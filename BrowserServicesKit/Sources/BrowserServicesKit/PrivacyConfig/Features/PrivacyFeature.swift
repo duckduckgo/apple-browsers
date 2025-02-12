@@ -194,6 +194,7 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case pip
     case autoplay
     case openInNewTab
+    case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
 }
 

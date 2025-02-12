@@ -136,6 +136,14 @@ enum GeneralPixel: PixelKitEventV2 {
     case duckPlayerNewTabSettingsOff
     case duckPlayerContingencySettingsDisplayed
     case duckPlayerContingencyLearnMoreClicked
+    case duckPlayerYouTubeSignInErrorImpression
+    case duckPlayerYouTubeAgeRestrictedErrorImpression
+    case duckPlayerYouTubeNoEmbedErrorImpression
+    case duckPlayerYouTubeUnknownErrorImpression
+    case duckPlayerYouTubeSignInErrorDaily
+    case duckPlayerYouTubeAgeRestrictedErrorDaily
+    case duckPlayerYouTubeNoEmbedErrorDaily
+    case duckPlayerYouTubeUnknownErrorDaily
 
     // Temporary Overlay Pixels
     case duckPlayerYouTubeOverlayNavigationBack
@@ -685,6 +693,22 @@ enum GeneralPixel: PixelKitEventV2 {
             return "duckplayer_mac_contingency_settings-displayed"
         case .duckPlayerContingencyLearnMoreClicked:
             return "duckplayer_mac_contingency_learn-more-clicked"
+        case .duckPlayerYouTubeSignInErrorImpression:
+            return "duckplayer_mac_youtube-signin-error_impression"
+        case .duckPlayerYouTubeAgeRestrictedErrorImpression:
+            return "duckplayer_mac_youtube-age-restricted-error_impression"
+        case .duckPlayerYouTubeNoEmbedErrorImpression:
+            return "duckplayer_mac_youtube-no-embed-error_impression"
+        case .duckPlayerYouTubeUnknownErrorImpression:
+            return "duckplayer_mac_youtube-unknown-error_impression"
+        case .duckPlayerYouTubeSignInErrorDaily:
+            return "duckplayer_mac_youtube-signin-error_daily-unique"
+        case .duckPlayerYouTubeAgeRestrictedErrorDaily:
+            return "duckplayer_mac_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerYouTubeNoEmbedErrorDaily:
+            return "duckplayer_mac_youtube-no-embed-error_daily-unique"
+        case .duckPlayerYouTubeUnknownErrorDaily:
+            return "duckplayer_mac_youtube-unknown-error_daily-unique"
 
             // Duck Player Temporary Overlay Pixels
         case .duckPlayerYouTubeOverlayNavigationBack:
@@ -1341,7 +1365,15 @@ enum GeneralPixel: PixelKitEventV2 {
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
                 .duckPlayerWeeklyUniqueView,
-                .duckPlayerContingencyLearnMoreClicked:
+                .duckPlayerContingencyLearnMoreClicked,
+                .duckPlayerYouTubeSignInErrorImpression,
+                .duckPlayerYouTubeAgeRestrictedErrorImpression,
+                .duckPlayerYouTubeNoEmbedErrorImpression,
+                .duckPlayerYouTubeUnknownErrorImpression,
+                .duckPlayerYouTubeSignInErrorDaily,
+                .duckPlayerYouTubeAgeRestrictedErrorDaily,
+                .duckPlayerYouTubeNoEmbedErrorDaily,
+                .duckPlayerYouTubeUnknownErrorDaily:
             return nil
 
         case .bookmarksSortButtonClicked(let origin),

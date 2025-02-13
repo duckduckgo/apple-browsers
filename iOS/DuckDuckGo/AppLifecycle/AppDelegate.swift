@@ -20,6 +20,8 @@
 import UIKit
 import Core
 
+// Test change to iOS code only
+
 public extension NSNotification.Name {
 
     static let appDidEncounterUnrecoverableState = Notification.Name("com.duckduckgo.app.unrecoverable.state")

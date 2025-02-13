@@ -1,4 +1,4 @@
-name: iOS - PR Labels
+name: Shared - PR Labels
 
 on:
   push:
@@ -9,11 +9,8 @@ on:
 
 jobs:
   enforce-label:
-
     name: Prevent merging with banned labels
-
     runs-on: ubuntu-latest
-
     steps:
     - if: github.event_name == 'pull_request'
       uses: yogevbd/enforce-label-action@2.2.2

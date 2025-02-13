@@ -1,7 +1,10 @@
 name: macOS - Update Phishing Detection Datasets
+
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * 0'  # Midnight UTC every Sunday
+
 jobs:
   update_data:
     runs-on: ubuntu-latest
@@ -9,12 +12,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          repository: duckduckgo/macos-browser
-          path: macos/
-          token: ${{ secrets.DAX_MACOS_BROWSER_PHISHING_AUTOMATION }}
+          repository: duckduckgo/apple-browsers
+          path: apple-monorepo/
       - name: Execute Update Script
         run: |
-          cd ./macos
+          cd ./apple-monorepo/macOS
           REVISION="$(bash ./scripts/update_phishing_detection_data.sh | grep -oP 'Updated revision from \K\d+')"
           echo "REVISION=$REVISION" >> $GITHUB_ENV
           TEMPLATE="$(bash ./scripts/update_phishing_detection_data.sh pr-body)"
@@ -26,9 +28,9 @@ jobs:
         uses: peter-evans/create-pull-request@88bf0de51c7487d91e1abbb4899332e602c58bbf
         id: create-pr
         with:
-          path: macos/
+          path: apple-monorepo/
           add-paths: |
-            ./DuckDuckGo/PhishingDetection/
+            ./macOS/DuckDuckGo/PhishingDetection/
           commit-message: Update phishing detection data to revision ${{ env.REVISION }}
           branch: update-phishing-protection-${{ env.REVISION }}
           title: Update phishing protection datasets to ${{ env.REVISION }}

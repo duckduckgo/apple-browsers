@@ -1,5 +1,9 @@
 name: macOS - Sync-End-to-End tests MacOS11/12
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
   # schedule:
@@ -23,7 +27,6 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_HANDLES_BASE64: ${{ secrets.MM_HANDLES_BASE64 }}
       MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -72,7 +75,7 @@ jobs:
       run: |
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
@@ -81,7 +84,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -104,7 +107,7 @@ jobs:
     - name: Build test runner
       run: |
         rm -rf LocalPackages
-        rm -rf /Users/runner/work/macos-browser/macos-browser/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+        rm -rf DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
         sed -i '' '/\/\* Begin XCSwiftPackageProductDependency section \*\//,/\/\* End XCSwiftPackageProductDependency section \*\//d' DuckDuckGo-macOS.xcodeproj/project.pbxproj
         sed -i '' '/\/\* Begin XCRemoteSwiftPackageReference section \*\//,/\/\* End XCRemoteSwiftPackageReference section \*\//d' DuckDuckGo-macOS.xcodeproj/project.pbxproj
         set -o pipefail && xcodebuild build-for-testing \
@@ -151,7 +154,7 @@ jobs:
       if: always()
       with:
         check_name: "Test Report ${{ matrix.runner }}"
-        report_paths: ui-tests.xml
+        report_paths: macOS/ui-tests.xml
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -159,7 +162,7 @@ jobs:
       with:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          macOS/xcodebuild.log
+          macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7

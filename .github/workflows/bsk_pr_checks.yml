@@ -73,14 +73,14 @@ jobs:
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
       - name: Run tests
-        run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename tests.xml
+        run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           check_name: Test Report (macOS)
-          report_paths: BrowserServicesKit/tests.xml
+          report_paths: BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: true
 
@@ -102,7 +102,7 @@ jobs:
         if: always()
         with:
           name: build-log.txt
-          path: build-log.txt
+          path: BrowserServicesKit/build-log.txt
 
       - name: Fetch latest commit author
         if: always() && github.ref_name == 'main'
@@ -174,14 +174,14 @@ jobs:
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
-            | xcbeautify --report junit --report-path . --junit-report-filename ios-unittests.xml
+            | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
           check_name: Test Report (iOS)
-          report_paths: BrowserServicesKit/ios-unittests.xml
+          report_paths: BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
 
       - name: Update Asana with failed unit tests
@@ -202,7 +202,7 @@ jobs:
         if: always()
         with:
           name: ios-build-log.txt
-          path: ios-build-log.txt
+          path: BrowserServicesKit/ios-build-log.txt
 
   create-asana-task:
     name: Create Asana Task

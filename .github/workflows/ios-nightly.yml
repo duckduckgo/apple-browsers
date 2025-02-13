@@ -1,8 +1,13 @@
 name: iOS - Nightly Test and Deploy
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
-  schedule:
-    - cron: '0 2 * * *' # Run at 2 AM UTC
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 2 * * *' # Run at 2 AM UTC
 
 jobs:
   atb-ui-tests:
@@ -29,7 +34,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -57,14 +62,14 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          iOS/xcodebuild.log
+          iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
       with:
-        report_paths: unittests.xml
+        report_paths: iOS/unittests.xml
 
   fingerprinting-ui-tests:
     name: Fingerprinting UI Tests
@@ -96,11 +101,11 @@ jobs:
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
       with:
-        report_paths: unittests.xml
+        report_paths: iOS/unittests.xml
 
   deploy-alpha:
     name: Deploy Nightly Alpha Build
-    uses: ./.github/workflows/ios-alpha.yml
+    uses: ./.github/workflows/ios_alpha.yml
     with:
       destination: "Nightly Alpha Group"
     secrets:

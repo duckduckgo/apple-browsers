@@ -1,5 +1,9 @@
 name: macOS - PIR E2E Tests
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
   schedule:
@@ -22,7 +26,8 @@ jobs:
       startsWith(github.event.pull_request.base.ref, 'release/') ||
       startsWith(github.event.pull_request.base.ref, 'hotfix/') ||
       (contains(github.event.pull_request.body, '- [x] Run PIR E2E tests') && (github.event.action != 'edited' || !contains(github.event.changes.body.from, '- [x] Run PIR E2E tests'))) ||
-      github.event_name == 'schedule'
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
@@ -44,7 +49,7 @@ jobs:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
         ref: main
-        path: pir-fake-broker
+        path: macOS/pir-fake-broker
 
     - name: Start PIR Fake Broker
       run: |
@@ -59,7 +64,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        path: main
+        path: macOS/main
 
     - name: Set up fastlane
       run: |
@@ -85,7 +90,7 @@ jobs:
         cd main
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
@@ -133,7 +138,7 @@ jobs:
       if: always()
       with:
         check_name: "Test Report ${{ matrix.runner }}"
-        report_paths: pir-e2e-tests.xml
+        report_paths: macOS/pir-e2e-tests.xml
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -141,8 +146,8 @@ jobs:
       with:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          macOS/xcodebuild.log
+          macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
 

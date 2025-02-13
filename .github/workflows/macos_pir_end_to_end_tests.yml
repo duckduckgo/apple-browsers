@@ -1,5 +1,9 @@
 name: macOS - PIR E2E Tests
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
   schedule:
@@ -38,13 +42,18 @@ jobs:
                         ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
                         ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
 
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
     - name: Check out the PIR fake broker code
       uses: actions/checkout@v4
       with:
         repository: DuckDuckGo/pir-fake-broker
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
         ref: main
-        path: pir-fake-broker
+        path: macOS/pir-fake-broker
 
     - name: Start PIR Fake Broker
       run: |
@@ -55,16 +64,8 @@ jobs:
         cd ..
         pnpm start:all &
 
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        path: main
-
     - name: Set up fastlane
-      run: |
-        cd main
-        bundle install
+      run: bundle install
 
     - name: Sync code signing assets
       env:
@@ -73,9 +74,7 @@ jobs:
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-      run: |
-        cd main
-        bundle exec fastlane sync_signing_ci
+      run: bundle exec fastlane sync_signing_ci
 
     - name: Download and unzip artifact
       uses: actions/download-artifact@v4
@@ -83,7 +82,7 @@ jobs:
     - name: Set cache key hash
       run: |
         cd main
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
           echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
@@ -94,7 +93,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: main/macOS/DerivedData/SourcePackages
+        path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -107,7 +106,6 @@ jobs:
 
     - name: Run PIR e2e Tests
       run: |
-        cd main
         launchctl setenv PRIVACYPRO_STAGING_TOKEN '${{ secrets.PRIVACYPRO_STAGING_TOKEN }}'
         set -o pipefail && xcodebuild test \
           -scheme "macOS PIR E2E Tests" \
@@ -125,7 +123,6 @@ jobs:
     - name: Prepare test report
       if: always()
       run: |
-        cd main
         xcbeautify --report junit --report-path . --junit-report-filename pir-e2e-tests.xml < pir-e2e-tests.log
 
     - name: Publish tests report
@@ -133,7 +130,7 @@ jobs:
       if: always()
       with:
         check_name: "Test Report ${{ matrix.runner }}"
-        report_paths: pir-e2e-tests.xml
+        report_paths: macOS/pir-e2e-tests.xml
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -141,8 +138,8 @@ jobs:
       with:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          macOS/xcodebuild.log
+          macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
 

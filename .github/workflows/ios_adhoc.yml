@@ -1,5 +1,9 @@
 name: iOS - Make ad-hoc build
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -67,8 +71,8 @@ jobs:
 
       - name: Set paths
         run: |
-          echo "ipa_path=${{ github.workspace }}/${{ env.ipa_filename }}" >> $GITHUB_ENV
-          echo "dsyms_path=${{ github.workspace }}/${{ env.dsyms_filename }}" >> $GITHUB_ENV
+          echo "ipa_path=${{ github.workspace }}/iOS/${{ env.ipa_filename }}" >> $GITHUB_ENV
+          echo "dsyms_path=${{ github.workspace }}/iOS/${{ env.dsyms_filename }}" >> $GITHUB_ENV
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4

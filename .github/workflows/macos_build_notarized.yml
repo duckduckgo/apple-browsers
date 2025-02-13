@@ -1,5 +1,9 @@
 name: macOS - Make Notarized DMG Release
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -63,8 +67,6 @@ on:
       AWS_SECRET_ACCESS_KEY_RELEASE_S3:
         required: true
       MATCH_PASSWORD:
-        required: true
-      MM_HANDLES_BASE64:
         required: true
       MM_WEBHOOK_URL:
         required: true
@@ -165,13 +167,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
-        path: ${{ github.workspace }}/release/DuckDuckGo-${{ env.app-version }}.zip
+        path: ${{ github.workspace }}/macOS/release/DuckDuckGo-${{ env.app-version }}.zip
 
     - name: Upload dSYMs artifact
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-dSYM-${{ env.app-version }}
-        path: ${{ github.workspace }}/release/${{ steps.set-outputs.outputs.dsym-name }}
+        path: ${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}
 
     - name: Upload dSYMs to S3
       if: ${{ env.upload-to == 's3' }}
@@ -183,10 +185,10 @@ jobs:
         DSYM_BUCKET_NAME: ${{ vars.DSYM_BUCKET_NAME }}
         DSYM_BUCKET_PREFIX: ${{ vars.MACOS_DSYM_BUCKET_PREFIX }}
         DSYM_NAME: ${{ steps.set-outputs.outputs.dsym-name }}
-        DSYM_LOCAL_PATH: "${{ github.workspace }}/release/${{ steps.set-outputs.outputs.dsym-name }}"
+        DSYM_LOCAL_PATH: "${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}"
       run: |
         dsym_s3_path="s3://${DSYM_BUCKET_NAME}/${DSYM_BUCKET_PREFIX}/${DSYM_NAME}"
-        aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path
+        # aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path KS TODO Revert
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Upload dSYMs to S3 (test build)
@@ -197,7 +199,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         DSYM_NAME: ${{ steps.set-outputs.outputs.dsym-name }}
-        DSYM_LOCAL_PATH: "${{ github.workspace }}/release/${{ steps.set-outputs.outputs.dsym-name }}"
+        DSYM_LOCAL_PATH: "${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}"
         DSYM_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
         RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
         RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
@@ -212,7 +214,7 @@ jobs:
         s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
         dsym_url="${dsym_s3_path/#${s3_bucket_url}/${DSYM_URL_ROOT}}" # replace S3 bucket url with CDN URL
         echo "dsym-url=${dsym_url}" >> $GITHUB_OUTPUT
-        aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read
+        # aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read KS TODO Revert
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
@@ -256,6 +258,9 @@ jobs:
           Gemfile
           Gemfile.lock
           fastlane
+          macOS/Gemfile
+          macOS/Gemfile.lock
+          macOS/fastlane
 
     - name: Set up fastlane
       run: bundle install
@@ -264,13 +269,13 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.app
-        path: ${{ github.workspace }}/dmg
+        path: ${{ github.workspace }}/macOS/dmg
 
     - name: Extract app bundle
       run: |
         ditto -xk DuckDuckGo-${{ env.app-version }}.zip .
         rm -f DuckDuckGo-${{ env.app-version }}.zip
-      working-directory: ${{ github.workspace }}/dmg
+      working-directory: ${{ github.workspace }}/macOS/dmg
 
     - name: Install create-dmg
       run: brew install create-dmg
@@ -281,7 +286,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
         dmg="duckduckgo-${{ env.app-version }}.dmg"
-        curl -fLSs $(gh api https://api.github.com/repos/${{ github.repository }}/contents/scripts/assets/dmg-background.png?ref=${{ github.ref }} --jq .download_url) \
+        curl -fLSs $(gh api https://api.github.com/repos/${{ github.repository }}/contents/macOS/scripts/assets/dmg-background.png?ref=${{ github.ref }} --jq .download_url) \
             --output dmg-background.png
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
@@ -298,7 +303,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: DuckDuckGo-${{ env.release-type }}-${{ env.app-version }}.dmg
-        path: ${{ github.workspace }}/${{ steps.create-dmg.outputs.dmg }}
+        path: ${{ github.workspace }}/macOS/${{ steps.create-dmg.outputs.dmg }}
 
     - name: Upload DMG to S3
       id: upload-dmg-to-s3
@@ -307,7 +312,7 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
         AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
         TEST_BUILD_S3_PATH: ${{ needs.export-notarized-app.outputs.test-build-s3-path }}
-        DMG_LOCAL_PATH: "${{ github.workspace }}/${{ steps.create-dmg.outputs.dmg }}"
+        DMG_LOCAL_PATH: "${{ github.workspace }}/macOS/${{ steps.create-dmg.outputs.dmg }}"
         DMG_URL_ROOT: ${{ vars.DMG_URL_ROOT }}
         RELEASE_BUCKET_NAME: ${{ vars.RELEASE_BUCKET_NAME }}
         RELEASE_BUCKET_PREFIX: ${{ vars.RELEASE_BUCKET_PREFIX }}
@@ -322,7 +327,7 @@ jobs:
           dmg_url="${dmg_s3_path/#${s3_bucket_url}/${DMG_URL_ROOT}}" # replace S3 bucket url with CDN URL
           echo "dmg-url=${dmg_url}" >> $GITHUB_OUTPUT
         fi
-        aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
+        # aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
@@ -383,6 +388,9 @@ jobs:
             Gemfile
             Gemfile.lock
             fastlane
+            macOS/Gemfile
+            macOS/Gemfile.lock
+            macOS/fastlane
 
       - name: Set up fastlane
         run: bundle install

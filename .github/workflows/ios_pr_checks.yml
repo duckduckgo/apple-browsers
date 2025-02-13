@@ -266,7 +266,7 @@ jobs:
 
     steps:
       - name: Create Asana Task
-        uses: duckduckgo/BrowserServicesKit/.github/actions/asana-failed-pr-checks@main
+        uses: ./.github/actions/asana-failed-pr-checks
         with:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -283,7 +283,7 @@ jobs:
 
     steps:
       - name: Close Asana Task
-        uses: duckduckgo/BrowserServicesKit/.github/actions/asana-failed-pr-checks@main
+        uses: ./.github/actions/asana-failed-pr-checks
         with:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

@@ -47,6 +47,8 @@ import RemoteMessaging
 import os.log
 import Freemium
 
+// Test macOS change
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG

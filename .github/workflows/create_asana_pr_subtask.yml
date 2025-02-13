@@ -9,9 +9,9 @@ jobs:
     create-asana-pr-subtask-if-needed:
 
         name: "Create the PR subtask in Asana"
-    
+
         runs-on: ubuntu-latest
-    
+
         steps:
         - name: Get Task ID
           id: get-task-id

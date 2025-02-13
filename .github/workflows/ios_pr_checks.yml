@@ -1,9 +1,19 @@
 name: iOS - PR Checks
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   push:
     branches: [ main, "release/**" ]
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'iOS/**'
   pull_request:
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'iOS/**'
   workflow_call:
     inputs:
       branch:
@@ -73,7 +83,7 @@ jobs:
       uses: ludeeus/action-shellcheck@master
       with:
         format: gcc
-        scandir: scripts
+        scandir: iOS/scripts
 
   unit-tests:
 
@@ -103,7 +113,8 @@ jobs:
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
          if [[ "$has_only_tags" == "true" ]]; then
-           echo "cache_key_hash=${{ hashFiles('DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+           # hashFiles does not respect the working directory, so the full path must be specified
+           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
          else
            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
          fi
@@ -112,10 +123,10 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        path: iOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-ios-spm-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-ios-spm-
 
     - name: Install xcbeautify
       run: brew install xcbeautify
@@ -141,14 +152,14 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          iOS/xcodebuild.log
+          iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v3
       with:
-        report_paths: unittests.xml
+        report_paths: iOS/unittests.xml
 
     - name: Update Asana with failed unit tests
       if: always() # always run even if the previous step fails
@@ -213,7 +224,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-release-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-release-

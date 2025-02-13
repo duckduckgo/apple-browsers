@@ -1,5 +1,9 @@
 name: iOS - Sync-End-to-End tests
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   # schedule:
   #   - cron: '0 1 * * *' # run at 1 AM UTC
@@ -19,9 +23,9 @@ jobs:
 
     - name: Set cache key hash
       run: |
-         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
          if [[ "$has_only_tags" == "true" ]]; then
-           echo "cache_key_hash=${{ hashFiles('DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
          else
            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
          fi
@@ -30,7 +34,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -90,7 +94,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: duckduckgo-ios-app
-        path: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
     - name: Overwrite default config with sync one
       run: |
@@ -104,7 +108,7 @@ jobs:
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
         name: sync_${{ github.sha }}
         timeout: 240
-        app-file: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: sync
         env: |
@@ -115,7 +119,7 @@ jobs:
 
     - name: Reset config
       run: |
-        git checkout .maestro/config.yaml
+        git checkout ../.maestro/config.yaml
 
 
 

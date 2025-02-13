@@ -1,8 +1,12 @@
 name: iOS - End-to-End tests
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
-  schedule:
-    - cron: '0 4 * * *' # run at 4 AM UTC
+  # schedule:
+  #   - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -21,7 +25,7 @@ jobs:
       run: |
          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
          if [[ "$has_only_tags" == "true" ]]; then
-           echo "cache_key_hash=${{ hashFiles('DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+           echo "cache_key_hash=${{ hashFiles('iOS/DuckDuckGo-iOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
          else
            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
          fi
@@ -30,7 +34,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -53,7 +57,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: duckduckgo-ios-app
-        path: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -61,8 +65,8 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          iOS/xcodebuild.log
+          iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
   end-to-end-tests:
@@ -85,7 +89,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: duckduckgo-ios-app
-        path: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
     - name: End to End tests
       id: upload
@@ -95,24 +99,24 @@ jobs:
         project-id: ${{ vars.ROBIN_PROJECT_KEY }}
         name: ${{ matrix.test-tag }}_${{ github.sha }}
         timeout: 300
-        app-file: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        app-file: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
         workspace: .maestro
         include-tags: ${{ matrix.test-tag }}
         env: ONBOARDING_COMPLETED=true
         ios-version: 17
         fail-on-timeout: true
-  
-  notify-failure:
-    name: Notify on failure
-    if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
-    needs: [build-end-to-end-tests, end-to-end-tests]
-    runs-on: ubuntu-latest
 
-    steps:
-    - name: Create Asana task when workflow failed
-      run: |
-        curl -s "https://app.asana.com/api/1.0/tasks" \
-          --header "Accept: application/json" \
-          --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
-          --header "Content-Type: application/json" \
-          --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed. See https://github.com/duckduckgo/iOS/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'
+  # notify-failure:
+  #   name: Notify on failure
+  #   if: ${{ always() && contains(join(needs.*.result, ','), 'failure') && github.ref_name == 'main' }}
+  #   needs: [build-end-to-end-tests, end-to-end-tests]
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #   - name: Create Asana task when workflow failed
+  #     run: |
+  #       curl -s "https://app.asana.com/api/1.0/tasks" \
+  #         --header "Accept: application/json" \
+  #         --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
+  #         --header "Content-Type: application/json" \
+  #         --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed. See https://github.com/duckduckgo/iOS/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'

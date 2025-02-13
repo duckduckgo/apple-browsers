@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "676d42679296a175169e433f2332e55644151edd",
-        "version" : "16.2.0"
+        "revision" : "3a9606fd26e9a54bf369cc241e6fa3b2571eb13a",
+        "version" : "16.2.1"
       }
     },
     {

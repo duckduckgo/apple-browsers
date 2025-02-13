@@ -1,5 +1,9 @@
 name: macOS - Publish DMG Release
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -67,7 +71,7 @@ jobs:
 
     env:
       RELEASE_TYPE: ${{ github.event.inputs.release-type || 'internal' }}
-      SPARKLE_DIR: ${{ github.workspace }}/sparkle-updates
+      SPARKLE_DIR: ${{ github.workspace }}/macOS/sparkle-updates
       asana-task-url: ${{ inputs.asana-task-url || github.event.inputs.asana-task-url }}
 
     needs: [tag-public-release]
@@ -80,6 +84,13 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      # Always check out main first, because the release branch might have been deleted (for public releases)
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
+          submodules: recursive
+          ref: main
 
       - name: Download tag artifact
         id: download-tag
@@ -94,7 +105,7 @@ jobs:
       - name: Set tag variable
         run: |
           if [[ "${{ steps.download-tag.outcome }}" == 'success' ]]; then
-            echo "TAG=$(<.github/tag)" >> $GITHUB_ENV
+            echo "TAG=$(<${{ github.workspace }}/.github/tag)" >> $GITHUB_ENV
           else
             echo "TAG=${{ github.event.inputs.tag }}" >> $GITHUB_ENV
           fi
@@ -102,21 +113,13 @@ jobs:
       - name: Verify the tag
         id: verify-tag
         run: |
-          tag_regex='^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$'
+          tag_regex='^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+(\+[a-zA-Z0-9._-]+)?$'
 
           if [[ ! "$TAG" =~ $tag_regex ]]; then
             echo "::error::The provided tag ($TAG) has incorrect format (attempted to match ${tag_regex})."
             exit 1
           fi
-          echo "release-version=${TAG//-/.}" >> $GITHUB_OUTPUT
-
-      # Always check out main first, because the release branch might have been deleted (for public releases)
-      - name: Check out the code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
-          submodules: recursive
-          ref: main
+          echo "release-version=$(echo "${TAG%%+*}" | sed 's/-/./g')" >> $GITHUB_OUTPUT
 
       - name: Check out the branch if it exists
         env:
@@ -160,7 +163,7 @@ jobs:
           SPARKLE_URL: https://github.com/sparkle-project/Sparkle/releases/download/${{ vars.SPARKLE_VERSION }}/Sparkle-${{ vars.SPARKLE_VERSION }}.tar.xz
         run: |
           curl -fLSs $SPARKLE_URL | tar xJ bin
-          echo "${{ github.workspace }}/bin" >> $GITHUB_PATH
+          echo "${{ github.workspace }}/macOS/bin" >> $GITHUB_PATH
 
       - name: Fetch DMG
         id: fetch-dmg
@@ -402,7 +405,7 @@ jobs:
     # Run if release-type is provided (not empty) an is not internal
     if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
 
-    uses: duckduckgo/macos-browser/.github/workflows/macos_create_variants.yml@main
+    uses: ./.github/workflows/macos_create_variants.yml
     secrets:
       APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
       APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
@@ -411,6 +414,5 @@ jobs:
       AWS_ACCESS_KEY_ID_RELEASE_S3: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
       AWS_SECRET_ACCESS_KEY_RELEASE_S3: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      MM_HANDLES_BASE64: ${{ secrets.MM_HANDLES_BASE64 }}
       MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}

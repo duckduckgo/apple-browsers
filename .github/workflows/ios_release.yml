@@ -1,5 +1,9 @@
 name: iOS - Make App Store Connect Release
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -25,7 +29,7 @@ on:
         description: "Branch name"
         required: false
         type: string
-      destination: 
+      destination:
         description: "Upload destination (TestFlight or App Store)"
         required: false
         default: testflight
@@ -62,10 +66,16 @@ jobs:
 
     steps:
 
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: ${{ env.branch }}
+
     - name: Set destination output
       id: destination
       run: |
-        INPUT_DESTINATION=${{ github.event.inputs.destination }}
+        INPUT_DESTINATION=${{ env.destination }}
         echo "destination=${INPUT_DESTINATION:-"testflight"}" >> $GITHUB_OUTPUT
 
     - name: Assert release branch
@@ -82,12 +92,6 @@ jobs:
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        ref: ${{ env.branch }}
-
     - name: Select Xcode
       run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
 
@@ -102,7 +106,7 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        echo "dsyms_path=${{ github.workspace }}/DuckDuckGo.app.dSYM.zip" >> $GITHUB_ENV
+        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
 
@@ -123,7 +127,7 @@ jobs:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
         if [[ -f ${{ env.dsyms_path }} ]]; then
-          asana_dsyms_path="${{ github.workspace }}/DuckDuckGo-${{ env.app_version }}-dSYM.zip"
+          asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-${{ env.app_version }}-dSYM.zip"
           mv -f "${{ env.dsyms_path }}" "$asana_dsyms_path"
 
           curl -s "https://app.asana.com/api/1.0/tasks/${{ steps.task-id.outputs.task_id }}/attachments" \

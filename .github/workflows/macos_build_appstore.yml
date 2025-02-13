@@ -1,5 +1,9 @@
 name: macOS - Make App Store Connect Release
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -48,8 +52,6 @@ on:
         required: true
       ASANA_ACCESS_TOKEN:
         required: true
-      MM_HANDLES_BASE64:
-        required: true
       MM_WEBHOOK_URL:
         required: true
 
@@ -67,6 +69,12 @@ jobs:
 
     steps:
 
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        ref: ${{ env.branch }}
+
     - name: Assert release branch
       if: env.destination == 'appstore' || env.destination == 'testflight'
       run: |
@@ -80,12 +88,6 @@ jobs:
       uses: webfactory/ssh-agent@v0.9.0
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-
-    - name: Check out the code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        ref: ${{ env.branch }}
 
     - name: Set up fastlane
       run: bundle install
@@ -120,8 +122,8 @@ jobs:
         fi
 
         bundle exec fastlane release_${{ env.destination }}
-        dsym_path="${{ github.workspace }}/${app_dsym_name}.app.dSYM.zip"
-        mv -f "${{ github.workspace }}/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
+        dsym_path="${{ github.workspace }}/macOS/${app_dsym_name}.app.dSYM.zip"
+        mv -f "${{ github.workspace }}/macOS/${app_bundle_name}.app.dSYM.zip" "${dsym_path}"
         version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
         build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
         echo "dsym-path=${dsym_path}" >> $GITHUB_ENV

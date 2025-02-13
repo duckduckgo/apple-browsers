@@ -1,5 +1,9 @@
 name: macOS - Create DMG Variants
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
 
@@ -18,8 +22,6 @@ on:
       AWS_SECRET_ACCESS_KEY_RELEASE_S3:
         required: true
       MATCH_PASSWORD:
-        required: true
-      MM_HANDLES_BASE64:
         required: true
       MM_WEBHOOK_URL:
         required: true
@@ -67,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: duckduckgo-dmg
-          path: ${{ github.workspace }}/duckduckgo.dmg
+          path: ${{ github.workspace }}/macOS/duckduckgo.dmg
           retention-days: 1
 
   create-variants-1:
@@ -129,10 +131,10 @@ jobs:
         with:
           sparse-checkout: |
             .github
-            Gemfile
-            Gemfile.lock
-            fastlane
-            scripts
+            macOS/Gemfile
+            macOS/Gemfile.lock
+            macOS/fastlane
+            macOS/scripts
 
       - name: Set up fastlane
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

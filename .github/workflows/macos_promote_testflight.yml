@@ -1,5 +1,9 @@
 name: macOS - Promote TestFlight to App Store
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch: {}
 
@@ -14,10 +18,10 @@ jobs:
         ref: ${{ github.ref_name }}
         sparse-checkout: |
           .github
-          Gemfile
-          Gemfile.lock
-          fastlane
-          scripts
+          macOS/Gemfile
+          macOS/Gemfile.lock
+          macOS/fastlane
+          macOS/scripts
 
     - name: Set up fastlane
       run: bundle install

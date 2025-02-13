@@ -1,5 +1,9 @@
 name: macOS - Create DMG Variant
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -62,10 +66,10 @@ jobs:
       with:
         sparse-checkout: |
           .github
-          Gemfile
-          Gemfile.lock
-          fastlane
-          scripts
+          macOS/Gemfile
+          macOS/Gemfile.lock
+          macOS/fastlane
+          macOS/scripts
 
     - name: Set up fastlane
       run: bundle install
@@ -106,7 +110,7 @@ jobs:
       run: brew install create-dmg
 
     - name: Set up variant
-      working-directory: ${{ github.workspace }}/dmg
+      working-directory: ${{ github.workspace }}/macOS/dmg
       run: |
         codesign -d --entitlements :- DuckDuckGo.app > entitlements.plist
         echo "${{ env.ATB_VARIANT_NAME }}" > "DuckDuckGo.app/Contents/Resources/variant.txt"
@@ -126,7 +130,7 @@ jobs:
         APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
         APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
-      working-directory: ${{ github.workspace }}/dmg
+      working-directory: ${{ github.workspace }}/macOS/dmg
       run: |
         # import API Key from secrets
         export APPLE_API_KEY_PATH="$RUNNER_TEMP/apple_api_key.pem"

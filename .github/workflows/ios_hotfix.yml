@@ -1,5 +1,9 @@
 name: iOS - Set Up Hotfix Release Branch
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   workflow_dispatch:
 
@@ -18,19 +22,19 @@ jobs:
 
     steps:
 
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
+          submodules: recursive
+          fetch-depth: 0
+
       - name: Assert main branch
         run: |
           if [ "${{ github.ref_name }}" != "main" ]; then
             echo "👎 Not the main branch"
             exit 1
           fi
-
-      - name: Check out the code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }} 
-          submodules: recursive
-          fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
 
       - name: Set up fastlane
         run: bundle install

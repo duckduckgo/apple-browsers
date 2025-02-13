@@ -188,7 +188,7 @@ jobs:
         DSYM_LOCAL_PATH: "${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}"
       run: |
         dsym_s3_path="s3://${DSYM_BUCKET_NAME}/${DSYM_BUCKET_PREFIX}/${DSYM_NAME}"
-        # aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path KS TODO Revert
+        aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Upload dSYMs to S3 (test build)
@@ -214,7 +214,7 @@ jobs:
         s3_bucket_url="s3://${RELEASE_BUCKET_NAME}/${RELEASE_BUCKET_PREFIX}/"
         dsym_url="${dsym_s3_path/#${s3_bucket_url}/${DSYM_URL_ROOT}}" # replace S3 bucket url with CDN URL
         echo "dsym-url=${dsym_url}" >> $GITHUB_OUTPUT
-        # aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read KS TODO Revert
+        aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success
@@ -327,7 +327,7 @@ jobs:
           dmg_url="${dmg_s3_path/#${s3_bucket_url}/${DMG_URL_ROOT}}" # replace S3 bucket url with CDN URL
           echo "dmg-url=${dmg_url}" >> $GITHUB_OUTPUT
         fi
-        # aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
+        aws s3 cp $DMG_LOCAL_PATH $dmg_s3_path --acl public-read
         echo "dmg-s3-path=${dmg_s3_path}" >> $GITHUB_OUTPUT
 
     - name: Report success

@@ -1,5 +1,9 @@
 name: iOS - Build Hotfix Release
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -26,6 +30,12 @@ jobs:
     timeout-minutes: 10
 
     steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
+          ref: ${{ github.ref_name }}
+          submodules: recursive
 
       - name: Assert hotfix release branch
         run: |
@@ -39,7 +49,7 @@ jobs:
     name: Run Tests
 
     needs: assert_release_branch
-    uses: ./.github/workflows/ios-pr-checks.yml
+    uses: ./.github/workflows/ios_pr_checks.yml
     with:
       skip-release: true
     secrets:
@@ -91,9 +101,9 @@ jobs:
             target_section_id:"${{ vars.IOS_APP_BOARD_VALIDATION_SECTION_ID }}"
 
   prepare_release:
-    name: Prepare Release 
+    name: Prepare Release
     needs: run_tests
-    uses: ./.github/workflows/ios-release.yml
+    uses: ./.github/workflows/ios_release.yml
     with:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
       destination: appstore
@@ -111,7 +121,7 @@ jobs:
   tag_and_merge:
     name: Tag and Merge Branch
     needs: [ prepare_release, update_asana ]
-    uses: ./.github/workflows/ios-tag-release-update-asana.yml
+    uses: ./.github/workflows/ios_tag_release_update_asana.yml
     with:
       asana-task-url: ${{ github.event.inputs.asana-task-url }}
       branch: ${{ github.ref_name }}

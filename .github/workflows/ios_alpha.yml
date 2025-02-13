@@ -1,5 +1,9 @@
 name: iOS - Make TestFlight Alpha Build
 
+defaults:
+  run:
+    working-directory: iOS
+
 on:
   workflow_dispatch:
     inputs:
@@ -63,7 +67,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: iOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-
@@ -86,7 +90,7 @@ jobs:
         bundle exec fastlane increment_build_number_for_version version:$app_version app_identifier:"com.duckduckgo.mobile.ios.alpha"
         build_version="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
         bundle exec fastlane release_alpha groups:["${{ env.destination }}"]
-        echo "dsyms_path=${{ github.workspace }}/DuckDuckGo-Alpha.app.dSYM.zip" >> $GITHUB_ENV
+        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-Alpha.app.dSYM.zip" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
         echo "build_version=${build_version}" >> $GITHUB_ENV
 
@@ -100,7 +104,7 @@ jobs:
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
-        asana_dsyms_path="${{ github.workspace }}/DuckDuckGo-Alpha-${{ env.app_version }}(${{ env.build_version }})-dSYM.zip"
+        asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-Alpha-${{ env.app_version }}(${{ env.build_version }})-dSYM.zip"
         mv -f "${{ env.dsyms_path }}" "$asana_dsyms_path"
 
         curl -s "https://app.asana.com/api/1.0/tasks/1205344386326139/attachments" \

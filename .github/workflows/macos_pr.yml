@@ -1,9 +1,19 @@
 name: macOS - PR Checks
 
+defaults:
+  run:
+    working-directory: macOS
+
 on:
   push:
     branches: [ main, "release/**" ]
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
   pull_request:
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
   workflow_call:
     inputs:
       branch:
@@ -34,7 +44,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: SwiftLint
-        uses: docker://norionomura/swiftlint:0.54.0
+        uses: docker://norionomura/swiftlint:0.54.0_swift-5.9.0
         with:
           args: swiftlint --reporter github-actions-logging --strict
 
@@ -59,10 +69,10 @@ jobs:
       uses: ludeeus/action-shellcheck@master
       with:
         format: gcc
-        ignore_paths: scripts/helpers
-        scandir: scripts
+        ignore_paths: macOS/scripts/helpers
+        scandir: macOS/scripts
       env:
-        SHELLCHECK_OPTS: -x -P scripts -P scripts/helpers
+        SHELLCHECK_OPTS: -x -P macOS/scripts -P macOS/scripts/helpers
 
   bats:
 
@@ -161,7 +171,8 @@ jobs:
       run: |
         has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
         if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+          # hashFiles does not respect the working directory, so the full path must be specified
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
         else
           echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
         fi
@@ -170,7 +181,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-${{ matrix.cache-key }}${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-${{ matrix.cache-key }}
@@ -356,7 +367,7 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
+        path: macOS/DerivedData/SourcePackages
         key: ${{ runner.os }}-spm-test-release-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-spm-test-release-${{ matrix.cache-key }}

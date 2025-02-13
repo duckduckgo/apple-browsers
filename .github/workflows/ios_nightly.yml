@@ -6,8 +6,8 @@ defaults:
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 2 * * *' # Run at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *' # Run at 2 AM UTC
 
 jobs:
   atb-ui-tests:

@@ -6,8 +6,8 @@ defaults:
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 4 * * *' # run at 4 AM UTC
+  schedule:
+    - cron: '0 4 * * *' # run at 4 AM UTC
 
 jobs:
   create-notarized-app:

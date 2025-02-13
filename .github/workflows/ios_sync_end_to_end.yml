@@ -57,7 +57,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: duckduckgo-ios-app
-        path: DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
+        path: iOS/DerivedData/Build/Products/Debug-iphonesimulator/DuckDuckGo.app
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -65,8 +65,8 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          iOS/xcodebuild.log
+          iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
 
   sync-end-to-end-tests:
@@ -98,7 +98,7 @@ jobs:
 
     - name: Overwrite default config with sync one
       run: |
-        cp .maestro/config-sync .maestro/config.yaml
+        cp ../.maestro/config-sync ../.maestro/config.yaml
 
     - name: Sync e2e tests
       id: upload

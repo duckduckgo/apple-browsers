@@ -1,4 +1,4 @@
-name: Assign GitHub Reviewer to Asana Task
+name: Shared - Assign GitHub Reviewer to Asana Task
 
 on:
     pull_request:

@@ -85,9 +85,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-macos-
 
     - name: Select Xcode 14.2 for macOS 12
       if: matrix.runner == 'macos-12-large'

@@ -10965,6 +10965,7 @@
 				F1D43AF12B98E47800BAB743 /* XCRemoteSwiftPackageReference "BareBonesBrowser" */,
 				9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */,
 				4B5235432C7BB14D00AFAF64 /* XCRemoteSwiftPackageReference "wireguard-apple" */,
+				9F5E53C42D60798800D2396D /* XCRemoteSwiftPackageReference "SwiftGenPlugin" */,
 			);
 			productRefGroup = AA585D7F248FD31100E9A3E2 /* Products */;
 			projectDirPath = "";
@@ -15719,6 +15720,14 @@
 			requirement = {
 				kind = exactVersion;
 				version = 237.1.0;
+			};
+		};
+		9F5E53C42D60798800D2396D /* XCRemoteSwiftPackageReference "SwiftGenPlugin" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftGen/SwiftGenPlugin";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.6.2;
 			};
 		};
 		9FF521422BAA8FF300B9819B /* XCRemoteSwiftPackageReference "lottie-spm" */ = {

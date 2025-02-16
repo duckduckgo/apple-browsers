@@ -30,8 +30,6 @@ playground.xcworkspace
 # hence it is not needed unless you have added a package configuration file to your project
 # .swiftpm
 
-.build/
-
 # fastlane
 #
 # It is recommended to not store the screenshots in the git repo.
@@ -44,4 +42,10 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 
+# Ruby
 vendor/
+
+# Release
+node_modules/
+.build/
+release/

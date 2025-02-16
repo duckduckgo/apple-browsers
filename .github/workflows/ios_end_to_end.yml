@@ -113,6 +113,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
     - name: Create Asana task when workflow failed
       run: |
         curl -s "https://app.asana.com/api/1.0/tasks" \

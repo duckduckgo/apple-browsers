@@ -61,6 +61,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "AI-chat";
 
+/* Duck.ai menu item opening a new chat */
+"action.title.duckai.new" = "Ny AI-chat";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Rediger bogmærke";
 
@@ -84,6 +87,9 @@
 
 /* Open action */
 "action.title.open" = "Åben";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "Adgangskoder";
 
 /* Paste and Go action */
 "action.title.pasteAndGo" = "Indsæt og fortsæt";
@@ -123,6 +129,9 @@
 
 /* Share action */
 "action.title.share" = "Del";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "Ny fane";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Nederst";
@@ -294,6 +303,18 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Når DuckDuckGo registrerer pop op-vinduer med samtykke til brug af cookies på websteder, du besøger, kan vi automatisk indstille dine cookiepræferencer til at minimere cookies og maksimere privatlivets fred og derefter lukke pop op-vinduer. Nogle websteder giver ikke mulighed for at administrere cookiepræferencer, så vi kan kun skjule pop op-vinduer som disse.";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
 
 /* Open Settings action for disabling autofill in Settings */
 "autofill.disable.prompt.action.open-settings" = "Åbn Indstillinger";
@@ -532,8 +553,11 @@
 /* Title displayed when there are no results on Autofill search */
 "autofill.logins.search.no-results.title" = "Ingen resultater";
 
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
 /* Description of autofill onboarding prompt's secure storage feature
-Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.description" = "Adgangskoder krypteres, gemmes på enheden og låses med %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
@@ -692,6 +716,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Slet";
 
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "Vil du slette %@?";
 
@@ -796,6 +823,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
 "contextual.onboarding.addToDock.tutorial.title" = "Det er nemt at tilføje mig til din Dock.";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* prøvede at spore dig her. Jeg blokerede dem!\n\n☝️ Tryk på skjoldet for at få mere information.";
@@ -910,6 +940,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.after.search.cta" = "Pyha!";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.multiple.trackers.cta" = "Giv mig fem!";
@@ -1037,9 +1070,6 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* No comment provided by engineer. */
 "Duck Address" = "Duck Address";
 
-/* No comment provided by engineer. */
-"Duck Player" = "Duck Player";
-
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player ikke tilgængelig";
 
@@ -1052,8 +1082,8 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
 "duckai.preferences.text.markdown" = "Duck.ai er en valgfri funktion, der giver dig mulighed for at chatte anonymt med populære tredjeparts AI-chatmodeller. Dine chats bruges ikke til at træne AI.\n [Læs mere](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
-/* Toggle text to enable/disable AI Chat in the address bar */
-"duckai.settings.enable.address-bar-searching-toggle" = "Vis Duck.ai på søgesiden";
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "Vis Duck.ai i adresselinjen";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Vis Duck.ai i browsermenuen";
@@ -1079,12 +1109,10 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Button that will dismiss the modal */
 "duckplayer.presentation.modal.dismiss-button" = "Forstået";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title" = "Drukner du i annoncer på YouTube? Prøv Duck Player!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Drukner du i annoncer på YouTube? Ikke med Duck Player!";
 
 /* Footer label in the settings screen for Duck Player */
@@ -1921,6 +1949,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "På et hvilket som helst websted skal du åbne menuen ••• og vælge **Tilføj favorit** for at føje den til din nye faneside.";
 
+/* Do not translate - stringsdict entry */
+"number.of.tabs" = "number.of.tabs";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Administrerede cookies";
 
@@ -2105,9 +2136,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 "prefrences.sync.credentials-limit-exceeded-description" = "Du har nået det maksimale antal adgangskoder. Slet nogle af dem for at genoptage synkroniseringen.";
 
 /* Description invalid credentials error when syncing.
-Description of incorrectly formatted data error when syncing.
-Description of too many requests error when syncing. */
-"prefrences.sync.invalid-login-description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
+   Description of incorrectly formatted data error when syncing.
+   Description of too many requests error when syncing. */
+"prefrences.sync.invalid-login-description" = "Synkronisering stødte på en fejl. Prøv at deaktivere synkronisering på denne enhed, og opret derefter forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synkronisering sat på pause";
@@ -2218,7 +2249,7 @@ Description of too many requests error when syncing. */
 "settings.add.widget.vpn" = "Tilføj DuckDuckGo VPN-widget til din startskærm";
 
 /* Name of the settings subsection related to the address bar
-Settings screen cell text for addess bar position */
+   Settings screen cell text for addess bar position */
 "settings.address.bar" = "Adresselinje";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2276,7 +2307,7 @@ Settings screen cell text for addess bar position */
 "settings.data.clearing" = "Datarydning";
 
 /* Settings screen cell text for setting the app as default browser
-The name of Settings category in Privacy Features related to configuration of the default browser */
+   The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardbrowser";
 
 /* Label of a button disabling email protection */
@@ -2702,6 +2733,9 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
 "subscription.subscription.expiring.monthly.caption" = "Dit månedlige abonnement udløber den %@.";
 
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "Din gratis prøveperiode slutter den %@ og vil ikke blive konverteret til et betalt abonnement.";
+
 /* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
 "subscription.subscription.expiring.unknown.caption" = "Dit abonnement udløber den %@.";
 
@@ -2711,6 +2745,12 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Dit månedlige abonnement fornys den %@.";
 
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "Din gratis prøveperiode slutter den %@ og konverteres automatisk til et månedligt betalt abonnement den dag.";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "Din gratis prøveperiode slutter den %@ og konverteres automatisk til et årligt betalt abonnement den dag.";
+
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Dit abonnement fornys den %@.";
 
@@ -2719,6 +2759,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Navigation bar Title for subscriptions */
 "subscription.title" = "Privacy Pro";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "Gratis prøveperiode er aktiv";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Gendannelseskode kopieret til udklipsholder";
@@ -3052,6 +3095,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Du er inviteret!";
+
+/* No comment provided by engineer. */
+"Watch this video on YouTube" = "Se denne video på YouTube";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Favorit fjernet";

@@ -61,6 +61,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Чат с ИИ";
 
+/* Duck.ai menu item opening a new chat */
+"action.title.duckai.new" = "Запустить AI Chat";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Редактировать закладку";
 
@@ -84,6 +87,9 @@
 
 /* Open action */
 "action.title.open" = "Открыть";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "Пароли";
 
 /* Paste and Go action */
 "action.title.pasteAndGo" = "Вставить и перейти";
@@ -123,6 +129,9 @@
 
 /* Share action */
 "action.title.share" = "Поделиться";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "Новая вкладка";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Внизу";
@@ -294,6 +303,18 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Если DuckDuckGo обнаружит всплывающее окно выбора куки-файлов на каком-либо сайте, мы попытаемся автоматически выбрать минимум куки, максимально защитив ваши данные, а затем закроем окно. Некоторые сайты не позволяют контролировать настройки куки-файлов. В этом случае мы можем их только скрыть.";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
 
 /* Open Settings action for disabling autofill in Settings */
 "autofill.disable.prompt.action.open-settings" = "Открыть Настройки";
@@ -532,8 +553,11 @@
 /* Title displayed when there are no results on Autofill search */
 "autofill.logins.search.no-results.title" = "Нет результатов";
 
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
 /* Description of autofill onboarding prompt's secure storage feature
-Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.description" = "Пароли в зашифрованном виде хранятся на устройстве, а их защиту обеспечивает %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
@@ -692,6 +716,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Удалить";
 
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "Удалить %@?";
 
@@ -796,6 +823,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
 "contextual.onboarding.addToDock.tutorial.title" = "Добавить меня на док-панель очень просто.";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Сайт *%1$@* пытался вести за вами слежку, но мы его заблокировали.\n\n☝️ Нажмите на щит, чтобы узнать подробности.";
@@ -910,6 +940,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.after.search.cta" = "Уф!";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.multiple.trackers.cta" = "Дай пять!";
@@ -1037,9 +1070,6 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* No comment provided by engineer. */
 "Duck Address" = "Duck Address";
 
-/* No comment provided by engineer. */
-"Duck Player" = "Duck Player";
-
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player недоступен";
 
@@ -1052,8 +1082,8 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
 "duckai.preferences.text.markdown" = "Duck.ai — дополнительная функция, позволяющая анонимно беседовать с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения ИИ.\n[Подробнее...](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
-/* Toggle text to enable/disable AI Chat in the address bar */
-"duckai.settings.enable.address-bar-searching-toggle" = "Показывать Duck.ai на странице поиска";
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "Показывать Duck.ai в адресной строке";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Показывать Duck.ai в меню браузера";
@@ -1079,12 +1109,10 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Button that will dismiss the modal */
 "duckplayer.presentation.modal.dismiss-button" = "Понятно";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title" = "Шквал рекламы на YouTube? Попробуйте Duck Player!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Шквал рекламы на YouTube? Только не с Duck Player!";
 
 /* Footer label in the settings screen for Duck Player */
@@ -1921,6 +1949,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Чтобы добавить сайт к странице новой вкладки, откройте меню ••• и выберите пункт **Добавить в избранное**.";
 
+/* Do not translate - stringsdict entry */
+"number.of.tabs" = "number.of.tabs";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Kуки-файлы выбраны";
 
@@ -2105,9 +2136,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 "prefrences.sync.credentials-limit-exceeded-description" = "Достигнуто максимальное число паролей. Чтобы возобновить синхронизацию, удалите некоторые из них.";
 
 /* Description invalid credentials error when syncing.
-Description of incorrectly formatted data error when syncing.
-Description of too many requests error when syncing. */
-"prefrences.sync.invalid-login-description" = "Некоторые закладки или пароли не синхронизируются из-за неверного формата или превышения ограничений по длине.";
+   Description of incorrectly formatted data error when syncing.
+   Description of too many requests error when syncing. */
+"prefrences.sync.invalid-login-description" = "Произошла ошибка синхронизации. Попробуйте отключить синхронизацию на этом устройстве, а затем выполнить повторную привязку с помощью другого устройства или кода восстановления.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Синхронизация на паузе";
@@ -2218,7 +2249,7 @@ Description of too many requests error when syncing. */
 "settings.add.widget.vpn" = "Добавить виджет DuckDuckGo VPN на главный экран";
 
 /* Name of the settings subsection related to the address bar
-Settings screen cell text for addess bar position */
+   Settings screen cell text for addess bar position */
 "settings.address.bar" = "Адресная строка";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2276,7 +2307,7 @@ Settings screen cell text for addess bar position */
 "settings.data.clearing" = "Очистка данных";
 
 /* Settings screen cell text for setting the app as default browser
-The name of Settings category in Privacy Features related to configuration of the default browser */
+   The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
 
 /* Label of a button disabling email protection */
@@ -2702,6 +2733,9 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
 "subscription.subscription.expiring.monthly.caption" = "Ваша ежемесячная подписка завершится %@.";
 
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "Ваш бесплатный пробный период завершится %@ без перехода на платную подписку.";
+
 /* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
 "subscription.subscription.expiring.unknown.caption" = "Ваша подписка завершится %@.";
 
@@ -2711,6 +2745,12 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Ваша ежемесячная подписка продлится %@.";
 
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "Бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную ежемесячную подписку.";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "Ваш бесплатный пробный период завершится %@. В тот же день вы автоматически перейдете на платную годовую подписку.";
+
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Ваша подписка продлится %@.";
 
@@ -2719,6 +2759,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Navigation bar Title for subscriptions */
 "subscription.title" = "Privacy Pro";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "Бесплатный пробный доступ активирован";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Код восстановления скопирован в буфер обмена";
@@ -3052,6 +3095,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Вас пригласили!";
+
+/* No comment provided by engineer. */
+"Watch this video on YouTube" = "Открыть видео в YouTube";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Страница удалена из избранного";

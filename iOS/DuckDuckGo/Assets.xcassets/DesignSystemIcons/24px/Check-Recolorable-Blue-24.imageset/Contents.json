@@ -3,6 +3,16 @@
     {
       "filename" : "Check-Recolorable-Blue-24.svg",
       "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Check-Recolorable-Blue-24-dark.svg",
+      "idiom" : "universal"
     }
   ],
   "info" : {

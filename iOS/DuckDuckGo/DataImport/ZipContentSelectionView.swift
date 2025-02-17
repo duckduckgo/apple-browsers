@@ -134,7 +134,7 @@ private struct DataTypeRow: View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {  // Reduce duration
+                    withAnimation(.easeInOut(duration: 0.2)) {
                         viewModel.toggleSelection(importPreview.type)
                     }
                 } label: {
@@ -147,6 +147,7 @@ private struct DataTypeRow: View {
                 .contentShape(Rectangle())
 
                 importPreview.icon
+                    .tint(Color(designSystemColor: .textPrimary))
                     .frame(width: 24)
                     .padding(.trailing, 8)
 

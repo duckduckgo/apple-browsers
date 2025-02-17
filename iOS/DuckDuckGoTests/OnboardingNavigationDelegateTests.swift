@@ -91,7 +91,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aichatSettings: MockAIChatSettingsProvider()
+            aiChatSettings: MockAIChatSettingsProvider()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

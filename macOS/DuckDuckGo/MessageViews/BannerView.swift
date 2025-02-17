@@ -65,29 +65,38 @@ struct BannerView: View {
     @ObservedObject public var viewModel: BannerViewModel
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(nsImage: viewModel.image)
+        VStack {
+            HStack(spacing: 12) {
+                Image(nsImage: viewModel.image)
 
-            Text(viewModel.message)
+                Text(viewModel.message)
 
-            Button {
-                viewModel.buttonAction()
-            } label: {
-                Text(viewModel.buttonText)
+                Button {
+                    viewModel.buttonAction()
+                } label: {
+                    Text(viewModel.buttonText)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+
+                Spacer()
+
+                Button(action: {
+                    viewModel.closeAction()
+                }) {
+                    Image(.closeSmall)
+                        .foregroundColor(.blackWhite100)
+                        .padding()
+                }
+                .buttonStyle(BorderlessButtonStyle())
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .padding(.leading, 19)
 
-            Spacer()
-
-            Button(action: {
-                viewModel.closeAction()
-            }) {
-                Image(.closeSmall)
-                    .padding()
-            }
-            .buttonStyle(BorderlessButtonStyle())
+            Divider()
+                .frame(height: 1)
+                .background(Color.blackWhite50).opacity(0.2)
         }
-        .padding(.leading, 19)
+
+        .background(Color.bannerBackground)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 }

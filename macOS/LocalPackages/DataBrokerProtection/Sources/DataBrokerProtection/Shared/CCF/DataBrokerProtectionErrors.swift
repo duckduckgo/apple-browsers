@@ -27,8 +27,6 @@ public enum DataBrokerProtectionError: Error, Equatable, Codable {
     case noActionFound
     case actionFailed(actionID: String, message: String)
     case parsingErrorObjectFailed
-    case unknownMethodName
-    case userScriptMessageBrokerNotSet
     case unknown(String)
     case unrecoverableError
     case noOptOutStep
@@ -67,10 +65,6 @@ extension DataBrokerProtectionError {
             return "actionFailed"
         case .parsingErrorObjectFailed:
             return "parsingErrorObjectFailed"
-        case .unknownMethodName:
-            return "unknownMethodName"
-        case .userScriptMessageBrokerNotSet:
-            return "userScriptMessageBrokerNotSet"
         case .unknown(let name):
             return name
         case .unrecoverableError:
@@ -102,18 +96,16 @@ extension DataBrokerProtectionError: CustomNSError {
         case .noActionFound: return 101
         case .actionFailed: return 102
         case .parsingErrorObjectFailed: return 103
-        case .unknownMethodName: return 104
-        case .userScriptMessageBrokerNotSet: return 105
-        case .unknown: return 106
-        case .unrecoverableError: return 107
-        case .noOptOutStep: return 108
-        case .captchaServiceError: return 109
-        case .emailError: return 110
-        case .cancelled: return 111
-        case .solvingCaptchaWithCallbackError: return 112
-        case .cantCalculatePreferredRunDate: return 113
-        case .httpError: return 114
-        case .dataNotInDatabase: return 115
+        case .unknown: return 104
+        case .unrecoverableError: return 105
+        case .noOptOutStep: return 106
+        case .captchaServiceError: return 107
+        case .emailError: return 108
+        case .cancelled: return 109
+        case .solvingCaptchaWithCallbackError: return 110
+        case .cantCalculatePreferredRunDate: return 111
+        case .httpError: return 112
+        case .dataNotInDatabase: return 113
         }
     }
 }

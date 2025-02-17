@@ -399,6 +399,9 @@ public final class VPNSettings {
             //            defaults.dnsSettings
         }
         set {
+            if !(featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false) {
+                defaults.isBlockRiskyDomainsOn = nil
+            }
             defaults.dnsSettings = newValue
         }
     }

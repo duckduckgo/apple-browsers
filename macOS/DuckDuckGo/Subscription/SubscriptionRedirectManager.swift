@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import BrowserServicesKit
+import Common
 
 protocol SubscriptionRedirectManager: AnyObject {
     func redirectURL(for url: URL) -> URL?
@@ -27,15 +28,18 @@ protocol SubscriptionRedirectManager: AnyObject {
 final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
     private let subscriptionEnvironment: SubscriptionEnvironment
-    private let canPurchase: () -> Bool
     private let baseURL: URL
+    private let canPurchase: () -> Bool
+    private let tld: TLD
 
     init(subscriptionEnvironment: SubscriptionEnvironment,
          baseURL: URL,
-         canPurchase: @escaping () -> Bool) {
+         canPurchase: @escaping () -> Bool,
+         tld: TLD = ContentBlocking.shared.tld) {
         self.subscriptionEnvironment = subscriptionEnvironment
         self.canPurchase = canPurchase
         self.baseURL = baseURL
+        self.tld = tld
     }
 
     func redirectURL(for url: URL) -> URL? {
@@ -44,28 +48,21 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
         if url.pathComponents == URL.privacyPro.pathComponents {
             let shouldHidePrivacyProDueToNoProducts = subscriptionEnvironment.purchasePlatform == .appStore && canPurchase() == false
             let isPurchasePageRedirectActive = !shouldHidePrivacyProDueToNoProducts
+
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.
-            return isPurchasePageRedirectActive ? baseURL.addingQueryItems(from: url) : nil
+            if isPurchasePageRedirectActive,
+               var baseURLComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: true),
+               let sourceURLComponents = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+
+                baseURLComponents.addingSubdomain(from: sourceURLComponents, tld: tld)
+                baseURLComponents.addingPort(from: sourceURLComponents)
+                baseURLComponents.addingFragment(from: sourceURLComponents)
+                baseURLComponents.addingQueryItems(from: sourceURLComponents)
+
+                return baseURLComponents.url
+            }
         }
 
         return nil
     }
-}
-
-fileprivate extension URL {
-
-    func addingQueryItems(from url: URL) -> URL {
-        // If the origin value is of type "do+something" appending the percentEncodedQueryItem crashes the browser as + is replaced by a space.
-        // Perform encoding on the value to avoid the crash.
-        guard let queryItems = url.getQueryItems()?
-            .compactMap({ queryItem -> URLQueryItem? in
-                guard let value = queryItem.value else { return nil }
-                let encodedValue = value.percentEncoded(withAllowedCharacters: .urlQueryParameterAllowed)
-                return URLQueryItem(name: queryItem.name, value: encodedValue)
-            })
-        else { return self }
-
-        return self.appending(percentEncodedQueryItems: queryItems)
-    }
-
 }

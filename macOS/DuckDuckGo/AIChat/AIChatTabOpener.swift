@@ -16,8 +16,26 @@
 //  limitations under the License.
 //
 
-struct AIChatTabOpener {
-    @MainActor static func openAIChatTab() {
+protocol AIChatTabOpening {
+    @MainActor
+    func openChatTab(_ query: String?)
+}
+
+extension AIChatTabOpening {
+    @MainActor
+    func openChatTab() {
+        openChatTab(nil)
+    }
+}
+
+struct AIChatTabOpener: AIChatTabOpening {
+    @MainActor
+    static func openAIChatTab(_ query: String? = nil) {
         WindowControllersManager.shared.showTab(with: .url(AIChatRemoteSettings().aiChatURL, credential: nil, source: .ui))
+    }
+
+    @MainActor
+    func openChatTab(_ query: String?) {
+        AIChatTabOpener.openAIChatTab()
     }
 }

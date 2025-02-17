@@ -47,6 +47,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     let isSearchBox: Bool
+    private let aiChatTabOpener: AIChatTabOpening
 
     enum Mode: Equatable {
         enum EditingMode {
@@ -105,7 +106,8 @@ final class AddressBarViewController: NSViewController, ObservableObject {
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           isSearchBox: Bool = false,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter()) {
+          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+          aiChatTabOpener: AIChatTabOpening = AIChatTabOpener()) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
@@ -115,6 +117,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.isSearchBox = isSearchBox
+        self.aiChatTabOpener = aiChatTabOpener
 
         super.init(coder: coder)
     }
@@ -633,6 +636,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
+    }
+
+    func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatTabOpener.openChatTab()
     }
 
 }

@@ -28,6 +28,7 @@ import PrivacyDashboard
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 
 }
 
@@ -65,6 +66,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var clearButton: NSButton!
+    @IBOutlet weak var aiChatButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
 
     @IBOutlet weak var animationWrapperView: NSView!
@@ -260,6 +262,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
     @IBAction func bookmarkButtonAction(_ sender: Any) {
         openBookmarkPopover(setFavorite: false, accessPoint: .button)
+    }
+
+    @IBAction func aiChatButtonAction(_ sender: Any) {
+        delegate?.addressBarButtonsViewControllerAIChatButtonClicked(self)
     }
 
     @IBAction func clearButtonAction(_ sender: Any) {
@@ -551,8 +557,11 @@ final class AddressBarButtonsViewController: NSViewController {
             microphoneButton.position = .free
             externalSchemeButton.position = .free
             bookmarkButton.isHidden = true
+            aiChatButton.isHidden = true
         } else {
-            bookmarkButton.position = .right
+            aiChatButton.isHidden = false
+            bookmarkButton.position = .left
+            aiChatButton.position = .right
             privacyEntryPointButton.position = .left
         }
 

@@ -691,58 +691,102 @@
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="50" id="bfq-Cs-mcP"/>
                                 </constraints>
                             </customView>
-                            <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="taC-vG-1fV" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                            <stackView distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" placeholderIntrinsicWidth="32" placeholderIntrinsicHeight="32" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xMy-It-hTw" userLabel="RightButtonsContainer">
                                 <rect key="frame" x="546" y="1" width="32" height="32"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Bookmark" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="H3Y-Sk-Xp8">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <color key="contentTintColor" name="ButtonColor"/>
+                                <subviews>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="taC-vG-1fV" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Bookmark" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="H3Y-Sk-Xp8">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="3ze-iM-E0b"/>
+                                            <constraint firstAttribute="height" constant="32" id="nLM-v6-jHW"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="bookmarkButtonAction:" target="mcr-nj-GmC" id="zSj-zA-HAq"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="Q47-MX-M0y" userLabel="AIChat Button" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="QUm-sf-OqP">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="cY4-Ty-CKV"/>
+                                            <constraint firstAttribute="height" constant="32" id="vDc-PE-FcJ"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="aiChatButtonAction:" target="mcr-nj-GmC" id="oUK-X7-W1B"/>
+                                        </connections>
+                                    </button>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="6" width="26" height="26"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ClearButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="26" id="8Ag-uG-RA7"/>
+                                            <constraint firstAttribute="height" constant="26" id="B6E-P0-EL6"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="clearButtonAction:" target="mcr-nj-GmC" id="m9h-NY-Ujx"/>
+                                        </connections>
+                                    </button>
+                                </subviews>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="32" id="3ze-iM-E0b"/>
-                                    <constraint firstAttribute="height" constant="32" id="nLM-v6-jHW"/>
+                                    <constraint firstAttribute="height" constant="32" id="qrg-Lb-6az"/>
                                 </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                        <color key="value" name="ButtonMouseOverColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                        <color key="value" name="ButtonMouseDownColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <integer key="value" value="7"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="bookmarkButtonAction:" target="mcr-nj-GmC" id="zSj-zA-HAq"/>
-                                </connections>
-                            </button>
-                            <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="550" y="4" width="26" height="26"/>
-                                <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
-                                    <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                                <color key="contentTintColor" name="ClearButtonColor"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="26" id="8Ag-uG-RA7"/>
-                                    <constraint firstAttribute="height" constant="26" id="B6E-P0-EL6"/>
-                                </constraints>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                        <color key="value" name="ButtonMouseOverColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                        <color key="value" name="ButtonMouseDownColor"/>
-                                    </userDefinedRuntimeAttribute>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <real key="value" value="4"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                                <connections>
-                                    <action selector="clearButtonAction:" target="mcr-nj-GmC" id="m9h-NY-Ujx"/>
-                                </connections>
-                            </button>
+                                <visibilityPriorities>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                    <integer value="1000"/>
+                                </visibilityPriorities>
+                                <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                    <real value="3.4028234663852886e+38"/>
+                                </customSpacing>
+                            </stackView>
                             <stackView distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HEu-ro-RSA">
                                 <rect key="frame" x="0.0" y="1" width="191" height="32"/>
                                 <subviews>
@@ -990,19 +1034,18 @@
                             </stackView>
                         </subviews>
                         <constraints>
-                            <constraint firstAttribute="trailing" secondItem="taC-vG-1fV" secondAttribute="trailing" id="26X-xU-JjT"/>
                             <constraint firstItem="HEu-ro-RSA" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="BRs-q1-MOh"/>
                             <constraint firstItem="1qw-sL-vFK" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="Cl5-vM-wFc"/>
                             <constraint firstItem="1qw-sL-vFK" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" constant="2" id="IGR-F0-d7K"/>
                             <constraint firstItem="HEu-ro-RSA" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" id="JJu-Ej-iFq"/>
-                            <constraint firstItem="kRc-0m-oqe" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="T0S-fo-y1J"/>
-                            <constraint firstAttribute="trailing" secondItem="kRc-0m-oqe" secondAttribute="trailing" constant="2" id="WeU-Fb-omO"/>
-                            <constraint firstItem="taC-vG-1fV" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="j0x-vX-dys"/>
+                            <constraint firstAttribute="trailing" secondItem="xMy-It-hTw" secondAttribute="trailing" id="K2H-1N-TLB"/>
+                            <constraint firstItem="xMy-It-hTw" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="dX7-bQ-hDX"/>
                             <constraint firstItem="hdY-An-3W8" firstAttribute="centerY" secondItem="Bhg-sv-n5J" secondAttribute="centerY" id="rBY-us-BMz"/>
                             <constraint firstItem="hdY-An-3W8" firstAttribute="leading" secondItem="Bhg-sv-n5J" secondAttribute="leading" id="xv6-0t-7td"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="aiChatButton" destination="Q47-MX-M0y" id="DN5-46-a89"/>
                         <outlet property="animationWrapperView" destination="hdY-An-3W8" id="53o-2D-orG"/>
                         <outlet property="bookmarkButton" destination="taC-vG-1fV" id="tbQ-qW-71o"/>
                         <outlet property="buttonsContainer" destination="HEu-ro-RSA" id="5r4-Ag-NpA"/>

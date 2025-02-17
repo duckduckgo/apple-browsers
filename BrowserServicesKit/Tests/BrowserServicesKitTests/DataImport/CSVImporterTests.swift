@@ -39,7 +39,7 @@ class CSVImporterTests: XCTestCase {
         """
 
         let logins = CSVImporter.extractLogins(from: csvFileContents, tld: tld)
-        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", username: "username", password: "p4ssw0rd")])
+        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", eTldPlusOne: "duck.com", username: "username", password: "p4ssw0rd")])
     }
 
     func testWhenImportingCSVFileWithHeader_AndHeaderHasBitwardenFormat_ThenHeaderRowIsExcluded() {
@@ -49,7 +49,7 @@ class CSVImporterTests: XCTestCase {
         """
 
         let logins = CSVImporter.extractLogins(from: csvFileContents, tld: tld)
-        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", username: "username", password: "p4ssw0rd")])
+        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", eTldPlusOne: "duck.com", username: "username", password: "p4ssw0rd")])
     }
 
     func testWhenImportingCSVFileWithHeader_ThenHeaderColumnPositionsAreRespected() {
@@ -59,7 +59,7 @@ class CSVImporterTests: XCTestCase {
         """
 
         let logins = CSVImporter.extractLogins(from: csvFileContents, tld: tld)
-        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", username: "username", password: "p4ssw0rd")])
+        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", eTldPlusOne: "duck.com", username: "username", password: "p4ssw0rd")])
     }
 
     func testWhenImportingCSVFileWithoutHeader_ThenNoRowsAreExcluded() {
@@ -68,7 +68,7 @@ class CSVImporterTests: XCTestCase {
         """
 
         let logins = CSVImporter.extractLogins(from: csvFileContents, tld: tld)
-        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", username: "username", password: "p4ssw0rd")])
+        XCTAssertEqual(logins, [ImportedLoginCredential(title: "Some Title", url: "duck.com", eTldPlusOne: "duck.com", username: "username", password: "p4ssw0rd")])
     }
 
     func testWhenImportingCSVDataFromTheFileSystem_AndNoTitleIsIncluded_ThenLoginCredentialsAreImported() async {
@@ -77,9 +77,9 @@ class CSVImporterTests: XCTestCase {
         let savedFileURL = temporaryFileCreator.persist(fileContents: file.data(using: .utf8)!, named: "test.csv")!
         let csvImporter = CSVImporter(fileURL: savedFileURL, loginImporter: mockLoginImporter, defaultColumnPositions: nil, reporter: MockSecureVaultReporting(), tld: tld)
 
-//        let result = csvImporter.importData(types: [.passwords]).task.value
-//
-//        XCTAssertEqual(result, [.passwords: .success(.init(successful: 1, duplicate: 0, failed: 0))])
+        let result = await csvImporter.importData(types: [.passwords]).task.value
+
+        XCTAssertEqual(result, [.passwords: .success(.init(successful: 1, duplicate: 0, failed: 0))])
     }
 
     func testWhenImportingCSVDataFromTheFileSystem_AndTitleIsIncluded_ThenLoginCredentialsAreImported() async {
@@ -88,9 +88,9 @@ class CSVImporterTests: XCTestCase {
         let savedFileURL = temporaryFileCreator.persist(fileContents: file.data(using: .utf8)!, named: "test.csv")!
         let csvImporter = CSVImporter(fileURL: savedFileURL, loginImporter: mockLoginImporter, defaultColumnPositions: nil, reporter: MockSecureVaultReporting(), tld: tld)
 
-//        let result = csvImporter.importData(types: [.passwords]).task.value
-//
-//        XCTAssertEqual(result, [.passwords: .success(.init(successful: 1, duplicate: 0, failed: 0))])
+        let result = await csvImporter.importData(types: [.passwords]).task.value
+
+        XCTAssertEqual(result, [.passwords: .success(.init(successful: 1, duplicate: 0, failed: 0))])
     }
 
     func testWhenInferringColumnPostions_AndColumnsAreValid_AndTitleIsIncluded_ThenPositionsAreCalculated() {

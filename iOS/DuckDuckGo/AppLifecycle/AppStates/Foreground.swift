@@ -26,7 +26,7 @@ import Core
 ///   - The app transitions to this state after completing the launch process or resuming from the background.
 ///   - During this state, the app is fully interactive, and the user can engage with the app's UI.
 @MainActor
-struct Foreground: AppState {
+struct Foreground: ForegroundHandling {
 
     private let appDependencies: AppDependencies
     var services: AppServices { appDependencies.services }
@@ -39,35 +39,31 @@ struct Foreground: AppState {
     private let launchActionHandler: LaunchActionHandler
     private let interactionManager: UIInteractionManager
 
-    init(stateContext: Launching.StateContext) {
+    init(stateContext: Launching.StateContext, actionToHandle: AppAction?) {
         self.init(
             appDependencies: stateContext.appDependencies,
-            urlToOpen: stateContext.urlToOpen,
-            shortcutItemToHandle: stateContext.shortcutItemToHandle,
             lastBackgroundDate: nil,
-            isFirstForeground: true
+            isFirstForeground: true,
+            actionToHandle: actionToHandle
         )
     }
 
-    init(stateContext: Background.StateContext) {
+    init(stateContext: Background.StateContext, actionToHandle: AppAction?) {
         self.init(
             appDependencies: stateContext.appDependencies,
-            urlToOpen: stateContext.urlToOpen,
-            shortcutItemToHandle: stateContext.shortcutItemToHandle,
             lastBackgroundDate: stateContext.lastBackgroundDate,
-            isFirstForeground: stateContext.didTransitionFromLaunching
+            isFirstForeground: stateContext.didTransitionFromLaunching,
+            actionToHandle: actionToHandle
         )
     }
 
     private init(appDependencies: AppDependencies,
-                 urlToOpen: URL?,
-                 shortcutItemToHandle: UIApplicationShortcutItem?,
                  lastBackgroundDate: Date?,
-                 isFirstForeground: Bool) {
+                 isFirstForeground: Bool,
+                 actionToHandle: AppAction?) {
         self.appDependencies = appDependencies
         self.isFirstForeground = isFirstForeground
-        launchAction = LaunchAction(urlToOpen: urlToOpen,
-                                    shortcutItemToHandle: shortcutItemToHandle,
+        launchAction = LaunchAction(actionToHandle: actionToHandle,
                                     lastBackgroundDate: lastBackgroundDate)
         launchActionHandler = LaunchActionHandler(
             urlHandler: appDependencies.mainCoordinator,
@@ -129,6 +125,15 @@ struct Foreground: AppState {
         UILabel.appearance(whenContainedInInstancesOf: [UIAlertController.self]).numberOfLines = 0
     }
 
+    func handle(_ action: AppAction) {
+        switch action {
+        case .openURL(let url):
+            launchActionHandler.handleLaunchAction(.openURL(url))
+        case .handleShortcutItem(let shortcutItem):
+            launchActionHandler.handleLaunchAction(.handleShortcutItem(shortcutItem))
+        }
+    }
+
 }
 
 // MARK: Handle application suspension (applicationWillResignActive(_:))
@@ -157,21 +162,6 @@ extension Foreground {
 
 }
 
-// MARK: - AppEventHandler
-
-extension Foreground {
-
-    func handle(action: AppAction) {
-        switch action {
-        case .openURL(let url):
-            launchActionHandler.handleLaunchAction(.openURL(url))
-        case .handleShortcutItem(let shortcutItem):
-            launchActionHandler.handleLaunchAction(.handleShortcutItem(shortcutItem))
-        }
-    }
-
-}
-
 // MARK: - StateContext
 
 extension Foreground {
@@ -186,8 +176,8 @@ extension Foreground {
 
     }
 
-    func makeStateContext() -> StateContext {
-        .init(appDependencies: appDependencies)
+    func makeBackgroundState() -> any BackgroundHandling {
+        Background(stateContext: StateContext(appDependencies: appDependencies))
     }
 
 }

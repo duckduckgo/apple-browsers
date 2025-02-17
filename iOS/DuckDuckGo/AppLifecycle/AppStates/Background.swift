@@ -24,15 +24,12 @@ import UIKit
 ///   - This state is typically associated with the `applicationDidEnterBackground(_:)` method.
 ///   - The app transitions to this state when it is no longer in the foreground, either due to the user
 ///     minimizing the app, switching to another app, or locking the device.
-struct Background: AppState {
+struct Background: BackgroundHandling {
 
     private let lastBackgroundDate: Date = Date()
     private let appDependencies: AppDependencies
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
-
-    var urlToOpen: URL?
-    var shortcutItemToHandle: UIApplicationShortcutItem?
 
     init(stateContext: Launching.StateContext) {
         appDependencies = stateContext.appDependencies
@@ -88,32 +85,16 @@ extension Background {
     struct StateContext {
 
         let lastBackgroundDate: Date
-        let urlToOpen: URL?
-        let shortcutItemToHandle: UIApplicationShortcutItem?
         let appDependencies: AppDependencies
         let didTransitionFromLaunching: Bool
 
     }
 
-    func makeStateContext() -> StateContext {
-        .init(lastBackgroundDate: lastBackgroundDate,
-              urlToOpen: urlToOpen,
-              shortcutItemToHandle: shortcutItemToHandle,
-              appDependencies: appDependencies,
-              didTransitionFromLaunching: didTransitionFromLaunching)
-    }
-
-}
-
-extension Background {
-
-    mutating func handle(action: AppAction) {
-        switch action {
-        case .openURL(let url):
-            urlToOpen = url
-        case .handleShortcutItem(let shortcutItem):
-            shortcutItemToHandle = shortcutItem
-        }
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        Foreground(stateContext: StateContext(lastBackgroundDate: lastBackgroundDate,
+                                              appDependencies: appDependencies,
+                                              didTransitionFromLaunching: didTransitionFromLaunching),
+                   actionToHandle: actionToHandle)
     }
 
 }

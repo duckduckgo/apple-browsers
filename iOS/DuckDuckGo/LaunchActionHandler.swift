@@ -25,12 +25,13 @@ enum LaunchAction {
     case handleShortcutItem(UIApplicationShortcutItem)
     case showKeyboard(Date?)
 
-    init(urlToOpen: URL?, shortcutItemToHandle: UIApplicationShortcutItem?, lastBackgroundDate: Date?) {
-        if let url = urlToOpen {
+    init(actionToHandle: AppAction?, lastBackgroundDate: Date?) {
+        switch actionToHandle {
+        case .openURL(let url)?:
             self = .openURL(url)
-        } else if let shortcutItem = shortcutItemToHandle {
+        case .handleShortcutItem(let shortcutItem)?:
             self = .handleShortcutItem(shortcutItem)
-        } else {
+        case nil:
             self = .showKeyboard(lastBackgroundDate)
         }
     }

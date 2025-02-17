@@ -19,7 +19,7 @@
 
 import UIKit
 
-struct Terminating: AppState {
+struct Terminating {
 
     init() {
         fatalError("App is in unrecoverable state")
@@ -40,11 +40,5 @@ struct Terminating: AppState {
         }
         application.window?.rootViewController?.present(alertController, animated: true, completion: nil)
     }
-
-}
-
-extension Terminating {
-
-    mutating func handle(action: AppAction) { }
 
 }

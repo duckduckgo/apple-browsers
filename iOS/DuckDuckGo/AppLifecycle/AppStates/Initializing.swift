@@ -24,7 +24,7 @@ import UIKit
 /// - Transitions:
 ///   - `Launching` after initialization is complete.
 @MainActor
-struct Initializing: AppState {
+struct Initializing: InitializingHandling {
 
     init() {
         CrashHandlersConfiguration.setupCrashHandlers()
@@ -34,6 +34,8 @@ struct Initializing: AppState {
 
 extension Initializing {
 
-    mutating func handle(action: AppAction) { }
+    func makeLaunchingState() -> any LaunchingHandling {
+        Launching()
+    }
 
 }

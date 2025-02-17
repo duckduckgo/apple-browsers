@@ -34,7 +34,7 @@ import UIKit
 /// - Notes:
 ///   - Avoid performing heavy or blocking operations during this phase to ensure smooth app startup.
 @MainActor
-struct Launching: AppState {
+struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
@@ -131,30 +131,21 @@ extension Launching {
     struct StateContext {
 
         let didFinishLaunchingStartTime: CFAbsoluteTime
-        let urlToOpen: URL?
-        let shortcutItemToHandle: UIApplicationShortcutItem?
         let appDependencies: AppDependencies
 
     }
 
     func makeStateContext() -> StateContext {
         .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-              urlToOpen: urlToOpen,
-              shortcutItemToHandle: shortcutItemToHandle,
               appDependencies: appDependencies)
     }
 
-}
+    func makeBackgroundState() -> any BackgroundHandling {
+        Background(stateContext: makeStateContext())
+    }
 
-extension Launching {
-
-    mutating func handle(action: AppAction) {
-        switch action {
-        case .openURL(let url):
-            urlToOpen = url
-        case .handleShortcutItem(let shortcutItem):
-            shortcutItemToHandle = shortcutItem
-        }
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
     }
 
 }

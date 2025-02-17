@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 enum AppEvent {
 
@@ -37,33 +38,146 @@ enum AppAction {
 
 }
 
-@MainActor
-protocol AppState {
+enum AppState {
 
-    func apply(event: AppEvent) -> any AppState
-    mutating func handle(action: AppAction)
+    case initializing(InitializingHandling)
+    case launching(LaunchingHandling)
+    case foreground(ForegroundHandling)
+    case background(BackgroundHandling)
+    case terminating(Terminating)
+    case simulated(Simulated)
 
 }
 
 @MainActor
-protocol AppEventHandler {
+protocol InitializingHandling {
 
-    func handle(_ event: AppEvent)
+    init()
+
+    func makeLaunchingState() -> LaunchingHandling
+
+}
+
+@MainActor
+protocol LaunchingHandling {
+
+    init()
+
+    func makeBackgroundState() -> BackgroundHandling
+    func makeForegroundState(actionToHandle: AppAction?) -> ForegroundHandling
+}
+
+@MainActor
+protocol ForegroundHandling {
+
+    func onTransition()
+    func willLeave()
+    func didReturn()
     func handle(_ action: AppAction)
 
+    func makeBackgroundState() -> BackgroundHandling
+
 }
 
 @MainActor
-final class AppStateMachine: AppEventHandler {
+protocol BackgroundHandling {
 
-    private(set) var currentState: any AppState = Initializing()
+    func onTransition()
+    func willLeave()
+    func didReturn()
+
+    func makeForegroundState(actionToHandle: AppAction?) -> ForegroundHandling
+
+}
+
+@MainActor
+final class AppStateMachine {
+
+    private(set) var currentState: AppState = .initializing(Initializing())
+    private var actionToHandle: AppAction?
 
     func handle(_ event: AppEvent) {
-        currentState = currentState.apply(event: event)
+        switch currentState {
+        case .initializing(let initializing):
+            guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event) }
+            if isTesting {
+                currentState = .simulated(Simulated())
+            } else {
+                currentState = .launching(initializing.makeLaunchingState())
+            }
+        case .launching(let launching):
+            switch event {
+            case .didBecomeActive:
+                let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
+                foreground.onTransition()
+                actionToHandle = nil
+                currentState = .foreground(foreground)
+            case .didEnterBackground:
+                let background = launching.makeBackgroundState()
+                background.onTransition()
+                currentState = .background(background)
+            case .willEnterForeground:
+                // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
+                // https://developer.apple.com/forums/thread/769924
+                // We don’t support this transition and instead stay in Launching.
+                // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
+                break
+            case .willTerminate(let terminationReason):
+                currentState = .terminating(Terminating(terminationReason: terminationReason))
+            default:
+                handleUnexpectedEvent(event)
+            }
+        case .foreground(let foreground):
+            switch event {
+            case .didBecomeActive:
+                foreground.didReturn()
+            case .didEnterBackground:
+                let background = foreground.makeBackgroundState()
+                background.onTransition()
+                currentState = .background(background)
+            case .willResignActive:
+                foreground.willLeave()
+            case .willTerminate(let terminationReason):
+                currentState = .terminating(Terminating(terminationReason: terminationReason))
+            default:
+                handleUnexpectedEvent(event)
+            }
+        case .background(let background):
+            switch event {
+            case .didBecomeActive:
+                let foreground = background.makeForegroundState(actionToHandle: actionToHandle)
+                foreground.onTransition()
+                actionToHandle = nil
+                currentState = .foreground(foreground)
+            case .didEnterBackground:
+                background.didReturn()
+            case .willEnterForeground:
+                background.willLeave()
+            case .willTerminate(let terminationReason):
+                currentState = .terminating(Terminating(terminationReason: terminationReason))
+            default:
+                handleUnexpectedEvent(event)
+            }
+        case .terminating, .simulated:
+            break
+        }
     }
 
     func handle(_ action: AppAction) {
-        currentState.handle(action: action)
+        if let foreground = currentState as? ForegroundHandling {
+            foreground.handle(action)
+        } else {
+            actionToHandle = action
+        }
+    }
+
+    func handleUnexpectedEvent(_ event: AppEvent) {
+        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(type(of: self))] state!")
+        DailyPixel.fireDailyAndCount(pixel: .appDidTransitionToUnexpectedState,
+                                     withAdditionalParameters: [PixelParameters.appState: String(describing: type(of: self)),
+                                                                PixelParameters.appEvent: String(describing: event)])
     }
 
 }
+
+

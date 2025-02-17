@@ -99,63 +99,79 @@ final class AppStateMachine {
     func handle(_ event: AppEvent) {
         switch currentState {
         case .initializing(let initializing):
-            guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event) }
-            currentState = isTesting ? .simulated(Simulated()) : .launching(initializing.makeLaunchingState())
+            respond(to: event, in: initializing)
         case .launching(let launching):
-            switch event {
-            case .didBecomeActive:
-                let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
-                foreground.onTransition()
-                actionToHandle = nil
-                currentState = .foreground(foreground)
-            case .didEnterBackground:
-                let background = launching.makeBackgroundState()
-                background.onTransition()
-                currentState = .background(background)
-            case .willEnterForeground:
-                // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
-                // https://developer.apple.com/forums/thread/769924
-                // We don’t support this transition and instead stay in Launching.
-                // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
-                break
-            case .willTerminate(let terminationReason):
-                currentState = .terminating(Terminating(terminationReason: terminationReason))
-            default:
-                handleUnexpectedEvent(event)
-            }
+            respond(to: event, in: launching)
         case .foreground(let foreground):
-            switch event {
-            case .didBecomeActive:
-                foreground.didReturn()
-            case .didEnterBackground:
-                let background = foreground.makeBackgroundState()
-                background.onTransition()
-                currentState = .background(background)
-            case .willResignActive:
-                foreground.willLeave()
-            case .willTerminate(let terminationReason):
-                currentState = .terminating(Terminating(terminationReason: terminationReason))
-            default:
-                handleUnexpectedEvent(event)
-            }
+            respond(to: event, in: foreground)
         case .background(let background):
-            switch event {
-            case .didBecomeActive:
-                let foreground = background.makeForegroundState(actionToHandle: actionToHandle)
-                foreground.onTransition()
-                actionToHandle = nil
-                currentState = .foreground(foreground)
-            case .didEnterBackground:
-                background.didReturn()
-            case .willEnterForeground:
-                background.willLeave()
-            case .willTerminate(let terminationReason):
-                currentState = .terminating(Terminating(terminationReason: terminationReason))
-            default:
-                handleUnexpectedEvent(event)
-            }
+            respond(to: event, in: background)
         case .terminating, .simulated:
             break
+        }
+    }
+
+    private func respond(to event: AppEvent, in initializing: InitializingHandling) {
+        guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event) }
+        currentState = isTesting ? .simulated(Simulated()) : .launching(initializing.makeLaunchingState())
+    }
+
+    private func respond(to event: AppEvent, in launching: LaunchingHandling) {
+        switch event {
+        case .didBecomeActive:
+            let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
+            foreground.onTransition()
+            actionToHandle = nil
+            currentState = .foreground(foreground)
+        case .didEnterBackground:
+            let background = launching.makeBackgroundState()
+            background.onTransition()
+            currentState = .background(background)
+        case .willEnterForeground:
+            // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
+            // https://developer.apple.com/forums/thread/769924
+            // We don’t support this transition and instead stay in Launching.
+            // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
+            break
+        case .willTerminate(let terminationReason):
+            currentState = .terminating(Terminating(terminationReason: terminationReason))
+        default:
+            handleUnexpectedEvent(event)
+        }
+    }
+
+    private func respond(to event: AppEvent, in foreground: ForegroundHandling) {
+        switch event {
+        case .didBecomeActive:
+            foreground.didReturn()
+        case .didEnterBackground:
+            let background = foreground.makeBackgroundState()
+            background.onTransition()
+            currentState = .background(background)
+        case .willResignActive:
+            foreground.willLeave()
+        case .willTerminate(let terminationReason):
+            currentState = .terminating(Terminating(terminationReason: terminationReason))
+        default:
+            handleUnexpectedEvent(event)
+        }
+    }
+
+    private func respond(to event: AppEvent, in background: BackgroundHandling) {
+        switch event {
+        case .didBecomeActive:
+            let foreground = background.makeForegroundState(actionToHandle: actionToHandle)
+            foreground.onTransition()
+            actionToHandle = nil
+            currentState = .foreground(foreground)
+        case .didEnterBackground:
+            background.didReturn()
+        case .willEnterForeground:
+            background.willLeave()
+        case .willTerminate(let terminationReason):
+            currentState = .terminating(Terminating(terminationReason: terminationReason))
+        default:
+            handleUnexpectedEvent(event)
         }
     }
 

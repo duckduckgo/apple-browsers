@@ -278,8 +278,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     var isEnabled: Bool {
-        // skip dax dialogs in integration tests
-        guard ProcessInfo.processInfo.environment["DAXDIALOGS"] != "false" else { return false }
+        if LaunchOptionsHandler().isOnboardingCompleted {
+            return false
+        }
         return !settings.isDismissed
     }
 

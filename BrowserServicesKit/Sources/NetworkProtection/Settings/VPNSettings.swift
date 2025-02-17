@@ -376,6 +376,14 @@ public final class VPNSettings {
         defaults.dnsSettingsPublisher
     }
 
+    public var isBlockRiskyDomainsOn: Bool {
+        defaults.isBlockRiskyDomainsOn
+    }
+
+    public var customDnsServers: [String] {
+        defaults.customDnsServers
+    }
+
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
             defaults.dnsSettings

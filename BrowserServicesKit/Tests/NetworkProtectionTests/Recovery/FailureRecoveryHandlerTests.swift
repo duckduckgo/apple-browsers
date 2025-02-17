@@ -58,7 +58,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: server,
             excludeLocalNetworks: expectedExcludeLocalNetworks,
-            dnsSettings: .default
+            dnsSettings: .ddg(blockRiskyDomains: false)
         ) {_ in }
         guard let spyGenerateTunnelConfiguration = deviceManager.spyGenerateTunnelConfiguration else {
             XCTFail("attemptRecovery not called")
@@ -122,7 +122,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            dnsSettings: .default
+            dnsSettings: .ddg(blockRiskyDomains: false)
         ) {_ in }
 
         XCTAssertEqual(startedCount, 1)
@@ -307,7 +307,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            dnsSettings: .default
+            dnsSettings: .ddg(blockRiskyDomains: false)
         ) {_ in }
     }
 
@@ -323,7 +323,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
         await failureRecoveryHandler.attemptRecovery(
             to: .mockRegisteredServer,
             excludeLocalNetworks: false,
-            dnsSettings: .default
+            dnsSettings: .ddg(blockRiskyDomains: false)
         ) { _ in
             let underlyingError = NSError(domain: "test", code: 1)
             throw WireGuardAdapterError.startWireGuardBackend(underlyingError)
@@ -342,7 +342,7 @@ final class FailureRecoveryHandlerTests: XCTestCase {
 
         var newConfigResult: NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult?
 
-        await failureRecoveryHandler.attemptRecovery(to: lastServer, excludeLocalNetworks: false, dnsSettings: .default) { configResult in
+        await failureRecoveryHandler.attemptRecovery(to: lastServer, excludeLocalNetworks: false, dnsSettings: .ddg(blockRiskyDomains: false)) { configResult in
             newConfigResult = configResult
         }
         return newConfigResult

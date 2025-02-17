@@ -151,6 +151,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Enforce routes for the VPN to fix TunnelVision
     /// https://app.asana.com/0/72649045549333/1208617860225199/f
     case enforceRoutes
+
+    /// Risky Domain Protection for VPN
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case riskyDomainsProtection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {

@@ -23,10 +23,30 @@ extension UserDefaults {
     final class StorableDNSSettings: NSObject, Codable {
         let usesCustomDNS: Bool
         let dnsServers: [String]
+        let isBlockRiskyDomainsOn: Bool
 
-        init(usesCustomDNS: Bool = false, dnsServers: [String] = []) {
+        init(usesCustomDNS: Bool = false, dnsServers: [String] = [], isBlockRiskyDomainsOn: Bool = true) {
             self.usesCustomDNS = usesCustomDNS
             self.dnsServers = dnsServers
+            self.isBlockRiskyDomainsOn = isBlockRiskyDomainsOn
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case usesCustomDNS, dnsServers, isBlockRiskyDomainsOn
+        }
+
+        required init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.usesCustomDNS = try container.decodeIfPresent(Bool.self, forKey: .usesCustomDNS) ?? false
+            self.dnsServers = try container.decodeIfPresent([String].self, forKey: .dnsServers) ?? []
+            self.isBlockRiskyDomainsOn = try container.decodeIfPresent(Bool.self, forKey: .isBlockRiskyDomainsOn) ?? true
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(usesCustomDNS, forKey: .usesCustomDNS)
+            try container.encode(dnsServers, forKey: .dnsServers)
+            try container.encode(isBlockRiskyDomainsOn, forKey: .isBlockRiskyDomainsOn)
         }
     }
 
@@ -35,7 +55,7 @@ extension UserDefaults {
     }
 
     private static func dnsSettingsFromStorageValue(_ value: StorableDNSSettings) -> NetworkProtectionDNSSettings {
-        guard value.usesCustomDNS, !value.dnsServers.isEmpty else { return .default }
+        guard value.usesCustomDNS, !value.dnsServers.isEmpty else { return .ddg(blockRiskyDomains: value.isBlockRiskyDomainsOn) }
         return .custom(value.dnsServers)
     }
 
@@ -53,6 +73,14 @@ extension UserDefaults {
         }
     }
 
+    var isBlockRiskyDomainsOn: Bool {
+        dnsSettingStorageValue.isBlockRiskyDomainsOn
+    }
+
+    var customDnsServers: [String] {
+        dnsSettingStorageValue.dnsServers
+    }
+
     var dnsSettings: NetworkProtectionDNSSettings {
         get {
             Self.dnsSettingsFromStorageValue(dnsSettingStorageValue)
@@ -60,14 +88,16 @@ extension UserDefaults {
 
         set {
             switch newValue {
-            case .default:
-                dnsSettingStorageValue = StorableDNSSettings()
+            case .ddg(let isBlockRiskyDomainsOn):
+                let dnsServers = dnsSettingStorageValue.dnsServers
+                dnsSettingStorageValue = StorableDNSSettings(dnsServers: dnsServers, isBlockRiskyDomainsOn: isBlockRiskyDomainsOn)
             case .custom(let dnsServers):
                 let hosts = dnsServers.compactMap(\.toIPv4Host)
+                let isBlockRiskyDomainsOn = dnsSettingStorageValue.isBlockRiskyDomainsOn
                 if hosts.isEmpty {
-                    dnsSettingStorageValue = StorableDNSSettings()
+                    dnsSettingStorageValue = StorableDNSSettings(isBlockRiskyDomainsOn: isBlockRiskyDomainsOn)
                 } else {
-                    dnsSettingStorageValue = StorableDNSSettings(usesCustomDNS: true, dnsServers: hosts)
+                    dnsSettingStorageValue = StorableDNSSettings(usesCustomDNS: true, dnsServers: hosts, isBlockRiskyDomainsOn: isBlockRiskyDomainsOn)
                 }
             }
         }
@@ -80,6 +110,6 @@ extension UserDefaults {
     }
 
     func resetDNSSettings() {
-        dnsSettings = .default
+        dnsSettings = .ddg(blockRiskyDomains: isBlockRiskyDomainsOn)
     }
 }

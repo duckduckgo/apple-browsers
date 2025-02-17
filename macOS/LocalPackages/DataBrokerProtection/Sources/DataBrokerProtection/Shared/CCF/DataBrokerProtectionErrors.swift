@@ -94,3 +94,26 @@ extension DataBrokerProtectionError {
         }
     }
 }
+
+extension DataBrokerProtectionError: CustomNSError {
+    public var errorCode: Int {
+        switch self {
+        case .malformedURL: return 100
+        case .noActionFound: return 101
+        case .actionFailed: return 102
+        case .parsingErrorObjectFailed: return 103
+        case .unknownMethodName: return 104
+        case .userScriptMessageBrokerNotSet: return 105
+        case .unknown: return 106
+        case .unrecoverableError: return 107
+        case .noOptOutStep: return 108
+        case .captchaServiceError: return 109
+        case .emailError: return 110
+        case .cancelled: return 111
+        case .solvingCaptchaWithCallbackError: return 112
+        case .cantCalculatePreferredRunDate: return 113
+        case .httpError: return 114
+        case .dataNotInDatabase: return 115
+        }
+    }
+}

@@ -164,7 +164,7 @@ class BookmarksImporterTests: XCTestCase {
                                                   urlString: otherURL,
                                                   children: nil)]
         
-        let _ = try await importer.saveBookmarks(importedBookmarks)
+        _ = try await importer.saveBookmarks(importedBookmarks)
         let newCount = try storage.makeContext(concurrencyType: .mainQueueConcurrencyType).count(for: countRequest)
         XCTAssertEqual(newCount, 3)
     }

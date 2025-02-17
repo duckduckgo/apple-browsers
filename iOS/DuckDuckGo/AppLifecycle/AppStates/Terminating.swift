@@ -19,7 +19,7 @@
 
 import UIKit
 
-struct Terminating {
+struct Terminating: TerminatingHandling {
 
     init() {
         fatalError("App is in unrecoverable state")

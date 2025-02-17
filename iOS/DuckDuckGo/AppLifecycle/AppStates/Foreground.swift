@@ -180,4 +180,8 @@ extension Foreground {
         Background(stateContext: StateContext(appDependencies: appDependencies))
     }
 
+    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
+        Terminating(terminationReason: terminationReason)
+    }
+
 }

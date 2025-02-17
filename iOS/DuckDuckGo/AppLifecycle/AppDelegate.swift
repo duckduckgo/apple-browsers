@@ -28,7 +28,7 @@ public extension NSNotification.Name {
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    private let appStateMachine: AppStateMachine = AppStateMachine()
+    private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     var window: UIWindow?
 

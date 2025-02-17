@@ -148,4 +148,8 @@ extension Launching {
         Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
     }
 
+    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
+        Terminating(terminationReason: terminationReason)
+    }
+
 }

@@ -44,8 +44,25 @@ enum AppState {
     case launching(LaunchingHandling)
     case foreground(ForegroundHandling)
     case background(BackgroundHandling)
-    case terminating(Terminating)
+    case terminating(TerminatingHandling)
     case simulated(Simulated)
+
+    var rawValue: String {
+        switch self {
+        case .initializing:
+            return "initializing"
+        case .launching:
+            return "launching"
+        case .foreground:
+            return "foreground"
+        case .background:
+            return "background"
+        case .terminating:
+            return "terminating"
+        case .simulated:
+            return "simulated"
+        }
+    }
 
 }
 
@@ -54,7 +71,7 @@ protocol InitializingHandling {
 
     init()
 
-    func makeLaunchingState() -> LaunchingHandling
+    func makeLaunchingState() -> any LaunchingHandling
 
 }
 
@@ -63,8 +80,10 @@ protocol LaunchingHandling {
 
     init()
 
-    func makeBackgroundState() -> BackgroundHandling
-    func makeForegroundState(actionToHandle: AppAction?) -> ForegroundHandling
+    func makeBackgroundState() -> any BackgroundHandling
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
+    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling
+
 }
 
 @MainActor
@@ -75,7 +94,8 @@ protocol ForegroundHandling {
     func didReturn()
     func handle(_ action: AppAction)
 
-    func makeBackgroundState() -> BackgroundHandling
+    func makeBackgroundState() -> any BackgroundHandling
+    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling
 
 }
 
@@ -86,15 +106,29 @@ protocol BackgroundHandling {
     func willLeave()
     func didReturn()
 
-    func makeForegroundState(actionToHandle: AppAction?) -> ForegroundHandling
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
+    func makeTerminatingState() -> any TerminatingHandling
+
+
+}
+
+@MainActor
+protocol TerminatingHandling {
+
+    init()
+    init(terminationReason: UIApplication.TerminationReason, application: UIApplication)
 
 }
 
 @MainActor
 final class AppStateMachine {
 
-    private(set) var currentState: AppState = .initializing(Initializing())
-    private var actionToHandle: AppAction?
+    private(set) var currentState: AppState
+    private(set) var actionToHandle: AppAction?
+
+    init(initialState: AppState) {
+        self.currentState = initialState
+    }
 
     func handle(_ event: AppEvent) {
         switch currentState {
@@ -111,8 +145,16 @@ final class AppStateMachine {
         }
     }
 
+    func handle(_ action: AppAction) {
+        if let foreground = currentState as? ForegroundHandling {
+            foreground.handle(action)
+        } else {
+            actionToHandle = action
+        }
+    }
+
     private func respond(to event: AppEvent, in initializing: InitializingHandling) {
-        guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event) }
+        guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event, for: .initializing(initializing)) }
         currentState = isTesting ? .simulated(Simulated()) : .launching(initializing.makeLaunchingState())
     }
 
@@ -121,11 +163,13 @@ final class AppStateMachine {
         case .didBecomeActive:
             let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
+            foreground.didReturn()
             actionToHandle = nil
             currentState = .foreground(foreground)
         case .didEnterBackground:
             let background = launching.makeBackgroundState()
             background.onTransition()
+            background.didReturn()
             currentState = .background(background)
         case .willEnterForeground:
             // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
@@ -134,9 +178,10 @@ final class AppStateMachine {
             // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
             break
         case .willTerminate(let terminationReason):
-            currentState = .terminating(Terminating(terminationReason: terminationReason))
+            let terminating = launching.makeTerminatingState(terminationReason: terminationReason)
+            currentState = .terminating(terminating)
         default:
-            handleUnexpectedEvent(event)
+            handleUnexpectedEvent(event, for: .launching(launching))
         }
     }
 
@@ -147,13 +192,15 @@ final class AppStateMachine {
         case .didEnterBackground:
             let background = foreground.makeBackgroundState()
             background.onTransition()
+            background.didReturn()
             currentState = .background(background)
         case .willResignActive:
             foreground.willLeave()
         case .willTerminate(let terminationReason):
-            currentState = .terminating(Terminating(terminationReason: terminationReason))
+            let terminating = foreground.makeTerminatingState(terminationReason: terminationReason)
+            currentState = .terminating(terminating)
         default:
-            handleUnexpectedEvent(event)
+            handleUnexpectedEvent(event, for: .foreground(foreground))
         }
     }
 
@@ -162,6 +209,7 @@ final class AppStateMachine {
         case .didBecomeActive:
             let foreground = background.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
+            foreground.didReturn()
             actionToHandle = nil
             currentState = .foreground(foreground)
         case .didEnterBackground:
@@ -169,24 +217,17 @@ final class AppStateMachine {
         case .willEnterForeground:
             background.willLeave()
         case .willTerminate(let terminationReason):
-            currentState = .terminating(Terminating(terminationReason: terminationReason))
+            let terminating = background.makeTerminatingState()
+            currentState = .terminating(terminating)
         default:
-            handleUnexpectedEvent(event)
+            handleUnexpectedEvent(event, for: .background(background))
         }
     }
 
-    func handle(_ action: AppAction) {
-        if let foreground = currentState as? ForegroundHandling {
-            foreground.handle(action)
-        } else {
-            actionToHandle = action
-        }
-    }
-
-    func handleUnexpectedEvent(_ event: AppEvent) {
-        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(type(of: self))] state!")
+    private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
+        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.rawValue))] state!")
         DailyPixel.fireDailyAndCount(pixel: .appDidTransitionToUnexpectedState,
-                                     withAdditionalParameters: [PixelParameters.appState: String(describing: type(of: self)),
+                                     withAdditionalParameters: [PixelParameters.appState: state.rawValue,
                                                                 PixelParameters.appEvent: String(describing: event)])
     }
 

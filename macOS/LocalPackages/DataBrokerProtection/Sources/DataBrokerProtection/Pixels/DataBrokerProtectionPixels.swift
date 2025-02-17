@@ -249,7 +249,7 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
         case .otherError: return "m_mac_data_broker_other_error"
         case .databaseError: return "m_mac_data_broker_database_error"
         case .cocoaError: return "m_mac_data_broker_cocoa_error"
-        case .miscError: return "m_mac_data_broker_misc_error"
+        case .miscError: return "m_mac_data_broker_misc_client_error"
         case .secureVaultInitError: return "m_mac_dbp_secure_vault_init_error"
         case .secureVaultKeyStoreReadError: return "m_mac_dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "m_mac_dbp_secure_vault_keystore_update_error"

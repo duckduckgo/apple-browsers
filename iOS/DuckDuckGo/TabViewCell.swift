@@ -381,6 +381,7 @@ final class TabViewCell: UICollectionViewCell {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             decorate()
+            refreshSelectionAppearance()
         }
     }
 

@@ -107,6 +107,7 @@ public class BookmarkCoreDataImporter {
                                                        parent: parent,
                                                        context: context)
                 if let children = bookmarkOrFolder.children {
+                    summary.successful += 1
                     try recursivelyCreateEntities(from: children,
                                                   parent: folder,
                                                   favoritesFolders: favoritesFolders,

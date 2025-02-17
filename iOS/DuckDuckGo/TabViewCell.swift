@@ -65,13 +65,11 @@ final class TabViewCell: UICollectionViewCell {
         
         switch dragState {
         case .none:
-            print("***, none", isSelected)
             selectionIndicator.isHidden = !isSelectionModeEnabled
             border.isHidden = false
             refreshSelectionAppearance()
 
         case .lifting, .dragging:
-            print("***, lifting", isSelected)
             selectionIndicator.isHidden = true
             border.isHidden = true
             border.layer.borderWidth = 0.0
@@ -295,7 +293,6 @@ final class TabViewCell: UICollectionViewCell {
     }
 
     func updateCurrentTabBorder() {
-        print("***", #function, isSelectionModeEnabled, isSelected, isCurrent)
         let showBorder = isSelectionModeEnabled ? isSelected : isCurrent
         border.layer.borderColor = UIColor(designSystemColor: isSelectionModeEnabled ? .accent : .textPrimary).cgColor
         border.layer.borderWidth = showBorder ? Constants.selectedBorderWidth : Constants.unselectedBorderWidth

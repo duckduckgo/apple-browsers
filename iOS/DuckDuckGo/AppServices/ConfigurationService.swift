@@ -22,17 +22,27 @@ import Core
 import Configuration
 import BackgroundTasks
 
+public extension NSNotification.Name {
+
+    static let didFetchConfigurationOnForeground = Notification.Name("com.duckduckgo.app.didFetchConfigurationOnForeground")
+
+}
+
 final class ConfigurationService {
 
     @UserDefaultsWrapper(key: .privacyConfigCustomURL, defaultValue: nil)
     private var privacyConfigCustomURL: String?
     private let isDebugBuild: Bool
 
+    var onConfigurationFetched: (() -> Void)?
+
     init(isDebugBuild: Bool) {
         self.isDebugBuild = isDebugBuild
     }
 
-    func onLaunching() {
+    // MARK: - Start
+
+    func start() {
         if isDebugBuild, let privacyConfigCustomURL, let url = URL(string: privacyConfigCustomURL) {
             Configuration.setURLProvider(CustomConfigurationURLProvider(customPrivacyConfigurationURL: url))
         } else {
@@ -44,8 +54,9 @@ final class ConfigurationService {
         AppConfigurationFetch.registerBackgroundRefreshTaskHandler()
     }
 
-    @MainActor
-    func resume() async {
+    // MARK: - Resume
+
+    func resume() {
         scheduleBackgroundTask()
 
         if AppConfigurationFetch.shouldScheduleRulesCompilationOnAppLaunch {
@@ -54,12 +65,10 @@ final class ConfigurationService {
         }
         AppDependencyProvider.shared.configurationManager.loadPrivacyConfigFromDiskIfNeeded()
 
-        await withCheckedContinuation { continuation in
-            AppConfigurationFetch().start { result in
-                continuation.resume()
-                if case .assetsUpdated(let protectionsUpdated) = result, protectionsUpdated {
-                    ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
-                }
+        AppConfigurationFetch().start { result in
+            NotificationCenter.default.post(name: .didFetchConfigurationOnForeground, object: nil)
+            if case .assetsUpdated(let protectionsUpdated) = result, protectionsUpdated {
+                ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
             }
         }
     }

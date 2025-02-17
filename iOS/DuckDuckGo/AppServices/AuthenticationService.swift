@@ -19,22 +19,36 @@
 
 import Foundation
 
+protocol AuthenticationServiceProtocol {
+
+    func authenticate() async
+
+}
+
 final class AuthenticationService {
 
     private let authenticator = Authenticator()
     private let overlayWindowManager: OverlayWindowManager
     private let privacyStore: PrivacyStore = PrivacyUserDefaults()
 
-    private var shouldAuthenticate: Bool {
-         privacyStore.authenticationEnabled && authenticator.canAuthenticate()
-    }
-
     init(overlayWindowManager: OverlayWindowManager) {
         self.overlayWindowManager = overlayWindowManager
     }
 
+    // MARK: - Suspend
+
+    func suspend() {
+        if privacyStore.authenticationEnabled {
+            overlayWindowManager.displayBlankSnapshotWindow()
+        }
+    }
+
+}
+
+extension AuthenticationService: AuthenticationServiceProtocol {
+
     @MainActor
-    func resume() async {
+    func authenticate() async {
         guard shouldAuthenticate else {
             return
         }
@@ -43,10 +57,8 @@ final class AuthenticationService {
         await authenticate(with: authenticationViewController)
     }
 
-    func onBackground() {
-        if privacyStore.authenticationEnabled {
-            overlayWindowManager.displayBlankSnapshotWindow()
-        }
+    private var shouldAuthenticate: Bool {
+         privacyStore.authenticationEnabled && authenticator.canAuthenticate()
     }
 
     @MainActor

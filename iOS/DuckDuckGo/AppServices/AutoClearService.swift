@@ -19,6 +19,12 @@
 
 import UIKit
 
+protocol AutoClearServiceProtocol {
+
+    func waitForDataCleared() async
+
+}
+
 final class AutoClearService {
 
     private let autoClear: AutoClear
@@ -26,6 +32,10 @@ final class AutoClearService {
     private let application: UIApplication
 
     private var autoClearTask: Task<Void, Never>?
+
+    var isClearingEnabled: Bool {
+        autoClear.isClearingEnabled
+    }
 
     init(worker: AutoClearWorker,
          overlayWindowManager: OverlayWindowManager,
@@ -35,6 +45,35 @@ final class AutoClearService {
         self.application = application
     }
 
+    // - MARK: Start
+
+    func start() {
+        autoClearTask = Task {
+            await autoClear.clearDataIfEnabled(applicationState: .init(with: application.applicationState))
+        }
+    }
+
+    // - MARK: Resume
+
+    func resume() {
+        autoClearTask = Task {
+            await autoClear.clearDataIfEnabledAndTimeExpired(applicationState: .active)
+        }
+    }
+
+    // - MARK: Suspend
+
+    func suspend() {
+        if autoClear.isClearingEnabled {
+            overlayWindowManager.displayBlankSnapshotWindow()
+        }
+        autoClear.startClearingTimer()
+    }
+
+}
+
+extension AutoClearService: AutoClearServiceProtocol {
+
     @MainActor
     func waitForDataCleared() async {
         guard let autoClearTask else {
@@ -43,29 +82,6 @@ final class AutoClearService {
         }
         await autoClearTask.value
         overlayWindowManager.removeNonAuthenticationOverlay()
-    }
-
-    func onLaunching() {
-        autoClearTask = Task {
-            await autoClear.clearDataIfEnabled(applicationState: .init(with: application.applicationState))
-        }
-    }
-
-    func onResuming() {
-        autoClearTask = Task {
-            await autoClear.clearDataIfEnabledAndTimeExpired(applicationState: .active)
-        }
-    }
-
-    func onBackground() {
-        if autoClear.isClearingEnabled {
-            overlayWindowManager.displayBlankSnapshotWindow()
-        }
-        autoClear.startClearingTimer()
-    }
-
-    var isClearingEnabled: Bool {
-        autoClear.isClearingEnabled
     }
 
 }

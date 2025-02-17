@@ -45,12 +45,12 @@ struct Background: AppState {
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
     func onTransition() {
-        appDependencies.vpnService.onBackground()
-        appDependencies.authenticationService.onBackground()
-        appDependencies.autoClearService.onBackground()
-        appDependencies.autofillService.onBackground()
-        appDependencies.syncService.onBackground()
-        appDependencies.reportingService.onBackground()
+        appDependencies.vpnService.suspend()
+        appDependencies.authenticationService.suspend()
+        appDependencies.autoClearService.suspend()
+        appDependencies.autofillService.suspend()
+        appDependencies.syncService.suspend()
+        appDependencies.reportingService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
     }
@@ -70,10 +70,10 @@ extension Background {
     /// This ensures that the app remains smooth as it enters the foreground.
     func willLeave() {
         ThemeManager.shared.updateUserInterfaceStyle()
-        appDependencies.autoClearService.onResuming()
+        appDependencies.autoClearService.resume()
     }
 
-    /// Called when the app transitions from launching or foreground to background,
+    /// Called when the app transitions from launching or foreground to background
     /// or when the app fails to wake up from the background (due to system Face ID lock).
     /// This is the counterpart to `willLeave()`.
     ///

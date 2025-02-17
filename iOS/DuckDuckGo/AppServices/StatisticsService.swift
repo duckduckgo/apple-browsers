@@ -1,5 +1,5 @@
 //
-//  ATBAndVariantConfiguration.swift
+//  StatisticsService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,16 +19,22 @@
 
 import Foundation
 import Core
-import BrowserServicesKit
 
-final class ATBAndVariantConfiguration {
+public extension NSNotification.Name {
 
-    lazy var variantManager = DefaultVariantManager()
+    static let didLoadStatisticsOnForeground = Notification.Name("com.duckduckgo.app.didLoadStatisticsOnForeground")
 
-    func cleanUpATBAndAssignVariant(onVariantAssigned: () -> Void) {
-        AtbAndVariantCleanup.cleanup()
-        variantManager.assignVariantIfNeeded { _ in
-            onVariantAssigned()
+}
+
+final class StatisticsService {
+
+    private lazy var statisticsLoader: StatisticsLoader = .shared
+
+    // MARK: - Resume
+
+    func resume() {
+        statisticsLoader.load {
+            NotificationCenter.default.post(name: .didLoadStatisticsOnForeground, object: nil)
         }
     }
 

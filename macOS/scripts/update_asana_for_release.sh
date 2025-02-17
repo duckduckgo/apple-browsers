@@ -37,7 +37,7 @@ find_task_urls_in_git_log() {
 	#    (Use -A 1 to handle cases where URL is on the next line after "Task/Issue URL:")
 	# 3. Filter only lines containing Asana URLs
 	# 4. Remove duplicates
-	git log "${last_release_tag}"..HEAD \
+	git log "${last_release_tag}"..HEAD -- macOS/ BrowserServicesKit/ \
 		| grep -A 1 'Task.*URL' \
 		| sed -nE 's|.*(https://app\.asana\.com.*)|\1|p' \
 		| uniq
@@ -336,7 +336,7 @@ handle_public_release() {
 get_tasks_in_last_internal_release() {
 	# 1. Find last internal release tag (last internal release is the second one, because the first one is the release that's just created)
 	local last_release_tag
-	last_release_tag="$(gh api /repos/duckduckgo/macos-browser/releases?per_page=2 --jq .[1].tag_name)"
+	last_release_tag="$(gh api repos/:owner/:repo/releases?per_page=25 --jq '[.[] | select(.tag_name | endswith("+macos"))][1].tag_name')"
 
 	# 2. Convert Asana task URLs from git commit messages to task IDs
 	local task_ids=()

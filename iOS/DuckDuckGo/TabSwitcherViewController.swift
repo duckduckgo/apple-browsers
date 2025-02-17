@@ -563,16 +563,3 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
     }
 
 }
-
-class XPreview: UIViewController {
-
-    var snapshot: UIView?
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        guard let snapshot else { return }
-        view.frame = snapshot.frame
-        view.addSubview(snapshot)
-    }
-
-}

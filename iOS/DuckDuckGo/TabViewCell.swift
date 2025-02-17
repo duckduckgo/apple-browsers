@@ -73,7 +73,6 @@ final class TabViewCell: UICollectionViewCell {
             selectionIndicator.isHidden = true
             border.isHidden = true
             border.layer.borderWidth = 0.0
-            backgroundColor = .red
 
         default: break
         }

@@ -379,7 +379,7 @@ public final class VPNSettings {
     }
 
     public var isBlockRiskyDomainsOn: Bool {
-        defaults.isBlockRiskyDomainsOn ?? false
+        defaults.isBlockRiskyDomainsOn
     }
 
     public var customDnsServers: [String] {
@@ -388,20 +388,20 @@ public final class VPNSettings {
 
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
-            let setting = defaults.dnsSettings
-            if case .ddg(let blockRiskyDomains) = setting,
+            // Only update if the first time after
+            // risky sites feature flag has been turned on
+            if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
                !blockRiskyDomains,
-               defaults.isBlockRiskyDomainsOn == nil,
+               !defaults.didDefaultToTrue,
                featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
+                // Set to default with risky domains protection enabled
                 defaults.dnsSettings = .ddg(blockRiskyDomains: true)
+                defaults.didDefaultToTrue = true
             }
+
             return defaults.dnsSettings
-            //            defaults.dnsSettings
         }
         set {
-            if !(featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false) {
-                defaults.isBlockRiskyDomainsOn = nil
-            }
             defaults.dnsSettings = newValue
         }
     }

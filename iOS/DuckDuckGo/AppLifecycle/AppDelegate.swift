@@ -45,17 +45,17 @@ public extension NSNotification.Name {
             self?.application(UIApplication.shared, willTerminateWithReason: .unrecoverableState)
         }
 
-//        let legacyJSONString = """
-//        {
-//            "usesCustomDNS": false,
-//            "dnsServers": []
-//        }
-//        """
-//
-//        if let legacyData = legacyJSONString.data(using: .utf8) {
-//            let defaults = UserDefaults.networkProtectionGroupDefaults
-//            defaults.set(legacyData, forKey: "dnsSettingStorageValue")
-//        }
+        let legacyJSONString = """
+        {
+            "usesCustomDNS": true,
+            "dnsServers": ["1.1.1.1"]
+        }
+        """
+
+        if let legacyData = legacyJSONString.data(using: .utf8) {
+            let defaults = UserDefaults.networkProtectionGroupDefaults
+            defaults.set(legacyData, forKey: "dnsSettingStorageValue")
+        }
     }
 
     /// See: `Launching.swift`

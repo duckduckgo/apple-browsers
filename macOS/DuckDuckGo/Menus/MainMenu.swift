@@ -769,6 +769,8 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
 
+            NSMenuItem(title: "Suggestions").submenu(SuggestionsDebugMenu())
+
 #if !APPSTORE
             if #available(macOS 14.4, *) {
                 NSMenuItem.separator()

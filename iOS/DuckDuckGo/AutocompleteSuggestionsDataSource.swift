@@ -55,8 +55,8 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
         historyManager.historyCoordinator
     }
 
-    var platform: Platform {
-        .mobile
+    var settings: any SuggestionSettings {
+        SuggestionDefaultSettings(platform: .mobile)
     }
 
     init(historyManager: HistoryManaging, bookmarksDatabase: CoreDataDatabase, featureFlagger: FeatureFlagger, tabsModel: TabsModel, performSuggestionsRequest: @escaping SuggestionsRequest) {

@@ -138,8 +138,8 @@ struct OpenTab: BrowserTab, Hashable {
 
 extension SuggestionContainer: SuggestionLoadingDataSource {
 
-    var platform: Platform {
-        return .desktop
+    var settings: any SuggestionSettings {
+        DebugSuggestionSettings()
     }
 
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
@@ -213,6 +213,90 @@ extension HistoryEntry: HistorySuggestion {
 
     public var numberOfVisits: Int {
         return numberOfTotalVisits
+    }
+
+}
+// TODO: ---vvv--- the following to be removed after Ship Review is done --vvv--
+
+struct DebugSuggestionSettings: SuggestionSettings {
+    enum DefaultValues {
+        static let shouldReplaceHistoryRecordsWithBookmarks = true
+        static let shouldReplaceHistoryRecordsWithOpenTabs = false
+        static let openTabsOrdering = SuggestionOrdering.afterTopHits
+    }
+
+    var platform: Suggestions.Platform { .desktop }
+
+    @UserDefaultsWrapper(key: .shouldReplaceHistoryRecordsWithBookmarks, defaultValue: DebugSuggestionSettings.DefaultValues.shouldReplaceHistoryRecordsWithBookmarks)
+    var shouldReplaceHistoryRecordsWithBookmarks: Bool
+
+    @UserDefaultsWrapper(key: .shouldReplaceHistoryRecordsWithOpenTabs, defaultValue: DebugSuggestionSettings.DefaultValues.shouldReplaceHistoryRecordsWithOpenTabs)
+    var shouldReplaceHistoryRecordsWithOpenTabs: Bool
+
+    @UserDefaultsWrapper(key: .openTabsOrdering, defaultValue: DebugSuggestionSettings.DefaultValues.openTabsOrdering)
+    var openTabsOrdering: SuggestionOrdering
+
+}
+
+private extension UserDefaultsWrapperKey {
+    static let shouldReplaceHistoryRecordsWithBookmarks = Self(rawValue: "suggestions_replace_history_with_bookmarks")
+    static let shouldReplaceHistoryRecordsWithOpenTabs = Self(rawValue: "suggestions_replace_history_with_open_tabs")
+    static let openTabsOrdering = Self(rawValue: "suggestions_open_tabs_ordering")
+}
+final class SuggestionsDebugMenu: NSMenu {
+
+    @UserDefaultsWrapper(key: .shouldReplaceHistoryRecordsWithBookmarks, defaultValue: DebugSuggestionSettings.DefaultValues.shouldReplaceHistoryRecordsWithBookmarks)
+    private var shouldReplaceHistoryRecordsWithBookmarks: Bool
+
+    @UserDefaultsWrapper(key: .shouldReplaceHistoryRecordsWithOpenTabs, defaultValue: DebugSuggestionSettings.DefaultValues.shouldReplaceHistoryRecordsWithOpenTabs)
+    private var shouldReplaceHistoryRecordsWithOpenTabs: Bool
+
+    @UserDefaultsWrapper(key: .openTabsOrdering, defaultValue: DebugSuggestionSettings.DefaultValues.openTabsOrdering)
+    private var openTabsOrdering: SuggestionOrdering
+
+    init() {
+        super.init(title: "")
+
+        buildItems {
+            NSMenuItem(title: "Deduplicate History Records with Bookmarks", action: #selector(menuShouldReplaceHistoryRecordsWithBookmarksSelected), target: self)
+            NSMenuItem(title: "Deduplicate History Records with Open Tabs", action: #selector(menuShouldReplaceHistoryRecordsWithOpenTabsSelected), target: self)
+            NSMenuItem.separator()
+            NSMenuItem(title: "Order Open Tabs in Top Hits", action: #selector(menuOpenTabsChangeOrderSelected), target: self, representedObject: SuggestionOrdering.topHits.rawValue)
+            NSMenuItem(title: "Order Open Tabs below Top Hits", action: #selector(menuOpenTabsChangeOrderSelected), target: self, representedObject: SuggestionOrdering.afterTopHits.rawValue)
+            NSMenuItem(title: "Order Open Tabs below History records", action: #selector(menuOpenTabsChangeOrderSelected), target: self, representedObject: SuggestionOrdering.afterHistory.rawValue)
+        }
+    }
+
+    required init(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Menu State Update
+
+    override func update() {
+        for item in items {
+            switch item.action {
+            case #selector(menuShouldReplaceHistoryRecordsWithBookmarksSelected):
+                item.state = shouldReplaceHistoryRecordsWithBookmarks ? .on : .off
+            case #selector(menuShouldReplaceHistoryRecordsWithOpenTabsSelected):
+                item.state = shouldReplaceHistoryRecordsWithOpenTabs ? .on : .off
+            case #selector(menuOpenTabsChangeOrderSelected):
+                item.state = (item.representedObject as? String == openTabsOrdering.rawValue) ? .on : .off
+            default: continue
+            }
+        }
+    }
+
+    @objc func menuShouldReplaceHistoryRecordsWithBookmarksSelected(_ sender: NSMenuItem) {
+        shouldReplaceHistoryRecordsWithBookmarks.toggle()
+    }
+
+    @objc func menuShouldReplaceHistoryRecordsWithOpenTabsSelected(_ sender: NSMenuItem) {
+        shouldReplaceHistoryRecordsWithOpenTabs.toggle()
+    }
+
+    @objc func menuOpenTabsChangeOrderSelected(_ sender: NSMenuItem) {
+        openTabsOrdering = .init(rawValue: sender.representedObject as! String)!
     }
 
 }

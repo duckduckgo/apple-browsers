@@ -20,21 +20,58 @@ import Foundation
 import Common
 
 public enum Platform {
-
     case mobile, desktop
+}
 
+public enum SuggestionOrdering: String {
+    case topHits, afterTopHits, afterHistory
+}
+public protocol SuggestionSettings {
+    var platform: Platform { get }
+    var shouldReplaceHistoryRecordsWithBookmarks: Bool { get }
+    var shouldReplaceHistoryRecordsWithOpenTabs: Bool { get }
+    var openTabsOrdering: SuggestionOrdering { get }
+}
+extension SuggestionSettings {
+    var shouldOrderOpenTabsBeforeHistoryAndBookmarks: Bool {
+        switch openTabsOrdering {
+        case .topHits, .afterTopHits: true
+        case .afterHistory: false
+        }
+    }
+    var allowOpenTabsInTopHits: Bool {
+        switch openTabsOrdering {
+        case .topHits: true
+        case .afterTopHits, .afterHistory: false
+        }
+    }
+}
+
+public struct SuggestionDefaultSettings: SuggestionSettings {
+    public let platform: Suggestions.Platform
+    public let shouldReplaceHistoryRecordsWithBookmarks: Bool
+    public let shouldReplaceHistoryRecordsWithOpenTabs: Bool
+    public let openTabsOrdering: SuggestionOrdering
+
+    public init(platform: Suggestions.Platform, shouldReplaceHistoryRecordsWithBookmarks: Bool = true, shouldReplaceHistoryRecordsWithOpenTabs: Bool = true, openTabsOrdering: SuggestionOrdering = .afterTopHits) {
+        self.platform = platform
+        self.shouldReplaceHistoryRecordsWithBookmarks = shouldReplaceHistoryRecordsWithBookmarks
+        self.shouldReplaceHistoryRecordsWithOpenTabs = shouldReplaceHistoryRecordsWithOpenTabs
+        self.openTabsOrdering = openTabsOrdering
+    }
 }
 
 /// Class encapsulates the whole ordering and filtering algorithm
 /// It takes query, history, bookmarks, and apiResult as input parameters
 /// The output is instance of SuggestionResult
 final class SuggestionProcessing {
+    typealias Settings = SuggestionSettings
 
-    private let platform: Platform
+    private let settings: Settings
     private var urlFactory: (String) -> URL?
 
-    init(platform: Platform, urlFactory: @escaping (String) -> URL?) {
-        self.platform = platform
+    init(settings: Settings, urlFactory: @escaping (String) -> URL?) {
+        self.settings = settings
         self.urlFactory = urlFactory
     }
 
@@ -67,7 +104,7 @@ final class SuggestionProcessing {
         let maximumOfNavigationalSuggestions = min(
             Self.maximumNumberOfSuggestions - Self.minimumNumberInSuggestionGroup,
             query.count + 1)
-        let expandedSuggestions = replaceHistoryWithBookmarksAndTabs(navigationalSuggestions)
+        let expandedSuggestions = deduplicateHistoryRecords(navigationalSuggestions)
 
         let dedupedNavigationalSuggestions = Array(dedupLocalSuggestions(expandedSuggestions).prefix(maximumOfNavigationalSuggestions))
 
@@ -116,8 +153,8 @@ final class SuggestionProcessing {
                         return true
                     }
 
-                case .openTab(title: let title, url: let url):
-                    if case .openTab(let searchTitle, let searchUrl) = suggestion,
+                case .openTab(title: let title, url: let url, _):
+                    if case .openTab(let searchTitle, let searchUrl, _) = suggestion,
                        searchTitle == title,
                        searchUrl.naked == url.naked {
                         return true
@@ -136,7 +173,7 @@ final class SuggestionProcessing {
         }
     }
 
-    private func replaceHistoryWithBookmarksAndTabs(_ sourceSuggestions: [Suggestion]) -> [Suggestion] {
+    private func deduplicateHistoryRecords(_ sourceSuggestions: [Suggestion]) -> [Suggestion] {
         var expanded = [Suggestion]()
         for i in 0 ..< sourceSuggestions.count {
             let suggestion = sourceSuggestions[i]
@@ -148,14 +185,16 @@ final class SuggestionProcessing {
             var foundTab = false
             var foundBookmark = false
 
-            if let tab = sourceSuggestions[i ..< sourceSuggestions.endIndex].first(where: {
+            if settings.shouldReplaceHistoryRecordsWithOpenTabs,
+               let tab = sourceSuggestions[i ..< sourceSuggestions.endIndex].first(where: {
                 $0.isOpenTab && $0.url?.naked == suggestion.url?.naked
             }) {
                 foundTab = true
                 expanded.append(tab)
             }
 
-            if case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, allowedInTopHits: _) = sourceSuggestions[i ..< sourceSuggestions.endIndex].first(where: {
+            if settings.shouldReplaceHistoryRecordsWithBookmarks,
+               case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, allowedInTopHits: _) = sourceSuggestions[i ..< sourceSuggestions.endIndex].first(where: {
                 $0.isBookmark && $0.url?.naked == suggestion.url?.naked
             }) {
                 foundBookmark = true
@@ -224,12 +263,14 @@ final class SuggestionProcessing {
             .filter { $0.score > 0 }
             // Sort according to the score
             .sorted {
-                switch ($0.item, $1.item) {
-                // place open tab suggestions on top
-                case (.openTab, .openTab): break
-                case (.openTab, _): return true
-                case (_, .openTab): return false
-                default: break
+                if settings.shouldOrderOpenTabsBeforeHistoryAndBookmarks {
+                    switch ($0.item, $1.item) {
+                        // place open tab suggestions on top
+                    case (.openTab, .openTab): break
+                    case (.openTab, _): return true
+                    case (_, .openTab): return false
+                    default: break
+                    }
                 }
                 return $0.score > $1.score
             }
@@ -237,7 +278,7 @@ final class SuggestionProcessing {
             .compactMap {
                 switch $0.item {
                 case .bookmark(let bookmark):
-                    switch platform {
+                    switch settings.platform {
                     case .desktop: return Suggestion(bookmark: bookmark)
                     case .mobile: return Suggestion(bookmark: bookmark, allowedInTopHits: true)
                     }
@@ -247,7 +288,7 @@ final class SuggestionProcessing {
                 case .internalPage(let internalPage):
                     return Suggestion(internalPage: internalPage)
                 case .openTab(let tab):
-                    return Suggestion(tab: tab)
+                    return Suggestion(tab: tab, allowedInTopHits: settings.allowOpenTabsInTopHits)
                 }
             }
 

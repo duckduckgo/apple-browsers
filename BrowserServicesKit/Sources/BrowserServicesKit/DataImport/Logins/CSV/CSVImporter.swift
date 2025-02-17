@@ -158,31 +158,34 @@ final public class CSVImporter: DataImporter {
     private let loginImporter: LoginImporter
     private let defaultColumnPositions: ColumnPositions?
     private let secureVaultReporter: SecureVaultReporting
+    private let tld: TLD
 
-    public init(fileURL: URL?, csvContent: String? = nil, loginImporter: LoginImporter, defaultColumnPositions: ColumnPositions?, reporter: SecureVaultReporting) {
+    public init(fileURL: URL?, csvContent: String? = nil, loginImporter: LoginImporter, defaultColumnPositions: ColumnPositions?, reporter: SecureVaultReporting, tld: TLD) {
         self.fileURL = fileURL
         self.csvContent = csvContent
         self.loginImporter = loginImporter
         self.defaultColumnPositions = defaultColumnPositions
         self.secureVaultReporter = reporter
+        self.tld = tld
     }
 
-    static func totalValidLogins(in fileURL: URL, defaultColumnPositions: ColumnPositions?) -> Int {
+    static func totalValidLogins(in fileURL: URL, defaultColumnPositions: ColumnPositions?, tld: TLD) -> Int {
         guard let fileContents = try? String(contentsOf: fileURL, encoding: .utf8) else { return 0 }
 
-        let logins = extractLogins(from: fileContents, defaultColumnPositions: defaultColumnPositions) ?? []
+        let logins = extractLogins(from: fileContents, defaultColumnPositions: defaultColumnPositions, tld: tld) ?? []
 
         return logins.count
     }
 
-    static public func totalValidLogins(in csvContent: String, defaultColumnPositions: ColumnPositions?) -> Int {
-        let logins = extractLogins(from: csvContent, defaultColumnPositions: defaultColumnPositions) ?? []
-
+    static public func totalValidLogins(in csvContent: String, defaultColumnPositions: ColumnPositions?, tld: TLD) -> Int {
+        let logins = extractLogins(from: csvContent, defaultColumnPositions: defaultColumnPositions, tld: tld) ?? []
         return logins.count
     }
 
-    public static func extractLogins(from fileContents: String, defaultColumnPositions: ColumnPositions? = nil) -> [ImportedLoginCredential]? {
+    public static func extractLogins(from fileContents: String, defaultColumnPositions: ColumnPositions? = nil, tld: TLD) -> [ImportedLoginCredential]? {
         guard let parsed = try? CSVParser().parse(string: fileContents) else { return nil }
+
+        let urlMatcher = AutofillDomainNameUrlMatcher()
 
         let columnPositions: ColumnPositions?
         var startRow = 0
@@ -195,7 +198,9 @@ final public class CSVImporter: DataImporter {
 
         guard parsed.indices.contains(startRow) else { return [] } // no data
 
-        let result = parsed[startRow...].compactMap(columnPositions.read)
+        let result = parsed[startRow...].compactMap { row in
+            columnPositions.read(row, tld: tld, urlMatcher: urlMatcher)
+        }
 
         guard !result.isEmpty else {
             if parsed.filter({ !$0.isEmpty }).isEmpty {
@@ -205,7 +210,7 @@ final public class CSVImporter: DataImporter {
             }
         }
 
-        return result
+        return result.removeDuplicates()
     }
 
     public var importableTypes: [DataImport.DataType] {
@@ -245,7 +250,7 @@ final public class CSVImporter: DataImporter {
         do {
             try updateProgress(.importingPasswords(numberOfPasswords: nil, fraction: 0.2))
 
-            let loginCredentials = try Self.extractLogins(from: fileContents, defaultColumnPositions: defaultColumnPositions) ?? {
+            let loginCredentials = try Self.extractLogins(from: fileContents, defaultColumnPositions: defaultColumnPositions, tld: tld) ?? {
                 try Task.checkCancellation()
                 throw LoginImporterError(error: nil, type: .malformedCSV)
             }()
@@ -291,7 +296,7 @@ extension ImportedLoginCredential {
 
 extension CSVImporter.ColumnPositions {
 
-    func read(_ row: [String]) -> ImportedLoginCredential? {
+    func read(_ row: [String], tld: TLD, urlMatcher: AutofillDomainNameUrlMatcher) -> ImportedLoginCredential? {
         let username: String
         let password: String
 
@@ -316,18 +321,30 @@ extension CSVImporter.ColumnPositions {
             return nil
         }
 
+        var url: String? = row[safe: urlIndex ?? -1]
+        var eTldPlusOne: String?
+
+        if let urlString = url {
+            url = urlMatcher.normalizeUrlForWeb(urlString)
+            if let normalizedUrl = url {
+                eTldPlusOne = urlMatcher.extractTLD(domain: URL(string: normalizedUrl)?.host ?? normalizedUrl, tld: tld) ?? normalizedUrl
+            }
+        }
+
         return ImportedLoginCredential(title: row[safe: titleIndex ?? -1],
-                                       url: row[safe: urlIndex ?? -1],
+                                       url: url,
+                                       eTldPlusOne: eTldPlusOne,
                                        username: username,
                                        password: password,
                                        notes: row[safe: notesIndex ?? -1])
+
     }
 
 }
 
 extension CSVImporter.ColumnPositions? {
 
-    func read(_ row: [String]) -> ImportedLoginCredential? {
+    func read(_ row: [String], tld: TLD, urlMatcher: AutofillDomainNameUrlMatcher) -> ImportedLoginCredential? {
         let columnPositions = self ?? [
             .rowFormatWithTitle,
             .rowFormatWithoutTitle
@@ -335,7 +352,113 @@ extension CSVImporter.ColumnPositions? {
             row.count > $0.maximumIndex
         })
 
-        return columnPositions?.read(row)
+        return columnPositions?.read(row, tld: tld, urlMatcher: urlMatcher)
     }
 
+}
+
+extension Array where Element == ImportedLoginCredential {
+
+    func removeDuplicates() -> [ImportedLoginCredential] {
+        // First, group credentials by their identifying key
+        var credentialGroups: [String: [ImportedLoginCredential]] = [:]
+
+        forEach { credential in
+            // special handling for titles with Safari format e.g. "example.com (username)"
+            let title = titleMatchesSafariFormat(for: credential) ? "SAFARI_TITLE" : credential.title ?? ""
+            let key = "\(credential.eTldPlusOne ?? "")|" + title + "|" +
+                      "\(credential.username)|\(credential.password)|\(credential.notes ?? "")"
+
+            if credentialGroups[key] == nil {
+                credentialGroups[key] = []
+            }
+            credentialGroups[key]?.append(credential)
+        }
+
+        var uniqueCredentials: [ImportedLoginCredential] = []
+
+        // Process each group
+        for (_, credentials) in credentialGroups {
+            // Only process as duplicates if we have multiple credentials with the exact same key
+            if credentials.count > 1 {
+                // Among the duplicates, select the one with the highest level TLD
+                if let selectedCredential = selectPreferredCredential(from: credentials) {
+                    uniqueCredentials.append(selectedCredential)
+                }
+            } else if let singleCredential = credentials.first {
+                // If there's only one credential with this key, it's automatically unique
+                uniqueCredentials.append(singleCredential)
+            }
+        }
+
+        return uniqueCredentials
+    }
+
+    private func selectPreferredCredential(from credentials: [ImportedLoginCredential]) -> ImportedLoginCredential? {
+        guard !credentials.isEmpty else { return nil }
+
+        // If there's only one credential, return it
+        if credentials.count == 1 {
+            return credentials[0]
+        }
+
+        // First, try to find a credential without subdomains (e.g. site.com or site.co.uk)
+        if let noSubdomainCredential = credentials.first(where: { credential in
+            guard let url = credential.url, let eTldPlusOne = credential.eTldPlusOne else { return false }
+            // The URL should match the TLD exactly (meaning it's the base domain without subdomains)
+            return url == eTldPlusOne
+        }) {
+            return noSubdomainCredential
+        }
+
+        // Look for www subdomain if no bare domain exists
+        if let wwwCredential = credentials.first(where: { credential in
+            guard let url = credential.url, let eTldPlusOne = credential.eTldPlusOne else { return false }
+            let components = url.split(separator: ".")
+            // Check first component is www AND rest matches TLD
+            return components.first == "www" && components.dropFirst().joined(separator: ".") == eTldPlusOne
+        }) {
+            return wwwCredential
+        }
+
+        // If neither bare domain nor www exists, sort remaining by:
+        // 1. Number of segments (fewer is better)
+        // 2. Alphabetically by domain
+        return credentials.min { credential1, credential2 in
+            let segments1 = getDomainSegments(from: credential1.url)
+            let segments2 = getDomainSegments(from: credential2.url)
+
+            if segments1 != segments2 {
+                return segments1 < segments2
+            }
+
+            // If segment counts are equal, compare URLs alphabetically
+            let url1 = credential1.url ?? ""
+            let url2 = credential2.url ?? ""
+            return url1 < url2
+        }
+    }
+
+    private func getDomainSegments(from url: String?) -> Int {
+        guard let url = url else { return Int.max }
+        return url.split(separator: ".").count
+    }
+
+    private func titleMatchesSafariFormat(for credential: ImportedLoginCredential) -> Bool {
+       guard let title = credential.title, let url = credential.url else { return false }
+
+       let components = title.components(separatedBy: " (")
+       guard components.count == 2,
+             components[1].hasSuffix(")"),
+             let username = components[1].dropLast().toString else {
+           return false
+       }
+
+       return url.contains(components[0]) && username == credential.username
+   }
+
+}
+
+extension StringProtocol {
+   var toString: String? { String(self) }
 }

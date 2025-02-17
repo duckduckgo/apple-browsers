@@ -19,6 +19,7 @@
 import Foundation
 import CoreData
 import Persistence
+import BrowserServicesKit
 
 public class BookmarkCoreDataImporter {
 
@@ -30,9 +31,9 @@ public class BookmarkCoreDataImporter {
         self.favoritesDisplayMode = favoritesDisplayMode
     }
 
-    public func importBookmarks(_ bookmarks: [BookmarkOrFolder]) async throws {
+    public func importBookmarks(_ bookmarks: [BookmarkOrFolder]) async throws -> BookmarksImportSummary {
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<BookmarksImportSummary, Error>) in
 
             context.performAndWait { () in
                 do {
@@ -43,13 +44,15 @@ public class BookmarkCoreDataImporter {
                     }
 
                     var bookmarkURLToIDMap = try bookmarkURLToID(in: context)
+                    var summary = BookmarksImportSummary(successful: 0, duplicates: 0, failed: 0)
 
                     try recursivelyCreateEntities(from: bookmarks,
                                                   parent: topLevelBookmarksFolder,
                                                   favoritesFolders: favoritesFolders,
-                                                  bookmarkURLToIDMap: &bookmarkURLToIDMap)
+                                                  bookmarkURLToIDMap: &bookmarkURLToIDMap,
+                                                  summary: &summary)
                     try context.save()
-                    continuation.resume()
+                    continuation.resume(returning: summary)
                 } catch {
                     continuation.resume(throwing: error)
                 }
@@ -90,9 +93,11 @@ public class BookmarkCoreDataImporter {
     private func recursivelyCreateEntities(from bookmarks: [BookmarkOrFolder],
                                            parent: BookmarkEntity,
                                            favoritesFolders: [BookmarkEntity],
-                                           bookmarkURLToIDMap: inout [String: NSManagedObjectID]) throws {
+                                           bookmarkURLToIDMap: inout [String: NSManagedObjectID],
+                                           summary: inout BookmarksImportSummary) throws {
         for bookmarkOrFolder in bookmarks {
             if bookmarkOrFolder.isInvalidBookmark {
+                summary.failed += 1
                 continue
             }
 
@@ -105,7 +110,8 @@ public class BookmarkCoreDataImporter {
                     try recursivelyCreateEntities(from: children,
                                                   parent: folder,
                                                   favoritesFolders: favoritesFolders,
-                                                  bookmarkURLToIDMap: &bookmarkURLToIDMap)
+                                                  bookmarkURLToIDMap: &bookmarkURLToIDMap,
+                                                  summary: &summary)
                 }
             case .favorite:
                 if let url = bookmarkOrFolder.url {
@@ -120,11 +126,15 @@ public class BookmarkCoreDataImporter {
                         newFavorite.addToFavorites(folders: favoritesFolders)
                         bookmarkURLToIDMap[url.absoluteString] = newFavorite.objectID
                     }
+                    summary.successful += 1
+                } else {
+                    summary.failed += 1
                 }
             case .bookmark:
                 if let url = bookmarkOrFolder.url {
                     if parent.isRoot,
                        parent.childrenArray.first(where: { $0.urlObject == url }) != nil {
+                        summary.successful += 1
                         continue
                     } else {
                         let newBookmark = BookmarkEntity.makeBookmark(title: bookmarkOrFolder.name,
@@ -133,6 +143,9 @@ public class BookmarkCoreDataImporter {
                                                                       context: context)
                         bookmarkURLToIDMap[url.absoluteString] = newBookmark.objectID
                     }
+                    summary.successful += 1
+                } else {
+                    summary.failed += 1
                 }
             }
         }

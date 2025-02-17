@@ -508,16 +508,12 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        guard !LaunchOptionsHandler().isOnboardingCompleted else {
-            // explicitly skip onboarding, e.g. for integration tests
-            return
-        }
+        let forceShowOnboarding = !LaunchOptionsHandler().isOnboardingCompleted
 
-        let showOnboarding = !tutorialSettings.hasSeenOnboarding
+        let showOnboarding = !tutorialSettings.hasSeenOnboarding || forceShowOnboarding
         guard showOnboarding else { return }
 
         segueToDaxOnboarding()
-
     }
 
     func presentNetworkProtectionStatusSettingsModal() {

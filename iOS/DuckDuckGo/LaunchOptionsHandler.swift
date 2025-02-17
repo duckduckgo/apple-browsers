@@ -24,15 +24,17 @@ public final class LaunchOptionsHandler {
     private static let appVariantName = "currentAppVariant"
 
     private let launchArguments: [String]
+    private let environment: [String: String]
     private let userDefaults: UserDefaults
 
-    public init(launchArguments: [String] = ProcessInfo.processInfo.arguments, userDefaults: UserDefaults = .app) {
+    public init(launchArguments: [String] = ProcessInfo.processInfo.arguments, environment: [String: String] =  ProcessInfo.processInfo.environment, userDefaults: UserDefaults = .app) {
         self.launchArguments = launchArguments
+        self.environment = environment
         self.userDefaults = userDefaults
     }
 
     public var isOnboardingCompleted: Bool {
-        ProcessInfo.processInfo.environment["ONBOARDING"] == "false" || userDefaults.string(forKey: Self.isOnboardingcompleted) == "true"
+        environment["ONBOARDING"] == "false" || userDefaults.string(forKey: Self.isOnboardingcompleted) == "true"
     }
 
     public var appVariantName: String? {

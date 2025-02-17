@@ -211,6 +211,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private var entityProviding: EntityProviding
     private let variantManager: VariantManager
     private let addToDockManager: OnboardingAddToDockManaging
+    private let launchOptionsHandler: LaunchOptionsHandler
 
     private var nextHomeScreenMessageOverride: HomeScreenSpec?
     
@@ -223,12 +224,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
-         onboardingManager: OnboardingAddToDockManaging = OnboardingManager()
+         onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
+         launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.addToDockManager = onboardingManager
+        self.launchOptionsHandler = launchOptionsHandler
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -278,7 +281,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     var isEnabled: Bool {
-        if LaunchOptionsHandler().isOnboardingCompleted {
+        if launchOptionsHandler.isOnboardingCompleted {
             return false
         }
         return !settings.isDismissed

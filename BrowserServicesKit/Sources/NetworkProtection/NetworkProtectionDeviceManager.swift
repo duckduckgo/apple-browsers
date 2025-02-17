@@ -275,7 +275,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
         guard let closestIP = allowedIPs.first, let interfaceAddressRange = IPAddressRange(from: closestIP) else {
             throw NetworkProtectionError.couldNotGetInterfaceAddressRange
         }
-
+        Logger.networkProtection.log("🐩 DNS SETTINGS \(dnsSettings, privacy: .public)")
         let dns: [DNSServer]
         switch dnsSettings {
         case .ddg(let blockRiskyDomains):

@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import BrowserServicesKit
 
 /// Persists and publishes changes to tunnel settings.
 ///
@@ -88,6 +89,7 @@ public final class VPNSettings {
     }
 
     private let defaults: UserDefaults
+    public var featureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags>?
 
     private(set) public lazy var changePublisher: AnyPublisher<Change, Never> = {
 
@@ -377,7 +379,7 @@ public final class VPNSettings {
     }
 
     public var isBlockRiskyDomainsOn: Bool {
-        defaults.isBlockRiskyDomainsOn
+        defaults.isBlockRiskyDomainsOn ?? false
     }
 
     public var customDnsServers: [String] {
@@ -386,9 +388,16 @@ public final class VPNSettings {
 
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
-            defaults.dnsSettings
+            let setting = defaults.dnsSettings
+            if case .ddg(let blockRiskyDomains) = setting,
+               !blockRiskyDomains,
+               defaults.isBlockRiskyDomainsOn == nil,
+               featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
+                defaults.dnsSettings = .ddg(blockRiskyDomains: true)
+            }
+            return defaults.dnsSettings
+            //            defaults.dnsSettings
         }
-
         set {
             defaults.dnsSettings = newValue
         }
@@ -440,5 +449,33 @@ public final class VPNSettings {
         set {
             defaults.networkProtectionSettingDisableRekeying = newValue
         }
+    }
+}
+
+public enum NetworkProtectionFlags {
+    case networkProtectionRiskyDomainsProtection
+}
+
+public extension NetworkProtectionFlags {
+
+    var defaultState: Bool {
+        switch self {
+        case .networkProtectionRiskyDomainsProtection:
+            return false
+        }
+    }
+}
+
+open class NetPFeatureFlaggerMapping<Feature> {
+    public typealias Mapping = (_ feature: Feature) -> Bool
+
+    private let isFeatureEnabledMapping: Mapping
+
+    public init(mapping: @escaping Mapping) {
+        isFeatureEnabledMapping = mapping
+    }
+
+    public func isFeatureOn(_ feature: Feature) -> Bool {
+        return isFeatureEnabledMapping(feature)
     }
 }

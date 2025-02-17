@@ -91,5 +91,4 @@ struct AppConfiguration {
         HistoryMessageManager().dismiss()
     }
 
-
 }

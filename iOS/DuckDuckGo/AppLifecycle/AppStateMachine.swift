@@ -100,11 +100,7 @@ final class AppStateMachine {
         switch currentState {
         case .initializing(let initializing):
             guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event) }
-            if isTesting {
-                currentState = .simulated(Simulated())
-            } else {
-                currentState = .launching(initializing.makeLaunchingState())
-            }
+            currentState = isTesting ? .simulated(Simulated()) : .launching(initializing.makeLaunchingState())
         case .launching(let launching):
             switch event {
             case .didBecomeActive:
@@ -179,5 +175,3 @@ final class AppStateMachine {
     }
 
 }
-
-

@@ -115,12 +115,15 @@ public extension NSNotification.Name {
     /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
     /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
     var debugPrivacyProDataReporter: PrivacyProDataReporting? {
-        (appStateMachine.currentState as? Foreground)?.services.reportingService.privacyProDataReporter
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            return (foregroundHandling as? Foreground)?.services.reportingService.privacyProDataReporter
+        }
+        return nil
     }
 
     func debugRefreshRemoteMessages() {
-        if let remoteMessagingService = (appStateMachine.currentState as? Foreground)?.services.remoteMessagingService {
-            remoteMessagingService.refreshRemoteMessages()
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
     }
 

@@ -147,7 +147,7 @@ private struct DataTypeRow: View {
                 .contentShape(Rectangle())
 
                 importPreview.icon
-                    .tint(Color(designSystemColor: .textPrimary))
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .frame(width: 24)
                     .padding(.trailing, 8)
 

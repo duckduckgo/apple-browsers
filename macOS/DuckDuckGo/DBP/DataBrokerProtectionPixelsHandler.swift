@@ -26,10 +26,15 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .error(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error))
-            case .generalError(let error, _),
-                    .secureVaultInitError(let error),
+            case .httpError(let error, _, _),
+                    .actionFailedError(let error, _, _, _),
+                    .otherError(let error, _):
+                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
+            case .databaseError(error: let error, functionOccurredIn: _),
+                    .cocoaError(error: let error, functionOccurredIn: _),
+                    .miscError(error: let error, functionOccurredIn: _):
+                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
+            case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error),
                     .secureVaultKeyStoreUpdateError(let error),

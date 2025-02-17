@@ -38,6 +38,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
+    private let promptsCoordinator: PromptsCoordinator
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -67,7 +68,8 @@ final class MainViewController: NSViewController {
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         promptsCoordinator: PromptsCoordinator = PromptsCoordinator()
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -75,6 +77,7 @@ final class MainViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
+        self.promptsCoordinator = promptsCoordinator
 
         tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
@@ -157,6 +160,7 @@ final class MainViewController: NSViewController {
         subscribeToBookmarkBarVisibility()
         subscribeToFirstResponder()
         mainView.findInPageContainerView.applyDropShadow()
+        showMessageBannerIfNeeded()
 
         view.registerForDraggedTypes([.URL, .fileURL])
     }
@@ -186,7 +190,7 @@ final class MainViewController: NSViewController {
             forName: .showBannerPromptForDefaultBrowser,
             object: nil,
             queue: .main) { [weak self] _ in
-                self?.showBanner()
+                self?.showMessageBannerIfNeeded()
         }
     }
 
@@ -219,6 +223,7 @@ final class MainViewController: NSViewController {
         }
 
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+
     }
 
     override func viewDidLayout() {
@@ -253,11 +258,15 @@ final class MainViewController: NSViewController {
         }
     }
 
-    private func showBanner() {
-        let promptsCoordinator = PromptsCoordinator()
-        guard let banner = promptsCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
-        addAndLayoutChild(banner, into: mainView.bannerContainerView)
-        mainView.bannerHeightConstraint.animator().constant = 48
+    private func showMessageBannerIfNeeded() {
+        if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
+
+        if promptsCoordinator.shouldShowPrompt {
+            guard let banner = promptsCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
+
+            addAndLayoutChild(banner, into: mainView.bannerContainerView)
+            mainView.bannerHeightConstraint.animator().constant = 48
+        }
     }
 
     private func hideBanner() {

@@ -158,7 +158,8 @@ final class PromptsCoordinator {
 
     var shouldShowPrompt: Bool {
         let wasOnboardingCompleted = false // TODO: Swap for real value
-        return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
+//        return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
+        return true
     }
 
     func getPopover() -> PopoverMessageViewController? {

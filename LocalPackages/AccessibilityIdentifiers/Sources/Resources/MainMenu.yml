@@ -1,0 +1,6 @@
+DuckDuckGo:
+  - settings
+  - checkForUpdates
+Bookmark:
+  - bookmarkThisPage
+  - manageBookmarks

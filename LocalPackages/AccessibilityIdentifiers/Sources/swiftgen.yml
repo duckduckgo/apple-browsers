@@ -1,0 +1,14 @@
+input_dir: Resources
+output_dir: ${DERIVED_SOURCES_DIR}
+
+yaml:
+  - inputs:
+      - MainMenu.yml
+      - RandomView.yml
+    outputs:
+      - templatePath: AccessibilityIdentifiers.stencil
+        output: AccessibilityIdentifiers.swift
+        params:
+          enumName: AccessibilityIdentifiers
+          publicAccess: true
+

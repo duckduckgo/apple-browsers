@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AccessibilityIdentifiers
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
@@ -33,7 +34,7 @@ final class AIChatDebugMenu: NSMenu {
             NSMenuItem(title: "Web Communication") {
                 NSMenuItem(title: "Set Custom URL", action: #selector(setCustomURL))
                     .targetting(self)
-                NSMenuItem(title: "Reset Custom URL", action: #selector(resetCustomURL))
+                NSMenuItem(title: "Reset Custom URL", action: #selector(resetCustomURL)).withAccessibilityIdentifier(AccessibilityIdentifiers)
                     .targetting(self)
                 customURLLabelMenuItem
             }

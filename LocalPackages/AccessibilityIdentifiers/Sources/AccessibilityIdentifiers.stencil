@@ -1,0 +1,59 @@
+// swiftlint:disable all
+// Generated using SwiftGen — https://github.com/SwiftGen/SwiftGen
+{% if files %}
+{# Set accessModifier and enumName variables for later reference#}
+{% set accessModifier %}{% if param.publicAccess %}public {% else %}{% endif %}{% endset %}
+{% set enumName %}{{param.enumName|default:"A11y"}}{% endset %}
+{# Process each input file and create the correspondent enum #}
+{% macro fileBlock file %}
+  {% set fileEnumName %}{{file.name|swiftIdentifier:"pretty"|escapeReservedKeywords}}{% endset %}
+  {% filter indent:4 %}
+  // MARK: - {{fileEnumName}}
+  {{accessModifier }}enum {{fileEnumName}} {
+    {# Process the file documents. Currently only one document per file is supported #}
+    {% call documentBlock file.documents.first %}
+  }
+  {% endfilter %}
+{% endmacro %}
+{% macro documentBlock document %}
+  {% if document.metadata.type == "Dictionary" %}
+  {% for key,value in document.metadata.properties %}
+  {% call enumBlock fileEnumName key value document.data %}
+  {% endfor %}
+  {% else %}
+  // Expected dictionary at root of file
+  {% endif %}
+{% endmacro %}
+{% macro enumBlock prefix enumName value data %}
+  {% filter indent:4 %}
+  {% set newPrefix %}{{prefix}}.{{enumName}}{% endset %}
+  {{accessModifier}}enum {{enumName|swiftIdentifier:"pretty"|escapeReservedKeywords}} {
+  {% call valueBlock enumName data%}
+  }
+  {% endfilter %}
+{% endmacro %}
+{% macro valueBlock enumName data%}
+  {% filter indent: 4%}
+  {{accessModifier}}static let identifier = "{{newPrefix}}.identifier"
+  {% if value.type == "Dictionary" %}
+  {% for key,value in value.properties %}
+  {% call enumBlock newPrefix key value data[enumName] %}
+  {% endfor %}
+  {% elif value.type == "Array" %}
+  {% for item in data[enumName] %}
+  {{accessModifier}}static let {{item|swiftIdentifier:"pretty"|lowerFirstWord|escapeReservedKeywords}} = "{{newPrefix}}.{{item}}"
+  {% endfor %}
+  {% endif %}
+  {% endfilter %}
+{% endmacro%}
+
+import Foundation
+
+{{accessModifier}}enum {{enumName}} {
+  {% for file in files %}
+    {% call fileBlock file %}
+  {% endfor %}
+}
+{% else %}
+// No accessibility identifier file found
+{% endif %}

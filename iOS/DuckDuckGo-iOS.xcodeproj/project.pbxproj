@@ -1034,6 +1034,9 @@
 		C1C23C352D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C272D4C0F1A00B6BDF6 /* DataImportSummaryViewModel.swift */; };
 		C1C23C362D4C0F1A00B6BDF6 /* ZipContentSelectionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C2C2D4C0F1A00B6BDF6 /* ZipContentSelectionViewController.swift */; };
 		C1C23C3A2D4C349D00B6BDF6 /* DataImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C23C372D4C349D00B6BDF6 /* DataImportManager.swift */; };
+		C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C725B62D63810D00361B81 /* ImportArchiveReaderTests.swift */; };
+		C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C725B42D63810D00361B81 /* DataImportManagerTests.swift */; };
+		C1C725BC2D6381E400361B81 /* DataImportMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C725BB2D6381E400361B81 /* DataImportMocks.swift */; };
 		C1CAAA6A2CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA692CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift */; };
 		C1CAAA712CF8BC0B00C37EE6 /* UIViewControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA702CF8BC0B00C37EE6 /* UIViewControllerExtension.swift */; };
 		C1CAAA732CF8BD1C00C37EE6 /* CredentialProviderActivatedViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CAAA722CF8BD1C00C37EE6 /* CredentialProviderActivatedViewModel.swift */; };
@@ -3037,6 +3040,9 @@
 		C1C23C2C2D4C0F1A00B6BDF6 /* ZipContentSelectionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewController.swift; sourceTree = "<group>"; };
 		C1C23C2D2D4C0F1A00B6BDF6 /* ZipContentSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipContentSelectionViewModel.swift; sourceTree = "<group>"; };
 		C1C23C372D4C349D00B6BDF6 /* DataImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportManager.swift; sourceTree = "<group>"; };
+		C1C725B42D63810D00361B81 /* DataImportManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportManagerTests.swift; sourceTree = "<group>"; };
+		C1C725B62D63810D00361B81 /* ImportArchiveReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportArchiveReaderTests.swift; sourceTree = "<group>"; };
+		C1C725BB2D6381E400361B81 /* DataImportMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportMocks.swift; sourceTree = "<group>"; };
 		C1CAAA672CF8B74200C37EE6 /* AutofillCredentialProviderAlpha.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AutofillCredentialProviderAlpha.entitlements; sourceTree = "<group>"; };
 		C1CAAA692CF8BABF00C37EE6 /* CredentialProviderActivatedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialProviderActivatedView.swift; sourceTree = "<group>"; };
 		C1CAAA702CF8BC0B00C37EE6 /* UIViewControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewControllerExtension.swift; sourceTree = "<group>"; };
@@ -5964,6 +5970,16 @@
 			path = DataImport;
 			sourceTree = "<group>";
 		};
+		C1C725B72D63810D00361B81 /* DataImport */ = {
+			isa = PBXGroup;
+			children = (
+				C1C725BB2D6381E400361B81 /* DataImportMocks.swift */,
+				C1C725B42D63810D00361B81 /* DataImportManagerTests.swift */,
+				C1C725B62D63810D00361B81 /* ImportArchiveReaderTests.swift */,
+			);
+			path = DataImport;
+			sourceTree = "<group>";
+		};
 		C1CAA3D52A630ECB00807703 /* EmailSignup */ = {
 			isa = PBXGroup;
 			children = (
@@ -6114,13 +6130,6 @@
 				CBECDB792CD981C6005B8B87 /* AppPageRefreshMonitor.swift */,
 			);
 			name = PageRefreshMonitor;
-			sourceTree = "<group>";
-		};
-		CB69F3142D52C541008550E7 /* AppLifecycle */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = AppLifecycle;
 			sourceTree = "<group>";
 		};
 		CBAA195627BFDD9800A4BD49 /* SmarterEncryption */ = {
@@ -7272,19 +7281,19 @@
 		F1E092B31E92A6B900732CCC /* Core */ = {
 			isa = PBXGroup;
 			children = (
-				CB69F3142D52C541008550E7 /* AppLifecycle */,
-				C1BF4BA82D26E08F00A83C77 /* Autofill */,
-				316790E32C9350980090B0A2 /* MarketplaceAdPostback */,
-				858479CA2B8795BF00D156C1 /* History */,
-				EA7EFE662677F5BD0075464E /* PrivacyReferenceTests */,
+				C1C725B72D63810D00361B81 /* DataImport */,
+				310EEA2D2CFFCDB60043CA1A /* AIChat */,
 				83EDCC3E1F86B363005CDFCD /* API */,
+				C1BF4BA82D26E08F00A83C77 /* Autofill */,
 				C14882DD27F20D7300D59F0C /* Bookmarks */,
 				830FA79B1F8E81FB00FCE105 /* ContentBlocker */,
 				F17D722C1E8B3563003E8B0E /* Domain */,
 				EE3B226929DE0EE10082298A /* FeatureFlags */,
+				858479CA2B8795BF00D156C1 /* History */,
+				316790E32C9350980090B0A2 /* MarketplaceAdPostback */,
+				EA7EFE662677F5BD0075464E /* PrivacyReferenceTests */,
 				F1134EC91F40E74800B73467 /* Statistics */,
 				F198D78F1E3976300088DA8A /* Utilities */,
-				310EEA2D2CFFCDB60043CA1A /* AIChat */,
 			);
 			name = Core;
 			sourceTree = "<group>";
@@ -9037,6 +9046,7 @@
 				983C52E72C2C0ACB007B5747 /* BookmarkStateRepairTests.swift in Sources */,
 				8598D2E62CEBAA1F00C45685 /* MockFaviconStore.swift in Sources */,
 				31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */,
+				C1C725BC2D6381E400361B81 /* DataImportMocks.swift in Sources */,
 				BDE219EA2C457B46005D5884 /* PrivacyProDataReporterTests.swift in Sources */,
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,
 				9F4CC5152C47AD08006A96EB /* ContextualOnboardingPresenterMock.swift in Sources */,
@@ -9066,6 +9076,8 @@
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				F1BDDBFE2C340D9C00459306 /* SubscriptionFlowViewModelTests.swift in Sources */,
+				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
+				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
 				F1BDDC022C340DDF00459306 /* SyncManagementViewModelTests.swift in Sources */,
 				D625AAEC2BBEF27600BC189A /* TabURLInterceptorTests.swift in Sources */,
 				EE7623BE2C5D038200FA061C /* MockFeatureFlagger.swift in Sources */,

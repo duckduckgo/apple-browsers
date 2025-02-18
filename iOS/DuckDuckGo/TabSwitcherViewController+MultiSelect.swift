@@ -623,7 +623,7 @@ extension TabSwitcherViewController {
 
     func longPressMenuCloseTab(index: Int) {
         let alert = UIAlertController(title: UserText.alertTitleCloseTabs(withCount: 1),
-                                      message: UserText.alertTitleCloseTabs(withCount: 1),
+                                      message: UserText.alertMessageCloseTabs(withCount: 1),
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
         alert.addAction(title: UserText.closeTabs(withCount: 1), style: .destructive) { [weak self] in

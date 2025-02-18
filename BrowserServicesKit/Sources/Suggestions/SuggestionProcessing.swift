@@ -101,22 +101,24 @@ final class SuggestionProcessing {
         // Combine HaB and domains into navigational suggestions and remove duplicates
         let navigationalSuggestions = allLocalSuggestions + duckDuckGoDomainSuggestions
 
-        let maximumOfNavigationalSuggestions = min(
-            Self.maximumNumberOfSuggestions - Self.minimumNumberInSuggestionGroup,
-            query.count + 1)
         let expandedSuggestions = deduplicateHistoryRecords(navigationalSuggestions)
 
-        let dedupedNavigationalSuggestions = Array(dedupLocalSuggestions(expandedSuggestions).prefix(maximumOfNavigationalSuggestions))
+        let dedupedNavigationalSuggestions = dedupLocalSuggestions(expandedSuggestions)
 
         // Split the Top Hits and the History and Bookmarks section
         let topHitsIndices = topHitsIndices(in: dedupedNavigationalSuggestions)
         let topHits = topHitsIndices.map { dedupedNavigationalSuggestions[$0] }
 
-        var localSuggestions = dedupedNavigationalSuggestions.enumerated().compactMap { (idx, suggestion) -> Suggestion? in
-            guard !topHitsIndices.contains(idx) else { return nil }
+        let maximumOfNavigationalSuggestions = min(
+            Self.maximumNumberOfSuggestions - Self.minimumNumberInSuggestionGroup,
+            query.count + 1)
+        var localSuggestions = [Suggestion]()
+        localSuggestions.reserveCapacity(max(min(dedupedNavigationalSuggestions.count, maximumOfNavigationalSuggestions) - topHits.count, 0))
+        for (idx, suggestion) in dedupedNavigationalSuggestions.enumerated() where !topHitsIndices.contains(idx) {
+            guard topHits.count + localSuggestions.count < maximumOfNavigationalSuggestions else { break }
             switch suggestion {
             case .bookmark, .openTab, .historyEntry, .internalPage:
-                return suggestion
+                localSuggestions.append(suggestion)
             default:
                 return nil
             }

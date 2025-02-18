@@ -385,36 +385,39 @@ public final class VPNSettings {
         defaults.customDnsServers
     }
 
+    public var didBlockRiskyDomainsDefaultToTrue: Bool {
+        defaults.didBlockRiskyDomainsDefaultToTrue
+    }
+
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
-            // Only update if the first time after
-            // risky sites feature flag has been turned on
-            if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
-               !blockRiskyDomains,
-               !defaults.didDefaultToTrue,
-               featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
-                // Set to default with risky domains protection enabled
-                defaults.dnsSettings = .ddg(blockRiskyDomains: true)
-                defaults.didDefaultToTrue = true
-            }
-
+            _ = ensureRiskyDomainsEnabledIfNeeded()
             return defaults.dnsSettings
         }
         set {
-            if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
-               !blockRiskyDomains,
-               !defaults.didDefaultToTrue,
-               featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
-                // Set to default with risky domains protection enabled
-                defaults.dnsSettings = .ddg(blockRiskyDomains: true)
-                defaults.didDefaultToTrue = true
-            } else {
+            if !ensureRiskyDomainsEnabledIfNeeded() {
+                // If dnsSettings is already ddg(true), mark that we've defaulted.
                 if case .ddg(true) = defaults.dnsSettings {
-                    defaults.didDefaultToTrue = true
+                    defaults.didBlockRiskyDomainsDefaultToTrue = true
                 }
                 defaults.dnsSettings = newValue
             }
         }
+    }
+
+    private func ensureRiskyDomainsEnabledIfNeeded() -> Bool {
+        // If current dnsSettings is .ddg with blockRiskyDomains false,
+        // and we haven't yet defaulted, and the risky domains protection feature is on,
+        // then update dnsSettings to .ddg(blockRiskyDomains: true) and mark the flag.
+        if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
+           !blockRiskyDomains,
+           !defaults.didBlockRiskyDomainsDefaultToTrue,
+           featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
+            defaults.dnsSettings = .ddg(blockRiskyDomains: true)
+            defaults.didBlockRiskyDomainsDefaultToTrue = true
+            return true
+        }
+        return false
     }
 
     // MARK: - Show in Menu Bar

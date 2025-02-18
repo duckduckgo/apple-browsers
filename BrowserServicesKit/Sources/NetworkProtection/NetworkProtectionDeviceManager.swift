@@ -275,7 +275,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
         guard let closestIP = allowedIPs.first, let interfaceAddressRange = IPAddressRange(from: closestIP) else {
             throw NetworkProtectionError.couldNotGetInterfaceAddressRange
         }
-        Logger.networkProtection.log("🐩 DNS SETTINGS \(dnsSettings, privacy: .public)")
         let dns: [DNSServer]
         switch dnsSettings {
         case .ddg(let blockRiskyDomains):
@@ -293,6 +292,7 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
         let routingTableResolver = VPNRoutingTableResolver(
             dnsServers: dns,
             excludeLocalNetworks: excludeLocalNetworks)
+        Logger.networkProtection.log("Routing table information:\nL Included Routes: \(routingTableResolver.includedRoutes, privacy: .public)\nL Excluded Routes: \(routingTableResolver.excludedRoutes, privacy: .public)")
 
         let interface = InterfaceConfiguration(privateKey: interfacePrivateKey,
                                                addresses: [interfaceAddressRange],

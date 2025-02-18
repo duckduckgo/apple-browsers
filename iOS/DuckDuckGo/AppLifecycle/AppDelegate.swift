@@ -44,19 +44,6 @@ public extension NSNotification.Name {
                                                queue: .main) { [weak self] _ in
             self?.application(UIApplication.shared, willTerminateWithReason: .unrecoverableState)
         }
-
-        let legacyJSONString = """
-        {
-            "usesCustomDNS": true,
-            "dnsServers": ["1.1.1.1"]
-        }
-        """
-
-        if let legacyData = legacyJSONString.data(using: .utf8) {
-            let defaults = UserDefaults.networkProtectionGroupDefaults
-            defaults.set(legacyData, forKey: "dnsSettingStorageValue")
-            defaults.set(false, forKey: "didDefaultToTrue")
-        }
     }
 
     /// See: `Launching.swift`

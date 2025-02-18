@@ -73,12 +73,12 @@ extension UserDefaults {
         }
     }
 
-    public var didDefaultToTrue: Bool {
+    var didBlockRiskyDomainsDefaultToTrue: Bool {
         get {
-            return bool(forKey: "didDefaultToTrue")
+            return bool(forKey: "didBlockRiskyDomainsDefaultToTrue")
         }
         set {
-            set(newValue, forKey: "didDefaultToTrue")
+            set(newValue, forKey: "didBlockRiskyDomainsDefaultToTrue")
         }
     }
 

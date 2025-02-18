@@ -104,7 +104,6 @@ final class AppDependencyProvider: DependencyProvider {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-
         // MARK: - Configure Subscription
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
@@ -149,10 +148,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               settings: vpnSettings)
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(userDefaults: .networkProtectionGroupDefaults,
                                                                   accountManager: accountManager)
+
+        // MARK: - Configure VPNSettings
         let netPFeatureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags> = NetPFeatureFlaggerMapping { feature in
-
             switch feature {
-
             case .networkProtectionRiskyDomainsProtection:
                 return self.featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
             }

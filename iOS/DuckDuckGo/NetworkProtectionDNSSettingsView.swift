@@ -112,12 +112,11 @@ struct NetworkProtectionDNSSettingsView: View {
 
     func blockRiskyDomainsSection() -> some View {
         NetworkProtectionUIElements.ToggleSectionView(
-            text: "Block risky domains",
-            headerText: "Content Blocking and Filtering",
+            text: UserText.vpnContentBlockingFilteringTitle,
+            headerText: UserText.vpnContentBlockingFilteringHeader,
             footerText: UserText.vpnContentBlockingFilteringFooter
         ) {
             Toggle("", isOn: $viewModel.isBlockRiskyDomainsOn)
         }
     }
-
 }

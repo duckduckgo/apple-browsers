@@ -114,26 +114,26 @@ final class VPNPreferencesModel: ObservableObject {
 
     @Published public var dnsSettings: NetworkProtectionDNSSettings
     @Published public var isCustomDNSSelected: Bool {
-           didSet {
-               if oldValue != isCustomDNSSelected {
-                   updateDNSSettings()
-               }
-           }
-       }
-       @Published public var customDNSServers: String? {
-           didSet {
-               if oldValue != customDNSServers {
-                   updateDNSSettings()
-               }
-           }
-       }
-       @Published var isBlockRiskyDomainsOn: Bool {
-           didSet {
-               if oldValue != isBlockRiskyDomainsOn {
-                   updateDNSSettings()
-               }
-           }
-       }
+        didSet {
+            if oldValue != isCustomDNSSelected {
+                updateDNSSettings()
+            }
+        }
+    }
+    @Published public var customDNSServers: String? {
+        didSet {
+            if oldValue != customDNSServers {
+                updateDNSSettings()
+            }
+        }
+    }
+    @Published var isBlockRiskyDomainsOn: Bool {
+        didSet {
+            if oldValue != isBlockRiskyDomainsOn {
+                updateDNSSettings()
+            }
+        }
+    }
 
     private let vpnXPCClient: VPNControllerXPCClient
     private let settings: VPNSettings

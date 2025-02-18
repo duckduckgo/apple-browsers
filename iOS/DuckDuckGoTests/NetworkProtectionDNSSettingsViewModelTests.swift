@@ -42,7 +42,7 @@ final class NetworkProtectionDNSSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(model.dnsSettings, vpnSettings.dnsSettings)
         XCTAssertFalse(model.isCustomDNSSelected)
         XCTAssertEqual(model.customDNSServers, vpnSettings.customDnsServers.joined(separator: ", "))
-        XCTAssertTrue(model.isBlockRiskyDomainsOn)
+        XCTAssertFalse(model.isBlockRiskyDomainsOn)
     }
 
     func test_WhenUpdateDNSSettingsToCustomThenPropagatesToVpnSettings() {
@@ -185,17 +185,6 @@ final class NetworkProtectionDNSSettingsViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(model.isCustomDNSSelected, !initial, "toggleDNSSettings should invert the value.")
-    }
-
-    func testToggleIsBlockRiskyDomainsOn() {
-        // GIVEN
-        let initial = model.isBlockRiskyDomainsOn
-
-        // WHEN
-        model.toggleIsBlockRiskyDomainsOn()
-
-        // THEN
-        XCTAssertEqual(model.isBlockRiskyDomainsOn, !initial, "toggleIsBlockRiskyDomainsOn should invert the value.")
     }
 
     func testUpdateApplyButtonStateWhenValid() {

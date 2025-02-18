@@ -48,7 +48,7 @@ final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
     }
 
     var didRiskySitesProtectionDefaultToTrue: Bool {
-        UserDefaults.networkProtectionGroupDefaults.didDefaultToTrue
+        settings.didBlockRiskyDomainsDefaultToTrue
     }
 
     init(settings: VPNSettings, controller: TunnelController, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
@@ -73,10 +73,6 @@ final class NetworkProtectionDNSSettingsViewModel: ObservableObject {
 
     func toggleDNSSettings() {
         isCustomDNSSelected.toggle()
-    }
-
-    func toggleIsBlockRiskyDomainsOn() {
-        isBlockRiskyDomainsOn.toggle()
     }
 
     func applyDNSSettings() {

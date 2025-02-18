@@ -211,6 +211,32 @@
                                             <action selector="aiChatButtonAction:" target="o2v-eH-jTI" id="F42-cw-WpC"/>
                                         </connections>
                                     </button>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="29A-Gw-5iD" userLabel="Focus Timer Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-3" width="32" height="38"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="timer" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="bcm-DV-Bnm">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="32" id="Gp2-L1-Gtg"/>
+                                            <constraint firstAttribute="width" constant="32" id="WOw-lr-5oV"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="focusTimerButtonAction:" target="o2v-eH-jTI" id="ANw-dZ-A0e"/>
+                                        </connections>
+                                    </button>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l0L-Gq-8p3" userLabel="Downloads Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Downloads" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="oqg-Yl-ZvV">
@@ -349,8 +375,10 @@
                                     <integer value="1000"/>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
+                                    <integer value="1000"/>
                                 </visibilityPriorities>
                                 <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
@@ -396,6 +424,7 @@
                         <outlet property="buttonsTopConstraint" destination="qeF-30-DZN" id="WfB-NP-nV7"/>
                         <outlet property="daxLogo" destination="8Ha-or-PB2" id="Id4-3e-U4K"/>
                         <outlet property="downloadsButton" destination="l0L-Gq-8p3" id="ujH-qR-rUH"/>
+                        <outlet property="focusTimerButton" destination="29A-Gw-5iD" id="NCg-SR-kwC"/>
                         <outlet property="goBackButton" destination="kky-0N-Cfd" id="RA9-yE-URS"/>
                         <outlet property="goForwardButton" destination="mdE-u0-Ei5" id="7wT-nX-Avr"/>
                         <outlet property="homeButton" destination="s7D-YB-p00" id="sjk-Af-Zl4"/>
@@ -1031,7 +1060,7 @@
         <image name="Arrow-Right-12" width="9" height="9"/>
         <image name="Back" width="16" height="16"/>
         <image name="Bookmark" width="16" height="16"/>
-        <image name="Bookmarks" width="16" height="16"/>
+        <image name="Bookmarks" width="24" height="24"/>
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>
@@ -1051,6 +1080,7 @@
         <image name="Search" width="14" height="14"/>
         <image name="Settings" width="16" height="16"/>
         <image name="ZoomIn" width="16" height="16"/>
+        <image name="timer" catalog="system" width="15" height="15"/>
         <namedColor name="AddressBarBackgroundColor">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>

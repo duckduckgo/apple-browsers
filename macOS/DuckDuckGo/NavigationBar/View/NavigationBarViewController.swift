@@ -56,6 +56,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var menuButtons: NSStackView!
 
     @IBOutlet weak var aiChatButton: MouseOverButton!
+    @IBOutlet weak var focusTimerButton: MouseOverButton!
     @IBOutlet var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarProportionalWidthConstraint: NSLayoutConstraint!
     @IBOutlet var navigationBarButtonsLeadingConstraint: NSLayoutConstraint!
@@ -178,6 +179,7 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionButton.sendAction(on: .leftMouseDown)
         passwordManagementButton.sendAction(on: .leftMouseDown)
         aiChatButton.sendAction(on: .leftMouseDown)
+        focusTimerButton.sendAction(on: .leftMouseDown)
 
         optionsButton.toolTip = UserText.applicationMenuTooltip
         optionsButton.setAccessibilityIdentifier("NavigationBarViewController.optionsButton")
@@ -215,6 +217,7 @@ final class NavigationBarViewController: NSViewController {
         updateBookmarksButton()
         updateHomeButton()
         updateAIChatButton()
+        updateFocusTimerButton()
 
         if view.window?.isPopUpWindow == true {
             goBackButton.isHidden = true
@@ -400,6 +403,8 @@ final class NavigationBarViewController: NSViewController {
                     self.networkProtectionButtonModel.updateVisibility()
                 case .aiChat:
                     self.updateAIChatButton()
+                case .focusTimer:
+                    self.updateFocusTimerButton()
                 }
             } else {
                 assertionFailure("Failed to get changed pinned view type")
@@ -1060,6 +1065,10 @@ final class NavigationBarViewController: NSViewController {
         PixelKit.fire(GeneralPixel.aichatToolbarClicked, includeAppVersionParameter: true)
     }
 
+    @IBAction func focusTimerButtonAction(_ sender: NSButton) {
+        print("Focus timer tapped")
+    }
+
     private func updateAIChatButton() {
         let menu = NSMenu()
         let title = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
@@ -1069,6 +1078,17 @@ final class NavigationBarViewController: NSViewController {
         aiChatButton.toolTip = UserText.aiChat
 
         aiChatButton.isHidden = !(LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut)
+    }
+
+    private func updateFocusTimerButton() {
+        let menu = NSMenu()
+        let title = LocalPinningManager.shared.shortcutTitle(for: .focusTimer)
+        menu.addItem(withTitle: title, action: #selector(toggleFocusTimerPanelPinning(_:)), keyEquivalent: "")
+
+        focusTimerButton.menu = menu
+        focusTimerButton.toolTip = "Focus Timer"
+
+        focusTimerButton.isHidden = !LocalPinningManager.shared.isPinned(.focusTimer)
     }
 }
 
@@ -1103,6 +1123,9 @@ extension NavigationBarViewController: NSMenuDelegate {
             let aiChatTitle = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
             menu.addItem(withTitle: aiChatTitle, action: #selector(toggleAIChatPanelPinning), keyEquivalent: "L")
         }
+
+        let focusTimerTitle = LocalPinningManager.shared.shortcutTitle(for: .focusTimer)
+        menu.addItem(withTitle: focusTimerTitle, action: #selector(toggleFocusTimerPanelPinning), keyEquivalent: "F")
     }
 
     @objc
@@ -1123,6 +1146,11 @@ extension NavigationBarViewController: NSMenuDelegate {
     @objc
     private func toggleAIChatPanelPinning(_ sender: NSMenuItem) {
         LocalPinningManager.shared.togglePinning(for: .aiChat)
+    }
+
+    @objc
+    private func toggleFocusTimerPanelPinning(_ sender: NSMenuItem) {
+        LocalPinningManager.shared.togglePinning(for: .focusTimer)
     }
 
     @objc

@@ -26,6 +26,7 @@ enum PinnableView: String {
     case homeButton
     case networkProtection
     case aiChat
+    case focusTimer
 }
 
 protocol PinningManager {
@@ -115,7 +116,8 @@ final class LocalPinningManager: PinningManager {
             return isPinned(.networkProtection) ? UserText.hideNetworkProtectionShortcut : UserText.showNetworkProtectionShortcut
         case .aiChat:
             return isPinned(.aiChat) ? UserText.hideAIChatShortcut : UserText.showAIChatShortcut
-
+        case .focusTimer:
+            return isPinned(.focusTimer) ? "Hide Focus Timer Shortcut" : "Show Focus Timer Shortcut"
         }
     }
 

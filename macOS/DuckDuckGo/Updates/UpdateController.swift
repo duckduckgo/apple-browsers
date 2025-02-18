@@ -138,7 +138,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         super.init()
 
         try? configureUpdater()
+
+#if !DEBUG
         checkForUpdateRespectingRollout()
+#endif
     }
 
     func checkNewApplicationVersion() {
@@ -182,10 +185,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
+#if DEBUG
+        // Skip checking for updates for DEBUG builds
+        updater?.updateCheckInterval = 0
+        updater?.automaticallyChecksForUpdates = false
+        updater?.automaticallyDownloadsUpdates = false
+#else
         // We don't want SUAutomaticallyUpdate enabled because it interferes with our custom updater UI
         if updater?.automaticallyDownloadsUpdates == true {
             updater?.automaticallyDownloadsUpdates = false
         }
+#endif
 
         updateProcessCancellable = userDriver.updateProgressPublisher
             .assign(to: \.updateProgress, onWeaklyHeld: self)

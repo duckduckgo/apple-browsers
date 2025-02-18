@@ -192,3 +192,15 @@ final class DataImportManagerTests: XCTestCase {
     }
 
 }
+
+private class MockLoginImporter: LoginImporter {
+    var importedLogins: DataImportSummary?
+
+    func importLogins(_ logins: [BrowserServicesKit.ImportedLoginCredential], reporter: SecureVaultReporting, progressCallback: @escaping (Int) throws -> Void) throws -> DataImport.DataTypeSummary {
+        let summary = DataImport.DataTypeSummary(successful: logins.count, duplicate: 0, failed: 0)
+
+        self.importedLogins = [.passwords: .success(summary)]
+        return summary
+    }
+
+}

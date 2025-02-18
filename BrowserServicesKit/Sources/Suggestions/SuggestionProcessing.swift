@@ -109,17 +109,25 @@ final class SuggestionProcessing {
         let dedupedNavigationalSuggestions = Array(dedupLocalSuggestions(expandedSuggestions).prefix(maximumOfNavigationalSuggestions))
 
         // Split the Top Hits and the History and Bookmarks section
-        let topHits = topHits(from: dedupedNavigationalSuggestions)
-        let localSuggestions = Array(dedupedNavigationalSuggestions.dropFirst(topHits.count).filter { suggestion in
+        let topHitsIndices = topHitsIndices(in: dedupedNavigationalSuggestions)
+        let topHits = topHitsIndices.map { dedupedNavigationalSuggestions[$0] }
+
+        var localSuggestions = dedupedNavigationalSuggestions.enumerated().compactMap { (idx, suggestion) -> Suggestion? in
+            guard !topHitsIndices.contains(idx) else { return nil }
             switch suggestion {
             case .bookmark, .openTab, .historyEntry, .internalPage:
-                return true
+                return suggestion
             default:
-                return false
+                return nil
             }
-        })
+        }
 
-        let dedupedDuckDuckGoSuggestions = removeDuplicateWebsiteSuggestions(in: topHits, from: duckDuckGoSuggestions)
+        var dedupedDuckDuckGoSuggestions = removeDuplicateWebsiteSuggestions(in: topHits, from: duckDuckGoSuggestions)
+        if topHits.isEmpty,
+           let firstOpenTabSuggestionIdx = localSuggestions.firstIndex(where: { $0.isOpenTab }) {
+            let firstOpenTabSuggestion = localSuggestions.remove(at: firstOpenTabSuggestionIdx)
+            dedupedDuckDuckGoSuggestions.insert(firstOpenTabSuggestion, at: 1)
+        }
 
         return makeResult(topHits: topHits,
                           duckduckgoSuggestions: dedupedDuckDuckGoSuggestions,
@@ -298,20 +306,22 @@ final class SuggestionProcessing {
     // MARK: - Top Hits
 
     /// Take the top two items from the suggestions, but only up to the first suggestion that is not allowed in top hits
-    private func topHits(from suggestions: [Suggestion]) -> [Suggestion] {
-        var topHits = [Suggestion]()
-
-        for suggestion in suggestions {
-            guard topHits.count < Self.maximumNumberOfTopHits else { break }
-
+    private func topHitsIndices(in suggestions: [Suggestion]) -> IndexSet {
+        var result = IndexSet()
+        for (idx, suggestion) in suggestions.enumerated() {
+            guard result.count < Self.maximumNumberOfTopHits else { break }
             if suggestion.allowedInTopHits {
-                topHits.append(suggestion)
+                result.insert(idx)
+            } else if suggestion.isOpenTab {
+                // switch-to-tab is ordered on top but shouldn‘t get to the Top Hits
+                // so continue looking for Top Hits if switch-to-tab suggestion is met
+                continue
             } else {
                 break
             }
         }
 
-        return topHits
+        return result
     }
 
     // MARK: - Cutting off and making the result

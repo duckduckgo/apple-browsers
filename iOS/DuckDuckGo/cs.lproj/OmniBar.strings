@@ -1,6 +1,9 @@
 /* Class = "UIButton"; accessibilityLabel = "Settings"; ObjectID = "1rB-5w-de3"; */
 "1rB-5w-de3.accessibilityLabel" = "Nastavení";
 
+/* Class = "UIButton"; accessibilityLabel = "Cancel"; ObjectID = "5FH-Ge-Z9a"; */
+"5FH-Ge-Z9a.accessibilityLabel" = "Zrušit";
+
 /* Class = "UIButton"; accessibilityLabel = "Browse forward"; ObjectID = "aXg-p3-oeq"; */
 "aXg-p3-oeq.accessibilityLabel" = "Procházet dopředu";
 

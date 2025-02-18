@@ -88,7 +88,6 @@ public final class VPNSettings {
     }
 
     private let defaults: UserDefaults
-    public var featureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags>?
 
     private(set) public lazy var changePublisher: AnyPublisher<Change, Never> = {
 
@@ -386,38 +385,25 @@ public final class VPNSettings {
     }
 
     public var didBlockRiskyDomainsDefaultToTrue: Bool {
-        defaults.didBlockRiskyDomainsDefaultToTrue
+        get {
+            defaults.didBlockRiskyDomainsDefaultToTrue
+        }
+        set {
+            defaults.didBlockRiskyDomainsDefaultToTrue = newValue
+        }
     }
 
     public var dnsSettings: NetworkProtectionDNSSettings {
         get {
-            _ = ensureRiskyDomainsEnabledIfNeeded()
             return defaults.dnsSettings
         }
         set {
-            if !ensureRiskyDomainsEnabledIfNeeded() {
-                // If dnsSettings is already ddg(true), mark that we've defaulted.
-                if case .ddg(true) = defaults.dnsSettings {
-                    defaults.didBlockRiskyDomainsDefaultToTrue = true
-                }
-                defaults.dnsSettings = newValue
+            // If dnsSettings is already ddg(true), mark that we've defaulted.
+            if case .ddg(true) = defaults.dnsSettings {
+                didBlockRiskyDomainsDefaultToTrue = true
             }
+            defaults.dnsSettings = newValue
         }
-    }
-
-    private func ensureRiskyDomainsEnabledIfNeeded() -> Bool {
-        // If current dnsSettings is .ddg with blockRiskyDomains false,
-        // and we haven't yet defaulted, and the risky domains protection feature is on,
-        // then update dnsSettings to .ddg(blockRiskyDomains: true) and mark the flag.
-        if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
-           !blockRiskyDomains,
-           !defaults.didBlockRiskyDomainsDefaultToTrue,
-           featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
-            defaults.dnsSettings = .ddg(blockRiskyDomains: true)
-            defaults.didBlockRiskyDomainsDefaultToTrue = true
-            return true
-        }
-        return false
     }
 
     // MARK: - Show in Menu Bar
@@ -466,23 +452,5 @@ public final class VPNSettings {
         set {
             defaults.networkProtectionSettingDisableRekeying = newValue
         }
-    }
-}
-
-public enum NetworkProtectionFlags {
-    case networkProtectionRiskyDomainsProtection
-}
-
-open class NetPFeatureFlaggerMapping<Feature> {
-    public typealias Mapping = (_ feature: Feature) -> Bool
-
-    private let isFeatureEnabledMapping: Mapping
-
-    public init(mapping: @escaping Mapping) {
-        isFeatureEnabledMapping = mapping
-    }
-
-    public func isFeatureOn(_ feature: Feature) -> Bool {
-        return isFeatureEnabledMapping(feature)
     }
 }

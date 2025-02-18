@@ -157,17 +157,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         self.tunnelSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         self.configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configurationStore)
         super.init()
-        setUpVPNSettings()
-    }
-
-    private func setUpVPNSettings() {
-        let netPFeatureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags> = NetPFeatureFlaggerMapping { feature in
-            switch feature {
-            case .networkProtectionRiskyDomainsProtection:
-                return self.featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-            }
-        }
-        tunnelSettings.featureFlagger = netPFeatureFlagger
     }
 
     private var cancellables = Set<AnyCancellable>()

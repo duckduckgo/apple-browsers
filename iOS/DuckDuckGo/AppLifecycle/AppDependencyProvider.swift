@@ -148,15 +148,6 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               settings: vpnSettings)
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(userDefaults: .networkProtectionGroupDefaults,
                                                                   accountManager: accountManager)
-
-        // MARK: - Configure VPNSettings
-        let netPFeatureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags> = NetPFeatureFlaggerMapping { feature in
-            switch feature {
-            case .networkProtectionRiskyDomainsProtection:
-                return self.featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-            }
-        }
-        vpnSettings.featureFlagger = netPFeatureFlagger
     }
 
 }

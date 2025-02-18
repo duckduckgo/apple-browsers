@@ -148,7 +148,7 @@ extension Preferences {
                         Picker(selection: $model.isCustomDNSSelected, label: EmptyView()) {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(UserText.vpnDnsServerPickerDefaultTitle)
-                                if model.isRiskySitesProtectionFeatureEnabled {
+                                if model.isRiskySitesProtectionFeatureEnabled && model.didRiskySitesProtectionDefaultToTrue {
                                     NativeCheckboxToggle(isOn: $model.isBlockRiskyDomainsOn, label: UserText.vpnDnsServerBlockRiskyDomainsToggleTitle)
                                         .disabled(model.isCustomDNSSelected)
                                     VStack(alignment: .leading, spacing: 0, content: {

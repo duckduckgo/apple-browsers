@@ -385,15 +385,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didFinishLaunching = true
         }
 
-        // Set up VPN settings
-        let netPFeatureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags> = NetPFeatureFlaggerMapping { feature in
-            switch feature {
-            case .networkProtectionRiskyDomainsProtection:
-                return self.featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
-            }
-        }
-        vpnSettings.featureFlagger = netPFeatureFlagger
-
         HistoryCoordinator.shared.loadHistory {
             HistoryCoordinator.shared.migrateModelV5toV6IfNeeded()
         }

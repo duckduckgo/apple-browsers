@@ -37,6 +37,7 @@ final class VPNAppEventsHandler {
         }
 
         let restartTunnel = {
+            self.tunnelController.ensureRiskyDomainsEnabledIfNeeded()
             Logger.networking.info("App updated from \(versionStore.lastAgentVersionRun ?? "null", privacy: .public) to \(currentVersion, privacy: .public): updating login items")
             self.restartTunnel()
         }

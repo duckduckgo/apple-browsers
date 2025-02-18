@@ -135,6 +135,10 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
+    var didRiskySitesProtectionDefaultToTrue: Bool {
+        settings.didBlockRiskyDomainsDefaultToTrue
+    }
+
     private let vpnXPCClient: VPNControllerXPCClient
     private let settings: VPNSettings
     private let proxySettings: TransparentProxySettings

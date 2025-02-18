@@ -720,32 +720,6 @@
                                             <action selector="bookmarkButtonAction:" target="mcr-nj-GmC" id="zSj-zA-HAq"/>
                                         </connections>
                                     </button>
-                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="Q47-MX-M0y" userLabel="AIChat Button" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="QUm-sf-OqP">
-                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                            <font key="font" metaFont="system"/>
-                                        </buttonCell>
-                                        <color key="contentTintColor" name="ButtonColor"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="32" id="cY4-Ty-CKV"/>
-                                            <constraint firstAttribute="height" constant="32" id="vDc-PE-FcJ"/>
-                                        </constraints>
-                                        <userDefinedRuntimeAttributes>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
-                                                <color key="value" name="ButtonMouseOverColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
-                                                <color key="value" name="ButtonMouseDownColor"/>
-                                            </userDefinedRuntimeAttribute>
-                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                                <integer key="value" value="7"/>
-                                            </userDefinedRuntimeAttribute>
-                                        </userDefinedRuntimeAttributes>
-                                        <connections>
-                                            <action selector="aiChatButtonAction:" target="mcr-nj-GmC" id="oUK-X7-W1B"/>
-                                        </connections>
-                                    </button>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="6" width="26" height="26"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
@@ -770,6 +744,32 @@
                                         </userDefinedRuntimeAttributes>
                                         <connections>
                                             <action selector="clearButtonAction:" target="mcr-nj-GmC" id="m9h-NY-Ujx"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="Q47-MX-M0y" userLabel="AIChat Button" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="QUm-sf-OqP">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="cY4-Ty-CKV"/>
+                                            <constraint firstAttribute="height" constant="32" id="vDc-PE-FcJ"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <integer key="value" value="7"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="aiChatButtonAction:" target="mcr-nj-GmC" id="oUK-X7-W1B"/>
                                         </connections>
                                     </button>
                                 </subviews>

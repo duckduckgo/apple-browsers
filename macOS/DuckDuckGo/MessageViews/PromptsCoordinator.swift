@@ -16,10 +16,37 @@
 //  limitations under the License.
 //
 
+import SwiftUI
+import SwiftUIExtensions
+
 public extension Notification.Name {
     static let showPopoverPromptForDefaultBrowser = Notification.Name("com.duckduckgo.app.showPopoverPromptForDefaultBrowser")
     static let showPopoverPromptForDefaultBrowserAddressBar = Notification.Name("com.duckduckgo.app.showPopoverPromptForDefaultBrowserAddressBar")
     static let showBannerPromptForDefaultBrowser = Notification.Name("com.duckduckgo.app.showBannerPromptForDefaultBrowser")
+    static let showDialogPromptForDefaultBrowser = Notification.Name("com.duckduckgo.app.showDialogPromptForDefaultBrowser")
+
+}
+
+struct PromptModalView: ModalView {
+    @ObservedObject public var viewModel: PopoverMessageViewModel
+    @Environment(\.dismiss) private var dismiss
+    var onClick: (() -> Void)?
+    var onClose: (() -> Void)?
+
+    var body: some View {
+        PopoverMessageView(
+            viewModel: viewModel,
+            onClick: {
+                dismiss.callAsFunction()
+                onClose?()
+            },
+            onClose: {
+                dismiss.callAsFunction()
+                onClose?()
+            }
+        )
+        .frame(height: 320)
+    }
 }
 
 enum PromptStyle {
@@ -196,6 +223,31 @@ final class PromptsCoordinator {
                                            buttonText: style.primaryButtonTitle,
                                            buttonAction: { self.onSetAsDefaultBrowser() },
                                            closeAction: { closeAction() })
+    }
+
+    @MainActor func showModal(in window: NSWindow) {
+        let isDefaultBrowser = defaultBrowserProvider.isDefault
+        let isAddedToDock = dockCustomization.isAddedToDock
+        guard let content = PromptContent.getStyle(isSparkle: isSparkleBuild, isDefaultBrowser: isDefaultBrowser, isOnDock: isAddedToDock) else {
+            return
+        }
+
+        let style = PromptStyle.popover(content)
+
+        let viewModel = PopoverMessageViewModel(title: style.title,
+                                                message: style.message,
+                                                image: style.icon,
+                                                buttonText: style.primaryButtonTitle,
+                                                buttonAction: onSetAsDefaultBrowser,
+                                                secondaryButtonText: style.secondaryButtonTitle,
+                                                secondaryButtonAction: { print("PromptModalView: Secondary button action") },
+                                                shouldShowCloseButton: false,
+                                                shouldPresentMultiline: true,
+                                                alignment: .vertical)
+
+        let modal = PromptModalView(viewModel: viewModel, onClick: onSetAsDefaultBrowser)
+
+        modal.show(in: window)
     }
 
     // MARK: - Private

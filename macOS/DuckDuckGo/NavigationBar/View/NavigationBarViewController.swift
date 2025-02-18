@@ -455,6 +455,12 @@ final class NavigationBarViewController: NSViewController {
                                                name: .showPopoverPromptForDefaultBrowserAddressBar,
                                                object: nil)
 
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(showCenteredDialog(_:)),
+                                               name: .showDialogPromptForDefaultBrowser,
+                                               object: nil)
+
         UserDefaults.netP
             .publisher(for: \.networkProtectionShouldShowVPNUninstalledMessage)
             .receive(on: DispatchQueue.main)
@@ -590,6 +596,13 @@ final class NavigationBarViewController: NSViewController {
         guard let popover = promptsCoordinator.getPopover() else { return }
 
         popover.show(onParent: self, relativeTo: self.addressBarViewController!.view)
+    }
+
+    @objc private func showCenteredDialog(_ sender: Notification) {
+        let promptsCoordinator = PromptsCoordinator()
+        guard let window = view.window else { return }
+
+        promptsCoordinator.showModal(in: window)
     }
 
     private var isOnboardingFinished: Bool {

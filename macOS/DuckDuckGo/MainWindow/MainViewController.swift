@@ -261,12 +261,13 @@ final class MainViewController: NSViewController {
     private func showMessageBannerIfNeeded() {
         if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
 
-        if promptsCoordinator.shouldShowPrompt {
+        // TODO: Remove check for review build
+//        if promptsCoordinator.shouldShowPrompt {
             guard let banner = promptsCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
 
             addAndLayoutChild(banner, into: mainView.bannerContainerView)
             mainView.bannerHeightConstraint.animator().constant = 48
-        }
+//        }
     }
 
     private func hideBanner() {

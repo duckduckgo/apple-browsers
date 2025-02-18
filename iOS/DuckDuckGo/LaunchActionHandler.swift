@@ -36,6 +36,13 @@ enum LaunchAction {
         }
     }
 
+    var isRegularLaunch: Bool {
+        if case .showKeyboard = self {
+            return true
+        }
+        return false
+    }
+
 }
 
 @MainActor

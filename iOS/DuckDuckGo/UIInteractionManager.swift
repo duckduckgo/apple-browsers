@@ -40,10 +40,16 @@ final class UIInteractionManager {
         Task { @MainActor in
             await withTaskGroup(of: Void.self) { group in
                 group.addTask { await self.authenticate() }
-                group.addTask { await self.clearData(onDataCleared: onWebViewReadyForInteractions) }
+                group.addTask { await self.clearData(launchAction: launchAction,
+                                                     onDataCleared: onWebViewReadyForInteractions) }
 
                 await group.waitForAll()
-                launchActionHandler.handleLaunchAction(launchAction)
+
+                // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
+                if launchAction.isRegularLaunch {
+                    self.launchActionHandler.handleLaunchAction(launchAction)
+                }
+
                 onAppReadyForInteractions()
             }
         }
@@ -53,8 +59,13 @@ final class UIInteractionManager {
         await authenticationService.authenticate()
     }
 
-    private func clearData(onDataCleared: () -> Void) async {
+    private func clearData(launchAction: LaunchAction, onDataCleared: () -> Void) async {
         await autoClearService.waitForDataCleared()
+
+        // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
+        if !launchAction.isRegularLaunch {
+            await self.launchActionHandler.handleLaunchAction(launchAction)
+        }
         onDataCleared()
     }
 

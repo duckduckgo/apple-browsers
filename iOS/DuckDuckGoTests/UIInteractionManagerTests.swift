@@ -70,8 +70,23 @@ final class UIInteractionManagerTests {
         launchActionHandler: mockLaunchActionHandler
     )
 
-    @Test("Start method calls onWebViewReadyForInteractions")
-    func startCallsOnWebViewReadyForInteractions() async {
+    @Test("Start method calls onWebViewReadyForInteractions and opens URL")
+    func startCallsOnWebViewReadyForInteractionsAndOpensURL() async {
+        await withCheckedContinuation { continuation in
+            uiInteractionManager.start(
+                launchAction: .openURL(URL("www.duckduckgo.com")!),
+                onWebViewReadyForInteractions: {
+                    #expect(self.mockAutoClearService.waitForDataClearedCalled)
+                    #expect(self.mockLaunchActionHandler.handleLaunchActionCalled)
+                    continuation.resume()
+                },
+                onAppReadyForInteractions: { }
+            )
+        }
+    }
+
+    @Test("Start method calls onWebViewReadyForInteractions and does not show keyboard unless authentication happened")
+    func startCallsOnWebViewReadyForInteractionsAndDoesNotShowKeyboard() async {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
                 launchAction: .showKeyboard(nil),
@@ -90,7 +105,9 @@ final class UIInteractionManagerTests {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
                 launchAction: .showKeyboard(nil),
-                onWebViewReadyForInteractions: { },
+                onWebViewReadyForInteractions: {
+                    #expect(!self.mockLaunchActionHandler.handleLaunchActionCalled)
+                },
                 onAppReadyForInteractions: {
                     #expect(self.mockAutoClearService.waitForDataClearedCalled)
                     #expect(self.mockAuthService.authenticateCalled)

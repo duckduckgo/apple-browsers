@@ -842,7 +842,6 @@
 		9F4CC5272C4E230C006A96EB /* PrivacyIconContextualOnboardingAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F4CC5262C4E230C006A96EB /* PrivacyIconContextualOnboardingAnimator.swift */; };
 		9F5179D82D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5179D72D54598800E40B40 /* DaxDialogsOnboardingMigrator.swift */; };
 		9F5179DA2D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */; };
-		9F5179DB2D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5179D92D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift */; };
 		9F5BEA7C2D4382430045E484 /* MaliciousSiteProtectionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BEA762D4382430045E484 /* MaliciousSiteProtectionMocks.swift */; };
 		9F5BEA7D2D4382430045E484 /* TimeTraveller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BEA772D4382430045E484 /* TimeTraveller.swift */; };
 		9F5BEA7E2D4382430045E484 /* MaliciousSiteProtectionDatasetsFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F5BEA792D4382430045E484 /* MaliciousSiteProtectionDatasetsFetcherTests.swift */; };
@@ -9230,7 +9229,6 @@
 			files = (
 				85F21DB0210F5E32002631A6 /* AtbIntegrationTests.swift in Sources */,
 				8551912724746EDC0010FDD0 /* SnapshotHelper.swift in Sources */,
-				9F5179DB2D545D4300E40B40 /* DaxDialogsOnboardingMigratorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -99,6 +99,7 @@ struct Launching: LaunchingHandling {
     }
 
     private func startServices() {
+        services.configurationService.start()
         services.crashCollectionService.start()
         services.syncService.start()
         services.remoteMessagingService.start()

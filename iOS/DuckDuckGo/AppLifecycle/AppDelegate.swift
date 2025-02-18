@@ -94,9 +94,7 @@ public extension NSNotification.Name {
     }
 
     func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-
         Logger.lifecycle.debug(#function)
-
         AppConfigurationFetch().start(isBackgroundFetch: true) { result in
             switch result {
             case .noData:

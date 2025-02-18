@@ -27,12 +27,16 @@ protocol AuthenticationServiceProtocol {
 
 final class AuthenticationService {
 
-    private let authenticator = Authenticator()
-    private let overlayWindowManager: OverlayWindowManager
-    private let privacyStore: PrivacyStore = PrivacyUserDefaults()
+    private let authenticator: Authenticating
+    private let overlayWindowManager: OverlayWindowManaging
+    private let privacyStore: PrivacyStore
 
-    init(overlayWindowManager: OverlayWindowManager) {
+    init(authenticator: Authenticating = Authenticator(),
+         overlayWindowManager: OverlayWindowManaging,
+         privacyStore: PrivacyStore = PrivacyUserDefaults()) {
+        self.authenticator = authenticator
         self.overlayWindowManager = overlayWindowManager
+        self.privacyStore = privacyStore
     }
 
     // MARK: - Suspend
@@ -52,8 +56,8 @@ extension AuthenticationService: AuthenticationServiceProtocol {
         guard shouldAuthenticate else {
             return
         }
+        overlayWindowManager.removeOverlay()
         let authenticationViewController = showAuthenticationScreen()
-        authenticationViewController.delegate = self
         await authenticate(with: authenticationViewController)
     }
 
@@ -73,8 +77,10 @@ extension AuthenticationService: AuthenticationServiceProtocol {
     }
 
     private func showAuthenticationScreen() -> AuthenticationViewController {
-        overlayWindowManager.removeOverlay()
-        return overlayWindowManager.displayAuthenticationWindow()
+        let authenticationViewController = AuthenticationViewController.loadFromStoryboard()
+        authenticationViewController.delegate = self
+        overlayWindowManager.displayOverlay(with: authenticationViewController)
+        return authenticationViewController
     }
 
 }

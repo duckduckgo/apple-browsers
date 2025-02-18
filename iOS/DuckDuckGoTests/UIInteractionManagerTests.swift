@@ -70,7 +70,7 @@ final class UIInteractionManagerTests {
     )
 
     @Test("Start method calls onWebViewReadyForInteractions")
-    func startMethodFlowCallsOnWebViewReadyForInteractions() async {
+    func startCallsOnWebViewReadyForInteractions() async {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
                 launchAction: .showKeyboard(nil),
@@ -85,7 +85,7 @@ final class UIInteractionManagerTests {
     }
 
     @Test("Start method calls onAppReadyForInteractions")
-    func startMethodFlowCallsOnAppReadyForInteractions() async {
+    func startCallsOnAppReadyForInteractions() async {
         await withCheckedContinuation { continuation in
             uiInteractionManager.start(
                 launchAction: .showKeyboard(nil),

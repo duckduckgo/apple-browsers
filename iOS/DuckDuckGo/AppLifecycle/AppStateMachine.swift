@@ -216,7 +216,7 @@ final class AppStateMachine {
             background.didReturn()
         case .willEnterForeground:
             background.willLeave()
-        case .willTerminate(let terminationReason):
+        case .willTerminate:
             let terminating = background.makeTerminatingState()
             currentState = .terminating(terminating)
         default:

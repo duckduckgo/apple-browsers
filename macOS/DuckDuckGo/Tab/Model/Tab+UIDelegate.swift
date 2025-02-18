@@ -244,6 +244,25 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
         }
     }
 
+    @objc(_webView:requestStorageAccessPanelForDomain:underCurrentDomain:completionHandler:)
+    @available(macOS 10.14, iOS 12.0, *)
+    func webView(_ webView: WKWebView,
+                 requestStorageAccessPanelForDomain requestingDomain: String,
+                 underCurrentDomain currentDomain: String,
+                 completionHandler: @escaping (Bool) -> Void) {
+        completionHandler(true)
+    }
+
+    @objc(_webView:requestStorageAccessPanelForDomain:underCurrentDomain:forQuirkDomains:completionHandler:)
+    @available(macOS 15.0, iOS 18.0, visionOS 2.0, *)
+    func webView(_ webView: WKWebView,
+                 requestStorageAccessPanelForDomain requestingDomain: String,
+                 underCurrentDomain currentDomain: String,
+                 forQuirkDomains quirkDomains: [String: [String]],
+                 completionHandler: @escaping (Bool) -> Void) {
+        completionHandler(true)
+    }
+
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {
         let dialog = UserDialogType.openPanel(.init(parameters) { result in
             completionHandler(try? result.get())

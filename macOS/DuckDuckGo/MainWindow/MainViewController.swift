@@ -160,7 +160,7 @@ final class MainViewController: NSViewController {
         subscribeToBookmarkBarVisibility()
         subscribeToFirstResponder()
         mainView.findInPageContainerView.applyDropShadow()
-        showMessageBannerIfNeeded()
+        // showMessageBannerIfNeeded() TODO: This should be commented for real build so new windows have the banner if it is being show.
 
         view.registerForDraggedTypes([.URL, .fileURL])
     }
@@ -261,13 +261,12 @@ final class MainViewController: NSViewController {
     private func showMessageBannerIfNeeded() {
         if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
 
-        // TODO: Remove check for review build
-//        if promptsCoordinator.shouldShowPrompt {
+        if promptsCoordinator.shouldShowPrompt {
             guard let banner = promptsCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
 
             addAndLayoutChild(banner, into: mainView.bannerContainerView)
             mainView.bannerHeightConstraint.animator().constant = 48
-//        }
+        }
     }
 
     private func hideBanner() {

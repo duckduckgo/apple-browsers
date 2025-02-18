@@ -92,7 +92,9 @@ struct Launching: LaunchingHandling {
         services.syncService.presenter = mainCoordinator.controller
 
         startServices()
-        configuration.finalize(with: services.reportingService)
+        configuration.finalize(with: services.reportingService,
+                               autoClearService: services.autoClearService,
+                               mainViewController: mainCoordinator.controller)
         setupWindow()
     }
 

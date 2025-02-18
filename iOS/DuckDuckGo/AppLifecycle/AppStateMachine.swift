@@ -170,6 +170,7 @@ final class AppStateMachine {
             let background = launching.makeBackgroundState()
             background.onTransition()
             background.didReturn()
+            actionToHandle = nil
             currentState = .background(background)
         case .willEnterForeground:
             // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
@@ -214,6 +215,7 @@ final class AppStateMachine {
             currentState = .foreground(foreground)
         case .didEnterBackground:
             background.didReturn()
+            actionToHandle = nil
         case .willEnterForeground:
             background.willLeave()
         case .willTerminate:

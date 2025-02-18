@@ -21,66 +21,57 @@ import UIKit
 
 protocol AutoClearServiceProtocol {
 
+    var autoClearTask: Task<Void, Never>? { get }
     func waitForDataCleared() async
 
 }
 
-final class AutoClearService {
+final class AutoClearService: AutoClearServiceProtocol {
 
-    private let autoClear: AutoClear
-    private let overlayWindowManager: OverlayWindowManager
+    private let autoClear: AutoClearing
+    private let overlayWindowManager: OverlayWindowManaging
     private let application: UIApplication
 
-    private var autoClearTask: Task<Void, Never>?
+    private(set) var autoClearTask: Task<Void, Never>?
 
     var isClearingEnabled: Bool {
         autoClear.isClearingEnabled
     }
 
-    init(mainViewController: MainViewController,
-         overlayWindowManager: OverlayWindowManager,
+    init(autoClear: AutoClearing,
+         overlayWindowManager: OverlayWindowManaging,
          application: UIApplication = UIApplication.shared) {
-        autoClear = AutoClear(worker: mainViewController)
+        self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
         self.application = application
-
-        removeLeftoverStatesIfAutoClearDisabled()
-
-        func removeLeftoverStatesIfAutoClearDisabled() {
-            if !autoClear.isClearingEnabled {
-                mainViewController.tabManager.removeLeftoverInteractionStates()
-            }
-        }
     }
 
-    // - MARK: Start
+    // MARK: - Start
 
     func start() {
         autoClearTask = Task {
-            await autoClear.clearDataIfEnabled(applicationState: .init(with: application.applicationState))
+            await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
         }
     }
 
-    // - MARK: Resume
+    // MARK: - Resume
 
     func resume() {
         autoClearTask = Task {
-            await autoClear.clearDataIfEnabledAndTimeExpired(applicationState: .active)
+            await autoClear.clearDataIfEnabledAndTimeExpired(baseTimeInterval: Date().timeIntervalSince1970, applicationState: .active)
         }
     }
 
-    // - MARK: Suspend
+    // MARK: - Suspend
 
     func suspend() {
         if autoClear.isClearingEnabled {
             overlayWindowManager.displayBlankSnapshotWindow()
         }
-        autoClear.startClearingTimer()
+        autoClear.startClearingTimer(Date().timeIntervalSince1970)
     }
 
-}
-
-extension AutoClearService: AutoClearServiceProtocol {
+    // MARK: -
 
     @MainActor
     func waitForDataCleared() async {

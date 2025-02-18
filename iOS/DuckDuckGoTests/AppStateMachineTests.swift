@@ -143,7 +143,7 @@ final class LaunchingTests {
         }
     }
 
-    @Test("handle(_:) if current state is Background should pass that action to Foreground and be consumed afterwards")
+    @Test("handle(_:) if current state is Launching should pass that action to Foreground and actionToHandle should be consumed afterwards")
     func handleAppAction() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
@@ -160,7 +160,7 @@ final class LaunchingTests {
         }
     }
 
-    @Test("didEnterBackground should transition from Launching to Background and call onTransition and didReturn")
+    @Test("didEnterBackground should transition from Launching to Background and call onTransition and didReturn ")
     func transitionFromLaunchingToBackground() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.didEnterBackground)
@@ -172,6 +172,15 @@ final class LaunchingTests {
         } else {
             Issue.record("Incorrect state")
         }
+    }
+
+    @Test("handle(_:) if current state is Launching and transitions to Background then actionToHandle should be consumed afterwards")
+    func handleAppActionWhenTransitionsFromLaunchingToBackground() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.openURL(URL("www.duckduckgo.com")!))
+        #expect(stateMachine.actionToHandle != nil)
+        stateMachine.handle(.didEnterBackground)
+        #expect(stateMachine.actionToHandle == nil)
     }
 
     @Test("willTerminate(with:) should transition from Launching to Terminating")

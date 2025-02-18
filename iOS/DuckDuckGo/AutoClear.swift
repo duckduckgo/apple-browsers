@@ -30,9 +30,20 @@ protocol AutoClearWorker {
 
     func willStartClearing(_: AutoClear)
     func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool)
+    
 }
 
-class AutoClear {
+protocol AutoClearing {
+
+    var isClearingEnabled: Bool { get }
+    func clearDataIfEnabled(launching: Bool, applicationState: DataStoreWarmup.ApplicationState) async
+    func clearDataIfEnabledAndTimeExpired(baseTimeInterval: TimeInterval,
+                                          applicationState: DataStoreWarmup.ApplicationState) async
+    func startClearingTimer(_ time: TimeInterval)
+
+}
+
+final class AutoClear: AutoClearing {
 
     private let worker: AutoClearWorker
     private var timestamp: TimeInterval?

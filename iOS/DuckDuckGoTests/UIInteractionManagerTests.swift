@@ -34,6 +34,7 @@ final class MockAuthenticationService: AuthenticationServiceProtocol {
 }
 
 final class MockAutoClearService: AutoClearServiceProtocol {
+    var autoClearTask: Task<Void, Never>?
 
     var waitForDataClearedCalled = false
     var clearDataCallback: (() async -> Void)?

@@ -70,7 +70,7 @@ struct AppServicesBuilder {
             autofillService: autofillService,
             remoteMessagingService: remoteMessagingService,
             configurationService: configurationService,
-            autoClearService: AutoClearService(mainViewController: mainCoordinator.controller, overlayWindowManager: overlayWindowManager),
+            autoClearService: AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager),
             reportingService: reportingService,
             subscriptionService: subscriptionService,
             crashCollectionService: crashCollectionService,

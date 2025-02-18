@@ -22,33 +22,6 @@ import UIKit
 import Testing
 @testable import DuckDuckGo
 
-final class MockOverlayWindowManager: OverlayWindowManaging {
-
-    var displayBlankSnapshotWindowCalled = false
-    var displayOverlayCalled = false
-    var removeOverlayCalled = false
-    var removeNonAuthenticationOverlayCalled = false
-
-    var lastDisplayedViewController: UIViewController?
-
-    func displayBlankSnapshotWindow() {
-        displayBlankSnapshotWindowCalled = true
-    }
-
-    func displayOverlay(with viewController: UIViewController) {
-        displayOverlayCalled = true
-        lastDisplayedViewController = viewController
-    }
-
-    func removeOverlay() {
-        removeOverlayCalled = true
-    }
-
-    func removeNonAuthenticationOverlay() {
-        removeNonAuthenticationOverlayCalled = true
-    }
-}
-
 final class MockPrivacyStore: PrivacyStore {
 
     var authenticationEnabled: Bool = true

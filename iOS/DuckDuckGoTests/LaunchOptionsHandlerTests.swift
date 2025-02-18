@@ -37,9 +37,9 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
     // MARK: - isOnboardingCompleted
 
-    func testShouldReturnTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
+    func testShouldReturnTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
-        let environment = ["ONBOARDING": "true"]
+        let environment = ["ONBOARDING": "false"]
         let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
 
         // WHEN
@@ -49,9 +49,9 @@ final class LaunchOptionsHandlerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testShouldReturnFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
+    func testShouldReturnFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
-        let environment = ["ONBOARDING": "false"]
+        let environment = ["ONBOARDING": "true"]
         let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
 
         // WHEN

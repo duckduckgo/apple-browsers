@@ -82,14 +82,18 @@ final class DaxDialog: XCTestCase {
     }
     
     func testWhenLaunchOptionsHandlerSkipsOnboardingThenDialogsAreNotEnabled() {
+        let settings = MockDaxDialogsSettings()
+        settings.isDismissed = false
         let launchOptionsHandler = LaunchOptionsHandler()
-        let onboarding = DaxDialogs(entityProviding: MockEntityProvider(),
+        let onboarding = DaxDialogs(settings: settings,
+                                    entityProviding: MockEntityProvider(),
                                     launchOptionsHandler: launchOptionsHandler)
         XCTAssertTrue(onboarding.isEnabled)
 
         let launchOptionsHandlerDisabled = LaunchOptionsHandler(environment: ["ONBOARDING": "false"])
-        let onboardingDisabled = DaxDialogs(entityProviding: MockEntityProvider(),
-                                    launchOptionsHandler: launchOptionsHandlerDisabled)
+        let onboardingDisabled = DaxDialogs(settings: settings,
+                                            entityProviding: MockEntityProvider(),
+                                            launchOptionsHandler: launchOptionsHandlerDisabled)
         XCTAssertFalse(onboardingDisabled.isEnabled)
     }
 

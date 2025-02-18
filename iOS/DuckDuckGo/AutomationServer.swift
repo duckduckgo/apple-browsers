@@ -214,21 +214,21 @@ final class AutomationServer {
 
     @MainActor
     func switchToWindow(on connection: NWConnection, url: URLComponents) {
-        if let handleString = getQueryStringParameter(url: url, param: "handle") {
-            Logger.automationServer.info("Switch to window \(handleString)")
-            let tabToSelect: TabViewController? = nil
-            if let tabIndex = self.main.tabManager.model.tabs.firstIndex(where: { tab in
-                guard let tabView = self.main.tabManager.controller(for: tab) else {
-                    return false
-                }
-                return tabView.tabModel.uid == handleString
-            }) {
-                Logger.automationServer.info("found tab \(tabIndex)")
-                self.main.tabManager.select(tabAt: tabIndex)
-                self.respond(on: connection, response: "{\"success\":true}")
-            } else {
-                self.respondError(on: connection, error: "Invalid window handle")
+        guard let handleString = getQueryStringParameter(url: url, param: "handle") else {
+            self.respondError(on: connection, error: "Invalid window handle")
+            return
+        }
+        Logger.automationServer.info("Switch to window \(handleString)")
+        let tabToSelect: TabViewController? = nil
+        if let tabIndex = self.main.tabManager.model.tabs.firstIndex(where: { tab in
+            guard let tabView = self.main.tabManager.controller(for: tab) else {
+                return false
             }
+            return tabView.tabModel.uid == handleString
+        }) {
+            Logger.automationServer.info("found tab \(tabIndex)")
+            self.main.tabManager.select(tabAt: tabIndex)
+            self.respond(on: connection, response: "{\"success\":true}")
         } else {
             self.respondError(on: connection, error: "Invalid window handle")
         }

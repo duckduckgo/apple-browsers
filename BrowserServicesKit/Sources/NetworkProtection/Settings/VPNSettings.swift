@@ -18,7 +18,6 @@
 
 import Combine
 import Foundation
-import BrowserServicesKit
 
 /// Persists and publishes changes to tunnel settings.
 ///
@@ -457,16 +456,6 @@ public final class VPNSettings {
 
 public enum NetworkProtectionFlags {
     case networkProtectionRiskyDomainsProtection
-}
-
-public extension NetworkProtectionFlags {
-
-    var defaultState: Bool {
-        switch self {
-        case .networkProtectionRiskyDomainsProtection:
-            return false
-        }
-    }
 }
 
 open class NetPFeatureFlaggerMapping<Feature> {

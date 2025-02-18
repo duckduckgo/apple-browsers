@@ -55,6 +55,7 @@ public extension NSNotification.Name {
         if let legacyData = legacyJSONString.data(using: .utf8) {
             let defaults = UserDefaults.networkProtectionGroupDefaults
             defaults.set(legacyData, forKey: "dnsSettingStorageValue")
+            defaults.set(false, forKey: "didDefaultToTrue")
         }
     }
 

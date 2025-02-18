@@ -346,9 +346,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
+        let legacyJSONString = """
+        {
+            "usesCustomDNS": false,
+            "dnsServers": ["1.1.1.1"]
+        }
+        """
+
+        if let legacyData = legacyJSONString.data(using: .utf8) {
+            let defaults = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .netP))!
+            defaults.set(legacyData, forKey: "dnsSettingStorageValue")
+            defaults.set(false, forKey: "didDefaultToTrue")
+        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Configuration.setURLProvider(AppConfigurationURLProvider())
 
@@ -384,6 +397,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defer {
             didFinishLaunching = true
         }
+
+        let netPFeatureFlagger: NetPFeatureFlaggerMapping<NetworkProtectionFlags> = NetPFeatureFlaggerMapping { feature in
+            switch feature {
+            case .networkProtectionRiskyDomainsProtection:
+                return self.featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
+            }
+        }
+        vpnSettings.featureFlagger = netPFeatureFlagger
 
         HistoryCoordinator.shared.loadHistory {
             HistoryCoordinator.shared.migrateModelV5toV6IfNeeded()

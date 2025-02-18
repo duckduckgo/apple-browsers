@@ -143,7 +143,7 @@ final class VPNPreferencesModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init(vpnXPCClient: VPNControllerXPCClient = .shared,
-         settings: VPNSettings = .init(defaults: .netP),
+         settings: VPNSettings = NSApp.delegateTyped.vpnSettings,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
          pinningManager: PinningManager = LocalPinningManager.shared,
          defaults: UserDefaults = .netP,

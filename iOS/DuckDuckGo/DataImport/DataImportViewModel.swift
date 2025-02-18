@@ -295,6 +295,10 @@ final class DataImportViewModel: ObservableObject {
         isLoading = true
 
         Task {
+            defer {
+                isLoading = false
+            }
+
             do {
                 guard let summary = try await importManager.importFile(at: url, for: fileType) else {
                     Logger.autofill.debug("Failed to import data")
@@ -313,8 +317,6 @@ final class DataImportViewModel: ObservableObject {
                 }
             }
         }
-
-        isLoading = false
     }
 
 }

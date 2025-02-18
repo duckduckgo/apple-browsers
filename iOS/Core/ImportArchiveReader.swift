@@ -49,6 +49,11 @@ public struct ImportArchiveReader: ImportArchiveReading {
         public let passwords: [String]  // CSV contents
         public let bookmarks: [String]  // HTML contents
         public var type: ContentType { ContentType(passwords: passwords, bookmarks: bookmarks) }
+
+        public init(passwords: [String], bookmarks: [String]) {
+            self.passwords = passwords
+            self.bookmarks = bookmarks
+        }
     }
 
     private enum Constants {
@@ -61,16 +66,17 @@ public struct ImportArchiveReader: ImportArchiveReading {
     public func readContents(from url: URL) throws -> Contents {
         let archive = try Archive(url: url, accessMode: .read)
 
-        let passwords = archive.compactMap { entry -> String? in
-            guard entry.path.lowercased().hasSuffix(Constants.csvExtension),
-                  let content = extractFileContent(from: entry, in: archive) else { return nil }
-            return content
-        }
+        var passwords = [String]()
+        var bookmarks = [String]()
 
-        let bookmarks = archive.compactMap { entry -> String? in
-            guard entry.path.lowercased().hasSuffix(Constants.htmlExtension),
-                  let content = extractFileContent(from: entry, in: archive) else { return nil }
-            return content
+        for entry in archive {
+            if entry.path.lowercased().hasSuffix(Constants.csvExtension),
+               let content = extractFileContent(from: entry, in: archive) {
+                passwords.append(content)
+            } else if entry.path.lowercased().hasSuffix(Constants.htmlExtension),
+                      let content = extractFileContent(from: entry, in: archive) {
+                bookmarks.append(content)
+            }
         }
 
         return Contents(passwords: passwords, bookmarks: bookmarks)

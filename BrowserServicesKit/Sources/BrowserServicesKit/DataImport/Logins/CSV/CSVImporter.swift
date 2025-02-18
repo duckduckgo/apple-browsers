@@ -366,8 +366,7 @@ extension Array where Element == ImportedLoginCredential {
         forEach { credential in
             // special handling for titles with Safari format e.g. "example.com (username)"
             let title = titleMatchesSafariFormat(for: credential) ? "SAFARI_TITLE" : credential.title ?? ""
-            let key = "\(credential.eTldPlusOne ?? "")|" + title + "|" +
-                      "\(credential.username)|\(credential.password)|\(credential.notes ?? "")"
+            let key = "\(credential.eTldPlusOne ?? "")|\(title)|\(credential.username)|\(credential.password)|\(credential.notes ?? "")"
 
             if credentialGroups[key] == nil {
                 credentialGroups[key] = []

@@ -164,13 +164,18 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - webView: The web view to load the video in.
     func openVideoInDuckPlayer(url: URL, webView: WKWebView)
     
-    /// Opens Duck Player settings.
+    /// Opens DuckPlayer Settings
+    func openDuckPlayerSettings()
+
+    /// Opens Duck Player settings from a web view
+    /// This is an alias for openDuckPlayerSettings()
+    /// Parameters are ignored but added to match the signature of the generic Webview Handlers
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
     ///   - message: The script message containing the parameters.
     func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable?
-    
+
     /// Opens Duck Player information modal.
     ///
     /// - Parameters:
@@ -208,6 +213,7 @@ protocol DuckPlayerControlling: AnyObject {
 
     /// Loads a native DuckPlayerView
     func loadNativeDuckPlayerVideo(videoID: String)
+
 }
 
 /// Implementation of the DuckPlayerControlling.
@@ -341,7 +347,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     
     func loadNativeDuckPlayerVideo(videoID: String) {
         Logger.duckplayer.debug("Starting loadNativeDuckPlayerVideo with ID: \(videoID)")
-        let viewModel = DuckPlayerViewModel(videoID: videoID)
+        let viewModel = DuckPlayerViewModel(videoID: videoID, duckPlayer: self)
         
         Logger.duckplayer.debug("Creating webView for videoID: \(videoID)")
         // Create webView with viewModel
@@ -361,6 +367,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 hostingController?.dismiss(animated: true)
             }
             .store(in: &nativePlayerCancellables)
+        
 
         hostView?.present(hostingController, animated: true)
     }
@@ -502,20 +509,25 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         return await self.encodedPlayerSettings(with: webView)
     }
     
-    /// Opens Duck Player settings.
-    ///
-    /// - Parameters:
-    ///   - params: Parameters from the web content.
-    ///   - message: The script message containing the parameters.
-    public func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable? {
+    /// Opens Duck Player Settings Page
+    public func openDuckPlayerSettings() {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.duckPlayer,
             userInfo: nil
         )
-        return nil
     }
     
+    /// Opens Duck Player settings from a web view    
+    ///
+    /// - Parameters:
+    ///   - params: Parameters from the web content.
+    ///   - message: The script message containing the parameters.
+    public func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable? {
+        openDuckPlayerSettings()
+        return nil
+    }
+
     /// Sends a telemetry event from the FE.
     ///
     /// - Parameters:

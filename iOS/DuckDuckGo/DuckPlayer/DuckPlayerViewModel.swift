@@ -21,41 +21,80 @@ import Combine
 import Foundation
 import UIKit
 
+/// A view model that manages the state and behavior of the DuckPlayer video player.
+/// 
+/// The DuckPlayerViewModel handles:
+/// - YouTube video URL generation with privacy-preserving parameters
+/// - Device orientation changes to adapt the player UI
+/// - Navigation to YouTube when requested
+/// - Autoplay settings management
 final class DuckPlayerViewModel: ObservableObject {
     
-    /// A publisher to notify when Youtube navigation is required
+    /// A publisher to notify when Youtube navigation is required.
+    /// Emits the URL that should be opened in YouTube.
     let youtubeNavigationRequestPublisher = PassthroughSubject<URL, Never>()
     
-    /// Current interface orientation
+    // A publisher to notify when the settings button is pressed.    
+
+    /// Current interface orientation state.
+    /// - `true` when device is in landscape orientation
+    /// - `false` when device is in portrait orientation
     @Published private var isLandscape: Bool = false
-    
+
+    weak var duckPlayer: DuckPlayerControlling?
+
+    /// Constants used for YouTube URL generation and parameters
     enum Constants {
+        /// Base URL for privacy-preserving YouTube embeds
         static let baseURL = "https://www.youtube-nocookie.com/embed/"
         
-        // Parameters
+        // URL Parameters
+        /// Controls whether related videos are shown
         static let relParameter = "rel"
+        /// Controls whether video plays inline or fullscreen on iOS
         static let playsInlineParameter = "playsinline"
+        /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
         
-        // Values
-        static let enabled = "1"
+        // Used to enable features in URL parameters        
+        static let enabled = "1"        
         static let disabled = "0"
     }
     
+    /// The YouTube video ID to be played
     let videoID: String
+    
+    /// App settings instance for accessing user preferences
     var appSettings: AppSettings
+
+    /// Whether the "Watch in YouTube" button should be visible
+    /// Returns `false` when in landscape mode to maximize video viewing area
+    var shouldShowYouTubeButton: Bool {
+        !isLandscape
+    }
+    
+    /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
+    
+    /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
         Constants.playsInlineParameter: Constants.enabled
     ]
     
-    init(videoID: String, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    /// Creates a new DuckPlayerViewModel instance
+    /// - Parameters:
+    ///   - videoID: The YouTube video ID to be played
+    ///   - appSettings: App settings instance for accessing user preferences
+    init(videoID: String, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, duckPlayer: DuckPlayerControlling) {
         self.videoID = videoID
         self.appSettings = appSettings
+        self.duckPlayer = duckPlayer
         self.url = getVideoURL()
     }
     
+    /// Generates the URL for the YouTube video with appropriate parameters
+    /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
     func getVideoURL() -> URL? {
         var parameters = defaultParameters
         parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
@@ -63,46 +102,56 @@ final class DuckPlayerViewModel: ObservableObject {
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }
     
+    /// Handles navigation requests to YouTube
+    /// - Parameter url: The YouTube URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
         youtubeNavigationRequestPublisher.send(url)
     }
     
+    /// Opens the current video in the YouTube app or website
     func openInYouTube() {
         let url: URL = .youtube(videoID)
         handleYouTubeNavigation(url)
     }
     
+    /// Called when the view first appears
+    /// Sets up orientation monitoring
     func onFirstAppear() {
         updateOrientation()
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(handleOrientationChange),
-                                               name: UIDevice.orientationDidChangeNotification,
-                                               object: nil)
+                                             selector: #selector(handleOrientationChange),
+                                             name: UIDevice.orientationDidChangeNotification,
+                                             object: nil)
     }
     
+    /// Called each time the view appears
     func onAppear() {
-        // NOOP
+        // Reserved for future use
     }
     
+    /// Called when the view disappears
+    /// Removes orientation monitoring
     func onDisappear() {
         NotificationCenter.default.removeObserver(self,
-                                                  name: UIDevice.orientationDidChangeNotification,
-                                                  object: nil)
+                                                name: UIDevice.orientationDidChangeNotification,
+                                                object: nil)
     }
     
+    /// Handles device orientation change notifications
     @objc private func handleOrientationChange() {
         updateOrientation()
     }
     
-    /// Updates the current interface orientation
+    /// Updates the current interface orientation state
     func updateOrientation() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             isLandscape = windowScene.interfaceOrientation.isLandscape
         }
     }
-    
-    /// Whether the YouTube button should be visible
-    var shouldShowYouTubeButton: Bool {
-        !isLandscape
+
+    // Opens the settings view
+    func openSettings() {
+        duckPlayer?.openDuckPlayerSettings()
     }
+       
 }

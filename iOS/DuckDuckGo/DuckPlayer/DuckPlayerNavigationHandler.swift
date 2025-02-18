@@ -292,7 +292,7 @@ final class DuckPlayerNavigationHandler: NSObject {
         // and playing audio in the background
         toggleAudioForTab(webView, mute: true)
         
-        if duckPlayer.settings.nativeUI {
+        if duckPlayer.settings.nativeUI && UIDevice.current.userInterfaceIdiom == .phone {
             loadNativeDuckPlayerVideo(videoID: videoID)
             return
         }
@@ -327,6 +327,9 @@ final class DuckPlayerNavigationHandler: NSObject {
     
     @MainActor
     private func loadNativeDuckPlayerVideo(videoID: String) {
+        // Only allow native UI on iPhone
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        
         duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID)
     }
     

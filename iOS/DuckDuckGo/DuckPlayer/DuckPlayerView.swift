@@ -74,10 +74,10 @@ struct DuckPlayerView: View {
                 }
         
                 if viewModel.shouldShowYouTubeButton {
-                    Button {
-                        viewModel.openInYouTube()
-                    } label: {
-                        HStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Button {
+                            viewModel.openInYouTube()
+                        } label: {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.gray.opacity(0.2))
@@ -90,12 +90,18 @@ struct DuckPlayerView: View {
                                         .colorScheme(.dark)
                                 }
                             }
+                        }
+                        
+                        Button {
+                            viewModel.openSettings()
+                            dismiss()
+                        } label: {
                             ZStack {
-                                Image(Constants.duckPlayerSettingsImage)
-                                .foregroundColor(.white)
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.gray.opacity(0.2))
                                     .frame(width: 44, height: 44)
+                                Image(Constants.duckPlayerSettingsImage)
+                                    .foregroundColor(.white)
                             }
                         }
                     }
@@ -114,7 +120,8 @@ struct DuckPlayerView: View {
         }
         .onDisappear {
             viewModel.onDisappear()
-        }
+        }        
+
     }
     
     private var header: some View {
@@ -145,16 +152,3 @@ struct DuckPlayerView: View {
         .background(Color.black)
     }
 }
-
-#if DEBUG
-struct DuckPlayerView_Previews: PreviewProvider {
-    static var previews: some View {
-        let viewModel = DuckPlayerViewModel(videoID: "dQw4w9WgXcQ")
-        DuckPlayerView(
-            viewModel: viewModel,
-            webView: DuckPlayerWebView(viewModel: viewModel)
-        )
-        .preferredColorScheme(.dark)
-    }
-}
-#endif

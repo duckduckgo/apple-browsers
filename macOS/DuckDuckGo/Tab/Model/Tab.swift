@@ -831,6 +831,11 @@ protocol NewWindowPolicyDecisionMaker {
     @MainActor(unsafe)
     @discardableResult
     func reload() -> ExpectedNavigation? {
+        if FocusSessionCoordinator.shared.isCurrentOnFocusSession {
+            blockIfDistracting()
+            return nil
+        }
+
         userInteractionDialog = nil
 
         self.brokenSiteInfo?.tabReloadRequested()
@@ -860,6 +865,16 @@ protocol NewWindowPolicyDecisionMaker {
         } else {
             return webView.navigator(distributedNavigationDelegate: navigationDelegate).reload(withExpectedNavigationType: .reload)
         }
+    }
+
+    @MainActor func blockIfDistracting() {
+        guard let url = self.url else { return }
+
+        loadErrorHTML(.init(_nsError: .init(domain: "Test", code: 1234)), header: UserText.errorPageHeader, forUnreachableURL: url, alternate: false)
+    }
+
+    func unblockIfBlocked() {
+        self.reload()
     }
 
     func muteUnmuteTab() {

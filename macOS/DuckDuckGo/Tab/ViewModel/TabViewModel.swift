@@ -43,6 +43,7 @@ final class TabViewModel {
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
+    private let focusSessionCoordinator = FocusSessionCoordinator.shared
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -131,6 +132,7 @@ final class TabViewModel {
         subscribeToPermissions()
         subscribeToPreferences()
         subscribeToWebViewDidFinishNavigation()
+        subscribeToFocusSession()
         tab.$isLoading
             .assign(to: \.isLoading, onWeaklyHeld: self)
             .store(in: &cancellables)
@@ -338,6 +340,22 @@ final class TabViewModel {
         }.store(in: &cancellables)
     }
 
+    private func subscribeToFocusSession() {
+        focusSessionCoordinator.$isCurrentOnFocusSession
+            .sink { [weak self] isOnSession in
+                guard let self = self else { return }
+
+                DispatchQueue.main.async {
+                    if isOnSession {
+                        self.tab.blockIfDistracting()
+                    } else {
+                        self.tab.unblockIfBlocked()
+                    }
+                }
+            }
+            .store(in: &cancellables)
+    }
+
     private func updateCanBeBookmarked() {
         canBeBookmarked = !isShowingErrorPage && tab.content.canBeBookmarked
     }
@@ -498,7 +516,7 @@ final class TabViewModel {
         tab.reload()
         updateAddressBarStrings()
         self.updateZoomForWebsite()
-    }
+    }    
 
     private func errorFaviconToShow(error: WKError?) -> NSImage {
         switch error as NSError? {

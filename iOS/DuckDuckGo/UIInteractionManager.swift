@@ -39,9 +39,17 @@ final class UIInteractionManager {
                onAppReadyForInteractions: @escaping () -> Void) {
         Task { @MainActor in
             await withTaskGroup(of: Void.self) { group in
-                group.addTask { await self.authenticate() }
-                group.addTask { await self.clearData(launchAction: launchAction,
-                                                     onDataCleared: onWebViewReadyForInteractions) }
+                group.addTask {
+                    await self.authenticationService.authenticate()
+                }
+                group.addTask {
+                    await self.autoClearService.waitForDataCleared()
+                    // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
+                    if !launchAction.isRegularLaunch {
+                        await self.launchActionHandler.handleLaunchAction(launchAction)
+                    }
+                    onWebViewReadyForInteractions()
+                }
 
                 await group.waitForAll()
 
@@ -53,20 +61,7 @@ final class UIInteractionManager {
                 onAppReadyForInteractions()
             }
         }
-    }
 
-    private func authenticate() async {
-        await authenticationService.authenticate()
-    }
-
-    private func clearData(launchAction: LaunchAction, onDataCleared: () -> Void) async {
-        await autoClearService.waitForDataCleared()
-
-        // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
-        if !launchAction.isRegularLaunch {
-            await self.launchActionHandler.handleLaunchAction(launchAction)
-        }
-        onDataCleared()
     }
 
 }

@@ -370,7 +370,7 @@ struct UserText {
     static let aiChatOnboardingPopoverCTAAccept = NSLocalizedString("ai-chat.onboarding.popover.accept", value: "Add Shortcut", comment: "AI Chat onboarding CTA for approval")
     static let aiChatOnboardingPopoverConfirmation = NSLocalizedString("duckai.onboarding.popover.confirmation", value: "Duck.ai shortcut added!", comment: "Confirmation for accepting the AI Chat onboarding popover")
 
-    static let aiChatShowInToolbarToggle = NSLocalizedString("duckai.show-in-toolbar.toggle", value: "Show Duck.ai shortcut in browser toolbar", comment: "Show AI Chat in toolbar")
+    static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in address bar")
 
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New AI Chat” in File and application menus", comment: "Show Duck.ai in application menus")
 

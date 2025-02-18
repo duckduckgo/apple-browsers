@@ -23,12 +23,6 @@ import Core
 import Networking
 import Configuration
 
-protocol AppConfigurationDelegate {
-
-    func appConfigurationDidAssignVariant()
-
-}
-
 struct AppConfiguration {
 
     @UserDefaultsWrapper(key: .privacyConfigCustomURL, defaultValue: nil)

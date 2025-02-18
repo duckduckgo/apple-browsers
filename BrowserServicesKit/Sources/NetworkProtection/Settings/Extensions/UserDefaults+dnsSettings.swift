@@ -73,7 +73,7 @@ extension UserDefaults {
         }
     }
 
-    var didDefaultToTrue: Bool {
+    public var didDefaultToTrue: Bool {
         get {
             return bool(forKey: "didDefaultToTrue")
         }

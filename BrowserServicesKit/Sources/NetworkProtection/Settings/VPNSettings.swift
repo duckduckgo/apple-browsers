@@ -401,7 +401,19 @@ public final class VPNSettings {
             return defaults.dnsSettings
         }
         set {
-            defaults.dnsSettings = newValue
+            if case .ddg(let blockRiskyDomains) = defaults.dnsSettings,
+               !blockRiskyDomains,
+               !defaults.didDefaultToTrue,
+               featureFlagger?.isFeatureOn(.networkProtectionRiskyDomainsProtection) ?? false {
+                // Set to default with risky domains protection enabled
+                defaults.dnsSettings = .ddg(blockRiskyDomains: true)
+                defaults.didDefaultToTrue = true
+            } else {
+                if case .ddg(true) = defaults.dnsSettings {
+                    defaults.didDefaultToTrue = true
+                }
+                defaults.dnsSettings = newValue
+            }
         }
     }
 

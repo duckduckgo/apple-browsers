@@ -348,7 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
         let legacyJSONString = """
         {
-            "usesCustomDNS": false,
+            "usesCustomDNS": true,
             "dnsServers": ["1.1.1.1"]
         }
         """

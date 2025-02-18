@@ -21,7 +21,7 @@ import SwiftUI
 import NetworkProtection
 
 struct NetworkProtectionDNSSettingsView: View {
-    @StateObject var viewModel = NetworkProtectionDNSSettingsViewModel(settings: VPNSettings(defaults: .networkProtectionGroupDefaults), controller: AppDependencyProvider.shared.networkProtectionTunnelController)
+    @StateObject var viewModel = NetworkProtectionDNSSettingsViewModel(settings: AppDependencyProvider.shared.vpnSettings, controller: AppDependencyProvider.shared.networkProtectionTunnelController)
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isCustomDNSServerFocused: Bool
 
@@ -58,7 +58,7 @@ struct NetworkProtectionDNSSettingsView: View {
                 if viewModel.isCustomDNSSelected {
                     customDNSSection()
                 } else {
-                    if viewModel.isRiskySitesProtectionFeatureEnabled {
+                    if viewModel.isRiskySitesProtectionFeatureEnabled && viewModel.didRiskySitesProtectionDefaultToTrue {
                         blockRiskyDomainsSection()
                     }
                 }

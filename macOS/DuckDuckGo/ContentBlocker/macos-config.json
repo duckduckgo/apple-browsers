@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1738959898999,
+    "version": 1739554171092,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -123,9 +123,6 @@
                 },
                 {
                     "domain": "publicmediasignin.org"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -152,7 +149,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "ceea252d7f8479da1bfd92e710203963"
+            "hash": "52f262bbcdf1759284d24c0be1445156"
         },
         "androidBrowserConfig": {
             "exceptions": [],
@@ -519,9 +516,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -678,7 +672,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "93c96a1b8fc5f28f95cf31f0d9044bf3"
+            "hash": "89b0a362351805cb4e912584fcf3b4d5"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -715,10 +709,10 @@
                     "state": "enabled"
                 },
                 "partialFormSaves": {
-                    "state": "disabled"
+                    "state": "enabled"
                 }
             },
-            "hash": "0fb08dee0e98a5a3a907ccbef485f71b"
+            "hash": "49fa3fee320aa10b90ba364f22d98285"
         },
         "backgroundAgentPixelTest": {
             "state": "enabled",
@@ -772,12 +766,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
-            "hash": "37e0cf88badfc8b01b6394f0884502f6"
+            "hash": "3784423a316ced2f9a533b55e1f862dd"
         },
         "brokenSitePrompt": {
             "state": "enabled",
@@ -793,6 +784,11 @@
             "exceptions": [],
             "state": "disabled",
             "hash": "728493ef7a1488e4781656d3f9db84aa"
+        },
+        "burn": {
+            "state": "enabled",
+            "exceptions": [],
+            "hash": "697382e31649d84b01166f1dc6f790d6"
         },
         "changeOmnibarPosition": {
             "exceptions": [],
@@ -1484,9 +1480,6 @@
                 },
                 {
                     "domain": "zoosk.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -1505,7 +1498,7 @@
             },
             "state": "enabled",
             "minSupportedVersion": "1.93.0",
-            "hash": "325c52e24b4455e63f1d84089408d8f2"
+            "hash": "cbfdb4ed07be6b0f16df07c95ebcc303"
         },
         "clickToPlay": {
             "exceptions": [
@@ -1520,9 +1513,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -1535,7 +1525,7 @@
                 }
             },
             "state": "enabled",
-            "hash": "f48fcbcedd692bef6e3279e323727b54"
+            "hash": "62ade25f4a9639e8947e3ac387584290"
         },
         "clientBrandHint": {
             "exceptions": [],
@@ -1580,9 +1570,6 @@
                 },
                 {
                     "domain": "wjla.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "features": {
@@ -1611,7 +1598,7 @@
                     ]
                 }
             },
-            "hash": "76ec7b96839562e7c53f0829d65d4322"
+            "hash": "e9af0e2625611aea5e869fc4faae65de"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1688,13 +1675,10 @@
                 },
                 {
                     "domain": "legalandgeneral.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "enabled",
-            "hash": "b9f1d6d60da1755617fffb2bc5922e90"
+            "hash": "11f9b449c5694802f718aea5cca1166b"
         },
         "customUserAgent": {
             "settings": {
@@ -1703,10 +1687,6 @@
                     {
                         "domain": "chase.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/issues/988"
-                    },
-                    {
-                        "domain": "instructure.com",
-                        "reason": "Experimental mitigation to reduce breakage"
                     },
                     {
                         "domain": "web.whatsapp.com",
@@ -1790,7 +1770,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "2e77733ec87e4293a8d078df1ad74d12"
+            "hash": "f1330bbd6a9a1c0c867c096d9a7a2f54"
         },
         "dbp": {
             "state": "enabled",
@@ -1942,9 +1922,6 @@
                 },
                 {
                     "domain": "wunderground.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -5478,11 +5455,20 @@
                                 "type": "closest-empty"
                             }
                         ]
+                    },
+                    {
+                        "domain": "ukutabs.com",
+                        "rules": [
+                            {
+                                "selector": ".wpb_wrapper",
+                                "type": "hide-empty"
+                            }
+                        ]
                     }
                 ]
             },
             "state": "enabled",
-            "hash": "3c580a906dab85d3be38ec438f413580"
+            "hash": "d61755129c0454b9f6680147d3dccfd2"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -5497,13 +5483,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be6751fe0307a7e1b9476f4d8b8d0aaf"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "extendedOnboarding": {
             "exceptions": [],
@@ -5527,12 +5510,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
-            "hash": "7f042650922da2636492e77ed1101bce"
+            "hash": "5b9e716c52331f6b647cb9567979ba2c"
         },
         "fingerprintingBattery": {
             "exceptions": [
@@ -5550,13 +5530,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "b9993a70bb5d6bfba23b4ec797f8a684"
+            "hash": "9ed616378e3abe589e0d76de5907b08f"
         },
         "fingerprintingCanvas": {
             "settings": {
@@ -5658,13 +5635,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "49a3d497835bf5715aaaa73f87dd974f"
+            "hash": "633757ded6d6e3be6a1a204d03d19307"
         },
         "fingerprintingHardware": {
             "settings": {
@@ -5729,6 +5703,9 @@
                     "domain": "humana.com"
                 },
                 {
+                    "domain": "target.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -5772,13 +5749,10 @@
                 },
                 {
                     "domain": "zoom.us"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "enabled",
-            "hash": "53cc82526eaeeaa1490c8538b78fdb35"
+            "hash": "686131b9d4b7e496bd2967e4617b4f7a"
         },
         "fingerprintingScreenSize": {
             "settings": {
@@ -5826,13 +5800,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "a26b20181df02a3dc1cce0945d6e0ccb"
+            "hash": "b9d3d9677c63ed8c32a4c8064fda7528"
         },
         "fingerprintingTemporaryStorage": {
             "exceptions": [
@@ -5856,13 +5827,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "2dc4c0ade2e385d208695d770002c725"
+            "hash": "5102bc3333498bc063d83d302e16edb9"
         },
         "fullScreenMode": {
             "state": "disabled",
@@ -5882,13 +5850,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be6751fe0307a7e1b9476f4d8b8d0aaf"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "gpc": {
             "state": "enabled",
@@ -5943,9 +5908,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -5957,7 +5919,7 @@
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "fdb3180769d77fd3cedfc8601e184dcd"
+            "hash": "59b838baac04ac0efabc4e0b031881c0"
         },
         "harmfulApis": {
             "settings": {
@@ -6070,13 +6032,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "fb598c4167ff166d85dd49c701cc5579"
+            "hash": "e4668f6b44c1d867c1b59ee95e821aed"
         },
         "history": {
             "state": "disabled",
@@ -6122,12 +6081,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
-            "hash": "b47d255c6f836ecb7ae0b3e61cc2c025"
+            "hash": "5ad8843e6ed35508e501028eff18d52f"
         },
         "incontextSignup": {
             "exceptions": [],
@@ -6162,6 +6118,9 @@
             "exceptions": [
                 {
                     "domain": "broken.third-party.site"
+                },
+                {
+                    "domain": "d3qpjnspil4z56.cloudfront.net"
                 }
             ],
             "features": {
@@ -6173,7 +6132,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "3f08e9c0213c586858a618047970bbd2"
+            "hash": "f08eb043e8d4f5be9c6e1d34f26a598e"
         },
         "marketplaceAdPostback": {
             "state": "disabled",
@@ -6207,9 +6166,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -6220,7 +6176,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "d14f6e3a9aa4139ee1d517016b59691e"
+            "hash": "e2daba047553f553d37e77e0a7670f0e"
         },
         "networkProtection": {
             "state": "enabled",
@@ -6263,12 +6219,13 @@
                     "state": "enabled"
                 },
                 "appExclusions": {
-                    "state": "disabled"
+                    "state": "enabled",
+                    "minSupportedVersion": "1.127.0"
                 }
             },
             "exceptions": [],
             "minSupportedVersion": "1.57.1",
-            "hash": "430d1d2964babe769602afc10bda17b4"
+            "hash": "9f05d3a31697cf6bb9b1b48587d112d1"
         },
         "newTabContinueSetUp": {
             "exceptions": [],
@@ -6309,13 +6266,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "82088db85ca7f64418fbfd57db25ade1"
+            "hash": "8b21215291e766b96894e9359c8fd651"
         },
         "performanceMetrics": {
             "state": "enabled",
@@ -6331,12 +6285,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
-            "hash": "6792064606a5a72c5cd44addb4d40bda"
+            "hash": "efca7990b31a8636fbddaab40d2a18da"
         },
         "phishingDetection": {
             "state": "disabled",
@@ -6520,13 +6471,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "138c3b2409f6b3bf967b804ab9bf2ce2"
+            "hash": "57d833bc120779cfa0672112194acc24"
         },
         "remoteMessaging": {
             "state": "enabled",
@@ -6547,15 +6495,12 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
                 "windowInMs": 0
             },
-            "hash": "baf19d9e0f506ed09f46c95b1849adee"
+            "hash": "21ef14af51a4ca23d83db2a82784c39f"
         },
         "runtimeChecks": {
             "state": "disabled",
@@ -6571,13 +6516,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {},
-            "hash": "dfede9f06b9e322e198736703d013d15"
+            "hash": "88e32d71041236b82393de277b2952a0"
         },
         "sendFullPackageInstallSource": {
             "state": "enabled",
@@ -6598,13 +6540,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be6751fe0307a7e1b9476f4d8b8d0aaf"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "settingsPage": {
             "exceptions": [],
@@ -6624,13 +6563,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be6751fe0307a7e1b9476f4d8b8d0aaf"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "sslCertificates": {
             "state": "enabled",
@@ -6655,13 +6591,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be6751fe0307a7e1b9476f4d8b8d0aaf"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "syncPromotion": {
             "state": "enabled",
@@ -7806,6 +7739,16 @@
                                 "rule": "ensighten.com",
                                 "domains": [
                                     "<all>"
+                                ]
+                            }
+                        ]
+                    },
+                    "exoclick.com": {
+                        "rules": [
+                            {
+                                "rule": "ads.exoclick.com/ads.js",
+                                "domains": [
+                                    "myreadingmanga.info"
                                 ]
                             }
                         ]
@@ -10254,12 +10197,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
-            "hash": "5bec6eef5bd756f392d81b23d0febc50"
+            "hash": "72dee0a9c86ad3fac0634408ecd6ff02"
         },
         "trackingCookies1p": {
             "settings": {
@@ -10280,13 +10220,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "763f56424b0827b5731927a043219912"
+            "hash": "55e8c2ef8c2a2bb95ae018d616a464d5"
         },
         "trackingCookies3p": {
             "settings": {
@@ -10304,13 +10241,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "disabled",
-            "hash": "82088db85ca7f64418fbfd57db25ade1"
+            "hash": "8b21215291e766b96894e9359c8fd651"
         },
         "trackingParameters": {
             "exceptions": [
@@ -10340,9 +10274,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "settings": {
@@ -10376,7 +10307,7 @@
             },
             "state": "enabled",
             "minSupportedVersion": "0.22.3",
-            "hash": "009e36025b3a532522f65bf0c19fa0d8"
+            "hash": "ceed30c329607284bbcd3e90736cc859"
         },
         "voiceSearch": {
             "exceptions": [],
@@ -10404,9 +10335,6 @@
                 },
                 {
                     "domain": "lastpass.com"
-                },
-                {
-                    "domain": "instructure.com"
                 }
             ],
             "state": "enabled",
@@ -10461,7 +10389,7 @@
                     }
                 ]
             },
-            "hash": "99b098daaea40136ae60aec41f52467e"
+            "hash": "91fae475f5f361b76901d8e740e01df7"
         },
         "webViewStateRestoration": {
             "state": "disabled",

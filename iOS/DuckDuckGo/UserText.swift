@@ -216,10 +216,15 @@ public struct UserText {
     public static let bookmarksButtonHint = NSLocalizedString("bookmarks.button.hint", value: "Bookmarks", comment: "")
     
     public static func numberOfTabs(_ number: Int) -> String {
-        let message = NSLocalizedString("number.of.tabs", comment: "Do not translate - stringsdict entry")
-        return message.format(arguments: number)
+        let format = Bundle.main.localizedString(forKey: "number.of.tabs", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, number)
     }
-    
+
+    public static func numberOfSelectedTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "numberOfSelectedTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func openTab(withTitle title: String, atAddress address: String) -> String {
         let message = NSLocalizedString("tab.open.with.title.and.address", value: "Open \"%@\" at %@", comment: "Accesibility label: first string is website title, second is address")
         return message.format(arguments: title, address)
@@ -272,8 +277,6 @@ public struct UserText {
         return message.format(arguments: title, address)
     }
 
-    public static let tabSwitcherShareLink = NotLocalizedString("tab.switcher.share.link", value: "Share Link", comment: "Share link menu item")
-
     public static let tabSwitcherBookmarkPage = NotLocalizedString("tab.switcher.bookmark.page", value: "Bookmark This Page", comment: "Bookmark this page menu item")
 
     public static let tabSwitcherBookmarkAllTabs = NotLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
@@ -288,8 +291,13 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
-    public static func shareSelectedLink(withCount count: Int) -> String {
-        let format = Bundle.main.localizedString(forKey: "tabs.share.selected.with.count", value: nil, table: nil)
+    public static func shareLinks(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "shareLinks.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
+    public static func shareSelectedTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "shareSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
 

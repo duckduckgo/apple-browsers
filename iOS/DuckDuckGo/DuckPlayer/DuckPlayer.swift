@@ -233,6 +233,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private var hideBrowserChromeTimer: Timer?
     private var tapGestureRecognizer: UITapGestureRecognizer?
     
+    // Native Player
+    private var nativePlayerCancellables = Set<AnyCancellable>()
+    
     private lazy var localeStrings: String? = {
         let languageCode = Locale.current.languageCode ?? Constants.defaultLocale
         if let localizedFile = ContentScopeScripts.Bundle.path(forResource: Constants.translationFile,
@@ -277,7 +280,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             hostView?.view.removeGestureRecognizer(tapGestureRecognizer)
         }
         hostView = nil
-        cancellables.removeAll()
+        nativePlayerCancellables.removeAll()
     }
     
     /// Sets the host view controller for presenting modals.
@@ -335,16 +338,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
 
-    // Loads a native DuckPlayerView
-    private var cancellables = Set<AnyCancellable>()
-        
+    
     func loadNativeDuckPlayerVideo(videoID: String) {
         Logger.duckplayer.debug("Starting loadNativeDuckPlayerVideo with ID: \(videoID)")
         let viewModel = DuckPlayerViewModel(videoID: videoID)
-        guard let url = viewModel.getVideoURL() else {
-            Logger.duckplayer.debug("Failed to get video URL for ID: \(videoID)")
-            return
-        }
         
         Logger.duckplayer.debug("Creating webView for videoID: \(videoID)")
         // Create webView with viewModel
@@ -363,7 +360,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 self?.youtubeNavigationRequest.send(url)
                 hostingController?.dismiss(animated: true)
             }
-            .store(in: &cancellables)
+            .store(in: &nativePlayerCancellables)
 
         hostView?.present(hostingController, animated: true)
     }

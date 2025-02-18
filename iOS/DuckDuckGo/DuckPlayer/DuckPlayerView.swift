@@ -34,6 +34,8 @@ struct DuckPlayerView: View {
         static let videoAspectRatio: CGFloat = 9/16 // 16:9 in portrait
         static let daxLogoSize: CGFloat = 24.0
         static let daxLogo = "Home"
+        static let duckPlayerImage: String = "DuckPlayer"
+        static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
         static let bottomButtonHeight: CGFloat = 44
     }
     
@@ -75,14 +77,26 @@ struct DuckPlayerView: View {
                     Button {
                         viewModel.openInYouTube()
                     } label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.2))
-                            Text("Watch this video on YouTube")
-                                .daxButton()
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .accent))
-                                .colorScheme(.dark)
+                        HStack(spacing: 8) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.gray.opacity(0.2))
+                                HStack(spacing: 8) {
+                                    Image(Constants.duckPlayerImage).colorScheme(.dark)
+                                    Text(UserText.duckPlayerNativeWatchOnYouTube)
+                                        .daxButton()
+                                        .daxBodyRegular()
+                                        .foregroundColor(.white)
+                                        .colorScheme(.dark)
+                                }
+                            }
+                            ZStack {
+                                Image(Constants.duckPlayerSettingsImage)
+                                .foregroundColor(.white)
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 44, height: 44)
+                            }
                         }
                     }
                     .frame(height: Constants.bottomButtonHeight)

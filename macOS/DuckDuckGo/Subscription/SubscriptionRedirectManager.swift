@@ -27,16 +27,16 @@ protocol SubscriptionRedirectManager: AnyObject {
 
 final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
-    private let subscriptionEnvironment: SubscriptionEnvironment
+    private let subscriptionManager: SubscriptionManager
     private let baseURL: URL
     private let canPurchase: () -> Bool
     private let tld: TLD
 
-    init(subscriptionEnvironment: SubscriptionEnvironment,
+    init(subscriptionManager: SubscriptionManager,
          baseURL: URL,
          canPurchase: @escaping () -> Bool,
          tld: TLD = ContentBlocking.shared.tld) {
-        self.subscriptionEnvironment = subscriptionEnvironment
+        self.subscriptionManager = subscriptionManager
         self.canPurchase = canPurchase
         self.baseURL = baseURL
         self.tld = tld
@@ -46,20 +46,13 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
         guard url.isPart(ofDomain: "duckduckgo.com") else { return nil }
 
         if url.pathComponents == URL.privacyPro.pathComponents {
-            let shouldHidePrivacyProDueToNoProducts = subscriptionEnvironment.purchasePlatform == .appStore && canPurchase() == false
+            let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && canPurchase() == false
             let isPurchasePageRedirectActive = !shouldHidePrivacyProDueToNoProducts
 
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.
             if isPurchasePageRedirectActive,
-               var baseURLComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: true),
-               let sourceURLComponents = URLComponents(url: url, resolvingAgainstBaseURL: true) {
-
-                baseURLComponents.addingSubdomain(from: sourceURLComponents, tld: tld)
-                baseURLComponents.addingPort(from: sourceURLComponents)
-                baseURLComponents.addingFragment(from: sourceURLComponents)
-                baseURLComponents.addingQueryItems(from: sourceURLComponents)
-
-                return baseURLComponents.url
+               let redirectURLComponents = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+                return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
             }
         }
 

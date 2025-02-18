@@ -17,9 +17,12 @@
 //
 
 import Foundation
+import Common
 @testable import Subscription
 
 public final class SubscriptionManagerMock: SubscriptionManager {
+
+    
     public var accountManager: AccountManager
     public var subscriptionEndpointService: SubscriptionEndpointService
     public var authEndpointService: AuthEndpointService
@@ -51,6 +54,11 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func url(for type: SubscriptionURL) -> URL {
         type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+    }
+
+    public var urlForPurchaseFromRedirect: URL!
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: Common.TLD) -> URL {
+        urlForPurchaseFromRedirect
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {

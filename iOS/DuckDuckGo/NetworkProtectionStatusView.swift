@@ -287,18 +287,39 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func about() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsFAQ, destination: LazyView(NetworkProtectionFAQView()))
+            NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
+                HStack {
+                    Image("Settings-24")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                    Text(UserText.netPVPNSettingsFAQ)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
 
             if statusModel.usesUnifiedFeedbackForm {
-                NavigationLink(
-                    UserText.subscriptionFeedback,
-                    destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))
-                )
+                NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
+                    HStack {
+                        Image("Info-24")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                        Text(UserText.subscriptionFeedback)
+                    }
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
             } else {
+                NavigationLink(destination: LazyView(VPNFeedbackFormCategoryView())) {
+                    HStack {
+                        Image("Feedback-24")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                        Text(UserText.netPVPNSettingsShareFeedback)
+                    }
+                    .daxBodyRegular()
+                    .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
                 NavigationLink(UserText.netPVPNSettingsShareFeedback, destination: LazyView(VPNFeedbackFormCategoryView()))
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))

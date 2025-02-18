@@ -115,6 +115,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    private let focusSessionCoordinator: FocusSessionCoordinator = .shared
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -1066,7 +1067,9 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @IBAction func focusTimerButtonAction(_ sender: NSButton) {
-        print("Focus timer tapped")
+        let menu = focusSessionCoordinator.getMenu()
+        let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
+        menu.popUp(positioning: nil, at: location, in: sender)
     }
 
     private func updateAIChatButton() {

@@ -2980,6 +2980,8 @@
 		BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBC063E82C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
 		BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
+		BBC3F8F62D651964003F4910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */; };
+		BBC3F8F72D651964003F4910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE013EB2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
@@ -5041,6 +5043,7 @@
 		BBBB653F2C77BB9400E69AC6 /* BookmarkSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSearchTests.swift; sourceTree = "<group>"; };
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
+		BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCoordinator.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
 		BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModel.swift; sourceTree = "<group>"; };
@@ -8300,6 +8303,7 @@
 		AA585D80248FD31100E9A3E2 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				BBC3F8F42D651952003F4910 /* FocusSession */,
 				CBECDB822CDA812A005B8B87 /* BrokenSitePrompt */,
 				31521ABE2CC0139C00248E6F /* AIChat */,
 				AA4D700525545EDE00C3411E /* Application */,
@@ -9838,6 +9842,14 @@
 				B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */,
 			);
 			path = View;
+			sourceTree = "<group>";
+		};
+		BBC3F8F42D651952003F4910 /* FocusSession */ = {
+			isa = PBXGroup;
+			children = (
+				BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */,
+			);
+			path = FocusSession;
 			sourceTree = "<group>";
 		};
 		BD7090D42C540C0D009EED82 /* MetadataCollectors */ = {
@@ -11720,6 +11732,7 @@
 				3768D8412C29C1F1004120AE /* ActiveRemoteMessageModel.swift in Sources */,
 				3706FAB8293F65D500E42796 /* FaviconImageCache.swift in Sources */,
 				3706FAB9293F65D500E42796 /* TabBarViewController.swift in Sources */,
+				BBC3F8F72D651964003F4910 /* FocusSessionCoordinator.swift in Sources */,
 				376E8C172D4102CC00D5D2EC /* NewTabPageModeDecider.swift in Sources */,
 				3706FABA293F65D500E42796 /* BookmarkOutlineViewDataSource.swift in Sources */,
 				560EB9332C78946F0080DBC8 /* ContextualOnboardingDialogs.swift in Sources */,
@@ -14021,6 +14034,7 @@
 				37A6A8F62AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,
 				5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */,
 				319FCFF52CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
+				BBC3F8F62D651964003F4910 /* FocusSessionCoordinator.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				3199AF6F2C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,
 				AA3F895324C18AD500628DDE /* SuggestionViewModel.swift in Sources */,

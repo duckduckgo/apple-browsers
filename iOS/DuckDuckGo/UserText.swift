@@ -247,6 +247,11 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func closeAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "closeAllTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func alertTitleCloseSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleCloseSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)

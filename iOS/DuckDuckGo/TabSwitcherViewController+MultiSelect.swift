@@ -354,15 +354,17 @@ extension TabSwitcherViewController {
     func createEditMenu() -> UIMenu {
         return UIMenu(children: [
             // Force plural version for the menu - this really means "switch to select tabs mode"
-            action(UserText.tabSwitcherSelectTabs(withCount: 2), systemImage: "checkmark.cicle", { [weak self] in
+            action(UserText.tabSwitcherSelectTabs(withCount: 2), systemImage: "checkmark.circle", { [weak self] in
                 guard let self else { return }
                 self.editMenuSelectAll()
             }),
 
-            action(UserText.closeTabs(withCount: tabsModel.count), "Tab-Close-16", destructive: true, { [weak self] in
-                guard let self else { return }
-                self.editMenuCloseAllTabs()
-            }),
+            UIMenu(title: "", options: [.displayInline], children: [
+                action(UserText.closeAllTabs(withCount: tabsModel.count), "Tab-Close-16", destructive: true, { [weak self] in
+                    guard let self else { return }
+                    self.editMenuCloseAllTabs()
+                })
+            ]),
         ])
     }
 

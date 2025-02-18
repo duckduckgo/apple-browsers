@@ -306,6 +306,24 @@ I blocked them!
 			<string>Close Tab</string>
 		</dict>
 	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Close All %d Tabs</string>
+			<key>one</key>
+			<string>Close Tab</string>
+			<key>zero</key>
+			<string>Close All Tabs</string>
+		</dict>
+	</dict>
 	<key>alertTitleCloseSelectedTabs.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

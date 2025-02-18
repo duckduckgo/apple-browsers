@@ -103,7 +103,7 @@ final class TabViewCell: UICollectionViewCell {
         backgroundColor = .clear
         backgroundView?.backgroundColor = .clear
 
-        border.layer.cornerRadius = 12
+        border.layer.cornerRadius = 16
 
         layer.cornerRadius = 12
         layer.shadowColor = UIColor.black.cgColor

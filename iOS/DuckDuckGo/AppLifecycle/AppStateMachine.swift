@@ -146,8 +146,8 @@ final class AppStateMachine {
     }
 
     func handle(_ action: AppAction) {
-        if let foreground = currentState as? ForegroundHandling {
-            foreground.handle(action)
+        if case .foreground(let foregroundHandling) = currentState {
+            foregroundHandling.handle(action)
         } else {
             actionToHandle = action
         }

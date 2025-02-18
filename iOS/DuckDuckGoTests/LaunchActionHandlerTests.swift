@@ -75,7 +75,7 @@ final class LaunchActionHandlerTests {
     )
 
     @Test("Open URL when LaunchAction is .openURL")
-    func testLaunchActionHandlerOpenURL() {
+    func openURL() {
         let url = URL(string: "https://example.com")!
         let action = LaunchAction.openURL(url)
 
@@ -86,7 +86,7 @@ final class LaunchActionHandlerTests {
     }
 
     @Test("Do not open URL when shouldProcessDeepLink returns false")
-    func testLaunchActionHandlerDoesNotOpenURLWhenShouldProcessDeepLinkReturnsFalse() {
+    func doNotOpenURLWhenShouldProcessDeepLinkReturnsFalse() {
         let url = URL(string: "https://example.com")!
         let action = LaunchAction.openURL(url)
 
@@ -98,7 +98,7 @@ final class LaunchActionHandlerTests {
     }
 
     @Test("Handle shortcut item when LaunchAction is .handleShortcutItem")
-    func testLaunchActionHandlerShortcutItem() {
+    func handleShortcutItem() {
         let shortcutItem = UIApplicationShortcutItem(type: "TestType", localizedTitle: "Test")
         let action = LaunchAction.handleShortcutItem(shortcutItem)
 
@@ -109,7 +109,7 @@ final class LaunchActionHandlerTests {
     }
 
     @Test("Show keyboard when LaunchAction is .showKeyboard")
-    func testLaunchActionHandlerShowKeyboard() {
+    func showKeyboard() {
         let date = Date()
         let action = LaunchAction.showKeyboard(date)
 

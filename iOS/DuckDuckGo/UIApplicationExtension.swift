@@ -61,7 +61,7 @@ extension UIApplication {
 
     // MARK: app delegate helpers
 
-    enum TerminationReason {
+    enum TerminationReason: String {
 
         case insufficientDiskSpace
         case unrecoverableState

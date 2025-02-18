@@ -23,7 +23,7 @@ import Core
 import BrowserServicesKit
 import Common
 
-private class DataImportViewModelTests: XCTestCase {
+class DataImportViewModelTests: XCTestCase {
 
     var viewModel: DataImportViewModel!
     fileprivate var mockImportManager: MockDataImportManager!

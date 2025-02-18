@@ -36,6 +36,7 @@ public protocol SubscriptionManager {
     func loadInitialData()
     func refreshCachedSubscriptionAndEntitlements(completion: @escaping (_ isSubscriptionActive: Bool) -> Void)
     func url(for type: SubscriptionURL) -> URL
+    func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
 }
 
@@ -156,6 +157,22 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public func url(for type: SubscriptionURL) -> URL {
         type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+    }
+
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
+        let defaultPurchaseURL = url(for: .purchase)
+
+        if var purchaseURLComponents = URLComponents(url: defaultPurchaseURL, resolvingAgainstBaseURL: true) {
+
+            purchaseURLComponents.addingSubdomain(from: redirectURLComponents, tld: tld)
+            purchaseURLComponents.addingPort(from: redirectURLComponents)
+            purchaseURLComponents.addingFragment(from: redirectURLComponents)
+            purchaseURLComponents.addingQueryItems(from: redirectURLComponents)
+
+            return purchaseURLComponents.url ?? defaultPurchaseURL
+        }
+
+        return defaultPurchaseURL
     }
 
     // MARK: - Current subscription's features

@@ -42,7 +42,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(origin: nil)),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow()),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
@@ -112,12 +112,13 @@ struct SettingsRootView: View {
             SubscriptionPIRView()
         case .itr:
             SubscriptionITPView()
-        case let .subscriptionFlow(origin):
-            SubscriptionContainerViewFactory.makeSubscribeFlow(origin: origin,
+        case let .subscriptionFlow(redirectURLComponents):
+            SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
                                                                navigationCoordinator: subscriptionNavigationCoordinator,
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               privacyProDataReporter: viewModel.privacyProDataReporter)
+                                                               privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                               tld: AppDependencyProvider.shared.storageCache.tld)
             .environmentObject(subscriptionNavigationCoordinator)
 
         case .restoreFlow:

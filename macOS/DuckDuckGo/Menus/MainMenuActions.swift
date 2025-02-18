@@ -68,7 +68,15 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
+            let controller = WindowControllersManager.shared.lastKeyMainWindowController
+            let textField = controller?.mainViewController.navigationBarViewController.addressBarViewController?.addressBarTextField
+
+            if let textField = textField, case let .text(text, _) = textField.value {
+                AIChatTabOpener.openAIChatTab(text)
+            } else {
+                AIChatTabOpener.openAIChatTab()
+            }
+
             PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
         }
     }

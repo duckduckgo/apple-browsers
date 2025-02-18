@@ -21,6 +21,8 @@ import UserScript
 protocol AIChatUserScriptHandling {
     func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable?
     func openSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -45,4 +47,29 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         UserValues(isToolbarShortcutEnabled: storage.shouldDisplayToolbarShortcut,
                    platform: "macOS")
     }
+
+    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
+        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                 platform: "ios")
+    }
+
+    public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
+        AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
+                                platform: "ios",
+                                aiChatPayload: nil)
+    }
+
+
+}
+
+public struct AIChatNativeConfigValues: Codable {
+    let isAIChatHandoffEnabled: Bool
+    let platform: String
+}
+
+public struct AIChatNativeHandoffData: Codable {
+    let isAIChatHandoffEnabled: Bool
+    let platform: String
+    let aiChatPayload: String?
+
 }

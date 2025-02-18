@@ -639,7 +639,11 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     }
 
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        aiChatTabOpener.openChatTab()
+        if case let .text(text, _) = addressBarTextField.value {
+            aiChatTabOpener.openChatTab(text)
+        } else {
+            aiChatTabOpener.openChatTab()
+        }
     }
 
 }

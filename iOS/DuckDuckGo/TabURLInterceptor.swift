@@ -57,7 +57,7 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
             return handleURLInterception(interceptedURLType: .aiChat)
         }
 
-        guard url.isPart(ofDomain: "duckduckgo.com"),
+        guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
               let components = normalizeScheme(url.absoluteString),
               let matchingURL = urlToIntercept(path: components.path) else {
             return true

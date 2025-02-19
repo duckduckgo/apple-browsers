@@ -78,6 +78,9 @@ public enum FeatureFlag: String {
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
+
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case networkProtectionRiskyDomainsProtection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -99,6 +102,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .textZoom:
             return true
         case .testExperiment:
+            return true
+        case .networkProtectionRiskyDomainsProtection:
             return true
         default:
             return false
@@ -185,6 +190,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .networkProtectionRiskyDomainsProtection:
+            return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         }
     }
 }

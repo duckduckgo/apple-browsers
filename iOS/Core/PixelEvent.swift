@@ -63,10 +63,6 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
-        case tabSwitcherOpenedFromSerp
-        case tabSwitcherOpenedFromWebsite
-        case tabSwitcherOpenedFromNewTabPage
-
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
@@ -1029,10 +1025,6 @@ extension Pixel.Event {
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
-
-        case .tabSwitcherOpenedFromSerp: return "m_tab_manager_open_from_serp"
-        case .tabSwitcherOpenedFromWebsite: return "m_tab_manager_open_from_website"
-        case .tabSwitcherOpenedFromNewTabPage: return "m_tab_manager_open_from_newtabpage"
 
         case .settingsDoNotSellShown: return "ms_dns"
         case .settingsDoNotSellOn: return "ms_dns_on"

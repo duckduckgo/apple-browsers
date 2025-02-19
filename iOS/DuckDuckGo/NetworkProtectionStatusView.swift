@@ -275,9 +275,16 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func settings() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsTitle, destination: NetworkProtectionVPNSettingsView())
+            NavigationLink(destination: NetworkProtectionVPNSettingsView()) {
+                HStack {
+                    Image("Settings-24")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                    Text(UserText.netPVPNSettingsTitle)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
         } header: {
             Text(UserText.netPStatusViewSettingsSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
         }
@@ -289,7 +296,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
                 HStack {
-                    Image("Settings-24")
+                    Image("Info-24")
                         .resizable()
                         .frame(width: 24, height: 24)
                     Text(UserText.netPVPNSettingsFAQ)
@@ -301,7 +308,7 @@ struct NetworkProtectionStatusView: View {
             if statusModel.usesUnifiedFeedbackForm {
                 NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
                     HStack {
-                        Image("Info-24")
+                        Image("Feedback-24")
                             .resizable()
                             .frame(width: 24, height: 24)
                         Text(UserText.subscriptionFeedback)

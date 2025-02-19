@@ -508,11 +508,16 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        let forceShowOnboarding = !LaunchOptionsHandler().isOnboardingCompleted
+        // Check if we override onboarding flag and show/hide onboarding accordingly
+        // If onboarding is not overridden, show onboarding only if users have not seen it.
+        let showOnboarding = switch LaunchOptionsHandler().onboardingStatus {
+        case .notOverridden:
+            !tutorialSettings.hasSeenOnboarding
+        case let .overridden(isOnboardingCompleted):
+            !isOnboardingCompleted
+        }
 
-        let showOnboarding = !tutorialSettings.hasSeenOnboarding || forceShowOnboarding
         guard showOnboarding else { return }
-
         segueToDaxOnboarding()
     }
 

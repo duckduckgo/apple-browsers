@@ -281,7 +281,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     var isEnabled: Bool {
-        if launchOptionsHandler.isOnboardingCompleted {
+        if launchOptionsHandler.onboardingStatus == .overridden(completed: true) {
             return false
         }
         return !settings.isDismissed

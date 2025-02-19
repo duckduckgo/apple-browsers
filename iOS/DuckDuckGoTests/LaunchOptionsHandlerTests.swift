@@ -37,52 +37,64 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
     // MARK: - isOnboardingCompleted
 
-    func testShouldReturnTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
+    func testShouldReturnStatusOverriddenCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
         let environment = ["ONBOARDING": "false"]
         let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
 
         // WHEN
-        let result = sut.isOnboardingCompleted
+        let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertTrue(result)
+        XCTAssertEqual(result, .overridden(completed: true))
     }
 
-    func testShouldReturnFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
+    func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
         let environment = ["ONBOARDING": "true"]
         let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
 
         // WHEN
-        let result = sut.isOnboardingCompleted
+        let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertFalse(result)
+        XCTAssertEqual(result, .overridden(completed: false))
     }
 
-    func testShouldReturnTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
+    func testShouldReturnStatusOverriddenCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
         // GIVEN
         userDefaults.set("true", forKey: "isOnboardingCompleted")
         let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
 
         // WHEN
-        let result = sut.isOnboardingCompleted
+        let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertTrue(result)
+        XCTAssertEqual(result, .overridden(completed: true))
     }
 
-    func testShouldReturnTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
+    func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
         // GIVEN
-        userDefaults.removeObject(forKey: "isOnboardingCompleted")
+        userDefaults.set("false", forKey: "isOnboardingCompleted")
         let sut = LaunchOptionsHandler(launchArguments: [], userDefaults: userDefaults)
 
         // WHEN
-        let result = sut.isOnboardingCompleted
+        let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertFalse(result)
+        XCTAssertEqual(result, .overridden(completed: false))
+    }
+
+    func testShouldReturnStatusNotOverriddenWhenIsOnboardingCompletedAndDefaultsAndEnvironmentAreNotDefined() {
+        // GIVEN
+        userDefaults.removeObject(forKey: "isOnboardingCompleted")
+        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+
+        // WHEN
+        let result = sut.onboardingStatus
+
+        // THEN
+        XCTAssertEqual(result, .notOverridden)
     }
 
     // MARK: - App Variant

@@ -31,19 +31,24 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
     private let baseURL: URL
     private let canPurchase: () -> Bool
     private let tld: TLD
+    private let featureFlagger: FeatureFlagger
 
     init(subscriptionManager: SubscriptionManager,
          baseURL: URL,
          canPurchase: @escaping () -> Bool,
-         tld: TLD = ContentBlocking.shared.tld) {
+         tld: TLD = ContentBlocking.shared.tld,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
         self.canPurchase = canPurchase
         self.baseURL = baseURL
         self.tld = tld
+        self.featureFlagger = featureFlagger
     }
 
     func redirectURL(for url: URL) -> URL? {
-        guard url.isPart(ofDomain: "duckduckgo.com") else { return nil }
+        guard url.isPart(ofDomain: "duckduckgo.com") ||
+              (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser)
+        else { return nil }
 
         if url.pathComponents == URL.privacyPro.pathComponents {
             let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && canPurchase() == false

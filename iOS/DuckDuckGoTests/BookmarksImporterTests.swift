@@ -53,14 +53,14 @@ class BookmarksImporterTests: XCTestCase {
 
     func test_WhenParseSafariHtml_ThenImportSuccess() async throws {
         try await importer.parseHtml(htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_safari.html"))
-        XCTAssertEqual(importer.importedBookmarks.count, 10)
+        XCTAssertEqual(importer.importedBookmarks.count, 11)
     }
 
-    func test_WhenParseSafariHtml_ThenReadingListExcluded() async throws {
+    func test_WhenParseSafariHtml_ThenReadingListIncluded() async throws {
         try await importer.parseHtml(htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_safari.html"))
 
         let result = importer.importedBookmarks.filter { $0.name == "Reading List" }
-        XCTAssertEqual(result.count, 0)
+        XCTAssertEqual(result.count, 1)
     }
 
     func test_WhenParseFirefoxHtml_ThenImportSuccess() async throws {
@@ -172,7 +172,7 @@ class BookmarksImporterTests: XCTestCase {
     func test_WhenSaveBookmarks_ThenDataSaved() async throws {
         try await importer.parseHtml(htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_safari.html"))
         let summary = try await importer.saveBookmarks(importer.importedBookmarks)
-        XCTAssertEqual(summary.successful, 13)
+        XCTAssertEqual(summary.successful, 29)
 
         // Note: exhaustive hierarchy is tested in BookmarksExporterTests.testExportHtml
         let context = storage.makeContext(concurrencyType: .mainQueueConcurrencyType)
@@ -180,7 +180,7 @@ class BookmarksImporterTests: XCTestCase {
             XCTFail("Root folder missing")
             return
         }
-        XCTAssertEqual(topLevelFolder.children?.count ?? 0, 10)
+        XCTAssertEqual(topLevelFolder.children?.count ?? 0, 11)
     }
 
     func test_WhenParseHtmlAndSave_ThenDataSaved() async {
@@ -188,7 +188,7 @@ class BookmarksImporterTests: XCTestCase {
         let result = await importer.parseAndSave()
         switch result {
         case .success(let importedBookmarks):
-            XCTAssertEqual(importedBookmarks.successful, 12)
+            XCTAssertEqual(importedBookmarks.successful, 25)
         case .failure(let bookmarksImportError):
             XCTFail("Failed to parse and save HTML \(bookmarksImportError.localizedDescription)")
         }

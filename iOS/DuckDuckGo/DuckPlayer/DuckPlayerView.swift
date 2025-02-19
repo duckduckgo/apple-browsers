@@ -84,13 +84,13 @@ struct DuckPlayerView: View {
                                     .fill(Color.gray.opacity(0.2))
                                 HStack(spacing: 8) {
                                     Image(Constants.duckPlayerYoutubeImage)
-                                        .renderingMode(.template)   
+                                        .renderingMode(.template)
                                         .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)                                        
+                                        .frame(width: 24, height: 24)
                                     Text(UserText.duckPlayerNativeWatchOnYouTube)
                                         .daxButton()
                                         .daxBodyRegular()
-                                        .foregroundColor(.white)                                        
+                                        .foregroundColor(.white)
                                 }
                             }
                         }
@@ -123,8 +123,7 @@ struct DuckPlayerView: View {
         }
         .onDisappear {
             viewModel.onDisappear()
-        }        
-
+        }
     }
     
     private var header: some View {

@@ -57,7 +57,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let autoplayParameter = "autoplay"
         
         // Used to enable features in URL parameters        
-        static let enabled = "1"        
+        static let enabled = "1"
         static let disabled = "0"
     }
     

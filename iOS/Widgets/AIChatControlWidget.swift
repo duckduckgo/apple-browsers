@@ -22,25 +22,144 @@ import SwiftUI
 import AppIntents
 
 @available(iOS 18, *)
-struct AIChatControlWidget: ControlWidget {
+protocol ControlWidgetProtocol: ControlWidget {
+    associatedtype IntentType: AppIntent
+
+    var kind: ControlWidgetKind { get }
+    var displayName: LocalizedStringResource { get }
+    var labelText: String { get }
+    var imageName: String { get }
+    var intent: IntentType { get }
+}
+
+@available(iOS 18, *)
+extension ControlWidgetProtocol {
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(kind: ControlWidgetKind.aiChat.rawValue) {
-            ControlWidgetButton(action: OpenAIChatIntent()) {
-                Label("Duck.ai", image: "AI-Chat-Symbol")
+        StaticControlConfiguration(kind: kind.rawValue) {
+            ControlWidgetButton(action: intent) {
+                Label(labelText, image: imageName)
             }
         }
-        .displayName("Duck.ai")
+        .displayName(displayName)
     }
 }
 
 @available(iOS 18, *)
-struct OpenAIChatIntent: AppIntent {
-    static var title: LocalizedStringResource = "Duck.ai"
-    static var description: LocalizedStringResource = "Launches Duck.ai from the Control Center."
-    static var openAppWhenRun: Bool = true
+struct AIChatControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .aiChat
+    let displayName: LocalizedStringResource = "Duck.ai"
+    let labelText: String = "Duck.ai"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = OpenAIChatIntent()
 
-    func perform() async throws -> some IntentResult & OpensIntent {
-        await EnvironmentValues().openURL(DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.controlCenter.rawValue))
-        return .result()
+    struct OpenAIChatIntent: AppIntent {
+        static var title: LocalizedStringResource = "Duck.ai"
+        static var description: LocalizedStringResource = "Launches Duck.ai from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.controlCenter.rawValue))
+            return .result()
+        }
+    }
+}
+
+@available(iOS 18, *)
+struct SearchControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .search
+    let displayName: LocalizedStringResource = "Search"
+    let labelText: String = "Search"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = OpenSearchIntent()
+
+    struct OpenSearchIntent: AppIntent {
+        static var title: LocalizedStringResource = "Search"
+        static var description: LocalizedStringResource = "Start a new search from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.newSearch)
+            return .result()
+        }
+    }
+}
+
+@available(iOS 18, *)
+struct PasswordsControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .passwords
+    let displayName: LocalizedStringResource = "Passwords"
+    let labelText: String = "Passwords"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = OpenPasswordsIntent()
+
+    struct OpenPasswordsIntent: AppIntent {
+        static var title: LocalizedStringResource = "Passwords"
+        static var description: LocalizedStringResource = "Open your passwords from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.openPasswords)
+            return .result()
+        }
+    }
+}
+
+@available(iOS 18, *)
+struct FavoritesControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .favorites
+    let displayName: LocalizedStringResource = "Favorites"
+    let labelText: String = "Favorites"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = OpenFavoritesIntent()
+
+    struct OpenFavoritesIntent: AppIntent {
+        static var title: LocalizedStringResource = "Favorites"
+        static var description: LocalizedStringResource = "Open your favorites from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.favorites)
+            return .result()
+        }
+    }
+}
+
+@available(iOS 18, *)
+struct VoiceSearchControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .voiceSearch
+    let displayName: LocalizedStringResource = "Voice Search"
+    let labelText: String = "Voice Search"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = OpenVoiceSearchIntent()
+
+    struct OpenVoiceSearchIntent: AppIntent {
+        static var title: LocalizedStringResource = "Favorites"
+        static var description: LocalizedStringResource = "Start a new voice search from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.voiceSearch)
+            return .result()
+        }
+    }
+}
+
+@available(iOS 18, *)
+struct EmailProtectionControlWidget: ControlWidgetProtocol {
+    let kind: ControlWidgetKind = .email
+    let displayName: LocalizedStringResource = "Email Protection"
+    let labelText: String = "Email Protection"
+    let imageName: String = "AI-Chat-Symbol"
+    let intent = EmailProtectionIntent()
+
+    struct EmailProtectionIntent: AppIntent {
+        static var title: LocalizedStringResource = "Email Protection"
+        static var description: LocalizedStringResource = "Instantly generate a new private Duck Address from the Control Center."
+        static var openAppWhenRun: Bool = true
+
+        func perform() async throws -> some IntentResult & OpensIntent {
+            await EnvironmentValues().openURL(DeepLinks.voiceSearch)
+            return .result()
+        }
     }
 }

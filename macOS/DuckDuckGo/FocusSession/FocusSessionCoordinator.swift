@@ -69,6 +69,14 @@ final class FocusSessionCoordinator: ObservableObject {
         timeRemainingMenuItem = NSMenuItem(title: "Time remaining: --:--", action: nil, keyEquivalent: "")
     }
 
+    func shouldBlock(url: URL) -> Bool {
+        if (url.isSettingsURL || url.isDuckDuckGo || url.isDuckURLScheme) && !url.isDuckPlayer {
+            return false
+        }
+
+        return true // TODO: Here we will need to check the allow list
+    }
+
     func startFocusSession(session: FocusSessionTimer) {
         isCurrentOnFocusSession = true
         totalDuration = session.duration

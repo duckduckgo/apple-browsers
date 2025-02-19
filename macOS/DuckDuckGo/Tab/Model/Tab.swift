@@ -831,11 +831,6 @@ protocol NewWindowPolicyDecisionMaker {
     @MainActor(unsafe)
     @discardableResult
     func reload() -> ExpectedNavigation? {
-        if FocusSessionCoordinator.shared.isCurrentOnFocusSession {
-            blockIfDistracting()
-            return nil
-        }
-
         userInteractionDialog = nil
 
         self.brokenSiteInfo?.tabReloadRequested()
@@ -870,7 +865,9 @@ protocol NewWindowPolicyDecisionMaker {
     @MainActor func blockIfDistracting() {
         guard let url = self.url else { return }
 
-        loadErrorHTML(.init(_nsError: .init(domain: "Test", code: 1234)), header: UserText.errorPageHeader, forUnreachableURL: url, alternate: false)
+        if FocusSessionCoordinator.shared.shouldBlock(url: url) {
+            loadErrorHTML(.init(_nsError: .init(domain: "Test", code: 1234)), header: "You are currently in Focus Mode. Exclude this site if you want to open it", forUnreachableURL: URL(string: "www.test.com")!, alternate: false)
+        }
     }
 
     func unblockIfBlocked() {
@@ -896,7 +893,7 @@ protocol NewWindowPolicyDecisionMaker {
     }
     @MainActor(unsafe)
     @discardableResult
-    private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
+        private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
         guard let url = content.urlForWebView,
               shouldReload(url, source: reloadIfNeededSource) else { return nil }
 
@@ -1288,6 +1285,14 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             onboardingPixelReporter.trackSiteVisited()
         }
         navigationDidEndPublisher.send(self)
+
+        guard let url = self.url else { return }
+
+        let coordinator = FocusSessionCoordinator.shared
+
+        if coordinator.isCurrentOnFocusSession && coordinator.shouldBlock(url: url) {
+            loadErrorHTML(.init(_nsError: .init(domain: "Test", code: 1234)), header: "You are currently in Focus Mode. Exclude this site if you want to open it", forUnreachableURL: URL(string: "www.test.com")!, alternate: false)
+        }
     }
 
     @MainActor

@@ -19,62 +19,61 @@
 import Foundation
 
 public final class Watchdog {
-    private var timer: DispatchSourceTimer?
-    private var lastMainThreadCheck: Date
+    private var lastMainThreadCheck = Date()
     private let timeout: TimeInterval
+    private var isMonitoring: Bool = false
+    private let monitorQueue = DispatchQueue(label: "com.watchdog.monitorQueue", qos: .background)
 
     public var isRunning: Bool {
-        guard let timer else {
-            return false
-        }
-        return !timer.isCancelled
+        return isMonitoring
     }
 
     public init(timeout: TimeInterval = 10.0) {
         self.timeout = timeout
-        self.lastMainThreadCheck = Date()
     }
 
     public func start() {
-        // Start monitoring the main thread with longer intervals
-        DispatchQueue.main.async {
-            self.startMainThreadHeartbeat()
-        }
-        
-        // Create a DispatchSourceTimer to monitor for responsiveness
-        let queue = DispatchQueue.global(qos: .background)
-        timer = DispatchSource.makeTimerSource(queue: queue)
-        timer?.setEventHandler { [weak self] in
-            self?.checkMainThreadResponsiveness()
-        }
-        timer?.schedule(deadline: .now(), repeating: DispatchTimeInterval.seconds(2))  // Check every 2 seconds
-        timer?.resume()
+        lastMainThreadCheck = Date()
+        // Start monitoring the main thread from a background thread
+        startMainThreadHeartbeatInBackground()
     }
 
     public func stop() {
-        timer?.cancel()
+        monitorQueue.async { [weak self] in
+            self?.isMonitoring = false
+        }
     }
 
-    // This method simulates the heartbeat from the main thread
-    private func startMainThreadHeartbeat() {
-        // Reset the last check time periodically (e.g., every 2 seconds)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // 2-second heartbeat
-            self.lastMainThreadCheck = Date()
-            self.startMainThreadHeartbeat()  // Keep the heartbeat running
+    // This method will simulate the heartbeat for the main thread in the background
+    private func startMainThreadHeartbeatInBackground() {
+        // Recursively check every 2 seconds from a background thread
+        monitorQueue.async { [weak self] in
+            guard let self = self else { return }
+            self.isMonitoring = true
+
+            while self.isMonitoring {
+                // Check the main thread's responsiveness
+                self.checkMainThreadResponsiveness()
+
+                // Simulate the heartbeat every 2 seconds, ensuring it doesn't block the main thread
+                DispatchQueue.main.async {
+                    self.lastMainThreadCheck = Date()
+                }
+
+                // Recursively call itself after a delay, but on the background queue
+                usleep(2 * 1000000)  // Sleep for 2 seconds before checking again
+            }
         }
     }
 
     private func checkMainThreadResponsiveness() {
         // If the last heartbeat was too long ago, kill the app
         if Date().timeIntervalSince(lastMainThreadCheck) > timeout {
-            print("Main thread is unresponsive! Killing the app.")
             killApp()
         }
     }
 
     private func killApp() {
-        // Terminate the app
-        let pid = getpid()
-        kill(pid, SIGKILL)
+        fatalError("Main thread is unresponsive! Killing the app.")
     }
 }

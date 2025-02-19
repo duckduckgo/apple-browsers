@@ -66,17 +66,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                                                 allowedDomains: allowedDomains,
                                                                 contentBlocking: false)
         
-    init(origin: String?,
+    init(purchaseURL: URL,
          userScript: SubscriptionPagesUserScript,
          subFeature: SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionManager,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil) {
-        let url = subscriptionManager.url(for: .purchase)
-        if let origin {
-            purchaseURL = url.appendingParameter(name: AttributionParameter.origin, value: origin)
-        } else {
-            purchaseURL = url
-        }
+        self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
@@ -84,7 +79,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
     }
-    
+
     // Observe transaction status
     private func setupTransactionObserver() async {
         

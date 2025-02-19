@@ -1544,8 +1544,8 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
-                if let origin = notification.userInfo?[AttributionParameter.origin] as? String {
-                    deepLinkTarget = .subscriptionFlow(origin: origin)
+                if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
+                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }

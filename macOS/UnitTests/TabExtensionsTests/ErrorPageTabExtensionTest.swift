@@ -542,6 +542,12 @@ class MockFeatureFlagger: FeatureFlagger {
     var localOverrides: FeatureFlagLocalOverriding?
     var cohort: (any FeatureFlagCohortDescribing)?
 
+    public init() { }
+
+    public init(internalUserDecider: InternalUserDecider) {
+        self.internalUserDecider = internalUserDecider
+    }
+
     var isFeatureOn = true
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
         return isFeatureOn

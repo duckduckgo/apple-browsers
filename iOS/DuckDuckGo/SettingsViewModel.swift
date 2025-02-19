@@ -721,7 +721,7 @@ extension SettingsViewModel {
         case netP
         case dbp
         case itr
-        case subscriptionFlow(origin: String? = nil)
+        case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
         case restoreFlow
         case duckPlayer
         case aiChat

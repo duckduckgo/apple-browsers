@@ -47,7 +47,8 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
         // GIVEN
         let origin = "test_origin"
         let queryParameter = URLQueryItem(name: "origin", value: "test_origin")
-        let expectedURL = SubscriptionURL.purchase.subscriptionURL(environment: .production).appending(percentEncodedQueryItem: queryParameter)
+        let redirectPurchaseURL = SubscriptionURL.purchase.subscriptionURL(environment: .production).appending(percentEncodedQueryItem: queryParameter)
+
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                              subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
@@ -63,7 +64,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
 
         // WHEN
         sut = .init(subscriptionManager: subscriptionManager,
-                    origin: origin,
+                    redirectPurchaseURL: redirectPurchaseURL,
                     userScript: .init(),
                     subFeature: .init(subscriptionManager: subscriptionManager,
                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -73,7 +74,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow))
 
         // THEN
-        XCTAssertEqual(sut.flow.purchaseURL, expectedURL)
+        XCTAssertEqual(sut.flow.purchaseURL, redirectPurchaseURL)
     }
 
     func testWhenInitWithoutOriginThenSubscriptionFlowPurchaseURLDoesNotHaveOriginSet() {
@@ -92,7 +93,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
 
         // WHEN
         sut = .init(subscriptionManager: subscriptionManager,
-                    origin: nil,
+                    redirectPurchaseURL: nil,
                     userScript: .init(),
                     subFeature: .init(subscriptionManager: subscriptionManager,
                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,

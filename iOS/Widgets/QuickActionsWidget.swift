@@ -65,7 +65,7 @@ struct ConfigurationIntent: WidgetConfigurationIntent {
     init() { }
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
     case passwords
     case duckAI
@@ -105,7 +105,7 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct QuickActionsWidget: Widget {
     let kind: String = "QuickActionsWidget"
 
@@ -119,7 +119,7 @@ struct QuickActionsWidget: Widget {
     }
 }
 
-@available(iOSApplicationExtension 17.0, *)
+@available(iOS 17.0, *)
 struct QuickActionsWidgetView: View {
     var entry: QuickActionsEntry
 

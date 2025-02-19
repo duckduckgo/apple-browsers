@@ -93,7 +93,7 @@ extension TabURLInterceptorDefault {
             if canPurchase() {
                 // We pass `interceptedURLComponents` to properly resolve final purchase URL
                 // and to capture `origin` query parameter as it is needed for the Pixel to track subscription attributions
-                var userInfo: [AnyHashable : Any]? = nil
+                var userInfo: [AnyHashable: Any]?
 
                 if let components = interceptedURLComponents {
                     userInfo = [TabURLInterceptorParameter.interceptedURLComponents: interceptedURLComponents as Any]

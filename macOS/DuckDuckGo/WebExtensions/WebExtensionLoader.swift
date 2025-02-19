@@ -16,27 +16,27 @@
 //  limitations under the License.
 //
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 protocol WebExtensionLoading: AnyObject {
 
-    func loadWebExtensions(from paths: [String]) -> [_WKWebExtension]
+    func loadWebExtensions(from paths: [String]) -> [WKWebExtension]
 
 }
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 final class WebExtensionLoader: WebExtensionLoading {
 
-    private func loadWebExtension(path: String) -> _WKWebExtension? {
+    private func loadWebExtension(path: String) -> WKWebExtension? {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
             return nil
         }
-        let webExtension = try? _WKWebExtension(resourceBaseURL: extensionURL)
+        let webExtension = try? WKWebExtension(resourceBaseURL: extensionURL)
         return webExtension
     }
 
-    func loadWebExtensions(from paths: [String]) -> [_WKWebExtension] {
-        var result = [_WKWebExtension]()
+    func loadWebExtensions(from paths: [String]) -> [WKWebExtension] {
+        var result = [WKWebExtension]()
         for webExtensionPath in paths {
             guard let webExtension = loadWebExtension(path: webExtensionPath) else {
                 assertionFailure("Failed to load the web extension: \(webExtensionPath)")

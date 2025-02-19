@@ -460,7 +460,7 @@ protocol NewWindowPolicyDecisionMaker {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
             }
 #endif
@@ -537,7 +537,7 @@ protocol NewWindowPolicyDecisionMaker {
     @Published var title: String? {
         didSet {
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
             }
 #endif
@@ -572,7 +572,7 @@ protocol NewWindowPolicyDecisionMaker {
     @Published private(set) var isLoading: Bool = false {
         didSet {
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
             }
 #endif
@@ -867,7 +867,7 @@ protocol NewWindowPolicyDecisionMaker {
         objectWillChange.send()
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
         }
 #endif

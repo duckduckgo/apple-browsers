@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 protocol WebExtensionPathsCaching: AnyObject {
 
     var cache: [String] { get }
@@ -25,7 +25,7 @@ protocol WebExtensionPathsCaching: AnyObject {
 
 }
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 final class WebExtensionPathsCache: WebExtensionPathsCaching {
 
     @UserDefaultsWrapper(key: .webExtensionPathsCache, defaultValue: [])

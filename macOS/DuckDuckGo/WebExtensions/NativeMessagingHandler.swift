@@ -19,12 +19,12 @@
 import Foundation
 import os.log
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 final class NativeMessagingHandler {
 
     var nativeMessagingConnections = [NativeMessagingConnection]()
 
-    private func connection(for port: _WKWebExtension.MessagePort) -> NativeMessagingConnection? {
+    private func connection(for port: WKWebExtensionMessagePort) -> NativeMessagingConnection? {
         return nativeMessagingConnections.first(where: { $0.port === port })
     }
 
@@ -36,7 +36,7 @@ final class NativeMessagingHandler {
         nativeMessagingConnections.removeAll {$0 === connection}
     }
 
-    private func cancelConnection(with port: _WKWebExtension.MessagePort) {
+    private func cancelConnection(with port: WKWebExtensionMessagePort) {
         nativeMessagingConnections.removeAll { $0.port === port }
     }
 
@@ -44,12 +44,12 @@ final class NativeMessagingHandler {
         nativeMessagingConnections.removeAll {$0.communicator === communicator}
     }
 
-    func webExtensionController(_ controller: _WKWebExtensionController, sendMessage message: Any, to applicationIdentifier: String?, for extensionContext: _WKWebExtensionContext) async throws -> Any? {
+    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, to applicationIdentifier: String?, for extensionContext: WKWebExtensionContext) async throws -> Any? {
         // Handle browser.runtime.sendNativeMessage()
         return nil
     }
 
-    func webExtensionController(_ controller: _WKWebExtensionController, connectUsingMessagePort port: _WKWebExtension.MessagePort, for extensionContext: _WKWebExtensionContext) async throws {
+    func webExtensionController(_ controller: WKWebExtensionController, connectUsingMessagePort port: WKWebExtensionMessagePort, for extensionContext: WKWebExtensionContext) async throws {
         port.disconnectHandler = { [weak self] error in
             if let error {
                 Logger.webExtensions.log(("Message port disconnected: \(error)"))
@@ -96,7 +96,7 @@ final class NativeMessagingHandler {
     }
 }
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 @MainActor
 extension NativeMessagingHandler: @preconcurrency NativeMessagingCommunicatorDelegate {
     func nativeMessagingCommunicator(_ nativeMessagingCommunicator: any NativeMessagingCommunication, didReceiveMessageData messageData: Data) {
@@ -138,7 +138,7 @@ extension NativeMessagingHandler: @preconcurrency NativeMessagingCommunicatorDel
 
 }
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 @MainActor
 extension NativeMessagingHandler: @preconcurrency NativeMessagingConnectionDelegate {
 

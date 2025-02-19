@@ -21,7 +21,7 @@ import Combine
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 final class WebExtensionManagerTests: XCTestCase {
 
     var pathsCachingMock: WebExtensionPathsCachingMock!

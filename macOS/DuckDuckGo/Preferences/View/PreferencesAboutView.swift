@@ -54,6 +54,7 @@ extension Preferences {
 
     struct AboutContentSection: View {
         @ObservedObject var model: AboutPreferences
+        @State private var tapCount = 0
 
         var body: some View {
             PreferencePaneSection {
@@ -74,23 +75,23 @@ extension Preferences {
                     model.openNewTab(with: .privacyPolicy)
                 }
 
-                #if FEEDBACK
+#if FEEDBACK
                 Button(UserText.sendFeedback) {
                     model.openFeedbackForm()
                 }
                 .padding(.top, 4)
-                #endif
+#endif
             }
-            #if SPARKLE
+#if SPARKLE
             .onAppear {
                 model.subscribeToUpdateInfoIfNeeded()
             }
-            #endif
+#endif
         }
 
         private var rightColumnContent: some View {
             Group {
-                #if APPSTORE
+#if APPSTORE
                 Text(UserText.duckDuckGoForMacAppStore).font(.companyName)
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
@@ -103,7 +104,7 @@ extension Preferences {
                             model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
-                #else
+#else
                 Text(UserText.duckDuckGo).font(.companyName)
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
@@ -120,7 +121,7 @@ extension Preferences {
                 .padding(.bottom, 4)
 
                 updateButton
-                #endif
+#endif
             }
         }
 
@@ -134,6 +135,12 @@ extension Preferences {
                 .padding(.top, 10)
             }
             .padding(.bottom, 8)
+            .onTapGesture {
+                tapCount += 1
+                if tapCount >= 10 {
+                    model.unlockFeatureModeFeature()
+                }
+            }
         }
 
         private var verticalPageLogo: some View {
@@ -145,6 +152,16 @@ extension Preferences {
                 .padding(.top, 10)
             }
             .padding(.bottom, 8)
+            .onTapGesture {
+                tapCount += 1
+                if tapCount >= 10 {
+                    model.unlockFeatureModeFeature()
+                }
+            }
+        }
+
+        private func unlockFeature() {
+            print("Feature unlocked")
         }
 
 #if SPARKLE

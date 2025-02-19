@@ -18,7 +18,6 @@
 
 import Foundation
 import Combine
-import AppKit // Make sure to import AppKit for NSMenu and NSMenuItem
 
 enum FocusSessionTimer {
     case fifteenMinutes
@@ -67,6 +66,14 @@ final class FocusSessionCoordinator: ObservableObject {
 
     private init() {
         timeRemainingMenuItem = NSMenuItem(title: "Time remaining: --:--", action: nil, keyEquivalent: "")
+    }
+
+    var canHaveAccessToTheFeature: Bool {
+        NSApp.delegateTyped.internalUserDecider.isInternalUser
+    }
+
+    var isFeatureEnabled: Bool {
+        NSApp.delegateTyped.internalUserDecider.isInternalUser && true // TODO: Add if feature was enabled from about section
     }
 
     func shouldBlock(url: URL) -> Bool {

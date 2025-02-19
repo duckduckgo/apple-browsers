@@ -93,6 +93,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         refreshUpdateState()
     }
 
+    func unlockFeatureModeFeature() {
+        if FocusSessionCoordinator.shared.canHaveAccessToTheFeature {
+            print("Feature unlocked!")
+        }
+    }
+
     private func refreshUpdateState() {
         guard let updateController else { return }
         updateState = UpdateState(from: updateController.latestUpdate, progress: updateController.updateProgress)

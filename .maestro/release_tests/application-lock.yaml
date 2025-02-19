@@ -22,7 +22,9 @@ tags:
 
 - stopApp
 
-- launchApp
+- launchApp:
+    arguments:
+      isOnboardingCompleted: ${ONBOARDING_COMPLETED}
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
@@ -49,6 +51,8 @@ tags:
 
 - stopApp
 
-- launchApp
+- launchApp:
+    arguments:
+      isOnboardingCompleted: ${ONBOARDING_COMPLETED}
 
 - assertVisible: "Privacy Test Pages"

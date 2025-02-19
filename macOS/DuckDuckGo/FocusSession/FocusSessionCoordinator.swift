@@ -18,11 +18,11 @@
 
 import Foundation
 import Combine
+import SwiftUICore
 
 public extension NSNotification.Name {
 
     static let focusModeFeatureEnabled = Notification.Name(rawValue: "com.duckduckgo.focus.mode.feature.enabled")
-
 }
 
 enum FocusSessionTimer {
@@ -30,22 +30,29 @@ enum FocusSessionTimer {
     case fifty
     case seventyFive
     case oneHundred
-    case custom(TimeInterval)
 
     var duration: TimeInterval {
         switch self {
         case .twentyFive:
-            return 25 * 60 // 15 minutes in seconds
+            return 25 * 60
         case .fifty:
-            return 50 * 60 // 30 minutes in seconds
+            return 50 * 60
         case .seventyFive:
-            return 75 * 60 // 30 minutes in seconds
+            return 75 * 60
         case .oneHundred:
-            return 100 * 60 // 1 hour in seconds
-        case .custom(let duration):
-            return duration
+            return 100 * 60
         }
     }
+}
+
+protocol FocusModePreferencesPersistor {
+    var playSoundEnabled: Bool { get set }
+}
+
+struct FocusModePreferencesUserDefaultsPersistor: FocusModePreferencesPersistor {
+
+    @UserDefaultsWrapper(key: .focusModePlaySoundEnabled, defaultValue: true)
+    var playSoundEnabled: Bool
 }
 
 final class FocusSessionCoordinator: ObservableObject {
@@ -53,13 +60,15 @@ final class FocusSessionCoordinator: ObservableObject {
     static let shared = FocusSessionCoordinator() // Singleton instance
 
     private let notificationCenter: NotificationCenter
+    private var persistor: FocusModePreferencesPersistor
 
+    @Published var status: Preferences.StatusIndicator?
     @Published var isCurrentOnFocusSession: Bool = false
     private var timer: Timer?
     private var totalDuration: TimeInterval = 0
     private var remainingTime: TimeInterval = 0
 
-    // Publisher for remaining time in mm:ss format
+    // Publisher for remaining time
     private var timeRemainingSubject = PassthroughSubject<String, Never>()
     var timeRemainingPublisher: AnyPublisher<String, Never> {
         timeRemainingSubject.eraseToAnyPublisher()
@@ -72,10 +81,21 @@ final class FocusSessionCoordinator: ObservableObject {
     @UserDefaultsWrapper(key: .focusModeEnabled, defaultValue: false)
     private var isFocusModeEnabled: Bool
 
-    private init(notificationCenter: NotificationCenter = .default) {
+    @Published
+    var isPlaySoundEnabled: Bool {
+        didSet {
+            persistor.playSoundEnabled = isPlaySoundEnabled
+        }
+    }
+
+    private init(notificationCenter: NotificationCenter = .default,
+                 persistor: FocusModePreferencesPersistor = FocusModePreferencesUserDefaultsPersistor()) {
         timeRemainingMenuItem = NSMenuItem(title: "Time remaining: --:--", action: nil, keyEquivalent: "")
+        status = .off
 
         self.notificationCenter = notificationCenter
+        self.persistor = persistor
+        self.isPlaySoundEnabled = persistor.playSoundEnabled
     }
 
     var canHaveAccessToTheFeature: Bool {
@@ -104,20 +124,18 @@ final class FocusSessionCoordinator: ObservableObject {
 
     func startFocusSession(session: FocusSessionTimer) {
         isCurrentOnFocusSession = true
+        status = .on
         totalDuration = session.duration
         remainingTime = totalDuration
 
-        // Invalidate any existing timer before starting a new one
         timer?.invalidate()
 
-        // Schedule a new timer to update remaining time every second
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.updateRemainingTime()
         }
 
         RunLoop.current.add(timer!, forMode: RunLoop.Mode.common)
 
-        // Publish the initial time remaining
         publishRemainingTime()
     }
 
@@ -153,6 +171,7 @@ final class FocusSessionCoordinator: ObservableObject {
 
     @objc func cancelFocusSession() {
         isCurrentOnFocusSession = false
+        status = .off
         timer?.invalidate() // Invalidate the timer if it's still running
         timer = nil
         remainingTime = 0
@@ -171,7 +190,8 @@ final class FocusSessionCoordinator: ObservableObject {
             menu.addItem(NSMenuItem(title: "50 minutes", action: #selector(startFiftyMinutesSession), target: self))
             menu.addItem(NSMenuItem(title: "75 minutes", action: #selector(startSeventyFiveMinutessession), target: self))
             menu.addItem(NSMenuItem(title: "100 minutes", action: #selector(startOneHundredMinutesSession), target: self))
-            menu.addItem(NSMenuItem(title: "Custom...", action: #selector(startCustomSession), target: self))
+            menu.addItem(NSMenuItem.separator())
+            menu.addItem(NSMenuItem(title: "Manage Allowed Sites", action: #selector(openFocusModeSettings), target: self))
         }
 
         return menu
@@ -193,7 +213,7 @@ final class FocusSessionCoordinator: ObservableObject {
         startFocusSession(session: .oneHundred)
     }
 
-    @objc func startCustomSession() {
-        // TODO: Implement an input where the user can select the minutes
+    @MainActor @objc func openFocusModeSettings() {
+        WindowControllersManager.shared.showTab(with: .settings(pane: .focusMode))
     }
 }

@@ -244,6 +244,7 @@ public struct UserDefaultsWrapper<T> {
 
         // Focus Mode
         case focusModeEnabled = "com.duckduckgo.focusMode.enabled"
+        case focusModePlaySoundEnabled = "com.duckduckgo.focusMode.play.sound"
     }
 
     enum RemovedKeys: String, CaseIterable {

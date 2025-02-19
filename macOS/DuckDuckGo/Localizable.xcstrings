@@ -37429,6 +37429,9 @@
         }
       }
     },
+    "Manage Allowed Sites..." : {
+
+    },
     "Manage Bookmarks" : {
       "comment" : "Main Menu History item",
       "localizations" : {
@@ -73468,6 +73471,9 @@
           }
         }
       }
+    },
+    "Websites you selected to be allowed while in Focus Mode" : {
+
     },
     "What do you want to import?" : {
       "comment" : "Data Import section title for checkboxes of data type to import: Passwords or Bookmarks.",

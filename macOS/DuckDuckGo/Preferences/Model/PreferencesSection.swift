@@ -29,7 +29,8 @@ struct PreferencesSection: Hashable, Identifiable {
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
                                 includingVPN: Bool,
-                                includingAIChat: Bool) -> [PreferencesSection] {
+                                includingAIChat: Bool,
+                                includeFocusMode: Bool) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
         ]
@@ -47,6 +48,10 @@ struct PreferencesSection: Hashable, Identifiable {
 
             if includingAIChat {
                 panes.append(.aiChat)
+            }
+
+            if includeFocusMode {
+                panes.append(.focusMode)
             }
 
             return panes
@@ -126,6 +131,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case duckPlayer = "duckplayer"
     case otherPlatforms = "https://duckduckgo.com/app?origin=funnel_app_macos"
     case aiChat = "aichat"
+    case focusMode = "focusmode"
     case about
 
     var id: Self {
@@ -190,6 +196,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.about
         case .otherPlatforms:
             return UserText.duckduckgoOnOtherPlatforms
+        case .focusMode:
+            return "Focus Mode"
         }
     }
 
@@ -229,6 +237,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return "OtherPlatformsPreferences"
         case .aiChat:
             return "AiChatPreferences"
+        case .focusMode:
+            return "FocusModeSettings"
         }
     }
 }

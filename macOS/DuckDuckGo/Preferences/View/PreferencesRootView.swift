@@ -128,6 +128,8 @@ enum Preferences {
                     AboutView(model: AboutPreferences.shared)
                 case .aiChat:
                     AIChatView(model: AIChatPreferences.shared)
+                case .focusMode:
+                    FocusModePreferenceView()
                 }
             }
             .frame(maxWidth: Const.paneContentWidth, maxHeight: .infinity, alignment: .topLeading)

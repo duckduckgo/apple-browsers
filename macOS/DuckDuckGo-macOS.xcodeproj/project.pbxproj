@@ -2982,6 +2982,8 @@
 		BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
 		BBC3F8F62D651964003F4910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */; };
 		BBC3F8F72D651964003F4910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */; };
+		BBC3F8F92D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */; };
+		BBC3F8FA2D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE013EB2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
@@ -5044,6 +5046,7 @@
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
 		BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCoordinator.swift; sourceTree = "<group>"; };
+		BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreferenceView.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
 		BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModel.swift; sourceTree = "<group>"; };
@@ -9847,6 +9850,7 @@
 		BBC3F8F42D651952003F4910 /* FocusSession */ = {
 			isa = PBXGroup;
 			children = (
+				BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */,
 				BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */,
 			);
 			path = FocusSession;
@@ -11649,6 +11653,7 @@
 				37EE56242D5F197300D53C7C /* NavigationBarViewController.swift in Sources */,
 				37EE56252D5F197300D53C7C /* NavigationButtonMenuDelegate.swift in Sources */,
 				37EE56262D5F197300D53C7C /* NetPPopoverManagerMock.swift in Sources */,
+				BBC3F8F92D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */,
 				37EE56272D5F197300D53C7C /* ShowToolbarsOnFullScreenMenuCoordinator.swift in Sources */,
 				37EE56282D5F197300D53C7C /* ZoomPopover.swift in Sources */,
 				37EE56292D5F197300D53C7C /* ZoomPopoverViewController.swift in Sources */,
@@ -14229,6 +14234,7 @@
 				F118EA7D2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */,
 				85707F28276A34D900DC0649 /* DaxSpeech.swift in Sources */,
 				31F28C5328C8EECA00119F70 /* DuckURLSchemeHandler.swift in Sources */,
+				BBC3F8FA2D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */,
 				AA13DCB4271480B0006D48D3 /* FirePopoverViewModel.swift in Sources */,
 				1DDC84F72B83558F00670238 /* PreferencesPrivateSearchView.swift in Sources */,
 				F1C5763E2BFF972900C78647 /* SubscriptionUIHandling.swift in Sources */,

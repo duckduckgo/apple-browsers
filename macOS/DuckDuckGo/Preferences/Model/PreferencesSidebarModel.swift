@@ -90,7 +90,8 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingVPN: includingVPN,
-                includingAIChat: includeAIChat
+                includingAIChat: includeAIChat,
+                includeFocusMode: FocusSessionCoordinator.shared.isEnabled
             )
         }
 

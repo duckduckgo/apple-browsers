@@ -212,8 +212,8 @@
                                         </connections>
                                     </button>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="29A-Gw-5iD" userLabel="Focus Timer Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="-3" width="32" height="38"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="timer" catalog="system" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="bcm-DV-Bnm">
+                                        <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Hourglass-Icon" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="bcm-DV-Bnm">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -1072,6 +1072,7 @@
         <image name="Geolocation-Icon" width="16" height="16"/>
         <image name="Home-16" width="16" height="16"/>
         <image name="HomePageLogo" width="56" height="56"/>
+        <image name="Hourglass-Icon" width="16" height="16"/>
         <image name="Microphone-Active" width="12" height="16"/>
         <image name="Microphone-Icon" width="12" height="16"/>
         <image name="PasswordManagement" width="16" height="16"/>
@@ -1080,7 +1081,6 @@
         <image name="Search" width="14" height="14"/>
         <image name="Settings" width="16" height="16"/>
         <image name="ZoomIn" width="16" height="16"/>
-        <image name="timer" catalog="system" width="15" height="15"/>
         <namedColor name="AddressBarBackgroundColor">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>

@@ -17,6 +17,7 @@
 //
 
 import HistoryView
+import SwiftUIExtensions
 
 final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
@@ -30,8 +31,23 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         guard let dataProvider else {
             return .noAction
         }
-        await dataProvider.deleteVisits(for: range)
-        return .delete
+
+        let response: HistoryViewDeleteDialogModel.Response = await withCheckedContinuation { continuation in
+            let parentWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window
+            let model = HistoryViewDeleteDialogModel()
+            let dialog = HistoryViewDeleteDialog(model: model)
+            dialog.show(in: parentWindow) {
+                continuation.resume(returning: model.response)
+            }
+        }
+
+        switch response {
+        case .burn, .delete:
+            await dataProvider.deleteVisits(for: range)
+            return .delete
+        default:
+            return .noAction
+        }
     }
 
     @MainActor

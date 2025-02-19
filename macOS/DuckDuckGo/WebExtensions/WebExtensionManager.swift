@@ -275,6 +275,7 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         // Move existing tabs if necessary
         try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
 
+        // swiftlint:disable:next force_cast
         return mainWindow?.windowController as! MainWindowController
     }
 

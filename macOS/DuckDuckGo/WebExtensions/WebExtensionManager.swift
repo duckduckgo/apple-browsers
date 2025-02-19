@@ -72,7 +72,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     private let featureFlagger: FeatureFlagger
 
     var areExtenstionsEnabled: Bool {
-        internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
+        false //internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
     }
 
     // Caches paths to selected web extensions

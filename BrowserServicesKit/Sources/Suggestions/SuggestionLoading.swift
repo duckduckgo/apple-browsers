@@ -88,7 +88,7 @@ public class SuggestionLoader: SuggestionLoading {
         // 2) Processing it
         group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
             guard let self = self else { return }
-            let processor = SuggestionProcessing(platform: dataSource.platform, urlFactory: self.urlFactory)
+            let processor = SuggestionProcessing(settings: dataSource.settings, urlFactory: self.urlFactory)
             let result = processor.result(for: query,
                                           from: history,
                                           bookmarks: bookmarks,
@@ -108,7 +108,7 @@ public class SuggestionLoader: SuggestionLoading {
 
 public protocol SuggestionLoadingDataSource: AnyObject {
 
-    var platform: Platform { get }
+    var settings: SuggestionSettings { get }
 
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Bookmark]
 

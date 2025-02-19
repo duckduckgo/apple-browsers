@@ -372,7 +372,7 @@ final class AddressBarTextField: NSTextField {
            url == .bookmarks || url.isSettingsURL {
             // when choosing an internal page suggestion prefer already open tab
             switchTo(OpenTab(title: title, url: url))
-        } else if case .openTab(let title, url: let url) = suggestion {
+        } else if case .openTab(let title, url: let url, _) = suggestion {
             switchTo(OpenTab(title: title, url: url))
         } else if NSApp.isCommandPressed {
             openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
@@ -503,7 +503,7 @@ final class AddressBarTextField: NSTextField {
              .historyEntry(title: _, url: let url, allowedInTopHits: _),
              .website(url: let url),
              .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url):
+             .openTab(title: _, url: let url, _):
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
@@ -909,7 +909,7 @@ extension AddressBarTextField {
                 } else {
                     self = .url(url)
                 }
-            case .openTab(title: _, url: let url):
+            case .openTab(title: _, url: let url, _):
                 self = .openTab(url)
             case .unknown:
                 self = Suffix.search

@@ -740,6 +740,18 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "C++ exception", action: #selector(MainViewController.crashOnCxxException))
             }
 
+            NSMenuItem(title: "Hang Debugging") {
+                NSMenuItem(
+                    title: "Toggle Hang Watchdog",
+                    action: #selector(MainViewController.toggleWatchdog),
+                    state: MainViewController.watchdog.isRunning ? .on : .off
+                )
+                NSMenuItem(
+                    title: "Simulate 15 Second Hang",
+                    action: #selector(MainViewController.simulate15SecondHang)
+                )
+            }
+
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
 

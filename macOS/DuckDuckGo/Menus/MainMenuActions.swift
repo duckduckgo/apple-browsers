@@ -825,6 +825,22 @@ extension MainViewController {
         throwTestCppExteption()
     }
 
+    @objc func toggleWatchdog(_ sender: Any?) {
+        if Self.watchdog.isRunning {
+            Self.watchdog.stop()
+        } else {
+            Self.watchdog.start()
+        }
+    }
+
+    @objc func simulate15SecondHang() {
+        DispatchQueue.main.async {
+            print("Simulating main thread hang...")
+            sleep(15)
+            print("Main thread is unblocked")
+        }
+    }
+
     @objc func resetSecureVaultData(_ sender: Any?) {
         let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
 

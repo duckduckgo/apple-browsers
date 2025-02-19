@@ -149,7 +149,7 @@ struct EmailProtectionControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .email
     let displayName: LocalizedStringResource = "Email Protection"
     let labelText: String = "Email Protection"
-    let imageName: String = "Email-Symbol"
+    let imageName: String = "Email-New-Symbol"
     let intent = EmailProtectionIntent()
 
     struct EmailProtectionIntent: AppIntent {
@@ -158,7 +158,7 @@ struct EmailProtectionControlWidget: ControlWidgetProtocol {
         static var openAppWhenRun: Bool = true
 
         func perform() async throws -> some IntentResult & OpensIntent {
-            await EnvironmentValues().openURL(DeepLinks.voiceSearch)
+            await EnvironmentValues().openURL(DeepLinks.newEmail)
             return .result()
         }
     }

@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Core
 
 final class MockFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+    var internalUserDecider: InternalUserDecider
     var localOverrides: FeatureFlagLocalOverriding?
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
@@ -30,7 +30,9 @@ final class MockFeatureFlagger: FeatureFlagger {
 
     var cohortToReturn: (any FeatureFlagCohortDescribing)?
 
-    init(enabledFeatureFlags: [FeatureFlag] = []) {
+    public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
+                enabledFeatureFlags: [FeatureFlag] = []) {
+        self.internalUserDecider = internalUserDecider
         self.enabledFeatureFlags = enabledFeatureFlags
     }
 

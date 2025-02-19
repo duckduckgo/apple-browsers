@@ -18,17 +18,22 @@
 //
 
 import XCTest
+import BrowserServicesKit
 import Subscription
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 class TabURLInterceptorDefaultTests: XCTestCase {
-    
+
+    private var mockInternalUserStoring = MockInternalUserStoring()
+
     var urlInterceptor: TabURLInterceptorDefault!
-    
+
     override func setUp() {
         super.setUp()
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(), canPurchase: { true })
+        mockInternalUserStoring.isInternalUser = false
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)),
+                                                  canPurchase: { true })
     }
     
     override func tearDown() {
@@ -125,6 +130,37 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
         let url = URL(string: "https://duckduckgo.com/?ia=chat")!
         XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+    }
+
+    func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNavigationIsNotIntercepted() async throws {
+        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+        notificationExpectation.isInverted = true
+
+        // GIVEN
+        let url = URL(string: "https://duck.co/pro")!
+        mockInternalUserStoring.isInternalUser = false
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertTrue(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
+    }
+
+    func testWhenURLBelongsToTestDomainAndInternalModeIsEnabledThenRedirectTriggers() async throws {
+        let notificationExpectation = expectation(forNotification: .urlInterceptPrivacyPro, object: nil, handler: nil)
+
+        // GIVEN
+        let url = URL(string: "https://duck.co/pro")!
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        let canNavigate = urlInterceptor.allowsNavigatingTo(url: url)
+
+        // THEN
+        XCTAssertFalse(canNavigate)
+        await fulfillment(of: [notificationExpectation], timeout: 0.5)
     }
 
 }

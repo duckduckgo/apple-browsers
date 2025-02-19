@@ -517,7 +517,8 @@ extension TabSwitcherViewController {
             self.deselectAllTabs()
         }
 
-        barsHandler.menuButton.image = UIImage(systemName: "ellipsis.circle")
+        barsHandler.menuButton.image = UIImage(resource: .moreApple24)
+        barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
         barsHandler.menuButton.isEnabled = barsHandler.menuButton.menu?.children.isEmpty == false
 

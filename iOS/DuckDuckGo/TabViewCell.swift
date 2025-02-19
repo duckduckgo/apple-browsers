@@ -35,7 +35,7 @@ final class TabViewCell: UICollectionViewCell {
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
         static let cellCornerRadius: CGFloat = 8.0
-        static let cellHeaderHeight: CGFloat = 38.0
+        static let cellHeaderHeight: CGFloat = 36.0
         static let cellLogoSize: CGFloat = 68.0
 
         static let selectedBorderWidth: CGFloat = 4.0

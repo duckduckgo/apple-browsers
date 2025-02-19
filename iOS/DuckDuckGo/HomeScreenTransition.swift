@@ -64,7 +64,6 @@ class HomeScreenTransition: TabSwitcherTransition {
         }
         
         var targetFrame = CGRect(origin: .zero, size: cellBounds)
-        targetFrame.origin.y -= TabViewCell.Constants.cellHeaderHeight
         targetFrame.size.height += TabViewCell.Constants.cellHeaderHeight
         return targetFrame
     }

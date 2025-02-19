@@ -19,13 +19,99 @@
 
 import SwiftUI
 import WidgetKit
+import AppIntents
 
+@available(iOS 17.0, *)
+struct QuickActionsProvider: AppIntentTimelineProvider {
+    typealias Entry = QuickActionsEntry
+    typealias Intent = ConfigurationIntent
+
+    func placeholder(in context: Context) -> QuickActionsEntry {
+        QuickActionsEntry(date: Date(), configuration: ConfigurationIntent())
+    }
+
+    func snapshot(for configuration: ConfigurationIntent, in context: Context) async -> QuickActionsEntry {
+        QuickActionsEntry(date: Date(), configuration: configuration)
+    }
+
+    func timeline(for configuration: ConfigurationIntent, in context: Context) async -> Timeline<QuickActionsEntry> {
+        let entry = QuickActionsEntry(date: Date(), configuration: configuration)
+        return Timeline(entries: [entry], policy: .never)
+    }
+}
+
+@available(iOS 17.0, *)
+struct QuickActionsEntry: TimelineEntry {
+    let date: Date
+    let configuration: ConfigurationIntent
+}
+
+@available(iOS 17.0, *)
+struct ConfigurationIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "Configure Shortcuts"
+    static var description = IntentDescription("Choose your shortcuts")
+
+    @Parameter(title: "Left Shortcut", default: .duckAI)
+    var leftShortcut: ShortcutOption
+
+    @Parameter(title: "Right Shortcut", default: .passwords)
+    var rightShortcut: ShortcutOption
+
+    init(leftShortcut: ShortcutOption, rightShortcut: ShortcutOption) {
+        self.leftShortcut = leftShortcut
+        self.rightShortcut = rightShortcut
+    }
+
+    init() { }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
+    case passwords
+    case duckAI
+    case voiceSearch
+    case favorites
+    case emailProtection
+
+    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Shortcut Option"
+    static var caseDisplayRepresentations: [ShortcutOption : DisplayRepresentation] = [
+        .passwords: "Passwords",
+        .duckAI: "Duck.ai",
+        .voiceSearch: "Voice Search",
+        .favorites: "Favorites",
+        .emailProtection: "Email Protection"
+    ]
+
+    var id: String { self.rawValue }
+
+    var icon: Image {
+        switch self {
+        case .passwords: return Image(.key24)
+        case .duckAI: return Image(.aiChat24)
+        case .voiceSearch: return Image(.microphone24)
+        case .favorites: return Image(.favorite24)
+        case .emailProtection: return Image(.email24)
+        }
+    }
+
+    var destination: URL {
+        switch self {
+        case .passwords: return DeepLinks.openPasswords
+        case .duckAI: return DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.quickActions.rawValue)
+        case .voiceSearch: return DeepLinks.voiceSearch
+        case .favorites: return DeepLinks.favorites
+        case .emailProtection: return DeepLinks.newEmail
+        }
+    }
+}
+
+@available(iOSApplicationExtension 17.0, *)
 struct QuickActionsWidget: Widget {
     let kind: String = "QuickActionsWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { _ in
-            QuickActionsWidgetView().widgetURL(DeepLinks.openAIChat)
+        AppIntentConfiguration(kind: kind, intent: ConfigurationIntent.self, provider: QuickActionsProvider()) { entry in
+            QuickActionsWidgetView(entry: entry)
         }
         .configurationDisplayName(UserText.quickActionsWidgetGalleryDisplayName)
         .description(UserText.quickActionsWidgetGalleryDescription)
@@ -33,7 +119,9 @@ struct QuickActionsWidget: Widget {
     }
 }
 
+@available(iOSApplicationExtension 17.0, *)
 struct QuickActionsWidgetView: View {
+    var entry: QuickActionsEntry
 
     var body: some View {
         VStack(spacing: 12) {
@@ -41,11 +129,11 @@ struct QuickActionsWidgetView: View {
                 SearchBoxView()
             }
             HStack(spacing: 12) {
-                Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.quickActions.rawValue)) {
-                    IconView(image: Image(.aiChat24))
+                Link(destination: entry.configuration.leftShortcut.destination) {
+                    IconView(image: entry.configuration.leftShortcut.icon)
                 }
-                Link(destination: DeepLinks.openPasswords) {
-                    IconView(image: Image(.key24))
+                Link(destination: entry.configuration.rightShortcut.destination) {
+                    IconView(image: entry.configuration.rightShortcut.icon)
                 }
             }
         }
@@ -92,8 +180,4 @@ private struct IconView: View {
         }
         .frame(width: 60, height: 60)
     }
-}
-
-#Preview {
-    QuickActionsWidgetView()
 }

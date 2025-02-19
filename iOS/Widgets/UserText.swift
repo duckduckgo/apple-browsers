@@ -67,7 +67,7 @@ struct UserText {
                                                                   comment: "Display name for quick actions widget in widget gallery")
 
     static let quickActionsWidgetGalleryDescription = NSLocalizedString("widget.gallery.quickactions.description",
-                                                                  value: "Search, chat on Duck.ai, or view your passwords.",
+                                                                  value: "Shortcuts to your favorite actions.",
                                                                   comment: "Description of quickActions widget in widget gallery")
 
     static let passwords = NSLocalizedString("widget.passwords",

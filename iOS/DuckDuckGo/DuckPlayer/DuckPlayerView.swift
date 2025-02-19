@@ -34,6 +34,9 @@ struct DuckPlayerView: View {
         static let videoAspectRatio: CGFloat = 9/16 // 16:9 in portrait
         static let daxLogoSize: CGFloat = 24.0
         static let daxLogo = "Home"
+        static let duckPlayerImage: String = "DuckPlayer"
+        static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
+        static let duckPlayerYoutubeImage: String = "OpenInYoutube"
         static let bottomButtonHeight: CGFloat = 44
     }
     
@@ -72,17 +75,37 @@ struct DuckPlayerView: View {
                 }
         
                 if viewModel.shouldShowYouTubeButton {
-                    Button {
-                        viewModel.openInYouTube()
-                    } label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.gray.opacity(0.2))
-                            Text("Watch this video on YouTube")
-                                .daxButton()
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .accent))
-                                .colorScheme(.dark)
+                    HStack(spacing: 8) {
+                        Button {
+                            viewModel.openInYouTube()
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.gray.opacity(0.2))
+                                HStack(spacing: 8) {
+                                    Image(Constants.duckPlayerYoutubeImage)
+                                        .renderingMode(.template)
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)
+                                    Text(UserText.duckPlayerNativeWatchOnYouTube)
+                                        .daxButton()
+                                        .daxBodyRegular()
+                                        .foregroundColor(.white)
+                                }
+                            }
+                        }
+                        
+                        Button {
+                            viewModel.openSettings()
+                            dismiss()
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.gray.opacity(0.2))
+                                    .frame(width: 44, height: 44)
+                                Image(Constants.duckPlayerSettingsImage)
+                                    .foregroundColor(.white)
+                            }
                         }
                     }
                     .frame(height: Constants.bottomButtonHeight)
@@ -131,16 +154,3 @@ struct DuckPlayerView: View {
         .background(Color.black)
     }
 }
-
-#if DEBUG
-struct DuckPlayerView_Previews: PreviewProvider {
-    static var previews: some View {
-        let viewModel = DuckPlayerViewModel(videoID: "dQw4w9WgXcQ")
-        DuckPlayerView(
-            viewModel: viewModel,
-            webView: DuckPlayerWebView(viewModel: viewModel)
-        )
-        .preferredColorScheme(.dark)
-    }
-}
-#endif

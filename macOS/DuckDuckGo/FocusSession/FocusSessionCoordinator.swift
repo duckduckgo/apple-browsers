@@ -26,27 +26,24 @@ public extension NSNotification.Name {
 }
 
 enum FocusSessionTimer {
-    case fifteenMinutes
-    case thirtyMinutes
-    case oneHour
-    case twoHours
-    case fourHours
-    case sixHours
+    case twentyFive
+    case fifty
+    case seventyFive
+    case oneHundred
+    case custom(TimeInterval)
 
     var duration: TimeInterval {
         switch self {
-        case .fifteenMinutes:
-            return 15 * 60 // 15 minutes in seconds
-        case .thirtyMinutes:
-            return 30 * 60 // 30 minutes in seconds
-        case .oneHour:
-            return 60 * 60 // 1 hour in seconds
-        case .twoHours:
-            return 2 * 60 * 60 // 2 hours in seconds
-        case .fourHours:
-            return 4 * 60 * 60 // 4 hours in seconds
-        case .sixHours:
-            return 6 * 60 * 60 // 6 hours in seconds
+        case .twentyFive:
+            return 25 * 60 // 15 minutes in seconds
+        case .fifty:
+            return 50 * 60 // 30 minutes in seconds
+        case .seventyFive:
+            return 75 * 60 // 30 minutes in seconds
+        case .oneHundred:
+            return 100 * 60 // 1 hour in seconds
+        case .custom(let duration):
+            return duration
         }
     }
 }
@@ -161,18 +158,33 @@ final class FocusSessionCoordinator: ObservableObject {
             menu.addItem(NSMenuItem.separator())
             menu.addItem(NSMenuItem(title: "Cancel session", action: #selector(cancelFocusSession), target: self, keyEquivalent: ""))
         } else {
-            menu.addItem(NSMenuItem(title: "Start 15 minutes session", action: #selector(startFifteenMinutesSession), target: self))
-            menu.addItem(NSMenuItem(title: "Start 30 minutes session", action: #selector(startThirtyMinutesSession), target: self))
+            menu.addItem(NSMenuItem(title: "25 minutes", action: #selector(startTwentyFiveMinutesSession), target: self))
+            menu.addItem(NSMenuItem(title: "50 minutes", action: #selector(startFiftyMinutesSession), target: self))
+            menu.addItem(NSMenuItem(title: "75 minutes", action: #selector(startSeventyFiveMinutessession), target: self))
+            menu.addItem(NSMenuItem(title: "100 minutes", action: #selector(startOneHundredMinutesSession), target: self))
+            menu.addItem(NSMenuItem(title: "Custom...", action: #selector(startCustomSession), target: self))
         }
 
         return menu
     }
 
-    @objc func startFifteenMinutesSession() {
-        startFocusSession(session: .fifteenMinutes)
+    @objc func startTwentyFiveMinutesSession() {
+        startFocusSession(session: .twentyFive)
     }
 
-    @objc func startThirtyMinutesSession() {
-        startFocusSession(session: .thirtyMinutes)
+    @objc func startFiftyMinutesSession() {
+        startFocusSession(session: .fifty)
+    }
+
+    @objc func startSeventyFiveMinutessession() {
+        startFocusSession(session: .seventyFive)
+    }
+
+    @objc func startOneHundredMinutesSession() {
+        startFocusSession(session: .oneHundred)
+    }
+
+    @objc func startCustomSession() {
+        // TODO: Implement an input where the user can select the minutes
     }
 }

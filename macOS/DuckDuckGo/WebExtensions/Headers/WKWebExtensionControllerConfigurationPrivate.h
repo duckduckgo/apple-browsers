@@ -1,8 +1,7 @@
-#import "_WKWebExtensionControllerConfiguration.h"
+#import "WKWebExtensionControllerConfiguration.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
-@interface _WKWebExtensionControllerConfiguration ()
+API_AVAILABLE(macos(15.3))
+@interface WKWebExtensionControllerConfiguration ()
 
 + (instancetype)_temporaryConfiguration;
 
@@ -11,5 +10,3 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, nullable, copy, setter=_setStorageDirectoryPath:) NSString *_storageDirectoryPath;
 
 @end
-
-NS_ASSUME_NONNULL_END

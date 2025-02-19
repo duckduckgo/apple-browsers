@@ -64,7 +64,7 @@ final class MainWindowController: NSWindowController {
         subscribeToFullScreenToolbarChanges()
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
 #endif
@@ -244,7 +244,7 @@ extension MainWindowController: NSWindowDelegate {
         }
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
 #endif
@@ -356,7 +356,7 @@ extension MainWindowController: NSWindowDelegate {
         WindowControllersManager.shared.unregister(self)
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }
 #endif

@@ -187,6 +187,7 @@ private struct ContinueButton: View {
             Text(UserText.zipContentSelectionButtonContinue)
         }
         .buttonStyle(PrimaryButtonStyle(disabled: viewModel.selectedTypes.isEmpty))
+        .frame(maxWidth: 360)
         .padding(.top, 44)
         .padding(.bottom, 8)
         .disabled(viewModel.selectedTypes.isEmpty)

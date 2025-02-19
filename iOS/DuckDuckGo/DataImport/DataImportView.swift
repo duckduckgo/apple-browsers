@@ -89,7 +89,8 @@ struct DataImportView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 24)
             }
-            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
             .background(
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color(UIColor.secondarySystemGroupedBackground))
@@ -218,8 +219,9 @@ struct DataImportView: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .padding(.top, 6)
+                Spacer()
             }
-            .padding(.leading, 8)
+            .padding(.leading, 12)
         }
     }
 

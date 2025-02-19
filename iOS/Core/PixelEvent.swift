@@ -969,6 +969,7 @@ extension Pixel {
         case openAIChatFromWidgetQuickAction
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
+        case openAIChatFromIconShortcut
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1955,6 +1956,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
+
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

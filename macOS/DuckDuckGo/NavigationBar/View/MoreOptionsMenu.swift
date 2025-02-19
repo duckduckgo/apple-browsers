@@ -74,6 +74,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let vpnFeatureGatekeeper: VPNFeatureGatekeeper
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let focusModeCoordinator: FocusSessionCoordinator
 
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
@@ -99,7 +100,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
          notificationCenter: NotificationCenter = .default,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration()) {
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         focusModeCoordinator: FocusSessionCoordinator = .shared) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
@@ -117,6 +119,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.notificationCenter = notificationCenter
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.focusModeCoordinator = focusModeCoordinator
 
         super.init(title: "")
 
@@ -191,6 +194,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         zoomMenuItem.submenu = ZoomSubMenu(targetting: self, tabCollectionViewModel: tabCollectionViewModel)
         addItem(zoomMenuItem)
+
+        if focusModeCoordinator.isEnabled {
+            let focusModeItem = NSMenuItem(title: "Focus Mode", action: nil, keyEquivalent: "").withImage(.timerIcon)
+            focusModeItem.submenu = focusModeCoordinator.getMenu()
+            addItem(focusModeItem)
+        }
 
         addItem(NSMenuItem.separator())
 

@@ -195,6 +195,8 @@ final class NavigationBarViewController: NSViewController {
 
         subscribeToAIChatOnboarding()
 
+        subscribeToFocusModeSessions()
+
 #if !APPSTORE
         if #available(macOS 14.4, *), !burnerMode.isBurner {
             WebExtensionManager.shared.toolbarButtons().enumerated().forEach { (index, button) in
@@ -218,7 +220,6 @@ final class NavigationBarViewController: NSViewController {
         updateBookmarksButton()
         updateHomeButton()
         updateAIChatButton()
-        updateFocusTimerButton()
 
         if view.window?.isPopUpWindow == true {
             goBackButton.isHidden = true
@@ -404,8 +405,6 @@ final class NavigationBarViewController: NSViewController {
                     self.networkProtectionButtonModel.updateVisibility()
                 case .aiChat:
                     self.updateAIChatButton()
-                case .focusTimer:
-                    self.updateFocusTimerButton()
                 }
             } else {
                 assertionFailure("Failed to get changed pinned view type")
@@ -1083,15 +1082,17 @@ final class NavigationBarViewController: NSViewController {
         aiChatButton.isHidden = !(LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut)
     }
 
-    private func updateFocusTimerButton() {
-        let menu = NSMenu()
-        let title = LocalPinningManager.shared.shortcutTitle(for: .focusTimer)
-        menu.addItem(withTitle: title, action: #selector(toggleFocusTimerPanelPinning(_:)), keyEquivalent: "")
+    // MARK: - Focus mode
 
-        focusTimerButton.menu = menu
-        focusTimerButton.toolTip = "Focus Timer"
+    private func subscribeToFocusModeSessions() {
+        focusSessionCoordinator.$isCurrentOnFocusSession
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isCurrentOnFocusSession in
+                guard let self = self else { return }
 
-        focusTimerButton.isHidden = !LocalPinningManager.shared.isPinned(.focusTimer)
+                focusTimerButton.isHidden = !isCurrentOnFocusSession
+            }
+            .store(in: &cancellables)
     }
 }
 
@@ -1126,9 +1127,6 @@ extension NavigationBarViewController: NSMenuDelegate {
             let aiChatTitle = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
             menu.addItem(withTitle: aiChatTitle, action: #selector(toggleAIChatPanelPinning), keyEquivalent: "L")
         }
-
-        let focusTimerTitle = LocalPinningManager.shared.shortcutTitle(for: .focusTimer)
-        menu.addItem(withTitle: focusTimerTitle, action: #selector(toggleFocusTimerPanelPinning), keyEquivalent: "F")
     }
 
     @objc
@@ -1149,11 +1147,6 @@ extension NavigationBarViewController: NSMenuDelegate {
     @objc
     private func toggleAIChatPanelPinning(_ sender: NSMenuItem) {
         LocalPinningManager.shared.togglePinning(for: .aiChat)
-    }
-
-    @objc
-    private func toggleFocusTimerPanelPinning(_ sender: NSMenuItem) {
-        LocalPinningManager.shared.togglePinning(for: .focusTimer)
     }
 
     @objc

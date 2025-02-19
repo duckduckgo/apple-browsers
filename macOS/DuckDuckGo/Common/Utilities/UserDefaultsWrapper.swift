@@ -241,6 +241,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Web Extensions
         case webExtensionPathsCache = "com.duckduckgo.web.extension.paths.cache"
+
+        // Focus Mode
+        case focusModeEnabled = "com.duckduckgo.focusMode.enabled"
     }
 
     enum RemovedKeys: String, CaseIterable {

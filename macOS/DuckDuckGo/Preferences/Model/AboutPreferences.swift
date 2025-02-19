@@ -94,8 +94,10 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     func unlockFeatureModeFeature() {
-        if FocusSessionCoordinator.shared.canHaveAccessToTheFeature {
-            print("Feature unlocked!")
+        let focusCoordinator = FocusSessionCoordinator.shared
+
+        if focusCoordinator.canHaveAccessToTheFeature {
+            focusCoordinator.enableFeature()
         }
     }
 

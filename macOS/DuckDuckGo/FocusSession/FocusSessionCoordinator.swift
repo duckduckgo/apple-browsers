@@ -19,6 +19,12 @@
 import Foundation
 import Combine
 
+public extension NSNotification.Name {
+
+    static let focusModeFeatureEnabled = Notification.Name(rawValue: "com.duckduckgo.focus.mode.feature.enabled")
+
+}
+
 enum FocusSessionTimer {
     case fifteenMinutes
     case thirtyMinutes
@@ -49,6 +55,8 @@ final class FocusSessionCoordinator: ObservableObject {
 
     static let shared = FocusSessionCoordinator() // Singleton instance
 
+    private let notificationCenter: NotificationCenter
+
     @Published var isCurrentOnFocusSession: Bool = false
     private var timer: Timer?
     private var totalDuration: TimeInterval = 0
@@ -64,16 +72,21 @@ final class FocusSessionCoordinator: ObservableObject {
     private var timeRemainingMenuItem: NSMenuItem
     private var cancellables = Set<AnyCancellable>()
 
-    private init() {
+    @UserDefaultsWrapper(key: .focusModeEnabled, defaultValue: false)
+    private var isFocusModeEnabled: Bool
+
+    private init(notificationCenter: NotificationCenter = .default) {
         timeRemainingMenuItem = NSMenuItem(title: "Time remaining: --:--", action: nil, keyEquivalent: "")
+
+        self.notificationCenter = notificationCenter
     }
 
     var canHaveAccessToTheFeature: Bool {
         NSApp.delegateTyped.internalUserDecider.isInternalUser
     }
 
-    var isFeatureEnabled: Bool {
-        NSApp.delegateTyped.internalUserDecider.isInternalUser && true // TODO: Add if feature was enabled from about section
+    var isEnabled: Bool {
+        NSApp.delegateTyped.internalUserDecider.isInternalUser && isFocusModeEnabled
     }
 
     func shouldBlock(url: URL) -> Bool {
@@ -82,6 +95,14 @@ final class FocusSessionCoordinator: ObservableObject {
         }
 
         return true // TODO: Here we will need to check the allow list
+    }
+
+    func enableFeature() {
+        if !isFocusModeEnabled {
+            isFocusModeEnabled = true
+
+            notificationCenter.post(name: .focusModeFeatureEnabled, object: nil)
+        }
     }
 
     func startFocusSession(session: FocusSessionTimer) {

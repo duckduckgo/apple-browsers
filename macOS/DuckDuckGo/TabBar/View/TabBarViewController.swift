@@ -1056,10 +1056,10 @@ extension TabBarViewController: NSCollectionViewDelegate {
               let frameRelativeToScreen = view.window?.convertToScreen(frameRelativeToWindow) else {
             return
         }
-        
+
         // Check if the drop point is above the tab bar by more than 10 points
         let isDroppedAboveTabBar = screenPoint.y > (frameRelativeToScreen.maxY + 10)
-        
+
         // Create new window if dropped above tab bar or too far away
         if isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance) {
             moveToNewWindow(from: sourceIndex,

@@ -21,7 +21,14 @@ import Foundation
 import LocalAuthentication
 import Core
 
-public class Authenticator {
+protocol Authenticating {
+
+    func canAuthenticate() -> Bool
+    func authenticate(reason: String) async -> Bool
+
+}
+
+public class Authenticator: Authenticating {
 
     private let policy = LAPolicy.deviceOwnerAuthentication
 

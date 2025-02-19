@@ -28,7 +28,7 @@ public extension NSNotification.Name {
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    private let appStateMachine: AppStateMachine = AppStateMachine()
+    private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     var window: UIWindow?
 
@@ -80,23 +80,21 @@ public extension NSNotification.Name {
         appStateMachine.handle(.willTerminate(terminationReason))
     }
 
-    /// See: `Foreground.swift` -> `handleShortcutItem(_:)`
+    /// See: `LaunchActionHandler.swift` -> `handleShortcutItem(_:)`
     func application(_ application: UIApplication,
                      performActionFor shortcutItem: UIApplicationShortcutItem,
                      completionHandler: @escaping (Bool) -> Void) {
         appStateMachine.handle(.handleShortcutItem(shortcutItem))
     }
 
-    /// See: `Foreground.swift` -> `openURL(_:)`
+    /// See: `LaunchActionHandler.swift` -> `openURL(_:)`
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         appStateMachine.handle(.openURL(url))
         return true
     }
 
     func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-
         Logger.lifecycle.debug(#function)
-
         AppConfigurationFetch().start(isBackgroundFetch: true) { result in
             switch result {
             case .noData:
@@ -115,12 +113,15 @@ public extension NSNotification.Name {
     /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
     /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
     var debugPrivacyProDataReporter: PrivacyProDataReporting? {
-        (appStateMachine.currentState as? Foreground)?.appDependencies.reportingService.privacyProDataReporter
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            return (foregroundHandling as? Foreground)?.services.reportingService.privacyProDataReporter
+        }
+        return nil
     }
 
     func debugRefreshRemoteMessages() {
-        if let remoteMessagingService = (appStateMachine.currentState as? Foreground)?.appDependencies.remoteMessagingService {
-            remoteMessagingService.refreshRemoteMessages()
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
     }
 

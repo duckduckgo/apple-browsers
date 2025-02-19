@@ -1,5 +1,5 @@
 //
-//  HistoryManagerConfiguration.swift
+//  StatisticsService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,12 +18,24 @@
 //
 
 import Foundation
+import Core
 
-final class HistoryManagerConfiguration {
+public extension NSNotification.Name {
 
-    func onVariantAssigned() {
-        // New users don't see the message
-        HistoryMessageManager().dismiss()
+    static let didLoadStatisticsOnForeground = Notification.Name("com.duckduckgo.app.didLoadStatisticsOnForeground")
+
+}
+
+final class StatisticsService {
+
+    private lazy var statisticsLoader: StatisticsLoader = .shared
+
+    // MARK: - Resume
+
+    func resume() {
+        statisticsLoader.load {
+            NotificationCenter.default.post(name: .didLoadStatisticsOnForeground, object: nil)
+        }
     }
 
 }

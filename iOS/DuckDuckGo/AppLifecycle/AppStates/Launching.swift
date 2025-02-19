@@ -19,8 +19,6 @@
 
 import Core
 import UIKit
-import BrowserServicesKit
-import WidgetKit
 
 /// Represents the transient state where the app is being prepared for user interaction after being launched by the system.
 /// - Usage:
@@ -36,113 +34,80 @@ import WidgetKit
 /// - Notes:
 ///   - Avoid performing heavy or blocking operations during this phase to ensure smooth app startup.
 @MainActor
-struct Launching: AppState {
+struct Launching: LaunchingHandling {
 
     private let appSettings = AppDependencyProvider.shared.appSettings
     private let voiceSearchHelper = VoiceSearchHelper()
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let aiChatSettings = AIChatSettings()
-    private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
-
-    private let screenshotService: ScreenshotService
-    private let authenticationService: AuthenticationService
-    private let syncService: SyncService
-    private let vpnService: VPNService
-    private let autofillService = AutofillService()
-    private let remoteMessagingService: RemoteMessagingService
-    private let keyboardService: KeyboardService
-    private let configurationService = ConfigurationService(isDebugBuild: isDebugBuild)
-    private let autoClearService: AutoClearService
-    private let reportingService: ReportingService
-    private let subscriptionService: SubscriptionService
-    private let crashCollectionService = CrashCollectionService()
-    private let maliciousSiteProtectionService: MaliciousSiteProtectionService
-
-    private let persistentStoresConfiguration = PersistentStoresConfiguration()
-    private let onboardingConfiguration = OnboardingConfiguration()
-    private let atbAndVariantConfiguration = ATBAndVariantConfiguration()
-    private let historyManagerConfiguration = HistoryManagerConfiguration()
-
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
+
+    /// Handles one-time application setup during launch
+    private let configuration = AppConfiguration()
+
+    /// Holds app-wide services that respond to lifecycle events and live throughout the app's lifetime.
+    private let services: AppServices
+
+    /// Coordinates and initializes the main view controller.
     private let mainCoordinator: MainCoordinator
 
     var urlToOpen: URL?
     var shortcutItemToHandle: UIApplicationShortcutItem?
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
+
     init() {
         defer {
             let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
             Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
                        withAdditionalParameters: [PixelParameters.time: String(launchTime)])
         }
-        reportingService = ReportingService(fireproofing: fireproofing)
-        KeyboardConfiguration.configure()
-        PixelConfiguration.configure(featureFlagger: featureFlagger)
-        ContentBlockingConfiguration.configure()
-        UserAgentConfiguration.configureAPIRequestUserAgent()
-        NewTabPageIntroMessageConfiguration().configure()
-        onboardingConfiguration.migrate()
-
-        persistentStoresConfiguration.configure()
-
-        configurationService.onLaunching()
-        crashCollectionService.onLaunching()
-
-        WidgetCenter.shared.reloadAllTimelines()
-        PrivacyFeatures.httpsUpgrade.loadDataAsync()
-
-        syncService = SyncService(bookmarksDatabase: persistentStoresConfiguration.bookmarksDatabase)
-        reportingService.syncService = syncService
-        autofillService.syncService = syncService
-        remoteMessagingService = RemoteMessagingService(bookmarksDatabase: persistentStoresConfiguration.bookmarksDatabase,
-                                                        database: persistentStoresConfiguration.database,
-                                                        appSettings: appSettings,
-                                                        internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                                        configurationStore: AppDependencyProvider.shared.configurationStore,
-                                                        privacyConfigurationManager: privacyConfigurationManager)
-        subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager)
-        maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
-        mainCoordinator = MainCoordinator(syncService: syncService,
-                                          bookmarksDatabase: persistentStoresConfiguration.bookmarksDatabase,
-                                          remoteMessagingService: remoteMessagingService,
-                                          daxDialogs: onboardingConfiguration.daxDialogs,
-                                          reportingService: reportingService,
-                                          variantManager: atbAndVariantConfiguration.variantManager,
-                                          subscriptionService: subscriptionService,
-                                          voiceSearchHelper: voiceSearchHelper,
-                                          featureFlagger: featureFlagger,
-                                          aiChatSettings: aiChatSettings,
-                                          fireproofing: fireproofing,
-                                          maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                          didFinishLaunchingStartTime: didFinishLaunchingStartTime)
-        syncService.presenter = mainCoordinator.controller
-        vpnService = VPNService(mainCoordinator: mainCoordinator)
+        configuration.start()
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
                                                         featureFlagger: featureFlagger,
                                                         aiChatSettings: aiChatSettings)
-        autoClearService = AutoClearService(worker: mainCoordinator.controller, overlayWindowManager: overlayWindowManager)
-        screenshotService = ScreenshotService(window: window)
-        authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
-        keyboardService = KeyboardService(mainViewController: mainCoordinator.controller)
+        let servicesBuilder = AppServicesBuilder(window: window,
+                                                 fireproofing: fireproofing,
+                                                 overlayWindowManager: overlayWindowManager,
+                                                 persistentStoresConfiguration: configuration.persistentStoresConfiguration)
+        mainCoordinator = MainCoordinator(syncService: servicesBuilder.syncService,
+                                          bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                          remoteMessagingService: servicesBuilder.remoteMessagingService,
+                                          daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                          reportingService: servicesBuilder.reportingService,
+                                          variantManager: configuration.atbAndVariantConfiguration.variantManager,
+                                          subscriptionService: servicesBuilder.subscriptionService,
+                                          voiceSearchHelper: voiceSearchHelper,
+                                          featureFlagger: featureFlagger,
+                                          aiChatSettings: aiChatSettings,
+                                          fireproofing: fireproofing,
+                                          maliciousSiteProtectionService: servicesBuilder.maliciousSiteProtectionService,
+                                          didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+        services = servicesBuilder.complete(with: mainCoordinator)
+        services.syncService.presenter = mainCoordinator.controller
 
-        autoClearService.onLaunching()
-        vpnService.onLaunching()
-        subscriptionService.onLaunching()
-        autofillService.onLaunching()
-        maliciousSiteProtectionService.onLaunching()
-
-        atbAndVariantConfiguration.configure(onVariantAssigned: onVariantAssigned)
-        CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
-        TabInteractionStateConfiguration.configure(autoClearService: autoClearService, mainViewController: mainCoordinator.controller)
-        UserAgentConfiguration.configureUserBrowsingUserAgent()
-
+        startServices()
+        configuration.finalize(with: services.reportingService,
+                               autoClearService: services.autoClearService,
+                               mainViewController: mainCoordinator.controller)
         setupWindow()
+    }
+
+    private func startServices() {
+        services.configurationService.start()
+        services.crashCollectionService.start()
+        services.syncService.start()
+        services.remoteMessagingService.start()
+        services.autoClearService.start()
+        services.vpnService.start()
+        services.subscriptionService.start()
+        services.autofillService.start()
+        services.maliciousSiteProtectionService.start()
     }
 
     private func setupWindow() {
@@ -153,30 +118,12 @@ struct Launching: AppState {
         mainCoordinator.start()
     }
 
-    // MARK: - Handle ATB and variant assigned logic here
-    func onVariantAssigned() {
-        onboardingConfiguration.onVariantAssigned()
-        historyManagerConfiguration.onVariantAssigned()
-        reportingService.onVariantAssigned()
-    }
-
     // MARK: -
+
     private var appDependencies: AppDependencies {
         .init(
             mainCoordinator: mainCoordinator,
-            vpnService: vpnService,
-            authenticationService: authenticationService,
-            screenshotService: screenshotService,
-            autoClearService: autoClearService,
-            syncService: syncService,
-            remoteMessagingService: remoteMessagingService,
-            subscriptionService: subscriptionService,
-            autofillService: autofillService,
-            crashCollectionService: crashCollectionService,
-            keyboardService: keyboardService,
-            configurationService: configurationService,
-            reportingService: reportingService,
-            maliciousSiteProtectionService: maliciousSiteProtectionService
+            services: services
         )
     }
     
@@ -187,30 +134,25 @@ extension Launching {
     struct StateContext {
 
         let didFinishLaunchingStartTime: CFAbsoluteTime
-        let urlToOpen: URL?
-        let shortcutItemToHandle: UIApplicationShortcutItem?
         let appDependencies: AppDependencies
 
     }
 
     func makeStateContext() -> StateContext {
         .init(didFinishLaunchingStartTime: didFinishLaunchingStartTime,
-              urlToOpen: urlToOpen,
-              shortcutItemToHandle: shortcutItemToHandle,
               appDependencies: appDependencies)
     }
 
-}
+    func makeBackgroundState() -> any BackgroundHandling {
+        Background(stateContext: makeStateContext())
+    }
 
-extension Launching {
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
+    }
 
-    mutating func handle(action: AppAction) {
-        switch action {
-        case .openURL(let url):
-            urlToOpen = url
-        case .handleShortcutItem(let shortcutItem):
-            shortcutItemToHandle = shortcutItem
-        }
+    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
+        Terminating(terminationReason: terminationReason)
     }
 
 }

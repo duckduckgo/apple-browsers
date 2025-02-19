@@ -36,6 +36,7 @@ struct DuckPlayerView: View {
         static let daxLogo = "Home"
         static let duckPlayerImage: String = "DuckPlayer"
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
+        static let duckPlayerYoutubeImage: String = "OpenInYoutube"
         static let bottomButtonHeight: CGFloat = 44
     }
     
@@ -82,12 +83,14 @@ struct DuckPlayerView: View {
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.gray.opacity(0.2))
                                 HStack(spacing: 8) {
-                                    Image(Constants.duckPlayerImage).colorScheme(.dark)
+                                    Image(Constants.duckPlayerYoutubeImage)
+                                        .renderingMode(.template)   
+                                        .foregroundColor(.white)
+                                        .frame(width: 24, height: 24)                                        
                                     Text(UserText.duckPlayerNativeWatchOnYouTube)
                                         .daxButton()
                                         .daxBodyRegular()
-                                        .foregroundColor(.white)
-                                        .colorScheme(.dark)
+                                        .foregroundColor(.white)                                        
                                 }
                             }
                         }

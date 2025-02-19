@@ -83,6 +83,7 @@ extension VoiceSearchFeedbackView {
 
             GlassySegmentedControl(selectedOption: $speechModel.selectedOption)
                 .frame(width: 300, height: 60)
+                .padding(.bottom, 10)
 
 
             Text(UserText.voiceSearchFooterOld)

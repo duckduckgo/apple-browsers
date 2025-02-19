@@ -27,12 +27,8 @@ struct GlassySegmentedControl: View {
         static let cornerRadius: CGFloat = 20
         static let buttonHeight: CGFloat = 50
         static let padding: CGFloat = 4
-        static let shadowRadius: CGFloat = 5
-        static let largeShadowRadius: CGFloat = 10
-        static let shadowOffset: CGFloat = 3
-        static let largeShadowOffset: CGFloat = 5
         static let animationDuration: Double = 0.3
-        static let springDampingFraction: Double = 0.7
+        static let springDampingFraction: Double = 0.8
     }
 
     var body: some View {
@@ -56,9 +52,7 @@ struct GlassySegmentedControl: View {
     private func slidingSelectionView(in geometry: GeometryProxy) -> some View {
         let optionWidth = geometry.size.width / CGFloat(options.count)
         return RoundedRectangle(cornerRadius: Constants.cornerRadius)
-            .fill(Colors.innerCircle.opacity(0.6))
-            .shadow(color: Color.black.opacity(0.5), radius: Constants.shadowRadius, x: -Constants.shadowOffset, y: -Constants.shadowOffset)
-            .shadow(color: Color.black.opacity(0.2), radius: Constants.shadowRadius, x: Constants.shadowOffset, y: Constants.shadowOffset)
+            .fill(Colors.toggleSelectedColor.opacity(1))
             .frame(width: optionWidth)
             .offset(x: CGFloat(selectedOption) * optionWidth)
             .animation(.spring(response: Constants.animationDuration, dampingFraction: Constants.springDampingFraction), value: selectedOption)
@@ -77,11 +71,11 @@ struct GlassySegmentedControl: View {
         Button(action: { selectedOption = index }) {
             HStack {
                 Spacer()
-                Image(index == 0 ? "DuckDuckGo-Silhouette-OnDark-24" : "AIChat-24")
+                Image(index == 0 ? "Find-Search-24" : "AIChat-24")
                 Text(options[index])
                 Spacer()
             }
-            .foregroundColor(selectedOption == index ? .white : .gray)
+            .foregroundColor(selectedOption == index ? .white : Color.secondary)
             .animation(.easeInOut, value: selectedOption)
         }
         .frame(maxHeight: .infinity)
@@ -95,11 +89,7 @@ struct GlassySegmentedControl: View {
             .stroke(Color.white.opacity(0.3), lineWidth: 1)
     }
     private struct Colors {
-        static let innerCircle = Color(UIColor(hex: "3969EF"))
-        static let footerText = Color(UIColor(hex: "888888"))
-        static let outerCircle = Color(UIColor(hex: "7295F6")).opacity(0.2)
-        static let cancelButton = Color("VoiceSearchCancelColor")
-        static let speechFeedback = Color("VoiceSearchSpeechFeedbackColor")
+        static let toggleSelectedColor = Color(UIColor(hex: "3969EF"))
     }
 
 }

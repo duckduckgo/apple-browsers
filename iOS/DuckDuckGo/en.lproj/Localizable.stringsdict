@@ -335,9 +335,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Selected Tabs?</string>
+			<string>Close %d selected tabs?</string>
 			<key>one</key>
-			<string>Close Selected Tab?</string>
+			<string>Close selected tab?</string>
 		</dict>
 	</dict>
 	<key>alertTitleCloseOtherTabs.withCount</key>
@@ -351,9 +351,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Other Tabs?</string>
+			<string>Close %d other tabs?</string>
 			<key>one</key>
-			<string>Close Other Tab?</string>
+			<string>Close other tab?</string>
 		</dict>
 	</dict>
 	<key>alertMessageCloseOtherTabs.withCount</key>

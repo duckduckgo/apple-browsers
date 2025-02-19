@@ -96,15 +96,23 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateDebugController() -> UIViewController {
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        return storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
+        var controller: UIViewController?
+        let debugController = DebugViewController() {
+            controller?.navigationController?.pushViewController($0, animated: true)
+            print("*** push", $0)
         }
+        controller = debugController
+        return debugController
+        // TODO remove
+//        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+//        return storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
+//            RootDebugViewController(coder: coder,
+//                                    sync: self.syncService,
+//                                    bookmarksDatabase: self.bookmarksDatabase,
+//                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+//                                    tabManager: self.tabManager,
+//                                    fireproofing: self.fireproofing)
+//        }
     }
 
     // Legacy UIKit Views (Pushed unmodified)

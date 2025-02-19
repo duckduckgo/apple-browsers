@@ -297,23 +297,31 @@ extension MainViewController {
         }
     }
 
-    private func launchDebugSettings(completion: ((RootDebugViewController) -> Void)? = nil) {
+    private func launchDebugSettings(completion: ((DebugViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
 
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        let settings = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
+        // TODO remove
+//        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+//        let settings = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
+//            RootDebugViewController(coder: coder,
+//                                    sync: self.syncService,
+//                                    bookmarksDatabase: self.bookmarksDatabase,
+//                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+//                                    tabManager: self.tabManager,
+//                                    fireproofing: self.fireproofing)
+//        }
+
+        var navController: UINavigationController?
+
+        let debug = DebugViewController() {
+            navController?.pushViewController($0, animated: true)
         }
 
-        let controller = UINavigationController(rootViewController: settings)
+        let controller = UINavigationController(rootViewController: debug)
+        navController = controller
         controller.modalPresentationStyle = .automatic
         present(controller, animated: true) {
-            completion?(settings)
+            completion?(debug)
         }
     }
 

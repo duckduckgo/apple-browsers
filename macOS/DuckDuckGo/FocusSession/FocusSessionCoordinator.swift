@@ -132,9 +132,18 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     private func publishRemainingTime() {
-        let minutes = Int(remainingTime) / 60
-        let seconds = Int(remainingTime) % 60
-        let timeString = String(format: "%02d:%02d", minutes, seconds)
+        let totalSeconds = Int(remainingTime)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+
+        let timeString: String
+        if hours > 0 {
+            timeString = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            timeString = String(format: "%02d:%02d", minutes, seconds)
+        }
+
         timeRemainingSubject.send(timeString)
 
         // Update menu item

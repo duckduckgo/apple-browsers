@@ -16,17 +16,14 @@
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
 "Gyy-py-IOg.accessibilityLabel" = "Scheda non letta";
 
-/* Class = "UIBarButtonItem"; title = "Close all tabs and clear data"; ObjectID = "h1S-c2-Spf"; */
-"h1S-c2-Spf.title" = "Chiudi tutte le schede e cancella i dati";
-
 /* Class = "UIButton"; accessibilityLabel = "Clear tabs and data"; ObjectID = "Hcx-F2-HgO"; */
 "Hcx-F2-HgO.accessibilityLabel" = "Cancella le schede e i dati";
 
 /* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
 "LbT-NO-T0G.text" = "Link";
 
-/* Class = "UIBarButtonItem"; title = "New Tab"; ObjectID = "nYf-xs-PE7"; */
-"nYf-xs-PE7.title" = "Nuova scheda";
+/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
+"P3h-DO-2nT.title" = "Titolo";
 
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
 "qrJ-aX-XrW.accessibilityLabel" = "Scheda non letta";

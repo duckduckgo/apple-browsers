@@ -22,11 +22,13 @@ name: 04_sync_data_setup
         text: "Cancel"
     commands:
       - tapOn: Cancel
+- tapOn: Browsing menu
 - tapOn: Settings
 - runFlow:
     file: ../shared/add_login_from_settings.yaml
 
 #  Copy Recovery Code
+- tapOn: Browsing menu
 - tapOn: Settings
 - runFlow:
     file: ../shared/copy_recovery_code_from_settings.yaml

@@ -61,6 +61,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Συνομιλία με ΤΝ";
 
+/* Duck.ai menu item opening a new chat */
+"action.title.duckai.new" = "Νέο AI Chat";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Επεξεργασία σελιδοδείκτη";
 
@@ -84,6 +87,9 @@
 
 /* Open action */
 "action.title.open" = "΄Άνοιγμα";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "Κωδικός πρόσβασης";
 
 /* Paste and Go action */
 "action.title.pasteAndGo" = "Επικόλληση & μετάβαση";
@@ -123,6 +129,9 @@
 
 /* Share action */
 "action.title.share" = "Κοινή χρήση";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "Νέα καρτέλα";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Κάτω μέρος";
@@ -294,6 +303,18 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Όταν το DuckDuckGo εντοπίζει αναδυόμενα παράθυρα συναίνεσης για cookies σε ιστότοπους που επισκέπτεστε, μπορούμε να προσπαθήσουμε να ρυθμίσουμε αυτόματα τις προτιμήσεις σας για τα cookies ώστε να ελαχιστοποιήσετε τα cookies και να μεγιστοποιήσετε το απόρρητο. Έπειτα μπορείτε να κλείσετε τα αναδυόμενα παράθυρα. Ορισμένοι ιστότοποι δεν παρέχουν επιλογή για διαχείριση των προτιμήσεων cookies, οπότε μπορούμε μόνο να αποκρύψουμε αναδυόμενα παράθυρα όπως αυτά.";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
 
 /* Open Settings action for disabling autofill in Settings */
 "autofill.disable.prompt.action.open-settings" = "Άνοιγμα ρυθμίσεων";
@@ -532,8 +553,11 @@
 /* Title displayed when there are no results on Autofill search */
 "autofill.logins.search.no-results.title" = "Κανένα αποτέλεσμα";
 
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
 /* Description of autofill onboarding prompt's secure storage feature
-Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.description" = "Οι κωδικοί πρόσβασης κρυπτογραφούνται, αποθηκεύονται στη συσκευή και κλειδώνονται με %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
@@ -692,6 +716,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Διαγραφή";
 
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "Διαγραφή %@;";
 
@@ -796,6 +823,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
 "contextual.onboarding.addToDock.tutorial.title" = "Η προσθήκη μου στο Dock σας είναι εύκολη.";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Το *%1$@* προσπαθούσε να σας παρακολουθήσει εδώ. Τους εμπόδισα!\n\n☝️ Πατήστε την ασπίδα για περισσότερες πληροφορίες.";
@@ -910,6 +940,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.after.search.cta" = "Φιου!";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.multiple.trackers.cta" = "Κόλλα πέντε!";
@@ -1037,9 +1070,6 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* No comment provided by engineer. */
 "Duck Address" = "Duck Address";
 
-/* No comment provided by engineer. */
-"Duck Player" = "Duck Player";
-
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Το Duck Player δεν είναι διαθέσιμο";
 
@@ -1052,8 +1082,8 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
 "duckai.preferences.text.markdown" = "Το Duck.ai αποτελεί προαιρετική λειτουργία που σας επιτρέπει να συνομιλείτε ανώνυμα με δημοφιλή μοντέλα τρίτων για συνομιλία μέσω τεχνητής νοημοσύνης. Οι συνομιλίες σας δεν χρησιμοποιούνται για την εκπαίδευση τεχνητής νοημοσύνης.\n[Μάθετε περισσότερα](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
-/* Toggle text to enable/disable AI Chat in the address bar */
-"duckai.settings.enable.address-bar-searching-toggle" = "Εμφάνιση του Duck.ai στη σελίδα αναζήτησης";
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "Εμφάνιση του Duck.ai στη γραμμή διευθύνσεων";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Εμφάνιση του Duck.ai στο μενού του προγράμματος περιήγησης";
@@ -1079,12 +1109,10 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Button that will dismiss the modal */
 "duckplayer.presentation.modal.dismiss-button" = "Το κατάλαβα!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title" = "Πνίγεστε από τις διαφημίσεις στο YouTube; Δοκιμάστε το Duck Player!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Πνίγεστε από τις διαφημίσεις στο YouTube; Όχι με το Duck Player!";
 
 /* Footer label in the settings screen for Duck Player */
@@ -1921,6 +1949,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Σε οποιονδήποτε ιστότοπο, ανοίξτε το μενού ••• και επιλέξτε **Προσθήκη αγαπημένου** για προσθήκη στη σελίδα νέας καρτέλας σας.";
 
+/* Do not translate - stringsdict entry */
+"number.of.tabs" = "number.of.tabs";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Διαχειριζόμενα cookies";
 
@@ -2105,9 +2136,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 "prefrences.sync.credentials-limit-exceeded-description" = "Έχετε φτάσει στον μέγιστο αριθμό κωδικών πρόσβασης. Διαγράψτε ορισμένους για να συνεχίσετε τον συγχρονισμό.";
 
 /* Description invalid credentials error when syncing.
-Description of incorrectly formatted data error when syncing.
-Description of too many requests error when syncing. */
-"prefrences.sync.invalid-login-description" = "Ορισμένοι σελιδοδείκτες ή κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
+   Description of incorrectly formatted data error when syncing.
+   Description of too many requests error when syncing. */
+"prefrences.sync.invalid-login-description" = "Ο συγχρονισμός αντιμετώπισε σφάλμα. Δοκιμάστε να απενεργοποιήσετε τον συγχρονισμό στη συσκευή αυτή και έπειτα συνδεθείτε ξανά χρησιμοποιώντας άλλη συσκευή ή τον κωδικό ανάκτησής σας.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Παύση συγχρονισμού";
@@ -2218,7 +2249,7 @@ Description of too many requests error when syncing. */
 "settings.add.widget.vpn" = "Προσθέστε τη μικροεφαρμογή VPN DuckDuckGo στην αρχική οθόνη σας";
 
 /* Name of the settings subsection related to the address bar
-Settings screen cell text for addess bar position */
+   Settings screen cell text for addess bar position */
 "settings.address.bar" = "Γραμμή διευθύνσεων";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2276,7 +2307,7 @@ Settings screen cell text for addess bar position */
 "settings.data.clearing" = "Διαγραφή δεδομένων";
 
 /* Settings screen cell text for setting the app as default browser
-The name of Settings category in Privacy Features related to configuration of the default browser */
+   The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
 
 /* Label of a button disabling email protection */
@@ -2702,6 +2733,9 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
 "subscription.subscription.expiring.monthly.caption" = "Η μηνιαία συνδρομή σας λήγει %@.";
 
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "Η δωρεάν δοκιμή σας λήγει %@ και δεν θα μετατραπεί σε συνδρομή επί πληρωμή.";
+
 /* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
 "subscription.subscription.expiring.unknown.caption" = "Η συνδρομή σας λήγει %@.";
 
@@ -2711,6 +2745,12 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Η μηνιαία συνδρομή σας ανανεώνεται %@.";
 
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "Η δωρεάν δοκιμή σας λήγει στις %@ και μετατρέπεται αυτόματα σε μηνιαία συνδρομή επί πληρωμή την ίδια ημέρα.";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "Η δωρεάν δοκιμή σου λήγει %@ και μετατρέπεται αυτόματα σε ετήσια συνδρομή επί πληρωμή την ίδια ημέρα.";
+
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Η συνδρομή σας ανανεώνεται %@.";
 
@@ -2719,6 +2759,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Navigation bar Title for subscriptions */
 "subscription.title" = "Privacy Pro";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "Η δωρεάν δοκιμή είναι ενεργή";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Ο κωδικός ανάκτησης αντιγράφηκε στο πρόχειρο";
@@ -3052,6 +3095,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Έχετε προσκληθεί!";
+
+/* No comment provided by engineer. */
+"Watch this video on YouTube" = "Παρακολουθήστε αυτό το βίντεο στο YouTube";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Το Αγαπημένο αφαιρέθηκε";

@@ -18,17 +18,29 @@
 
 import Foundation
 
-final class Watchdog {
+public final class Watchdog {
     private var timer: DispatchSourceTimer?
     private var lastMainThreadCheck: Date
     private let timeout: TimeInterval
 
-    init(timeout: TimeInterval = 10.0) {
+    public var isRunning: Bool {
+        guard let timer else {
+            return false
+        }
+        return !timer.isCancelled
+    }
+
+    public init(timeout: TimeInterval = 10.0) {
         self.timeout = timeout
         self.lastMainThreadCheck = Date()
     }
 
-    func start() {
+    public func start() {
+        // Start monitoring the main thread with longer intervals
+        DispatchQueue.main.async {
+            self.startMainThreadHeartbeat()
+        }
+        
         // Create a DispatchSourceTimer to monitor for responsiveness
         let queue = DispatchQueue.global(qos: .background)
         timer = DispatchSource.makeTimerSource(queue: queue)
@@ -37,14 +49,9 @@ final class Watchdog {
         }
         timer?.schedule(deadline: .now(), repeating: DispatchTimeInterval.seconds(2))  // Check every 2 seconds
         timer?.resume()
-
-        // Start monitoring the main thread with longer intervals
-        DispatchQueue.main.async {
-            self.startMainThreadHeartbeat()
-        }
     }
 
-    func stop() {
+    public func stop() {
         timer?.cancel()
     }
 

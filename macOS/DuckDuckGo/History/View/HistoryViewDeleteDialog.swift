@@ -22,8 +22,13 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
     enum Response {
         case unknown, noAction, delete, burn
     }
+    let entriesCount: Int
     @Published var shouldBurn: Bool = true
     @Published private(set) var response: Response = .unknown
+
+    init(entriesCount: Int) {
+        self.entriesCount = entriesCount
+    }
 
     func cancel() {
         response = .noAction
@@ -45,7 +50,7 @@ struct HistoryViewDeleteDialog: ModalView {
 
             VStack(spacing: 12) {
                 Text("Delete history?").font(.title3)
-                Text("Do you want to delete X history items?").font(.body)
+                Text("Do you want to delete \(model.entriesCount) history items?").font(.body)
                     VStack(spacing: 8) {
                         Toggle("Also delete cookies and site data", isOn: $model.shouldBurn)
                             .lineLimit(nil)

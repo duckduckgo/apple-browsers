@@ -107,13 +107,30 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
         return DataModel.HistoryItemsBatch(finished: finished, visits: visits)
     }
 
-    func deleteVisits(for range: DataModel.HistoryRange) async {
+    func countEntries(for range: DataModel.HistoryRange) async -> Int {
         let startDate = Date()
         let history = Task { @MainActor in
             self.historyCoordinator.history
         }
         guard let history = await history.value else {
-            return
+            return 0
+        }
+        let fetchDate = Date()
+        print("Fetching history took \(fetchDate.timeIntervalSince(startDate)) s")
+        let date = lastQuery?.date ?? Date()
+        guard let dateRange = range.dateRange(for: date) else {
+            return history.count
+        }
+        return history.filter { dateRange.contains($0.lastVisit) }.count
+    }
+
+    private func visits(for range: DataModel.HistoryRange) async -> [Visit] {
+        let startDate = Date()
+        let history = Task { @MainActor in
+            self.historyCoordinator.history
+        }
+        guard let history = await history.value else {
+            return []
         }
         let fetchDate = Date()
         print("Fetching history took \(fetchDate.timeIntervalSince(startDate)) s")
@@ -128,9 +145,28 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
         let filterDate = Date()
         print("Filtering history took \(filterDate.timeIntervalSince(startDate)) s")
 
+        return visits
+    }
+
+    func deleteVisits(for range: DataModel.HistoryRange) async {
+        let startDate = Date()
+        let visits = await visits(for: range)
         await historyCoordinator.delete(visits)
         await resetCache()
         print("Deleting history took \(Date().timeIntervalSince(startDate)) s")
+    }
+
+    func burnVisits(for range: DataModel.HistoryRange) async {
+        let startDate = Date()
+        let visits = await visits(for: range)
+
+        await withCheckedContinuation { continuation in
+            historyCoordinator.burnVisits(visits) {
+                continuation.resume()
+            }
+        }
+        await resetCache()
+        print("Burning history took \(Date().timeIntervalSince(startDate)) s")
     }
 
     private func perform(_ query: DataModel.HistoryQueryKind) -> [DataModel.HistoryItem] {

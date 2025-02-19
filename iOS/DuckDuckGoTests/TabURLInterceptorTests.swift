@@ -100,7 +100,9 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
         // THEN
         waitForExpectations(timeout: 1)
-        XCTAssertNil(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
+        let interceptedURLComponents = try XCTUnwrap(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
+        let originQueryItem = interceptedURLComponents.queryItems?.first { $0.name == AttributionParameter.origin }
+        XCTAssertNil(originQueryItem)
     }
 
     func testAllowsNavigationForNonAIChatURL() {

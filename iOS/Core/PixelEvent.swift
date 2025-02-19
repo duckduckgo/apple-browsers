@@ -931,6 +931,14 @@ extension Pixel {
         case duckPlayerContingencyLearnMoreClicked
         case duckPlayerNewTabSettingOn
         case duckPlayerNewTabSettingOff
+        case duckPlayerYouTubeSignInErrorImpression
+        case duckPlayerYouTubeAgeRestrictedErrorImpression
+        case duckPlayerYouTubeNoEmbedErrorImpression
+        case duckPlayerYouTubeUnknownErrorImpression
+        case duckPlayerYouTubeSignInErrorDaily
+        case duckPlayerYouTubeAgeRestrictedErrorDaily
+        case duckPlayerYouTubeNoEmbedErrorDaily
+        case duckPlayerYouTubeUnknownErrorDaily
 
         // MARK: enhanced statistics
         case usageSegments
@@ -1910,6 +1918,14 @@ extension Pixel.Event {
         case .duckPlayerContingencyLearnMoreClicked: return "duckplayer_ios_contingency_learn-more-clicked"
         case .duckPlayerNewTabSettingOn: return "duckplayer_ios_newtab_setting-on"
         case .duckPlayerNewTabSettingOff: return "duckplayer_ios_newtab_setting-off"
+        case .duckPlayerYouTubeSignInErrorImpression: return "duckplayer_youtube-signin-error_impression"
+        case .duckPlayerYouTubeAgeRestrictedErrorImpression: return "duckplayer_youtube-age-restricted-error_impression"
+        case .duckPlayerYouTubeNoEmbedErrorImpression: return "duckplayer_youtube-no-embed-error_impression"
+        case .duckPlayerYouTubeUnknownErrorImpression: return "duckplayer_youtube-unknown-error_impression"
+        case .duckPlayerYouTubeSignInErrorDaily: return "duckplayer_youtube-signin-error_daily-unique"
+        case .duckPlayerYouTubeAgeRestrictedErrorDaily: return "duckplayer_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerYouTubeNoEmbedErrorDaily: return "duckplayer_youtube-no-embed-error_daily-unique"
+        case .duckPlayerYouTubeUnknownErrorDaily: return "duckplayer_youtube-unknown-error_daily-unique"
 
         // MARK: Enhanced statistics
         case .usageSegments: return "m_retention_segments"

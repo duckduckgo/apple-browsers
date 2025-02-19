@@ -69,7 +69,7 @@ struct SearchControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .search
     let displayName: LocalizedStringResource = "Search"
     let labelText: String = "Search"
-    let imageName: String = "AI-Chat-Symbol"
+    let imageName: String = "Search-Symbol"
     let intent = OpenSearchIntent()
 
     struct OpenSearchIntent: AppIntent {
@@ -89,7 +89,7 @@ struct PasswordsControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .passwords
     let displayName: LocalizedStringResource = "Passwords"
     let labelText: String = "Passwords"
-    let imageName: String = "AI-Chat-Symbol"
+    let imageName: String = "Key-Symbol"
     let intent = OpenPasswordsIntent()
 
     struct OpenPasswordsIntent: AppIntent {
@@ -109,7 +109,7 @@ struct FavoritesControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .favorites
     let displayName: LocalizedStringResource = "Favorites"
     let labelText: String = "Favorites"
-    let imageName: String = "AI-Chat-Symbol"
+    let imageName: String = "Favorite-Symbol"
     let intent = OpenFavoritesIntent()
 
     struct OpenFavoritesIntent: AppIntent {
@@ -129,7 +129,7 @@ struct VoiceSearchControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .voiceSearch
     let displayName: LocalizedStringResource = "Voice Search"
     let labelText: String = "Voice Search"
-    let imageName: String = "AI-Chat-Symbol"
+    let imageName: String = "Microphone-Symbol"
     let intent = OpenVoiceSearchIntent()
 
     struct OpenVoiceSearchIntent: AppIntent {
@@ -149,7 +149,7 @@ struct EmailProtectionControlWidget: ControlWidgetProtocol {
     let kind: ControlWidgetKind = .email
     let displayName: LocalizedStringResource = "Email Protection"
     let labelText: String = "Email Protection"
-    let imageName: String = "AI-Chat-Symbol"
+    let imageName: String = "Email-Symbol"
     let intent = EmailProtectionIntent()
 
     struct EmailProtectionIntent: AppIntent {

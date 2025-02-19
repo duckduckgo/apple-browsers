@@ -249,6 +249,15 @@ final class MainCoordinator {
         Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
     }
 
+    func handleAIChatAppIconShortuct() {
+        controller.clearNavigationStack()
+        // Give the `clearNavigationStack` call time to complete.
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+            self.controller.openAIChat()
+        }
+        Pixel.fire(pixel: .openAIChatFromIconShortcut)
+    }
+
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
         controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)

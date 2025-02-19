@@ -191,6 +191,8 @@ extension Foreground {
             mainCoordinator.handleSearchPassword()
         } else if shortcutItem.type == ShortcutKey.openVPNSettings {
             mainCoordinator.presentNetworkProtectionStatusSettingsModal()
+        } else if shortcutItem.type == ShortcutKey.aiChat {
+            mainCoordinator.handleAIChatAppIconShortuct()
         }
     }
 

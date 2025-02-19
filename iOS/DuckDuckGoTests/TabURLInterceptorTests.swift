@@ -76,8 +76,9 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
         // THEN
         waitForExpectations(timeout: 1)
-        let origin = try XCTUnwrap(capturedNotification?.userInfo?[AttributionParameter.origin] as? String)
-        XCTAssertEqual(origin, "test_origin")
+        let interceptedURLComponents = try XCTUnwrap(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
+        let originQueryItem = try XCTUnwrap(interceptedURLComponents.queryItems?.first { $0.name == AttributionParameter.origin })
+        XCTAssertEqual(originQueryItem.value, "test_origin")
     }
 
     func testWhenURLIsPrivacyProAndDoesNotHaveOriginQueryParameterThenNotificationUserInfoDoesNotHaveOriginSet() throws {
@@ -94,7 +95,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
 
         // THEN
         waitForExpectations(timeout: 1)
-        XCTAssertNil(capturedNotification?.userInfo?[AttributionParameter.origin] as? String)
+        XCTAssertNil(capturedNotification?.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents)
     }
 
     func testAllowsNavigationForNonAIChatURL() {

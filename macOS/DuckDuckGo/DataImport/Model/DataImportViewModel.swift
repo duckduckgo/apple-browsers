@@ -410,7 +410,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
 
     case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
          /* any */_ where fileDataType == .passwords:
-        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared)
+        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: ContentBlocking.shared.tld)
 
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,

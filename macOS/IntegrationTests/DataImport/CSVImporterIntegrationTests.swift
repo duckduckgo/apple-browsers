@@ -20,8 +20,11 @@ import Foundation
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
+import Common
 
 final class CSVImporterIntegrationTests: XCTestCase {
+
+    private let tld: TLD = TLD()
 
     override func setUp() {
         super.setUp()
@@ -51,8 +54,9 @@ final class CSVImporterIntegrationTests: XCTestCase {
         let csvImporter = CSVImporter(
             fileURL: csvURL,
             loginImporter: SecureVaultLoginImporter(),
-            defaultColumnPositions: nil, reporter: SecureVaultReporter.shared
-        )
+            defaultColumnPositions: nil,
+            reporter: SecureVaultReporter.shared,
+            tld: tld)
         let importTask = csvImporter.importData(types: [.passwords])
 
         // No baseline set, but should be no more than 0.5 seconds on an M1 Max with 32GB memory
@@ -61,7 +65,7 @@ final class CSVImporterIntegrationTests: XCTestCase {
             Task {
                 startMeasuring()
                 let result = await importTask.result
-                _ = try result.get()
+                _ = result.get()
                 stopMeasuring()
                 expectation.fulfill()
             }
@@ -76,7 +80,9 @@ final class CSVImporterIntegrationTests: XCTestCase {
         let startingDataImporter = CSVImporter(
             fileURL: startingDataURL,
             loginImporter: SecureVaultLoginImporter(),
-            defaultColumnPositions: nil, reporter: SecureVaultReporter.shared
+            defaultColumnPositions: nil,
+            reporter: SecureVaultReporter.shared,
+            tld: tld
         )
         _ = await startingDataImporter.importData(types: [.passwords]).result
 
@@ -84,7 +90,9 @@ final class CSVImporterIntegrationTests: XCTestCase {
         let testDataImporter = CSVImporter(
             fileURL: testDataURL,
             loginImporter: SecureVaultLoginImporter(),
-            defaultColumnPositions: nil, reporter: SecureVaultReporter.shared
+            defaultColumnPositions: nil,
+            reporter: SecureVaultReporter.shared,
+            tld: tld
         )
         let importTask = testDataImporter.importData(types: [.passwords])
         let result = await importTask.result

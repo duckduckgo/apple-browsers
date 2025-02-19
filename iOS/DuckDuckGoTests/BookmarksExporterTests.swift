@@ -45,7 +45,7 @@ class BookmarksExporterTests: XCTestCase {
     }
     
     func test_WhenImportChrome_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_chrome.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_chrome.html"))
         let result = await importer.parseAndSave()
         switch result {
         case .success:
@@ -66,7 +66,7 @@ class BookmarksExporterTests: XCTestCase {
     }
 
     func test_WhenImportSafari_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_safari.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_safari.html"))
         let result = await importer.parseAndSave()
         switch result {
         case .success:
@@ -82,6 +82,11 @@ class BookmarksExporterTests: XCTestCase {
             content.append(BookmarksExporter.Template.closeFolder(level: 2))
             content.append(BookmarksExporter.Template.openFolder(level: 2, named: "Bookmarks Menu"))
             content.append(BookmarksExporter.Template.closeFolder(level: 2))
+            content.append(BookmarksExporter.Template.openFolder(level: 2, named: "Reading List"))
+            content.append(BookmarksExporter.Template.bookmark(level: 3,
+                                                               title: "How Danny Trejo Built a Decades-Long Film Career After Prison – Texas Monthly",
+                                                               url: "https://www.texasmonthly.com/the-culture/how-danny-trejo-built-decades-long-film-career-after-prison/"))
+            content.append(BookmarksExporter.Template.closeFolder(level: 2))
             content.append(buildCommonContent())
             content.append(BookmarksExporter.Template.footer)
 
@@ -92,7 +97,7 @@ class BookmarksExporterTests: XCTestCase {
     }
 
     func test_WhenImportFirefox_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_firefox.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_firefox.html"))
         let result = await importer.parseAndSave()
         switch result {
         case .success:
@@ -130,7 +135,7 @@ class BookmarksExporterTests: XCTestCase {
     }
 
     func test_WhenImportBrave_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_brave.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_brave.html"))
 
         let result = await importer.parseAndSave()
         switch result {
@@ -152,7 +157,7 @@ class BookmarksExporterTests: XCTestCase {
     }
 
     func test_WhenImportDDGAndroid_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_ddg_android.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_ddg_android.html"))
 
         let result = await importer.parseAndSave()
         switch result {
@@ -180,7 +185,7 @@ class BookmarksExporterTests: XCTestCase {
     }
 
     func test_WhenImportDDGMacOS_ThenExportSuccess() async throws {
-        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks_ddg_macos.html"))
+        let importer = BookmarksImporter(coreDataStore: storage, favoritesDisplayMode: .displayNative(.mobile), htmlContent: htmlLoader.fromHtmlFile("MockFiles/bookmarks/bookmarks_ddg_macos.html"))
 
         let result = await importer.parseAndSave()
         switch result {

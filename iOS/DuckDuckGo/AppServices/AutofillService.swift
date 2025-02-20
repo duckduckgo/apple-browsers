@@ -30,9 +30,7 @@ final class AutofillService {
 
     var syncService: SyncService?
 
-    // MARK: - Start
-
-    func start() {
+    init() {
         if AppDependencyProvider.shared.appSettings.autofillIsNewInstallForOnByDefault == nil {
             AppDependencyProvider.shared.appSettings.setAutofillIsNewInstallForOnByDefault()
         }

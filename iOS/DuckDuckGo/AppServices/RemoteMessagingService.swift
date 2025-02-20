@@ -47,11 +47,6 @@ final class RemoteMessagingService {
             ),
             duckPlayerStorage: DefaultDuckPlayerStorage()
         )
-    }
-
-    // MARK: - Start
-
-    func start() {
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
     }
 

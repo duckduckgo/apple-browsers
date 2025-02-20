@@ -84,11 +84,7 @@ final class SyncService {
                                includedParameters: [.appVersion])
                 })
             }
-    }
 
-    // MARK: - Start
-
-    func start() {
         sync.initializeIfNeeded()
     }
 

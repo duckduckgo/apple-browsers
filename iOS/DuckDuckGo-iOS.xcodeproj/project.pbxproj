@@ -1072,7 +1072,6 @@
 		CB2A7EF4285383B300885F67 /* AppLastCompiledRulesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB2A7EF3285383B300885F67 /* AppLastCompiledRulesStore.swift */; };
 		CB3B4D442D5F757A006DAD63 /* StatisticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */; };
 		CB3B4D4A2D5FA4A3006DAD63 /* AppConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */; };
-		CB3B4D4C2D5FAD63006DAD63 /* AppServicesBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D4B2D5FAD63006DAD63 /* AppServicesBuilder.swift */; };
 		CB3B4D4E2D63910B006DAD63 /* LaunchActionHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D4D2D63910B006DAD63 /* LaunchActionHandlerTests.swift */; };
 		CB3B4D502D63957F006DAD63 /* UIInteractionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D4F2D63957F006DAD63 /* UIInteractionManagerTests.swift */; };
 		CB3B4D522D63CDA0006DAD63 /* AppStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB3B4D512D63CDA0006DAD63 /* AppStateMachineTests.swift */; };
@@ -3085,7 +3084,6 @@
 		CB2C47822AF6D55800AEDCD9 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatisticsService.swift; sourceTree = "<group>"; };
 		CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfiguration.swift; sourceTree = "<group>"; };
-		CB3B4D4B2D5FAD63006DAD63 /* AppServicesBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppServicesBuilder.swift; sourceTree = "<group>"; };
 		CB3B4D4D2D63910B006DAD63 /* LaunchActionHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchActionHandlerTests.swift; sourceTree = "<group>"; };
 		CB3B4D4F2D63957F006DAD63 /* UIInteractionManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIInteractionManagerTests.swift; sourceTree = "<group>"; };
 		CB3B4D512D63CDA0006DAD63 /* AppStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStateMachineTests.swift; sourceTree = "<group>"; };
@@ -6133,7 +6131,6 @@
 				CBAD0F0B2CFF4EDD006267B8 /* AppDependencies.swift */,
 				CBAD0F052CFE270D006267B8 /* AppStateMachine.swift */,
 				CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */,
-				CB3B4D4B2D5FAD63006DAD63 /* AppServicesBuilder.swift */,
 				98B31291218CCB8C00E54DE1 /* AppDependencyProvider.swift */,
 				CBAD0EF72CFE1D14006267B8 /* AppStates */,
 			);
@@ -8566,7 +8563,6 @@
 				5644419D2D4D1EDD003C53B8 /* FeatureFlagsMenuView.swift in Sources */,
 				CBECDB7A2CD981CE005B8B87 /* AppPageRefreshMonitor.swift in Sources */,
 				B60DFF072872B64B0061E7C2 /* JSAlertController.swift in Sources */,
-				CB3B4D4C2D5FAD63006DAD63 /* AppServicesBuilder.swift in Sources */,
 				981FED6E22025151008488D7 /* BlankSnapshotViewController.swift in Sources */,
 				D66F683D2BB333C100AE93E2 /* SubscriptionContainerView.swift in Sources */,
 				851B128822200575004781BC /* Onboarding.swift in Sources */,

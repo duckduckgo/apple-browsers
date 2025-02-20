@@ -41,21 +41,14 @@ struct Launching: LaunchingHandling {
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let aiChatSettings = AIChatSettings()
+    private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
     private let didFinishLaunchingStartTime = CFAbsoluteTimeGetCurrent()
     private let window: UIWindow = UIWindow(frame: UIScreen.main.bounds)
 
-    /// Handles one-time application setup during launch
     private let configuration = AppConfiguration()
-
-    /// Holds app-wide services that respond to lifecycle events and live throughout the app's lifetime.
     private let services: AppServices
-
-    /// Coordinates and initializes the main view controller.
     private let mainCoordinator: MainCoordinator
-
-    var urlToOpen: URL?
-    var shortcutItemToHandle: UIApplicationShortcutItem?
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
@@ -65,49 +58,95 @@ struct Launching: LaunchingHandling {
             Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
                        withAdditionalParameters: [PixelParameters.time: String(launchTime)])
         }
+
+        // MARK: - Application Setup
+        // Handles one-time application setup during launch
+
         configuration.start()
+
+        // MARK: - Service Initialization
+        // Create and initialize core services
+        // These services are instantiated early in the app lifecycle for two main reasons:
+        // 1. To begin their essential work immediately, without waiting for UI or other components
+        // 2. To potentially complete their tasks before the app becomes visible to the user
+        // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
+
+        let autofillService = AutofillService()
+        let configurationService = ConfigurationService()
+        let crashCollectionService = CrashCollectionService()
+        let statisticsService = StatisticsService()
+        let reportingService = ReportingService(fireproofing: fireproofing)
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase)
+        reportingService.syncService = syncService
+        autofillService.syncService = syncService
+        let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                                            database: configuration.persistentStoresConfiguration.database,
+                                                            appSettings: appSettings,
+                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                            configurationStore: AppDependencyProvider.shared.configurationStore,
+                                                            privacyConfigurationManager: privacyConfigurationManager)
+        let subscriptionService = SubscriptionService(privacyConfigurationManager: privacyConfigurationManager)
+        let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger)
+
+        // MARK: - Main Coordinator Setup
+        // Initialize the main coordinator which manages the app's primary view controller
+        // This step may take some time due to loading from nibs, etc.
+
+        mainCoordinator = MainCoordinator(syncService: syncService,
+                                          bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                          remoteMessagingService: remoteMessagingService,
+                                          daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                          reportingService: reportingService,
+                                          variantManager: configuration.atbAndVariantConfiguration.variantManager,
+                                          subscriptionService: subscriptionService,
+                                          voiceSearchHelper: voiceSearchHelper,
+                                          featureFlagger: featureFlagger,
+                                          aiChatSettings: aiChatSettings,
+                                          fireproofing: fireproofing,
+                                          maliciousSiteProtectionService: maliciousSiteProtectionService,
+                                          didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+
+        // MARK: - UI-Dependent Services Setup
+        // Initialize and configure services that depend on UI components
+
+        syncService.presenter = mainCoordinator.controller
+        let vpnService = VPNService(mainCoordinator: mainCoordinator)
         let overlayWindowManager = OverlayWindowManager(window: window,
                                                         appSettings: appSettings,
                                                         voiceSearchHelper: voiceSearchHelper,
                                                         featureFlagger: featureFlagger,
                                                         aiChatSettings: aiChatSettings)
-        let servicesBuilder = AppServicesBuilder(window: window,
-                                                 fireproofing: fireproofing,
-                                                 overlayWindowManager: overlayWindowManager,
-                                                 persistentStoresConfiguration: configuration.persistentStoresConfiguration)
-        mainCoordinator = MainCoordinator(syncService: servicesBuilder.syncService,
-                                          bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
-                                          remoteMessagingService: servicesBuilder.remoteMessagingService,
-                                          daxDialogs: configuration.onboardingConfiguration.daxDialogs,
-                                          reportingService: servicesBuilder.reportingService,
-                                          variantManager: configuration.atbAndVariantConfiguration.variantManager,
-                                          subscriptionService: servicesBuilder.subscriptionService,
-                                          voiceSearchHelper: voiceSearchHelper,
-                                          featureFlagger: featureFlagger,
-                                          aiChatSettings: aiChatSettings,
-                                          fireproofing: fireproofing,
-                                          maliciousSiteProtectionService: servicesBuilder.maliciousSiteProtectionService,
-                                          didFinishLaunchingStartTime: didFinishLaunchingStartTime)
-        services = servicesBuilder.complete(with: mainCoordinator)
-        services.syncService.presenter = mainCoordinator.controller
+        let autoClearService = AutoClearService(autoClear: AutoClear(worker: mainCoordinator.controller), overlayWindowManager: overlayWindowManager)
+        let authenticationService = AuthenticationService(overlayWindowManager: overlayWindowManager)
+        let screenshotService = ScreenshotService(window: window, mainViewController: mainCoordinator.controller)
 
-        startServices()
-        configuration.finalize(with: services.reportingService,
-                               autoClearService: services.autoClearService,
+        // MARK: - App Services aggregation
+        // This object serves as a central hub for app-wide services that:
+        // 1. Respond to lifecycle events
+        // 2. Persist throughout the app's runtime
+        // 3. Provide core functionality across different parts of the app
+
+        services = AppServices(screenshotService: screenshotService,
+                               authenticationService: authenticationService,
+                               syncService: syncService,
+                               vpnService: vpnService,
+                               autofillService: autofillService,
+                               remoteMessagingService: remoteMessagingService,
+                               configurationService: configurationService,
+                               autoClearService: autoClearService,
+                               reportingService: reportingService,
+                               subscriptionService: subscriptionService,
+                               crashCollectionService: crashCollectionService,
+                               maliciousSiteProtectionService: maliciousSiteProtectionService,
+                               statisticsService: statisticsService)
+
+        // MARK: - Final Configuration
+        // Complete the configuration process and set up the main window
+
+        configuration.finalize(with: reportingService,
+                               autoClearService: autoClearService,
                                mainViewController: mainCoordinator.controller)
         setupWindow()
-    }
-
-    private func startServices() {
-        services.configurationService.start()
-        services.crashCollectionService.start()
-        services.syncService.start()
-        services.remoteMessagingService.start()
-        services.autoClearService.start()
-        services.vpnService.start()
-        services.subscriptionService.start()
-        services.autofillService.start()
-        services.maliciousSiteProtectionService.start()
     }
 
     private func setupWindow() {

@@ -73,11 +73,7 @@ final class MaliciousSiteProtectionService {
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger
         )
-    }
 
-    // MARK: - Start
-
-    func start() {
         // Register Malicious Site Protection background tasks to fetch datasets
         manager.registerBackgroundRefreshTaskHandler()
     }

@@ -44,11 +44,7 @@ final class AutoClearService: AutoClearServiceProtocol {
         self.autoClear = autoClear
         self.overlayWindowManager = overlayWindowManager
         self.application = application
-    }
 
-    // MARK: - Start
-
-    func start() {
         autoClearTask = Task {
             await autoClear.clearDataIfEnabled(launching: true, applicationState: .init(with: application.applicationState))
         }

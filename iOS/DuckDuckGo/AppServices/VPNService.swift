@@ -53,11 +53,7 @@ final class VPNService: NSObject {
         super.init()
 
         notificationCenter.delegate = self
-    }
 
-    // MARK: - Start
-
-    func start() {
         widgetRefreshModel.beginObservingVPNStatus()
         tipKitAppEventsHandler.appDidFinishLaunching()
     }

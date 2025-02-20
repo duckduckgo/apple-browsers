@@ -45,6 +45,8 @@ final class SubscriptionService {
                 self?.handlePrivacyConfigurationUpdates()
             }
             .store(in: &cancellables)
+
+        subscriptionManager.loadInitialData()
     }
 
     private static func makeSubscriptionCookieManager(application: UIApplication,
@@ -83,12 +85,6 @@ final class SubscriptionService {
                 }
             }
         }
-    }
-
-    // MARK: - Start
-
-    func start() {
-        subscriptionManager.loadInitialData()
     }
 
     // MARK: - Resume

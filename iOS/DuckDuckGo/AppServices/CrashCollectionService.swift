@@ -34,11 +34,7 @@ final class CrashCollectionService {
          application: UIApplication = UIApplication.shared) {
         self.appSettings = appSettings
         self.application = application
-    }
 
-    // MARK: - Start
-
-    func start() {
         crashCollection.startAttachingCrashLogMessages { [weak self] pixelParameters, payloads, sendReport in
             pixelParameters.forEach { params in
                 Pixel.fire(pixel: .dbCrashDetected, withAdditionalParameters: params, includedParameters: [])

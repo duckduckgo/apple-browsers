@@ -23,6 +23,7 @@ import Foundation
 import Persistence
 import SwiftSoup
 import os.log
+import BrowserServicesKit
 
 public enum BookmarksImportError: Error {
     case invalidHtmlNoDLTag
@@ -32,7 +33,6 @@ public enum BookmarksImportError: Error {
     case unknown
 }
 
-@MainActor
 final public class BookmarksImporter {
 
     public enum Notifications {
@@ -42,28 +42,23 @@ final public class BookmarksImporter {
 
     private(set) var importedBookmarks: [BookmarkOrFolder] = []
     private(set) var coreDataStorage: BookmarkCoreDataImporter
+    private let htmlContent: String
 
-    public init(coreDataStore: CoreDataDatabase, favoritesDisplayMode: FavoritesDisplayMode) {
+    @MainActor
+    public init(coreDataStore: CoreDataDatabase, favoritesDisplayMode: FavoritesDisplayMode, htmlContent: String) {
         coreDataStorage = BookmarkCoreDataImporter(database: coreDataStore, favoritesDisplayMode: favoritesDisplayMode)
+        self.htmlContent = htmlContent
     }
 
-    func isDocumentInSafariFormat(_ document: Document) -> Bool {
-        // have to handle Safari html bookmarks differently as it doesn't wrap bookmarks in DL tags
-        if let firstDL = try? document.select("DL").first(), firstDL.parents().size() > 2 {
-            return true
-        }
-
-        return false
-    }
-
-    public func parseAndSave(html: String) async -> Result<[BookmarkOrFolder], BookmarksImportError> {
+    @MainActor
+    public func parseAndSave() async -> Result<BookmarksImportSummary, BookmarksImportError> {
         NotificationCenter.default.post(name: Notifications.importDidBegin, object: nil)
 
         do {
-            try await parseHtml(html)
-            try await saveBookmarks(importedBookmarks)
+            try await parseHtml(htmlContent)
+            let summary = try await saveBookmarks(importedBookmarks)
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
-            return .success(importedBookmarks)
+            return .success(summary)
         } catch BookmarksImportError.invalidHtmlNoDLTag {
             NotificationCenter.default.post(name: Notifications.importDidEnd, object: nil)
             Pixel.fire(pixel: .bookmarkImportFailureParsingDL)
@@ -87,57 +82,75 @@ final public class BookmarksImporter {
         }
     }
 
+    public static func totalValidBookmarks(in htmlContent: String) -> Int {
+        do {
+            let normalizedHtml = try normalizeBookmarkHtml(htmlContent)
+            var count = 0
+            try countBookmarks(in: normalizedHtml, count: &count)
+            return count
+        } catch {
+            return 0
+        }
+    }
+
     func parseHtml(_ htmlContent: String) async throws {
         // remove irrelevant DD tags used in older firefox and netscape bookmark files
-        let cleanedHtml = htmlContent.replacingOccurrences(of: "<DD>", with: "", options: .caseInsensitive)
+        let normalizedHtml = try Self.normalizeBookmarkHtml(htmlContent)
 
-        let document: Document = try SwiftSoup.parse(cleanedHtml)
+        try parse(documentElement: normalizedHtml, importedBookmark: nil)
+    }
 
-        if isDocumentInSafariFormat(document) {
-            guard let newDocument = try transformSafariDocument(document: document) else {
-                Logger.bookmarks.debug("Safari format could not be handled")
-                throw BookmarksImportError.safariTransformFailure
+    private static func normalizeBookmarkHtml(_ htmlContent: String) throws -> Element {
+        let normalizedHtml = htmlContent.replacingOccurrences(of: "<DD>", with: "", options: .caseInsensitive)
+
+        let document: Document = try SwiftSoup.parse(normalizedHtml)
+
+        let root = try document.select("body").first() ?? document
+
+        // Get all direct children
+        let children = try root.children()
+            .filter { try !$0.select("DT").isEmpty() }
+
+        // If multiple root elements, wrap them in DL
+        let rootElement: Element
+        if children.count > 1 {
+            let newDL = try Element(Tag.valueOf("DL"), "")
+            try children.forEach { child in
+                try newDL.appendChild(child)
             }
-            try parse(documentElement: newDocument, importedBookmark: nil)
+            rootElement = newDL
         } else {
-            try parse(documentElement: document, importedBookmark: nil)
-        }
-    }
-
-    /// transform Safari document into a standard bookmark html format
-    func transformSafariDocument(document: Document) throws -> Document? {
-        guard let body = try document.select("body").first() else {
-            throw BookmarksImportError.invalidHtmlNoBodyTag
+            rootElement = root
         }
 
-        let newDocument: Document = Document("")
-
-        // create new DL tag
-        let dlElement = try newDocument.appendElement("DL")
-
-        // get all childNodes of document body, filtering out Safari Reading list
-        let bodyChildren = body.getChildNodes().filter { isSafariReadingList(node: $0) == false }
-
-        // insert DT elements into the new DL element
-        try dlElement.insertChildren(0, bodyChildren)
-
-        return newDocument
+        return rootElement
     }
 
-    func isSafariReadingList(node: Node) -> Bool {
-        if let element = node as? Element {
-            for childElement in element.children() {
-                if let folder = try? childElement.select("H3").first(),
-                    let attribute = try? folder.attr(Constants.idAttribute),
-                    attribute == Constants.readingListId {
-                    return true
+    private static func countBookmarks(in documentElement: Element, count: inout Int) throws {
+        guard let firstDL = try documentElement.select("DL").first() else {
+            throw BookmarksImportError.invalidHtmlNoDLTag
+        }
+
+        try firstDL.children()
+            .filter({ try $0.select("DT").hasText() })
+            .forEach({ element in
+                let folder = try? element.select("H3").first()
+
+                if folder != nil {
+                    // Apple includes folders in the bookmarks count when exporting from Safari
+                    count += 1
+                    // Recursively count contents of folder
+                    try? countBookmarks(in: element, count: &count)
+                } else {
+                    let linkItem = try element.select("A")
+                    if !linkItem.isEmpty() {
+                        count += 1
+                    }
                 }
-            }
-        }
-        return false
+            })
     }
 
-    func parse(documentElement: Element, importedBookmark: BookmarkOrFolder?, inFavorite: Bool = false) throws {
+    private func parse(documentElement: Element, importedBookmark: BookmarkOrFolder?, inFavorite: Bool = false) throws {
         guard let firstDL = try documentElement.select("DL").first() else {
             throw BookmarksImportError.invalidHtmlNoDLTag
         }
@@ -205,16 +218,16 @@ final public class BookmarksImporter {
         return newBookmarkOrFolder
     }
 
-    func saveBookmarks(_ bookmarks: [BookmarkOrFolder]) async throws {
+    func saveBookmarks(_ bookmarks: [BookmarkOrFolder]) async throws -> BookmarksImportSummary {
         do {
-            try await coreDataStorage.importBookmarks(bookmarks)
+            return try await coreDataStorage.importBookmarks(bookmarks)
         } catch {
             Logger.bookmarks.error("Failed to save imported bookmarks to core data: \(error.localizedDescription, privacy: .public)")
             throw BookmarksImportError.saveFailure
         }
     }
 
-    enum Constants {
+    private enum Constants {
         static let FavoritesFolder = "DuckDuckGo Favorites"
         static let BookmarksFolder = "DuckDuckGo Bookmarks"
         static let bookmarkURLString = "https://duckduckgo.com"

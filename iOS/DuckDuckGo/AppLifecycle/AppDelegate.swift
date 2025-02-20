@@ -20,31 +20,11 @@
 import UIKit
 import Core
 
-public extension NSNotification.Name {
-
-    static let appDidEncounterUnrecoverableState = Notification.Name("com.duckduckgo.app.unrecoverable.state")
-
-}
-
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     var window: UIWindow?
-
-    override init() {
-        super.init()
-        NotificationCenter.default.addObserver(forName: .databaseDidEncounterInsufficientDiskSpace,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            self?.application(UIApplication.shared, willTerminateWithReason: .insufficientDiskSpace)
-        }
-        NotificationCenter.default.addObserver(forName: .appDidEncounterUnrecoverableState,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            self?.application(UIApplication.shared, willTerminateWithReason: .unrecoverableState)
-        }
-    }
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -71,13 +51,6 @@ public extension NSNotification.Name {
     /// See: `Background.swift` -> `onTransition()`
     func applicationDidEnterBackground(_ application: UIApplication) {
         appStateMachine.handle(.didEnterBackground)
-    }
-
-    /// See: `Terminating.swift`
-    /// **Note** This is *not* the system function `applicationWillTerminate(_:)`, and it is *not* called by the system.
-    /// This is used to handle force crashes due to unrecoverable errors (e.g., low disk space) and display an alert beforehand.
-    func application(_ application: UIApplication, willTerminateWithReason terminationReason: UIApplication.TerminationReason) {
-        appStateMachine.handle(.willTerminate(terminationReason))
     }
 
     /// See: `LaunchActionHandler.swift` -> `handleShortcutItem(_:)`

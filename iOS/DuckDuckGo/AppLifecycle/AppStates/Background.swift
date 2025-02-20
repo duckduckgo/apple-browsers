@@ -97,8 +97,4 @@ extension Background {
                    actionToHandle: actionToHandle)
     }
 
-    func makeTerminatingState() -> any TerminatingHandling {
-        Terminating()
-    }
-
 }

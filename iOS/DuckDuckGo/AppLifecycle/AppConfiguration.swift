@@ -34,15 +34,15 @@ struct AppConfiguration {
     let onboardingConfiguration = OnboardingConfiguration()
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
 
-    func start() {
+    func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
-        ContentBlockingConfiguration.prepareContentBlocking()
+        try ContentBlockingConfiguration.prepareContentBlocking()
         NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
         configureAPIRequestUserAgent()
         onboardingConfiguration.migrateToNewOnboarding()
-        persistentStoresConfiguration.configure()
+        try persistentStoresConfiguration.configure()
         setConfigurationURLProvider()
 
         WidgetCenter.shared.reloadAllTimelines()

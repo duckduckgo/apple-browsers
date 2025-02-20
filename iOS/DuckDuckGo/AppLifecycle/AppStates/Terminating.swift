@@ -21,24 +21,42 @@ import UIKit
 
 struct Terminating: TerminatingHandling {
 
+    let terminationError: UIApplication.TerminationError
+
     init() {
         fatalError("App is in unrecoverable state")
     }
 
-    init(terminationReason: UIApplication.TerminationReason,
+    init(terminationError: UIApplication.TerminationError,
          application: UIApplication = UIApplication.shared) {
-        alertAndTerminate(application: application, terminationReason: terminationReason)
+        self.terminationError = terminationError
+        alertAndTerminate(application: application)
     }
 
-    private func alertAndTerminate(application: UIApplication, terminationReason: UIApplication.TerminationReason) {
+    private func alertAndTerminate(application: UIApplication) {
         let alertController: UIAlertController
-        switch terminationReason {
+        switch terminationError {
         case .insufficientDiskSpace:
             alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
         case .unrecoverableState:
             alertController = CriticalAlerts.makePreemptiveCrashAlert()
         }
-        application.window?.rootViewController?.present(alertController, animated: true, completion: nil)
+
+        let window = makeWindow(for: application)
+        window.rootViewController?.present(alertController, animated: true, completion: nil)
+    }
+
+    private func makeWindow(for application: UIApplication) -> UIWindow {
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.backgroundColor = .white
+
+        let rootViewController = UIViewController()
+        rootViewController.view.backgroundColor = .white
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+        application.setWindow(window)
+
+        return window
     }
 
 }

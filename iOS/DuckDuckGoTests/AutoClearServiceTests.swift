@@ -54,22 +54,19 @@ final class MockAutoClear: AutoClearing {
 
 final class AutoClearServiceTests {
 
-    var autoClearService: AutoClearService!
     var mockAutoClear: MockAutoClear!
     var mockOverlayWindowManager: MockOverlayWindowManager!
 
     init() {
         mockAutoClear = MockAutoClear()
         mockOverlayWindowManager = MockOverlayWindowManager()
-
-        autoClearService = AutoClearService(autoClear: mockAutoClear,
-                                            overlayWindowManager: mockOverlayWindowManager)
     }
 
-    @Test("start() should start clearing data")
-    func start() async {
+    @Test("autoClearService's init() should start clearing data")
+    func clearDataOnInit() async {
         // When
-        autoClearService.start()
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
 
         // Then
         await autoClearService.autoClearTask?.value
@@ -79,6 +76,10 @@ final class AutoClearServiceTests {
 
     @Test("resume() should start clearing data")
     func resume() async {
+        // Given
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
+
         // When
         let startTime = Date().timeIntervalSince1970
         autoClearService.resume()
@@ -93,6 +94,9 @@ final class AutoClearServiceTests {
     func suspend() {
         // Given
         mockAutoClear.isClearingEnabledValue = true
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
+
         let startTime = Date().timeIntervalSince1970
 
         // When
@@ -108,6 +112,9 @@ final class AutoClearServiceTests {
     func suspendWhenClearingDisabled() {
         // Given
         mockAutoClear.isClearingEnabledValue = false
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
+
 
         // When
         autoClearService.suspend()
@@ -120,7 +127,8 @@ final class AutoClearServiceTests {
     @Test("waitForDataCleared() should remove non-authentication overlay")
     func waitForDataCleared() async {
         // Given
-        autoClearService.start()
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
 
         // When
         await autoClearService.waitForDataCleared()

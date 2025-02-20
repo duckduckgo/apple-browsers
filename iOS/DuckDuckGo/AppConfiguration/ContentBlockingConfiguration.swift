@@ -22,9 +22,17 @@ import Core
 
 final class ContentBlockingConfiguration {
 
-    static func prepareContentBlocking() {
+    static func prepareContentBlocking() throws {
+        var thrownError: Error?
         ContentBlocking.shared.onCriticalError = {
-            NotificationCenter.default.post(name: .appDidEncounterUnrecoverableState, object: nil)
+            do {
+                throw UIApplication.TerminationError.unrecoverableState
+            } catch {
+                thrownError = error
+            }
+        }
+        if let thrownError {
+            throw thrownError
         }
         // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
         _ = ContentBlockingUpdating.shared

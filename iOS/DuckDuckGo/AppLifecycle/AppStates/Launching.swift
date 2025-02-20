@@ -52,17 +52,11 @@ struct Launching: LaunchingHandling {
 
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
-    init() {
-        defer {
-            let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
-            Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
-                       withAdditionalParameters: [PixelParameters.time: String(launchTime)])
-        }
-
+    init() throws {
         // MARK: - Application Setup
         // Handles one-time application setup during launch
 
-        configuration.start()
+        try configuration.start()
 
         // MARK: - Service Initialization
         // Create and initialize core services
@@ -92,19 +86,19 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
-        mainCoordinator = MainCoordinator(syncService: syncService,
-                                          bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
-                                          remoteMessagingService: remoteMessagingService,
-                                          daxDialogs: configuration.onboardingConfiguration.daxDialogs,
-                                          reportingService: reportingService,
-                                          variantManager: configuration.atbAndVariantConfiguration.variantManager,
-                                          subscriptionService: subscriptionService,
-                                          voiceSearchHelper: voiceSearchHelper,
-                                          featureFlagger: featureFlagger,
-                                          aiChatSettings: aiChatSettings,
-                                          fireproofing: fireproofing,
-                                          maliciousSiteProtectionService: maliciousSiteProtectionService,
-                                          didFinishLaunchingStartTime: didFinishLaunchingStartTime)
+        mainCoordinator = try MainCoordinator(syncService: syncService,
+                                              bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                              remoteMessagingService: remoteMessagingService,
+                                              daxDialogs: configuration.onboardingConfiguration.daxDialogs,
+                                              reportingService: reportingService,
+                                              variantManager: configuration.atbAndVariantConfiguration.variantManager,
+                                              subscriptionService: subscriptionService,
+                                              voiceSearchHelper: voiceSearchHelper,
+                                              featureFlagger: featureFlagger,
+                                              aiChatSettings: aiChatSettings,
+                                              fireproofing: fireproofing,
+                                              maliciousSiteProtectionService: maliciousSiteProtectionService,
+                                              didFinishLaunchingStartTime: didFinishLaunchingStartTime)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components
@@ -147,6 +141,7 @@ struct Launching: LaunchingHandling {
                                autoClearService: autoClearService,
                                mainViewController: mainCoordinator.controller)
         setupWindow()
+        logAppLaunchTime()
     }
 
     private func setupWindow() {
@@ -155,6 +150,12 @@ struct Launching: LaunchingHandling {
         UIApplication.shared.setWindow(window)
         window.makeKeyAndVisible()
         mainCoordinator.start()
+    }
+
+    private func logAppLaunchTime() {
+        let launchTime = CFAbsoluteTimeGetCurrent() - didFinishLaunchingStartTime
+        Pixel.fire(pixel: .appDidFinishLaunchingTime(time: Pixel.Event.BucketAggregation(number: launchTime)),
+                   withAdditionalParameters: [PixelParameters.time: String(launchTime)])
     }
 
     // MARK: -
@@ -188,10 +189,6 @@ extension Launching {
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: makeStateContext(), actionToHandle: actionToHandle)
-    }
-
-    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
-        Terminating(terminationReason: terminationReason)
     }
 
 }

@@ -57,13 +57,13 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          accountManager: AccountManager = AppDependencyProvider.shared.accountManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime) {
+         didFinishLaunchingStartTime: CFAbsoluteTime) throws {
         self.accountManager = accountManager
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
         let previewsSource = TabPreviewsSource()
-        let historyManager = Self.makeHistoryManager()
+        let historyManager = try Self.makeHistoryManager()
         let tabsModel = Self.prepareTabsModel(previewsSource: previewsSource)
         reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
@@ -101,7 +101,7 @@ final class MainCoordinator {
         controller.loadViewIfNeeded()
     }
 
-    private static func makeHistoryManager() -> HistoryManaging {
+    private static func makeHistoryManager() throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
@@ -110,11 +110,10 @@ final class MainCoordinator {
         case .failure(let error):
             Pixel.fire(pixel: .historyStoreLoadFailed, error: error)
             if error.isDiskFull {
-                NotificationCenter.default.post(name: .databaseDidEncounterInsufficientDiskSpace, object: nil)
+                throw UIApplication.TerminationError.insufficientDiskSpace
             } else {
-                NotificationCenter.default.post(name: .appDidEncounterUnrecoverableState, object: nil)
+                throw UIApplication.TerminationError.unrecoverableState
             }
-            return NullHistoryManager()
         case .success(let historyManager):
             return historyManager
         }

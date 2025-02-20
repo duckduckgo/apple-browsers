@@ -24,10 +24,16 @@ import Testing
 @MainActor
 final class MockInitializing: InitializingHandling {
 
-    required init() {}
+    var shouldThrowOnLaunching = false
 
-    func makeLaunchingState() -> any LaunchingHandling {
-        MockLaunching()
+    init() {}
+
+    func makeLaunchingState() throws -> any LaunchingHandling {
+        if shouldThrowOnLaunching {
+            throw UIApplication.TerminationError.insufficientDiskSpace
+        } else {
+            MockLaunching()
+        }
     }
 
 }
@@ -35,7 +41,7 @@ final class MockInitializing: InitializingHandling {
 @MainActor
 final class MockLaunching: LaunchingHandling {
 
-    required init() {}
+    init() { }
 
     func makeBackgroundState() -> any BackgroundHandling {
         MockBackground()
@@ -43,10 +49,6 @@ final class MockLaunching: LaunchingHandling {
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         MockForeground(actionToHandle: actionToHandle)
-    }
-
-    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
-        MockTerminating(terminationReason: terminationReason, application: UIApplication.shared)
     }
 
 }
@@ -75,10 +77,6 @@ final class MockForeground: ForegroundHandling {
         MockBackground()
     }
 
-    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling {
-        MockTerminating(terminationReason: terminationReason, application: UIApplication.shared)
-    }
-
 }
 
 @MainActor
@@ -98,20 +96,16 @@ final class MockBackground: BackgroundHandling {
         MockForeground(actionToHandle: actionToHandle)
     }
 
-    func makeTerminatingState() -> any TerminatingHandling {
-        MockTerminating()
-    }
-
 }
 
 @MainActor
 final class MockTerminating: TerminatingHandling {
 
-    private(set) var terminationReason: String?
+    private(set) var terminationError: String?
 
     init() {}
-    init(terminationReason: UIApplication.TerminationReason, application: UIApplication) {
-        self.terminationReason = terminationReason.rawValue
+    init(terminationError: UIApplication.TerminationError, application: UIApplication) {
+        self.terminationError = terminationError.localizedDescription
     }
 
 }
@@ -185,14 +179,16 @@ final class LaunchingTests {
 
     @Test("willTerminate(with:) should transition from Launching to Terminating")
     func transitionFromLaunchingToTerminating() {
-        let terminationReason = UIApplication.TerminationReason.insufficientDiskSpace
+        if case .initializing(let initializing) = stateMachine.currentState,
+           let mockInitializing = initializing as? MockInitializing {
+            mockInitializing.shouldThrowOnLaunching = true
+        }
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        stateMachine.handle(.willTerminate(terminationReason))
         #expect(stateMachine.currentState.rawValue == "terminating")
 
         if case .terminating(let terminating) = stateMachine.currentState,
-           let mockTerminating = terminating as? MockTerminating {
-            #expect(mockTerminating.terminationReason == terminationReason.rawValue)
+           let terminating = terminating as? Terminating {
+            #expect(terminating.terminationError == UIApplication.TerminationError.insufficientDiskSpace)
         } else {
             Issue.record("Incorrect state")
         }
@@ -268,20 +264,6 @@ final class ForegroundTests {
         }
     }
 
-    @Test("willTerminate(with:) should transition from Foreground to Terminating")
-    func transitionFromForegroundToTerminating() {
-        let terminationReason = UIApplication.TerminationReason.insufficientDiskSpace
-        stateMachine.handle(.willTerminate(terminationReason))
-        #expect(stateMachine.currentState.rawValue == "terminating")
-
-        if case .terminating(let terminating) = stateMachine.currentState,
-           let mockTerminating = terminating as? MockTerminating {
-            #expect(mockTerminating.terminationReason == terminationReason.rawValue)
-        } else {
-            Issue.record("Incorrect state")
-        }
-    }
-
     @Test("Incorrect transitions from Foreground should not trigger state change")
     func incorrectTransitionsFromLaunching() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -348,20 +330,6 @@ final class BackgroundTests {
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
             #expect(mockForeground.actionToHandle != nil)
-        } else {
-            Issue.record("Incorrect state")
-        }
-    }
-
-    @Test("willTerminate(with:) should transition from Background to Terminating")
-    func transitionFromForegroundToTerminating() {
-        let terminationReason = UIApplication.TerminationReason.insufficientDiskSpace
-        stateMachine.handle(.willTerminate(terminationReason))
-        #expect(stateMachine.currentState.rawValue == "terminating")
-
-        if case .terminating(let terminating) = stateMachine.currentState,
-           let mockTerminating = terminating as? MockTerminating {
-            #expect(mockTerminating.terminationReason == nil)
         } else {
             Issue.record("Incorrect state")
         }

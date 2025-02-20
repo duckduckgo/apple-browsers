@@ -34,8 +34,8 @@ struct Initializing: InitializingHandling {
 
 extension Initializing {
 
-    func makeLaunchingState() -> any LaunchingHandling {
-        Launching()
+    func makeLaunchingState() throws -> any LaunchingHandling {
+        try Launching()
     }
 
 }

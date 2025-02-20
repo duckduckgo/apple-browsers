@@ -27,7 +27,6 @@ enum AppEvent {
     case didEnterBackground
     case willResignActive
     case willEnterForeground
-    case willTerminate(UIApplication.TerminationReason)
 
 }
 
@@ -71,18 +70,17 @@ protocol InitializingHandling {
 
     init()
 
-    func makeLaunchingState() -> any LaunchingHandling
+    func makeLaunchingState() throws -> any LaunchingHandling
 
 }
 
 @MainActor
 protocol LaunchingHandling {
 
-    init()
+    init() throws
 
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
-    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling
 
 }
 
@@ -95,7 +93,6 @@ protocol ForegroundHandling {
     func handle(_ action: AppAction)
 
     func makeBackgroundState() -> any BackgroundHandling
-    func makeTerminatingState(terminationReason: UIApplication.TerminationReason) -> any TerminatingHandling
 
 }
 
@@ -107,8 +104,6 @@ protocol BackgroundHandling {
     func didReturn()
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
-    func makeTerminatingState() -> any TerminatingHandling
-
 
 }
 
@@ -116,7 +111,7 @@ protocol BackgroundHandling {
 protocol TerminatingHandling {
 
     init()
-    init(terminationReason: UIApplication.TerminationReason, application: UIApplication)
+    init(terminationError: UIApplication.TerminationError, application: UIApplication)
 
 }
 
@@ -155,7 +150,17 @@ final class AppStateMachine {
 
     private func respond(to event: AppEvent, in initializing: InitializingHandling) {
         guard case .didFinishLaunching(let isTesting) = event else { return handleUnexpectedEvent(event, for: .initializing(initializing)) }
-        currentState = isTesting ? .simulated(Simulated()) : .launching(initializing.makeLaunchingState())
+        if isTesting {
+            currentState = .simulated(Simulated())
+        } else {
+            do {
+                currentState = try .launching(initializing.makeLaunchingState())
+            } catch let error as UIApplication.TerminationError {
+                currentState = .terminating(Terminating(terminationError: error))
+            } catch {
+                currentState = .terminating(Terminating())
+            }
+        }
     }
 
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
@@ -178,9 +183,6 @@ final class AppStateMachine {
             // We don’t support this transition and instead stay in Launching.
             // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
             break
-        case .willTerminate(let terminationReason):
-            let terminating = launching.makeTerminatingState(terminationReason: terminationReason)
-            currentState = .terminating(terminating)
         default:
             handleUnexpectedEvent(event, for: .launching(launching))
         }
@@ -197,9 +199,6 @@ final class AppStateMachine {
             currentState = .background(background)
         case .willResignActive:
             foreground.willLeave()
-        case .willTerminate(let terminationReason):
-            let terminating = foreground.makeTerminatingState(terminationReason: terminationReason)
-            currentState = .terminating(terminating)
         default:
             handleUnexpectedEvent(event, for: .foreground(foreground))
         }
@@ -218,9 +217,6 @@ final class AppStateMachine {
             actionToHandle = nil
         case .willEnterForeground:
             background.willLeave()
-        case .willTerminate:
-            let terminating = background.makeTerminatingState()
-            currentState = .terminating(terminating)
         default:
             handleUnexpectedEvent(event, for: .background(background))
         }

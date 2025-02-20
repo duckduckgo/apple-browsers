@@ -22,7 +22,10 @@ import SwiftUI
 class DebugViewController: UIHostingController<RootDebugView> {
 
     convenience init(pushController: @escaping (UIViewController) -> Void) {
-        self.init(rootView: RootDebugView(model: RootDebugModel(pushController: pushController)))
+        let model = RootDebugModel(dependencies: .init(),
+                                   pushController: pushController)
+        
+        self.init(rootView: RootDebugView(model: model))
     }
 
 }
@@ -42,15 +45,15 @@ struct RootDebugView: View {
             }
 
             Section {
-                ForEach(model.visibleDebugViews) {
-                    switch $0 {
-                    case .controller(let title, let controller):
+                ForEach(model.visibleDebugViews) { debugViewBuilder in
+                    switch debugViewBuilder {
+                    case .controller(let title, _):
                         SettingsCellView(label: title, action: {
-                            model.pushController(controller())
+                            model.navigateToController(debugViewBuilder)
                         }, disclosureIndicator: true, isButton: true)
 
                     case .view(let title, _):
-                        NavigationLink(destination: LazyView($0.view)) {
+                        NavigationLink(destination: LazyView(model.buildView(debugViewBuilder))) {
                             Text(title)
                         }
                     }
@@ -67,13 +70,13 @@ struct RootDebugView: View {
 class RootDebugModel: ObservableObject {
 
     let allDebugViews: [DebugViewBuilder] = [
-        .view(title: "SwiftUI View", {
+        .view(title: "SwiftUI View", { _ in
             Image(.addToHome16)
         }),
-        .view(title: "Beta Test", {
+        .view(title: "Beta Test", { _ in
             Image(.adobe)
         }),
-        .controller(title: "AI Chat", {
+        .controller(title: "AI Chat", { _ in
             UIHostingController(rootView: AIChatDebugView())
         }),
     ]
@@ -86,9 +89,14 @@ class RootDebugModel: ObservableObject {
     }
     @Published var visibleDebugViews: [DebugViewBuilder] = []
 
+    let dependencies: DebugViewBuilder.Dependencies
+
     let pushController: (UIViewController) -> Void
 
-    init(pushController: @escaping (UIViewController) -> Void) {
+    init(dependencies: DebugViewBuilder.Dependencies,
+         pushController: @escaping (UIViewController) -> Void) {
+
+        self.dependencies = dependencies
         self.pushController = pushController
         refreshFilter()
     }
@@ -106,12 +114,35 @@ class RootDebugModel: ObservableObject {
         })
     }
 
+    func navigateToController(_ builder: DebugViewBuilder) {
+        switch builder {
+        case .controller(_, let controllerBuilder):
+            pushController(controllerBuilder(.init()))
+        case .view(_, _):
+            assertionFailure("Should not be pushing SwiftUI view as controller")
+        }
+    }
+
+    func buildView(_ builder: DebugViewBuilder) -> AnyView {
+        switch builder {
+        case .controller(_, let controllerBuilder):
+            return AnyView(FailedAssertionView("Unexpected view creation"))
+
+        case .view(_, let viewBuilder):
+            return AnyView(viewBuilder(.init()))
+        }
+    }
+
 }
 
 enum DebugViewBuilder: Identifiable {
 
-    case controller(title: String, () -> UIViewController)
-    case view(title: String, () -> any View)
+    struct Dependencies {
+
+    }
+
+    case controller(title: String, (Dependencies) -> UIViewController)
+    case view(title: String, (Dependencies) -> any View)
 
     var id: String {
         return title
@@ -124,15 +155,6 @@ enum DebugViewBuilder: Identifiable {
 
         case .view(let title, _):
             return title
-        }
-    }
-
-    var view: AnyView {
-        switch self {
-        case .view(_, let builder):
-            return AnyView(builder())
-        default:
-            return AnyView(Text(verbatim: "Unexpected"))
         }
     }
 

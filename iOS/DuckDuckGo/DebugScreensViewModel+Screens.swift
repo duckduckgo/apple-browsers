@@ -40,6 +40,9 @@ extension DebugScreensViewModel {
             .view(title: "New Tab Page", { _ in
                 NewTabPageSectionsDebugView()
             }),
+            .view(title: "WebView State Restoration", { _ in
+                WebViewStateRestorationDebugView()
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in
@@ -58,12 +61,18 @@ extension DebugScreensViewModel {
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
-            .controller(title: "Configuration Refresh Info", { d in
+            .controller(title: "Configuration Refresh Info", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
                     ConfigurationDebugViewController(coder: coder)
                 }
-            })
+            }),
+            .controller(title: "NetP", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
+                    NetworkProtectionDebugViewController(coder: coder)
+                }
+            }),
         ]
     }
 

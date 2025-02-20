@@ -155,51 +155,44 @@ class RootDebugViewController: UITableViewController {
             case .resetAutoconsentPrompt:
                 AppUserDefaults().clearAutoconsentUserSetting()
 
-            // brindy - migrated
-            case .crashFatalError:
+            case .crashFatalError: // brindy - migrated to crash screen
                 fatalError(#function)
 
-            // brindy - migrated
-            case .crashMemory:
+            case .crashMemory: // brindy - migrated to crash screen
                 var arrays = [String]()
                 while 1 != 2 {
                     arrays.append(UUID().uuidString)
                 }
 
-            // brindy - migrated - created alterantive div/0 error
-            case .crashException:
+            case .crashException: // brindy - migrated to crash screen - created alterantive div/0 error
                 tableView.beginUpdates()
                 tableView.deleteRows(at: [indexPath], with: .automatic)
                 tableView.endUpdates()
 
-            // brindy - migrated
-            case .crashCxxException:
+            case .crashCxxException: // brindy to crash screen - migrated
                 throwTestCppException()
 
-            // brindy - migrated
-            case .toggleInspectableWebViews:
+            case .toggleInspectableWebViews: // brindy - migrated
                 let defaults = AppUserDefaults()
                 defaults.inspectableWebViewEnabled.toggle()
                 cell.accessoryType = defaults.inspectableWebViewEnabled ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
 
-            // brindy - migrated
-            case .toggleInternalUserState:
+            case .toggleInternalUserState: // brindy - migrated
                 let newState = !internalUserDecider.isInternalUser
                 (internalUserDecider as? DefaultInternalUserDecider)?.debugSetInternalUserState(newState)
                 cell.accessoryType = newState ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
             case .openVanillaBrowser:
                 openVanillaBrowser(nil)
-            case .resetSendCrashLogs:
+
+            case .resetSendCrashLogs: // migrated to crash screen
                 AppUserDefaults().crashCollectionOptInStatus = .undetermined
 
-            // brindy - migrated to config info screen
-            case .refreshConfig:
+            case .refreshConfig: // brindy - migrated to config info screen
                 fetchAssets()
 
-            // brindy - migrated
-            case .newTabPageSections:
+            case .newTabPageSections: // brindy - migrated
                 let controller = UIHostingController(rootView: NewTabPageSectionsDebugView())
                 show(controller, sender: nil)
 

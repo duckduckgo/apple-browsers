@@ -24,24 +24,34 @@ struct CrashDebugScreen: View {
 
     var body: some View {
         List {
-            SettingsCellView(label: "Fatal Error", action: {
-                fatalError(#function)
+            Section {
+                SettingsCellView(label: "Fatal Error", action: {
+                    fatalError(#function)
+                }, isButton: true)
+
+                SettingsCellView(label: "Memory", action: {
+                    var array = [String]()
+                    while 1 != 2 {
+                        array.append(array.joined())
+                    }
+                }, isButton: true)
+
+                SettingsCellView(label: "div/0 error", action: {
+                    func zero() -> Int { return 0 }
+                    print(10 / zero())
+                }, isButton: true)
+
+                SettingsCellView(label: "CPP Exception", action: {
+                    throwTestCppException()
+                }, isButton: true)
+            }
+
+            SettingsCellView(label: "Reset Crash Send Logs", action: {
+                AppUserDefaults().crashCollectionOptInStatus = .undetermined
+                ActionMessageView.present(message: "Crash Send logs reset")
             }, isButton: true)
 
-            SettingsCellView(label: "Memory", action: {
-                var array = [String]()
-                while 1 != 2 {
-                    array.append(array.joined())
-                }
-            }, isButton: true)
-            SettingsCellView(label: "div/0 error", action: {
-                func zero() -> Int { return 0 }
-                print(10 / zero())
-            }, isButton: true)
-            SettingsCellView(label: "CPP Exception", action: {
-                throwTestCppException()
-            }, isButton: true)
-        }.navigationTitle("Crash")
+        }.navigationTitle("Crashes")
     }
 
 }

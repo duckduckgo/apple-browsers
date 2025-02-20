@@ -24,6 +24,21 @@ import Subscription
 import Persistence
 
 @MainActor
+protocol URLHandling {
+
+    func handleURL(_ url: URL)
+    func shouldProcessDeepLink(_ url: URL) -> Bool
+
+}
+
+@MainActor
+protocol ShortcutItemHandling {
+
+    func handleShortcutItem(_ item: UIApplicationShortcutItem)
+
+}
+
+@MainActor
 final class MainCoordinator {
 
     let controller: MainViewController
@@ -42,16 +57,15 @@ final class MainCoordinator {
          fireproofing: Fireproofing,
          accountManager: AccountManager = AppDependencyProvider.shared.accountManager,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
-         didFinishLaunchingStartTime: CFAbsoluteTime) {
+         didFinishLaunchingStartTime: CFAbsoluteTime) throws {
         self.accountManager = accountManager
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
         let previewsSource = TabPreviewsSource()
-        let historyManager = Self.makeHistoryManager()
+        let historyManager = try Self.makeHistoryManager()
         let tabsModel = Self.prepareTabsModel(previewsSource: previewsSource)
         reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
-
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
@@ -80,36 +94,33 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                        aichatSettings: aiChatSettings)
+                                        aiChatSettings: aiChatSettings)
     }
 
     func start() {
         controller.loadViewIfNeeded()
     }
 
-    private static func makeHistoryManager() -> HistoryManaging {
+    private static func makeHistoryManager() throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
                                    isRecentlyVisitedSitesEnabledByUser: provider.appSettings.recentlyVisitedSites,
                                    privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
                                    tld: provider.storageCache.tld) {
-
         case .failure(let error):
             Pixel.fire(pixel: .historyStoreLoadFailed, error: error)
             if error.isDiskFull {
-                NotificationCenter.default.post(name: .databaseDidEncounterInsufficientDiskSpace, object: nil)
+                throw UIApplication.TerminationError.insufficientDiskSpace
             } else {
-                NotificationCenter.default.post(name: .appDidEncounterUnrecoverableState, object: nil)
+                throw UIApplication.TerminationError.unrecoverableState
             }
-            return NullHistoryManager()
         case .success(let historyManager):
             return historyManager
         }
     }
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = TabPreviewsSource(),
-                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-                                         isDesktop: Bool = UIDevice.current.userInterfaceIdiom == .pad) -> TabsModel {
+                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> TabsModel {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let tabsModel: TabsModel
         if AutoClearSettingsModel(settings: appSettings) != nil {
@@ -129,87 +140,19 @@ final class MainCoordinator {
     }
 
     private static func makeTextZoomCoordinator() -> TextZoomCoordinator {
-        let provider = AppDependencyProvider.shared
-        let storage = TextZoomStorage()
-
-        return TextZoomCoordinator(appSettings: provider.appSettings,
-                                   storage: storage,
-                                   featureFlagger: provider.featureFlagger)
+        TextZoomCoordinator(appSettings: AppDependencyProvider.shared.appSettings,
+                            storage: TextZoomStorage(),
+                            featureFlagger: AppDependencyProvider.shared.featureFlagger)
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
-        return WebCacheManager(cookieStorage: MigratableCookieStorage(),
-                               fireproofing: fireproofing,
-                               dataStoreIDManager: dataStoreIDManager)
+        WebCacheManager(cookieStorage: MigratableCookieStorage(),
+                        fireproofing: fireproofing,
+                        dataStoreIDManager: dataStoreIDManager)
     }
 
-    func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
-
-        if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
-            controller.clearNavigationStack()
-        }
-
-        switch AppDeepLinkSchemes.fromURL(url) {
-        case .newSearch:
-            controller.newTab(reuseExisting: true)
-            controller.enterSearch()
-
-        case .favorites:
-            controller.newTab(reuseExisting: true, allowingKeyboard: false)
-
-        case .quickLink:
-            let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: true)
-
-        case .addFavorite:
-            controller.startAddFavoriteFlow()
-
-        case .fireButton:
-            controller.forgetAllWithAnimation()
-
-        case .voiceSearch:
-            controller.onVoiceSearchPressed()
-
-        case .newEmail:
-            controller.newEmailAddress()
-
-        case .openVPN:
-            presentNetworkProtectionStatusSettingsModal()
-
-        case .openPasswords:
-            var source: AutofillSettingsSource = .homeScreenWidget
-
-            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-                let queryItems = components.queryItems,
-                queryItems.first(where: { $0.name == "ls" }) != nil {
-                Pixel.fire(pixel: .autofillLoginsLaunchWidgetLock)
-                source = .lockScreenWidget
-            } else {
-                Pixel.fire(pixel: .autofillLoginsLaunchWidgetHome)
-            }
-
-            DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-                self.controller.launchAutofillLogins(openSearch: true, source: source)
-            }
-        case .openAIChat:
-            AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
-
-        default:
-            guard application.applicationState == .active,
-                  let currentTab = controller.currentTab else {
-                return false
-            }
-
-            // If app is in active state, treat this navigation as something initiated form the context of the current tab.
-            controller.tab(currentTab,
-                           didRequestNewTabForUrl: url,
-                           openedByPage: true,
-                           inheritingAttribution: nil)
-        }
-
-        return true
-    }
+    // MARK: - Public API
 
     func segueToPrivacyPro() {
         controller.segueToPrivacyPro()
@@ -225,40 +168,7 @@ final class MainCoordinator {
         }
     }
 
-    private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
-        guard url.absoluteString.starts(with: URL.emailProtection.absoluteString),
-              let navViewController = controller.presentedViewController as? UINavigationController,
-              let emailSignUpViewController = navViewController.topViewController as? EmailSignupViewController else {
-            return false
-        }
-        emailSignUpViewController.loadUrl(url)
-        return true
-    }
-
-    func handleQuery(_ query: String) {
-        controller.clearNavigationStack()
-        controller.loadQueryInNewTab(query)
-    }
-
-    func handleSearchPassword() {
-        controller.clearNavigationStack()
-        // Give the `clearNavigationStack` call time to complete.
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-            self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
-        }
-        Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
-    }
-
-    func handleURL(_ url: URL) {
-        guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)
-    }
-
-    func shouldProcessDeepLink(_ url: URL) -> Bool {
-        // Ignore deeplinks if onboarding is active
-        // as well as handle email sign-up deep link separately
-        !controller.needsToShowOnboardingIntro() && !handleEmailSignUpDeepLink(url)
-    }
+    // MARK: App Lifecycle handling
 
     func onForeground() {
         controller.showBars()
@@ -271,6 +181,115 @@ final class MainCoordinator {
 
     private func resetAppStartTime() {
         controller.appDidFinishLaunchingStartTime = nil
+    }
+
+}
+
+extension MainCoordinator: URLHandling {
+
+    func shouldProcessDeepLink(_ url: URL) -> Bool {
+        // Ignore deeplinks if onboarding is active
+        // as well as handle email sign-up deep link separately
+        !controller.needsToShowOnboardingIntro() && !handleEmailSignUpDeepLink(url)
+    }
+
+    func handleURL(_ url: URL) {
+        guard !handleAppDeepLink(url: url) else { return }
+        controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)
+    }
+
+    private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
+        guard url.absoluteString.starts(with: URL.emailProtection.absoluteString),
+              let navViewController = controller.presentedViewController as? UINavigationController,
+              let emailSignUpViewController = navViewController.topViewController as? EmailSignupViewController else {
+            return false
+        }
+        emailSignUpViewController.loadUrl(url)
+        return true
+    }
+
+    private func handleAppDeepLink(url: URL, application: UIApplication = UIApplication.shared) -> Bool {
+        if url != AppDeepLinkSchemes.openVPN.url && url.scheme != AppDeepLinkSchemes.openAIChat.url.scheme {
+            controller.clearNavigationStack()
+        }
+        switch AppDeepLinkSchemes.fromURL(url) {
+        case .newSearch:
+            controller.newTab(reuseExisting: true)
+            controller.enterSearch()
+        case .favorites:
+            controller.newTab(reuseExisting: true, allowingKeyboard: false)
+        case .quickLink:
+            let query = AppDeepLinkSchemes.query(fromQuickLink: url)
+            controller.loadQueryInNewTab(query, reuseExisting: true)
+        case .addFavorite:
+            controller.startAddFavoriteFlow()
+        case .fireButton:
+            controller.forgetAllWithAnimation()
+        case .voiceSearch:
+            controller.onVoiceSearchPressed()
+        case .newEmail:
+            controller.newEmailAddress()
+        case .openVPN:
+            presentNetworkProtectionStatusSettingsModal()
+        case .openPasswords:
+            handleOpenPasswords(url: url)
+        case .openAIChat:
+            AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
+        default:
+            guard application.applicationState == .active, let currentTab = controller.currentTab else {
+                return false
+            }
+            // If app is in active state, treat this navigation as something initiated form the context of the current tab.
+            controller.tab(currentTab,
+                           didRequestNewTabForUrl: url,
+                           openedByPage: true,
+                           inheritingAttribution: nil)
+        }
+        return true
+    }
+
+    private func handleOpenPasswords(url: URL) {
+        var source: AutofillSettingsSource = .homeScreenWidget
+        if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+           let queryItems = components.queryItems,
+           queryItems.contains(where: { $0.name == "ls" }) {
+            Pixel.fire(pixel: .autofillLoginsLaunchWidgetLock)
+            source = .lockScreenWidget
+        } else {
+            Pixel.fire(pixel: .autofillLoginsLaunchWidgetHome)
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.controller.launchAutofillLogins(openSearch: true, source: source)
+        }
+    }
+
+}
+
+extension MainCoordinator: ShortcutItemHandling {
+
+    func handleShortcutItem(_ item: UIApplicationShortcutItem) {
+        if item.type == ShortcutKey.clipboard, let query = UIPasteboard.general.string {
+            handleQuery(query)
+        } else if item.type == ShortcutKey.passwords {
+            handleSearchPassword()
+        } else if item.type == ShortcutKey.openVPNSettings {
+            presentNetworkProtectionStatusSettingsModal()
+        }
+    }
+
+    private func handleQuery(_ query: String) {
+        controller.clearNavigationStack()
+        controller.loadQueryInNewTab(query)
+    }
+
+    private func handleSearchPassword() {
+        controller.clearNavigationStack()
+        // Give the `clearNavigationStack` call time to complete.
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+            self.controller.launchAutofillLogins(openSearch: true, source: .appIconShortcut)
+        }
+        Pixel.fire(pixel: .autofillLoginsLaunchAppShortcut)
     }
 
 }

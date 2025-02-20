@@ -73,14 +73,14 @@ final class MaliciousSiteProtectionService {
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger
         )
-    }
 
-    func onLaunching() {
         // Register Malicious Site Protection background tasks to fetch datasets
         manager.registerBackgroundRefreshTaskHandler()
     }
 
-    func onForeground() {
+    // MARK: - Resume
+
+    func resume() {
         manager.startFetching()
     }
 

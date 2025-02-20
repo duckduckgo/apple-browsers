@@ -21,29 +21,20 @@ import Foundation
 import Core
 import Persistence
 
-public extension NSNotification.Name {
-
-    static let databaseDidEncounterInsufficientDiskSpace = Notification.Name("com.duckduckgo.database.insufficient.disk.space")
-
-}
-
 final class PersistentStoresConfiguration {
 
     let database = Database.shared
     let bookmarksDatabase = BookmarksDatabase.make()
     private let application: UIApplication
-    private let notificationCenter: NotificationCenter
 
-    init(application: UIApplication = .shared,
-         notificationCenter: NotificationCenter = .default) {
+    init(application: UIApplication = .shared) {
         self.application = application
-        self.notificationCenter = notificationCenter
     }
 
-    func configure() {
+    func configure() throws {
         clearTemporaryDirectory()
-        loadAndMigrateDatabase()
-        loadAndMigrateBookmarksDatabase()
+        try loadAndMigrateDatabase()
+        try loadAndMigrateBookmarksDatabase()
     }
 
     private func clearTemporaryDirectory() {
@@ -55,38 +46,46 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateDatabase() {
+    private func loadAndMigrateDatabase() throws {
+        var thrownError: Error?
         database.loadStore { [application] context, error in
-            guard let context = context else {
-                let parameters = [PixelParameters.applicationState: "\(application.applicationState.rawValue)",
-                                  PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"]
-                switch error {
-                case .none:
-                    fatalError("Could not create database stack: Unknown Error")
-                case .some(CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError)):
-                    Pixel.fire(pixel: .dbContainerInitializationError,
-                               error: underlyingError,
-                               withAdditionalParameters: parameters)
-                    Thread.sleep(forTimeInterval: 1)
-                    fatalError("Could not create database stack: \(underlyingError.localizedDescription)")
-                case .some(let error):
-                    Pixel.fire(pixel: .dbInitializationError,
-                               error: error,
-                               withAdditionalParameters: parameters)
-                    if error.isDiskFull {
-                        NotificationCenter.default.post(name: .databaseDidEncounterInsufficientDiskSpace, object: nil)
-                        return
-                    } else {
+            do {
+                guard let context = context else {
+                    let parameters = [PixelParameters.applicationState: "\(application.applicationState.rawValue)",
+                                      PixelParameters.dataAvailability: "\(application.isProtectedDataAvailable)"]
+                    switch error {
+                    case .none:
+                        fatalError("Could not create database stack: Unknown Error")
+                    case .some(CoreDataDatabase.Error.containerLocationCouldNotBePrepared(let underlyingError)):
+                        Pixel.fire(pixel: .dbContainerInitializationError,
+                                   error: underlyingError,
+                                   withAdditionalParameters: parameters)
                         Thread.sleep(forTimeInterval: 1)
-                        fatalError("Could not create database stack: \(error.localizedDescription)")
+                        fatalError("Could not create database stack: \(underlyingError.localizedDescription)")
+                    case .some(let error):
+                        Pixel.fire(pixel: .dbInitializationError,
+                                   error: error,
+                                   withAdditionalParameters: parameters)
+                        if error.isDiskFull {
+                            throw UIApplication.TerminationError.insufficientDiskSpace
+                        } else {
+                            Thread.sleep(forTimeInterval: 1)
+                            fatalError("Could not create database stack: \(error.localizedDescription)")
+                        }
                     }
                 }
+                DatabaseMigration.migrate(to: context)
+            } catch {
+                thrownError = error
             }
-            DatabaseMigration.migrate(to: context)
+        }
+
+        if let thrownError {
+            throw thrownError
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase() {
+    private func loadAndMigrateBookmarksDatabase() throws {
         switch BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase) {
         case .success:
             break
@@ -94,7 +93,7 @@ final class PersistentStoresConfiguration {
             Pixel.fire(pixel: .bookmarksCouldNotLoadDatabase,
                        error: error)
             if error.isDiskFull {
-                NotificationCenter.default.post(name: .databaseDidEncounterInsufficientDiskSpace, object: nil)
+                throw UIApplication.TerminationError.insufficientDiskSpace
             } else {
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create database stack: \(error.localizedDescription)")

@@ -45,9 +45,7 @@ final class SubscriptionService {
                 self?.handlePrivacyConfigurationUpdates()
             }
             .store(in: &cancellables)
-    }
 
-    func onLaunching() {
         subscriptionManager.loadInitialData()
     }
 
@@ -89,7 +87,9 @@ final class SubscriptionService {
         }
     }
 
-    func onForeground() {
+    // MARK: - Resume
+
+    func resume() {
         subscriptionManager.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
                 DailyPixel.fire(pixel: .privacyProSubscriptionActive)

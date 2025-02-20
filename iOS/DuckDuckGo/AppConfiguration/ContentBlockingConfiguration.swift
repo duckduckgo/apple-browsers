@@ -22,12 +22,33 @@ import Core
 
 final class ContentBlockingConfiguration {
 
-    static func configure() {
+    private let application: UIApplication
+
+    init(application: UIApplication = UIApplication.shared) {
+        self.application = application
+    }
+
+    func prepareContentBlocking() {
         ContentBlocking.shared.onCriticalError = {
-            NotificationCenter.default.post(name: .appDidEncounterUnrecoverableState, object: nil)
+            DispatchQueue.main.async {
+                self.alertAndTerminate()
+            }
         }
         // Explicitly prepare ContentBlockingUpdating instance before Tabs are created
         _ = ContentBlockingUpdating.shared
+    }
+
+    private func alertAndTerminate() {
+        let window: UIWindow
+        if let existingWindow = application.window {
+            window = existingWindow
+        } else {
+            window = UIWindow.makeBlank()
+            application.setWindow(window)
+        }
+
+        let alertController = CriticalAlerts.makePreemptiveCrashAlert()
+        window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
 
 }

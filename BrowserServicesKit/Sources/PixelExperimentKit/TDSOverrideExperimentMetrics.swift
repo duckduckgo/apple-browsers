@@ -61,7 +61,7 @@ public struct TDSOverrideExperimentMetrics {
             for day in 0...5 {
                 ExperimentConfig.firePixelExperiment(experiment.subfeature.rawValue,
                                                      metricType.rawValue,
-                                                     day...day,
+                                                     0...day,
                                                      "1"
                 )
                 fireDebugBreakageExperiment(experimentType: experiment,

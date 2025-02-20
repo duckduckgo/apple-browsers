@@ -141,7 +141,6 @@ final class PrivacyDashboardViewController: UIViewController {
             TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             }
-            TDSOverrideExperimentMetrics.fireTDSExperimentMetricUpdated(metricType: .privacyToggleUsed)
         }
         
         contentBlockingManager.scheduleCompilation()

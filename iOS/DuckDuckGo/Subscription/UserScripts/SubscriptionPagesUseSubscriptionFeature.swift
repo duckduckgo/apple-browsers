@@ -42,7 +42,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObjec
     
     struct OriginDomains {
         static let duckduckgo = "duckduckgo.com"
-        static let abrown = "abrown.duckduckgo.com"
     }
     
     struct Handlers {
@@ -122,13 +121,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObjec
     
     weak var broker: UserScriptMessageBroker?
 
-    var featureName = Constants.featureName
-
-    var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: OriginDomains.duckduckgo),
-        .exact(hostname: OriginDomains.abrown)
+    let featureName = Constants.featureName
+    lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
+        .exact(hostname: subscriptionManager.url(for: .baseURL).host ?? OriginDomains.duckduckgo)
     ])
-    
+
     var originalMessage: WKScriptMessage?
 
     func with(broker: UserScriptMessageBroker) {

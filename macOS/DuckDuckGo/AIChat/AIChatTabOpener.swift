@@ -17,7 +17,15 @@
 //
 
 struct AIChatTabOpener {
-    @MainActor static func openAIChatTab() {
+    @MainActor static func openAIChatTab(postData: AIChatSummaryPost? = nil) {
+
+        AIChatSummaryProvider.shared.setSummaryPost(postData)
+
         WindowControllersManager.shared.showTab(with: .url(AIChatRemoteSettings().aiChatURL, credential: nil, source: .ui))
     }
+}
+
+struct AIChatSummaryPost: Codable {
+    var platform: String
+    var content: String
 }

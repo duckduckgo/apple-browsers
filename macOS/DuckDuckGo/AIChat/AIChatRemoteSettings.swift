@@ -68,10 +68,10 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String { getSettingsData(.aiChatURLIdentifiableQueryValue) }
 
     var aiChatURL: URL {
-        guard let url = URL(string: getSettingsData(.aiChatURL)) else {
-            return URL(string: SettingsValue.aiChatURL.defaultValue)!
-        }
-        return url
+//        guard let url = URL(string: getSettingsData(.aiChatURL)) else {
+//            return URL(string: SettingsValue.aiChatURL.defaultValue)!
+//        }
+//        return url
     }
 
     var isAIChatEnabled: Bool {

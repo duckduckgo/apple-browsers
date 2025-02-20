@@ -199,6 +199,9 @@ extension ContextMenuManager {
 
     private func handleSearchWebItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
         menu.replaceItem(at: index, with: self.searchMenuItem(makeBurner: isCurrentWindowBurner))
+
+        /// Add summarize option when we also have the search button
+        menu.insertItem(self.summarizeMenuItem(), at: index + 1)
     }
 
     private func handleReloadItem(_ item: NSMenuItem, at index: Int, in menu: NSMenu) {
@@ -305,6 +308,11 @@ private extension ContextMenuManager {
         return NSMenuItem(title: UserText.searchWithDuckDuckGo, action: action, target: self)
     }
 
+    func summarizeMenuItem() -> NSMenuItem {
+        return NSMenuItem(title: UserText.summarizeWithAIChat, action: #selector(summarizeOnAIChat), target: self)
+    }
+
+
     private func makeMenuItem(withTitle title: String, action: Selector, from item: NSMenuItem, with identifier: WKMenuItemIdentifier, keyEquivalent: String? = nil) -> NSMenuItem {
         return makeMenuItem(withTitle: title, action: action, from: item, withIdentifierIn: [identifier], keyEquivalent: keyEquivalent)
     }
@@ -323,6 +331,14 @@ private extension ContextMenuManager {
 
 // MARK: - Handle Context Menu Items
 @objc extension ContextMenuManager {
+
+    func summarizeOnAIChat(_ sender: NSMenuItem) {
+        guard let text = selectedText else {
+            assertionFailure("Failed to get search term")
+            return
+        }
+        AIChatTabOpener.openAIChatTab(postData: .init(platform: "macos", content: text))
+    }
 
     func search(_ sender: NSMenuItem) {
         searchCommon(sender, burner: false)

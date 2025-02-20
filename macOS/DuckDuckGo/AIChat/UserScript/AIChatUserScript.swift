@@ -24,6 +24,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     enum MessageNames: String, CaseIterable {
         case openSettings
         case getUserValues
+        case getAIChatSummarizeHandoffData
     }
 
     private let handler: AIChatUserScriptHandling
@@ -47,11 +48,14 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        print("POTATO \(methodName)")
         switch MessageNames(rawValue: methodName) {
         case .getUserValues:
             return handler.handleGetUserValues
         case .openSettings:
             return handler.openSettings
+        case .getAIChatSummarizeHandoffData:
+            return handler.getAIChatSummarizeHandoffData
         default:
             return nil
         }

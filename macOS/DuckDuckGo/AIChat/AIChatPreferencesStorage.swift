@@ -18,6 +18,24 @@
 
 import Combine
 
+// TODO: Hack days :)
+final class AIChatSummaryProvider {
+    static let shared = AIChatSummaryProvider()
+
+    private var summaryPost: AIChatSummaryPost?
+
+    func setSummaryPost(_ post: AIChatSummaryPost?) {
+        self.summaryPost = post
+    }
+
+    func consumeSummaryPost() -> AIChatSummaryPost? {
+        defer {
+            self.summaryPost = nil
+        }
+        return self.summaryPost
+    }
+}
+
 protocol AIChatPreferencesStorage {
     var showShortcutInApplicationMenu: Bool { get set }
     var shouldDisplayToolbarShortcut: Bool { get set }

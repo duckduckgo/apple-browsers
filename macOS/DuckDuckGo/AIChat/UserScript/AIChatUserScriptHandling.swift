@@ -21,6 +21,7 @@ import UserScript
 protocol AIChatUserScriptHandling {
     func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable?
     func openSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatSummarizeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -45,4 +46,13 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         UserValues(isToolbarShortcutEnabled: storage.shouldDisplayToolbarShortcut,
                    platform: "macOS")
     }
+
+    public func getAIChatSummarizeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
+        if let summary = AIChatSummaryProvider.shared.consumeSummaryPost() {
+            return summary
+        } else {
+            return nil
+        }
+    }
+
 }

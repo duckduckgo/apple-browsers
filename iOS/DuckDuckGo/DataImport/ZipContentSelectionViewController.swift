@@ -29,9 +29,11 @@ final class ZipContentSelectionViewController: UIViewController {
     
     private var viewModel: ZipContentSelectionViewModel?
     private let importPreview: [DataImportPreview]
+    private let importScreen: DataImportViewModel.ImportScreen
 
-    init(_ importPreview: [DataImportPreview], completion: @escaping ZipContentSelectionViewControllerCompletion) {
+    init(_ importPreview: [DataImportPreview], importScreen: DataImportViewModel.ImportScreen, completion: @escaping ZipContentSelectionViewControllerCompletion) {
         self.importPreview = importPreview
+        self.importScreen = importScreen
         self.completion = completion
         
         super.init(nibName: nil, bundle: nil)
@@ -46,6 +48,7 @@ final class ZipContentSelectionViewController: UIViewController {
         
         self.view.backgroundColor = UIColor(designSystemColor: .surface)
         setupView()
+        Pixel.fire(pixel: .importPreviewPromptDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
 
     // MARK: - Private
@@ -68,7 +71,7 @@ final class ZipContentSelectionViewController: UIViewController {
 extension ZipContentSelectionViewController: UISheetPresentationControllerDelegate {
 
     func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        // TODO - pixel?
+        Pixel.fire(pixel: .importPreviewPromptDismissed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
 
 }
@@ -80,10 +83,12 @@ extension ZipContentSelectionViewController: ZipContentSelectionViewModelDelegat
     func zipContentSelectionViewModelDidSelectOptions(_ viewModel: ZipContentSelectionViewModel, selectedTypes: [DataImport.DataType]) {
         completion(selectedTypes)
         self.dismiss(animated: true)
+        Pixel.fire(pixel: .importPreviewPromptConfirmed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
     
     func zipContentSelectionViewModelDidSelectCancel(_ viewModel: ZipContentSelectionViewModel) {
         self.dismiss(animated: true)
+        Pixel.fire(pixel: .importPreviewPromptDismissed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
     
     func zipContentSelectionViewModelDidResizeContent(_ viewModel: ZipContentSelectionViewModel, contentHeight: CGFloat) {

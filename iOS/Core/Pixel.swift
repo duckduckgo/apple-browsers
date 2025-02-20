@@ -150,6 +150,10 @@ public struct PixelParameters {
     public static let backfilled = "backfilled"
     public static let isExtension = "is_extension"
 
+    // Data Import
+    public static let savedCredentials = "saved_credentials"
+    public static let skippedCredentials = "skipped_credentials"
+
     // Privacy Dashboard
     public static let daysSinceInstall = "daysSinceInstall"
     public static let fromOnboarding = "from_onboarding"

@@ -57,8 +57,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     private lazy var emptyView: UIView = {
         let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
             self?.segueToFileImport()
-            // TODO - new pixel
-//            Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
+            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
         }, importViaSyncButtonAction: { [weak self] in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
@@ -423,8 +422,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     private func importFileAction() -> UIAction {
         return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: UIImage(named: "Import-16")) { [weak self] _ in
             self?.segueToFileImport()
-            // TODO - new pixel
-//            Pixel.fire(pixel: .autofillLoginsImport)
+            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
         }
     }
 

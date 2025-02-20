@@ -203,7 +203,7 @@ public final class AutofillPixelReporter {
             // if a user is using a password manager we can't get a count of their passwords so we are assuming they are likely to have a lot of passwords saved
             return BucketName.lots.rawValue
         } else if let accountsCount = try? vault()?.accountsCount() {
-            return accountsBucketNameFrom(count: accountsCount)
+            return Self.accountsBucketNameFrom(count: accountsCount)
         }
         return nil
     }
@@ -255,7 +255,7 @@ public final class AutofillPixelReporter {
         return secureVault
     }
 
-    private func accountsBucketNameFrom(count: Int) -> String {
+    public static func accountsBucketNameFrom(count: Int) -> String {
         if count == 0 {
             return BucketName.none.rawValue
         } else if count < 4 {

@@ -9,6 +9,7 @@
 @class WKWebExtensionControllerConfiguration;
 @class WKWebExtensionDataRecord;
 
+API_AVAILABLE(macos(15.3))
 @interface WKWebExtensionController : NSObject
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;

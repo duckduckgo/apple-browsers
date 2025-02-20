@@ -9,6 +9,7 @@ typedef NS_ENUM(NSUInteger, _WKContentSecurityPolicyModeForExtension) {
 @class _WKVisitedLinkStore;
 @class WKWebExtensionController;
 
+API_AVAILABLE(macos(15.3))
 @interface WKWebViewConfiguration (WKPrivate)
 
 // Specifies the base URL that the web view must use for navigation. Navigation to URLs not matching this base URL will result in a navigation error.

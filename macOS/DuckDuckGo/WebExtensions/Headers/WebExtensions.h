@@ -1,3 +1,4 @@
+#pragma clang diagnostic ignored "-Wnullability-completeness"
 #import "WKWebExtension.h"
 #import "WKWebExtensionAction.h"
 #import "WKWebExtensionCommand.h"

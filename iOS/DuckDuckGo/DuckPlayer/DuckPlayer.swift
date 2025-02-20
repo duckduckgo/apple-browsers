@@ -134,6 +134,9 @@ protocol DuckPlayerControlling: AnyObject {
     // Navigation Request Publisher to notify when DuckPlayer needs direct Youtube Nav
     var youtubeNavigationRequest: PassthroughSubject<URL, Never> { get }
     
+    /// Publisher that emits when Native DuckPlayer is dismissed
+    var playerDismissedPublisher: PassthroughSubject<Void, Never> { get }
+    
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
     /// - Parameters:
@@ -212,8 +215,20 @@ protocol DuckPlayerControlling: AnyObject {
     func setHostViewController(_ vc: TabViewController)
 
     /// Loads a native DuckPlayerView
-    func loadNativeDuckPlayerVideo(videoID: String)
+    ///
+    /// - Parameters:
+    ///   - videoID: The ID of the video to load
+    ///   - source: The source of the video navigation.
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource)
 
+}
+
+extension DuckPlayerControlling {
+    
+    // Convenience method to load a native DuckPlayerView - Default to other
+    func loadNativeDuckPlayerVideo(videoID: String) {
+        loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other)
+    }
 }
 
 /// Implementation of the DuckPlayerControlling.
@@ -262,9 +277,18 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         case page = "duckPlayerPage"
         case overlay = "duckPlayer"
     }
+
+    enum VideoNavigationSource: String {
+        case youtube
+        case serp
+        case other
+    }
     
     // A published subject to notify when a Youtube navigation request is needed
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
+    
+    /// Publisher to notify when DuckPlayer is dismissed
+    var playerDismissedPublisher: PassthroughSubject<Void, Never>
     
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -276,6 +300,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
+        self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         super.init()
         registerOrientationSubscriber()
     }
@@ -345,7 +370,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     
-    func loadNativeDuckPlayerVideo(videoID: String) {
+    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other) {
         Logger.duckplayer.debug("Starting loadNativeDuckPlayerVideo with ID: \(videoID)")
         let viewModel = DuckPlayerViewModel(videoID: videoID, duckPlayer: self)
         
@@ -363,15 +388,20 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             .receive(on: DispatchQueue.main)
             .sink { [weak self, weak hostingController] url in
                 Logger.duckplayer.debug("Received YouTube navigation request: \(url)")
-                self?.youtubeNavigationRequest.send(url)
+                
+                // When in Youtube, videos are loaded behind the Native Player
+                // So no need to perform a navigation request
+                if source != .youtube {
+                    self?.youtubeNavigationRequest.send(url)
+                }
                 hostingController?.dismiss(animated: true)
             }
             .store(in: &nativePlayerCancellables)
         
-
+        // Add dismissal handler
+        hostingController.presentationController?.delegate = self
         hostView?.present(hostingController, animated: true)
     }
-
 
     // MARK: - Common Message Handlers
 
@@ -660,5 +690,12 @@ extension DuckPlayer: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
+    }
+}
+
+// Add UIAdaptivePresentationControllerDelegate to handle sheet dismissal
+extension DuckPlayer: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        playerDismissedPublisher.send()
     }
 }

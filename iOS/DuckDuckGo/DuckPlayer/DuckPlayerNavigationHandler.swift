@@ -81,7 +81,39 @@ final class DuckPlayerNavigationHandler: NSObject {
     
     /// Cancellable for observing DuckPlayer Navigation Request
     private var duckPlayerNavigationRequestCancellable: AnyCancellable?
+        
+    /// Cancellable for observing DuckPlayer dismissal
+    private var duckPlayerDismissalCancellable: AnyCancellable?
     
+    /// JavaScript for media playback control using MutationObserver
+    private let mediaControlScript: String = {
+        guard let url = Bundle.main.url(forResource: "addMediaControl", withExtension: "js"),
+              let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load media control script")
+            return ""
+        }
+        return script
+    }()
+
+    /// Script to remove media playback controls
+    private let removeMediaControlScript: String = {
+        guard let url = Bundle.main.url(forResource: "removeMediaControl", withExtension: "js"),
+              let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load remove media control script")
+            return ""
+        }
+        return script
+    }()
+
+    /// Script to mute/unmute audio
+    private let muteAudioScript: String = {
+        guard let url = Bundle.main.url(forResource: "muteAudio", withExtension: "js"),
+              let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load mute audio script")
+            return ""
+        }
+        return script
+    }()
     private struct Constants {
         static let SERPURL =  "duckduckgo.com/"
         static let refererHeader = "Referer"
@@ -140,6 +172,7 @@ final class DuckPlayerNavigationHandler: NSObject {
         // Clean up Combine subscriptions
         duckPlayerModeCancellable?.cancel()
         duckPlayerNavigationRequestCancellable?.cancel()
+        duckPlayerDismissalCancellable?.cancel()
     }
     
     /// Returns the file path for the Duck Player HTML template.
@@ -292,8 +325,18 @@ final class DuckPlayerNavigationHandler: NSObject {
         // and playing audio in the background
         toggleAudioForTab(webView, mute: true)
         
+        // Pause all media elements in the webView
+        toggleMediaPlayback(webView, pause: true)
+
         if duckPlayer.settings.nativeUI && UIDevice.current.userInterfaceIdiom == .phone {
             loadNativeDuckPlayerVideo(videoID: videoID)
+
+            // Subscribe to player dismissal
+            duckPlayerDismissalCancellable = duckPlayer.playerDismissedPublisher
+                .sink { [weak self] in
+                    self?.allowYoutubeVideoPlayback(webView: webView)
+                }
+
             return
         }
         
@@ -329,8 +372,11 @@ final class DuckPlayerNavigationHandler: NSObject {
     private func loadNativeDuckPlayerVideo(videoID: String) {
         // Only allow native UI on iPhone
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-        
-        duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID)
+        if referrer == .youtube {
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+        } else {
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID)
+        }
     }
     
     
@@ -370,7 +416,7 @@ final class DuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func cancelJavascriptNavigation(webView: WKWebView, completion: (() -> Void)? = nil) {
         
-        if duckPlayerMode == .enabled {
+        if duckPlayerMode == .enabled && !duckPlayer.settings.nativeUI {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 webView.stopLoading()
                 if webView.canGoBack {
@@ -392,11 +438,7 @@ final class DuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func toggleAudioForTab(_ webView: WKWebView, mute: Bool) {
         if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
-            webView.evaluateJavaScript("""
-                document.querySelectorAll('video, audio').forEach(function(media) {
-                    media.muted = \(mute);
-                });
-            """)
+            webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
         }
     }
         
@@ -661,6 +703,28 @@ final class DuckPlayerNavigationHandler: NSObject {
         if urlReferrer != .other && urlReferrer != .undefined {
             referrer = urlReferrer
         }
+    }
+    
+    /// Toggles continuous pause injection and audio for all media elements in a webView.
+    ///
+    /// - Parameters:
+    ///   - webView: The `WKWebView` to manipulate
+    ///   - pause: When true, blocks media playback. When false, allows playback
+    @MainActor
+    private func toggleMediaPlayback(_ webView: WKWebView, pause: Bool) {
+        if pause {
+            // Inject the media control script
+            webView.evaluateJavaScript(mediaControlScript)
+        } else {
+            // Remove the media controls and unmute
+            webView.evaluateJavaScript(removeMediaControlScript)
+        }
+    }
+    
+    /// Cleans up timers and audio state when DuckPlayer is dismissed
+    @MainActor
+    private func allowYoutubeVideoPlayback(webView: WKWebView) {
+        toggleMediaPlayback(webView, pause: false)
     }
     
 }

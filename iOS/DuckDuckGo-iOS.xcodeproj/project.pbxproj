@@ -321,6 +321,9 @@
 		56D7793C2CFFC7E800B619EF /* PixelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 56D7793B2CFFC7E800B619EF /* PixelKit */; };
 		56D8556A2BEA9169009F9698 /* CurrentDateProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D855692BEA9169009F9698 /* CurrentDateProviding.swift */; };
 		56D8556C2BEA91C4009F9698 /* SyncAlertsPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D8556B2BEA91C4009F9698 /* SyncAlertsPresenting.swift */; };
+		6505529C2D6741BA0067D4F2 /* addMediaControl.js in Resources */ = {isa = PBXBuildFile; fileRef = 650552952D673E440067D4F2 /* addMediaControl.js */; };
+		6505529D2D6741BD0067D4F2 /* muteAudio.js in Resources */ = {isa = PBXBuildFile; fileRef = 650552962D673E440067D4F2 /* muteAudio.js */; };
+		6505529E2D6741C00067D4F2 /* removeMediaControl.js in Resources */ = {isa = PBXBuildFile; fileRef = 650552972D673E440067D4F2 /* removeMediaControl.js */; };
 		653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */; };
 		655A9C6A2D4D2812000A7841 /* DuckPlayerWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655A9C692D4D280D000A7841 /* DuckPlayerWebView.swift */; };
 		6594CCEA2D4A3E1200188B1A /* DuckPlayerSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */; };
@@ -1795,6 +1798,9 @@
 		56D0602C2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSuggestedSearchesProviderTests.swift; sourceTree = "<group>"; };
 		56D855692BEA9169009F9698 /* CurrentDateProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentDateProviding.swift; sourceTree = "<group>"; };
 		56D8556B2BEA91C4009F9698 /* SyncAlertsPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncAlertsPresenting.swift; sourceTree = "<group>"; };
+		650552952D673E440067D4F2 /* addMediaControl.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = addMediaControl.js; sourceTree = "<group>"; };
+		650552962D673E440067D4F2 /* muteAudio.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = muteAudio.js; sourceTree = "<group>"; };
+		650552972D673E440067D4F2 /* removeMediaControl.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = removeMediaControl.js; sourceTree = "<group>"; };
 		653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DuckPlayer.swift"; sourceTree = "<group>"; };
 		655A9C692D4D280D000A7841 /* DuckPlayerWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerWebView.swift; sourceTree = "<group>"; };
 		6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerSettingsTests.swift; sourceTree = "<group>"; };
@@ -4311,6 +4317,16 @@
 			path = OnboardingHelpers;
 			sourceTree = "<group>";
 		};
+		650552982D673E440067D4F2 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				650552952D673E440067D4F2 /* addMediaControl.js */,
+				650552962D673E440067D4F2 /* muteAudio.js */,
+				650552972D673E440067D4F2 /* removeMediaControl.js */,
+			);
+			path = Scripts;
+			sourceTree = "<group>";
+		};
 		6F03CAF82C32C3AA004179A8 /* Messages */ = {
 			isa = PBXGroup;
 			children = (
@@ -6168,6 +6184,7 @@
 		D63FF8922C1B67D1006DE24D /* DuckPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				650552982D673E440067D4F2 /* Scripts */,
 				31DE43C82C2DAA8F00F8C51F /* Modal */,
 				31DE43C72C2DAA7F00F8C51F /* Resources */,
 				653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */,
@@ -7871,6 +7888,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6505529C2D6741BA0067D4F2 /* addMediaControl.js in Resources */,
+				6505529D2D6741BD0067D4F2 /* muteAudio.js in Resources */,
+				6505529E2D6741C00067D4F2 /* removeMediaControl.js in Resources */,
 				F47E53DB250A9A1C0037C686 /* Onboarding.xcassets in Resources */,
 				1E242960293F585300584836 /* cookie-icon-animated-40-light.json in Resources */,
 				984147C024F026A300362052 /* Tab.storyboard in Resources */,

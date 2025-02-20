@@ -119,14 +119,14 @@ final class LaunchingTests {
     @Test("didFinishLaunching should transition from Initializing to Launching")
     func transitionFromInitializingToLaunching() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(stateMachine.currentState.rawValue == "launching")
+        #expect(stateMachine.currentState.name == "launching")
     }
 
     @Test("didBecomeActive should transition from Launching to Foreground and call onTransition and didReturn")
     func transitionFromLaunchingToForeground() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.didBecomeActive)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
 
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
@@ -145,7 +145,7 @@ final class LaunchingTests {
         stateMachine.handle(.didBecomeActive)
         #expect(stateMachine.actionToHandle == nil)
 
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
             #expect(mockForeground.actionToHandle != nil)
@@ -158,7 +158,7 @@ final class LaunchingTests {
     func transitionFromLaunchingToBackground() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.didEnterBackground)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
 
         if case .background(let background) = stateMachine.currentState,
            let mockBackground = background as? MockBackground {
@@ -184,7 +184,7 @@ final class LaunchingTests {
             mockInitializing.shouldThrowOnLaunching = true
         }
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(stateMachine.currentState.rawValue == "terminating")
+        #expect(stateMachine.currentState.name == "terminating")
 
         if case .terminating(let terminating) = stateMachine.currentState,
            let terminating = terminating as? Terminating {
@@ -198,13 +198,13 @@ final class LaunchingTests {
     func incorrectTransitionsFromLaunching() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(stateMachine.currentState.rawValue == "launching")
+        #expect(stateMachine.currentState.name == "launching")
 
         stateMachine.handle(.willEnterForeground)
-        #expect(stateMachine.currentState.rawValue == "launching")
+        #expect(stateMachine.currentState.name == "launching")
 
         stateMachine.handle(.willResignActive)
-        #expect(stateMachine.currentState.rawValue == "launching")
+        #expect(stateMachine.currentState.name == "launching")
     }
 
 }
@@ -218,7 +218,7 @@ final class ForegroundTests {
     @Test("didEnterBackground should transition from Foreground to Background and call onTransition and didReturn")
     func transitionFromForegroundToBackground() {
         stateMachine.handle(.willResignActive)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
 
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
@@ -228,7 +228,7 @@ final class ForegroundTests {
         }
 
         stateMachine.handle(.didEnterBackground)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
 
         if case .background(let background) = stateMachine.currentState,
            let mockBackground = background as? MockBackground {
@@ -241,9 +241,9 @@ final class ForegroundTests {
     @Test("willResignActive and didBecomeActive should call willLeave and didReturn on Foreground")
     func transitionFromForegroundToForeground() {
         stateMachine.handle(.willResignActive)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
         stateMachine.handle(.didBecomeActive)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
 
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
@@ -267,10 +267,10 @@ final class ForegroundTests {
     @Test("Incorrect transitions from Foreground should not trigger state change")
     func incorrectTransitionsFromLaunching() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
 
         stateMachine.handle(.willEnterForeground)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
     }
 
 }
@@ -284,7 +284,7 @@ final class BackgroundTests {
     @Test("didBecomeActive should transition from Background to Foreground and call onTransition and didReturn")
     func transitionFromBackgroundToForeground() {
         stateMachine.handle(.willEnterForeground)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
 
         if case .background(let background) = stateMachine.currentState,
            let mockBackground = background as? MockBackground {
@@ -294,7 +294,7 @@ final class BackgroundTests {
         }
 
         stateMachine.handle(.didBecomeActive)
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
 
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
@@ -307,9 +307,9 @@ final class BackgroundTests {
     @Test("willEnterForeground and didEnterBackground should call willLeave and didReturn on Foreground")
     func transitionFromBackgroundToBackground() {
         stateMachine.handle(.willEnterForeground)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
         stateMachine.handle(.didEnterBackground)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
 
         if case .background(let background) = stateMachine.currentState,
            let mockBackground = background as? MockBackground {
@@ -326,7 +326,7 @@ final class BackgroundTests {
         stateMachine.handle(.didBecomeActive)
         #expect(stateMachine.actionToHandle == nil)
 
-        #expect(stateMachine.currentState.rawValue == "foreground")
+        #expect(stateMachine.currentState.name == "foreground")
         if case .foreground(let foreground) = stateMachine.currentState,
            let mockForeground = foreground as? MockForeground {
             #expect(mockForeground.actionToHandle != nil)
@@ -338,10 +338,10 @@ final class BackgroundTests {
     @Test("Incorrect transitions from Background should not trigger state change")
     func incorrectTransitionsFromLaunching() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
 
         stateMachine.handle(.willResignActive)
-        #expect(stateMachine.currentState.rawValue == "background")
+        #expect(stateMachine.currentState.name == "background")
     }
 
 }

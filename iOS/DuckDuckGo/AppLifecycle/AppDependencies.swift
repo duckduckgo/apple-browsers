@@ -32,7 +32,7 @@ struct AppServices {
     let vpnService: VPNService
     let autofillService: AutofillService
     let remoteMessagingService: RemoteMessagingService
-    let configurationService: ConfigurationService
+    let configurationService: RemoteConfigurationService
     let autoClearService: AutoClearService
     let reportingService: ReportingService
     let subscriptionService: SubscriptionService

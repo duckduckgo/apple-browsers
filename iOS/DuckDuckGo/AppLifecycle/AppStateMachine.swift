@@ -46,7 +46,7 @@ enum AppState {
     case terminating(TerminatingHandling)
     case simulated(Simulated)
 
-    var rawValue: String {
+    var name: String {
         switch self {
         case .initializing:
             return "initializing"
@@ -228,9 +228,9 @@ final class AppStateMachine {
     }
 
     private func handleUnexpectedEvent(_ event: AppEvent, for state: AppState) {
-        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.rawValue))] state!")
+        Logger.lifecycle.error("🔴 Unexpected [\(String(describing: event))] event while in [\(state.name))] state!")
         DailyPixel.fireDailyAndCount(pixel: .appDidTransitionToUnexpectedState,
-                                     withAdditionalParameters: [PixelParameters.appState: state.rawValue,
+                                     withAdditionalParameters: [PixelParameters.appState: state.name,
                                                                 PixelParameters.appEvent: String(describing: event)])
     }
 

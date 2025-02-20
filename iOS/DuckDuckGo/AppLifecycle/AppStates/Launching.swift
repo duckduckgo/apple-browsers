@@ -66,7 +66,7 @@ struct Launching: LaunchingHandling {
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
 
         let autofillService = AutofillService()
-        let configurationService = ConfigurationService()
+        let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing)

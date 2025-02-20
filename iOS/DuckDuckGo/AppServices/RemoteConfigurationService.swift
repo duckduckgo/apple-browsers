@@ -1,5 +1,5 @@
 //
-//  ConfigurationService.swift
+//  RemoteConfigurationService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -28,7 +28,7 @@ public extension NSNotification.Name {
 
 }
 
-final class ConfigurationService {
+final class RemoteConfigurationService {
 
     init() {
         // Task handler registration needs to happen before the end of `didFinishLaunching`, otherwise submitting a task can throw an exception.

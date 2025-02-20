@@ -72,7 +72,7 @@ final class AutoClearService: AutoClearServiceProtocol {
     @MainActor
     func waitForDataCleared() async {
         guard let autoClearTask else {
-            assertionFailure("AutoClear task must be started before registering. Call register after onLaunching or onResuming.")
+            assertionFailure("AutoClear did not run — this should never happen. Please investigate.")
             return
         }
         await autoClearTask.value

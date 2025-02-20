@@ -1127,7 +1127,7 @@
 		CBF259902D47BEC700AC63E4 /* AuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF2598F2D47BEC700AC63E4 /* AuthenticationService.swift */; };
 		CBF259922D47BFDD00AC63E4 /* OverlayWindowManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */; };
 		CBF259B32D47EE6F00AC63E4 /* KeyboardPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259B22D47EE6F00AC63E4 /* KeyboardPresenter.swift */; };
-		CBF259B72D49113E00AC63E4 /* ConfigurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259B62D49113E00AC63E4 /* ConfigurationService.swift */; };
+		CBF259B72D49113E00AC63E4 /* RemoteConfigurationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259B62D49113E00AC63E4 /* RemoteConfigurationService.swift */; };
 		CBF259B92D499D0B00AC63E4 /* MainCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */; };
 		CBF259BB2D4D020200AC63E4 /* AutoClearService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */; };
 		CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */; };
@@ -3148,7 +3148,7 @@
 		CBF2598F2D47BEC700AC63E4 /* AuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticationService.swift; sourceTree = "<group>"; };
 		CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowManager.swift; sourceTree = "<group>"; };
 		CBF259B22D47EE6F00AC63E4 /* KeyboardPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardPresenter.swift; sourceTree = "<group>"; };
-		CBF259B62D49113E00AC63E4 /* ConfigurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationService.swift; sourceTree = "<group>"; };
+		CBF259B62D49113E00AC63E4 /* RemoteConfigurationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteConfigurationService.swift; sourceTree = "<group>"; };
 		CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainCoordinator.swift; sourceTree = "<group>"; };
 		CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearService.swift; sourceTree = "<group>"; };
 		CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportingService.swift; sourceTree = "<group>"; };
@@ -6149,7 +6149,7 @@
 				CBF259782D3FC36C00AC63E4 /* AutofillService.swift */,
 				CBF259822D4293B700AC63E4 /* RemoteMessagingService.swift */,
 				CBF2598F2D47BEC700AC63E4 /* AuthenticationService.swift */,
-				CBF259B62D49113E00AC63E4 /* ConfigurationService.swift */,
+				CBF259B62D49113E00AC63E4 /* RemoteConfigurationService.swift */,
 				CBF259BA2D4D020200AC63E4 /* AutoClearService.swift */,
 				CBF259BC2D4E56E900AC63E4 /* ReportingService.swift */,
 				CB3B4D432D5F757A006DAD63 /* StatisticsService.swift */,
@@ -8880,7 +8880,7 @@
 				6FD1BAE62B87A107000C475C /* AdAttributionFetcher.swift in Sources */,
 				EE01EB402AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift in Sources */,
 				EE72CA852A862D000043B5B3 /* NetworkProtectionDebugViewController.swift in Sources */,
-				CBF259B72D49113E00AC63E4 /* ConfigurationService.swift in Sources */,
+				CBF259B72D49113E00AC63E4 /* RemoteConfigurationService.swift in Sources */,
 				C18ED43A2AB6F77600BF3805 /* AutofillSettingsEnableFooterView.swift in Sources */,
 				CB84C7BD29A3EF530088A5B8 /* AppConfigurationURLProvider.swift in Sources */,
 				AA3D854723D9E88E00788410 /* AppIconSettingsCell.swift in Sources */,

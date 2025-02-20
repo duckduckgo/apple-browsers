@@ -19,7 +19,9 @@
 
 import Foundation
 
-/// This handles foreground-related async tasks that require coordination between services.
+/// This class coordinates foreground tasks that require synchronization between various services.
+/// It manages the sequence of operations that occur when the app becomes active, ensuring proper order of execution
+/// for authentication, data clearing, and handling of launch actions.
 final class UIInteractionManager {
 
     private let authenticationService: AuthenticationServiceProtocol
@@ -34,6 +36,15 @@ final class UIInteractionManager {
         self.launchActionHandler = launchActionHandler
     }
 
+    /// This method orchestrates the following operations:
+    ///
+    /// 1. Triggers authentication (if needed)
+    /// 2. Waits for data clearing to complete
+    /// 3. Handles immediate launch actions (if any)
+    /// 4. Signals when the WebView is ready for interactions
+    /// 5. Handles non-immediate launch actions (if any)
+    /// 6. Signals when the entire app is ready for user interactions
+    ///
     func start(launchAction: LaunchAction,
                onWebViewReadyForInteractions: @escaping () -> Void,
                onAppReadyForInteractions: @escaping () -> Void) {
@@ -50,18 +61,14 @@ final class UIInteractionManager {
                     }
                     onWebViewReadyForInteractions()
                 }
-
                 await group.waitForAll()
-
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
                 if !launchAction.requiresImmediateAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
                 }
-
                 onAppReadyForInteractions()
             }
         }
-
     }
 
 }

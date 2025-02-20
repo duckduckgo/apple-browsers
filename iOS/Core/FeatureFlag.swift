@@ -73,8 +73,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204167627774280/1209205869217377
     case aiChatNewTabPage
 
-    case testExperiment
-
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
@@ -85,8 +83,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
-        case .testExperiment:
-            TestExperimentCohort.self
         default:
             nil
         }
@@ -97,8 +93,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom:
-            return true
-        case .testExperiment:
             return true
         default:
             return false
@@ -181,8 +175,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .aiChatNewTabPage:
             return .enabled
-        case .testExperiment:
-            return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         }
@@ -200,10 +192,5 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.
-    case treatment
-}
-
-public enum TestExperimentCohort: String, FeatureFlagCohortDescribing {
-    case control
     case treatment
 }

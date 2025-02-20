@@ -41,39 +41,6 @@ final class NewTabPageViewModel: ObservableObject {
         isIntroMessageVisible = introDataStorage.newTabPageIntroMessageEnabled ?? false
         isOnboarding = false
         isShowingSettings = false
-
-        // This is just temporarily here to run an A/A test to check the new experiment framework works as expected
-        guard let cohort = AppDependencyProvider.shared.featureFlagger.resolveCohort(for: FeatureFlag.testExperiment) as? TestExperimentCohort else { return }
-        switch cohort {
-
-        case .control:
-            print("COHORT A")
-        case .treatment:
-            print("COHORT B")
-        }
-        subscribeToTextExperimentFeatureFlagChanges()
-    }
-
-    // This is for testing and will be removed
-    private var cancellables: Set<AnyCancellable> = []
-    private func subscribeToTextExperimentFeatureFlagChanges() {
-        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.experimentFlagDidChangePublisher
-            .filter { $0.0 == .testExperiment }
-            .sink { (_, cohort) in
-                guard let newCohort = TestExperimentCohort.cohort(for: cohort) else { return }
-                switch newCohort {
-                case .control:
-                    print("COHORT A")
-                case .treatment:
-                    print("COHORT B")
-                }
-            }
-
-            .store(in: &cancellables)
     }
 
     func introMessageDisplayed() {

@@ -39,4 +39,26 @@ extension URLComponents {
         return "\(etldPlus1):\(port)"
     }
 
+    mutating public func addingSubdomain(from sourceURLComponents: URLComponents, tld: TLD) {
+        guard let sourceURLSubdomain = sourceURLComponents.subdomain(tld: tld)?.droppingWwwPrefix(),
+              !sourceURLSubdomain.isEmpty,
+              sourceURLSubdomain != "www",
+              let eTLDplus1 = eTLDplus1(tld: tld)
+        else { return }
+
+        host = [sourceURLSubdomain, eTLDplus1].joined(separator: ".")
+    }
+
+    mutating public func addingPort(from sourceURLComponents: URLComponents) {
+        port = sourceURLComponents.port
+    }
+
+    mutating public func addingQueryItems(from sourceURLComponents: URLComponents) {
+        guard let sourceQueryItems = sourceURLComponents.percentEncodedQueryItems else { return }
+        percentEncodedQueryItems = (percentEncodedQueryItems ?? []) + sourceQueryItems
+    }
+
+    mutating public func addingFragment(from sourceURLComponents: URLComponents) {
+        fragment = sourceURLComponents.fragment
+    }
 }

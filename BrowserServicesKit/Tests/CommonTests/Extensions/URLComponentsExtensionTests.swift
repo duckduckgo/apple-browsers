@@ -21,6 +21,7 @@ import XCTest
 
 final class URLComponentsExtensionTests: XCTestCase {
 
+    private let tld = TLD()
     private let portSuffix = ":1234"
     private let domain = "https://www.duckduckgo.com"
     private let etldPlus1 = "duckduckgo.com"
@@ -31,7 +32,7 @@ final class URLComponentsExtensionTests: XCTestCase {
         var sut = URLComponents(string: domainAndPort)
 
         // When
-        let result = sut?.eTLDplus1WithPort(tld: TLD())
+        let result = sut?.eTLDplus1WithPort(tld: tld)
 
         // Then
         XCTAssertTrue(result!.hasSuffix(portSuffix))
@@ -42,10 +43,88 @@ final class URLComponentsExtensionTests: XCTestCase {
         var sut = URLComponents(string: domain)
 
         // When
-        let result = sut?.eTLDplus1WithPort(tld: TLD())
+        let result = sut?.eTLDplus1WithPort(tld: tld)
 
         // Then
         XCTAssertEqual(result!, etldPlus1)
+    }
+
+    func testAddingSubdomainFromSourceURLComponents() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://subdomain.duck.co:1234/path?origin=test#fragment"))
+
+        // When
+        sut.addingSubdomain(from: sourceURLComponents, tld: tld)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://subdomain.duckduckgo.com/subscriptions")
+    }
+
+    func testAddingPortFromSourceURLComponents() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://subdomain.duck.co:1234/path?origin=test#fragment"))
+
+        // When
+        sut.addingPort(from: sourceURLComponents)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://www.duckduckgo.com:1234/subscriptions")
+    }
+
+    func testAddingQueryItemsFromSourceURLComponents() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://subdomain.duck.co:1234/path?origin=test#fragment"))
+
+        // When
+        sut.addingQueryItems(from: sourceURLComponents)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://www.duckduckgo.com/subscriptions?origin=test")
+    }
+
+    func testAddingFragmentFromSourceURLComponents() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://subdomain.duck.co:1234/path?origin=test#fragment"))
+
+        // When
+        sut.addingFragment(from: sourceURLComponents)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://www.duckduckgo.com/subscriptions#fragment")
+    }
+
+    func testAddingSubdomainPortQueryItemsAndFragmentFromSourceURLComponents() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://subdomain.duck.co:1234/path?origin=test#fragment"))
+
+        // When
+        sut.addingSubdomain(from: sourceURLComponents, tld: tld)
+        sut.addingPort(from: sourceURLComponents)
+        sut.addingQueryItems(from: sourceURLComponents)
+        sut.addingFragment(from: sourceURLComponents)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://subdomain.duckduckgo.com:1234/subscriptions?origin=test#fragment")
+    }
+
+    func testWhenUsingPlainSourceURLOriginalIsUnchanged() throws {
+        // Given
+        var sut = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/subscriptions"))
+        let sourceURLComponents = try XCTUnwrap(URLComponents(string: "https://duck.co/pro"))
+
+        // When
+        sut.addingSubdomain(from: sourceURLComponents, tld: tld)
+        sut.addingPort(from: sourceURLComponents)
+        sut.addingQueryItems(from: sourceURLComponents)
+        sut.addingFragment(from: sourceURLComponents)
+
+        // Then
+        XCTAssertEqual(sut.url?.absoluteString, "https://www.duckduckgo.com/subscriptions")
     }
 
 }

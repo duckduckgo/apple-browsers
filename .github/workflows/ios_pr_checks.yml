@@ -40,28 +40,6 @@ on:
         required: true
 
 jobs:
-  swiftlint:
-
-    name: SwiftLint
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Check out the code
-      if: github.event_name == 'pull_request' || github.event_name == 'push'
-      uses: actions/checkout@v4
-
-    - name: Check out the code
-      if: github.event_name != 'pull_request' && github.event_name != 'push'
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ inputs.branch || github.ref_name }}
-
-    - name: SwiftLint
-      uses: docker://norionomura/swiftlint:0.54.0_swift-5.9.0
-      with:
-        args: swiftlint --reporter github-actions-logging --strict
-
   shellcheck:
 
     name: ShellCheck
@@ -258,7 +236,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [swiftlint, unit-tests, shellcheck, release-build]
+    needs: [unit-tests, shellcheck, release-build]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -277,7 +255,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [swiftlint, unit-tests, shellcheck, release-build]
+    needs: [unit-tests, shellcheck, release-build]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

@@ -19,15 +19,17 @@
 
 import SwiftUI
 import Subscription
+import Common
 import BrowserServicesKit
 
 enum SubscriptionContainerViewFactory {
 
-    static func makeSubscribeFlow(origin: String?,
+    static func makeSubscribeFlow(redirectURLComponents: URLComponents?,
                                   navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  privacyProDataReporter: PrivacyProDataReporting?) -> some View {
+                                  privacyProDataReporter: PrivacyProDataReporting?,
+                                  tld: TLD) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                              subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
@@ -41,9 +43,16 @@ enum SubscriptionContainerViewFactory {
                                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                                  accountManager: subscriptionManager.accountManager)
 
+  let redirectPurchaseURL: URL? = {
+            guard let redirectURLComponents else { return nil }
+            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
+        }()
+
+        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            origin: origin,
+            redirectPurchaseURL: redirectPurchaseURL,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -75,7 +84,6 @@ enum SubscriptionContainerViewFactory {
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            origin: nil,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -106,7 +114,6 @@ enum SubscriptionContainerViewFactory {
                                                                                  accountManager: subscriptionManager.accountManager)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
-            origin: nil,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,

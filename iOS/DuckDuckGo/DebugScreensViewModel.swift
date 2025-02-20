@@ -47,6 +47,8 @@ class DebugScreensViewModel: ObservableObject {
 
     @Published var visibleScreens: [DebugScreen] = []
 
+    @Published var isFiltering = false
+
     let dependencies: DebugScreen.Dependencies
 
     let pushController: (UIViewController) -> Void
@@ -86,10 +88,12 @@ class DebugScreensViewModel: ObservableObject {
     func refreshFilter() {
         if filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             self.visibleScreens = screens
+            isFiltering = false
         } else {
             self.visibleScreens = screens.filter {
                 $0.title.lowercased().contains(filter.lowercased())
             }
+            isFiltering = true
         }
         self.visibleScreens = self.visibleScreens.sorted(by: {
             $0.title < $1.title

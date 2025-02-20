@@ -50,7 +50,9 @@ struct DebugScreensView: View {
 
     var body: some View {
         List {
-            DebugTogglesView(model: model)
+            if !model.isFiltering {
+                DebugTogglesView(model: model)
+            }
 
             Section {
                 ForEach(model.visibleScreens) { screen in
@@ -70,16 +72,17 @@ struct DebugScreensView: View {
                 }
             }
 
-            Section {
-                SettingsCellView(label: "Legacy Debug", action: {
-                    model.navigateToLegacyDebugController()
-                }, disclosureIndicator: true, isButton: true)
+            if !model.isFiltering {
+                Section {
+                    SettingsCellView(label: "Legacy Debug", action: {
+                        model.navigateToLegacyDebugController()
+                    }, disclosureIndicator: true, isButton: true)
+                }
             }
         }
         .searchable(text: $model.filter, prompt: "Filter")
         .navigationTitle("Debug")
     }
-
 }
 
 // This should be used sparingly.  Don't add some trivial toggle here; please create a new screen.

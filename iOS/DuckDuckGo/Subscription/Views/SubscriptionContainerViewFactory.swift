@@ -43,12 +43,9 @@ enum SubscriptionContainerViewFactory {
                                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                                  accountManager: subscriptionManager.accountManager)
 
-        let redirectPurchaseURL: URL? = {
-            if let redirectURLComponents {
-                subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
-            } else {
-                nil
-            }
+  let redirectPurchaseURL: URL? = {
+            guard let redirectURLComponents else { return nil }
+            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()
 
         let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)

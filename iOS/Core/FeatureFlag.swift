@@ -76,6 +76,12 @@ public enum FeatureFlag: String {
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
+
+    /// Umbrella flag for experimental browser theming and appearance
+    /// https://app.asana.com/0/1206226850447395/1209291055975934
+    case experimentalBrowserTheming
+
+    case alternativeColorScheme
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -92,7 +98,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming:
             return true
         default:
             return false
@@ -177,6 +183,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .experimentalBrowserTheming:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .alternativeColorScheme:
+            return .internalOnly()
         }
     }
 }

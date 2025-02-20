@@ -38,12 +38,24 @@ class ThemeManager {
 
     private var appSettings: AppSettings
 
-    let currentTheme: Theme = DefaultTheme()
+    private(set) var currentTheme: Theme = DefaultTheme()
 
     init(settings: AppSettings = AppUserDefaults()) {
         appSettings = settings
+
+        updateCurrentTheme()
     }
-    
+
+    public func updateCurrentTheme() {
+        if ExperimentalThemingManager().isAlternativeColorSchemeEnabled {
+            currentTheme = ExperimentalTheme()
+        } else {
+            currentTheme = DefaultTheme()
+        }
+
+        updateUserInterfaceStyle()
+    }
+
     public func enableTheme(with name: ThemeName) {
         appSettings.currentThemeName = name
         updateUserInterfaceStyle()

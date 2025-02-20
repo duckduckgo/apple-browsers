@@ -1207,6 +1207,9 @@ But if you *do* want a peek under the hood, you can find more information about 
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
     public static let settingsAddressBar = NSLocalizedString("settings.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
+    public static let settingsExperimentalSection = NotLocalizedString("settings.experimental.section.title", value: "Experimental theming (internal only) ", comment: "Settings screen section title for experimental features")
+    public static let settingsExperimentalMainSwitch = NotLocalizedString("settings.experimental.main.switch", value: "Experimental appearance", comment: "Settings screen cell title for experimental main switch")
+    public static let settingsExperimentalColorsSwitch = NotLocalizedString("settings.experimental.colors.switch", value: "Alternative colors", comment: "Settings screen cell title for experimental colors switch")
 
     // Privacy Section
     public static let settingsPrivacySection = NSLocalizedString("settings.privacy", value: "Privacy", comment: "Settings title for the privacy section")

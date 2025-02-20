@@ -402,7 +402,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [swiftlint, bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -421,7 +421,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [swiftlint, bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

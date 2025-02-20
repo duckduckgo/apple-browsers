@@ -33,6 +33,12 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
+    @Published var isInspectibleWebViewsEnabled = false {
+        didSet {
+            persistInspectibleWebViewsState()
+        }
+    }
+
     @Published var filter = "" {
         didSet {
             refreshFilter()
@@ -52,9 +58,9 @@ class DebugScreensViewModel: ObservableObject {
 
         self.dependencies = dependencies
         self.pushController = pushController
-        self.isInternalUser = dependencies.internalUserDecider.isInternalUser
 
         refreshFilter()
+        refreshToggles()
     }
 
     func persisteInternalUserState() {
@@ -62,8 +68,19 @@ class DebugScreensViewModel: ObservableObject {
             .debugSetInternalUserState(isInternalUser)
     }
 
-    func refreshInternalUserState() {
-        isInternalUser = dependencies.internalUserDecider.isInternalUser
+    func persistInspectibleWebViewsState() {
+        let defaults = AppUserDefaults()
+        let oldValue = defaults.inspectableWebViewEnabled
+        defaults.inspectableWebViewEnabled = isInspectibleWebViewsEnabled
+
+        if oldValue != isInspectibleWebViewsEnabled {
+            NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
+        }
+    }
+
+    func refreshToggles() {
+        self.isInternalUser = dependencies.internalUserDecider.isInternalUser
+        self.isInspectibleWebViewsEnabled = AppUserDefaults().inspectableWebViewEnabled
     }
 
     func refreshFilter() {

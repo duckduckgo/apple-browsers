@@ -176,11 +176,14 @@ class RootDebugViewController: UITableViewController {
             case .crashCxxException:
                 throwTestCppException()
 
+            // brindy - migrated
             case .toggleInspectableWebViews:
                 let defaults = AppUserDefaults()
                 defaults.inspectableWebViewEnabled.toggle()
                 cell.accessoryType = defaults.inspectableWebViewEnabled ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
+
+            // brindy - migrated
             case .toggleInternalUserState:
                 let newState = !internalUserDecider.isInternalUser
                 (internalUserDecider as? DefaultInternalUserDecider)?.debugSetInternalUserState(newState)

@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-class DebugScreensViewController: UIHostingController<RootDebugView> {
+class DebugScreensViewController: UIHostingController<DebugScreensView> {
 
     var model: DebugScreensViewModel?
 
@@ -29,7 +29,7 @@ class DebugScreensViewController: UIHostingController<RootDebugView> {
         let model = DebugScreensViewModel(dependencies: dependencies,
                                    pushController: pushController)
 
-        self.init(rootView: RootDebugView(model: model))
+        self.init(rootView: DebugScreensView(model: model))
 
         self.model = model
     }
@@ -39,30 +39,18 @@ class DebugScreensViewController: UIHostingController<RootDebugView> {
 
         // We only need this because the legacy controller can change the state.
         //  Once the legacy controller is gone this can be removed.
-        model?.refreshInternalUserState()
+        model?.refreshToggles()
     }
 
 }
 
-struct RootDebugView: View {
+struct DebugScreensView: View {
 
     @ObservedObject var model: DebugScreensViewModel
 
     var body: some View {
         List {
-            Toggle(isOn: $model.isInternalUser) {
-                Label {
-                    Text(verbatim: "Internal User")
-                } icon: {
-                    Image(systemName: "flask")
-                }
-            }
-
-            Section {
-                SettingsCellView(label: "Legacy Debug", action: {
-                    model.navigateToLegacyDebugController()
-                }, disclosureIndicator: true, isButton: true)
-            }
+            DebugTogglesView(model: model)
 
             Section {
                 ForEach(model.visibleScreens) { screen in
@@ -82,6 +70,11 @@ struct RootDebugView: View {
                 }
             }
 
+            Section {
+                SettingsCellView(label: "Legacy Debug", action: {
+                    model.navigateToLegacyDebugController()
+                }, disclosureIndicator: true, isButton: true)
+            }
         }
         .searchable(text: $model.filter, prompt: "Filter")
         .navigationTitle("Debug")
@@ -89,3 +82,30 @@ struct RootDebugView: View {
 
 }
 
+// This should be used sparingly.  Don't add some trivial toggle here; please create a new screen.
+//  Please only add here if this toggle is going to be frequently used in the long term.
+struct DebugTogglesView: View {
+
+    @ObservedObject var model: DebugScreensViewModel
+
+    var body: some View {
+        Section {
+            Toggle(isOn: $model.isInternalUser) {
+                Label {
+                    Text(verbatim: "Internal User")
+                } icon: {
+                    Image(systemName: "flask")
+                }
+            }
+
+            Toggle(isOn: $model.isInspectibleWebViewsEnabled) {
+                Label {
+                    Text(verbatim: "Inspectable WebViews")
+                } icon: {
+                    Image(systemName: "globe")
+                }
+            }
+        }
+    }
+
+}

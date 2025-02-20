@@ -296,7 +296,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
                 HStack {
-                    Image("Info-24")
+                    Image("Help-16")
                         .resizable()
                         .frame(width: 24, height: 24)
                     Text(UserText.netPVPNSettingsFAQ)
@@ -308,7 +308,7 @@ struct NetworkProtectionStatusView: View {
             if statusModel.usesUnifiedFeedbackForm {
                 NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
                     HStack {
-                        Image("Feedback-24")
+                        Image("Support-16")
                             .resizable()
                             .frame(width: 24, height: 24)
                         Text(UserText.subscriptionFeedback)
@@ -319,7 +319,7 @@ struct NetworkProtectionStatusView: View {
             } else {
                 NavigationLink(destination: LazyView(VPNFeedbackFormCategoryView())) {
                     HStack {
-                        Image("Feedback-24")
+                        Image("Support-16")
                             .resizable()
                             .frame(width: 24, height: 24)
                         Text(UserText.netPVPNSettingsShareFeedback)

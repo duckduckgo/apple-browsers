@@ -33,13 +33,14 @@ struct AppConfiguration {
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
     let atbAndVariantConfiguration = ATBAndVariantConfiguration()
+    let contentBlockingConfiguration = ContentBlockingConfiguration()
 
     func start() throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
-        try ContentBlockingConfiguration.prepareContentBlocking()
         NewTabPageIntroMessageConfiguration().disableIntroMessageForReturningUsers()
 
+        contentBlockingConfiguration.prepareContentBlocking()
         configureAPIRequestUserAgent()
         onboardingConfiguration.migrateToNewOnboarding()
         try persistentStoresConfiguration.configure()

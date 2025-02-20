@@ -42,21 +42,9 @@ struct Terminating: TerminatingHandling {
             alertController = CriticalAlerts.makePreemptiveCrashAlert()
         }
 
-        let window = makeWindow(for: application)
-        window.rootViewController?.present(alertController, animated: true, completion: nil)
-    }
-
-    private func makeWindow(for application: UIApplication) -> UIWindow {
-        let window = UIWindow(frame: UIScreen.main.bounds)
-        window.backgroundColor = .white
-
-        let rootViewController = UIViewController()
-        rootViewController.view.backgroundColor = .white
-        window.rootViewController = rootViewController
-        window.makeKeyAndVisible()
+        let window = UIWindow.makeBlank()
         application.setWindow(window)
-
-        return window
+        window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
 
 }

@@ -508,19 +508,17 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        
-        guard ProcessInfo.processInfo.environment["ONBOARDING"] != "false" else {
-            // explicitly skip onboarding, e.g. for integration tests
-            return
+        // Check if we override onboarding flag and show/hide onboarding accordingly
+        // If onboarding is not overridden, show onboarding only if users have not seen it.
+        let showOnboarding = switch LaunchOptionsHandler().onboardingStatus {
+        case .notOverridden:
+            !tutorialSettings.hasSeenOnboarding
+        case let .overridden(isOnboardingCompleted):
+            !isOnboardingCompleted
         }
 
-        let showOnboarding = !tutorialSettings.hasSeenOnboarding ||
-            // explicitly show onboarding, can be set in the scheme > Run > Environment Variables
-            ProcessInfo.processInfo.environment["ONBOARDING"] == "true"
         guard showOnboarding else { return }
-
         segueToDaxOnboarding()
-
     }
 
     func presentNetworkProtectionStatusSettingsModal() {

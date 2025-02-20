@@ -100,7 +100,9 @@ tags:
 - tapOn: "Done"
 - stopApp: "com.duckduckgo.mobile.ios"
 - launchApp:
-    clearState: false
+    arguments:
+      clearState: false
+      isOnboardingCompleted: ${ONBOARDING_COMPLETED}
 - assertVisible:
     text: "Pay"    
 - tapOn:

@@ -80,6 +80,22 @@ final class DaxDialog: XCTestCase {
         XCTAssertEqual(onboarding.nextHomeScreenMessageNew(), .addFavorite)
         XCTAssertTrue(onboarding.isAddFavoriteFlow)
     }
+    
+    func testWhenLaunchOptionsHandlerSkipsOnboardingThenDialogsAreNotEnabled() {
+        let settings = MockDaxDialogsSettings()
+        settings.isDismissed = false
+        let launchOptionsHandler = LaunchOptionsHandler()
+        let onboarding = DaxDialogs(settings: settings,
+                                    entityProviding: MockEntityProvider(),
+                                    launchOptionsHandler: launchOptionsHandler)
+        XCTAssertTrue(onboarding.isEnabled)
+
+        let launchOptionsHandlerDisabled = LaunchOptionsHandler(environment: ["ONBOARDING": "false"])
+        let onboardingDisabled = DaxDialogs(settings: settings,
+                                            entityProviding: MockEntityProvider(),
+                                            launchOptionsHandler: launchOptionsHandlerDisabled)
+        XCTAssertFalse(onboardingDisabled.isEnabled)
+    }
 
     func testWhenEachVersionOfTrackersMessageIsShownThenFormattedCorrectly() {
         let testCases = [

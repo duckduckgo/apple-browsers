@@ -31,6 +31,7 @@ import SwiftUI
 import UIKit
 import WebKit
 
+// MARK: Please Use DebugScreensViewController to add new debug views - do not add anything else this as it will be removed")
 class RootDebugViewController: UITableViewController {
 
     enum Row: Int {
@@ -196,13 +197,13 @@ class RootDebugViewController: UITableViewController {
                 ActionMessageView.present(message: "Sync Promos reset")
             case .resetTipKit:
                 tipKitUIActionHandler.resetTipKitTapped()
-            case .aiChat:
+            case .aiChat: // Brindy - migrated
                 let controller = UIHostingController(rootView: AIChatDebugView())
                 navigationController?.pushViewController(controller, animated: true)
             case .webViewStateRestoration:
                 let controller = UIHostingController(rootView: WebViewStateRestorationDebugView())
                 navigationController?.pushViewController(controller, animated: true)
-            case .featureFlags:
+            case .featureFlags: // Brindy - migrated
                 let hostingController = UIHostingController(rootView: FeatureFlagsMenuView())
                 navigationController?.pushViewController(hostingController, animated: true)
             }

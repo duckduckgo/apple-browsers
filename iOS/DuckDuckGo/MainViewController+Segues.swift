@@ -297,23 +297,18 @@ extension MainViewController {
         }
     }
 
-    private func launchDebugSettings(completion: ((DebugViewController) -> Void)? = nil) {
+    private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
-
-        // TODO remove
-//        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-//        let settings = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-//            RootDebugViewController(coder: coder,
-//                                    sync: self.syncService,
-//                                    bookmarksDatabase: self.bookmarksDatabase,
-//                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-//                                    tabManager: self.tabManager,
-//                                    fireproofing: self.fireproofing)
-//        }
 
         var navController: UINavigationController?
 
-        let debug = DebugViewController() {
+        let debug = DebugScreensViewController(dependencies: .init(
+            syncService: self.syncService,
+            bookmarksDatabase: self.bookmarksDatabase,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            tabManager: self.tabManager,
+            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+            fireproofing: self.fireproofing)) {
             navController?.pushViewController($0, animated: true)
         }
 

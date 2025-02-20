@@ -249,7 +249,7 @@ private func handleException(_ exception: NSException) {
 }
 
 /// Throw test C++ exception – used for debug purpose
-public func throwTestCppExteption() {
+public func throwTestCppException() {
     _throwTestCppException("This a test C++ exception")
 }
 

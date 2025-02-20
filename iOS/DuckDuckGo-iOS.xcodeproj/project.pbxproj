@@ -529,6 +529,7 @@
 		8530BB492D67404900B518AC /* DebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8530BB482D67404600B518AC /* DebugScreen.swift */; };
 		8530BB4B2D67435300B518AC /* DebugScreensViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8530BB4A2D67434F00B518AC /* DebugScreensViewModel.swift */; };
 		8530BB4D2D67438C00B518AC /* DebugScreensViewModel+Screens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8530BB4C2D67438000B518AC /* DebugScreensViewModel+Screens.swift */; };
+		8530BB502D677B0E00B518AC /* CrashDebugScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8530BB4F2D677AEF00B518AC /* CrashDebugScreen.swift */; };
 		8531A08E1F9950E6000484F0 /* UnprotectedSitesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */; };
 		853273AB24FEF27500E3C778 /* WidgetViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853273A924FEF24300E3C778 /* WidgetViews.swift */; };
 		853273AE24FEF49600E3C778 /* ColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853273AC24FEF49600E3C778 /* ColorExtension.swift */; };
@@ -2007,6 +2008,7 @@
 		8530BB482D67404600B518AC /* DebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugScreen.swift; sourceTree = "<group>"; };
 		8530BB4A2D67434F00B518AC /* DebugScreensViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugScreensViewModel.swift; sourceTree = "<group>"; };
 		8530BB4C2D67438000B518AC /* DebugScreensViewModel+Screens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DebugScreensViewModel+Screens.swift"; sourceTree = "<group>"; };
+		8530BB4F2D677AEF00B518AC /* CrashDebugScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDebugScreen.swift; sourceTree = "<group>"; };
 		8531A08D1F9950E6000484F0 /* UnprotectedSitesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnprotectedSitesViewController.swift; sourceTree = "<group>"; };
 		853273A924FEF24300E3C778 /* WidgetViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetViews.swift; sourceTree = "<group>"; };
 		853273AC24FEF49600E3C778 /* ColorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtension.swift; sourceTree = "<group>"; };
@@ -4970,6 +4972,7 @@
 				4B0295182537BC6700E00CEF /* ConfigurationDebugViewController.swift */,
 				CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */,
 				8590CB602684D0600089F6BF /* CookieDebugViewController.swift */,
+				8530BB4F2D677AEF00B518AC /* CrashDebugScreen.swift */,
 				858566E7252E4F56007501B8 /* Debug.storyboard */,
 				8590CB68268A4E190089F6BF /* DebugEtagStorage.swift */,
 				8530BB4C2D67438000B518AC /* DebugScreensViewModel+Screens.swift */,
@@ -8506,6 +8509,7 @@
 				6F3537A22C4AB97A009F8717 /* NewTabPageSettingsModel.swift in Sources */,
 				9F23B8032C2BCD0000950875 /* DaxDialogStyles.swift in Sources */,
 				C1641EAF2BC2F5140012607A /* ImportPasswordsViewController.swift in Sources */,
+				8530BB502D677B0E00B518AC /* CrashDebugScreen.swift in Sources */,
 				D63FF8982C1B6A45006DE24D /* DuckPlayer.swift in Sources */,
 				85B9CB8921AEBDD5009001F1 /* FavoriteHomeCell.swift in Sources */,
 				859DB81C2CE6268C001F7210 /* MockTextZoomCoordinator.swift in Sources */,

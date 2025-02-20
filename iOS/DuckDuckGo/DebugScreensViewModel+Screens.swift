@@ -48,6 +48,9 @@ extension DebugScreensViewModel {
                                             sync: d.syncService,
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
+            }),
+            .view(title: "Crashes", { _ in
+                CrashDebugScreen()
             })
         ]
     }

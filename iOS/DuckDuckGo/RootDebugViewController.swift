@@ -154,19 +154,28 @@ class RootDebugViewController: UITableViewController {
             switch row {
             case .resetAutoconsentPrompt:
                 AppUserDefaults().clearAutoconsentUserSetting()
+
+            // brindy - migrated
             case .crashFatalError:
                 fatalError(#function)
+
+            // brindy - migrated
             case .crashMemory:
                 var arrays = [String]()
                 while 1 != 2 {
                     arrays.append(UUID().uuidString)
                 }
+
+            // brindy - migrated - created alterantive div/0 error
             case .crashException:
                 tableView.beginUpdates()
                 tableView.deleteRows(at: [indexPath], with: .automatic)
                 tableView.endUpdates()
+
+            // brindy - migrated
             case .crashCxxException:
-                throwTestCppExteption()
+                throwTestCppException()
+
             case .toggleInspectableWebViews:
                 let defaults = AppUserDefaults()
                 defaults.inspectableWebViewEnabled.toggle()

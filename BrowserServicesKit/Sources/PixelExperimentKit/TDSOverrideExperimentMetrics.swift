@@ -57,11 +57,12 @@ public struct TDSOverrideExperimentMetrics {
     public static func fireTDSExperimentMetric( metricType: TDSExperimentMetricType,
                                                 etag: String,
                                                 fireDebugExperiment: @escaping FireDebugExperiment) {
+        
         for experiment in TDSExperimentType.allCases {
             for day in 0...5 {
                 ExperimentConfig.firePixelExperiment(experiment.subfeature.rawValue,
                                                      metricType.rawValue,
-                                                     day...day,
+                                                     0...day,
                                                      "1"
                 )
                 fireDebugBreakageExperiment(experimentType: experiment,

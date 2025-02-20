@@ -119,6 +119,11 @@ protocol TerminatingHandling {
 final class AppStateMachine {
 
     private(set) var currentState: AppState
+
+    /// Buffers the most recent action for the `Foreground` state. Cleared in foreground and background.
+    /// Only the latest action is retained; any new action overwrites the previous one.
+    /// Clearing in background prevents stale actions (e.g., open URLs) from persisting
+    /// if the app is backgrounded before user authentication (iOS 18.0+).
     private(set) var actionToHandle: AppAction?
 
     init(initialState: AppState) {

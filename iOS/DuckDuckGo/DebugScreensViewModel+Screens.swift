@@ -82,6 +82,12 @@ extension DebugScreensViewModel {
                     NetworkProtectionDebugViewController(coder: coder)
                 }
             }),
+            .controller(title: "File Size Inspector", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
+                    FileSizeDebugViewController(coder: coder)
+                }
+            }),
         ]
     }
 

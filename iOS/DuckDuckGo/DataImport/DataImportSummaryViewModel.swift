@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import DDGSync
+import Core
 
 protocol DataImportSummaryViewModelDelegate: AnyObject {
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel)
@@ -33,6 +34,7 @@ final class DataImportSummaryViewModel: ObservableObject {
     @Published var passwordsSummary: DataImport.DataTypeSummary?
     @Published var bookmarksSummary: DataImport.DataTypeSummary?
 
+    let importScreen: DataImportViewModel.ImportScreen
     private let syncService: DDGSyncing
 
     var syncIsActive: Bool {
@@ -52,10 +54,13 @@ final class DataImportSummaryViewModel: ObservableObject {
         }
     }
 
-    init(summary: DataImportSummary, syncService: DDGSyncing) {
+    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
         self.passwordsSummary = try? summary[.passwords]?.get()
         self.bookmarksSummary = try? summary[.bookmarks]?.get()
+        self.importScreen = importScreen
         self.syncService = syncService
+
+        fireSummaryPixels()
     }
 
     func isAllSuccessful() -> Bool {
@@ -68,8 +73,26 @@ final class DataImportSummaryViewModel: ObservableObject {
        else { return false }
 
        return true
-   }
+    }
 
+    func fireSyncButtonShownPixel() {
+        Pixel.fire(pixel: .importResultSyncButtonShown, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+    }
+    
+    func fireSummaryPixels() {
+        if let passwords = passwordsSummary {
+            let successBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.successful)
+            let skippedBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.duplicate + passwords.failed)
+            Pixel.fire(pixel: .importResultPasswordsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                        PixelParameters.saved_credentials: successBucket,
+                                                                                        PixelParameters.skipped_credentials: skippedBucket])
+        }
+        if let bookmarks = bookmarksSummary {
+            Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
+                                                                                        PixelParameters.bookmarkCount: "\(bookmarks.successful)"])
+        }
+
+    }
 
     func dismiss() {
         delegate?.dataImportSummaryViewModelComplete(self)
@@ -77,6 +100,7 @@ final class DataImportSummaryViewModel: ObservableObject {
 
     func launchSync() {
         delegate?.dataImportSummaryViewModelDidRequestLaunchSync(self)
+        Pixel.fire(pixel: .importResultSyncButtonTapped, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
 
 }

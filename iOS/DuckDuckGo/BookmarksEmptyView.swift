@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import Core
 
 struct BookmarksEmptyView: View {
 
@@ -56,6 +57,9 @@ struct BookmarksEmptyView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(fullWidth: false))
                     .padding(.top, 24)
+                    .onFirstAppear() {
+                        Pixel.fire(pixel: .bookmarksImportButtonShown)
+                    }
                 } else {
                     Button {
                         importDocumentButtonAction?()

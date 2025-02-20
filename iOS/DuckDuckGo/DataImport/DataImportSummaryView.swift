@@ -101,6 +101,9 @@ struct DataImportSummaryView: View {
                         }
                     }
                     .buttonStyle(GhostButtonStyle())
+                    .onFirstAppear {
+                        viewModel.fireSyncButtonShownPixel()
+                    }
                 }
             }
             .frame(maxWidth: 360)

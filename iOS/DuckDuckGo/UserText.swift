@@ -1651,11 +1651,11 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value:"Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
 
-    public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value:"No supported data found in the zip file", comment: "Error message displayed when no supported data is found in the zip file")
+    public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value:"No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
     public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value:"The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
     public static let dataImportFileTypeCsv = NSLocalizedString("data.import.file-type.csv", value:"CSV", comment: "File type for CSV files")
     public static let dataImportFileTypeHtml = NSLocalizedString("data.import.file-type.html", value:"HTML", comment: "File type for HTML files")
-    public static let dataImportFileTypeZip = NSLocalizedString("data.import.file-type.zip", value:"zip", comment: "File type for ZIP files")
+    public static let dataImportFileTypeZip = NSLocalizedString("data.import.file-type.zip", value:"ZIP", comment: "File type for ZIP files")
     public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value:"The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
 
     public static let dataImportInstructionsSafariStep2 = NSLocalizedString("data.import.instructions.safari.step2", value:"Scroll to %@ and select %@, check the box for %@, and save the file.", comment: "Step 2 for instructions to import passwords.'Scroll to History and Website Data and select Export, check the box for Passwords, and save the file.'")

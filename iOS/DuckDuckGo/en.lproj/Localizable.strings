@@ -921,7 +921,7 @@
 "data.import.bookmarks.title" = "Import Bookmarks to DuckDuckGo";
 
 /* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "No supported data found in the zip file";
+"data.import.failed.no-data-in-zip-error-message" = "No supported data found in the zip file. Please review the Safari export instructions and try again.";
 
 /* Error message displayed when the user has selected an unsupported file */
 "data.import.failed.unsupported-file-error-message" = "The file selected is not supported. Please select a different file and try again.";
@@ -936,7 +936,7 @@
 "data.import.file-type.html" = "HTML";
 
 /* File type for ZIP files */
-"data.import.file-type.zip" = "zip";
+"data.import.file-type.zip" = "ZIP";
 
 /* Step 2 for instructions to import passwords.'Scroll to History and Website Data and select Export, check the box for Passwords, and save the file.' */
 "data.import.instructions.safari.step2" = "Scroll to %1$@ and select %2$@, check the box for %3$@, and save the file.";

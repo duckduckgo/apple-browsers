@@ -80,8 +80,8 @@ struct Foreground: ForegroundHandling {
     // MARK: - Handle applicationDidBecomeActive(_:) logic here
 
     /// **Before adding code here, ensure it does not depend on pending tasks:**
-    /// - If your code relies on web navigations, use `onWebViewReadyForInteractions` callback — it runs after `AutoClear` is complete.
-    /// - If your code relies on UI interactions, use `onAppReadyForInteractions` callback - it runs after `AutoClear` and authentication.
+    /// - For web-related tasks: Use `interactionManager.onWebViewReadyForInteractions` (it executes after `AutoClear`)
+    /// - For UI-related tasks: Use `interactionManager.onAppReadyForInteractions` (it executes after `AutoClear` and authentication)
     ///
     /// This is **the last moment** for setting up anything. If you need something to happen earlier,
     /// add it to `Launching.swift` -> `init()` and `Background.swift` -> `willLeave()` so it runs both on a cold start and when the app wakes up.

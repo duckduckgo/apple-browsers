@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/apple-toolbox.git",
       "state" : {
-        "revision" : "0c13c5f056805f2d403618ccc3bfb833c303c68d",
-        "version" : "3.1.2"
+        "revision" : "9c1d950d2cbac10b7f86b3258a3d06b43a39a254",
+        "version" : "3.1.3"
       }
     },
     {

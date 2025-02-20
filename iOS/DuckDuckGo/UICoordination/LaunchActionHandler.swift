@@ -36,13 +36,6 @@ enum LaunchAction {
         }
     }
 
-    var requiresImmediateAction: Bool {
-        if case .showKeyboard = self {
-            return false
-        }
-        return true
-    }
-
 }
 
 @MainActor

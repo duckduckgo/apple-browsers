@@ -6052,6 +6052,18 @@
 			name = EmailAddressPrompt;
 			sourceTree = "<group>";
 		};
+		CB05BCD52D676AFF0034ABA6 /* UICoordination */ = {
+			isa = PBXGroup;
+			children = (
+				CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */,
+				CBF259B22D47EE6F00AC63E4 /* KeyboardPresenter.swift */,
+				CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */,
+				CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */,
+				CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */,
+			);
+			path = UICoordination;
+			sourceTree = "<group>";
+		};
 		CB258D1129A4F1BB00DEBA24 /* Configuration */ = {
 			isa = PBXGroup;
 			children = (
@@ -6132,7 +6144,6 @@
 				84E341951E2F7EFB00BDBA6F /* AppDelegate.swift */,
 				CBAD0F0B2CFF4EDD006267B8 /* AppDependencies.swift */,
 				CBAD0F052CFE270D006267B8 /* AppStateMachine.swift */,
-				CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */,
 				98B31291218CCB8C00E54DE1 /* AppDependencyProvider.swift */,
 				CBAD0EF72CFE1D14006267B8 /* AppStates */,
 			);
@@ -6162,6 +6173,7 @@
 		CBF2598C2D47B19800AC63E4 /* AppConfiguration */ = {
 			isa = PBXGroup;
 			children = (
+				CB3B4D492D5FA4A3006DAD63 /* AppConfiguration.swift */,
 				CBF2597A2D414B6D00AC63E4 /* PersistentStoresConfiguration.swift */,
 				CBF259802D42852B00AC63E4 /* PixelConfiguration.swift */,
 				CBF2598D2D47B1A500AC63E4 /* KeyboardConfiguration.swift */,
@@ -7080,16 +7092,13 @@
 		F1C5ECF31E37812900C599A4 /* Application */ = {
 			isa = PBXGroup;
 			children = (
+				CB05BCD52D676AFF0034ABA6 /* UICoordination */,
+				CBAD0F042CFE1DA2006267B8 /* AppLifecycle */,
 				CBF2598C2D47B19800AC63E4 /* AppConfiguration */,
 				CBAD0F0E2D006291006267B8 /* AppServices */,
 				EE9D68D72AE15AD600B55EF4 /* UIApplicationExtension.swift */,
-				CBF259912D47BFDD00AC63E4 /* OverlayWindowManager.swift */,
-				CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */,
-				CBF259B82D499D0B00AC63E4 /* MainCoordinator.swift */,
-				CB7E0A222D5E1E55002A7C0C /* LaunchActionHandler.swift */,
-				CBF259B22D47EE6F00AC63E4 /* KeyboardPresenter.swift */,
 				CB05BCD32D67652F0034ABA6 /* UIWindowExtension.swift */,
-				CBAD0F042CFE1DA2006267B8 /* AppLifecycle */,
+				CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */,
 				83BE9BC2215D69C1009844D9 /* AppConfigurationFetch.swift */,
 				CB24F70E29A3EB15006DCC58 /* AppConfigurationURLProvider.swift */,
 				85BA58591F3506AE00C6E8CA /* AppSettings.swift */,
@@ -7100,7 +7109,6 @@
 				853C5F6021C277C7001F7A05 /* global.swift */,
 				85C8E61C2B0E47380029A6BD /* BookmarksDatabaseSetup.swift */,
 				9821234F2B6D233E00F08C57 /* UserSession.swift */,
-				CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */,
 			);
 			name = Application;
 			sourceTree = "<group>";

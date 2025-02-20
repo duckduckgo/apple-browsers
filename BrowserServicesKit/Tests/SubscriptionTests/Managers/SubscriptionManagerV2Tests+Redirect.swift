@@ -99,4 +99,3 @@ extension SubscriptionManagerV2Tests {
         XCTAssertEqual(result, expectedURL)
     }
 }
-

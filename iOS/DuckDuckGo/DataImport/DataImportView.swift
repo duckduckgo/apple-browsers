@@ -221,7 +221,7 @@ struct DataImportView: View {
                     .padding(.top, 6)
                 Spacer()
             }
-            .padding(.leading, 12)
+            .padding(.leading, 10)
         }
     }
 

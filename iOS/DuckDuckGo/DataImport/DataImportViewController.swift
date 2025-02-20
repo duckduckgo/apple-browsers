@@ -77,6 +77,14 @@ final class DataImportViewController: UIViewController {
     private func presentDataTypePicker(for contents: ImportArchiveContents) {
         let dataTypes = viewModel.importDataTypes(for: contents)
 
+        guard !dataTypes.isEmpty else {
+            DispatchQueue.main.async { [weak self] in
+                ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
+                self?.viewModel.isLoading = false
+            }
+            return
+        }
+
         let zipContentSelectionViewController = ZipContentSelectionViewController(dataTypes) { [weak self] dataTypes in
             self?.viewModel.importZipArchive(from: contents, for: dataTypes)
         }

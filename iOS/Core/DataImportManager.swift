@@ -170,6 +170,20 @@ public final class DataImportManager: DataImportManaging {
         bookmarksImporter = nil
     }
 
+    struct ImportError: DataImportError {
+        enum OperationType: Int {
+            case parseHtml = 0
+            case saveError
+            case unknown
+        }
+
+        var action: DataImportAction { .bookmarks }
+        let type: OperationType
+        let underlyingError: Error?
+
+        var errorType: DataImport.ErrorType { .dataCorrupted }
+    }
+
     private func importDataSync(types: Set<DataImport.DataType>, updateProgress: @escaping DataImportProgressCallback) async throws -> DataImportSummary {
         var summary = DataImportSummary()
 
@@ -181,8 +195,20 @@ public final class DataImportManager: DataImportManaging {
         }
 
         if types.contains(.bookmarks), let bookmarksImporter {
-            if let bookmarksSummary = try? await bookmarksImporter.parseAndSave().get() {
-               summary[.bookmarks] = .success(DataImport.DataTypeSummary(bookmarksSummary))
+            let result = await bookmarksImporter.parseAndSave()
+            if case .success(let bookmarksSummary) = result {
+                summary[.bookmarks] = .success(DataImport.DataTypeSummary(bookmarksSummary))
+            } else if case .failure(let error) = result {
+                var errorType: ImportError.OperationType
+                switch error {
+                case .invalidHtmlNoBodyTag, .invalidHtmlNoDLTag, .safariTransformFailure:
+                    errorType = .parseHtml
+                case .saveFailure:
+                    errorType = .saveError
+                case .unknown:
+                    errorType = .unknown
+                }
+                summary[.bookmarks] = .failure(ImportError(type: errorType, underlyingError: error))
             }
         }
 

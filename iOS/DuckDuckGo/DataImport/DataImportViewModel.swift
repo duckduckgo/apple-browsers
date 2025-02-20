@@ -271,7 +271,7 @@ final class DataImportViewModel: ObservableObject {
             } catch {
                 DispatchQueue.main.async { [weak self] in
                     self?.isLoading = false
-                    ActionMessageView.present(message: UserText.dataImportFailedReadZipErrorMessage)
+                    ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
                 }
             }
         default:
@@ -296,28 +296,63 @@ final class DataImportViewModel: ObservableObject {
 
         Task {
             defer {
-                isLoading = false
+                Task { @MainActor in
+                    self.isLoading = false
+                }
             }
 
             do {
                 guard let summary = try await importManager.importFile(at: url, for: fileType) else {
                     Logger.autofill.debug("Failed to import data")
-                    DispatchQueue.main.async {
-                        ActionMessageView.present(message: UserText.dataImportFailedErrorMessage)
-                    }
+                    presentErrorMessage(for: fileType)
                     return
                 }
 
-                Logger.autofill.debug("Imported \(summary.description)")
-                delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
+                var hadAnySuccess = false
+                var failedImports: [(BrowserServicesKit.DataImport.DataType, Error)] = []
+
+                for dataType in [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks] {
+                    if let result = summary[dataType] {
+                        switch result {
+                        case .success(_):
+                            hadAnySuccess = true
+                        case .failure(let error):
+                            failedImports.append((dataType, error))
+                        }
+                    }
+                }
+
+                for (type, _) in failedImports {
+                    presentErrorMessage(for: type == .bookmarks ? .html : .csv)
+                }
+
+                // Only proceed to success screen if at least one type succeeded
+                if hadAnySuccess {
+                    Logger.autofill.debug("Imported \(summary.description)")
+                    delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
+                }
             } catch {
                 Logger.autofill.debug("Failed to import data: \(error)")
-                DispatchQueue.main.async {
-                    ActionMessageView.present(message: UserText.dataImportFailedErrorMessage)
-                }
+                presentErrorMessage(for: fileType)
             }
         }
     }
+
+    private func presentErrorMessage(for fileType: DataImportFileType) {
+        var fileName = ""
+        switch fileType {
+        case .csv:
+            fileName = UserText.dataImportFileTypeCsv
+        case .html:
+            fileName = UserText.dataImportFileTypeHtml
+        case .zip:
+            fileName = UserText.dataImportFileTypeZip
+        }
+
+        DispatchQueue.main.async {
+            ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, fileName))
+        }
+     }
 
 }
 

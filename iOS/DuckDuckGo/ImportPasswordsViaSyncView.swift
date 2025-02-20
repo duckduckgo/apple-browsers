@@ -156,13 +156,14 @@ struct NumberBadge: View {
     var body: some View {
         Text("\(number)")
             .daxHeadline()
-            .padding(10)
             .background(
                 Circle()
                     .fill(colorScheme == .dark ? darkBulletColor : lightBulletColor)
+                    .frame(width: 24, height: 24)
             )
             .foregroundColor(Color(designSystemColor: .accent))
             .fixedSize()
+            .padding(10)
     }
 }
 

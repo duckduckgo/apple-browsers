@@ -154,7 +154,7 @@ public struct UserText {
     
     public static let moreBookmarkButton = NSLocalizedString("bookmark.moreButton", value: "More", comment: "More options button text")
 
-    public static let importExportBookmarksTitle = NSLocalizedString("bookmarks.importExport.title", value: "Import your bookmarks from other DuckDuckGo Privacy Browsers and most popular Browsers.", comment: "Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks")
+    public static let importExportBookmarksTitle = NSLocalizedString("bookmarks.importExport.title", value: "Import bookmarks from other popular browsers.", comment: "Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks")
     public static let importBookmarksActionHtmlTitle = NSLocalizedString("bookmarks.importAction.html.title", value: "Import HTML File", comment: "Title of option to import HTML")
     public static let importBookmarksActionTitle = NSLocalizedString("bookmarks.importAction.title", value: "Import Bookmarks", comment: "Title of option to import HTML")
     public static let exportBookmarksActionHtmlTitle = NSLocalizedString("bookmarks.exportAction.html.title", value: "Export HTML File", comment: "Title of option to export HTML")
@@ -1651,10 +1651,12 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
     public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value:"Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
 
 
-    public static let dataImportFailedErrorMessage = NSLocalizedString("data.import.failed.error-message", value:"Data failed to import", comment: "Error message displayed when import fails")
     public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value:"No supported data found in the zip file", comment: "Error message displayed when no supported data is found in the zip file")
-    public static let dataImportFailedReadZipErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value:"The zip file could not be read. Please review the Safari export instructions and try again", comment: "Error message displayed when the zip file can't be opened")
-    public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value:"The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the file sele")
+    public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value:"The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
+    public static let dataImportFileTypeCsv = NSLocalizedString("data.import.file-type.csv", value:"CSV", comment: "File type for CSV files")
+    public static let dataImportFileTypeHtml = NSLocalizedString("data.import.file-type.html", value:"HTML", comment: "File type for HTML files")
+    public static let dataImportFileTypeZip = NSLocalizedString("data.import.file-type.zip", value:"zip", comment: "File type for ZIP files")
+    public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value:"The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
 
     public static let dataImportInstructionsSafariStep2 = NSLocalizedString("data.import.instructions.safari.step2", value:"Scroll to %@ and select %@, check the box for %@, and save the file.", comment: "Step 2 for instructions to import passwords.'Scroll to History and Website Data and select Export, check the box for Passwords, and save the file.'")
     public static let dataImportInstructionsSafariStep2History = NSLocalizedString("data.import.instructions.safari.step2.history", value:"History and Website Data", comment: "first parameter for autofill.import.passwords.instructions.safari.step2")
@@ -1676,7 +1678,7 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
     public static let zipContentSelectionButtonContinue = NSLocalizedString("zip.content.import.type.button.title.continue", value:"Continue", comment: "Title of button to continue after selecting what data to import")
 
     public static let dataImportSummaryTitle = NSLocalizedString("data.import.summary.complete.title", value:"Import complete!", comment: "Title for screen shown after attempting to import data (passwords / bookmarks)")
-    public static let dataImportSummaryPasswordsSubtitle = NSLocalizedString("data.import.summary.passwords.subtitle", value:"You can now delete the passwords file", comment: "Subtitle for screen shown after after attempting to import passwords from file")
+    public static let dataImportSummaryPasswordsSubtitle = NSLocalizedString("data.import.summary.passwords.subtitle", value:"You can now delete the passwords file.", comment: "Subtitle for screen shown after after attempting to import passwords from file")
     public static let dataImportSummaryPasswordsSuccess = NSLocalizedString("data.import.summary.passwords.success", value:"Passwords", comment: "Data import summary of how many passwords were successfully imported.")
     public static let dataImportSummaryBookmarksSuccess = NSLocalizedString("data.import.summary.bookmarks.success", value:"Bookmarks", comment: "Data import summary of how many bookmarks were successfully imported.")
     public static let dataImportSummaryFailed = NSLocalizedString("data.import.summary.failed", value:"Failed to import", comment: "Data import summary of how many items failed to import.")

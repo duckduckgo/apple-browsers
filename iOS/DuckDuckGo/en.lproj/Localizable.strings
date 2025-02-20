@@ -780,7 +780,7 @@
 "bookmarks.importAction.title" = "Import Bookmarks";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Import your bookmarks from other DuckDuckGo Privacy Browsers and most popular Browsers.";
+"bookmarks.importExport.title" = "Import bookmarks from other popular browsers.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Report Problem With This Site";
@@ -920,17 +920,23 @@
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Import Bookmarks to DuckDuckGo";
 
-/* Error message displayed when import fails */
-"data.import.failed.error-message" = "Data failed to import";
-
 /* Error message displayed when no supported data is found in the zip file */
 "data.import.failed.no-data-in-zip-error-message" = "No supported data found in the zip file";
 
-/* Error message displayed when the file sele */
+/* Error message displayed when the user has selected an unsupported file */
 "data.import.failed.unsupported-file-error-message" = "The file selected is not supported. Please select a different file and try again.";
 
-/* Error message displayed when the zip file can't be opened */
-"data.import.failed.zip-read-error-message" = "The zip file could not be read. Please review the Safari export instructions and try again";
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "The %@ file could not be read. There may be an issue with the data in the file.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "zip";
 
 /* Step 2 for instructions to import passwords.'Scroll to History and Website Data and select Export, check the box for Passwords, and save the file.' */
 "data.import.instructions.safari.step2" = "Scroll to %1$@ and select %2$@, check the box for %3$@, and save the file.";
@@ -1021,7 +1027,7 @@
 "data.import.summary.failed" = "Failed to import";
 
 /* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "You can now delete the passwords file";
+"data.import.summary.passwords.subtitle" = "You can now delete the passwords file.";
 
 /* Data import summary of how many passwords were successfully imported. */
 "data.import.summary.passwords.success" = "Passwords";

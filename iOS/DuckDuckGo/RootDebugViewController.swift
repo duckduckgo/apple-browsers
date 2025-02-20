@@ -193,11 +193,16 @@ class RootDebugViewController: UITableViewController {
                 openVanillaBrowser(nil)
             case .resetSendCrashLogs:
                 AppUserDefaults().crashCollectionOptInStatus = .undetermined
+
+            // brindy - migrated to config info screen
             case .refreshConfig:
                 fetchAssets()
+
+            // brindy - migrated
             case .newTabPageSections:
                 let controller = UIHostingController(rootView: NewTabPageSectionsDebugView())
                 show(controller, sender: nil)
+
             case .onboarding:
                 let action = { [weak self] in
                     guard let self else { return }
@@ -224,6 +229,7 @@ class RootDebugViewController: UITableViewController {
         }
     }
 
+    // brindy - migrated to configuration refresh info screen
     func fetchAssets() {
         self.lastConfigurationRefreshDate = Date.distantPast
         AppConfigurationFetch().start(isDebug: true) { [weak tableView] result in

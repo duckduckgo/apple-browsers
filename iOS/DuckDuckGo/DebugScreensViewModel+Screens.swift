@@ -27,12 +27,21 @@ extension DebugScreensViewModel {
     /// Note that the storyboard is not passed to the controller builder - ideally we'll mirgate away from that to SwiftUI entirely
     var screens: [DebugScreen] {
         return [
+            // MARK: Views
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "Crashes", { _ in
+                CrashDebugScreen()
+            }),
+            .view(title: "New Tab Page", { _ in
+                NewTabPageSectionsDebugView()
+            }),
+
+            // MARK: Controllers
             .controller(title: "Image Cache", { d in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
@@ -49,8 +58,11 @@ extension DebugScreensViewModel {
                                             bookmarksDatabase: d.bookmarksDatabase)
                 }
             }),
-            .view(title: "Crashes", { _ in
-                CrashDebugScreen()
+            .controller(title: "Configuration Refresh Info", { d in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
+                    ConfigurationDebugViewController(coder: coder)
+                }
             })
         ]
     }

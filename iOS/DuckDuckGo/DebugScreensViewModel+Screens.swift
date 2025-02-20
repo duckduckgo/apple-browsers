@@ -27,7 +27,7 @@ extension DebugScreensViewModel {
     /// Note that the storyboard is not passed to the controller builder - ideally we'll mirgate away from that to SwiftUI entirely
     var screens: [DebugScreen] {
         return [
-            // MARK: Views
+            // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()
             }),
@@ -42,6 +42,15 @@ extension DebugScreensViewModel {
             }),
             .view(title: "WebView State Restoration", { _ in
                 WebViewStateRestorationDebugView()
+            }),
+            .view(title: "History", { _ in
+                HistoryDebugRootView()
+            }),
+            .view(title: "Bookmarks", { _ in
+                BookmarksDebugRootView()
+            }),
+            .view(title: "Remote Messaging", { _ in
+                RemoteMessagingDebugRootView()
             }),
 
             // MARK: Controllers

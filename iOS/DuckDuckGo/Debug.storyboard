@@ -447,7 +447,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="81O-EB-gQb" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="674" y="214"/>
+            <point key="canvasLocation" x="-3236" y="3370"/>
         </scene>
         <!--Remote Messaging Debug View Controller-->
         <scene sceneID="3qu-hW-syX">
@@ -463,7 +463,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="22Y-MP-9dh" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2496" y="213"/>
+            <point key="canvasLocation" x="-1514" y="3370"/>
         </scene>
         <!--Autofill Debug View Controller-->
         <scene sceneID="M8s-LV-KYA">
@@ -1158,7 +1158,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="aOU-z7-CYi" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1641" y="213"/>
+            <point key="canvasLocation" x="-2423" y="3370"/>
         </scene>
     </scenes>
     <resources>

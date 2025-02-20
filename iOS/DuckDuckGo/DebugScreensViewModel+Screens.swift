@@ -40,6 +40,14 @@ extension DebugScreensViewModel {
                                                   bookmarksDatabase: d.bookmarksDatabase,
                                                   fireproofing: d.fireproofing)
                 }
+            }),
+            .controller(title: "Sync", { d in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
+                    SyncDebugViewController(coder: coder,
+                                            sync: d.syncService,
+                                            bookmarksDatabase: d.bookmarksDatabase)
+                }
             })
         ]
     }

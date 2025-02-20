@@ -94,6 +94,7 @@ class RootDebugViewController: UITableViewController {
         fatalError("init not implemented")
     }
 
+    // Brindy - migrated
     @IBSegueAction func onCreateImageCacheDebugScreen(_ coder: NSCoder) -> ImageCacheDebugViewController? {
         guard let controller = ImageCacheDebugViewController(coder: coder,
                                                              bookmarksDatabase: self.bookmarksDatabase,
@@ -104,6 +105,7 @@ class RootDebugViewController: UITableViewController {
         return controller
     }
 
+    // Brindy - migrated
     @IBSegueAction func onCreateSyncDebugScreen(_ coder: NSCoder, sender: Any?, segueIdentifier: String?) -> SyncDebugViewController {
         guard let controller = SyncDebugViewController(coder: coder,
                                                        sync: self.sync,

@@ -84,8 +84,8 @@ final class DataImportSummaryViewModel: ObservableObject {
             let successBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.successful)
             let skippedBucket = AutofillPixelReporter.accountsBucketNameFrom(count: passwords.duplicate + passwords.failed)
             Pixel.fire(pixel: .importResultPasswordsSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,
-                                                                                        PixelParameters.saved_credentials: successBucket,
-                                                                                        PixelParameters.skipped_credentials: skippedBucket])
+                                                                                        PixelParameters.savedCredentials: successBucket,
+                                                                                        PixelParameters.skippedCredentials: skippedBucket])
         }
         if let bookmarks = bookmarksSummary {
             Pixel.fire(pixel: .importResultBookmarksSuccess, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue,

@@ -57,7 +57,7 @@ struct BookmarksEmptyView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle(fullWidth: false))
                     .padding(.top, 24)
-                    .onFirstAppear() {
+                    .onFirstAppear {
                         Pixel.fire(pixel: .bookmarksImportButtonShown)
                     }
                 } else {

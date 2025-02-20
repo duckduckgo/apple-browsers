@@ -151,8 +151,8 @@ public struct PixelParameters {
     public static let isExtension = "is_extension"
 
     // Data Import
-    public static let saved_credentials = "saved_credentials"
-    public static let skipped_credentials = "skipped_credentials"
+    public static let savedCredentials = "saved_credentials"
+    public static let skippedCredentials = "skipped_credentials"
 
     // Privacy Dashboard
     public static let daysSinceInstall = "daysSinceInstall"

@@ -88,6 +88,12 @@ extension DebugScreensViewModel {
                     FileSizeDebugViewController(coder: coder)
                 }
             }),
+            .controller(title: "Cookies", { d in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "CookieDebugViewController") { coder in
+                    CookieDebugViewController(coder: coder, fireproofing: d.fireproofing)
+                }
+            }),
         ]
     }
 

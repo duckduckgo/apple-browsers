@@ -29,7 +29,8 @@ enum SubscriptionContainerViewFactory {
                                   subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
                                   privacyProDataReporter: PrivacyProDataReporting?,
-                                  tld: TLD) -> some View {
+                                  tld: TLD,
+                                  internalUserDecider: InternalUserDecider) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                              subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
@@ -43,7 +44,7 @@ enum SubscriptionContainerViewFactory {
                                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                                  accountManager: subscriptionManager.accountManager)
 
-  let redirectPurchaseURL: URL? = {
+        let redirectPurchaseURL: URL? = {
             guard let redirectURLComponents else { return nil }
             return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
         }()
@@ -53,6 +54,7 @@ enum SubscriptionContainerViewFactory {
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             redirectPurchaseURL: redirectPurchaseURL,
+            isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,

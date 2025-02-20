@@ -2984,6 +2984,8 @@
 		BBC3F8F72D651964003F4910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */; };
 		BBC3F8F92D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */; };
 		BBC3F8FA2D668AFD003F4910 /* FocusModePreferenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */; };
+		BBC3F8FC2D677E6E003F4910 /* duck-quack.wav in Resources */ = {isa = PBXBuildFile; fileRef = BBC3F8FB2D677E6E003F4910 /* duck-quack.wav */; };
+		BBC3F8FD2D677E6E003F4910 /* duck-quack.wav in Resources */ = {isa = PBXBuildFile; fileRef = BBC3F8FB2D677E6E003F4910 /* duck-quack.wav */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBE013EA2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
 		BBE013EB2C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */; };
@@ -5047,6 +5049,7 @@
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
 		BBC3F8F52D65195F003F4910 /* FocusSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCoordinator.swift; sourceTree = "<group>"; };
 		BBC3F8F82D668AF4003F4910 /* FocusModePreferenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusModePreferenceView.swift; sourceTree = "<group>"; };
+		BBC3F8FB2D677E6E003F4910 /* duck-quack.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = "duck-quack.wav"; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBE013E92C5BFD660025F2C6 /* BookmarksEmptyStateContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyStateContent.swift; sourceTree = "<group>"; };
 		BBFB727E2C48047C0088884C /* SortBookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModel.swift; sourceTree = "<group>"; };
@@ -8306,6 +8309,7 @@
 		AA585D80248FD31100E9A3E2 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				BBC3F8FB2D677E6E003F4910 /* duck-quack.wav */,
 				BBC3F8F42D651952003F4910 /* FocusSession */,
 				CBECDB822CDA812A005B8B87 /* BrokenSitePrompt */,
 				31521ABE2CC0139C00248E6F /* AIChat */,
@@ -11054,6 +11058,7 @@
 				37EE56102D5F197300D53C7C /* trackers-3.json in Resources */,
 				37EE56112D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				EEC8EB3F2982CA440065AA39 /* JSAlert.storyboard in Resources */,
+				BBC3F8FC2D677E6E003F4910 /* duck-quack.wav in Resources */,
 				3706FCC3293F65D500E42796 /* userscript.js in Resources */,
 				3706FCC6293F65D500E42796 /* README.md in Resources */,
 				3706FCC8293F65D500E42796 /* Assets.xcassets in Resources */,
@@ -11258,6 +11263,7 @@
 				37EE55E72D5F197300D53C7C /* trackers-3.json in Resources */,
 				37EE55E82D5F197300D53C7C /* NavigationBar.storyboard in Resources */,
 				EEC111E4294D06020086524F /* JSAlert.storyboard in Resources */,
+				BBC3F8FD2D677E6E003F4910 /* duck-quack.wav in Resources */,
 				B31055C627A1BA1D001AC618 /* userscript.js in Resources */,
 				AA68C3D72490F821001B8783 /* README.md in Resources */,
 				AA585D86248FD31400E9A3E2 /* Assets.xcassets in Resources */,

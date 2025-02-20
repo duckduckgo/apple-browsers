@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import SwiftUICore
+import AVFoundation
 
 public extension NSNotification.Name {
 
@@ -34,7 +35,7 @@ enum FocusSessionTimer {
     var duration: TimeInterval {
         switch self {
         case .twentyFive:
-            return 25 * 60
+            return 10
         case .fifty:
             return 50 * 60
         case .seventyFive:
@@ -67,6 +68,7 @@ final class FocusSessionCoordinator: ObservableObject {
     private var timer: Timer?
     private var totalDuration: TimeInterval = 0
     private var remainingTime: TimeInterval = 0
+    private var audioPlayer: AVAudioPlayer?
 
     // Publisher for remaining time
     private var timeRemainingSubject = PassthroughSubject<String, Never>()
@@ -143,9 +145,28 @@ final class FocusSessionCoordinator: ObservableObject {
         if remainingTime > 0 {
             remainingTime -= 1
             publishRemainingTime()
-
         } else {
             cancelFocusSession()
+            if isPlaySoundEnabled {
+                playSound() // Play sound when the timer finishes
+            }
+        }
+    }
+
+    private func playSound() {
+        guard isPlaySoundEnabled else { return } // Check if sound playback is enabled
+
+        // Replace "soundFileName" with the actual name of your sound file
+        guard let url = Bundle.main.url(forResource: "duck-quack", withExtension: "wav") else {
+            print("Sound file not found")
+            return
+        }
+
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Error playing sound: \(error.localizedDescription)")
         }
     }
 

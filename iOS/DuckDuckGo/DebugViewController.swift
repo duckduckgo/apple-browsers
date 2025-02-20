@@ -50,7 +50,9 @@ struct RootDebugView: View {
                         }, disclosureIndicator: true, isButton: true)
 
                     case .view(let title, _):
-                        NavigationLink(title, destination: $0.view)
+                        NavigationLink(destination: LazyView($0.view)) {
+                            Text(title)
+                        }
                     }
                 }
             }

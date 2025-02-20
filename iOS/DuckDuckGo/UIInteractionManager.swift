@@ -45,7 +45,7 @@ final class UIInteractionManager {
                 group.addTask {
                     await self.autoClearService.waitForDataCleared()
                     // Handle URL and shortcutItem after data clearing, so the page is loaded when the auth screen is dismissed.
-                    if !launchAction.isRegularLaunch {
+                    if launchAction.requiresImmediateAction {
                         await self.launchActionHandler.handleLaunchAction(launchAction)
                     }
                     onWebViewReadyForInteractions()
@@ -54,7 +54,7 @@ final class UIInteractionManager {
                 await group.waitForAll()
 
                 // Handle keyboard launch after data clearing and auth to avoid interfering with the auth screen
-                if launchAction.isRegularLaunch {
+                if !launchAction.requiresImmediateAction {
                     self.launchActionHandler.handleLaunchAction(launchAction)
                 }
 

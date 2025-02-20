@@ -36,11 +36,11 @@ enum LaunchAction {
         }
     }
 
-    var isRegularLaunch: Bool {
+    var requiresImmediateAction: Bool {
         if case .showKeyboard = self {
-            return true
+            return false
         }
-        return false
+        return true
     }
 
 }

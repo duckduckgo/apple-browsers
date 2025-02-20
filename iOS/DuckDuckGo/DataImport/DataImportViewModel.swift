@@ -314,7 +314,7 @@ final class DataImportViewModel: ObservableObject {
                 for dataType in [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks] {
                     if let result = summary[dataType] {
                         switch result {
-                        case .success(_):
+                        case .success:
                             hadAnySuccess = true
                         case .failure(let error):
                             failedImports.append((dataType, error))

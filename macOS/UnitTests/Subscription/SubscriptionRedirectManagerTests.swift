@@ -19,6 +19,8 @@
 import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
+import Common
+import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SubscriptionRedirectManagerTests: XCTestCase {
@@ -28,15 +30,25 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         static let redirectURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
     }
 
+    var subscriptionManager: SubscriptionManagerMock!
+
     private var canPurchase: Bool = true
+    private var mockInternalUserStoring = MockInternalUserStoring()
+
     private var sut: PrivacyProSubscriptionRedirectManager!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        subscriptionManager = SubscriptionManagerMock()
+        subscriptionManager.currentEnvironment = Constants.environment
 
-        sut = PrivacyProSubscriptionRedirectManager(subscriptionEnvironment: Constants.environment,
+        mockInternalUserStoring.isInternalUser = false
+
+        sut = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                     baseURL: Constants.redirectURL,
-                                                    canPurchase: { [self] in canPurchase })
+                                                    canPurchase: { [self] in canPurchase },
+                                                    tld: TLD(),
+                                                    featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)))
     }
 
     override func tearDownWithError() throws {
@@ -50,18 +62,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
 
         // WHEN
-        let result = sut.redirectURL(for: url)
-
-        // THEN
-        XCTAssertEqual(result, expectedURL)
-    }
-
-    func testWhenURLIsPrivacyProAndHasOriginQueryParameterThenRedirectToSubscriptionBaseURLAndAppendQueryParameter() throws {
-        // GIVEN
-        let url = try XCTUnwrap(URL(string: "https://www.duckduckgo.com/pro?origin=test"))
-        let expectedURL = Constants.redirectURL.appending(percentEncodedQueryItem: .init(name: "origin", value: "test"))
-
-        // WHEN
+        subscriptionManager.urlForPurchaseFromRedirect = expectedURL
         let result = sut.redirectURL(for: url)
 
         // THEN
@@ -78,5 +79,34 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         // THEN
         XCTAssertNil(result)
+    }
+
+    func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNoRedirectTriggers() throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "https://www.duck.co/pro"))
+        let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        mockInternalUserStoring.isInternalUser = false
+
+        // WHEN
+        subscriptionManager.urlForPurchaseFromRedirect = expectedURL
+        let result = sut.redirectURL(for: url)
+
+        // THEN
+        XCTAssertNotEqual(result, expectedURL)
+        XCTAssertNotEqual(result, url)
+    }
+
+    func testWhenURLBelongsToTestDomainAndInternalModeIsEnabledThenRedirectTriggers() throws {
+        // GIVEN
+        let url = try XCTUnwrap(URL(string: "https://www.duck.co/pro"))
+        let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+        mockInternalUserStoring.isInternalUser = true
+
+        // WHEN
+        subscriptionManager.urlForPurchaseFromRedirect = expectedURL
+        let result = sut.redirectURL(for: url)
+
+        // THEN
+        XCTAssertEqual(result, expectedURL)
     }
 }

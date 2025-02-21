@@ -37,7 +37,7 @@ final class PinnedTabsManager {
         }
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif
@@ -55,7 +55,7 @@ final class PinnedTabsManager {
         didUnpinTabSubject.send(index)
 
 #if !APPSTORE
-        if #available(macOS 14.4, *) {
+        if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif

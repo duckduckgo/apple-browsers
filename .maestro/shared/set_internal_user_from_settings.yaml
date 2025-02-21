@@ -10,4 +10,5 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Internal User State
 - tapOn: Settings
 - tapOn: Done
+- tapOn: Browsing menu
 - tapOn: Settings

@@ -277,7 +277,8 @@ extension MainViewController {
                                                   privacyProDataReporter: privacyProDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
-                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,

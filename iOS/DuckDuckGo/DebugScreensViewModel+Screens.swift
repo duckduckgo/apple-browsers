@@ -106,6 +106,12 @@ extension DebugScreensViewModel {
                     AutofillDebugViewController(coder: coder)
                 }
             }),
+            .controller(title: "Subscription", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
+                    SubscriptionDebugViewController(coder: coder)
+                }
+            }),
         ]
     }
 

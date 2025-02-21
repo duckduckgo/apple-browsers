@@ -24,7 +24,7 @@ import BrowserServicesKit
 import Combine
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
-///  Please use DebugScreensViewModel+Views to add new views/controllers.
+///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.
 class DebugScreensViewModel: ObservableObject {
 
     @Published var isInternalUser = false {

@@ -44,7 +44,8 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.appstore: "App Store",
         Sections.environment: "Environment",
         Sections.pixels: "Promo Pixel Parameters",
-        Sections.metadata: "StoreKit Metadata"
+        Sections.metadata: "StoreKit Metadata",
+        Sections.featureFlags: "Feature Flags"
     ]
 
     enum Sections: Int, CaseIterable {

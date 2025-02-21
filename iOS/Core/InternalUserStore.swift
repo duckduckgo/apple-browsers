@@ -23,7 +23,10 @@ import BrowserServicesKit
 public class InternalUserStore: InternalUserStoring {
     public init() {
     }
-
+#if ALPHA
+    @UserDefaultsWrapper(key: .featureFlaggingDidVerifyInternalUser, defaultValue: true)
+#else
     @UserDefaultsWrapper(key: .featureFlaggingDidVerifyInternalUser, defaultValue: false)
+#endif
     public var isInternalUser: Bool
 }

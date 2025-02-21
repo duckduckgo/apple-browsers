@@ -23,32 +23,27 @@ public final class LaunchOptionsHandler {
     private static let isOnboardingCompleted = "isOnboardingCompleted"
     private static let appVariantName = "currentAppVariant"
 
-    private let launchArguments: [String]
     private let environment: [String: String]
     private let userDefaults: UserDefaults
 
-    public init(launchArguments: [String] = ProcessInfo.processInfo.arguments, environment: [String: String] =  ProcessInfo.processInfo.environment, userDefaults: UserDefaults = .app) {
-        self.launchArguments = launchArguments
+    public init(environment: [String: String] = ProcessInfo.processInfo.environment, userDefaults: UserDefaults = .app) {
         self.environment = environment
         self.userDefaults = userDefaults
     }
 
     public var onboardingStatus: OnboardingStatus {
+        // If we're running UI Tests override onboarding settings permanently to keep state consistency across app launches. Some test re-launch the app within the same tests.
         // Launch Arguments can be read via userDefaults for easy value access.
-        switch (environment["ONBOARDING"], userDefaults.string(forKey: Self.isOnboardingCompleted)) {
-        // No Environment Variables or Launch Arguments override the onboarding
-        case (.none, .none):
-            return .notOverridden
-        // Launch Argument override onboarding. This happens from UITest Maestro workflow.
-        case (.none, .some(let argumentValue)):
-            return .overridden(completed: argumentValue == "true")
-        // Launch Environment override onboarding. Developer can override this setting in the App scheme to show onboarding when working on the feature
-        case (.some(let environmentValue), .none):
-            return .overridden(completed: environmentValue == "false")
-        // We need to handle this case
-        case (.some(let environmentValue), .some(let argumentValue)):
-            return .overridden(completed: environmentValue == "false" || argumentValue == "true")
+        if let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.isOnboardingCompleted) {
+            return .overridden(.uiTests(completed: uiTestingOnboardingOverride == "true"))
         }
+
+        // If developer override via Scheme Environment variable temporarily it means we want to show the onboarding.
+        if let developerOnboardingOverride = environment["ONBOARDING"] {
+            return .overridden(.developer(completed: developerOnboardingOverride == "false"))
+        }
+
+        return .notOverridden
     }
 
     public var appVariantName: String? {
@@ -75,8 +70,26 @@ extension LaunchOptionsHandler: VariantNameOverriding {
 // MARK: - LaunchOptionsHandler + Onboarding
 
 extension LaunchOptionsHandler {
+
     public enum OnboardingStatus: Equatable {
         case notOverridden
-        case overridden(completed: Bool)
+        case overridden(OverrideType)
+
+        public enum OverrideType: Equatable {
+            case developer(completed: Bool)
+            case uiTests(completed: Bool)
+        }
+
+        public var isOverriddenCompleted: Bool {
+            switch self {
+            case .notOverridden:
+                return false
+            case .overridden(.developer(let completed)):
+                return completed
+            case .overridden(.uiTests(let completed)):
+                return completed
+            }
+        }
     }
+
 }

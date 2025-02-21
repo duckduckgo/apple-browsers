@@ -37,58 +37,58 @@ final class LaunchOptionsHandlerTests: XCTestCase {
 
     // MARK: - isOnboardingCompleted
 
-    func testShouldReturnStatusOverriddenCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
+    func testShouldReturnStatusOverriddenDeveloperCompletedTrueWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsFalse() {
         // GIVEN
         let environment = ["ONBOARDING": "false"]
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults)
 
         // WHEN
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(completed: true))
+        XCTAssertEqual(result, .overridden(.developer(completed: true)))
     }
 
-    func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
+    func testShouldReturnStatusOverriddenDeveloperCompletedFalseWhenIsOnboardingCompletedAndEnvironmentsOnboardingIsTrue() {
         // GIVEN
         let environment = ["ONBOARDING": "true"]
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: environment, userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: environment, userDefaults: userDefaults)
 
         // WHEN
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(completed: false))
+        XCTAssertEqual(result, .overridden(.developer(completed: false)))
     }
 
-    func testShouldReturnStatusOverriddenCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
+    func testShouldReturnStatusOverriddenUITestsCompletedTrueWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsTrue() {
         // GIVEN
         userDefaults.set("true", forKey: "isOnboardingCompleted")
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
         // WHEN
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(completed: true))
+        XCTAssertEqual(result, .overridden(.uiTests(completed: true)))
     }
 
     func testShouldReturnStatusOverriddenCompletedFalseWhenIsOnboardingCompletedAndDefaultsIsOnboardingCompletedIsFalse() {
         // GIVEN
         userDefaults.set("false", forKey: "isOnboardingCompleted")
-        let sut = LaunchOptionsHandler(launchArguments: [], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(userDefaults: userDefaults)
 
         // WHEN
         let result = sut.onboardingStatus
 
         // THEN
-        XCTAssertEqual(result, .overridden(completed: false))
+        XCTAssertEqual(result, .overridden(.uiTests(completed: false)))
     }
 
     func testShouldReturnStatusNotOverriddenWhenIsOnboardingCompletedAndDefaultsAndEnvironmentAreNotDefined() {
         // GIVEN
         userDefaults.removeObject(forKey: "isOnboardingCompleted")
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
         // WHEN
         let result = sut.onboardingStatus
@@ -102,7 +102,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
     func testShouldReturnAppVariantWhenAppVariantIsCalledAndDefaultsContainsAppVariant() {
         // GIVEN
         userDefaults.set("mb", forKey: "currentAppVariant")
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
         // WHEN
         let result = sut.appVariantName
@@ -114,7 +114,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsDoesNotContainsAppVariant() {
         // GIVEN
         userDefaults.removeObject(forKey: "currentAppVariant")
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
         // WHEN
         let result = sut.appVariantName
@@ -126,7 +126,7 @@ final class LaunchOptionsHandlerTests: XCTestCase {
     func testShouldReturnNilWhenAppVariantIsCalledAndDefaultsContainsNullStringAppVariant() {
         // GIVEN
         userDefaults.set("null", forKey: "currentAppVariant")
-        let sut = LaunchOptionsHandler(launchArguments: [], environment: [:], userDefaults: userDefaults)
+        let sut = LaunchOptionsHandler(environment: [:], userDefaults: userDefaults)
 
         // WHEN
         let result = sut.appVariantName

@@ -102,7 +102,6 @@ tags:
 - launchApp:
     arguments:
       clearState: false
-      isOnboardingCompleted: ${ONBOARDING_COMPLETED}
 - assertVisible:
     text: "Pay"    
 - tapOn:

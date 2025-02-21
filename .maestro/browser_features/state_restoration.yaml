@@ -43,10 +43,7 @@ tags:
 - pressKey: Enter
 
 - stopApp
-- launchApp:
-    arguments:
-      isOnboardingCompleted: ${ONBOARDING_COMPLETED}
-
+- launchApp
 
 - tapOn: "Tab Switcher"
 - tapOn:

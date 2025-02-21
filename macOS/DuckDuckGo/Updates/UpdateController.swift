@@ -165,6 +165,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
 
+    // Default behavior
     func checkForUpdateRespectingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
@@ -173,6 +174,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater.checkForUpdatesInBackground()
     }
 
+    // Only for user-initiated Check for Updates
     func checkForUpdateSkippingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
@@ -183,13 +185,29 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     // MARK: - Private
 
-    private func configureUpdater() throws {
+    // Determines if a forced update check is necessary
+    //
+    // Due to frequent releases (weekly public, daily internal), the downloaded update
+    // may become obsolete if the user doesn't relaunch the app for an extended period.
+    private var shouldForceUpdateCheck: Bool {
+        let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
+
+        guard let userDriver,
+              let daysSinceLastUpdateCheck = Calendar.current.dateComponents([.day], from: userDriver.pendingUpdateSince, to: Date()).day,
+              daysSinceLastUpdateCheck > thresholdInDays else {
+            return false
+        }
+
+        return true
+    }
+
+    private func configureUpdater(needsUpdateCheck: Bool = false) throws {
         // Workaround to reset the updater state
         cachedUpdateResult = nil
         latestUpdate = nil
 
-        // The default configuration of Sparkle updates is in Info.plist
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
+                                      hasPendingObsoleteUpdate: needsUpdateCheck,
                                       areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
         guard let userDriver else { return }
 
@@ -204,7 +222,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater?.automaticallyChecksForUpdates = false
         updater?.automaticallyDownloadsUpdates = false
 #else
-        // We don't want SUAutomaticallyUpdate enabled because it interferes with our custom updater UI
+        // Some older version uses SUAutomaticallyUpdate to control the app restart behavior
+        // We don't want it enabled because it interferes with our custom updater UI
         if updater?.automaticallyDownloadsUpdates == true {
             updater?.automaticallyDownloadsUpdates = false
         }
@@ -214,6 +233,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             .assign(to: \.updateProgress, onWeaklyHeld: self)
 
         try updater?.start()
+
+        if needsUpdateCheck {
+            checkForUpdateRespectingRollout()
+        }
     }
 
     private func showUpdateNotificationIfNeeded() {
@@ -244,8 +267,15 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     }
 
     @objc func runUpdate() {
-        if let userDriver {
-            PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+        guard let userDriver else { return }
+
+        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+
+        if shouldForceUpdateCheck {
+            userDriver.dismissUpdateInstallation()
+            updater = nil
+            try? configureUpdater(needsUpdateCheck: true)
+        } else {
             userDriver.resume()
         }
     }

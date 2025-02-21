@@ -103,9 +103,18 @@ enum UpdateCycleProgress: CustomStringConvertible {
 }
 
 final class UpdateUserDriver: NSObject, SPUUserDriver {
-    enum Checkpoint: Equatable {
-        case download // for manual updates, pause the process before downloading the update
-        case restart // for automatic updates, pause the process before attempting to restart
+    private enum Checkpoint: Equatable {
+        // Pauses before downloading the update
+        // Flow: Manual update -> [Pause] -> Download -> Install
+        case download
+
+        // Pauses before restarting the app to apply the update
+        // Flow: Auto update -> Download -> [Pause] -> Install
+        case restart
+
+        // Bypasses all checkpoints, allowing immediate download & install
+        // Flow: Auto/Manual update -> [Pause at appropriate checkpoint] -> Force update check -> Download -> Install
+        case bypass
     }
 
     private var internalUserDecider: InternalUserDecider
@@ -113,7 +122,14 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var checkpoint: Checkpoint
 
     // Resume the update process when the user explicitly chooses to do so
-    private var onResuming: (() -> Void)?
+    private var onResuming: (() -> Void)? {
+        didSet {
+            pendingUpdateSince = Date()
+        }
+    }
+
+    @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
+    var pendingUpdateSince: Date
 
     // Dismiss the current update for the time being but keep the downloaded file around
     private var onDismiss: () -> Void = {}
@@ -130,10 +146,20 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    init(internalUserDecider: InternalUserDecider,
-         areAutomaticUpdatesEnabled: Bool) {
+    // Initializes the custom user driver with the appropriate checkpoint for user input
+    //
+    // Different scenarios:
+    // - Automatic updates: Pauses before attempting to restart the app
+    // - Manual updates: Pauses before downloading the update
+    // - Potential obsolete update: Allows the process to continue without interruption
+    // (This can only occur at a checkpoint, so we bypass further checks)
+    init(internalUserDecider: InternalUserDecider, hasPendingObsoleteUpdate: Bool, areAutomaticUpdatesEnabled: Bool) {
         self.internalUserDecider = internalUserDecider
-        self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
+        if hasPendingObsoleteUpdate {
+            self.checkpoint = .bypass
+        } else {
+            self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
+        }
     }
 
     func resume() {
@@ -147,6 +173,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     func cancelAndDismissCurrentUpdate() {
         onDismiss()
+        pendingUpdateSince = .distantPast
     }
 
     func show(_ request: SPUUpdatePermissionRequest) async -> SUUpdatePermissionResponse {

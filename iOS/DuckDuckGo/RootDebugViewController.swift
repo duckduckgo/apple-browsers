@@ -164,8 +164,24 @@ class RootDebugViewController: UITableViewController {
            let cell = tableView.cellForRow(at: indexPath) {
 
             switch row {
+
+            // MARK: Actions that need migrating
+
             case .resetAutoconsentPrompt:
                 AppUserDefaults().clearAutoconsentUserSetting()
+
+            case .openVanillaBrowser:
+                openVanillaBrowser(nil)
+
+            case .resetSyncPromoPrompts:
+                let syncPromoPresenter = SyncPromoManager(syncService: sync)
+                syncPromoPresenter.resetPromos()
+                ActionMessageView.present(message: "Sync Promos reset")
+
+            case .resetTipKit:
+                tipKitUIActionHandler.resetTipKitTapped()
+
+            // MARK: Migrated to debug screen
 
             case .crashFatalError: // brindy - migrated to crash screen
                 fatalError(#function)
@@ -195,8 +211,6 @@ class RootDebugViewController: UITableViewController {
                 (internalUserDecider as? DefaultInternalUserDecider)?.debugSetInternalUserState(newState)
                 cell.accessoryType = newState ? .checkmark : .none
                 NotificationCenter.default.post(Notification(name: AppUserDefaults.Notifications.inspectableWebViewsToggled))
-            case .openVanillaBrowser:
-                openVanillaBrowser(nil)
 
             case .resetSendCrashLogs: // migrated to crash screen
                 AppUserDefaults().crashCollectionOptInStatus = .undetermined
@@ -208,19 +222,14 @@ class RootDebugViewController: UITableViewController {
                 let controller = UIHostingController(rootView: NewTabPageSectionsDebugView())
                 show(controller, sender: nil)
 
-            case .onboarding:
+            case .onboarding: // brindy - migrated
                 let action = { [weak self] in
                     guard let self else { return }
                     self.showOnboardingIntro()
                 }
                 let controller = UIHostingController(rootView: OnboardingDebugView(onNewOnboardingIntroStartAction: action))
                 show(controller, sender: nil)
-            case .resetSyncPromoPrompts:
-                let syncPromoPresenter = SyncPromoManager(syncService: sync)
-                syncPromoPresenter.resetPromos()
-                ActionMessageView.present(message: "Sync Promos reset")
-            case .resetTipKit:
-                tipKitUIActionHandler.resetTipKitTapped()
+
             case .aiChat: // Brindy - migrated
                 let controller = UIHostingController(rootView: AIChatDebugView())
                 navigationController?.pushViewController(controller, animated: true)

@@ -60,30 +60,19 @@ public enum FeatureFlag: String, CaseIterable {
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
-
-    case testExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .testExperiment:
-            return TestExperimentCohort.self
         default:
             return nil
         }
     }
 
-    public enum TestExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     public var supportsLocalOverriding: Bool {
         switch self {
         case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
-            return true
-        case .testExperiment:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -135,8 +124,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-        case .testExperiment:
-            return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         }

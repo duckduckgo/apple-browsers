@@ -17,12 +17,17 @@
 //
 
 import XCTest
+import Common
 @testable import Subscription
 @testable import Networking
 import SubscriptionTestingUtilities
 import NetworkingTestingUtils
 
 class SubscriptionManagerV2Tests: XCTestCase {
+
+    struct Constants {
+        static let tld = TLD()
+    }
 
     var subscriptionManager: DefaultSubscriptionManagerV2!
     var mockOAuthClient: MockOAuthClient!
@@ -43,7 +48,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
-            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .stripe),
+            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: { _ in },
             autoRecoveryHandler: {
                 if let overrideTokenResponse = self.overrideTokenResponse {

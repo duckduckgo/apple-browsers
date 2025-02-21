@@ -48,6 +48,7 @@ enum UpdateCycleProgress: CustomStringConvertible {
         case pausedAtRestartCheckpoint = 103
         case proceededToInstallationAtRestartCheckpoint = 104
         case dismissedWithNoError = 105
+        case dismissingObsoleteUpdate = 106
     }
 
     case updateCycleNotStarted
@@ -111,14 +112,9 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
         // Pauses before restarting the app to apply the update
         // Flow: Auto update -> Download -> [Pause] -> Install
         case restart
-
-        // Bypasses all checkpoints, allowing immediate download & install
-        // Flow: Auto/Manual update -> [Pause at appropriate checkpoint] -> Force update check -> Download -> Install
-        case bypass
     }
 
     private var internalUserDecider: InternalUserDecider
-
     private var checkpoint: Checkpoint
 
     // Resume the update process when the user explicitly chooses to do so
@@ -129,7 +125,13 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
-    var pendingUpdateSince: Date
+    private var pendingUpdateSince: Date
+
+    var daysSinceLastUpdateCheck: Int {
+        Calendar.current.dateComponents([.day], from: pendingUpdateSince, to: Date()).day ?? Int.max
+    }
+
+    private var ignoresCheckpoint = false
 
     // Dismiss the current update for the time being but keep the downloaded file around
     private var onDismiss: () -> Void = {}
@@ -146,20 +148,10 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    // Initializes the custom user driver with the appropriate checkpoint for user input
-    //
-    // Different scenarios:
-    // - Automatic updates: Pauses before attempting to restart the app
-    // - Manual updates: Pauses before downloading the update
-    // - Potential obsolete update: Allows the process to continue without interruption
-    // (This can only occur at a checkpoint, so we bypass further checks)
     init(internalUserDecider: InternalUserDecider, hasPendingObsoleteUpdate: Bool, areAutomaticUpdatesEnabled: Bool) {
         self.internalUserDecider = internalUserDecider
-        if hasPendingObsoleteUpdate {
-            self.checkpoint = .bypass
-        } else {
-            self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
-        }
+        self.ignoresCheckpoint = hasPendingObsoleteUpdate
+        self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
     }
 
     func resume() {
@@ -198,9 +190,14 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             reply(.dismiss)
         }
 
-        onDismiss = { reply(.dismiss) }
+        onDismiss = {
+            // Dismiss the update for the time being
+            // If the update has been updated, it's kept till the next time an update is shown to the user
+            // If the update is installing, it's also preserved after dismissing, and will also be installed after the app is terminated
+            reply(.dismiss)
+        }
 
-        if checkpoint == .download {
+        if checkpoint == .download && !ignoresCheckpoint {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtDownloadCheckpoint)
             Logger.updates.log("Updater paused at download checkpoint (manual update pending user decision)")
@@ -256,9 +253,15 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     }
 
     func showReady(toInstallAndRelaunch reply: @escaping (SPUUserUpdateChoice) -> Void) {
-        onDismiss = { reply(.dismiss) }
+        onDismiss = { [weak self] in
+            // Cancel the current update that has begun installing and dismiss the update
+            // This doesn't actually skip the update in the future (‽)
+            reply(.skip)
+            self?.updateProgress = .updateCycleDone(.dismissingObsoleteUpdate)
+            Logger.updates.log("Updater dismissing obsolete update")
+        }
 
-        if checkpoint == .restart {
+        if checkpoint == .restart && !ignoresCheckpoint {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
             Logger.updates.log("Updater paused at restart checkpoint (automatic update pending user decision)")

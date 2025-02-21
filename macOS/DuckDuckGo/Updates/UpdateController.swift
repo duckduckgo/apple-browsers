@@ -165,7 +165,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
 
-    // Default behavior
+    // Check for updates while adhering to the rollout schedule
+    // This is the default behavior
     func checkForUpdateRespectingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
@@ -174,7 +175,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater.checkForUpdatesInBackground()
     }
 
-    // Only for user-initiated Check for Updates
+    // Check for updates immediately, bypassing the rollout schedule
+    // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
@@ -191,13 +193,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // may become obsolete if the user doesn't relaunch the app for an extended period.
     private var shouldForceUpdateCheck: Bool {
         let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
-
-        guard let userDriver,
-              let daysSinceLastUpdateCheck = Calendar.current.dateComponents([.day], from: userDriver.pendingUpdateSince, to: Date()).day,
-              daysSinceLastUpdateCheck > thresholdInDays else {
-            return false
-        }
-
+        guard let userDriver, userDriver.daysSinceLastUpdateCheck > thresholdInDays else { return false }
         return true
     }
 
@@ -222,8 +218,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater?.automaticallyChecksForUpdates = false
         updater?.automaticallyDownloadsUpdates = false
 #else
-        // Some older version uses SUAutomaticallyUpdate to control the app restart behavior
-        // We don't want it enabled because it interferes with our custom updater UI
+        // Some older version uses SUAutomaticallyUpdate to control app restart behavior
+        // We disable it to prevent interference with our custom updater UI
         if updater?.automaticallyDownloadsUpdates == true {
             updater?.automaticallyDownloadsUpdates = false
         }
@@ -233,10 +229,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             .assign(to: \.updateProgress, onWeaklyHeld: self)
 
         try updater?.start()
-
-        if needsUpdateCheck {
-            checkForUpdateRespectingRollout()
-        }
     }
 
     private func showUpdateNotificationIfNeeded() {
@@ -271,12 +263,17 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
 
-        if shouldForceUpdateCheck {
-            userDriver.dismissUpdateInstallation()
-            updater = nil
-            try? configureUpdater(needsUpdateCheck: true)
-        } else {
+        guard shouldForceUpdateCheck else {
             userDriver.resume()
+            return
+        }
+
+        userDriver.cancelAndDismissCurrentUpdate()
+        updater = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            try? self?.configureUpdater(needsUpdateCheck: true)
+            self?.checkForUpdateRespectingRollout()
         }
     }
 
@@ -369,7 +366,7 @@ extension UpdateController: SPUUpdaterDelegate {
             Logger.updates.log("cachedUpdateResult: \(cachedUpdateResult.item.displayVersionString, privacy: .public)(\(cachedUpdateResult.item.versionString, privacy: .public))")
         }
         if let state = userDriver?.sparkleUpdateState {
-            Logger.updates.log("Sparkle update state: (userInitiated:  \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
+            Logger.updates.log("Sparkle update state: (userInitiated: \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
         } else {
             Logger.updates.log("Sparkle update state: Unknown")
         }

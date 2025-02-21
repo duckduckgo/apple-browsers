@@ -36,7 +36,7 @@ final class OnboardingConfiguration {
 
         // MARK: perform first time launch logic here
         // If it's running UI Tests check if the onboarding should be in a completed state.
-        if launchOptionsHandler.isUITesting && launchOptionsHandler.isOnboardingCompleted {
+        if launchOptionsHandler.onboardingStatus.isOverriddenCompleted {
             daxDialogs.dismiss()
         } else {
             daxDialogs.primeForUse()

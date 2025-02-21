@@ -535,7 +535,6 @@ extension TabViewController {
         TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
             UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
         }
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetricUpdated(metricType: .privacyToggleUsed)
     }
 
     private func togglePrivacyProtection(domain: String, didSendReport: Bool = false) {

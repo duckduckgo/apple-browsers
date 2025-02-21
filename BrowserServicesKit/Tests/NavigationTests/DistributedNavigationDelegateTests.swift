@@ -652,8 +652,6 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
     }
 
     func testOpenAboutBlankInNewWindow() throws {
-        throw XCTSkip("Flaky, see https://app.asana.com/0/1200194497630846/1205018266972898/f")
-
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
         navigationDelegateProxy.finishEventsDispatchTime = .instant
 
@@ -710,7 +708,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         waitForExpectations(timeout: 5)
 
         assertHistory(ofResponderAt: 0, equalsTo: [
-            .willStart(Nav(action: NavAction(req(urls.aboutBlank, ["Referer": urls.local.separatedString]), .other, from: history[1], src: main(webView: newWebView)), .approved, isCurrent: false)),
+            .willStart(Nav(action: NavAction(req(urls.aboutBlank, ["Referer": urls.local.separatedString]), .other, from: history[1], src: main(webView: newWebView, secOrigin: urls.local.securityOrigin)), .approved, isCurrent: false)),
             .didStart(Nav(action: navAct(2), .started)),
             .didCommit(Nav(action: navAct(2), .started, .committed)),
             .didFinish(Nav(action: navAct(2), .finished, .committed)),

@@ -54,23 +54,11 @@ struct DebugScreensView: View {
                 DebugTogglesView(model: model)
             }
 
-            Section {
-                ForEach(model.visibleScreens) { screen in
-                    switch screen {
-                    case .controller(let title, _):
-                        SettingsCellView(label: title, action: {
-                            model.navigateToController(screen)
-                        }, disclosureIndicator: true, isButton: true)
-
-                    case .view(let title, _):
-                        NavigationLink(destination: LazyView(model.buildView(screen))) {
-                            SettingsCellView(
-                                label: title
-                            )
-                        }
-                    }
-                }
+            if !model.pinnedScreens.isEmpty {
+                DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
             }
+
+            DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
 
             if !model.isFiltering {
                 Section {
@@ -83,6 +71,52 @@ struct DebugScreensView: View {
         .searchable(text: $model.filter, prompt: "Filter")
         .navigationTitle("Debug")
     }
+}
+
+struct DebugScreensListView: View {
+    
+    @ObservedObject var model: DebugScreensViewModel
+
+    let sectionTitle: String
+    let screens: [DebugScreen]
+
+    @ViewBuilder
+    func togglePinButton(_ screen: DebugScreen) -> some View {
+        Button {
+            model.togglePin(screen)
+        } label: {
+            Image(systemName: model.isPinned(screen) ? "pin.slash" : "pin")
+        }
+    }
+
+    var body: some View {
+        Section {
+            ForEach(screens) { screen in
+                switch screen {
+                case .controller(let title, _):
+                    SettingsCellView(label: title, action: {
+                        model.navigateToController(screen)
+                    }, disclosureIndicator: true, isButton: true)
+                    .swipeActions {
+                        togglePinButton(screen)
+                    }
+
+                case .view(let title, _):
+                    NavigationLink(destination: LazyView(model.buildView(screen))) {
+                        SettingsCellView(
+                            label: title
+                        )
+                    }
+                    .swipeActions {
+                        togglePinButton(screen)
+                    }
+                }
+            }
+        } header: {
+            Text(verbatim: sectionTitle)
+        }
+    }
+
 }
 
 // This should be used sparingly.  Don't add some trivial toggle here; please create a new screen.

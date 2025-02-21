@@ -22,6 +22,7 @@ import SwiftUI
 import UIKit
 import BrowserServicesKit
 import Combine
+import Core
 
 /// The view mode for the debug view.  You shouldn't have to add or change anything here.
 ///  Please add new views/controllers to DebugScreensViewModel+Screens.swift.
@@ -45,9 +46,14 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
-    @Published var visibleScreens: [DebugScreen] = []
+    @Published var pinnedScreens: [DebugScreen] = []
+
+    @Published var unpinnedScreens: [DebugScreen] = []
 
     @Published var isFiltering = false
+
+    @UserDefaultsWrapper(key: .debugPinnedScreens, defaultValue: [])
+    var pinnedTitles: [String]
 
     let dependencies: DebugScreen.Dependencies
 
@@ -87,17 +93,24 @@ class DebugScreensViewModel: ObservableObject {
 
     func refreshFilter() {
         if filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            self.visibleScreens = screens
+            self.unpinnedScreens = screens.filter { !self.isPinned($0) }
+            self.pinnedScreens = screens.filter { self.isPinned($0) }
             isFiltering = false
         } else {
-            self.visibleScreens = screens.filter {
+            // When filtering we just ignore the pinning state
+            self.pinnedScreens = []
+            self.unpinnedScreens = screens.filter {
                 $0.title.lowercased().contains(filter.lowercased())
             }
             isFiltering = true
         }
-        self.visibleScreens = self.visibleScreens.sorted(by: {
-            $0.title < $1.title
-        })
+
+        func sorter(screen1: DebugScreen, screen2: DebugScreen) -> Bool {
+            screen1.title < screen2.title
+        }
+        
+        self.pinnedScreens = self.pinnedScreens.sorted(by: sorter)
+        self.unpinnedScreens = self.unpinnedScreens.sorted(by: sorter)
     }
 
     func navigateToLegacyDebugController() {
@@ -131,6 +144,21 @@ class DebugScreensViewModel: ObservableObject {
         case .view(_, let viewBuilder):
             return AnyView(viewBuilder(self.dependencies))
         }
+    }
+
+    func isPinned(_ screen: DebugScreen) -> Bool {
+        return Set<String>(pinnedTitles).contains(screen.title)
+    }
+
+    func togglePin(_ screen: DebugScreen) {
+        if isPinned(screen) {
+            var set = Set<String>(pinnedTitles)
+            set.remove(screen.title)
+            pinnedTitles = Array(set)
+        } else {
+            pinnedTitles.append(screen.title)
+        }
+        refreshFilter()
     }
 
 }

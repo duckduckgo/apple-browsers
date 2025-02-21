@@ -172,6 +172,8 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var openInNewTab: Bool = false
     var nativeUI: Bool = false
     var autoplay: Bool = false
+    var customError: Bool = false
+    var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
 
     
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
@@ -244,6 +246,10 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
     
     func initialSetup(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+
+    func handleYoutubeError(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
         nil
     }
 }

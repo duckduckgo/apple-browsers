@@ -186,8 +186,8 @@ extension Preferences {
                         }
                         .onChange(of: showsCustomDNSServerPageSheet) { showsCustomDNSServerPageSheet in
                             guard !showsCustomDNSServerPageSheet else { return }
-                            /// Flip the setting back if no DNS server is defined
-                            if model.isCustomDNSSelected, !model.dnsSettings.usesCustomDNS {
+                            guard model.isCustomDNSSelected else { return }
+                            if model.customDNSServers == "" || model.customDNSServers == nil {
                                 model.isCustomDNSSelected = false
                             }
                         }

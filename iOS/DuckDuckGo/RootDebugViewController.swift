@@ -94,6 +94,16 @@ class RootDebugViewController: UITableViewController {
         fatalError("init not implemented")
     }
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // This might be annoying but I want to flush out any missing functionality before removing it.
+        let controller = UIAlertController(title: "Something missing?", message: "Something you need in here that isn't in the other screen?  Let us know by dropping a task in the iOS App Development project.", preferredStyle: .actionSheet)
+        controller.addAction(UIAlertAction(title: "OK!", style: .default))
+
+        present(controller: controller, fromView: self.view)
+    }
+
     // Brindy - migrated
     @IBSegueAction func onCreateImageCacheDebugScreen(_ coder: NSCoder) -> ImageCacheDebugViewController? {
         guard let controller = ImageCacheDebugViewController(coder: coder,

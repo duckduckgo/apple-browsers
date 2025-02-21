@@ -57,16 +57,12 @@ class DebugScreensViewModel: ObservableObject {
 
     let dependencies: DebugScreen.Dependencies
 
-    let pushController: (UIViewController) -> Void
+    var pushController: ((UIViewController) -> Void)?
 
     var cancellables = Set<AnyCancellable>()
 
-    init(dependencies: DebugScreen.Dependencies,
-         pushController: @escaping (UIViewController) -> Void) {
-
+    init(dependencies: DebugScreen.Dependencies) {
         self.dependencies = dependencies
-        self.pushController = pushController
-
         refreshFilter()
         refreshToggles()
     }
@@ -124,13 +120,13 @@ class DebugScreensViewModel: ObservableObject {
                                     tabManager: d.tabManager,
                                     fireproofing: d.fireproofing)
         }
-        pushController(controller)
+        pushController?(controller)
     }
 
     func navigateToController(_ builder: DebugScreen) {
         switch builder {
         case .controller(_, let controllerBuilder):
-            pushController(controllerBuilder(self.dependencies))
+            pushController?(controllerBuilder(self.dependencies))
         case .view(_, _):
             assertionFailure("Should not be pushing SwiftUI view as controller")
         }

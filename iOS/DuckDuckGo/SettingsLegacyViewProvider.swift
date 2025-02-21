@@ -96,18 +96,13 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateDebugController() -> UIViewController {
-        var controller: UIViewController?
-        let debugController = DebugScreensViewController(dependencies: .init(
+        return DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing)) {
-            controller?.navigationController?.pushViewController($0, animated: true)
-        }
-        controller = debugController
-        return debugController
+            fireproofing: self.fireproofing))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

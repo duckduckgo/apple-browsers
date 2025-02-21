@@ -118,6 +118,24 @@ extension DebugScreensViewModel {
                     ConfigurationURLDebugViewController(coder: coder)
                 }
             }),
+            .controller(title: "Onboarding", { _ in
+                class OnboardingDebugViewController: UIHostingController<OnboardingDebugView>, OnboardingDelegate {
+                    func onboardingCompleted(controller: UIViewController) {
+                        controller.presentingViewController?.dismiss(animated: true)
+                    }
+                }
+
+                var capturedController: OnboardingDebugViewController? = nil
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                    guard let capturedController else { return }
+                    let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter())
+                    controller.delegate = capturedController
+                    controller.modalPresentationStyle = .overFullScreen
+                    capturedController.parent?.present(controller: controller, fromView: capturedController.view)
+                })
+                capturedController = onboardingController
+                return onboardingController
+            }),
         ]
     }
 

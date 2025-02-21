@@ -21,25 +21,17 @@ import SwiftUI
 
 class DebugScreensViewController: UIHostingController<DebugScreensView> {
 
-    var model: DebugScreensViewModel?
-
-    convenience init(dependencies: DebugScreen.Dependencies,
-                     pushController: @escaping (UIViewController) -> Void) {
-
-        let model = DebugScreensViewModel(dependencies: dependencies,
-                                   pushController: pushController)
-
+    convenience init(dependencies: DebugScreen.Dependencies) {
+        let model = DebugScreensViewModel(dependencies: dependencies)
         self.init(rootView: DebugScreensView(model: model))
-
-        self.model = model
+        model.pushController = { [weak self] in
+            self?.navigationController?.pushViewController($0, animated: true)
+        }
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
-        // We only need this because the legacy controller can change the state.
-        //  Once the legacy controller is gone this can be removed.
-        model?.refreshToggles()
+        rootView.model.refreshToggles()
     }
 
 }

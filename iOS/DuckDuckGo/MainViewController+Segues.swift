@@ -300,20 +300,15 @@ extension MainViewController {
     private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
 
-        var navController: UINavigationController?
-
         let debug = DebugScreensViewController(dependencies: .init(
             syncService: self.syncService,
             bookmarksDatabase: self.bookmarksDatabase,
             internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
             tabManager: self.tabManager,
             tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
-            fireproofing: self.fireproofing)) {
-            navController?.pushViewController($0, animated: true)
-        }
+            fireproofing: self.fireproofing))
 
         let controller = UINavigationController(rootViewController: debug)
-        navController = controller
         controller.modalPresentationStyle = .automatic
         present(controller, animated: true) {
             completion?(debug)

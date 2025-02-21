@@ -126,6 +126,7 @@ class RootDebugViewController: UITableViewController {
         return controller
     }
 
+    // brindy - migrated
     @IBSegueAction func onCreateNetPDebugScreen(_ coder: NSCoder, sender: Any?, segueIdentifier: String?) -> NetworkProtectionDebugViewController {
         guard let controller = NetworkProtectionDebugViewController(coder: coder) else {
             fatalError("Failed to create controller")
@@ -134,6 +135,7 @@ class RootDebugViewController: UITableViewController {
         return controller
     }
 
+    // brindy - migrated
     @IBSegueAction func onCreateCookieDebugScreen(_ coder: NSCoder) -> CookieDebugViewController? {
         guard let controller = CookieDebugViewController(coder: coder, fireproofing: fireproofing) else {
             fatalError("Failed to create controller")
@@ -142,7 +144,7 @@ class RootDebugViewController: UITableViewController {
         return controller
     }
 
-
+    // brindy - migrated
     override func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         if cell.tag == Row.toggleInspectableWebViews.rawValue {
             cell.accessoryType = AppUserDefaults().inspectableWebViewEnabled ? .checkmark : .none
@@ -222,7 +224,7 @@ class RootDebugViewController: UITableViewController {
             case .aiChat: // Brindy - migrated
                 let controller = UIHostingController(rootView: AIChatDebugView())
                 navigationController?.pushViewController(controller, animated: true)
-            case .webViewStateRestoration:
+            case .webViewStateRestoration: // brindy - migrated
                 let controller = UIHostingController(rootView: WebViewStateRestorationDebugView())
                 navigationController?.pushViewController(controller, animated: true)
             case .featureFlags: // Brindy - migrated

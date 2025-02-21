@@ -47,10 +47,9 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     @Published var pinnedScreens: [DebugScreen] = []
-
     @Published var unpinnedScreens: [DebugScreen] = []
-
-    @Published var isFiltering = false
+    @Published var actions: [DebugScreen] = []
+    @Published var filtered: [DebugScreen] = []
 
     @UserDefaultsWrapper(key: .debugPinnedScreens, defaultValue: [])
     var pinnedTitles: [String]
@@ -88,25 +87,21 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func refreshFilter() {
-        if filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            self.unpinnedScreens = screens.filter { !self.isPinned($0) }
-            self.pinnedScreens = screens.filter { self.isPinned($0) }
-            isFiltering = false
-        } else {
-            // When filtering we just ignore the pinning state
-            self.pinnedScreens = []
-            self.unpinnedScreens = screens.filter {
-                $0.title.lowercased().contains(filter.lowercased())
-            }
-            isFiltering = true
-        }
-
         func sorter(screen1: DebugScreen, screen2: DebugScreen) -> Bool {
             screen1.title < screen2.title
         }
-        
-        self.pinnedScreens = self.pinnedScreens.sorted(by: sorter)
-        self.unpinnedScreens = self.unpinnedScreens.sorted(by: sorter)
+
+        self.actions = screens.filter { $0.isAction && !self.isPinned($0) }.sorted(by: sorter)
+        self.unpinnedScreens = screens.filter { !$0.isAction && !self.isPinned($0) }.sorted(by: sorter)
+        self.pinnedScreens = screens.filter { self.isPinned($0) }.sorted(by: sorter)
+
+        if filter.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self.filtered = []
+        } else {
+            self.filtered = screens.filter {
+                $0.title.lowercased().contains(filter.lowercased())
+            }.sorted(by: sorter)
+        }
     }
 
     func navigateToLegacyDebugController() {
@@ -123,18 +118,29 @@ class DebugScreensViewModel: ObservableObject {
         pushController?(controller)
     }
 
-    func navigateToController(_ builder: DebugScreen) {
-        switch builder {
-        case .controller(_, let controllerBuilder):
-            pushController?(controllerBuilder(self.dependencies))
-        case .view(_, _):
+    func executeAction(_ screen: DebugScreen) {
+        switch screen {
+        case .action(_, let action):
+            action(self.dependencies)
+            ActionMessageView.present(message: "\(screen.title) - DONE")
+
+        case .view(_, _), .controller(_, _):
             assertionFailure("Should not be pushing SwiftUI view as controller")
         }
     }
 
-    func buildView(_ builder: DebugScreen) -> AnyView {
-        switch builder {
-        case .controller(_, _):
+    func navigateToController(_ screen: DebugScreen) {
+        switch screen {
+        case .controller(_, let controllerBuilder):
+            pushController?(controllerBuilder(self.dependencies))
+        case .view(_, _), .action(_, _):
+            assertionFailure("Should not be pushing SwiftUI view as controller")
+        }
+    }
+
+    func buildView(_ screen: DebugScreen) -> AnyView {
+        switch screen {
+        case .controller(_, _), .action(_, _):
             return AnyView(FailedAssertionView("Unexpected view creation"))
 
         case .view(_, let viewBuilder):

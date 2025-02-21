@@ -166,22 +166,20 @@ class RootDebugViewController: UITableViewController {
             switch row {
 
             // MARK: Actions that need migrating
-
-            case .resetAutoconsentPrompt:
-                AppUserDefaults().clearAutoconsentUserSetting()
-
             case .openVanillaBrowser:
                 openVanillaBrowser(nil)
 
-            case .resetSyncPromoPrompts:
+            // MARK: Migrated to debug screen
+            case .resetTipKit: // brindy - migrated
+                tipKitUIActionHandler.resetTipKitTapped()
+
+            case .resetSyncPromoPrompts: // brindy - migrated
                 let syncPromoPresenter = SyncPromoManager(syncService: sync)
                 syncPromoPresenter.resetPromos()
                 ActionMessageView.present(message: "Sync Promos reset")
 
-            case .resetTipKit:
-                tipKitUIActionHandler.resetTipKitTapped()
-
-            // MARK: Migrated to debug screen
+            case .resetAutoconsentPrompt: // Brindy - migrated
+                AppUserDefaults().clearAutoconsentUserSetting()
 
             case .crashFatalError: // brindy - migrated to crash screen
                 fatalError(#function)

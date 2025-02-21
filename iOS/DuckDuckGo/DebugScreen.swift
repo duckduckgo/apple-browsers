@@ -39,6 +39,14 @@ enum DebugScreen: Identifiable {
 
     case controller(title: String, (Dependencies) -> UIViewController)
     case view(title: String, (Dependencies) -> any View)
+    case action(title: String, (Dependencies) -> Void)
+
+    var isAction: Bool {
+        if case .action = self {
+            return true
+        }
+        return false
+    }
 
     var id: String {
         return title
@@ -50,6 +58,9 @@ enum DebugScreen: Identifiable {
             return title
 
         case .view(let title, _):
+            return title
+
+        case .action(let title, _):
             return title
         }
     }

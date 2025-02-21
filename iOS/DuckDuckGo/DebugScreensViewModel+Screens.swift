@@ -27,6 +27,18 @@ extension DebugScreensViewModel {
     /// Note that the storyboard is not passed to the controller builder - ideally we'll mirgate away from that to SwiftUI entirely
     var screens: [DebugScreen] {
         return [
+            // MARK: Actions
+            .action(title: "Reset Autoconsent Prompt", { _ in
+                AppUserDefaults().clearAutoconsentUserSetting()
+            }),
+            .action(title: "Reset Sync Promos", { d in
+                let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
+                syncPromoPresenter.resetPromos()
+            }),
+            .action(title: "Reset TipTik", { d in
+                d.tipKitUIActionHandler.resetTipKitTapped()
+            }),
+
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()

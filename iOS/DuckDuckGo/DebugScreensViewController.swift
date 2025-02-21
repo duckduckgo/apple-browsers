@@ -42,22 +42,22 @@ struct DebugScreensView: View {
 
     var body: some View {
         List {
-            if !model.isFiltering {
+            if model.filtered.isEmpty {
                 DebugTogglesView(model: model)
-            }
 
-            if !model.pinnedScreens.isEmpty {
-                DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
-            }
+                if !model.pinnedScreens.isEmpty {
+                    DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
+                }
 
-            DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
-
-            if !model.isFiltering {
+                DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
+                DebugScreensListView(model: model, sectionTitle: "Actions", screens: model.actions)
                 Section {
                     SettingsCellView(label: "Legacy Debug", action: {
                         model.navigateToLegacyDebugController()
                     }, disclosureIndicator: true, isButton: true)
                 }
+            } else {
+                DebugScreensListView(model: model, sectionTitle: "Results", screens: model.filtered)
             }
         }
         .searchable(text: $model.filter, prompt: "Filter")
@@ -99,6 +99,14 @@ struct DebugScreensListView: View {
                             label: title
                         )
                     }
+                    .swipeActions {
+                        togglePinButton(screen)
+                    }
+
+                case .action(let title, _):
+                    SettingsCellView(label: title, image: Image(systemName: "hammer"), action: {
+                        model.executeAction(screen)
+                    }, isButton: true)
                     .swipeActions {
                         togglePinButton(screen)
                     }

@@ -21,6 +21,8 @@ import Core
 import Common
 import PageRefreshMonitor
 import PixelExperimentKit
+import Configuration
+import PixelKit
 
 extension PageRefreshMonitor {
 

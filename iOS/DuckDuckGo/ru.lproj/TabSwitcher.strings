@@ -16,17 +16,14 @@
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
 "Gyy-py-IOg.accessibilityLabel" = "Вкладка не прочитана";
 
-/* Class = "UIBarButtonItem"; title = "Close all tabs and clear data"; ObjectID = "h1S-c2-Spf"; */
-"h1S-c2-Spf.title" = "Закрыть все вкладки и удалить данные";
-
 /* Class = "UIButton"; accessibilityLabel = "Clear tabs and data"; ObjectID = "Hcx-F2-HgO"; */
 "Hcx-F2-HgO.accessibilityLabel" = "Сбросить вкладки и данные";
 
 /* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
 "LbT-NO-T0G.text" = "Ссылка";
 
-/* Class = "UIBarButtonItem"; title = "New Tab"; ObjectID = "nYf-xs-PE7"; */
-"nYf-xs-PE7.title" = "Новая вкладка";
+/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
+"P3h-DO-2nT.title" = "Название";
 
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
 "qrJ-aX-XrW.accessibilityLabel" = "Вкладка не прочитана";

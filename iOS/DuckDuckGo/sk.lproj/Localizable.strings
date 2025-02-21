@@ -61,6 +61,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "AI Chat";
 
+/* Duck.ai menu item opening a new chat */
+"action.title.duckai.new" = "Nový AI Chat";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Upraviť záložku";
 
@@ -84,6 +87,9 @@
 
 /* Open action */
 "action.title.open" = "Otvorené";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "Heslo";
 
 /* Paste and Go action */
 "action.title.pasteAndGo" = "Prilepiť a odísť";
@@ -123,6 +129,9 @@
 
 /* Share action */
 "action.title.share" = "Zdieľať";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "Nová karta";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Spodná časť";
@@ -294,6 +303,18 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Keď DuckDuckGo zistí na vami navštívených lokalitách kontextové okná týkajúce sa súhlasu so súbormi cookie, môžeme sa pokúsiť automaticky nastaviť vaše možnosti súborov cookie tak, aby sa využívanie súborov cookie minimalizovali a aby sa maximalizovala ochrana súkromia, a potom môžeme kontextové automaticky okná zavrieť. Niektoré lokality neponúkajú možnosť spravovať preferencie súborov cookie, takže takéto kontextové okná môžeme iba skryť.";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
 
 /* Open Settings action for disabling autofill in Settings */
 "autofill.disable.prompt.action.open-settings" = "Otvoriť nastavenia";
@@ -532,8 +553,11 @@
 /* Title displayed when there are no results on Autofill search */
 "autofill.logins.search.no-results.title" = "Žiadne výsledky";
 
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
 /* Description of autofill onboarding prompt's secure storage feature
-Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.description" = "Heslá sú šifrované, uložené v zariadení a uzamknuté pomocou %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
@@ -692,6 +716,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Vymazať";
 
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "Chcete odstrániť priečinok %@?";
 
@@ -796,6 +823,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
 "contextual.onboarding.addToDock.tutorial.title" = "Pridanie ma do doku je jednoduché.";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Služba *%1$@* sa vás tu pokúsila sledovať. Bola zablokovaná!\n\n☝️ Ťuknite na štít pre viac informácií.";
@@ -910,6 +940,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.after.search.cta" = "Uf!";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.multiple.trackers.cta" = "Ruku na to!";
@@ -1037,9 +1070,6 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* No comment provided by engineer. */
 "Duck Address" = "Duck Address";
 
-/* No comment provided by engineer. */
-"Duck Player" = "Duck Player";
-
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player nie je dostupný";
 
@@ -1052,8 +1082,8 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
 "duckai.preferences.text.markdown" = "Duck.ai je voliteľná funkcia, ktorá ti umožňuje anonymne chatovať s obľúbenými modelmi chatu s umelou inteligenciou tretích strán. Tvoje chaty sa nepoužívajú na trénovanie AI.\n[Viac informácií](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
-/* Toggle text to enable/disable AI Chat in the address bar */
-"duckai.settings.enable.address-bar-searching-toggle" = "Zobraziť Duck.ai na stránke vyhľadávania";
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "Zobraziť Duck.ai v adresnom riadku";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Zobraziť Duck.ai v ponuke prehliadača";
@@ -1079,12 +1109,10 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Button that will dismiss the modal */
 "duckplayer.presentation.modal.dismiss-button" = "Rozumiem!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title" = "Utápať sa v reklamách na YouTube? Vyskúšajte Duck Player!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Utápať sa v reklamách na YouTube? Nie s Duck Player!";
 
 /* Footer label in the settings screen for Duck Player */
@@ -1921,6 +1949,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Na ľubovoľnej lokalite otvorte ponuku ••• a vybraním položky **Pridať obľúbené** ju pridajte na novú stránku karty.";
 
+/* Do not translate - stringsdict entry */
+"number.of.tabs" = "number.of.tabs";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Spravované súbory cookie";
 
@@ -2105,9 +2136,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 "prefrences.sync.credentials-limit-exceeded-description" = "Dosiahli ste maximálny počet hesiel. Ak chcete obnoviť synchronizáciu, odstráňte niektoré záložky.";
 
 /* Description invalid credentials error when syncing.
-Description of incorrectly formatted data error when syncing.
-Description of too many requests error when syncing. */
-"prefrences.sync.invalid-login-description" = "Niektoré záložky alebo heslá sú nesprávne naformátované alebo príliš dlhé a neboli synchronizované.";
+   Description of incorrectly formatted data error when syncing.
+   Description of too many requests error when syncing. */
+"prefrences.sync.invalid-login-description" = "Pri synchronizácii sa vyskytla chyba. Skúste vypnúť synchronizáciu v tomto zariadení a potom sa znovu pripojte pomocou iného zariadenia alebo kódu na obnovenie.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Synchronizácia bola pozastavená";
@@ -2218,7 +2249,7 @@ Description of too many requests error when syncing. */
 "settings.add.widget.vpn" = "Pridaj si miniaplikáciu DuckDuckGo VPN na svoju úvodnú obrazovku";
 
 /* Name of the settings subsection related to the address bar
-Settings screen cell text for addess bar position */
+   Settings screen cell text for addess bar position */
 "settings.address.bar" = "Riadok adresy";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2276,7 +2307,7 @@ Settings screen cell text for addess bar position */
 "settings.data.clearing" = "Vymazanie údajov";
 
 /* Settings screen cell text for setting the app as default browser
-The name of Settings category in Privacy Features related to configuration of the default browser */
+   The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Predvolený prehliadač";
 
 /* Label of a button disabling email protection */
@@ -2702,6 +2733,9 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
 "subscription.subscription.expiring.monthly.caption" = "Tvoje mesačné predplatné vyprší dňa %@.";
 
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "Tvoja bezplatná skúšobná verzia končí %@ a nebude sa automaticky meniť na platené predplatné.";
+
 /* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
 "subscription.subscription.expiring.unknown.caption" = "Platnosť tvojho predplatného vyprší dňa %@.";
 
@@ -2711,6 +2745,12 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tvoje mesačné predplatné sa obnoví %@.";
 
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "Tvoja bezplatná skúšobná verzia končí dňa %@, kedy sa automaticky zmení na mesačné platené predplatné.";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "Tvoja bezplatná skúšobná verzia končí dňa %@, kedy sa automaticky zmení na ročné platené predplatné.";
+
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Tvoje predplatné sa obnoví %@.";
 
@@ -2719,6 +2759,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Navigation bar Title for subscriptions */
 "subscription.title" = "Ochrana osobných údajov Pro";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "Bezplatná skúšobná verzia je aktívna";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Kód obnovenia bol skopírovaný do schránky";
@@ -3052,6 +3095,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Ste pozvaný/-á!";
+
+/* No comment provided by engineer. */
+"Watch this video on YouTube" = "Pozri si toto video na YouTube";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Obľúbená položka bola odstránená";

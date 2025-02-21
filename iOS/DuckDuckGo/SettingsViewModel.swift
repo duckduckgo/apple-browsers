@@ -48,6 +48,7 @@ final class SettingsViewModel: ObservableObject {
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    let experimentalThemingManager: ExperimentalThemingManager
 
     // Subscription Dependencies
     let subscriptionManager: SubscriptionManager
@@ -158,6 +159,24 @@ final class SettingsViewModel: ObservableObject {
                 self.appSettings.showFullSiteAddress = $0
             }
         )
+    }
+
+    var experimentalThemingBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.isExperimentalThemingEnabled },
+            set: { _ in
+                self.experimentalThemingManager.toggleExperimentalTheming()
+                self.state.isExperimentalThemingEnabled = self.experimentalThemingManager.isExperimentalThemingEnabled
+            })
+        }
+
+    var alternativeColorsBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.isAlternativeColorSchemeEnabled },
+            set: { _ in
+                self.experimentalThemingManager.toggleAlternativeColorScheme()
+                self.state.isAlternativeColorSchemeEnabled = self.experimentalThemingManager.isAlternativeColorSchemeEnabled
+            })
     }
 
     var applicationLockBinding: Binding<Bool> {
@@ -438,7 +457,8 @@ final class SettingsViewModel: ObservableObject {
          privacyProDataReporter: PrivacyProDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
-         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
+         experimentalThemingManager: ExperimentalThemingManager
     ) {
 
         self.state = SettingsState.defaults
@@ -453,6 +473,7 @@ final class SettingsViewModel: ObservableObject {
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
+        self.experimentalThemingManager = experimentalThemingManager
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -479,6 +500,8 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
+            isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
+            isAlternativeColorSchemeEnabled: experimentalThemingManager.isAlternativeColorSchemeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -721,7 +744,7 @@ extension SettingsViewModel {
         case netP
         case dbp
         case itr
-        case subscriptionFlow(origin: String? = nil)
+        case subscriptionFlow(redirectURLComponents: URLComponents? = nil)
         case restoreFlow
         case duckPlayer
         case aiChat

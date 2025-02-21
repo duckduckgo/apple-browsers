@@ -1049,19 +1049,23 @@ extension TabBarViewController: NSCollectionViewDelegate {
         // dropping not on a tab bar
         guard case .none = operation else { return }
 
-        // Create a new window if the drop is too distant
+        // Create a new window if dragged upward or too distant
         let frameRelativeToWindow = view.convert(view.bounds, to: nil)
         guard TabDragAndDropManager.shared.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
               let sourceIndex = TabDragAndDropManager.shared.sourceUnit?.index,
-              let frameRelativeToScreen = view.window?.convertToScreen(frameRelativeToWindow),
-              !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance) else {
-            // dropped near the tab bar, do nothing
+              let frameRelativeToScreen = view.window?.convertToScreen(frameRelativeToWindow) else {
             return
         }
 
-        moveToNewWindow(from: sourceIndex,
-                        droppingPoint: screenPoint,
-                        burner: tabCollectionViewModel.isBurner)
+        // Check if the drop point is above the tab bar by more than 10 points
+        let isDroppedAboveTabBar = screenPoint.y > (frameRelativeToScreen.maxY + 10)
+
+        // Create new window if dropped above tab bar or too far away
+        if isDroppedAboveTabBar || !screenPoint.isNearRect(frameRelativeToScreen, allowedDistance: Self.dropToOpenDistance) {
+            moveToNewWindow(from: sourceIndex,
+                           droppingPoint: screenPoint,
+                           burner: tabCollectionViewModel.isBurner)
+        }
     }
 
     func collectionView(_ collectionView: NSCollectionView,

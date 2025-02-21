@@ -61,6 +61,9 @@
 /* Open AI Chat action in the menu list */
 "action.title.duckai" = "Chat de IA";
 
+/* Duck.ai menu item opening a new chat */
+"action.title.duckai.new" = "Nuevo AI Chat";
+
 /* Edit Bookmark action */
 "action.title.edit.bookmark" = "Editar marcador";
 
@@ -84,6 +87,9 @@
 
 /* Open action */
 "action.title.open" = "Abrir";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "Contraseñas";
 
 /* Paste and Go action */
 "action.title.pasteAndGo" = "Pegar e ir";
@@ -123,6 +129,9 @@
 
 /* Share action */
 "action.title.share" = "Compartir";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "Nueva pestaña";
 
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Inferior";
@@ -294,6 +303,18 @@
 
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Cuando DuckDuckGo detecta ventanas emergentes de consentimiento de cookies en los sitios que visitas, podemos configurar automáticamente tus preferencias de cookies para minimizar las cookies y maximizar la privacidad y, a continuación, cerrar las ventanas emergentes. Algunos sitios no ofrecen la opción de administrar las preferencias de cookies, por lo que solo podemos ocultar ventanas emergentes de este tipo.";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
 
 /* Open Settings action for disabling autofill in Settings */
 "autofill.disable.prompt.action.open-settings" = "Abrir ajustes";
@@ -532,8 +553,11 @@
 /* Title displayed when there are no results on Autofill search */
 "autofill.logins.search.no-results.title" = "Sin resultados";
 
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
 /* Description of autofill onboarding prompt's secure storage feature
-Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.description" = "Las contraseñas se cifran, se almacenan en el dispositivo y se bloquean con %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
@@ -692,6 +716,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Delete bookmark folder alert delete button */
 "bookmark.deleteFolderAlert.deleteButton" = "Eliminar";
 
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
 /* Delete bookmark folder alert title */
 "bookmark.deleteFolderAlert.title" = "¿Eliminar %@?";
 
@@ -796,6 +823,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
 "contextual.onboarding.addToDock.tutorial.title" = "Añadirme a tu Dock es fácil.";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
 
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* ha intentado rastrearte aquí. Los he bloqueado.\n\n☝️ Pulsa en el escudo para obtener más información.";
@@ -910,6 +940,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.after.search.cta" = "¡Uf!";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
 
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.multiple.trackers.cta" = "¡Choca esos cinco!";
@@ -1037,9 +1070,6 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* No comment provided by engineer. */
 "Duck Address" = "Duck Address";
 
-/* No comment provided by engineer. */
-"Duck Player" = "Duck Player";
-
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player no disponible";
 
@@ -1052,8 +1082,8 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
 "duckai.preferences.text.markdown" = "Duck.ai es una función opcional que te permite chatear de forma anónima con modelos populares de chat de IA de terceros. Tus chats no se utilizan para entrenar a la IA.\n[Más información](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
-/* Toggle text to enable/disable AI Chat in the address bar */
-"duckai.settings.enable.address-bar-searching-toggle" = "Mostar Duck.ai en la página de búsqueda";
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "Mostrar Duck.ai en la barra de direcciones";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Mostrar Duck.ai en el menú del navegador";
@@ -1079,12 +1109,10 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Button that will dismiss the modal */
 "duckplayer.presentation.modal.dismiss-button" = "Entendido";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title" = "¿Te ahogas en anuncios en YouTube? ¡Prueba Duck Player!";
 
-/* Two line title (separated by 
-) for the feature explanation */
+/* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "¿Te ahogas en anuncios en YouTube? ¡No con Duck Player!";
 
 /* Footer label in the settings screen for Duck Player */
@@ -1921,6 +1949,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "En cualquier sitio, abre el menú ••• y selecciona **Añadir favorito** para añadirlo a tu nueva pestaña.";
 
+/* Do not translate - stringsdict entry */
+"number.of.tabs" = "number.of.tabs";
+
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gestionadas";
 
@@ -2105,9 +2136,9 @@ Description of autofill onboarding prompt's secure storage feature with a string
 "prefrences.sync.credentials-limit-exceeded-description" = "Has alcanzado el número máximo de contraseñas. Elimina algunas para reanudar la sincronización.";
 
 /* Description invalid credentials error when syncing.
-Description of incorrectly formatted data error when syncing.
-Description of too many requests error when syncing. */
-"prefrences.sync.invalid-login-description" = "Algunos marcadores o contraseñas tienen un formato incorrecto o demasiado largo y no se han sincronizado.";
+   Description of incorrectly formatted data error when syncing.
+   Description of too many requests error when syncing. */
+"prefrences.sync.invalid-login-description" = "Se ha producido un error en la sincronización. Intenta desactivar la sincronización en este dispositivo y, a continuación, vuelve a conectarte con otro dispositivo o con tu código de recuperación.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sincronización pausada";
@@ -2218,7 +2249,7 @@ Description of too many requests error when syncing. */
 "settings.add.widget.vpn" = "Añade el widget VPN de DuckDuckGo a tu pantalla de inicio";
 
 /* Name of the settings subsection related to the address bar
-Settings screen cell text for addess bar position */
+   Settings screen cell text for addess bar position */
 "settings.address.bar" = "Barra de direcciones";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2276,7 +2307,7 @@ Settings screen cell text for addess bar position */
 "settings.data.clearing" = "Eliminación de datos";
 
 /* Settings screen cell text for setting the app as default browser
-The name of Settings category in Privacy Features related to configuration of the default browser */
+   The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
 
 /* Label of a button disabling email protection */
@@ -2702,6 +2733,9 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
 "subscription.subscription.expiring.monthly.caption" = "Tu suscripción mensual caduca el %@.";
 
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "Tu prueba gratuita finaliza el %@ y no se convertirá en una suscripción de pago.";
+
 /* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
 "subscription.subscription.expiring.unknown.caption" = "Tu suscripción caduca el %@.";
 
@@ -2711,6 +2745,12 @@ The name of Settings category in Privacy Features related to configuration of th
 /* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
 "subscription.subscription.renewing.monthly.caption" = "Tu suscripción mensual se renueva el %@.";
 
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "Tu prueba gratuita finaliza el %@ y ese día pasará automáticamente a una suscripción mensual de pago.";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "Tu prueba gratuita finaliza el %@ y ese día se convertirá automáticamente en una suscripción anual de pago.";
+
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Tu suscripción se renueva el %@.";
 
@@ -2719,6 +2759,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Navigation bar Title for subscriptions */
 "subscription.title" = "Privacy Pro";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "Prueba gratuita activa";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Código de recuperación copiado en el portapapeles";
@@ -3052,6 +3095,9 @@ The name of Settings category in Privacy Features related to configuration of th
 
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "¡Has recibido una invitación!";
+
+/* No comment provided by engineer. */
+"Watch this video on YouTube" = "Ver este vídeo en YouTube";
 
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Favorito eliminado";

@@ -16,17 +16,14 @@
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
 "Gyy-py-IOg.accessibilityLabel" = "Karta nieprzeczytana";
 
-/* Class = "UIBarButtonItem"; title = "Close all tabs and clear data"; ObjectID = "h1S-c2-Spf"; */
-"h1S-c2-Spf.title" = "Zamknij wszystkie karty i wyczyść dane";
-
 /* Class = "UIButton"; accessibilityLabel = "Clear tabs and data"; ObjectID = "Hcx-F2-HgO"; */
 "Hcx-F2-HgO.accessibilityLabel" = "Wyczyść karty i dane";
 
 /* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
 "LbT-NO-T0G.text" = "Łącze";
 
-/* Class = "UIBarButtonItem"; title = "New Tab"; ObjectID = "nYf-xs-PE7"; */
-"nYf-xs-PE7.title" = "Nowa karta";
+/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
+"P3h-DO-2nT.title" = "Tytuł";
 
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
 "qrJ-aX-XrW.accessibilityLabel" = "Karta nieprzeczytana";

@@ -670,7 +670,7 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsSaving), .enabled)
     }
 
-    let exampleSubfeatureWithRolloutsConfig =
+    static func exampleSubfeatureWithRolloutsConfigTemplate(percent: Double) -> Data {
     """
     {
         "features": {
@@ -682,7 +682,7 @@ class AppPrivacyConfigurationTests: XCTestCase {
                         "state": "enabled",
                         "rollout": {
                             "steps": [{
-                                "percent": 5.0
+                                "percent": \(percent)
                             }]
                         }
                     }
@@ -692,6 +692,9 @@ class AppPrivacyConfigurationTests: XCTestCase {
         "unprotectedTemporary": []
     }
     """.data(using: .utf8)!
+    }
+
+    let exampleSubfeatureWithRolloutsConfig = exampleSubfeatureWithRolloutsConfigTemplate(percent: 5.0)
 
     func clearRolloutData(feature: String, subFeature: String) {
         UserDefaults().set(nil, forKey: "config.\(feature).\(subFeature).enabled")
@@ -811,6 +814,76 @@ class AppPrivacyConfigurationTests: XCTestCase {
         enabled = config.isSubfeatureEnabled(AutofillSubfeature.credentialsAutofill, randomizer: mockRandom(in:))
         XCTAssertTrue(enabled, "Feature should not be enabled if selected value above rollout")
         XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsAutofill), .enabled)
+    }
+
+    func testWhenCheckingSubfeatureStateAndRolloutStepChanges_SubfeatureMatchesOldEnabledResult() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: Self.exampleSubfeatureWithRolloutsConfigTemplate(percent: 50.0),
+                                                        etag: "test")
+        var manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: DefaultInternalUserDecider())
+
+        var config = manager.privacyConfig
+
+        clearRolloutData(feature: "autofill", subFeature: "credentialsSaving")
+
+        // This will allocate
+        mockRandomValue = 40
+        var enabled = config.isSubfeatureEnabled(AutofillSubfeature.credentialsSaving, randomizer: mockRandom(in:))
+        XCTAssertTrue(enabled, "Subfeature should be enabled")
+
+        let newMockEmbeddedData = MockEmbeddedDataProvider(data: Self.exampleSubfeatureWithRolloutsConfigTemplate(percent: 5.0),
+                                                           etag: "test")
+        manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                              fetchedData: nil,
+                                              embeddedDataProvider: newMockEmbeddedData,
+                                              localProtection: MockDomainsProtectionStore(),
+                                              internalUserDecider: DefaultInternalUserDecider())
+        config = manager.privacyConfig
+
+        // This should not be used
+        mockRandomValue = 0.99
+        enabled = config.isSubfeatureEnabled(AutofillSubfeature.credentialsSaving, randomizer: mockRandom(in:))
+
+        XCTAssertTrue(enabled, "Subfeature should be still enabled when rollout count does not changes")
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsSaving), .enabled)
+    }
+
+    func testWhenCheckingSubfeatureStateAndRolloutStepChanges_SubfeatureMatchesOldDisabledResult() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: Self.exampleSubfeatureWithRolloutsConfigTemplate(percent: 50.0),
+                                                        etag: "test")
+        var manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: DefaultInternalUserDecider())
+
+        var config = manager.privacyConfig
+
+        clearRolloutData(feature: "autofill", subFeature: "credentialsSaving")
+
+        // This won't allocate
+        mockRandomValue = 60
+        var enabled = config.isSubfeatureEnabled(AutofillSubfeature.credentialsSaving, randomizer: mockRandom(in:))
+        XCTAssertFalse(enabled, "Subfeature should not be enabled")
+
+        let newMockEmbeddedData = MockEmbeddedDataProvider(data: Self.exampleSubfeatureWithRolloutsConfigTemplate(percent: 5.0),
+                                                           etag: "test")
+        manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                              fetchedData: nil,
+                                              embeddedDataProvider: newMockEmbeddedData,
+                                              localProtection: MockDomainsProtectionStore(),
+                                              internalUserDecider: DefaultInternalUserDecider())
+        config = manager.privacyConfig
+
+        // This should not be used
+        mockRandomValue = 0.99
+        enabled = config.isSubfeatureEnabled(AutofillSubfeature.credentialsSaving, randomizer: mockRandom(in:))
+
+        XCTAssertFalse(enabled, "Subfeature should still be disabled when rollout count does not change")
+        XCTAssertEqual(config.stateFor(AutofillSubfeature.credentialsSaving), .disabled(.stillInRollout))
     }
 
     func testWhenCheckingSubfeatureStateAndRolloutSizeChanges_SubfeatureIsEnabledWithMultipleRolloutProbability() {

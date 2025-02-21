@@ -6,8 +6,8 @@ defaults:
 
 on:
   workflow_dispatch:
-  # schedule:
-  #    - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
+  schedule:
+    - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   pull_request:
     branches:
       - hotfix/*
@@ -111,9 +111,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-macos-
 
     - name: Select Xcode
       run: |
@@ -179,6 +179,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

@@ -6,6 +6,7 @@ defaults:
 
 on:
   workflow_dispatch:
+  # Disabled due to the macos-11 and macos-12 runners being deprecated
   # schedule:
   #   - cron: '0 4 * * *' # run at 4 AM UTC
 
@@ -85,9 +86,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-macos-
 
     - name: Select Xcode 14.2 for macOS 12
       if: matrix.runner == 'macos-12-large'

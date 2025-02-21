@@ -29,7 +29,7 @@ let package = Package(
             targets: ["DataBrokerProtectionShared"])
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/BrowserServicesKit", exact: "236.1.0"),
+        .package(path: "../../BrowserServicesKit"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
@@ -48,7 +48,8 @@ let package = Package(
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Freemium", package: "Freemium"),
             ],
-            resources: [.copy("Resources")],
+            // Commented out until this package needs to bundle resources, as it causes SwiftPM warnings:
+            // resources: [.copy("Resources")],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -61,10 +62,9 @@ let package = Package(
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-            ],
-            resources: [
-                .copy("Resources")
             ]
+            // Commented out until this package needs to bundle resources, as it causes SwiftPM warnings:
+            // resources: [.copy("Resources")]
         )
     ]
 )

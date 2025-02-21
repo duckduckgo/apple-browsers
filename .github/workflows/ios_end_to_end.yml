@@ -5,8 +5,8 @@ defaults:
     working-directory: iOS
 
 on:
-  # schedule:
-  #   - cron: '0 4 * * *' # run at 4 AM UTC
+  schedule:
+    - cron: '0 4 * * *' # run at 4 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -35,9 +35,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: iOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-ios-
 
     - name: Select Xcode
       run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
@@ -113,10 +113,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
     - name: Create Asana task when workflow failed
       run: |
         curl -s "https://app.asana.com/api/1.0/tasks" \
           --header "Accept: application/json" \
           --header "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
           --header "Content-Type: application/json" \
-          --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed. See https://github.com/duckduckgo/iOS/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'
+          --data ' { "data": { "name": "GH Workflow Failure - End to end tests", "workspace": "${{ vars.ASANA_WORKSPACE_ID }}", "projects": [ "${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}" ], "notes" : "The end to end workflow has failed. See https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}. For instructions on how to handle the failure(s), check https://app.asana.com/0/0/1206423571874502/f" } }'

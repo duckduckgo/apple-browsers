@@ -6,8 +6,8 @@ defaults:
 
 on:
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 5 * * *' # run at 5 AM UTC
+  schedule:
+    - cron: '0 5 * * *' # run at 5 AM UTC
 
 jobs:
   create-notarized-app:
@@ -83,6 +83,8 @@ jobs:
 
     - name: Download and unzip artifact
       uses: actions/download-artifact@v4
+      with:
+        path: macOS
 
     - name: Set cache key hash
       run: |
@@ -97,10 +99,10 @@ jobs:
       if: env.cache_key_hash
       uses: actions/cache@v4
       with:
-        path: DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ env.cache_key_hash }}
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-
+          ${{ runner.os }}-macos-
 
     - name: Select Xcode
       run: |
@@ -166,7 +168,7 @@ jobs:
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report ${{ matrix.runner }}"
-        report_paths: ui-tests.xml
+        report_paths: macOS/ui-tests.xml
         check_retries: true
 
     - name: Upload logs when workflow failed
@@ -175,8 +177,8 @@ jobs:
       with:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
-          xcodebuild.log
-          DerivedData/Logs/Test/*.xcresult
+          macOS/xcodebuild.log
+          macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
 
@@ -187,6 +189,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
     - name: Create Asana task when workflow failed
       uses: duckduckgo/native-github-asana-sync@v1.1
       with:

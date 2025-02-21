@@ -53,7 +53,7 @@ build_app() {
     fi
 
     echo "⏲️ Building the app"
-    set -o pipefail && xcodebuild -project "$project_root"/DuckDuckGo-iOS.xcodeproj \
+    set -o pipefail && xcodebuild -project "$project_root"/iOS/DuckDuckGo-iOS.xcodeproj \
                                   -scheme "iOS Browser" \
                                   -destination "platform=iOS Simulator,name=$destination_device,OS=$destination_os_version" \
                                   -derivedDataPath "$derived_data_path" \

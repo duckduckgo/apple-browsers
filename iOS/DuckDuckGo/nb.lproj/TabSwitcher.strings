@@ -16,17 +16,14 @@
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "Gyy-py-IOg"; */
 "Gyy-py-IOg.accessibilityLabel" = "Fane ulest";
 
-/* Class = "UIBarButtonItem"; title = "Close all tabs and clear data"; ObjectID = "h1S-c2-Spf"; */
-"h1S-c2-Spf.title" = "Lukk alle faner og slett data";
-
 /* Class = "UIButton"; accessibilityLabel = "Clear tabs and data"; ObjectID = "Hcx-F2-HgO"; */
 "Hcx-F2-HgO.accessibilityLabel" = "Lukk faner og slett data";
 
 /* Class = "UILabel"; text = "Link"; ObjectID = "LbT-NO-T0G"; */
 "LbT-NO-T0G.text" = "Lenke";
 
-/* Class = "UIBarButtonItem"; title = "New Tab"; ObjectID = "nYf-xs-PE7"; */
-"nYf-xs-PE7.title" = "Ny fane";
+/* Class = "UINavigationItem"; title = "Title"; ObjectID = "P3h-DO-2nT"; */
+"P3h-DO-2nT.title" = "Tittel";
 
 /* Class = "UIImageView"; accessibilityLabel = "Tab Unread"; ObjectID = "qrJ-aX-XrW"; */
 "qrJ-aX-XrW.accessibilityLabel" = "Fane ulest";

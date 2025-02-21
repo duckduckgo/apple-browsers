@@ -35,19 +35,6 @@ on:
         required: true
 
 jobs:
-  swiftlint:
-
-    name: SwiftLint
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: SwiftLint
-        uses: docker://norionomura/swiftlint:0.54.0_swift-5.9.0
-        with:
-          args: swiftlint --reporter github-actions-logging --strict
-
   shellcheck:
 
     name: ShellCheck
@@ -182,9 +169,9 @@ jobs:
       uses: actions/cache@v4
       with:
         path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-spm-${{ matrix.cache-key }}${{ env.cache_key_hash }}
+        key: ${{ runner.os }}-macos-${{ matrix.cache-key }}${{ env.cache_key_hash }}
         restore-keys: |
-          ${{ runner.os }}-spm-${{ matrix.cache-key }}
+          ${{ runner.os }}-macos-${{ matrix.cache-key }}
 
     - name: Select Xcode
       run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
@@ -415,15 +402,17 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [swiftlint, bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
       - name: Create Asana Task
-        uses: duckduckgo/BrowserServicesKit/.github/actions/asana-failed-pr-checks@main
+        uses: ./.github/actions/asana-failed-pr-checks
         with:
           action: create-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -432,15 +421,17 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [swiftlint, bats, tests, release-build, verify-autoconsent-bundle, private-api]
+    needs: [bats, tests, release-build, verify-autoconsent-bundle, private-api]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
       - name: Close Asana Task
-        uses: duckduckgo/BrowserServicesKit/.github/actions/asana-failed-pr-checks@main
+        uses: ./.github/actions/asana-failed-pr-checks
         with:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}

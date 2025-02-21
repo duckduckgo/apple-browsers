@@ -55,6 +55,10 @@ class SecureVaultManagerTests: XCTestCase {
     private var testVault: (any AutofillSecureVault)!
     private var secureVaultManagerDelegate: MockSecureVaultManagerDelegate!
     private var manager: SecureVaultManager!
+    static let tld = TLD()
+    var tld: TLD {
+        Self.tld
+    }
 
     override func setUp() {
         super.setUp()
@@ -66,7 +70,7 @@ class SecureVaultManagerTests: XCTestCase {
 
         self.testVault = DefaultAutofillSecureVault(providers: providers)
         self.secureVaultManagerDelegate = MockSecureVaultManagerDelegate()
-        self.manager = SecureVaultManager(vault: self.testVault, shouldAllowPartialFormSaves: true)
+        self.manager = SecureVaultManager(vault: self.testVault, shouldAllowPartialFormSaves: true, tld: tld)
         self.manager.delegate = secureVaultManagerDelegate
     }
 
@@ -211,7 +215,7 @@ class SecureVaultManagerTests: XCTestCase {
             }
         }
 
-        self.manager = SecureVaultManager(vault: self.testVault, includePartialAccountMatches: true, tld: TLD())
+        self.manager = SecureVaultManager(vault: self.testVault, tld: tld)
         self.secureVaultManagerDelegate = SecureVaultDelegate()
         self.manager.delegate = self.secureVaultManagerDelegate
 
@@ -256,7 +260,7 @@ class SecureVaultManagerTests: XCTestCase {
             }
         }
 
-        self.manager = SecureVaultManager(vault: self.testVault, includePartialAccountMatches: true, tld: TLD())
+        self.manager = SecureVaultManager(vault: self.testVault, tld: tld)
         self.secureVaultManagerDelegate = SecureVaultDelegate()
         self.manager.delegate = self.secureVaultManagerDelegate
 
@@ -286,13 +290,8 @@ class SecureVaultManagerTests: XCTestCase {
         waitForExpectations(timeout: 0.1)
     }
 
-    func testWhenRequestingAutofillInitDataWithDomainAndPort_withPartialMatches_ThenDataIsReturned() throws {
-        self.manager = SecureVaultManager(vault: self.testVault, includePartialAccountMatches: true, tld: TLD())
-        try assertWhenRequestingAutofillInitDataWithDomainAndPort_ThenDataIsReturned()
-    }
-
-    func testWhenRequestingAutofillInitDataWithDomainAndPort_withoutPartialMatches_ThenDataIsReturned() throws {
-        self.manager = SecureVaultManager(vault: self.testVault, includePartialAccountMatches: false, tld: TLD())
+    func testWhenRequestingAutofillInitDataWithDomainAndPort_ThenDataIsReturned() throws {
+        self.manager = SecureVaultManager(vault: self.testVault, tld: tld)
         try assertWhenRequestingAutofillInitDataWithDomainAndPort_ThenDataIsReturned()
     }
 
@@ -347,7 +346,7 @@ class SecureVaultManagerTests: XCTestCase {
             }
         }
 
-        self.manager = SecureVaultManager(vault: self.testVault, includePartialAccountMatches: true, tld: TLD())
+        self.manager = SecureVaultManager(vault: self.testVault, tld: tld)
         self.secureVaultManagerDelegate = SecureVaultDelegate()
         self.manager.delegate = self.secureVaultManagerDelegate
 

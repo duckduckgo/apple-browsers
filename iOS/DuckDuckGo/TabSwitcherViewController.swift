@@ -190,24 +190,6 @@ class TabSwitcherViewController: UIViewController {
         }
     }
 
-    @objc func handleLongPress(gesture: UILongPressGestureRecognizer) {
-        switch gesture.state {
-        case .began:
-            guard let path = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else { return }
-            collectionView.beginInteractiveMovementForItem(at: path)
-
-        case .changed:
-            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: collectionView))
-
-        case .ended:
-            collectionView.endInteractiveMovement()
-
-        default:
-            collectionView.cancelInteractiveMovement()
-        }
-
-    }
-
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         collectionView.collectionViewLayout.invalidateLayout()
@@ -222,6 +204,12 @@ class TabSwitcherViewController: UIViewController {
 
     func refreshTitle() {
         topBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
+
+        guard interfaceMode.isMultiSelection else { return }
+
+        if !selectedTabs.isEmpty {
+            topBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
+        }
     }
 
     func displayBookmarkAllStatusMessage(with results: BookmarkAllResult, openTabsCount: Int) {
@@ -371,6 +359,7 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
         
         return cell
     }
+
 }
 
 extension TabSwitcherViewController: UICollectionViewDelegate {
@@ -379,16 +368,18 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         Pixel.fire(pixel: .tabSwitcherSwitchTabs)
         currentSelection = indexPath.row
         if isEditing {
-            (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.toggleSelection()
+            (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             updateUIForSelectionMode()
+            refreshTitle()
         } else {
             markCurrentAsViewedAndDismiss()
         }
     }
 
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.toggleSelection()
+        (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
         updateUIForSelectionMode()
+        refreshTitle()
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
@@ -406,21 +397,33 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
 
-        assert(!indexPaths.isEmpty)
-
         guard interfaceMode.isMultiSelection else { return nil }
+
+        // This can happen if you long press in the whitespace
+        guard !indexPaths.isEmpty else { return nil }
 
         let title = indexPaths.count == 1 ?
             trimMenuTitleIfNeeded(tabsModel.get(tabAt: indexPaths[0].row).link?.displayTitle ?? "", 50) :
-            UserText.numberOfTabs(indexPaths.count)
+        UserText.numberOfSelectedTabs(withCount: indexPaths.count)
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
             let menuItems = indexPaths.count == 1 ?
                 self.createLongPressMenuItemsForSingleTab(forIndex: indexPaths[0].row) :
                 self.createLongPressMenuItemsForMultipleTabs()
             return UIMenu(title: title, children: menuItems.compactMap { $0 })
         }
 
+        return configuration
+    }
+
+    func collectionView(_ collectionView: UICollectionView, willEndContextMenuInteraction configuration: UIContextMenuConfiguration, animator: (any UIContextMenuInteractionAnimating)?) {
+        if let selected = collectionView.indexPathsForSelectedItems {
+            collectionView.reloadItems(at: selected)
+            selected.forEach {
+                collectionView.selectItem(at: $0, animated: false, scrollPosition: [])
+                self.collectionView(collectionView, didSelectItemAt: $0)
+            }
+        }
     }
 
 }
@@ -504,14 +507,18 @@ extension TabSwitcherViewController {
                 
         collectionView.reloadData()
     }
+
 }
 
+// These don't appear to do anything but at least one needs to exist for dragging to even work
 extension TabSwitcherViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        guard let cell = collectionView.cellForItem(at: indexPath),
-              let snapshot = cell.createImageSnapshot() else { return [] }
-        return [.init(itemProvider: .init(object: snapshot))]
+        return [UIDragItem(itemProvider: NSItemProvider())]
+    }
+
+    func collectionView(_ collectionView: UICollectionView, itemsForAddingTo session: any UIDragSession, at indexPath: IndexPath, point: CGPoint) -> [UIDragItem] {
+        return [UIDragItem(itemProvider: NSItemProvider())]
     }
 
 }
@@ -543,15 +550,16 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
             collectionView.insertItems(at: [destination])
         } completion: { _ in
             if self.isEditing {
-                collectionView.reloadData()
+                collectionView.reloadData() // Clears the selection
                 collectionView.selectItem(at: destination, animated: true, scrollPosition: [])
+                self.refreshBarButtons()
             } else {
                 collectionView.reloadItems(at: [IndexPath(row: self.currentSelection ?? 0, section: 0)])
             }
             self.delegate.tabSwitcherDidReorderTabs(tabSwitcher: self)
+            coordinator.drop(item.dragItem, toItemAt: destination)
         }
 
-        coordinator.drop(item.dragItem, toItemAt: destination)
     }
 
 }

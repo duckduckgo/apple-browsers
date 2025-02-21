@@ -94,6 +94,12 @@ extension DebugScreensViewModel {
                     CookieDebugViewController(coder: coder, fireproofing: d.fireproofing)
                 }
             }),
+            .controller(title: "Keychain Items", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "KeychainItemsDebugViewController") { coder in
+                    KeychainItemsDebugViewController(coder: coder)
+                }
+            }),
         ]
     }
 

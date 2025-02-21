@@ -35,7 +35,13 @@ public protocol SubscriptionManager {
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
     func loadInitialData()
     func refreshCachedSubscriptionAndEntitlements(completion: @escaping (_ isSubscriptionActive: Bool) -> Void)
+
+    /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
+
+    /// Purchase page URL when launched as a result of intercepted `/pro` navigation.
+    /// It is created based on current `SubscriptionURL.purchase` and inherits designated URL components from the source page that triggered redirect.
+    func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
 }
 
@@ -156,6 +162,22 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     public func url(for type: SubscriptionURL) -> URL {
         type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+    }
+
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
+        let defaultPurchaseURL = url(for: .purchase)
+
+        if var purchaseURLComponents = URLComponents(url: defaultPurchaseURL, resolvingAgainstBaseURL: true) {
+
+            purchaseURLComponents.addingSubdomain(from: redirectURLComponents, tld: tld)
+            purchaseURLComponents.addingPort(from: redirectURLComponents)
+            purchaseURLComponents.addingFragment(from: redirectURLComponents)
+            purchaseURLComponents.addingQueryItems(from: redirectURLComponents)
+
+            return purchaseURLComponents.url ?? defaultPurchaseURL
+        }
+
+        return defaultPurchaseURL
     }
 
     // MARK: - Current subscription's features

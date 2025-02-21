@@ -100,6 +100,12 @@ extension DebugScreensViewModel {
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
+            .controller(title: "Autofill", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                    AutofillDebugViewController(coder: coder)
+                }
+            }),
         ]
     }
 

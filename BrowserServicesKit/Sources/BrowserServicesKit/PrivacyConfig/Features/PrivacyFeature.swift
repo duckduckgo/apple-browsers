@@ -67,6 +67,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case tabManager
     case webViewStateRestoration
+    case experimentalBrowserTheming
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

@@ -79,6 +79,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
+
+    /// Umbrella flag for experimental browser theming and appearance
+    /// https://app.asana.com/0/1206226850447395/1209291055975934
+    case experimentalBrowserTheming
+
+    case alternativeColorScheme
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -95,7 +101,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming:
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
@@ -184,6 +190,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .experimentalBrowserTheming:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .alternativeColorScheme:
+            return .internalOnly()
         }
     }
 }

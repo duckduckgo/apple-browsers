@@ -1,5 +1,5 @@
 //
-//  PrivacyConfigurationManager.swift
+//  Locked.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import Foundation
 
 @propertyWrapper
-class Locked<Value> {
+final class Locked<Value> {
     private var value: Value
     private let lock = NSLock()
 

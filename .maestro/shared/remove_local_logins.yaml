@@ -1,6 +1,7 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
+- tapOn: Browsing menu
 - tapOn: Settings
 - scrollUntilVisible:
     element: Passwords

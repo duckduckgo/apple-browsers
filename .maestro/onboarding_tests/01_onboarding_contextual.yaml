@@ -11,6 +11,10 @@ tags:
         ONBOARDING_COMPLETED: "false"
         APP_VARIANT: "mh"
 
+# Get past linear onboarding screens
+- runFlow:
+    file: shared/onboarding.yaml
+
 # Handle Search Suggestions
 - assertVisible: "Ready to get started?\nTry a search!"
 - assertVisible: "Surprise Me!"

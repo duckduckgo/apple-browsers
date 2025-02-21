@@ -90,6 +90,8 @@ struct Foreground: ForegroundHandling {
     /// If your service needs to perform async work, handle it **within the service** instead of spawning `Task {}` blocks here.
     /// This ensures that each service manages its own async execution without unnecessary indirection.
     func onTransition() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+
         configureAppearance()
 
         let vpnService = services.vpnService
@@ -152,13 +154,17 @@ extension Foreground {
     /// **Important note**
     /// By default, suspend any services in the `onTransition()` method of the `Background` state.
     /// Use this method only to pause specific tasks, like video playback, when the app displays a system alert.
-    func willLeave() { }
+    func willLeave() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+    }
 
     /// Called when the app resumes activity after being **paused** or when transitioning from launching or background.
     /// This is the counterpart to `willLeave()`.
     ///
     /// Use this method to revert any actions performed in `willLeave()` (if applicable).
-    func didReturn() { }
+    func didReturn() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+    }
 
 }
 

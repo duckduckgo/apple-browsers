@@ -53,6 +53,8 @@ struct Launching: LaunchingHandling {
     // MARK: - Handle application(_:didFinishLaunchingWithOptions:) logic here
 
     init() throws {
+        Logger.lifecycle.info("Launching: \(#function)")
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
 

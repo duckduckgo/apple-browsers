@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
@@ -43,6 +44,8 @@ struct Background: BackgroundHandling {
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
     func onTransition() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+
         services.vpnService.suspend()
         services.authenticationService.suspend()
         services.autoClearService.suspend()
@@ -67,6 +70,7 @@ extension Background {
     /// Use this method to resume **UI related tasks** that need to be completed promptly, preventing UI glitches when the user first sees the app.
     /// This ensures that the app remains smooth as it enters the foreground.
     func willLeave() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
         ThemeManager.shared.updateUserInterfaceStyle()
         services.autoClearService.resume()
     }
@@ -76,7 +80,9 @@ extension Background {
     /// This is the counterpart to `willLeave()`.
     ///
     /// Use this method to revert any actions performed in `willLeave` (if applicable).
-    func didReturn() { }
+    func didReturn() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+    }
 
 }
 

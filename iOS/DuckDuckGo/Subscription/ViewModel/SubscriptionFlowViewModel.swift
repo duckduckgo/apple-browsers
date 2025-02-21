@@ -93,7 +93,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
         // For internal user allow these domains as required for DUO based authentication flow
         if isInternalUser {
-            allowedDomains.formUnion(["duosecurity.com" , "login.microsoftonline.com"])
+            allowedDomains.formUnion(["use-login.duckduckgo.com", "duosecurity.com" , "login.microsoftonline.com"])
         }
 
         assert(!allowedDomains.isEmpty, "Allowed domains should not be empty.")

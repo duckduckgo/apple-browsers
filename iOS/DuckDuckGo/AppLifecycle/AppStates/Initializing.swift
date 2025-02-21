@@ -27,6 +27,7 @@ import UIKit
 struct Initializing: InitializingHandling {
 
     init() {
+        Logger.lifecycle.info("Initializing: \(#function)")
         CrashHandlersConfiguration.setupCrashHandlers()
     }
 

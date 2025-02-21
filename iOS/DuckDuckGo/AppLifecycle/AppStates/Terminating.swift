@@ -24,11 +24,13 @@ struct Terminating: TerminatingHandling {
     let terminationError: UIApplication.TerminationError
 
     init() {
+        Logger.lifecycle.info("Terminating: \(#function)")
         fatalError("App is in unrecoverable state")
     }
 
     init(terminationError: UIApplication.TerminationError,
          application: UIApplication = UIApplication.shared) {
+        Logger.lifecycle.info("Terminating: \(#function)")
         self.terminationError = terminationError
         alertAndTerminate(application: application)
     }

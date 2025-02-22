@@ -197,6 +197,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         return true
     }
 
+    // Resets the updater state, configures it with dependencies/settings
+    //
+    // - Parameters:
+    //   - needsUpdateCheck: A flag indicating whether to perform a new appcast check.
+    //     Set to `true` if the pending update might be obsolete.
+    //     Defaults to `false`
     private func configureUpdater(needsUpdateCheck: Bool = false) throws {
         // Workaround to reset the updater state
         cachedUpdateResult = nil

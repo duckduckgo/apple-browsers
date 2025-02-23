@@ -1,0 +1,29 @@
+name: Release Pixel Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version of the release'
+        required: true
+      platform:
+        description: "The platform of the release (ios or macos)"
+        required: true
+        type: choice
+        options:
+          - ios
+          - macos
+
+jobs:
+  send_pixel:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Send Release Annotation Pixel
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ github.event.inputs.version }}
+          platform: ${{ github.event.inputs.platform }}

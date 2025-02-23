@@ -395,6 +395,14 @@ jobs:
             task_url:"${{ env.asana-task-url }}" \
             template_name:"${{ steps.asana-templates.outputs.release-task-comment-template }}"
 
+      - name: Send release annotation pixel
+        if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ steps.verify-tag.outputs.release-version }}
+          platform: "macos"
+
   # This is only run for public and hotfix releases
   create-variants:
 

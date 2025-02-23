@@ -38,6 +38,21 @@ extension DebugScreensViewModel {
             .action(title: "Reset TipTik", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
+            .action(title: "Generate Diagnostic Report", { d in
+                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+
+                class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
+                    func dataGatheringStarted() {
+                        ActionMessageView.present(message: "Data Gathering Started... please wait")
+                    }
+                    
+                    func dataGatheringComplete() {
+                        ActionMessageView.present(message: "Data Gathering Complete")
+                    }
+                }
+
+                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), fireproofing: d.fireproofing)], fromView: controller.view)
+            }),
 
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in

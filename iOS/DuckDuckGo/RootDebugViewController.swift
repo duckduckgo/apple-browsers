@@ -31,7 +31,7 @@ import SwiftUI
 import UIKit
 import WebKit
 
-// MARK: Please Use DebugScreensViewController to add new debug views - do not add anything else this as it will be removed")
+// MARK: Please Use DebugScreensViewController to add new debug views - do not add anything else this as it will be removed, thanks.")
 class RootDebugViewController: UITableViewController {
 
     enum Row: Int {

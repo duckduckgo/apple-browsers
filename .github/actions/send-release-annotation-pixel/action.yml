@@ -15,6 +15,7 @@ inputs:
     default: "ios"
 
 runs:
+  using: "composite"
   steps:
     - name: "Send Release Annotation Pixel"
       shell: bash

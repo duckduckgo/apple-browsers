@@ -20,6 +20,9 @@
 import Foundation
 import SwiftUI
 import UIKit
+import WebKit
+import BareBonesBrowserKit
+import Core
 
 extension DebugScreensViewModel {
 
@@ -78,6 +81,21 @@ extension DebugScreensViewModel {
             }),
             .view(title: "Remote Messaging", { _ in
                 RemoteMessagingDebugRootView()
+            }),
+            .view(title: "Vanilla Web View", { d in
+                let configuration = WKWebViewConfiguration()
+                configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+                configuration.processPool = WKProcessPool()
+
+                let ddgURL = URL(string: "https://duckduckgo.com/")!
+                let tab = d.tabManager.model.safeGetTabAt(d.tabManager.model.currentIndex)
+                let url = tab?.link?.url ?? ddgURL
+                return BareBonesBrowserView(initialURL: url,
+                                            homeURL: ddgURL,
+                                            uiDelegate: nil,
+                                            configuration: configuration,
+                                            userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+
             }),
 
             // MARK: Controllers

@@ -164,12 +164,9 @@ class RootDebugViewController: UITableViewController {
            let cell = tableView.cellForRow(at: indexPath) {
 
             switch row {
-
-            // MARK: Actions that need migrating
-            case .openVanillaBrowser:
+            case .openVanillaBrowser: // brindy migrated
                 openVanillaBrowser(nil)
 
-            // MARK: Migrated to debug screen
             case .resetTipKit: // brindy - migrated
                 tipKitUIActionHandler.resetTipKitTapped()
 

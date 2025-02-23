@@ -189,3 +189,10 @@ jobs:
           bundle exec fastlane run asana_add_comment \
             task_url:"${{ env.asana-task-url }}" \
             template_name:"${{ steps.asana-templates.outputs.release-task-comment-template }}"
+
+      - name: Send release annotation pixel
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ env.TAG }}
+          platform: "ios"

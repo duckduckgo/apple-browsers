@@ -1,7 +1,6 @@
 name: Release Pixel Test
 
 on:
-  push:
   workflow_dispatch:
     inputs:
       version:

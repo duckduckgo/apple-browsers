@@ -1,6 +1,7 @@
 name: Release Pixel Test
 
 on:
+  push:
   workflow_dispatch:
     inputs:
       version:
@@ -16,6 +17,7 @@ on:
 
 jobs:
   send_pixel:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

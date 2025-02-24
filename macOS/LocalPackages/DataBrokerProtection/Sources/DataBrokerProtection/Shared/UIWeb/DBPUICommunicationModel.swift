@@ -415,3 +415,17 @@ extension DBPUIInitialScanState {
               scanProgress: DBPUIScanProgress(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 }
+
+struct DBPUIVPNExclusionConfigSetting: DBPUISendableMessage {
+    let excluded: Bool
+}
+
+struct DBPUIVPNExclusionSettingUpdateRequest: DBPUISendableMessage {
+    let excluded: Bool
+    let version: Int
+}
+
+struct DBPUIVPNExclusionSettingUpdateResult: DBPUISendableMessage {
+    let success: Bool
+    let version: Int
+}

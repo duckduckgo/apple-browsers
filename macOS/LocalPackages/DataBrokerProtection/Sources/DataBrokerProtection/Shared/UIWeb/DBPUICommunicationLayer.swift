@@ -62,6 +62,8 @@ enum DBPUIReceivedMethodName: String {
     case getBackgroundAgentMetadata
     case getFeatureConfig
     case openSendFeedbackModal
+    case getVPNExclusionSetting = "getVpnExclusionSetting"
+    case setVPNExclusionSetting = "setVpnExclusionSetting"
 }
 
 enum DBPUISendableMethodName: String {
@@ -70,6 +72,7 @@ enum DBPUISendableMethodName: String {
 
 struct DBPUICommunicationLayer: Subfeature {
     private let webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable
+    private let dbpSettings: DataBrokerProtectionSettings
     private let privacyConfig: PrivacyConfigurationManaging
 
     var messageOriginPolicy: MessageOriginPolicy
@@ -83,8 +86,10 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     internal init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                  dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .dbp),
                   privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
+        self.dbpSettings = dbpSettings
         self.privacyConfig = privacyConfig
         self.messageOriginPolicy = .only(rules: [
             .exact(hostname: webURLSettings.selectedURLHostname)
@@ -116,6 +121,8 @@ struct DBPUICommunicationLayer: Subfeature {
         case .getBackgroundAgentMetadata: return getBackgroundAgentMetadata
         case .getFeatureConfig: return getFeatureConfig
         case .openSendFeedbackModal: return openSendFeedbackModal
+        case .getVPNExclusionSetting: return getVPNExclusionSetting
+        case .setVPNExclusionSetting: return setVPNExclusionSetting
         }
 
     }
@@ -311,5 +318,20 @@ struct DBPUICommunicationLayer: Subfeature {
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         await delegate?.openSendFeedbackModal()
         return nil
+    }
+
+    func getVPNExclusionSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DBPUIVPNExclusionConfigSetting(excluded: dbpSettings.bypassVPN)
+    }
+
+    func setVPNExclusionSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let result = try? JSONDecoder().decode(DBPUIVPNExclusionSettingUpdateRequest.self, from: data) else {
+            Logger.dataBrokerProtection.log("Failed to parse setVpnExclusionSetting message")
+            throw DBPUIError.malformedRequest
+        }
+
+        dbpSettings.bypassVPN = result.excluded
+        return DBPUIVPNExclusionSettingUpdateResult(success: true, version: Constants.version)
     }
 }

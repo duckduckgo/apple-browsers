@@ -94,6 +94,22 @@ public final class DataBrokerProtectionSettings {
             defaults.dataBrokerProtectionShowMenuBarIcon = newValue
         }
     }
+
+    // MARK: - VPN exclusion
+
+    public var bypassVPNPublisher: AnyPublisher<Bool, Never> {
+        defaults.dataBrokerProtectionBypassVPNPublisher
+    }
+
+    public var bypassVPN: Bool {
+        get {
+            defaults.dataBrokerProtectionBypassVPN
+        }
+        
+        set {
+            defaults.dataBrokerProtectionBypassVPN = newValue
+        }
+    }
 }
 
 extension UserDefaults {
@@ -104,6 +120,11 @@ extension UserDefaults {
     static let showMenuBarIconDefaultValue = false
     private var showMenuBarIconKey: String {
         "dataBrokerProtectionShowMenuBarIcon"
+    }
+
+    static let bypassVPNDefaultValue = true
+    private var bypassVPNKey: String {
+        "dataBrokerProtectionBypassVPN"
     }
 
     // MARK: - Environment
@@ -148,5 +169,26 @@ extension UserDefaults {
 
     var networkProtectionSettingShowInMenuBarPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.dataBrokerProtectionShowMenuBarIcon).eraseToAnyPublisher()
+    }
+
+    // MARK: - VPN exclusion
+
+    @objc
+    dynamic var dataBrokerProtectionBypassVPN: Bool {
+        get {
+            value(forKey: bypassVPNKey) as? Bool ?? Self.bypassVPNDefaultValue
+        }
+
+        set {
+            guard newValue != dataBrokerProtectionBypassVPN else {
+                return
+            }
+
+            set(newValue, forKey: bypassVPNKey)
+        }
+    }
+
+    var dataBrokerProtectionBypassVPNPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.dataBrokerProtectionBypassVPN).eraseToAnyPublisher()
     }
 }

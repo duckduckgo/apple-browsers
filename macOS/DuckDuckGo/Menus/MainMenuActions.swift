@@ -822,7 +822,7 @@ extension MainViewController {
     }
 
     @objc func crashOnCxxException(_ sender: Any?) {
-        throwTestCppExteption()
+        throwTestCppException()
     }
 
     @objc func resetSecureVaultData(_ sender: Any?) {

@@ -424,9 +424,16 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Called when the Orientation notification is changed
     @objc private func orientationDidChange() {
         let orientation = UIDevice.current.orientation
-        if let url = hostView?.url, url.isDuckPlayer {
-            handleOrientationChange(orientation)
+        
+        // Only proceed with orientation change if DuckPlayer is visible
+        guard let hostView = hostView,
+              let hostViewDelegate = hostView.delegate,
+              hostViewDelegate.tabCheckIfItsBeingCurrentlyPresented(hostView),
+              let url = hostView.url,
+              url.isDuckPlayer else {
+            return
         }
+        handleOrientationChange(orientation)
     }
     
     /// Handles UI Updates based on orientation.  When switching to landscape, we hide

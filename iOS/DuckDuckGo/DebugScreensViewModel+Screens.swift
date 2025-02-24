@@ -38,7 +38,7 @@ extension DebugScreensViewModel {
                 let syncPromoPresenter = SyncPromoManager(syncService: d.syncService)
                 syncPromoPresenter.resetPromos()
             }),
-            .action(title: "Reset TipTik", { d in
+            .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
             .action(title: "Generate Diagnostic Report", { d in

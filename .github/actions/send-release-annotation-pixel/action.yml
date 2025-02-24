@@ -26,9 +26,9 @@ runs:
         fi
 
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-          pixel_name="m_test_pixel_debug_${{ inputs.platform }}" # TODO rename
+          pixel_name="m_new_release_debug_${{ inputs.platform }}"
         else
-          pixel_name="m_test_pixel_${{ inputs.platform }}" # TODO rename
+          pixel_name="m_new_release_${{ inputs.platform }}"
         fi
 
         status=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://improving.duckduckgo.com/t/${pixel_name}?appVersion=${{ inputs.version }}")

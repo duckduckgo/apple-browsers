@@ -74,17 +74,6 @@ final class DataImportViewModel: ObservableObject {
         case step1 = 1
         case step2
 
-        private var deviceType: String {
-            switch UIDevice.current.userInterfaceIdiom {
-            case .phone:
-                return UserText.deviceTypeiPhone
-            case .pad:
-                return UserText.deviceTypeiPad
-            default:
-                return UserText.deviceTypeDefault
-            }
-        }
-
         func attributedInstructions(for state: BrowserImportState) -> AttributedString {
             switch (state.browser, state.importScreen) {
             case (.safari, .bookmarks):
@@ -99,83 +88,51 @@ final class DataImportViewModel: ObservableObject {
         private func attributedInstructionsForSafariBookmarks() -> AttributedString {
             switch self {
             case .step1:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportPasswordsInstructionsSafariStep1,
-                        UserText.deviceTypeiPhone,
-                        UserText.dataImportPasswordsInstructionsSafariStep1SystemSettings
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsSafariStep1SystemSettings)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportInstructionsSafariStep1)
+                } catch {
+                    return AttributedString(UserText.dataImportInstructionsSafariStep1)
+                }
             case .step2:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportInstructionsSafariStep2,
-                        UserText.dataImportInstructionsSafariStep2History,
-                        UserText.dataImportInstructionsSafariStep2Export,
-                        UserText.dataImportInstructionsSafariStep2Bookmarks
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2History)
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2Export)
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2Bookmarks)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportInstructionsSafariStep2Bookmarks)
+                } catch {
+                    return AttributedString(UserText.dataImportInstructionsSafariStep2Bookmarks)
+                }
             }
         }
 
         private func attributedInstructionsForSafariPasswords() -> AttributedString {
             switch self {
             case .step1:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportPasswordsInstructionsSafariStep1,
-                        UserText.deviceTypeiPhone,
-                        UserText.dataImportPasswordsInstructionsSafariStep1SystemSettings
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsSafariStep1SystemSettings)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportInstructionsSafariStep1)
+                } catch {
+                    return AttributedString(UserText.dataImportInstructionsSafariStep1)
+                }
             case .step2:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportInstructionsSafariStep2,
-                        UserText.dataImportInstructionsSafariStep2History,
-                        UserText.dataImportInstructionsSafariStep2Export,
-                        UserText.dataImportInstructionsSafariStep2Passwords
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2History)
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2Export)
-                attributedString.applyBoldStyle(to: UserText.dataImportInstructionsSafariStep2Passwords)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportInstructionsSafariStep2Passwords)
+                } catch {
+                    return AttributedString(UserText.dataImportInstructionsSafariStep2Passwords)
+                }
             }
         }
 
         private func attributedInstructionsForChrome() -> AttributedString {
             switch self {
             case .step1:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportPasswordsInstructionsChromeStep1,
-                        UserText.dataImportPasswordsInstructionsChromeStep1PasswordManager,
-                        UserText.dataImportPasswordsInstructionsChromeStep1Settings
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsChromeStep1PasswordManager)
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsChromeStep1Settings)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportPasswordsInstructionsChromeStep1)
+                } catch {
+                    return AttributedString(UserText.dataImportPasswordsInstructionsChromeStep1)
+                }
             case .step2:
-                var attributedString = AttributedString(
-                    String(
-                        format: UserText.dataImportPasswordsInstructionsChromeStep2,
-                        UserText.dataImportPasswordsInstructionsStep2ChromeHistory,
-                        UserText.dataImportPasswordsInstructionsStep2ChromeExport
-                    )
-                )
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsStep2ChromeHistory)
-                attributedString.applyBoldStyle(to: UserText.dataImportPasswordsInstructionsStep2ChromeExport)
-                return attributedString
+                do {
+                    return try AttributedString(markdown: UserText.dataImportPasswordsInstructionsChromeStep2)
+                } catch {
+                    return AttributedString(UserText.dataImportPasswordsInstructionsChromeStep2)
+                }
             }
         }
     }
@@ -362,17 +319,5 @@ final class DataImportViewModel: ObservableObject {
             ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, fileName))
         }
      }
-
-}
-
-// MARK: - AttributedString
-
-private extension AttributedString {
-
-    mutating func applyBoldStyle(to substring: String) {
-        if let range = self.range(of: substring) {
-            self[range].font = Font.body.bold()
-        }
-    }
 
 }

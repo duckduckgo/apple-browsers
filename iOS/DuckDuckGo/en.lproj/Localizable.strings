@@ -915,7 +915,7 @@
 "data.import.bookmarks.instructions.header" = "How to export bookmarks from Safari";
 
 /* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Select the file containing bookmarks. This is usually a ZIP or HTML file..";
+"data.import.bookmarks.subtitle" = "Select the file containing bookmarks. This is usually a ZIP or HTML file.";
 
 /* Title for screen to import bookmarks */
 "data.import.bookmarks.title" = "Import Bookmarks to DuckDuckGo";
@@ -938,48 +938,26 @@
 /* File type for ZIP files */
 "data.import.file-type.zip" = "ZIP";
 
-/* Step 2 for instructions to import passwords.'Scroll to History and Website Data and select Export, check the box for Passwords, and save the file.' */
-"data.import.instructions.safari.step2" = "Scroll to %1$@ and select %2$@, check the box for %3$@, and save the file.";
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Select **Export**, and on the next screen select **Bookmarks** and **Save to Downloads**.";
 
-/* first parameter for autofill.import.passwords.instructions.safari.step2 */
-"data.import.instructions.safari.step2.history" = "History and Website Data";
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Select **Export**, and on the next screen select **Passwords** and **Save to Downloads**.";
 
 /* Button label to select zip or csv file for importing */
 "data.import.passwords.file-button" = "Import Passwords File...";
 
-/* Step 1 for instructions to import passwords from Chrome -> 'In Chrome, go to Google Password Manager and then Settings' */
-"data.import.passwords.instructions.chrome.step1" = "In Chrome, go to %1$@ and then %2$@.";
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "In Chrome, go to **Google Password Manager** and then **Settings**.";
 
-/* first parameter for autofill.import.passwords.instructions.chrome.step1 */
-"data.import.passwords.instructions.chrome.step1.google" = "Google Password Manager";
-
-/* second parameter for autofill.import.passwords.instructions.chrome.step1 */
-"data.import.passwords.instructions.chrome.step1.settings" = "Settings";
-
-/* Step 2 for instructions to import passwords. 'Select Export passwords, then Save to Files and save the file in a folder that you can remember' */
-"data.import.passwords.instructions.chrome.step2" = "Select %1$@, then %2$@ and save the file in a folder that you can remember.";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"data.import.passwords.instructions.chrome.step2.export" = "Export passwords";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"data.import.passwords.instructions.chrome.step2.save" = "Save to Files";
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.";
 
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "How to export passwords";
 
-/* Step 1 for instructions to import passwords from Safari. 'On your iPhone, open ⚙️ Settings → Apps → Safari.' */
-"data.import.passwords.instructions.safari.step1" = "On your %1$@, open ⚙️ %2$@.";
-
-/* second parameter for autofill.import.passwords.instructions.safari.step1 */
-"data.import.passwords.instructions.safari.step1.system-settings" = "Settings → Apps → Safari";
-
-/* second parameter for autofill.import.instructions.safari.step2 */
-"data.import.passwords.instructions.safari.step2.export" = "Export";
-
-/* third parameter for autofill.import.instructions.safari.step2 if user is importing bookmarks
-   third parameter for autofill.import.instructions.safari.step2 if user is importing passwords */
-"data.import.passwords.instructions.safari.step2.passwords" = "Passwords";
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).";
 
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Export From";

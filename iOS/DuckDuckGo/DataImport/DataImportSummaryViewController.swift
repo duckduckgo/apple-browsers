@@ -21,14 +21,17 @@ import Foundation
 import UIKit
 import SwiftUI
 import BrowserServicesKit
+import Core
 import DDGSync
 
 final class DataImportSummaryViewController: UIViewController {
 
     private var viewModel: DataImportSummaryViewModel
+    private let importScreen: DataImportViewModel.ImportScreen
 
-    init(summary: DataImportSummary, syncService: DDGSyncing) {
-        self.viewModel = DataImportSummaryViewModel(summary: summary, syncService: syncService)
+    init(summary: DataImportSummary, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
+        self.viewModel = DataImportSummaryViewModel(summary: summary, importScreen: importScreen, syncService: syncService)
+        self.importScreen = importScreen
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -41,6 +44,7 @@ final class DataImportSummaryViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
+        Pixel.fire(pixel: .importResultDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
     }
 
     private func setupView() {

@@ -91,8 +91,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var emptyView: UIView = {
         let emptyView = BookmarksEmptyView(importViaSafariButtonAction: { [weak self] in
             self?.segueToDataImport()
-            // TODO - new pixel?
-    //            Pixel.fire(pixel: )
+            Pixel.fire(pixel: .bookmarksImportButtonTapped)
         }, importDocumentButtonAction: { [weak self] in
             self?.presentDocumentPicker()
         })
@@ -683,6 +682,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                         image: UIImage(named: Constants.importBookmarkImage)
         ) { [weak self] _ in
             self?.segueToDataImport()
+            Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
         }
     }
 

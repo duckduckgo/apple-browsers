@@ -32,7 +32,7 @@ protocol DataImportViewModelDelegate: AnyObject {
 
 final class DataImportViewModel: ObservableObject {
 
-    enum ImportScreen {
+    enum ImportScreen: String {
         case passwords
         case bookmarks
 
@@ -181,7 +181,11 @@ final class DataImportViewModel: ObservableObject {
     }
 
     struct BrowserImportState {
-        var browser: BrowserInstructions
+        var browser: BrowserInstructions {
+            didSet {
+                Pixel.fire(pixel: .importInstructionsToggled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+            }
+        }
         let importScreen: ImportScreen
 
         var image: Image {
@@ -267,12 +271,14 @@ final class DataImportViewModel: ObservableObject {
                         self?.isLoading = false
                         ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
                     }
+                    Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
                 }
             } catch {
                 DispatchQueue.main.async { [weak self] in
                     self?.isLoading = false
                     ActionMessageView.present(message: String(format: UserText.dataImportFailedReadErrorMessage, UserText.dataImportFileTypeZip))
                 }
+                Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
             }
         default:
             importFile(at: url, for: type)
@@ -343,10 +349,13 @@ final class DataImportViewModel: ObservableObject {
         switch fileType {
         case .csv:
             fileName = UserText.dataImportFileTypeCsv
+            Pixel.fire(pixel: .importResultPasswordsParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
         case .html:
             fileName = UserText.dataImportFileTypeHtml
+            Pixel.fire(pixel: .importResultBookmarksParsing, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
         case .zip:
             fileName = UserText.dataImportFileTypeZip
+            Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
         }
 
         DispatchQueue.main.async {

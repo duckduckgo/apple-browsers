@@ -36,9 +36,12 @@ final class DataImportViewController: UIViewController {
 
     private let viewModel: DataImportViewModel
     private let syncService: DDGSyncing
+    private let importScreen: DataImportViewModel.ImportScreen
+    private var summaryPresented: Bool = false
 
     init(importManager: DataImportManager, importScreen: DataImportViewModel.ImportScreen, syncService: DDGSyncing) {
         self.viewModel = DataImportViewModel(importScreen: importScreen, importManager: importManager)
+        self.importScreen = importScreen
         self.syncService = syncService
 
         super.init(nibName: nil, bundle: nil)
@@ -52,6 +55,14 @@ final class DataImportViewController: UIViewController {
         super.viewDidLoad()
 
         setupView()
+        Pixel.fire(pixel: .importInstructionsDisplayed, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if !summaryPresented {
+            Pixel.fire(pixel: .importInstructionsCancelled, withAdditionalParameters: [PixelParameters.source: importScreen.rawValue])
+        }
     }
 
     // MARK: - Private
@@ -72,6 +83,8 @@ final class DataImportViewController: UIViewController {
             documentPicker.allowsMultipleSelection = false
             present(documentPicker, animated: true)
         }
+
+        Pixel.fire(pixel: .importInstructionsFileButtonTapped, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
     }
 
     private func presentDataTypePicker(for contents: ImportArchiveContents) {
@@ -85,7 +98,7 @@ final class DataImportViewController: UIViewController {
             return
         }
 
-        let zipContentSelectionViewController = ZipContentSelectionViewController(dataTypes) { [weak self] dataTypes in
+        let zipContentSelectionViewController = ZipContentSelectionViewController(dataTypes, importScreen: importScreen) { [weak self] dataTypes in
             self?.viewModel.importZipArchive(from: contents, for: dataTypes)
         }
 
@@ -108,10 +121,12 @@ final class DataImportViewController: UIViewController {
     }
 
     private func presentSummary(for summary: DataImportSummary) {
+        summaryPresented = true
+
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            self.navigationController?.present(DataImportSummaryViewController(summary: summary, syncService: syncService), animated: true) { [weak self] in
+            self.navigationController?.present(DataImportSummaryViewController(summary: summary, importScreen: importScreen, syncService: syncService), animated: true) { [weak self] in
                 guard let self = self else { return }
 
                 self.navigationController?.popViewController(animated: false)
@@ -173,6 +188,15 @@ extension DataImportViewController: UIDocumentPickerDelegate {
 
             validDocumentSelected = true
             viewModel.handleFileSelection(selectedFileURL, type: fileType)
+
+            switch fileType {
+            case .zip:
+                Pixel.fire(pixel: .importInstructionsFileSelectedZip, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+            case .csv:
+                Pixel.fire(pixel: .importInstructionsFileSelectedCsv, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+            case .html:
+                Pixel.fire(pixel: .importInstructionsFileSelectedHtml, withAdditionalParameters: [PixelParameters.source: viewModel.state.importScreen.rawValue])
+            }
 
         } catch {
             Logger.autofill.debug("Failed to determine the file type: \(error)")

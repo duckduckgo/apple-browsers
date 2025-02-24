@@ -50,50 +50,50 @@ class DataImportSummaryViewModelTests: XCTestCase {
     
     func testInit_WithValidSummary_SetsCorrectState() {
         let summary = createSummary(passwords: true, bookmarks: true)
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertNotNil(viewModel.passwordsSummary)
         XCTAssertNotNil(viewModel.bookmarksSummary)
     }
     
     func testInit_WithFailedSummary_HandlesErrorsGracefully() {
         let summary = createFailedSummary()
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertNil(viewModel.passwordsSummary)
         XCTAssertNil(viewModel.bookmarksSummary)
     }
     
     func testIsAllSuccessful_WithPerfectImport_ReturnsTrue() {
         let summary = createPerfectSummary()
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertTrue(viewModel.isAllSuccessful())
     }
     
     func testIsAllSuccessful_WithFailures_ReturnsFalse() {
         let summary = createSummaryWithFailures()
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertFalse(viewModel.isAllSuccessful())
     }
     
     func testSyncButtonTitle_WithBothTypes_ShowsCorrectTitle() {
         let summary = createSummary(passwords: true, bookmarks: true)
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertEqual(viewModel.syncButtonTitle, expectedFullSyncTitle)
     }
     
     func testSyncButtonTitle_WithOnlyPasswords_ShowsPasswordsTitle() {
         let summary = createSummary(passwords: true, bookmarks: false)
-        viewModel = DataImportSummaryViewModel(summary: summary, syncService: mockSyncService)
-        
+        viewModel = DataImportSummaryViewModel(summary: summary, importScreen: .bookmarks, syncService: mockSyncService)
+
         XCTAssertEqual(viewModel.syncButtonTitle, expectedPasswordsSyncTitle)
     }
     
     func testLaunchSync_NotifiesDelegate() {
-        viewModel = DataImportSummaryViewModel(summary: createSummary(), syncService: mockSyncService)
+        viewModel = DataImportSummaryViewModel(summary: createSummary(), importScreen: .bookmarks, syncService: mockSyncService)
         viewModel.delegate = mockDelegate
         
         viewModel.launchSync()
@@ -102,7 +102,7 @@ class DataImportSummaryViewModelTests: XCTestCase {
     }
     
     func testDismiss_NotifiesDelegate() {
-        viewModel = DataImportSummaryViewModel(summary: createSummary(), syncService: mockSyncService)
+        viewModel = DataImportSummaryViewModel(summary: createSummary(), importScreen: .bookmarks, syncService: mockSyncService)
         viewModel.delegate = mockDelegate
         
         viewModel.dismiss()

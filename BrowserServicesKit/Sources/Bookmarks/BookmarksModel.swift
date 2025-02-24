@@ -51,6 +51,8 @@ public protocol BookmarkListInteracting: BookmarkStoring, AnyObject {
     func countBookmarksForDomain(_ domain: String) -> Int
 
     func createBookmark(title: String, url: String, folder: BookmarkEntity, folderIndex: Int, favoritesFoldersAndIndexes: [BookmarkEntity: Int])
+    
+    func bookmark(for url: URL) -> BookmarkEntity?
 
 }
 

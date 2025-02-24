@@ -219,7 +219,17 @@ class TabSwitcherViewController: UIViewController {
                 self.editBookmark(results.urls.first)
             })
         } else {
-            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount))
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericUndo, onAction: {
+                self.removeBookmarks(results.urls)
+            })
+        }
+    }
+    
+    func removeBookmarks(_ url: [URL]) {
+        let model = BookmarkListViewModel(bookmarksDatabase: self.bookmarksDatabase, parentID: nil, favoritesDisplayMode: .default, errorEvents: nil)
+        url.forEach {
+            guard let entity = model.bookmark(for: $0) else { return }
+            model.softDeleteBookmark(entity)
         }
     }
     

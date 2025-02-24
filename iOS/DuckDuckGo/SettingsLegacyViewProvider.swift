@@ -96,15 +96,13 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateDebugController() -> UIViewController {
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        return storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
-        }
+        return DebugScreensViewController(dependencies: .init(
+            syncService: self.syncService,
+            bookmarksDatabase: self.bookmarksDatabase,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            tabManager: self.tabManager,
+            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+            fireproofing: self.fireproofing))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

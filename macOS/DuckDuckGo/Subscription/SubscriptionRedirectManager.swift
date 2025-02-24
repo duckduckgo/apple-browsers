@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import BrowserServicesKit
+import Common
 
 protocol SubscriptionRedirectManager: AnyObject {
     func redirectURL(for url: URL) -> URL?
@@ -26,46 +27,40 @@ protocol SubscriptionRedirectManager: AnyObject {
 
 final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
-    private let subscriptionEnvironment: SubscriptionEnvironment
-    private let canPurchase: () -> Bool
+    private let subscriptionManager: SubscriptionManager
     private let baseURL: URL
+    private let canPurchase: () -> Bool
+    private let tld: TLD
+    private let featureFlagger: FeatureFlagger
 
-    init(subscriptionEnvironment: SubscriptionEnvironment,
+    init(subscriptionManager: SubscriptionManager,
          baseURL: URL,
-         canPurchase: @escaping () -> Bool) {
-        self.subscriptionEnvironment = subscriptionEnvironment
+         canPurchase: @escaping () -> Bool,
+         tld: TLD = ContentBlocking.shared.tld,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+        self.subscriptionManager = subscriptionManager
         self.canPurchase = canPurchase
         self.baseURL = baseURL
+        self.tld = tld
+        self.featureFlagger = featureFlagger
     }
 
     func redirectURL(for url: URL) -> URL? {
-        guard url.isPart(ofDomain: "duckduckgo.com") else { return nil }
+        guard url.isPart(ofDomain: "duckduckgo.com") ||
+              (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser)
+        else { return nil }
 
         if url.pathComponents == URL.privacyPro.pathComponents {
-            let shouldHidePrivacyProDueToNoProducts = subscriptionEnvironment.purchasePlatform == .appStore && canPurchase() == false
+            let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && canPurchase() == false
             let isPurchasePageRedirectActive = !shouldHidePrivacyProDueToNoProducts
+
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.
-            return isPurchasePageRedirectActive ? baseURL.addingQueryItems(from: url) : nil
+            if isPurchasePageRedirectActive,
+               let redirectURLComponents = URLComponents(url: url, resolvingAgainstBaseURL: true) {
+                return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
+            }
         }
 
         return nil
     }
-}
-
-fileprivate extension URL {
-
-    func addingQueryItems(from url: URL) -> URL {
-        // If the origin value is of type "do+something" appending the percentEncodedQueryItem crashes the browser as + is replaced by a space.
-        // Perform encoding on the value to avoid the crash.
-        guard let queryItems = url.getQueryItems()?
-            .compactMap({ queryItem -> URLQueryItem? in
-                guard let value = queryItem.value else { return nil }
-                let encodedValue = value.percentEncoded(withAllowedCharacters: .urlQueryParameterAllowed)
-                return URLQueryItem(name: queryItem.name, value: encodedValue)
-            })
-        else { return self }
-
-        return self.appending(percentEncodedQueryItems: queryItems)
-    }
-
 }

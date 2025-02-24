@@ -195,7 +195,7 @@ jobs:
 
   create-asana-task:
     name: Create Asana Task
-    needs: [swiftlint, unit-tests, unit-tests-ios]
+    needs: [unit-tests, unit-tests-ios]
 
     if: failure() && github.ref_name == 'main' && github.run_attempt == 1
 
@@ -214,7 +214,7 @@ jobs:
 
   close-asana-task:
     name: Close Asana Task
-    needs: [swiftlint, unit-tests, unit-tests-ios]
+    needs: [unit-tests, unit-tests-ios]
 
     if: success() && github.ref_name == 'main' && github.run_attempt > 1
 

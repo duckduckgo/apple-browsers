@@ -277,7 +277,8 @@ extension MainViewController {
                                                   privacyProDataReporter: privacyProDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
-                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,
@@ -297,23 +298,21 @@ extension MainViewController {
         }
     }
 
-    private func launchDebugSettings(completion: ((RootDebugViewController) -> Void)? = nil) {
+    private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
 
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        let settings = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
-        }
+        let debug = DebugScreensViewController(dependencies: .init(
+            syncService: self.syncService,
+            bookmarksDatabase: self.bookmarksDatabase,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            tabManager: self.tabManager,
+            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+            fireproofing: self.fireproofing))
 
-        let controller = UINavigationController(rootViewController: settings)
+        let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
         present(controller, animated: true) {
-            completion?(settings)
+            completion?(debug)
         }
     }
 

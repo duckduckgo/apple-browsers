@@ -121,7 +121,7 @@ extension DebugScreensViewModel {
                     ConfigurationDebugViewController(coder: coder)
                 }
             }),
-            .controller(title: "NetP", { _ in
+            .controller(title: "VPN", { _ in
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
                     NetworkProtectionDebugViewController(coder: coder)

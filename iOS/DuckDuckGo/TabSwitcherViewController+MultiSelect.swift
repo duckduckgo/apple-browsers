@@ -56,7 +56,11 @@ extension TabSwitcherViewController {
         guard let tab = tabsModel.safeGetTabAt(index), let link = tab.link else { return }
         let viewModel = MenuBookmarksViewModel(bookmarksDatabase: self.bookmarksDatabase, syncService: self.syncService)
         viewModel.createBookmark(title: link.displayTitle, url: link.url)
-        ActionMessageView.present(message: UserText.webSaveBookmarkDone)
+        ActionMessageView.present(message: UserText.tabsBookmarked(withCount: 1),
+                                  actionTitle: UserText.actionGenericEdit,
+                                  onAction: {
+            self.editBookmark(tab.link?.url)
+        })
     }
 
     func onTabStyleChange() {

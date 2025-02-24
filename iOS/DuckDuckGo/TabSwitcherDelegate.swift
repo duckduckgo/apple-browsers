@@ -26,6 +26,8 @@ protocol TabSwitcherDelegate: AnyObject {
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab)
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab)
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL)
 
     func tabSwitcherDidRequestForgetAll(tabSwitcher: TabSwitcherViewController)
     

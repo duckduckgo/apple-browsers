@@ -40,6 +40,7 @@ class TabSwitcherViewController: UIViewController {
     struct BookmarkAllResult {
         let newCount: Int
         let existingCount: Int
+        let urls: [URL]
     }
 
     enum InterfaceMode {
@@ -213,16 +214,24 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func displayBookmarkAllStatusMessage(with results: BookmarkAllResult, openTabsCount: Int) {
-        if interfaceMode.isMultiSelection {
-            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount))
+        if results.newCount == 1 {
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericEdit, onAction: {
+                self.editBookmark(results.urls.first)
+            })
         } else {
-            ActionMessageView.present(message: UserText.bookmarkAllTabsSaved)
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount))
         }
+    }
+    
+    func editBookmark(_ url: URL?) {
+        guard let url else { return }
+        delegate?.tabSwitcher(self, editBookmarkForUrl: url)
     }
 
     func bookmarkTabs(withIndices indexes: [Int], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
         var newCount = 0
+        var urls = [URL]()
 
         indexes.compactMap {
             tabsModel.safeGetTabAt($0)
@@ -232,9 +241,10 @@ class TabSwitcherViewController: UIViewController {
                 viewModel.createBookmark(title: link.displayTitle, url: link.url)
                 favicons.loadFavicon(forDomain: link.url.host, intoCache: .fireproof, fromCache: .tabs)
                 newCount += 1
+                urls.append(link.url)
             }
         }
-        return .init(newCount: newCount, existingCount: tabs.count - newCount)
+        return .init(newCount: newCount, existingCount: tabs.count - newCount, urls: urls)
     }
 
     @IBAction func onAddPressed(_ sender: UIBarButtonItem) {

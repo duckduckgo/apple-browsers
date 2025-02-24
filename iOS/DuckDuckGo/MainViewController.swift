@@ -2642,6 +2642,13 @@ extension MainViewController: TabSwitcherDelegate {
             showFireButtonPulse()
         }
     }
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
+        guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToEditBookmark(bookmark)
+        }
+    }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
         if tabManager.count == 1 {

@@ -18,6 +18,17 @@
 
 import Foundation
 
+
+/// A property wrapper that provides thread-safe access to a value using an `NSLock`.
+///
+/// This wrapper ensures that each individual read (getter) and write (setter) is performed atomically.
+///
+/// **Limitations:**
+///
+/// - **Atomic Get/Set Only:**
+///   The lock is applied only during the getter and setter. Compound operations—such as in-place mutations on a collection (e.g. `allowlist.append(newEntry)` or using `+=` on a scalar)—are not atomic.
+///
+/// - For mutable collections or compound operations, use dedicated methods that lock the entire operation or a thread-safe container.
 @propertyWrapper
 final class Locked<Value> {
     private var value: Value

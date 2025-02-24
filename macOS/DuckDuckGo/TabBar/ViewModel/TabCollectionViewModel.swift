@@ -156,14 +156,14 @@ final class TabCollectionViewModel: NSObject {
                      burnerMode: BurnerMode = .regular) {
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,
-                  pinnedTabsManager: WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManager: Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsManager(),
                   burnerMode: burnerMode)
     }
 
     convenience init(burnerMode: BurnerMode = .regular) {
         let tabCollection = TabCollection()
         self.init(tabCollection: tabCollection,
-                  pinnedTabsManager: WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManager:  Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsManager(),
                   burnerMode: burnerMode)
     }
 

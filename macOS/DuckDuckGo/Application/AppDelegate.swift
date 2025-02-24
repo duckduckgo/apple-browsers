@@ -79,6 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let pinnedTabsManager = PinnedTabsManager()
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding = PinnedTabsManagerProvider()
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider

@@ -360,7 +360,11 @@ extension WindowControllersManager {
 
 extension Tab {
     var isPinned: Bool {
-        return self.pinnedTabsManager.isTabPinned(self)
+        guard let pinnedTabsManager = self.pinnedTabsManagerProvider.pinnedTabsManager(for: self) else {
+            return false
+        }
+
+        return pinnedTabsManager.isTabPinned(self)
     }
 }
 

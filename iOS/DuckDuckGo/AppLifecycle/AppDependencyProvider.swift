@@ -130,7 +130,9 @@ final class AppDependencyProvider: DependencyProvider {
                                                              subscriptionEndpointService: subscriptionService,
                                                              authEndpointService: authService,
                                                              subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                             subscriptionEnvironment: subscriptionEnvironment)
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             isInternalUserEnabled: { ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser })
+
         accountManager.delegate = subscriptionManager
 
         self.subscriptionManager = subscriptionManager

@@ -19,6 +19,7 @@
 
 import UIKit
 
+// brindy - migrated to debug screen
 extension RootDebugViewController {
 
     func showOnboardingIntro() {

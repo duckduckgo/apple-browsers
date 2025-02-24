@@ -184,6 +184,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Malicious Site Protection
         case maliciousSiteProtectionEnabled = "com.duckduckgo.ios.maliciousSiteProtection.enabled"
+
+        // Debug screen
+        case debugPinnedScreens = "debugPinnedScreens"
     }
 
     private let key: Key

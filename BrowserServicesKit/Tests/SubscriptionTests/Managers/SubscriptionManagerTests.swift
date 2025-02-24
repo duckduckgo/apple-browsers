@@ -17,17 +17,20 @@
 //
 
 import XCTest
+import Common
 @testable import Subscription
 import SubscriptionTestingUtilities
 
 final class SubscriptionManagerTests: XCTestCase {
 
-    private struct Constants {
+    struct Constants {
         static let userDefaultsSuiteName = "SubscriptionManagerTests"
 
         static let accessToken = UUID().uuidString
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
+
+        static let tld = TLD()
     }
 
     var storePurchaseManager: StorePurchaseManagerMock!

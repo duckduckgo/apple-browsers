@@ -508,19 +508,22 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        
-        guard ProcessInfo.processInfo.environment["ONBOARDING"] != "false" else {
-            // explicitly skip onboarding, e.g. for integration tests
-            return
+        // Check if we override onboarding flag and show/hide onboarding accordingly
+        // If onboarding is not overridden, show onboarding only if users have not seen it.
+        let showOnboarding: Bool
+        switch LaunchOptionsHandler().onboardingStatus {
+        case .notOverridden:
+            showOnboarding = !tutorialSettings.hasSeenOnboarding
+        case let .overridden(.developer(isOnboardingCompleted)):
+            showOnboarding = !isOnboardingCompleted
+        case let .overridden(.uiTests(isOnboardingCompleted)):
+            // Set onboarding settings so state is persisted across app re-launches during UI Tests
+            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
+            showOnboarding = !tutorialSettings.hasSeenOnboarding
         }
 
-        let showOnboarding = !tutorialSettings.hasSeenOnboarding ||
-            // explicitly show onboarding, can be set in the scheme > Run > Environment Variables
-            ProcessInfo.processInfo.environment["ONBOARDING"] == "true"
         guard showOnboarding else { return }
-
         segueToDaxOnboarding()
-
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
@@ -1121,7 +1124,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func updateCurrentTab() {
-        if let currentTab = currentTab {
+        // prepopulate VC for current tab if needed
+        if let currentTab = tabManager.current(createIfNeeded: true) {
             select(tab: currentTab)
             viewCoordinator.omniBar.resignFirstResponder()
         } else {
@@ -1544,8 +1548,8 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
-                if let origin = notification.userInfo?[AttributionParameter.origin] as? String {
-                    deepLinkTarget = .subscriptionFlow(origin: origin)
+                if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
+                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
@@ -2715,13 +2719,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     func showTabSwitcher(_ button: TabSwitcherButton) {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened)
         DailyPixel.fireDaily(.tabSwitcherOpenedDaily, withAdditionalParameters: TabSwitcherOpenDailyPixel().parameters(with: tabManager.model.tabs))
-        if currentTab?.url?.isDuckDuckGoSearch == true {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromSerp)
-        } else if currentTab?.url != nil {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromWebsite)
-        } else {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromNewTabPage)
-        }
 
         performCancel()
         showTabSwitcher()

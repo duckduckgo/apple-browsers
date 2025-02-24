@@ -66,4 +66,3 @@ enum DebugScreen: Identifiable {
     }
 
 }
-

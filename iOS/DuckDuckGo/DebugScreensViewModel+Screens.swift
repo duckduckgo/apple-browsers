@@ -170,8 +170,8 @@ extension DebugScreensViewModel {
                     }
                 }
 
-                weak var capturedController: OnboardingDebugViewController? = nil
-                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView() {
+                weak var capturedController: OnboardingDebugViewController?
+                let onboardingController = OnboardingDebugViewController(rootView: OnboardingDebugView {
                     guard let capturedController else { return }
                     let controller = OnboardingIntroViewController(onboardingPixelReporter: OnboardingPixelReporter())
                     controller.delegate = capturedController

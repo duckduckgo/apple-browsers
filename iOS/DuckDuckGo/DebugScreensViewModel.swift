@@ -124,7 +124,7 @@ class DebugScreensViewModel: ObservableObject {
             action(self.dependencies)
             ActionMessageView.present(message: "\(screen.title) - DONE")
 
-        case .view(_, _), .controller(_, _):
+        case .view, .controller:
             assertionFailure("Should not be pushing SwiftUI view as controller")
         }
     }
@@ -133,14 +133,14 @@ class DebugScreensViewModel: ObservableObject {
         switch screen {
         case .controller(_, let controllerBuilder):
             pushController?(controllerBuilder(self.dependencies))
-        case .view(_, _), .action(_, _):
+        case .view, .action:
             assertionFailure("Should not be pushing SwiftUI view as controller")
         }
     }
 
     func buildView(_ screen: DebugScreen) -> AnyView {
         switch screen {
-        case .controller(_, _), .action(_, _):
+        case .controller, .action:
             return AnyView(FailedAssertionView("Unexpected view creation"))
 
         case .view(_, let viewBuilder):

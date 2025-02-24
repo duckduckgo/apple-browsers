@@ -1124,7 +1124,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func updateCurrentTab() {
-        if let currentTab = currentTab {
+        // prepopulate VC for current tab if needed
+        if let currentTab = tabManager.current(createIfNeeded: true) {
             select(tab: currentTab)
             viewCoordinator.omniBar.resignFirstResponder()
         } else {

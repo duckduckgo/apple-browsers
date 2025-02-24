@@ -61,7 +61,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                 authEndpointService: AuthEndpointService,
                 subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache,
                 subscriptionEnvironment: SubscriptionEnvironment,
-                isInternalUserEnabled: @escaping () -> Bool =  { false } ) {
+                isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.accountManager = accountManager
         self.subscriptionEndpointService = subscriptionEndpointService

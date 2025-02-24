@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 final class SubscriptionURLTests: XCTestCase {
 
     func testExpectedDefaultBaseSubscriptionURLForProduction() throws {
-        //Given
+        // Given
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
 
         // When
@@ -34,7 +34,7 @@ final class SubscriptionURLTests: XCTestCase {
     }
 
     func testExpectedDefaultBaseSubscriptionURLForStaging() throws {
-        //Given
+        // Given
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging")!
 
         // When
@@ -43,7 +43,6 @@ final class SubscriptionURLTests: XCTestCase {
         // Then
         XCTAssertEqual(url, expectedURL)
     }
-
 
     func testProductionURLs() throws {
         let allURLTypes: [SubscriptionURL] = [.baseURL,

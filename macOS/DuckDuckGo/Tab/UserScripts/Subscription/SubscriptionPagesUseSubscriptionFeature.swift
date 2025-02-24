@@ -36,7 +36,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     weak var broker: UserScriptMessageBroker?
-    
+
     let featureName = "useSubscription"
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: subscriptionManager.url(for: .baseURL).host ?? OriginDomains.duckduckgo)

@@ -53,8 +53,12 @@ final class AutoClearService: AutoClearServiceProtocol {
     // MARK: - Resume
 
     func resume() {
-        autoClearTask = Task {
-            await autoClear.clearDataIfEnabledAndTimeExpired(baseTimeInterval: Date().timeIntervalSince1970, applicationState: .active)
+        if autoClear.shouldClearDataIfTimeExpired {
+            autoClearTask = Task {
+                await autoClear.clearDataDueToTimeExpired(applicationState: .active)
+            }
+        } else {
+            overlayWindowManager.removeNonAuthenticationOverlay()
         }
     }
 
@@ -71,11 +75,7 @@ final class AutoClearService: AutoClearServiceProtocol {
 
     @MainActor
     func waitForDataCleared() async {
-        guard let autoClearTask else {
-            assertionFailure("AutoClear did not run — this should never happen. Please investigate.")
-            return
-        }
-        await autoClearTask.value
+        await autoClearTask?.value
         overlayWindowManager.removeNonAuthenticationOverlay()
     }
 

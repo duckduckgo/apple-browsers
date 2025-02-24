@@ -18,7 +18,6 @@
 
 import Foundation
 
-
 /// A property wrapper that provides thread-safe access to a value using an `NSLock`.
 ///
 /// This wrapper ensures that each individual read (getter) and write (setter) is performed atomically.

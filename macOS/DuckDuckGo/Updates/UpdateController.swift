@@ -194,6 +194,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private var shouldForceUpdateCheck: Bool {
         let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
         guard let userDriver, userDriver.daysSinceLastUpdateCheck > thresholdInDays else { return false }
+
+        // This workaround is for internal users for now
+        guard internalUserDecider.isInternalUser else { return false }
+
         return true
     }
 

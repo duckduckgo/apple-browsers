@@ -179,11 +179,10 @@ class TabSwitcherViewController: UIViewController {
         view.layoutIfNeeded()
         self.scrollToInitialTab()
     }
-
+    
     @objc func handleTap(gesture: UITapGestureRecognizer) {
-        // TODO FIX: If the user taps between tabs this will dismiss.
-        //  Only dimiss if it's in the big whitespace below the collection view.
-
+        guard gesture.tappedInWhitespaceAtEndOfCollectionView(collectionView) else { return }
+        
         if isEditing {
             transitionFromMultiSelect()
         } else {
@@ -582,4 +581,34 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
 
     }
 
+}
+
+extension UITapGestureRecognizer {
+    
+    func tappedInWhitespaceAtEndOfCollectionView(_ collectionView: UICollectionView) -> Bool {
+        guard collectionView.indexPathForItem(at: self.location(in: collectionView)) == nil else { return false }
+        let location = self.location(in: collectionView)
+           
+        // Now check if the tap is in the whitespace area at the end
+        let lastSection = collectionView.numberOfSections - 1
+        let lastItemIndex = collectionView.numberOfItems(inSection: lastSection) - 1
+        
+        // Get the frame of the last item
+        // If there are no items in the last section, the entire area is whitespace
+       guard lastItemIndex >= 0 else { return true }
+        
+        let lastItemIndexPath = IndexPath(item: lastItemIndex, section: lastSection)
+        let lastItemFrame = collectionView.layoutAttributesForItem(at: lastItemIndexPath)?.frame ?? .zero
+        
+        // Check if the tap is below the last item.
+        // Add 10px buffer to ensure it's whitespace.
+        if location.y > lastItemFrame.maxY + 15 // below the bottom of the last item is definitely the end
+            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) // to the right of the last item is the end as long as it's also at least below the start of the frame
+        {
+            // The tap is in the whitespace area at the end
+           return true
+        }
+
+        return false
+    }
 }

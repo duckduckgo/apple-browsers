@@ -47,16 +47,16 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     }
 
     func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController? {
-        guard let content = coordinator.evaluatePromptEligibility else {
+        guard let type = coordinator.evaluatePromptEligibility else {
             return nil
         }
 
-        let style = DefaultBrowserAndDockPromptPresentation.banner(content)
+        let content = DefaultBrowserAndDockPromptContent.banner(type)
 
         return BannerMessageViewController(
-            message: style.message,
-            image: style.icon,
-            buttonText: style.primaryButtonTitle,
+            message: content.message,
+            image: content.icon,
+            buttonText: content.primaryButtonTitle,
             buttonAction: { self.coordinator.onPromptConfirmation() },
             closeAction: {
                 closeAction()
@@ -66,15 +66,15 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     // MARK: - Private
 
-    private func createPopover(with content: DefaultBrowserAndDockPromptContent) -> NSHostingController<PopoverMessageView> {
-        let style = DefaultBrowserAndDockPromptPresentation.popover(content)
+    private func createPopover(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<PopoverMessageView> {
+        let content = DefaultBrowserAndDockPromptContent.popover(type)
         let viewModel = PopoverMessageViewModel(
-            title: style.title,
-            message: style.message,
-            image: style.icon,
-            buttonText: style.primaryButtonTitle,
+            title: content.title,
+            message: content.message,
+            image: content.icon,
+            buttonText: content.primaryButtonTitle,
             buttonAction: { self.coordinator.onPromptConfirmation() },
-            secondaryButtonText: style.secondaryButtonTitle,
+            secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()
                 self.coordinator.onPromptDismissed()
@@ -88,8 +88,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return NSHostingController(rootView: contentView)
     }
 
-    private func initializePopover(with content: DefaultBrowserAndDockPromptContent) {
-        let viewController = createPopover(with: content)
+    private func initializePopover(with type: DefaultBrowserAndDockPromptType) {
+        let viewController = createPopover(with: type)
         popover = DefaultBrowserAndDockPromptPopover(viewController: viewController)
     }
 

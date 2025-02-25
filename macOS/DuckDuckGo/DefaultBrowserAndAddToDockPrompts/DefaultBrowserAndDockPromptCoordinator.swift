@@ -21,7 +21,7 @@ import SwiftUIExtensions
 
 protocol DefaultBrowserAndDockPrompt {
     var isUserEligibleForPrompt: Bool { get }
-    var evaluatePromptEligibility: DefaultBrowserAndDockPromptContent? { get }
+    var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
     func onPromptConfirmation()
     func onPromptDismissed()
@@ -50,7 +50,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     // MARK: - Private
 
     /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
-    /// `DefaultBrowserAndDockPromptContent` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
+    /// `DefaultBrowserAndDockPromptType` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
     ///
     /// The implementation checks the following conditions:
     /// - If this is a Sparkle build:
@@ -60,8 +60,8 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     ///   - If the user hasn't set DuckDuckGo as the default browser and hasn't added it to the dock, it returns `.bothDefaultBrowserAndDockPrompt`.
     /// - If this is not a Sparkle build, it only returns `.setAsDefaultPrompt` if the user hasn't already set DuckDuckGo as the default browser (otherwise, it returns `nil`).
     ///
-    /// - Returns: The appropriate `DefaultBrowserAndDockPromptContent` value, or `nil` if the user is not eligible for any prompt.
-    var evaluatePromptEligibility: DefaultBrowserAndDockPromptContent? {
+    /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
+    var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
 

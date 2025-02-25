@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptPresentation.swift
+//  DefaultBrowserAndDockPromptContent.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,15 +16,15 @@
 //  limitations under the License.
 //
 
-enum DefaultBrowserAndDockPromptContent {
+enum DefaultBrowserAndDockPromptType {
     case bothDefaultBrowserAndDockPrompt
     case setAsDefaultPrompt
     case addToDockPrompt
 }
 
-enum DefaultBrowserAndDockPromptPresentation {
-    case popover(DefaultBrowserAndDockPromptContent)
-    case banner(DefaultBrowserAndDockPromptContent)
+enum DefaultBrowserAndDockPromptContent {
+    case popover(DefaultBrowserAndDockPromptType)
+    case banner(DefaultBrowserAndDockPromptType)
 
     var title: String? {
         switch self {

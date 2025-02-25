@@ -27,7 +27,7 @@ final class MockAutoClear: AutoClearing {
     var isClearingEnabledValue = false
     var clearDataIfEnabledCalled = false
     var didTimeExpired = true
-    var isDataClearingDueCalled = false
+    var isClearingDueCalled = false
     var clearDataDueToTimeExpiredCalled = false
     var startClearingTimerCalled = false
     var lastLaunchingValue: Bool?
@@ -42,8 +42,8 @@ final class MockAutoClear: AutoClearing {
         lastLaunchingValue = launching
     }
 
-    var isDataClearingDue: Bool {
-        isDataClearingDueCalled = true
+    var isClearingDue: Bool {
+        isClearingDueCalled = true
         return didTimeExpired
     }
 
@@ -91,7 +91,7 @@ final class AutoClearServiceTests {
 
         // Then
         await autoClearService.autoClearTask?.value
-        #expect(mockAutoClear.isDataClearingDueCalled)
+        #expect(mockAutoClear.isClearingDueCalled)
         #expect(mockAutoClear.clearDataDueToTimeExpiredCalled)
     }
 
@@ -106,7 +106,7 @@ final class AutoClearServiceTests {
         autoClearService.resume()
 
         // Then
-        #expect(mockAutoClear.isDataClearingDueCalled)
+        #expect(mockAutoClear.isClearingDueCalled)
         #expect(!mockAutoClear.clearDataDueToTimeExpiredCalled)
         #expect(mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
     }

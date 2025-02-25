@@ -53,7 +53,7 @@ final class AutoClearService: AutoClearServiceProtocol {
     // MARK: - Resume
 
     func resume() {
-        if autoClear.shouldClearDataIfTimeExpired {
+        if autoClear.isClearingDue {
             autoClearTask = Task {
                 await autoClear.clearDataDueToTimeExpired(applicationState: .active)
             }

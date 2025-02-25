@@ -31,6 +31,7 @@ import SwiftUI
 struct InitialPlayerSettings: Codable {
     struct PlayerSettings: Codable {
         let pip: PIP
+        let customError: CustomError
     }
 
     struct PIP: Codable {
@@ -39,6 +40,11 @@ struct InitialPlayerSettings: Codable {
     
     struct Platform: Codable {
         let name: String
+    }
+
+    struct CustomError: Codable {
+        let state: Status
+        let signInRequiredSelector: String
     }
 
     enum Status: String, Codable {
@@ -121,7 +127,6 @@ enum Attributes: Decodable {
     }
 }
 
-
 /// Protocol defining the Duck Player functionality.
 protocol DuckPlayerControlling: AnyObject {
     
@@ -178,6 +183,13 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - message: The script message containing the parameters.
     func openDuckPlayerInfo(params: Any, message: WKScriptMessage) async -> Encodable?
     
+    /// Handles a YouTube Error event from the web view
+    ///
+    /// - Parameters:
+    ///   - params: Parameters from the web content.
+    ///   - message: The script message containing the parameters.
+    func handleYoutubeError(params: Any, message: WKScriptMessage) async -> Encodable?
+
     /// Sends a telemetry event from the FE.
     ///
     /// - Parameters:
@@ -412,9 +424,16 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Called when the Orientation notification is changed
     @objc private func orientationDidChange() {
         let orientation = UIDevice.current.orientation
-        if let url = hostView?.url, url.isDuckPlayer {
-            handleOrientationChange(orientation)
+        
+        // Only proceed with orientation change if DuckPlayer is visible
+        guard let hostView = hostView,
+              let hostViewDelegate = hostView.delegate,
+              hostViewDelegate.tabCheckIfItsBeingCurrentlyPresented(hostView),
+              let url = hostView.url,
+              url.isDuckPlayer else {
+            return
         }
+        handleOrientationChange(orientation)
     }
     
     /// Handles UI Updates based on orientation.  When switching to landscape, we hide
@@ -530,6 +549,19 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         return nil
     }
     
+    /// Handles a YouTube Error event from the web view
+    ///
+    /// - Parameters:
+    ///   - params: Parameters from the web content.
+    ///   - message: The script message containing the parameters.
+    @MainActor
+    public func handleYoutubeError(params: Any, message: WKScriptMessage) -> Encodable? {
+        let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
+        DailyPixel.fire(pixel: dailyPixel)
+        Pixel.fire(pixel: volumePixel)
+        return nil
+    }
+
     /// Opens Duck Player information modal.
     ///
     /// - Parameters:
@@ -583,9 +615,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func encodedPlayerSettings(with webView: WKWebView?) async -> InitialPlayerSettings {
         let isPiPEnabled = webView?.configuration.allowsPictureInPictureMediaPlayback == true
         let pip = InitialPlayerSettings.PIP(status: isPiPEnabled ? .enabled : .disabled)
+        let customError = InitialPlayerSettings.CustomError(state: settings.customError ? .enabled : .disabled, signInRequiredSelector: settings.customErrorSettings?.signInRequiredSelector ?? "")
         let platform = InitialPlayerSettings.Platform(name: "ios")
         let locale = Locale.current.languageCode ?? "en"
-        let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip)
+        let playerSettings = InitialPlayerSettings.PlayerSettings(pip: pip, customError: customError)
+
         let userValues = encodeUserValues()
         let uiValues = encodeUIValues()
         let settings = InitialPlayerSettings(
@@ -644,7 +678,23 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
        
     }
 
-    
+    /// Returns tuple of Pixels for firing when a YouTube Error occurs
+    private func getPixelsForYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
+        if let paramsDict = params as? [String: Any],
+           let errorParam = paramsDict["error"] as? String{
+                switch errorParam {
+                case "sign-in-required":
+                    return (.duckPlayerYouTubeSignInErrorImpression, .duckPlayerYouTubeSignInErrorDaily)
+                case "age-restricted":
+                    return (.duckPlayerYouTubeAgeRestrictedErrorImpression, .duckPlayerYouTubeAgeRestrictedErrorDaily)
+                case "no-embed":
+                    return (.duckPlayerYouTubeNoEmbedErrorImpression, .duckPlayerYouTubeNoEmbedErrorDaily)
+                default:
+                    return (.duckPlayerYouTubeUnknownErrorImpression, .duckPlayerYouTubeUnknownErrorDaily)
+                }
+        }
+        return (.duckPlayerYouTubeUnknownErrorImpression, .duckPlayerYouTubeUnknownErrorDaily)
+    }
 }
 
 extension DuckPlayer: UIGestureRecognizerDelegate {

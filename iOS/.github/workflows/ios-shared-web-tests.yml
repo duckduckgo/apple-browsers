@@ -2,7 +2,7 @@ name: iOS - Shared Web Tests
 
 on:
   push:
-    branches: [ main, "release/**", 'jkt/shared-web-tests' ]
+    branches: [ main, "release/**", "jkt/shared-web-tests" ]
   pull_request:
   workflow_call:
     inputs:

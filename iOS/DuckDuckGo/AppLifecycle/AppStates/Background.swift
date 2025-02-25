@@ -18,20 +18,19 @@
 //
 
 import UIKit
+import Core
 
 /// Represents the state where the app is in the background and not visible to the user.
 /// - Usage:
 ///   - This state is typically associated with the `applicationDidEnterBackground(_:)` method.
 ///   - The app transitions to this state when it is no longer in the foreground, either due to the user
 ///     minimizing the app, switching to another app, or locking the device.
-struct Background: AppState {
+struct Background: BackgroundHandling {
 
     private let lastBackgroundDate: Date = Date()
     private let appDependencies: AppDependencies
     private let didTransitionFromLaunching: Bool
-
-    var urlToOpen: URL?
-    var shortcutItemToHandle: UIApplicationShortcutItem?
+    private var services: AppServices { appDependencies.services }
 
     init(stateContext: Launching.StateContext) {
         appDependencies = stateContext.appDependencies
@@ -45,12 +44,14 @@ struct Background: AppState {
 
     // MARK: - Handle applicationDidEnterBackground(_:) logic here
     func onTransition() {
-        appDependencies.vpnService.onBackground()
-        appDependencies.authenticationService.onBackground()
-        appDependencies.autoClearService.onBackground()
-        appDependencies.autofillService.onBackground()
-        appDependencies.syncService.onBackground()
-        appDependencies.reportingService.onBackground()
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+
+        services.vpnService.suspend()
+        services.authenticationService.suspend()
+        services.autoClearService.suspend()
+        services.autofillService.suspend()
+        services.syncService.suspend()
+        services.reportingService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
     }
@@ -69,16 +70,19 @@ extension Background {
     /// Use this method to resume **UI related tasks** that need to be completed promptly, preventing UI glitches when the user first sees the app.
     /// This ensures that the app remains smooth as it enters the foreground.
     func willLeave() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
         ThemeManager.shared.updateUserInterfaceStyle()
-        appDependencies.autoClearService.onResuming()
+        services.autoClearService.resume()
     }
 
-    /// Called when the app transitions from launching or foreground to background,
+    /// Called when the app transitions from launching or foreground to background
     /// or when the app fails to wake up from the background (due to system Face ID lock).
     /// This is the counterpart to `willLeave()`.
     ///
     /// Use this method to revert any actions performed in `willLeave` (if applicable).
-    func didReturn() { }
+    func didReturn() {
+        Logger.lifecycle.info("\(type(of: self)): \(#function)")
+    }
 
 }
 
@@ -87,32 +91,16 @@ extension Background {
     struct StateContext {
 
         let lastBackgroundDate: Date
-        let urlToOpen: URL?
-        let shortcutItemToHandle: UIApplicationShortcutItem?
         let appDependencies: AppDependencies
         let didTransitionFromLaunching: Bool
 
     }
 
-    func makeStateContext() -> StateContext {
-        .init(lastBackgroundDate: lastBackgroundDate,
-              urlToOpen: urlToOpen,
-              shortcutItemToHandle: shortcutItemToHandle,
-              appDependencies: appDependencies,
-              didTransitionFromLaunching: didTransitionFromLaunching)
-    }
-
-}
-
-extension Background {
-
-    mutating func handle(action: AppAction) {
-        switch action {
-        case .openURL(let url):
-            urlToOpen = url
-        case .handleShortcutItem(let shortcutItem):
-            shortcutItemToHandle = shortcutItem
-        }
+    func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
+        Foreground(stateContext: StateContext(lastBackgroundDate: lastBackgroundDate,
+                                              appDependencies: appDependencies,
+                                              didTransitionFromLaunching: didTransitionFromLaunching),
+                   actionToHandle: actionToHandle)
     }
 
 }

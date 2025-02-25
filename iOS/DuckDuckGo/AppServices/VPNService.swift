@@ -23,20 +23,11 @@ import UIKit
 import NotificationCenter
 import Core
 
-protocol VPNServiceProtocol {
-
-    func installRedditSessionWorkaround()
-
-}
-
 final class VPNService: NSObject {
 
     private let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
     private let widgetRefreshModel = NetworkProtectionWidgetRefreshModel()
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
-
-    private lazy var vpnWorkaround: VPNRedditSessionWorkaround = VPNRedditSessionWorkaround(accountManager: accountManager,
-                                                                                            tunnelController: tunnelController)
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
 
@@ -117,7 +108,6 @@ final class VPNService: NSObject {
     func suspend() {
         Task { @MainActor in
             await refreshVPNShortcuts()
-            await vpnWorkaround.removeRedditSessionWorkaround()
         }
     }
 
@@ -138,16 +128,6 @@ final class VPNService: NSObject {
                                       icon: UIApplicationShortcutIcon(templateImageName: "VPN-16"),
                                       userInfo: nil)
         ]
-    }
-
-}
-
-extension VPNService: VPNServiceProtocol {
-
-    func installRedditSessionWorkaround() {
-        Task {
-            await vpnWorkaround.installRedditSessionWorkaround()
-        }
     }
 
 }

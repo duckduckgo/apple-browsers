@@ -97,9 +97,6 @@ extension DebugScreensViewModel {
                                             userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
 
             }),
-            .view(title: "Alert Playground", { _ in
-                AlertPlaygroundView()
-            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

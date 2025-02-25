@@ -54,7 +54,7 @@ struct AlertPlaygroundView: View {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(title: primary, style: primaryStyle.uikitStyle)
-        alert.addAction(title: secondary, style: primaryStyle.uikitStyle)
+        alert.addAction(title: secondary, style: secondaryStyle.uikitStyle)
         controller.present(alert, animated: true)
         
     }

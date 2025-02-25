@@ -100,10 +100,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .htmlNewTabPage:
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:

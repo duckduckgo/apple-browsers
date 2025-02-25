@@ -127,6 +127,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 .targetting(self)
             NSMenuItem(title: "Force broker JSON files update", action: #selector(DataBrokerProtectionDebugMenu.forceBrokerJSONFilesUpdate))
                 .targetting(self)
+            NSMenuItem(title: "Toggle VPN Exclusion", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNExclusion))
+                .targetting(self)
             NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON))
                 .targetting(self)
             NSMenuItem(title: "Reset All State and Delete All Data", action: #selector(DataBrokerProtectionDebugMenu.deleteAllDataAndStopAgent))
@@ -267,6 +269,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func forceBrokerJSONFilesUpdate() {
         if let updater = DefaultDataBrokerProtectionBrokerUpdater.provideForDebug() {
             updater.updateBrokers()
+        }
+    }
+
+    @objc private func toggleVPNExclusion() {
+        Task {
+            DataBrokerProtectionSettings(defaults: .dbp).bypassVPN.toggle()
+            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNExclusionSetting(
+                DataBrokerProtectionSettings(defaults: .dbp).bypassVPN
+            )
         }
     }
 

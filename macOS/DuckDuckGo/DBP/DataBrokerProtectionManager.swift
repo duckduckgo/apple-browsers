@@ -22,6 +22,8 @@ import DataBrokerProtection
 import LoginItems
 import Common
 import Freemium
+import NetworkProtectionProxy
+import NetworkProtectionIPC
 
 public final class DataBrokerProtectionManager {
 
@@ -85,7 +87,31 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm, object: nil, userInfo: UnifiedFeedbackSource.userInfo(source: .pir))
     }
 
+    public func dataBrokerProtectionDataManagerWillApplyVPNExclusionSetting(_ excluded: Bool) async {
+        let proxySettings = TransparentProxySettings(defaults: .netP)
+        let vpnXPCClient = VPNControllerXPCClient.shared
+        let dbpBundleID = Bundle.dbpBundleID
+        if excluded {
+            proxySettings.appRoutingRules[dbpBundleID] = .exclude
+        } else if proxySettings.appRoutingRules[dbpBundleID] == .exclude {
+            proxySettings.appRoutingRules.removeValue(forKey: dbpBundleID)
+        }
+        try? await Task.sleep(interval: 0.1)
+        try? await vpnXPCClient.command(.restartAdapter)
+    }
+
     public func isAuthenticatedUser() -> Bool {
         isUserAuthenticated()
+    }
+}
+
+extension Bundle {
+    fileprivate static var dbpBundleID: String {
+        let key = "DBP_APP_GROUP"
+        guard let bundleID = Bundle.main.object(forInfoDictionaryKey: key) as? String else {
+            fatalError("Info.plist is missing \(key)")
+        }
+
+        return bundleID
     }
 }

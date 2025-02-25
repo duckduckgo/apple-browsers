@@ -139,7 +139,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         try? configureUpdater()
 
-#if !DEBUG
+#if DEBUG
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
+            checkForUpdateRespectingRollout()
+        }
+#else
         checkForUpdateRespectingRollout()
 #endif
     }
@@ -186,8 +190,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
 #if DEBUG
-        // Skip checking for updates for DEBUG builds
-        updater?.updateCheckInterval = 0
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
+            updater?.updateCheckInterval = 10_800
+        } else {
+            updater?.updateCheckInterval = 0
+        }
         updater?.automaticallyChecksForUpdates = false
         updater?.automaticallyDownloadsUpdates = false
 #else

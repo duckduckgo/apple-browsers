@@ -1,4 +1,4 @@
-name: iOS - PR Checks
+name: iOS - Shared Web Tests
 
 on:
   push:
@@ -70,5 +70,4 @@ jobs:
       run: |
         cd shared-web-tests
         npm run test
-
   

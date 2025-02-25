@@ -1,5 +1,5 @@
 //
-//  TabInteractionStateConfiguration.swift
+//  UIWindowExtension.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,15 +17,20 @@
 //  limitations under the License.
 //
 
-import Foundation
+import UIKit
 
-final class TabInteractionStateConfiguration {
+extension UIWindow {
 
-    static func configure(autoClearService: AutoClearService, mainViewController: MainViewController) {
-        if !autoClearService.isClearingEnabled {
-            // If not using autoclear, make sure there are no leftover states on disk.
-            mainViewController.tabManager.removeLeftoverInteractionStates()
-        }
+    static func makeBlank() -> UIWindow {
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.backgroundColor = .white
+
+        let rootViewController = UIViewController()
+        rootViewController.view.backgroundColor = .white
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
+
+        return window
     }
 
 }

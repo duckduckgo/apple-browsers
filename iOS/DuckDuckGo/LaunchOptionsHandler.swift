@@ -51,6 +51,12 @@ public final class LaunchOptionsHandler {
         userDefaults.integer(forKey: Self.automationPort)
     }
 
+#if DEBUG || ALPHA
+    public func overrideOnboardingCompleted() {
+        userDefaults.set("true", forKey: Self.isOnboardingCompleted)
+    }
+#endif
+
     public var appVariantName: String? {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }

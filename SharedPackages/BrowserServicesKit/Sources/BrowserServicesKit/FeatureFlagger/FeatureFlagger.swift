@@ -27,6 +27,8 @@ public protocol FeatureFlagDescribing: CaseIterable {
     /// Returns a string representation of the flag, suitable for persisting the flag state to disk.
     var rawValue: String { get }
 
+    var defaultValue: Bool { get }
+
     /// Return `true` here if a flag can be locally overridden.
     ///
     /// Local overriding mechanism requires passing `FeatureFlagOverriding` instance to

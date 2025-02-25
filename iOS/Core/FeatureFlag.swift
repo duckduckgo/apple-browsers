@@ -87,9 +87,23 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+
+    case killswitchExampleCrossPlatformFeature
+
+    case killswitchExamplePlatformSpecificSubfeature
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .killswitchExampleCrossPlatformFeature, .killswitchExamplePlatformSpecificSubfeature:
+            true
+        default:
+            false
+        }
+    }
+    
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .privacyProFreeTrialJan25:
@@ -211,6 +225,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .killswitchExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.killswitchExample))
+        case .killswitchExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.killswitchExample))
         }
     }
 }

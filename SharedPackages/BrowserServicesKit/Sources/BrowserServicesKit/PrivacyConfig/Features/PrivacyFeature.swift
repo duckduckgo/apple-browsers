@@ -72,6 +72,9 @@ public enum PrivacyFeature: String {
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
+    case macOSBrowserConfig
+    case iOSBrowserConfig
+    case killswitchExample
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -82,6 +85,22 @@ public protocol PrivacySubfeature: RawRepresentable where RawValue == String {
 }
 
 // MARK: Subfeature definitions
+
+public enum macOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .macOSBrowserConfig
+    }
+
+    case killswitchExample
+}
+
+public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .iOSBrowserConfig
+    }
+
+    case killswitchExample
+}
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {

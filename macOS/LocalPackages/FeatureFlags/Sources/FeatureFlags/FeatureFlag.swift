@@ -68,9 +68,21 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+    case killswitchExampleCrossPlatformFeature
+    case killswitchExamplePlatformSpecificSubfeature
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .killswitchExampleCrossPlatformFeature, .killswitchExamplePlatformSpecificSubfeature:
+            true
+        default:
+            false
+        }
+    }
+    
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .popoverVsBannerExperiment:
@@ -101,7 +113,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .exchangeKeysToSyncWithAnotherDevice:
+                .exchangeKeysToSyncWithAnotherDevice,
+                .killswitchExampleCrossPlatformFeature, 
+                .killswitchExamplePlatformSpecificSubfeature:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -161,6 +175,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .killswitchExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.killswitchExample))
+        case .killswitchExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(macOSBrowserConfigSubfeature.killswitchExample))
         }
     }
 }

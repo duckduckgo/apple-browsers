@@ -38,7 +38,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
-    private let defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt
+    private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -69,7 +69,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator()
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = DefaultBrowserAndDockPromptPresenter()
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -77,7 +77,7 @@ final class MainViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
-        self.defaultBrowserAndDockPromptCoordinator = defaultBrowserAndDockPromptCoordinator
+        self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
 
         tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
@@ -262,12 +262,10 @@ final class MainViewController: NSViewController {
     private func showMessageBannerIfNeeded() {
         if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
 
-        if defaultBrowserAndDockPromptCoordinator.isUserEligibleForPrompt {
-            guard let banner = defaultBrowserAndDockPromptCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
+        guard let banner = defaultBrowserAndDockPromptPresenting.getBanner(closeAction: { self.hideBanner() }) else { return }
 
-            addAndLayoutChild(banner, into: mainView.bannerContainerView)
-            mainView.bannerHeightConstraint.animator().constant = 48
-        }
+        addAndLayoutChild(banner, into: mainView.bannerContainerView)
+        mainView.bannerHeightConstraint.animator().constant = 48
     }
 
     private func hideBanner() {
@@ -526,9 +524,9 @@ final class MainViewController: NSViewController {
 
     @objc private func showToSetAsDefaultPopover(_ sender: Notification) {
         if bookmarksBarVisibilityManager.isBookmarksBarVisible {
-            defaultBrowserAndDockPromptCoordinator.showPopover(below: self.bookmarksBarViewController.view)
+            defaultBrowserAndDockPromptPresenting.showPopover(below: self.bookmarksBarViewController.view)
         } else {
-            defaultBrowserAndDockPromptCoordinator.showPopover(below: self.navigationBarViewController.view)
+            defaultBrowserAndDockPromptPresenting.showPopover(below: self.navigationBarViewController.view)
         }
     }
 

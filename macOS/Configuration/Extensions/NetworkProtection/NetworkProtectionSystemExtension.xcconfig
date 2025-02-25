@@ -14,7 +14,7 @@
 //
 
 #include "../ExtensionBase.xcconfig"
-#include "../../AppStore.xcconfig"
+#include "../../DeveloperID.xcconfig"
 
 INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo VPN Network Extension
 

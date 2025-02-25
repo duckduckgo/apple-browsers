@@ -239,8 +239,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
       "state" : {
-        "branch" : "alex/update-Clibsodium.xcframework",
-        "revision" : "6b93384a5d8daf86b3fc6d652f121736efac243d"
+        "revision" : "4e383fa27d3386a48e01a43fd890540a7d8656aa",
+        "version" : "0.5.0"
       }
     },
     {

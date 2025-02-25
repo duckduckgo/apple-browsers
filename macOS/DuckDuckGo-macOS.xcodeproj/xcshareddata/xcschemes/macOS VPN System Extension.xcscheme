@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "4B2537592A11BE7300610219"
-               BuildableName = "com.duckduckgo.mobile.ios.vpn.agent.network-extension.systemextension"
+               BuildableName = "com.duckduckgo.macos.vpn.network-extension.systemextension"
                BlueprintName = "NetworkProtectionSystemExtension"
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
@@ -51,7 +51,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "4B2537592A11BE7300610219"
-            BuildableName = "com.duckduckgo.mobile.ios.vpn.agent.network-extension.systemextension"
+            BuildableName = "com.duckduckgo.macos.vpn.network-extension.systemextension"
             BlueprintName = "NetworkProtectionSystemExtension"
             ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
          </BuildableReference>

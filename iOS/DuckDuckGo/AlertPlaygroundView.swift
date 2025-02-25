@@ -49,6 +49,10 @@ struct AlertPlaygroundView: View {
     
     @State var alertPresented = false
     
+    var isDoubleCancel: Bool {
+        primaryStyle == .cancel && secondaryStyle == .cancel
+    }
+    
     func showUIAlert() {
         guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
         
@@ -103,45 +107,54 @@ struct AlertPlaygroundView: View {
                     }
                 }
             } footer: {
-                HStack {
-                    
-                    Button {
-                        alertPresented = true
-                    } label: {
-                        Text("SwiftUI Alert")
-                    }
-                    .buttonStyle(.bordered)
-                    .alert(title, isPresented: $alertPresented, actions: {
+                VStack {
+                    HStack {
                         
-                        switch primaryStyle {
-                        case .default:
-                            Button(primary) { }
-                        case .cancel:
-                            Button(primary, role: .cancel) { }
-                        case .destructive:
-                            Button(primary, role: .destructive) { }
+                        Button {
+                            alertPresented = true
+                        } label: {
+                            Text("SwiftUI Alert")
                         }
+                        .buttonStyle(.bordered)
+                        .alert(title, isPresented: $alertPresented, actions: {
+                            
+                            switch primaryStyle {
+                            case .default:
+                                Button(primary) { }
+                            case .cancel:
+                                Button(primary, role: .cancel) { }
+                            case .destructive:
+                                Button(primary, role: .destructive) { }
+                            }
+                            
+                            switch secondaryStyle {
+                            case .default:
+                                Button(secondary) { }
+                            case .cancel:
+                                Button(secondary, role: .cancel) { }
+                            case .destructive:
+                                Button(secondary, role: .destructive) { }
+                            }
+                            
+                        }, message: {
+                            Text(message)
+                        })
+                        .disabled(isDoubleCancel)
                         
-                        switch secondaryStyle {
-                        case .default:
-                            Button(secondary) { }
-                        case .cancel:
-                            Button(secondary, role: .cancel) { }
-                        case .destructive:
-                            Button(secondary, role: .destructive) { }
+                        Button {
+                            showUIAlert()
+                        } label: {
+                            Text("UIAlert")
                         }
-                        
-                    }, message: {
-                        Text(message)
-                    })
-                    
-                    Button {
-                        showUIAlert()
-                    } label: {
-                        Text("UIAlert")
+                        .buttonStyle(.bordered)
+                        .disabled(isDoubleCancel)
                     }
-                    .buttonStyle(.bordered)
                     
+                    if isDoubleCancel {
+                        Text("Cancel is not allowed more than once")
+                            .bold()
+                            .foregroundStyle(.red)
+                    }
                 }
             }
         }

@@ -54,93 +54,99 @@ struct AlertPlaygroundView: View {
         
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(title: primary, style: primaryStyle.uikitStyle)
-        alert.addAction(title: secondary, style: primaryStyle.uikitStyle)
+        alert.addAction(title: secondary, style: secondaryStyle.uikitStyle)
         controller.present(alert, animated: true)
         
     }
 
     var body: some View {
-        
-        VStack(alignment: .leading, spacing: 0) {
-            
-            Text("Title")
-                .font(.caption)
-            TextField("Title", text: $title)
-                .padding(.bottom, 8)
-
-            Text("Message")
-                .font(.caption)
-            TextField("Message", text: $message)
-                .padding(.bottom, 8)
-            
-            Text("Primary / First Action")
-                .font(.caption)
-            TextField("Primary / First Action", text: $primary)
-            Picker("Style", selection: $primaryStyle, content: {
-                ForEach(ActionStyle.allCases, id: \.rawValue) { style in
-                    Text(style.rawValue).tag(style)
-                }
-            })
-                .padding(.bottom, 8)
-
-            Text("Secondary / Second Action")
-                .font(.caption)
-            TextField("Secondary / Second Action", text: $secondary)
-            Picker("Style", selection: $secondaryStyle, content: {
-                ForEach(ActionStyle.allCases, id: \.rawValue) { style in
-                    Text(style.rawValue).tag(style)
-                }
-            })
-                .padding(.bottom, 8)
-
-            
-            HStack {
+        List {
+            Section {
                 
-                Button {
-                    alertPresented = true
-                } label: {
-                    Text("SwiftUI Alert")
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Title")
+                        .font(.caption)
+                    TextField("Title", text: $title)
                 }
-                .buttonStyle(.bordered)
-                .alert(title, isPresented: $alertPresented, actions: {
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Message")
+                        .font(.caption)
+                    TextField("Message", text: $message)
+                }
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Primary / First Action")
+                        .font(.caption)
+                    HStack {
+                        TextField("Primary / First Action", text: $primary)
+                        Spacer()
+                        Picker("", selection: $primaryStyle, content: {
+                            ForEach(ActionStyle.allCases, id: \.rawValue) { style in
+                                Text(style.rawValue).tag(style)
+                            }
+                        })
+                    }
+                }
+                
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Secondary / Second Action")
+                        .font(.caption)
+                    HStack {
+                        TextField("Secondary / Second Action", text: $secondary)
+                        Spacer()
+                        Picker("", selection: $secondaryStyle, content: {
+                            ForEach(ActionStyle.allCases, id: \.rawValue) { style in
+                                Text(style.rawValue).tag(style)
+                            }
+                        })
+                    }
+                }
+            } footer: {
+                HStack {
                     
-                    switch primaryStyle {
-                    case .default:
-                        Button(primary) { }
-                    case .cancel:
-                        Button(primary, role: .cancel) { }
-                    case .destructive:
-                        Button(primary, role: .destructive) { }
+                    Button {
+                        alertPresented = true
+                    } label: {
+                        Text("SwiftUI Alert")
                     }
-
-                    switch secondaryStyle {
-                    case .default:
-                        Button(secondary) { }
-                    case .cancel:
-                        Button(secondary, role: .cancel) { }
-                    case .destructive:
-                        Button(secondary, role: .destructive) { }
+                    .buttonStyle(.bordered)
+                    .alert(title, isPresented: $alertPresented, actions: {
+                        
+                        switch primaryStyle {
+                        case .default:
+                            Button(primary) { }
+                        case .cancel:
+                            Button(primary, role: .cancel) { }
+                        case .destructive:
+                            Button(primary, role: .destructive) { }
+                        }
+                        
+                        switch secondaryStyle {
+                        case .default:
+                            Button(secondary) { }
+                        case .cancel:
+                            Button(secondary, role: .cancel) { }
+                        case .destructive:
+                            Button(secondary, role: .destructive) { }
+                        }
+                        
+                    }, message: {
+                        Text(message)
+                    })
+                    
+                    Button {
+                        showUIAlert()
+                    } label: {
+                        Text("UIAlert")
                     }
-                            
-                }, message: {
-                    Text(message)
-                })
-
-                Button {
-                    showUIAlert()
-                } label: {
-                    Text("UIAlert")
+                    .buttonStyle(.bordered)
+                    
                 }
-                .buttonStyle(.bordered)
-
             }
-            
-            Spacer()
-
         }
-        .padding(.horizontal)
         .navigationTitle("Alert Playground")
-        
+
     }
     
 }

@@ -38,7 +38,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
-    private let defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPromptCoordinator
+    private let defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -69,7 +69,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPromptCoordinator = DefaultBrowserAndDockPromptCoordinator()
+         defaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator()
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -262,7 +262,7 @@ final class MainViewController: NSViewController {
     private func showMessageBannerIfNeeded() {
         if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
 
-        if defaultBrowserAndDockPromptCoordinator.shouldShowPrompt {
+        if defaultBrowserAndDockPromptCoordinator.isUserEligibleForPrompt {
             guard let banner = defaultBrowserAndDockPromptCoordinator.getBanner(closeAction: { self.hideBanner() }) else { return }
 
             addAndLayoutChild(banner, into: mainView.bannerContainerView)
@@ -525,12 +525,10 @@ final class MainViewController: NSViewController {
     }
 
     @objc private func showToSetAsDefaultPopover(_ sender: Notification) {
-        let coordinator = DefaultBrowserAndDockPromptCoordinator()
-
         if bookmarksBarVisibilityManager.isBookmarksBarVisible {
-            coordinator.showPopover(below: self.bookmarksBarViewController.view)
+            defaultBrowserAndDockPromptCoordinator.showPopover(below: self.bookmarksBarViewController.view)
         } else {
-            coordinator.showPopover(below: self.navigationBarViewController.view)
+            defaultBrowserAndDockPromptCoordinator.showPopover(below: self.navigationBarViewController.view)
         }
     }
 

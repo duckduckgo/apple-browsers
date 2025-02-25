@@ -19,23 +19,14 @@
 import SwiftUI
 import SwiftUIExtensions
 
-/// The `DefaultBrowserAndDockPromptCoordinator` class is responsible for managing the display of prompts to the user in a macOS browser application.
-///
-/// This class serves as a centralized coordinator for handling different types of prompts, such as "Set As Default Browser" and "Add To The Dock". The decision on which prompt to display is based on a flag, which can be set to either show a popover or a banner.
-///
-/// The `DefaultBrowserAndDockPromptCoordinator` class is designed to encapsulate the logic for determining which prompt to display, as well as the presentation of the prompt itself. This allows the rest of the application to interact with the `PromptsCoordinator` without needing to know the specific implementation details of each prompt type.
-///
-/// By using a coordinator pattern, the `DefaultBrowserAndDockPromptCoordinator` class helps to maintain a separation of concerns and improve the overall organization and maintainability of the application's codebase. It also makes it easier to add or modify prompt types in the future, as the changes can be localized within the `DefaultBrowserAndDockPromptCoordinator` class.
-///
-/// The `DefaultBrowserAndDockPromptCoordinator` class should be responsible for the following tasks:
-/// - Determining which prompt to display based on the provided flag
-/// - Presenting the appropriate prompt (popover or banner) to the user
-/// - Handling user interactions with the prompt (e.g., setting the browser as default, adding to the dock)
-/// - Providing a consistent interface for other parts of the application to interact with the prompts
-/// - Firing pixels related to the prompts
-///
-/// By encapsulating the prompt-related logic within the `PromptsCoordinator` class, the rest of the application can focus on its core functionality, while the `PromptsCoordinator` ensures that the prompts are displayed and handled correctly.
-final class DefaultBrowserAndDockPromptCoordinator {
+protocol DefaultBrowserAndDockPrompt {
+    var isUserEligibleForPrompt: Bool { get }
+
+    func showPopover(below view: NSView)
+    func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController?
+}
+
+final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
     let dockCustomization: DockCustomization
     let defaultBrowserProvider: DefaultBrowserProvider
 #if SPARKLE
@@ -50,32 +41,33 @@ final class DefaultBrowserAndDockPromptCoordinator {
         self.defaultBrowserProvider = defaultBrowserProvider
     }
 
-    var shouldShowPrompt: Bool {
-        let wasOnboardingCompleted = false // TODO: Swap for real value
-//        return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
-        return true
+    var isUserEligibleForPrompt: Bool {
+        let wasOnboardingCompleted = true // TODO: Swap for real value
+        return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
     }
 
     func showPopover(below view: NSView) {
-        let isDefaultBrowser = defaultBrowserProvider.isDefault
-        let isAddedToDock = dockCustomization.isAddedToDock
-
-        guard let content = DefaultBrowserAndDockPromptContent.getStyle(isSparkle: isSparkleBuild, isDefaultBrowser: isDefaultBrowser, isOnDock: isAddedToDock) else {
+        guard let content = evaluatePromptEligibility else {
             return
         }
 
         var popover: NSPopover?
         let style = DefaultBrowserAndDockPromptPresentation.popover(content)
-        let viewModel = PopoverMessageViewModel(title: style.title,
-                                                message: style.message,
-                                                image: style.icon,
-                                                buttonText: style.primaryButtonTitle,
-                                                buttonAction: { self.onSetAsDefaultBrowser() },
-                                                secondaryButtonText: style.secondaryButtonTitle,
-                                                secondaryButtonAction: { popover?.close() },
-                                                shouldShowCloseButton: false,
-                                                shouldPresentMultiline: true,
-                                                alignment: .vertical)
+        let viewModel = PopoverMessageViewModel(
+            title: style.title,
+            message: style.message,
+            image: style.icon,
+            buttonText: style.primaryButtonTitle,
+            buttonAction: { self.onPromptConfirmation() },
+            secondaryButtonText: style.secondaryButtonTitle,
+            secondaryButtonAction: {
+                popover?.close()
+                self.onPromptDismissed()
+            },
+            shouldShowCloseButton: false,
+            shouldPresentMultiline: true,
+            alignment: .vertical)
+
         let contentView = PopoverMessageView(viewModel: viewModel, onClick: nil, onClose: nil)
         let viewController = NSHostingController(rootView: contentView)
         popover = DefaultBrowserAndDockPromptPopover(viewController: viewController)
@@ -84,25 +76,58 @@ final class DefaultBrowserAndDockPromptCoordinator {
     }
 
     func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController? {
-        let isDefaultBrowser = defaultBrowserProvider.isDefault
-        let isAddedToDock = dockCustomization.isAddedToDock
-        guard let content = DefaultBrowserAndDockPromptContent.getStyle(isSparkle: isSparkleBuild, isDefaultBrowser: isDefaultBrowser, isOnDock: isAddedToDock) else {
+        guard let content = evaluatePromptEligibility else {
             return nil
         }
 
         let style = DefaultBrowserAndDockPromptPresentation.banner(content)
 
-        return BannerMessageViewController(message: style.message,
-                                           image: style.icon,
-                                           buttonText: style.primaryButtonTitle,
-                                           buttonAction: { self.onSetAsDefaultBrowser() },
-                                           closeAction: { closeAction() })
+        return BannerMessageViewController(
+            message: style.message,
+            image: style.icon,
+            buttonText: style.primaryButtonTitle,
+            buttonAction: { self.onPromptConfirmation() },
+            closeAction: {
+                closeAction()
+                self.onPromptDismissed()
+            })
     }
 
     // MARK: - Private
 
-    private func onSetAsDefaultBrowser() {
-        if isSparkleBuild && !dockCustomization.isAddedToDock{
+    /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
+    /// `DefaultBrowserAndDockPromptContent` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
+    ///
+    /// The implementation checks the following conditions:
+    /// - If this is a Sparkle build:
+    ///   - If the user has both set DuckDuckGo as the default browser and added it to the dock, they are not eligible for any prompt (returns `nil`).
+    ///   - If the user has set DuckDuckGo as the default browser but hasn't added it to the dock, it returns `.addToDockPrompt`.
+    ///   - If the user hasn't set DuckDuckGo as the default browser but has added it to the dock, it returns `.setAsDefaultPrompt`.
+    ///   - If the user hasn't set DuckDuckGo as the default browser and hasn't added it to the dock, it returns `.bothDefaultBrowserAndDockPrompt`.
+    /// - If this is not a Sparkle build, it only returns `.setAsDefaultPrompt` if the user hasn't already set DuckDuckGo as the default browser (otherwise, it returns `nil`).
+    ///
+    /// - Returns: The appropriate `DefaultBrowserAndDockPromptContent` value, or `nil` if the user is not eligible for any prompt.
+    private var evaluatePromptEligibility: DefaultBrowserAndDockPromptContent? {
+        let isDefaultBrowser = defaultBrowserProvider.isDefault
+        let isAddedToDock = dockCustomization.isAddedToDock
+
+        if isSparkleBuild {
+            if isDefaultBrowser && isAddedToDock {
+                return nil
+            } else if isDefaultBrowser && !isAddedToDock {
+                return .addToDockPrompt
+            } else if !isDefaultBrowser && isAddedToDock {
+                return .setAsDefaultPrompt
+            } else {
+                return .bothDefaultBrowserAndDockPrompt
+            }
+        } else {
+            return isDefaultBrowser ? nil : .setAsDefaultPrompt
+        }
+    }
+
+    private func onPromptConfirmation() {
+        if isSparkleBuild && !dockCustomization.isAddedToDock {
             dockCustomization.addToDock()
         }
 
@@ -113,7 +138,7 @@ final class DefaultBrowserAndDockPromptCoordinator {
         }
     }
 
-    private func onPopoverDismissed() {
+    private func onPromptDismissed() {
         /// TODO: We need to do the following:
         /// - Fire a pixel with the dimissal (the experiment one)
         /// - Save a flag in user defaults so we do not show the popover again

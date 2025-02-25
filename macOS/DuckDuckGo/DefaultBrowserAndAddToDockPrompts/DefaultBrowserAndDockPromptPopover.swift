@@ -43,8 +43,10 @@ final class DefaultBrowserAndDockPromptPopover: NSPopover {
 
         let positioningViewCenter = positioningView.convert(positioningView.bounds.center, to: nil)
         let positioningViewScreenCenter = mainWindow.convertPoint(toScreen: positioningViewCenter)
-        frame.origin.x = positioningViewScreenCenter.x - (frame.size.width / 2) // Adjusts the popover to be always centered in the parent view
-        frame.origin.y = min(max(screenFrame.minY, screenPoint.y - frame.size.height - DefaultBrowserAndDockPromptPopover.topInset), screenFrame.maxY) // Adjusts the popover to be shown some pixels below the parent view
+        // Adjusts the popover to be always centered in the parent view
+        frame.origin.x = positioningViewScreenCenter.x - (frame.size.width / 2)
+        // Adjusts the popover to be shown some pixels below the parent view
+        frame.origin.y = min(max(screenFrame.minY, screenPoint.y - frame.size.height - DefaultBrowserAndDockPromptPopover.topInset), screenFrame.maxY)
 
         return frame
     }

@@ -16,6 +16,12 @@
 //  limitations under the License.
 //
 
+enum DefaultBrowserAndDockPromptContent {
+    case bothDefaultBrowserAndDockPrompt
+    case setAsDefaultPrompt
+    case addToDockPrompt
+}
+
 enum DefaultBrowserAndDockPromptPresentation {
     case popover(DefaultBrowserAndDockPromptContent)
     case banner(DefaultBrowserAndDockPromptContent)
@@ -23,7 +29,12 @@ enum DefaultBrowserAndDockPromptPresentation {
     var title: String? {
         switch self {
         case let .popover(content):
-            return content.title
+            switch content {
+            case .addToDockPrompt:
+                return "Add DuckDuckGo to your Dock"
+            default:
+                return "Let DuckDuckGo protect more of what you do online"
+            }
         default:
             return nil
         }
@@ -52,7 +63,7 @@ enum DefaultBrowserAndDockPromptPresentation {
                 return "Get quick access to protected browsing when you add DuckDuckGo to your Dock."
             case .setAsDefaultPrompt:
                 return "Make us your default browser so all site links open in DuckDuckGo"
-            case .both:
+            case .bothDefaultBrowserAndDockPrompt:
                 return "Make us your default browser so all site links open in DuckDuckGo, and add us to your Dock for quick access."
             }
         case let .banner(content):
@@ -84,37 +95,6 @@ enum DefaultBrowserAndDockPromptPresentation {
             return "Not Now"
         default:
             return nil
-        }
-    }
-}
-
-enum DefaultBrowserAndDockPromptContent {
-    case both
-    case setAsDefaultPrompt
-    case addToDockPrompt
-
-    var title: String {
-        switch self {
-        case .addToDockPrompt:
-            return "Add DuckDuckGo to your Dock"
-        default:
-            return "Let DuckDuckGo protect more of what you do online"
-        }
-    }
-
-    static func getStyle(isSparkle: Bool, isDefaultBrowser: Bool, isOnDock: Bool) -> DefaultBrowserAndDockPromptContent? {
-        if isSparkle {
-            if isDefaultBrowser && isOnDock {
-                return nil
-            } else if isDefaultBrowser && !isOnDock {
-                return .addToDockPrompt
-            } else if !isDefaultBrowser && isOnDock {
-                return .setAsDefaultPrompt
-            } else {
-                return .both
-            }
-        } else {
-            return isDefaultBrowser ? nil : .setAsDefaultPrompt
         }
     }
 }

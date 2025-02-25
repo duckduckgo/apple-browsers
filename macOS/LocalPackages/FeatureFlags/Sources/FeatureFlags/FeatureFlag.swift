@@ -60,19 +60,28 @@ public enum FeatureFlag: String, CaseIterable {
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
+    case popoverVsBannerExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .popoverVsBannerExperiment:
+            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
 
+    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case popover
+        case banner
+     }
+
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .popoverVsBannerExperiment:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -126,6 +135,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .popoverVsBannerExperiment:
+            return .internalOnly()
         }
     }
 }

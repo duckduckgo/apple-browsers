@@ -57,10 +57,10 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation() },
+            buttonAction: { self.coordinator.onPromptConfirmation(for: content) },
             closeAction: {
                 closeAction()
-                self.coordinator.onPromptDismissed()
+                self.coordinator.onPromptDismissed(for: content)
             })
     }
 
@@ -73,11 +73,11 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation() },
+            buttonAction: { self.coordinator.onPromptConfirmation(for: content) },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()
-                self.coordinator.onPromptDismissed()
+                self.coordinator.onPromptDismissed(for: content)
             },
             shouldShowCloseButton: false,
             shouldPresentMultiline: true,

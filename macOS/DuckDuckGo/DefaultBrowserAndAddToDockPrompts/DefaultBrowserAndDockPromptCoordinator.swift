@@ -16,35 +16,79 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
 import SwiftUIExtensions
+import BrowserServicesKit
+import FeatureFlags
+import PixelKit
 
 protocol DefaultBrowserAndDockPrompt {
     var isUserEligibleForPrompt: Bool { get }
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
-    func onPromptConfirmation()
-    func onPromptDismissed()
+    func onPromptConfirmation(for content: DefaultBrowserAndDockPromptContent)
+    func onPromptDismissed(for content: DefaultBrowserAndDockPromptContent)
 }
 
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
-    let dockCustomization: DockCustomization
-    let defaultBrowserProvider: DefaultBrowserProvider
+    enum Constants {
+        static let subfeatureID = FeatureFlag.popoverVsBannerExperiment.rawValue
+
+        /// Metric identifiers for the user actions around the experiment
+        static let userDismissedBanner = "userDismissedBanner"
+        static let userDismissedPopover = "userDismissedPopover"
+        static let userActionedBanner = "userActionedBanner"
+        static let userActionedPopover = "userActionedPopover"
+
+        static let conversionWindowDays = 0...3
+    }
+
+    private let dockCustomization: DockCustomization
+    private let defaultBrowserProvider: DefaultBrowserProvider
+    private let featureFlagger: FeatureFlagger
+
+    private var cancellables: Set<AnyCancellable> = []
+
 #if SPARKLE
-    let isSparkleBuild: Bool = true
+    private let isSparkleBuild: Bool = true
 #else
-    let isSparkleBuild: Bool = false
+    private let isSparkleBuild: Bool = false
 #endif
 
     init(dockCustomization: DockCustomization = DockCustomizer(),
-         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider()) {
+         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
+        self.featureFlagger = featureFlagger
+
+        subscribeToExperiment()
     }
 
     var isUserEligibleForPrompt: Bool {
         let wasOnboardingCompleted = true // TODO: Swap for real value
         return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
+    }
+
+    private func subscribeToExperiment() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.experimentFlagDidChangePublisher
+            .filter { $0.0 == .popoverVsBannerExperiment }
+            .sink { (_, cohort) in
+                guard let newCohort = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
+                switch newCohort {
+                case .control: print("No-op")
+                case .popover:
+                    NotificationCenter.default.post(name: .showPopoverPromptForDefaultBrowser, object: nil)
+                case .banner:
+                    NotificationCenter.default.post(name: .showBannerPromptForDefaultBrowser, object: nil)
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Private
@@ -80,11 +124,28 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    func onPromptConfirmation() {
-        if isSparkleBuild && !dockCustomization.isAddedToDock {
+    func onPromptConfirmation(for content: DefaultBrowserAndDockPromptContent) {
+        guard let type = evaluatePromptEligibility else { return }
+
+        switch type {
+        case .bothDefaultBrowserAndDockPrompt:
             dockCustomization.addToDock()
+            setAsDefaultBrowserAction()
+        case .addToDockPrompt:
+            dockCustomization.addToDock()
+        case .setAsDefaultPrompt:
+            setAsDefaultBrowserAction()
         }
 
+        trackPromptConfirmation(for: content)
+    }
+
+    func onPromptDismissed(for content: DefaultBrowserAndDockPromptContent) {
+        trackPromptDismissal(for: content)
+        /// TODO: Save a flag in user defaults so we do not show the popover or banner again.
+    }
+
+    private func setAsDefaultBrowserAction() {
         do {
             try defaultBrowserProvider.presentDefaultBrowserPrompt()
         } catch {
@@ -92,9 +153,41 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    func onPromptDismissed() {
-        /// TODO: We need to do the following:
-        /// - Fire a pixel with the dimissal (the experiment one)
-        /// - Save a flag in user defaults so we do not show the popover again
+    private func trackPromptConfirmation(for content: DefaultBrowserAndDockPromptContent) {
+        switch content {
+        case .popover:
+            PixelKit.fireExperimentPixel(
+                for: Constants.subfeatureID,
+                metric: Constants.userActionedPopover,
+                conversionWindowDays: Constants.conversionWindowDays,
+                value: ""
+            )
+        case .banner:
+            PixelKit.fireExperimentPixel(
+                for: FeatureFlag.popoverVsBannerExperiment.rawValue,
+                metric: Constants.userActionedBanner,
+                conversionWindowDays: Constants.conversionWindowDays,
+                value: ""
+            )
+        }
+    }
+
+    private func trackPromptDismissal(for content: DefaultBrowserAndDockPromptContent) {
+        switch content {
+        case .popover:
+            PixelKit.fireExperimentPixel(
+                for: Constants.subfeatureID,
+                metric: Constants.userDismissedPopover,
+                conversionWindowDays: Constants.conversionWindowDays,
+                value: ""
+            )
+        case .banner:
+            PixelKit.fireExperimentPixel(
+                for: FeatureFlag.popoverVsBannerExperiment.rawValue,
+                metric: Constants.userDismissedBanner,
+                conversionWindowDays: Constants.conversionWindowDays,
+                value: ""
+            )
+        }
     }
 }

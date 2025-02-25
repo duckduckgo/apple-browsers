@@ -988,14 +988,6 @@ extension MainViewController {
         NotificationCenter.default.post(name: .showPopoverPromptForDefaultBrowser, object: nil)
     }
 
-    @objc func showPopoverPromptForDefaultBrowserAddressBar() {
-        NotificationCenter.default.post(name: .showPopoverPromptForDefaultBrowserAddressBar, object: nil)
-    }
-
-    @objc func showDialogForDefaultBrowser() {
-        NotificationCenter.default.post(name: .showDialogPromptForDefaultBrowser, object: nil)
-    }
-
     /// debug menu popup window test
     @objc func showPopUpWindow(_ sender: Any?) {
         let tab = Tab(content: .url(.duckDuckGo, source: .ui),

@@ -1,5 +1,5 @@
 //
-//  PromptStyle.swift
+//  DefaultBrowserAndDockPromptPresentation.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-enum PromptStyle {
-    case popover(PromptContent)
-    case banner(PromptContent)
+enum DefaultBrowserAndDockPromptPresentation {
+    case popover(DefaultBrowserAndDockPromptContent)
+    case banner(DefaultBrowserAndDockPromptContent)
 
     var title: String? {
         switch self {
@@ -88,7 +88,7 @@ enum PromptStyle {
     }
 }
 
-enum PromptContent {
+enum DefaultBrowserAndDockPromptContent {
     case both
     case setAsDefaultPrompt
     case addToDockPrompt
@@ -102,7 +102,7 @@ enum PromptContent {
         }
     }
 
-    static func getStyle(isSparkle: Bool, isDefaultBrowser: Bool, isOnDock: Bool) -> PromptContent? {
+    static func getStyle(isSparkle: Bool, isDefaultBrowser: Bool, isOnDock: Bool) -> DefaultBrowserAndDockPromptContent? {
         if isSparkle {
             if isDefaultBrowser && isOnDock {
                 return nil

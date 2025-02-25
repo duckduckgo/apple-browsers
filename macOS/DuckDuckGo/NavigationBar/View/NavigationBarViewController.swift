@@ -445,17 +445,6 @@ final class NavigationBarViewController: NSViewController {
                                                name: .pageRefreshMonitorDidDetectRefreshPattern,
                                                object: nil)
 
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showPopoverPromptForDefaultBrowser(_:)),
-                                               name: .showPopoverPromptForDefaultBrowser,
-                                               object: nil)
-
-
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showCenteredDialog(_:)),
-                                               name: .showDialogPromptForDefaultBrowser,
-                                               object: nil)
-
         UserDefaults.netP
             .publisher(for: \.networkProtectionShouldShowVPNUninstalledMessage)
             .receive(on: DispatchQueue.main)
@@ -577,20 +566,6 @@ final class NavigationBarViewController: NSViewController {
               isOnboardingFinished
         else { return }
         showBrokenSitePrompt()
-    }
-
-    @objc private func showPopoverPromptForDefaultBrowser(_ sender: Notification) {
-        let promptsCoordinator = PromptsCoordinator()
-        guard let popover = promptsCoordinator.getPopover() else { return }
-
-        popover.show(onParent: self, relativeTo: self.optionsButton)
-    }
-
-    @objc private func showCenteredDialog(_ sender: Notification) {
-        let promptsCoordinator = PromptsCoordinator()
-        guard let window = view.window else { return }
-
-        promptsCoordinator.showModal(in: window)
     }
 
     private var isOnboardingFinished: Bool {

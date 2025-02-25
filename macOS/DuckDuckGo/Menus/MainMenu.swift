@@ -702,8 +702,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
                 NSMenuItem(title: "Show SAT & ATT Banner", action: #selector(MainViewController.showBannerPromptForDefaultBrowser))
                 NSMenuItem(title: "Show SAT & ATT Popover - More Options Menu", action: #selector(MainViewController.showPopoverPromptForDefaultBrowser))
-                NSMenuItem(title: "Show SAT & ATT Popover - Centered In Address Bar", action: #selector(MainViewController.showPopoverPromptForDefaultBrowserAddressBar))
-                NSMenuItem(title: "Show SAT & ATT Popover - Centered Dialog", action: #selector(MainViewController.showDialogForDefaultBrowser))
             }
             NSMenuItem(title: "Remote Configuration") {
                 customConfigurationUrlMenuItem

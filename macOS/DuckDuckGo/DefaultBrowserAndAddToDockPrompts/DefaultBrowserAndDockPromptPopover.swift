@@ -1,5 +1,5 @@
 //
-//  CenteredPromptPopover.swift
+//  DefaultBrowserAndDockPromptPopover.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import SwiftUI
 import SwiftUIExtensions
 
-final class CenteredPromptPopover: NSPopover {
+final class DefaultBrowserAndDockPromptPopover: NSPopover {
     private static let topInset: CGFloat = 22
 
     init(viewController: NSHostingController<PopoverMessageView>) {
@@ -31,7 +31,7 @@ final class CenteredPromptPopover: NSPopover {
     }
 
     required init?(coder: NSCoder) {
-        fatalError("PromptCenteredPopover: Bad initializer")
+        fatalError("DefaultBrowserAndDockPromptPopover: Bad initializer")
     }
 
     @objc override func adjustFrame(_ frame: NSRect) -> NSRect {
@@ -44,7 +44,7 @@ final class CenteredPromptPopover: NSPopover {
         let positioningViewCenter = positioningView.convert(positioningView.bounds.center, to: nil)
         let positioningViewScreenCenter = mainWindow.convertPoint(toScreen: positioningViewCenter)
         frame.origin.x = positioningViewScreenCenter.x - (frame.size.width / 2) // Adjusts the popover to be always centered in the parent view
-        frame.origin.y = min(max(screenFrame.minY, screenPoint.y - frame.size.height - CenteredPromptPopover.topInset), screenFrame.maxY) // Adjusts the popover to be shown some pixels below the parent view
+        frame.origin.y = min(max(screenFrame.minY, screenPoint.y - frame.size.height - DefaultBrowserAndDockPromptPopover.topInset), screenFrame.maxY) // Adjusts the popover to be shown some pixels below the parent view
 
         return frame
     }

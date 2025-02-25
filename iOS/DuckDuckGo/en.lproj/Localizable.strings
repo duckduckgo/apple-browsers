@@ -211,9 +211,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sync & Backup is Paused";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Bookmark All Tabs?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Add to Unprotected Sites";
 

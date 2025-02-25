@@ -141,18 +141,18 @@ extension TabSwitcherViewController {
 
     func closeAllTabs() {
         let alert = UIAlertController(
-            title: UserText.alertTitleCloseTabs(withCount: tabsModel.count),
-            message: UserText.alertMessageCloseTabs(withCount: tabsModel.count),
+            title: UserText.alertTitleCloseAllTabs(withCount: tabsModel.count),
+            message: UserText.alertMessageCloseAllTabs(withCount: tabsModel.count),
             preferredStyle: .alert)
-
-        alert.addAction(UIAlertAction(title: UserText.actionCancel,
-                                      style: .default) { _ in })
 
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: tabsModel.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
             self.delegate?.tabSwitcherDidRequestCloseAll(tabSwitcher: self)
         })
+
+        alert.addAction(UIAlertAction(title: UserText.actionCancel,
+                                      style: .cancel) { _ in })
 
         present(alert, animated: true)
     }
@@ -171,7 +171,7 @@ extension TabSwitcherViewController {
             preferredStyle: .alert)
 
         alert.addAction(UIAlertAction(title: UserText.actionCancel,
-                                      style: .default) { _ in })
+                                      style: .cancel) { _ in })
 
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indices.count),
                                       style: .destructive) { [weak self] _ in
@@ -488,7 +488,7 @@ extension TabSwitcherViewController {
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
             guard let self else { return }
             self.bookmarkTabs(withIndexes: self.tabsModel.tabs.indices.map { $0 },
-                              title: UserText.alertBookmarkAllTitle,
+                              title: UserText.alertTitleBookmarkAll(withCount: tabCount),
                               message: UserText.alertBookmarkAllMessage)
         }
 
@@ -563,7 +563,7 @@ extension TabSwitcherViewController {
 
     func selectModeBookmarkAll() {
         bookmarkTabs(withIndexes: tabsModel.tabs.indices.map { $0 },
-                     title: UserText.alertBookmarkAllTitle,
+                     title: UserText.alertTitleBookmarkAll(withCount: tabCount),
                      message: UserText.alertBookmarkAllMessage)
     }
 

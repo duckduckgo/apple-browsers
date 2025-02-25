@@ -122,6 +122,28 @@ extension Preferences {
                     }
                 }
 
+                // SECTION: Pinned Tabs
+
+                PreferencePaneSection(UserText.pinnedTabs) {
+
+                    PreferencePaneSubSection {
+
+                        TextMenuItemCaption(UserText.pinnedTabsDescription)
+
+                        Picker(selection: $tabsModel.sharedPinnedTabs, label: EmptyView()) {
+                            Text(UserText.perWindowPinnedTabs).tag(false)
+                            VStack(alignment: .leading, spacing: 0) {
+                                HStack(spacing: 15) {
+                                    Text(UserText.sharedPinnedTabs)
+                                }
+                            }.tag(true)
+                        }
+                        .pickerStyle(.radioGroup)
+                        .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+                    }
+
+                }
+
                 // SECTION 4: Home Page
                 PreferencePaneSection(UserText.homePage) {
 

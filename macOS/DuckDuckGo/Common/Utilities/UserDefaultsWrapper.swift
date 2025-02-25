@@ -98,6 +98,7 @@ public struct UserDefaultsWrapper<T> {
         case defaultPageZoom = "preferences.appearance.default-page-zoom"
         case websitePageZoom = "preferences.appearance.website-page-zoom"
         case bookmarksBarAppearance = "preferences.appearance.bookmarks-bar"
+        case sharedPinnedTabs = "preferences.tabs.shared-pinned-tabs"
 
         case homeButtonPosition = "preferences.appeareance.home-button-position"
 

@@ -56017,6 +56017,54 @@
         }
       }
     },
+    "preferences-pinned-tabs-per-window" : {
+      "comment" : "Option for pinned tabs behavior",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Specific to each window"
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs-shared" : {
+      "comment" : "Option for pinned tabs behavior",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared across all windows"
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs.description" : {
+      "comment" : "Pinned tabs Settings section description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose how pinned tabs behave across browser windows."
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs.title" : {
+      "comment" : "Title for Pinned Tabs section in settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinned Tabs"
+          }
+        }
+      }
+    },
     "preferences-tabs.new.tab.position.title" : {
       "comment" : "Title for new tab positioning",
       "extractionState" : "extracted_with_value",

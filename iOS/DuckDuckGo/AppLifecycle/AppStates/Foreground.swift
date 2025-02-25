@@ -94,9 +94,6 @@ struct Foreground: ForegroundHandling {
 
         configureAppearance()
 
-        let vpnService = services.vpnService
-        vpnService.resume()
-
         interactionManager.start(
             launchAction: launchAction,
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
@@ -111,6 +108,7 @@ struct Foreground: ForegroundHandling {
             }
         )
 
+        services.vpnService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
         services.subscriptionService.resume()

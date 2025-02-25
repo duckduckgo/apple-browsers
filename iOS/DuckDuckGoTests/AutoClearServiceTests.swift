@@ -26,8 +26,8 @@ final class MockAutoClear: AutoClearing {
 
     var isClearingEnabledValue = false
     var clearDataIfEnabledCalled = false
-    var shouldClearData = true
-    var shouldClearDataIfTimeExpiredCalled = false
+    var didTimeExpired = true
+    var isDataClearingDueCalled = false
     var clearDataDueToTimeExpiredCalled = false
     var startClearingTimerCalled = false
     var lastLaunchingValue: Bool?
@@ -42,9 +42,9 @@ final class MockAutoClear: AutoClearing {
         lastLaunchingValue = launching
     }
 
-    var shouldClearDataIfTimeExpired: Bool {
-        shouldClearDataIfTimeExpiredCalled = true
-        return shouldClearData
+    var isDataClearingDue: Bool {
+        isDataClearingDueCalled = true
+        return didTimeExpired
     }
 
     func clearDataDueToTimeExpired(applicationState: DataStoreWarmup.ApplicationState) async {
@@ -91,14 +91,14 @@ final class AutoClearServiceTests {
 
         // Then
         await autoClearService.autoClearTask?.value
-        #expect(mockAutoClear.shouldClearDataIfTimeExpiredCalled)
+        #expect(mockAutoClear.isDataClearingDueCalled)
         #expect(mockAutoClear.clearDataDueToTimeExpiredCalled)
     }
 
     @Test("resume() should not start data clear but should remove overlay instead")
     func testResumeWithoutClearingWhenTimeThresholdNotMet() async {
         // Given
-        mockAutoClear.shouldClearData = false
+        mockAutoClear.didTimeExpired = false
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
                                                 overlayWindowManager: mockOverlayWindowManager)
 
@@ -106,7 +106,7 @@ final class AutoClearServiceTests {
         autoClearService.resume()
 
         // Then
-        #expect(mockAutoClear.shouldClearDataIfTimeExpiredCalled)
+        #expect(mockAutoClear.isDataClearingDueCalled)
         #expect(!mockAutoClear.clearDataDueToTimeExpiredCalled)
         #expect(mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
     }

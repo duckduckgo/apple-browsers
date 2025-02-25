@@ -71,7 +71,7 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataDueToTimeExpired(applicationState: .unknown)
         logic.startClearingTimer()
 
-        XCTAssertFalse(logic.shouldClearDataIfTimeExpired)
+        XCTAssertFalse(logic.isDataClearingDue)
     }
     
     func testWhenDesiredTimingIsSetThenDataIsClearedOnceTimeHasElapsed() async {
@@ -88,9 +88,9 @@ class AutoClearTests: XCTestCase {
             appSettings.autoClearTiming = timing
             
             logic.startClearingTimer(Date().timeIntervalSince1970 - delay + 1)
-            XCTAssertFalse(logic.shouldClearDataIfTimeExpired)
+            XCTAssertFalse(logic.isDataClearingDue)
             logic.startClearingTimer(Date().timeIntervalSince1970 - delay - 1)
-            XCTAssertTrue(logic.shouldClearDataIfTimeExpired)
+            XCTAssertTrue(logic.isDataClearingDue)
         }
     }
 

@@ -38,7 +38,7 @@ protocol AutoClearing {
     var isClearingEnabled: Bool { get }
     func clearDataIfEnabled(launching: Bool, applicationState: DataStoreWarmup.ApplicationState) async
 
-    var shouldClearDataIfTimeExpired: Bool { get }
+    var isDataClearingDue: Bool { get }
     func clearDataDueToTimeExpired(applicationState: DataStoreWarmup.ApplicationState) async
     func startClearingTimer(_ time: TimeInterval)
 
@@ -103,7 +103,7 @@ final class AutoClear: AutoClearing {
         }
     }
 
-    var shouldClearDataIfTimeExpired: Bool {
+    var isDataClearingDue: Bool {
         guard isClearingEnabled, let timestamp = timestamp else { return false }
         return shouldClearData(elapsedTime: Date().timeIntervalSince1970 - timestamp)
     }

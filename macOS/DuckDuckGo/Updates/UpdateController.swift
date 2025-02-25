@@ -284,6 +284,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             try? self?.configureUpdater(needsUpdateCheck: true)
             self?.checkForUpdateRespectingRollout()
+            self?.checkForUpdateSkippingRollout()
         }
     }
 

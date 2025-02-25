@@ -56,6 +56,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    case autoUpdateInDEBUG
+
     case autofillPartialFormSaves
     case autcompleteTabs
     case webExtensions
@@ -72,7 +74,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -115,6 +117,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .htmlNewTabPage:
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
+            return .disabled
+        case .autoUpdateInDEBUG:
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))

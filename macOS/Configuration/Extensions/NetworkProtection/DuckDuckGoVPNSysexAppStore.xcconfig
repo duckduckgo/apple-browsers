@@ -50,9 +50,10 @@ PRODUCT_NAME[config=Debug][sdk=*] = $(SYSEX_BUNDLE_ID)
 PRODUCT_NAME[config=Release][sdk=*] = $(SYSEX_BUNDLE_ID)
 PRODUCT_NAME[config=Review][sdk=*] = $(SYSEX_BUNDLE_ID)
 
-PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] =
-PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.network-extension macos
-PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.network-extension.review macos
+PROVISIONING_PROFILE_SPECIFIER[config=Debug][sdk=macosx*] =
+PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.debug macos
+PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios macos
+PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.review macos
 
 SDKROOT = macosx
 SKIP_INSTALL = YES

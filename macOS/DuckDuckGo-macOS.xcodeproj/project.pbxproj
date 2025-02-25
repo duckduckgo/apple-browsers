@@ -10510,7 +10510,7 @@
 				1E5921C02CF479EE00E15CCA /* FeatureFlags */,
 			);
 			productName = NetworkProtectionSystemExtension;
-			productReference = 4B25375A2A11BE7300610219 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */;
+			productReference = 4B25375A2A11BE7300610219 /* com.duckduckgo.macos.vpn.network-extension.debug.systemextension */;
 			productType = "com.apple.product-type.system-extension";
 		};
 		4B2D06382A11CFBA00DE1F49 /* DuckDuckGoVPN */ = {

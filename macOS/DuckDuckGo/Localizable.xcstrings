@@ -39891,7 +39891,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Statistiche di protezione"
+            "value" : "Statistiche sulla protezione"
           }
         },
         "nl" : {
@@ -56804,7 +56804,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo zum Dock hinzufügen…"
+            "value" : "DuckDuckGo zum Dock hinzufügen …"
           }
         },
         "en" : {
@@ -56834,25 +56834,25 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voeg DuckDuckGo toe aan Dock…"
+            "value" : "DuckDuckGo toevoegen aan Dock…"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj DuckDuckGo do Dock…"
+            "value" : "Dodaj DuckDuckGo do Docka…"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar DuckDuckGo ao Dock…"
+            "value" : "Adicionar DuckDuckGo à Dock…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить DuckDuckGo в док-панель…"
+            "value" : "Добавить DuckDuckGo на док-панель…"
           }
         }
       }
@@ -68633,6 +68633,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Применить"
+          }
+        }
+      }
+    },
+    "vpn.dns.server.block.risky.domains.toggle.footer" : {
+      "comment" : "Explanation in a footer of option the user can opt in where the VPN blocks risky domains",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blockiere mit einer Blockliste auf DNS-Ebene über 150.000 Domains, die für das Hosten von Malware, Phishing-Angriffen und Online-Betrug gekennzeichnet sind.\n "
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquea más de 150 000 dominios identificados por alojar malware, ataques de phishing y estafas en Internet con una lista de bloqueo a nivel de DNS."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquez plus de 150 000 domaines signalés comme hébergeant des logiciels malveillants, des attaques de phishing et des escroqueries en ligne grâce à une liste de blocage au niveau du DNS."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca oltre 150.000 domini segnalati per ospitare malware, attacchi di phishing e truffe online con una lista di blocco a livello DNS.\n "
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokkeer meer dan 150.000 domeinen die zijn aangeduid als hosts van malware, phishing-aanvallen en online oplichting met een blokkeringslijst op DNS-niveau."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zablokuj ponad 150 000 domen oznaczonych jako hosting złośliwego oprogramowania, ataków wyłudzających informacje i oszustw internetowych za pomocą listy zablokowanych na poziomie DNS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueia mais de 150 000 domínios identificados por alojarem malware, ataques de phishing e fraudes online com uma lista de bloqueios ao nível do DNS."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "С помощью стоп-списка DNS блокировать более 150 тысяч доменов, на которые поступили жалобы за размещение вредоносного ПО, фишинговые атаки и онлайн-мошенничество."
+          }
+        }
+      }
+    },
+    "vpn.dns.server.block.risky.domains.toggle.title" : {
+      "comment" : "Name of option the user can opt in where the VPN blocks risky domains",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riskante Domains blockieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Block risky domains"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear dominios de riesgo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquer les domaines à risque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocca i domini rischiosi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Risicovolle domeinen blokkeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokuj ryzykowne domeny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloquear domínios arriscados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировать опасные домены"
           }
         }
       }

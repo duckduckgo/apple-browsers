@@ -46,6 +46,12 @@ public final class LaunchOptionsHandler {
         return .notOverridden
     }
 
+#if DEBUG || ALPHA
+    public func overrideOnboardingCompleted() {
+        userDefaults.set("true", forKey: Self.isOnboardingCompleted)
+    }
+#endif
+
     public var appVariantName: String? {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))
     }

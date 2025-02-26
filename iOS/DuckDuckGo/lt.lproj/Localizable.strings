@@ -1949,9 +1949,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Bet kurioje interneto svetainėje atidarykite ••• meniu ir pasirinkite **Pridėti mėgstamą**, kad pridėtumėte naujame skirtuko puslapyje.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Slapukai valdomi";
 
@@ -2484,8 +2481,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Apsauga nuo žiniatinklio sekimo";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "„DuckDuckGo“ automatiškai blokuoja paslėptas stebėjimo priemones naršant internete.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Blokuoti daugiau nei 150 000 domenų, pažymėtų kaip talpinančių kenkėjiškas programas, sukčiavimo atakas ir internetinius sukčius, naudodamas DNS lygmens blokavimo sąrašą. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Turinio blokavimas ir filtravimas";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Blokuoti rizikingus domenus";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Pasirinkite parinktį, kuri geriausiai apibūdina iškilusią problemą.";

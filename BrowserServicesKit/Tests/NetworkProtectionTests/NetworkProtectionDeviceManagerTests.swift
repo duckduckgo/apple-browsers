@@ -20,6 +20,7 @@ import Foundation
 import XCTest
 @testable import NetworkProtection
 @testable import NetworkProtectionTestUtils
+import Network
 
 final class NetworkProtectionDeviceManagerTests: XCTestCase {
     var tokenHandler: SubscriptionTokenHandlingMock!
@@ -204,16 +205,56 @@ final class NetworkProtectionDeviceManagerTests: XCTestCase {
         XCTAssertEqual(firstKey, secondKey) // Check that the key did NOT change, even though we tried to regenerate it
         XCTAssertNotNil(networkClient.spyRegister)
     }
+
+    func testDNSConfigurationWhenProtectionIsActive() async {
+        // GIVEN
+        let server = NetworkProtectionServer.mockRegisteredServer
+        networkClient.stubRegister = .success([server])
+        let protectionActive = true
+        let configuration: NetworkProtectionDeviceManager.GenerateTunnelConfigurationResult
+        let expectedIPAddress = IPv4Address("10.11.12.2")!
+
+        // WHEN
+        do {
+            configuration = try await manager.generateTunnelConfiguration(selectionMethod: .automatic, regenerateKey: false, protectionActive: protectionActive)
+        } catch {
+            XCTFail("Unexpected error \(error.localizedDescription)")
+            return
+        }
+
+        // THEN
+        XCTAssertEqual(configuration.0.interface.dns.first?.address.rawValue, expectedIPAddress.rawValue)
+    }
+
+    func testDNSConfigurationWhenProtectionIsNotActive() async {
+        // GIVEN
+        let server = NetworkProtectionServer.mockRegisteredServer
+        networkClient.stubRegister = .success([server])
+        let protectionActive = false
+        let configuration: NetworkProtectionDeviceManager.GenerateTunnelConfigurationResult
+        let expectedIPAddress = IPv4Address("10.11.12.1")!
+
+        // WHEN
+        do {
+            configuration = try await manager.generateTunnelConfiguration(selectionMethod: .automatic, regenerateKey: false, protectionActive: protectionActive)
+        } catch {
+            XCTFail("Unexpected error \(error.localizedDescription)")
+            return
+        }
+
+        // THEN
+        XCTAssertEqual(configuration.0.interface.dns.first?.address.rawValue, expectedIPAddress.rawValue)
+    }
 }
 
 extension NetworkProtectionDeviceManager {
 
     func generateTunnelConfiguration(selectionMethod: NetworkProtectionServerSelectionMethod,
-                                     regenerateKey: Bool) async throws -> NetworkProtectionDeviceManager.GenerateTunnelConfigurationResult {
+                                     regenerateKey: Bool, protectionActive: Bool = false) async throws -> NetworkProtectionDeviceManager.GenerateTunnelConfigurationResult {
         try await generateTunnelConfiguration(
             resolvedSelectionMethod: selectionMethod,
             excludeLocalNetworks: false,
-            dnsSettings: .default,
+            dnsSettings: .ddg(blockRiskyDomains: protectionActive),
             regenerateKey: regenerateKey
         )
     }

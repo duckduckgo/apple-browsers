@@ -1949,9 +1949,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Ava mis tahes saidil menüü ••• ja vali **Lisa lemmik**, et lisada see oma uue vahekaardi lehele.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallatavad küpsised";
 
@@ -2484,8 +2481,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Veebijälgimise kaitse";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo blokeerib automaatselt peidetud jälgijaid, kui sa veebis sirvid.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Sisu blokeerimine ja filtreerimine";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Riskantsete domeenide blokeerimine";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vali suvand, mis kirjeldab sinu probleemi kõige paremini.";

@@ -81,7 +81,7 @@ public class AdClickAttributionFeature: AdClickAttributing {
 
     public private(set) var isEnabled = false
     private var navigationLinkFormats = LinkFormats(linkFormatsJSON: [])
-    public private(set) var allowlist = [AllowlistEntry]()
+    @Locked public private(set) var allowlist = [AllowlistEntry]()
     public private(set) var navigationExpiration: Double = 0
     public private(set) var totalExpiration: Double = 0
     public private(set) var isHeuristicDetectionEnabled: Bool = false

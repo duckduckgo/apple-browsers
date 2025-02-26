@@ -47,40 +47,34 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/72649045549333/1208617860225199/f
     case networkProtectionEnforceRoutes
 
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case networkProtectionRiskyDomainsProtection
+
     /// https://app.asana.com/0/72649045549333/1208241266421040/f
     case htmlNewTabPage
 
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    case autoUpdateInDEBUG
+
     case autofillPartialFormSaves
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
-
-    case testExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .testExperiment:
-            return TestExperimentCohort.self
         default:
             return nil
         }
     }
 
-    public enum TestExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
-            return true
-        case .testExperiment:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -124,6 +118,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
             return .disabled
+        case .autoUpdateInDEBUG:
+            return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autcompleteTabs:
@@ -132,8 +128,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-        case .testExperiment:
-            return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
+        case .networkProtectionRiskyDomainsProtection:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         }
     }
 }

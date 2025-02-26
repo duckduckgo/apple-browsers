@@ -1949,9 +1949,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Herhangi bir sitedeyken, ••• menüsünü açın ve siteyi yeni sekme sayfanıza eklemek için **Favori Ekle**'yi seçin.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
 
@@ -2484,8 +2481,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web İzleme Koruması";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo, web'de gezinirken gizli izleyicileri otomatik olarak engeller.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "İçerik Engelleme ve Filtreleme";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Riskli alan adlarını engelleyin";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";

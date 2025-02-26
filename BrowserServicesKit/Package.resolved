@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "874b27ad51d1784c934760c85493f78e609c4409",
-        "version" : "7.18.0"
+        "revision" : "c8428aec4646126b7aa4903f85caf6315d565995",
+        "version" : "7.22.0"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "3a9606fd26e9a54bf369cc241e6fa3b2571eb13a",
-        "version" : "16.2.1"
+        "revision" : "b5976277a68e18f93edb0d853889e461e06557fa",
+        "version" : "16.2.2"
       }
     },
     {
@@ -122,8 +122,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
       "state" : {
-        "revision" : "cc726cebb67367466bc31ced4784e16d44ac68d1",
-        "version" : "0.4.0"
+        "revision" : "4e383fa27d3386a48e01a43fd890540a7d8656aa",
+        "version" : "0.5.0"
       }
     },
     {

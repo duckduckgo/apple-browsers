@@ -1949,9 +1949,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "På et hvilket som helst websted skal du åbne menuen ••• og vælge **Tilføj favorit** for at føje den til din nye faneside.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Administrerede cookies";
 
@@ -2484,8 +2481,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Beskyttelse mod sporing på nettet";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo blokerer automatisk skjulte trackere, når du surfer på nettet.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Bloker over 150.000 domæner, der er markeret for hosting af malware, phishing-angreb og onlinesvindel med en blokeringsliste på DNS-niveau. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Blokering og filtrering af indhold";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Bloker risikable domæner";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vælg den mulighed, der bedst beskriver det problem, du oplevede.";

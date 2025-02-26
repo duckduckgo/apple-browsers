@@ -49,6 +49,7 @@ final class MainViewController: NSViewController {
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private var bannerPromptObserver: Any?
 
     private var bookmarksBarIsVisible: Bool {
         return bookmarksBarViewController.parent != nil
@@ -69,7 +70,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = DefaultBrowserAndDockPromptPresenter()
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = DefaultBrowserAndDockPromptPresenter.shared
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -159,9 +160,8 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToFirstResponder()
-        subscribeToSetAsDefaultPopover()
+        subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
-        // showMessageBannerIfNeeded() TODO: This should be commented for real build so new windows have the banner if it is being show.
 
         view.registerForDraggedTypes([.URL, .fileURL])
     }
@@ -170,8 +170,9 @@ final class MainViewController: NSViewController {
         super.viewDidAppear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
-        registerForBannerNotifications()
+
         adjustFirstResponder(force: true)
+        tryToShowSetAsDefaultAndAddtoDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -182,16 +183,6 @@ final class MainViewController: NSViewController {
             object: nil,
             queue: .main) { [weak self] _ in
                 self?.showBookmarkPromptIfNeeded()
-        }
-    }
-
-    var bannerPromptObserver: Any?
-    private func registerForBannerNotifications() {
-        bannerPromptObserver = NotificationCenter.default.addObserver(
-            forName: .showBannerPromptForDefaultBrowser,
-            object: nil,
-            queue: .main) { [weak self] _ in
-                self?.showMessageBannerIfNeeded()
         }
     }
 
@@ -257,20 +248,6 @@ final class MainViewController: NSViewController {
         DispatchQueue.main.async {
             self.bookmarksBarViewController.showBookmarksBarPrompt()
         }
-    }
-
-    private func showMessageBannerIfNeeded() {
-        if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
-
-        guard let banner = defaultBrowserAndDockPromptPresenting.getBanner(closeAction: { self.hideBanner() }) else { return }
-
-        addAndLayoutChild(banner, into: mainView.bannerContainerView)
-        mainView.bannerHeightConstraint.animator().constant = 48
-    }
-
-    private func hideBanner() {
-        mainView.bannerContainerView.subviews.forEach { $0.removeFromSuperview() }
-        mainView.bannerHeightConstraint.animator().constant = 0
     }
 
     override func encodeRestorableState(with coder: NSCoder) {
@@ -515,19 +492,44 @@ final class MainViewController: NSViewController {
         NSApp.mainMenuTyped.stopMenuItem.isEnabled = selectedTabViewModel.isLoading
     }
 
-    private func subscribeToSetAsDefaultPopover() {
+    // MARK: - Set As Default and Add To Dock Prompts configuration
+
+    private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showToSetAsDefaultPopover(_:)),
-                                               name: .showPopoverPromptForDefaultBrowser,
+                                               selector: #selector(tryToShowSetAsDefaultAndAddtoDockIfNeeded),
+                                               name: .showPromptForSetAsDefaultBrowserAndAddToDock,
                                                object: nil)
     }
 
-    @objc private func showToSetAsDefaultPopover(_ sender: Notification) {
-        if bookmarksBarVisibilityManager.isBookmarksBarVisible {
-            defaultBrowserAndDockPromptPresenting.showPopover(below: self.bookmarksBarViewController.view)
-        } else {
-            defaultBrowserAndDockPromptPresenting.showPopover(below: self.navigationBarViewController.view)
+    @objc private func tryToShowSetAsDefaultAndAddtoDockIfNeeded() {
+        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
+            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
+            hideBanner: hideBanner,
+            bannerViewHandler: showMessageBanner)
+    }
+
+    private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
+        if self.isViewLoaded && self.view.window?.isKeyWindow == true {
+            if bookmarksBarVisibilityManager.isBookmarksBarVisible {
+                return self.bookmarksBarViewController.view
+            } else {
+                return self.navigationBarViewController.view
+            }
         }
+
+        return nil
+    }
+
+    private func showMessageBanner(banner: BannerMessageViewController) {
+        if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
+
+        addAndLayoutChild(banner, into: mainView.bannerContainerView)
+        mainView.bannerHeightConstraint.animator().constant = 48
+    }
+
+    private func hideBanner() {
+        mainView.bannerContainerView.subviews.forEach { $0.removeFromSuperview() }
+        mainView.bannerHeightConstraint.animator().constant = 0
     }
 
     // MARK: - First responder

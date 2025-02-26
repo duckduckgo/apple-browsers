@@ -24,11 +24,34 @@ import FeatureFlags
 import PixelKit
 
 protocol DefaultBrowserAndDockPrompt {
-    var isUserEligibleForPrompt: Bool { get }
+    /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
+    /// `DefaultBrowserAndDockPromptType` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
+    ///
+    /// The implementation checks the following conditions:
+    /// - If this is a Sparkle build:
+    ///   - If the user has both set DuckDuckGo as the default browser and added it to the dock, they are not eligible for any prompt (returns `nil`).
+    ///   - If the user has set DuckDuckGo as the default browser but hasn't added it to the dock, it returns `.addToDockPrompt`.
+    ///   - If the user hasn't set DuckDuckGo as the default browser but has added it to the dock, it returns `.setAsDefaultPrompt`.
+    ///   - If the user hasn't set DuckDuckGo as the default browser and hasn't added it to the dock, it returns `.bothDefaultBrowserAndDockPrompt`.
+    /// - If this is not a Sparkle build, it only returns `.setAsDefaultPrompt` if the user hasn't already set DuckDuckGo as the default browser (otherwise, it returns `nil`).
+    ///
+    /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
-    func onPromptConfirmation(for content: DefaultBrowserAndDockPromptContent)
-    func onPromptDismissed(for content: DefaultBrowserAndDockPromptContent)
+    /// Attempts to show a prompt to the user based on their eligibility for the experiment.
+    ///
+    /// This function checks if the user is eligible for the "Popover vs Banner Experiment" by evaluating the following conditions:
+    /// 1. The user has completed the onboarding process (`wasOnboardingCompleted`).
+    /// 2. At least two days have passed since the user's first launch of the app (`AppDelegate.twoDaysPassedSinceFirstLaunch`).
+    /// 3. The `evaluatePromptEligibility` closure is not `nil`, indicating that the user has not set the user as default or did not add the browser to the dock.
+    ///
+    /// If the user is eligible, the function resolves the user's cohort for the "Popover vs Banner Experiment" feature flag. Based on the user's cohort, the function will post a notification to display either a banner prompt or a popover prompt for the default browser setting.
+    ///
+    /// - Note: The `FeatureFlag.PopoverVSBannerExperimentCohort` enum represents the different cohorts for the experiment, with the `control` cohort not displaying any prompt.
+    func tryToShowPrompt() -> DefaultBrowserAndDockPromptPresentationType?
+
+    func onPromptConfirmation()
+    func onPromptDismissed()
 }
 
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
@@ -36,12 +59,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         static let subfeatureID = FeatureFlag.popoverVsBannerExperiment.rawValue
 
         /// Metric identifiers for the user actions around the experiment
-        static let userDismissedBanner = "userDismissedBanner"
-        static let userDismissedPopover = "userDismissedPopover"
-        static let userActionedBanner = "userActionedBanner"
-        static let userActionedPopover = "userActionedPopover"
+        static let userSetAsDefaultOrAddedToDock = "userSetAsDefaultOrAddedToDock"
+        static let value = "1"
 
-        static let conversionWindowDays = 0...3
+        static let conversionWindowDays = 0...28
     }
 
     private let dockCustomization: DockCustomization
@@ -63,48 +84,14 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.defaultBrowserProvider = defaultBrowserProvider
         self.featureFlagger = featureFlagger
 
-        subscribeToExperiment()
+        subscribeToLocalOverride()
     }
 
-    var isUserEligibleForPrompt: Bool {
-        let wasOnboardingCompleted = true // TODO: Swap for real value
-        return AppDelegate.twoDaysPassedSinceFirstLaunch && wasOnboardingCompleted
+    private var isUserEligibleForExperiment: Bool {
+        let wasOnboardingCompleted = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted
+        return !AppDelegate.isNewUser && wasOnboardingCompleted && evaluatePromptEligibility != nil
     }
 
-    private func subscribeToExperiment() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.experimentFlagDidChangePublisher
-            .filter { $0.0 == .popoverVsBannerExperiment }
-            .sink { (_, cohort) in
-                guard let newCohort = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
-                switch newCohort {
-                case .control: print("No-op")
-                case .popover:
-                    NotificationCenter.default.post(name: .showPopoverPromptForDefaultBrowser, object: nil)
-                case .banner:
-                    NotificationCenter.default.post(name: .showBannerPromptForDefaultBrowser, object: nil)
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    // MARK: - Private
-
-    /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
-    /// `DefaultBrowserAndDockPromptType` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
-    ///
-    /// The implementation checks the following conditions:
-    /// - If this is a Sparkle build:
-    ///   - If the user has both set DuckDuckGo as the default browser and added it to the dock, they are not eligible for any prompt (returns `nil`).
-    ///   - If the user has set DuckDuckGo as the default browser but hasn't added it to the dock, it returns `.addToDockPrompt`.
-    ///   - If the user hasn't set DuckDuckGo as the default browser but has added it to the dock, it returns `.setAsDefaultPrompt`.
-    ///   - If the user hasn't set DuckDuckGo as the default browser and hasn't added it to the dock, it returns `.bothDefaultBrowserAndDockPrompt`.
-    /// - If this is not a Sparkle build, it only returns `.setAsDefaultPrompt` if the user hasn't already set DuckDuckGo as the default browser (otherwise, it returns `nil`).
-    ///
-    /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
@@ -124,7 +111,18 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    func onPromptConfirmation(for content: DefaultBrowserAndDockPromptContent) {
+    func tryToShowPrompt() -> DefaultBrowserAndDockPromptPresentationType? {
+        guard isUserEligibleForExperiment else { return nil }
+        guard let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.popoverVsBannerExperiment) as? FeatureFlag.PopoverVSBannerExperimentCohort else { return nil }
+
+        switch cohort {
+        case .control: return nil
+        case .banner: return .banner
+        case .popover: return .popover
+        }
+    }
+
+    func onPromptConfirmation() {
         guard let type = evaluatePromptEligibility else { return }
 
         switch type {
@@ -137,12 +135,33 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             setAsDefaultBrowserAction()
         }
 
-        trackPromptConfirmation(for: content)
+        PixelKit.fireExperimentPixel(
+            for: FeatureFlag.popoverVsBannerExperiment.rawValue,
+            metric: Constants.userSetAsDefaultOrAddedToDock,
+            conversionWindowDays: Constants.conversionWindowDays,
+            value: Constants.value
+        )
     }
 
-    func onPromptDismissed(for content: DefaultBrowserAndDockPromptContent) {
-        trackPromptDismissal(for: content)
+    func onPromptDismissed() {
         /// TODO: Save a flag in user defaults so we do not show the popover or banner again.
+    }
+
+    // MARK: - Private
+
+    private func subscribeToLocalOverride() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.experimentFlagDidChangePublisher
+            .filter { $0.0 == .popoverVsBannerExperiment }
+            .sink { (_, cohort) in
+                guard let _ = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
+
+                NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
+            }
+            .store(in: &cancellables)
     }
 
     private func setAsDefaultBrowserAction() {
@@ -150,44 +169,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             try defaultBrowserProvider.presentDefaultBrowserPrompt()
         } catch {
             defaultBrowserProvider.openSystemPreferences()
-        }
-    }
-
-    private func trackPromptConfirmation(for content: DefaultBrowserAndDockPromptContent) {
-        switch content {
-        case .popover:
-            PixelKit.fireExperimentPixel(
-                for: Constants.subfeatureID,
-                metric: Constants.userActionedPopover,
-                conversionWindowDays: Constants.conversionWindowDays,
-                value: ""
-            )
-        case .banner:
-            PixelKit.fireExperimentPixel(
-                for: FeatureFlag.popoverVsBannerExperiment.rawValue,
-                metric: Constants.userActionedBanner,
-                conversionWindowDays: Constants.conversionWindowDays,
-                value: ""
-            )
-        }
-    }
-
-    private func trackPromptDismissal(for content: DefaultBrowserAndDockPromptContent) {
-        switch content {
-        case .popover:
-            PixelKit.fireExperimentPixel(
-                for: Constants.subfeatureID,
-                metric: Constants.userDismissedPopover,
-                conversionWindowDays: Constants.conversionWindowDays,
-                value: ""
-            )
-        case .banner:
-            PixelKit.fireExperimentPixel(
-                for: FeatureFlag.popoverVsBannerExperiment.rawValue,
-                metric: Constants.userDismissedBanner,
-                conversionWindowDays: Constants.conversionWindowDays,
-                value: ""
-            )
         }
     }
 }

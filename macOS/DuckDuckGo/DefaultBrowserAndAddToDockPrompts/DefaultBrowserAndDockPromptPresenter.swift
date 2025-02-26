@@ -18,12 +18,19 @@
 
 import SwiftUIExtensions
 
+enum DefaultBrowserAndDockPromptPresentationType {
+    case banner
+    case popover
+}
+
 protocol DefaultBrowserAndDockPromptPresenting {
-    func showPopover(below view: NSView)
-    func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController?
+    func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
+                         hideBanner: @escaping () -> Void,
+                         bannerViewHandler: (BannerMessageViewController) -> Void)
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
+    static let shared = DefaultBrowserAndDockPromptPresenter()
 
     private let coordinator: DefaultBrowserAndDockPrompt
 
@@ -33,7 +40,26 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         self.coordinator = coordinator
     }
 
-    func showPopover(below view: NSView) {
+    func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
+                         hideBanner: @escaping () -> Void,
+                         bannerViewHandler: (BannerMessageViewController) -> Void) {
+        guard let type = coordinator.tryToShowPrompt() else {
+            return
+        }
+
+        switch type {
+        case .banner:
+            bannerViewHandler(getBanner(closeAction: hideBanner)!)
+        case .popover:
+            guard let view = popoverAnchorProvider() else { return }
+
+            showPopover(below: view)
+        }
+    }
+
+    // MARK: - Private
+
+    private func showPopover(below view: NSView) {
         guard let content = coordinator.evaluatePromptEligibility else {
             return
         }
@@ -46,7 +72,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         }
     }
 
-    func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController? {
+    private func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController? {
         guard let type = coordinator.evaluatePromptEligibility else {
             return nil
         }
@@ -57,14 +83,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation(for: content) },
+            buttonAction: { self.coordinator.onPromptConfirmation() },
             closeAction: {
                 closeAction()
-                self.coordinator.onPromptDismissed(for: content)
+                self.coordinator.onPromptDismissed()
             })
     }
-
-    // MARK: - Private
 
     private func createPopover(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<PopoverMessageView> {
         let content = DefaultBrowserAndDockPromptContent.popover(type)
@@ -73,11 +97,11 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation(for: content) },
+            buttonAction: { self.coordinator.onPromptConfirmation() },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()
-                self.coordinator.onPromptDismissed(for: content)
+                self.coordinator.onPromptDismissed()
             },
             shouldShowCloseButton: false,
             shouldPresentMultiline: true,

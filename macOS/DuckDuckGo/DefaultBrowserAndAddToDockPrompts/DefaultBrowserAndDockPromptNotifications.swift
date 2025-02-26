@@ -17,6 +17,5 @@
 //
 
 public extension Notification.Name {
-    static let showPopoverPromptForDefaultBrowser = Notification.Name("com.duckduckgo.app.showPopoverPromptForDefaultBrowser")
-    static let showBannerPromptForDefaultBrowser = Notification.Name("com.duckduckgo.app.showBannerPromptForDefaultBrowser")
+    static let showPromptForSetAsDefaultBrowserAndAddToDock = Notification.Name("com.duckduckgo.app.showPromptForSetAsDefaultBrowserAndAddToDock")
 }

@@ -576,5 +576,19 @@ I blocked them!
 			<string>%d Selected</string>
 		</dict>
 	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d Selected Tabs</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

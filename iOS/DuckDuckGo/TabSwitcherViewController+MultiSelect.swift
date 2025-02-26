@@ -382,90 +382,36 @@ extension TabSwitcherViewController {
         return s
     }
 
-    func createLongPressMenuItemsForMultipleTabs() -> [UIMenuElement?] {
-        let selectedTabsCount = selectedTabs.count
+    /// Takes indexes of tabs to create long menu for.  Interally creates tab array for those indexes, then passes either tabs or indexes to the handles in order to try and reduce the amount of
+    ///  converting from [Int] -> [Tab] operations.
+    func createLongPressMenuForTabs(atIndexes indexes: [Int]) -> UIMenu {
+        let tabs = indexes.map { tabsModel.safeGetTabAt($0) }.compactMap { $0 }
+        let containsWebPages = tabs.contains(where: { $0.link != nil })                
+        let actionGroup: [UIMenuElement?] = containsWebPages ? [
+            action(tabs, UserText.shareLinks(withCount: tabs.count), "Share-Apple-16", longPressMenuShareLinks),
+            action(indexes, UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16", longPressMenuBookmarkTabs),
+            tabs.count == 1 ? action(indexes, UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", longPressMenuSelectTabs) : nil,
+        ] : []
 
-        let closeGroup = [
-            // Close selected
-            action(UserText.keyCommandClose, "Close-16", destructive: true, { [weak self] in
-                self?.longPressMenuCloseSelectedTabs()
-            }),
-        ]
+        var title = tabs.count > 1 ? UserText.numberOfSelectedTabsForMenuTitle(withCount: tabs.count) : ""
+        
+        // Single tab with hostname, use that instead
+        if tabs.count == 1, let host = tabs.first?.link?.url.host?.droppingWwwPrefix() {
+            title = host
+        }
+        
+        return UIMenu(title: title, children: [
+            UIMenu(title: "", options: .displayInline, children: actionGroup.compactMap { $0 }),
+            
+            UIMenu(title: "", options: .displayInline, children: [
+                action(indexes, UserText.closeTabs(withCount: tabs.count), "Close-16", destructive: true, longPressMenuCloseTabs)
+            ]),
 
-        // Close Other
-        let closeOtherGroup = [
-            (tabsModel.count - selectedTabsCount) > 0 ?
-            action(UserText.tabSwitcherCloseOtherTabs(withCount: tabsModel.count - selectedTabsCount), "Tab-Close-16", destructive: true, { [weak self] in
-                self?.longPressMenuCloseUnselectedTabs()
-            }) : nil
-        ]
-
-        return [
-            // Share
-            action(UserText.shareLinks(withCount: selectedTabsCount), "Share-Apple-16", { [weak self] in
-                self?.longPressMenuShareSelectedLinks()
-            }),
-
-            // Bookmark
-            selectedPagesCount > 0 ?
-            action(UserText.actionBookmark, "Bookmark-Add-16", { [weak self] in
-                    self?.longPressMenuBookmarkSelectedTabs()
-                }) : nil,
-
-            // -- divider --
-            UIMenu(title: "", options: .displayInline, children: closeGroup.compactMap { $0 }),
-
-            // -- divider --
-            UIMenu(title: "", options: .displayInline, children: closeOtherGroup.compactMap { $0 }),
-        ]
-    }
-
-    func createLongPressMenuItemsForSingleTab(forIndex index: Int) -> [UIMenuElement?] {
-        guard let tab = tabsModel.safeGetTabAt(index) else { return [] }
-
-        let bookmarksModel = MenuBookmarksViewModel(bookmarksDatabase: self.bookmarksDatabase, syncService: self.syncService)
-
-        let closeGroup = [
-            // Close Tab
-            self.action(index, UserText.keyCommandCloseTab, "Close-16", destructive: true, { [weak self] index in
-                guard let self else { return }
-                self.longPressMenuCloseTab(index: index)
-            }),
-        ]
-
-        let closeOtherGroup = [
-            // Close Other Tabs
-            tabsModel.count > 1 ? self.action(index, UserText.tabSwitcherCloseOtherTabs(withCount: tabsModel.count - selectedTabs.count), "Tab-Close-16", destructive: true, { [weak self] index in
-                guard let self else { return }
-                self.longPressMenuCloseOtherTabs(index: index)
-            }) : nil,
-        ]
-
-        return [
-            // Share Link
-            tabsModel.safeGetTabAt(index)?.link != nil ? self.action(index, UserText.shareLinks(withCount: 1), "Share-Apple-16", { [weak self] index in
-                guard let self else { return }
-                self.longPressMenuShareLink(index: index)
-            }) : nil,
-
-            // Bookmark This Page (if not already bookmarked)
-            shouldShowBookmarkThisPageLongPressMenuItem(tab, bookmarksModel) ? self.action(index, UserText.tabSwitcherBookmarkPage, "Bookmark-Add-16", { [weak self] index in
-                guard let self else { return }
-                self.longPressMenuBookmarkThisPage(index: index)
-            }) : nil,
-
-            // Select Tabs -> switch to selection mode with this tab selected (if not already selected)
-            selectedTabs.contains(index) ? nil : self.action(index, UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", { [weak self] index in
-                guard let self else { return }
-                self.longPressMenuSelectTabs(index: index)
-            }),
-
-            // -- divider --
-            UIMenu(title: "", options: .displayInline, children: closeGroup.compactMap { $0 }),
-
-            // -- divider --
-            UIMenu(title: "", options: .displayInline, children: closeOtherGroup.compactMap { $0 }),
-        ]
+            UIMenu(title: "", options: .displayInline, children: [
+                // Always use plural here
+                action(indexes, UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", destructive: true, longPressMenuCloseOtherTabs)
+            ]),
+        ].compactMap { $0 })
     }
 
     private func shouldShowBookmarkThisPageLongPressMenuItem(_ tab: Tab, _ bookmarksModel: MenuBookmarksViewModel) -> Bool {
@@ -599,8 +545,8 @@ extension TabSwitcherViewController {
         shareTabs(selectedTabs.map { tabsModel.safeGetTabAt($0) }.compactMap { $0 })
     }
 
-    func longPressMenuBookmarkSelectedTabs() {
-        bookmarkTabs(withIndexes: selectedTabs,
+    func longPressMenuBookmarkTabs(indexes: [Int]) {
+        bookmarkTabs(withIndexes: indexes,
                      title: UserText.bookmarkSelectedTabs(withCount: selectedPagesCount),
                      message: UserText.alertBookmarkAllMessage)
     }
@@ -609,41 +555,44 @@ extension TabSwitcherViewController {
         closeOtherTabs(retainingIndexes: selectedTabs)
     }
 
-    func longPressMenuShareLink(index: Int) {
-        guard let tab = tabsModel.safeGetTabAt(index) else { return }
-        shareTabs([tab])
+    func longPressMenuShareLinks(tabs: [Tab]) {
+        shareTabs(tabs)
     }
 
     func longPressMenuBookmarkThisPage(index: Int) {
         bookmarkTabAt(index)
     }
 
-    func longPressMenuSelectTabs(index: Int) {
+    func longPressMenuSelectTabs(indexes: [Int]) {
         if !isEditing {
             transitionToMultiSelect()
         }
-
-        let path = IndexPath(row: index, section: 0)
-        collectionView.selectItem(at: path, animated: true, scrollPosition: .centeredVertically)
-        (collectionView.cellForItem(at: path) as? TabViewCell)?.refreshSelectionAppearance()
-        updateUIForSelectionMode()
+        
+        indexes.forEach { index in
+            let path = IndexPath(row: index, section: 0)
+            collectionView.selectItem(at: path, animated: true, scrollPosition: .centeredVertically)
+            (collectionView.cellForItem(at: path) as? TabViewCell)?.refreshSelectionAppearance()
+            updateUIForSelectionMode()
+        }
     }
 
-    func longPressMenuCloseTab(index: Int) {
+    func longPressMenuCloseTabs(indexes: [Int]) {
         let alert = UIAlertController(title: UserText.alertTitleCloseTabs(withCount: 1),
                                       message: UserText.alertMessageCloseTabs(withCount: 1),
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
         alert.addAction(title: UserText.closeTabs(withCount: 1), style: .destructive) { [weak self] in
             guard let self else { return }
-            guard let tab = self.tabsModel.safeGetTabAt(index) else { return }
-            self.deleteTab(tab: tab)
+            indexes.forEach { index in
+                guard let tab = self.tabsModel.safeGetTabAt(index) else { return }
+                self.deleteTab(tab: tab)
+            }
         }
         present(alert, animated: true, completion: nil)
     }
 
-    func longPressMenuCloseOtherTabs(index: Int) {
-        closeOtherTabs(retainingIndexes: [index])
+    func longPressMenuCloseOtherTabs(indexesToRetain: [Int]) {
+        closeOtherTabs(retainingIndexes: indexesToRetain)
     }
 
 }

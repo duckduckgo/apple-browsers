@@ -230,6 +230,11 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func numberOfSelectedTabsForMenuTitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "numberOfSelectedTabsForMenuTitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func openTab(withTitle title: String, atAddress address: String) -> String {
         let message = NSLocalizedString("tab.open.with.title.and.address", value: "Open \"%@\" at %@", comment: "Accesibility label: first string is website title, second is address")
         return message.format(arguments: title, address)

@@ -420,16 +420,9 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
 
         // This can happen if you long press in the whitespace
         guard !indexPaths.isEmpty else { return nil }
-
-        let title = indexPaths.count == 1 ?
-            trimMenuTitleIfNeeded(tabsModel.get(tabAt: indexPaths[0].row).link?.displayTitle ?? "", 50) :
-        UserText.numberOfSelectedTabs(withCount: indexPaths.count)
-
+        
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            let menuItems = indexPaths.count == 1 ?
-                self.createLongPressMenuItemsForSingleTab(forIndex: indexPaths[0].row) :
-                self.createLongPressMenuItemsForMultipleTabs()
-            return UIMenu(title: title, children: menuItems.compactMap { $0 })
+            return self.createLongPressMenuForTabs(atIndexes: indexPaths.map { $0.row })
         }
 
         return configuration

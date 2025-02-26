@@ -180,7 +180,7 @@ extension TabSwitcherViewController {
             indices.compactMap {
                 self.tabsModel.safeGetTabAt($0)
             }.forEach {
-                self.delegate.tabSwitcher(self, didRemoveTab: $0)
+                self.deleteTab(tab: $0)
             }
             self.collectionView.reloadData()
             self.refreshTitle()

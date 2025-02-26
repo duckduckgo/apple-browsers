@@ -58,7 +58,6 @@ jobs:
       run: |
           cd shared-web-tests
           npm run build
-          sudo npm run install-hosts
 
     - name: Build iOS
       run: |
@@ -70,5 +69,6 @@ jobs:
       run: |
         cd shared-web-tests
         brew install python@3.9 && /opt/homebrew/bin/python3.9 -m venv venv39 && source venv39/bin/activate
+        sudo npm run install-hosts
         npm run test
   

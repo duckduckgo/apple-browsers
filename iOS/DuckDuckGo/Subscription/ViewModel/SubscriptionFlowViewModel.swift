@@ -74,7 +74,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.subscriptionManager = subscriptionManager
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                            allowedDomains: Self.allowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                            allowedDomains: Self.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                                                 isInternalUser: isInternalUser),
                                                             contentBlocking: false)
 
@@ -85,7 +85,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     // Allowed domains
-    private static func allowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
+    internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
         var allowedDomains = Set<String>()
 
         // Allow navigation to baseURLs domain

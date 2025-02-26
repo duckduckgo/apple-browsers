@@ -33,7 +33,7 @@ final class PersistentStoresConfiguration {
 
     func configure() throws {
         clearTemporaryDirectory()
-        try loadAndMigrateDatabase()
+        try loadDatabase()
         try loadAndMigrateBookmarksDatabase()
     }
 
@@ -46,7 +46,7 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateDatabase() throws {
+    private func loadDatabase() throws {
         var thrownError: Error?
         database.loadStore { [application] context, error in
             do {
@@ -74,7 +74,6 @@ final class PersistentStoresConfiguration {
                         }
                     }
                 }
-                DatabaseMigration.migrate(to: context)
             } catch {
                 thrownError = error
             }

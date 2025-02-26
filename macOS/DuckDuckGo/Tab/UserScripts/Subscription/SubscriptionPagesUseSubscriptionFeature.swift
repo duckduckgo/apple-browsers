@@ -30,12 +30,18 @@ import Networking
 
 /// Use Subscription sub-feature
 final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
+
+    private enum OriginDomains {
+        static let duckduckgo = "duckduckgo.com"
+    }
+
     weak var broker: UserScriptMessageBroker?
-    var featureName = "useSubscription"
-    var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: "duckduckgo.com"),
-        .exact(hostname: "abrown.duckduckgo.com")
+
+    let featureName = "useSubscription"
+    lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
+        .exact(hostname: subscriptionManager.url(for: .baseURL).host ?? OriginDomains.duckduckgo)
     ])
+
     let subscriptionManager: SubscriptionManager
     var accountManager: AccountManager { subscriptionManager.accountManager }
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }

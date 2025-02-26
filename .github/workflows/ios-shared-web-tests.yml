@@ -70,5 +70,5 @@ jobs:
         cd shared-web-tests
         brew install python@3.9 && /opt/homebrew/bin/python3.9 -m venv venv39 && source venv39/bin/activate
         sudo npm run install-hosts
-        npm run test
-  
+        export DERIVED_DATA_PATH="$project_root/DerivedData"
+        npm run test | tee test-output.log

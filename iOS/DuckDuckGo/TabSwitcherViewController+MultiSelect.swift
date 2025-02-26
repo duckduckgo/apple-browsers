@@ -580,6 +580,14 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuCloseTabs(indexes: [Int]) {
+        if indexes.count == 1 && indexes.first == tabsModel.currentIndex {
+            // Skip the confirmation for the current tab,
+            //  see https://app.asana.com/0/1209499866654340/1209424833902030
+            guard let tab = self.tabsModel.safeGetTabAt(tabsModel.currentIndex) else { return }
+            self.deleteTab(tab: tab)
+            return
+        }
+        
         let alert = UIAlertController(title: UserText.alertTitleCloseTabs(withCount: 1),
                                       message: UserText.alertMessageCloseTabs(withCount: 1),
                                       preferredStyle: .alert)

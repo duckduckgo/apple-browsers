@@ -386,22 +386,25 @@ extension TabSwitcherViewController {
     ///  converting from [Int] -> [Tab] operations.
     func createLongPressMenuForTabs(atIndexes indexes: [Int]) -> UIMenu {
         let tabs = indexes.map { tabsModel.safeGetTabAt($0) }.compactMap { $0 }
-        let containsWebPages = tabs.contains(where: { $0.link != nil })                
-        let actionGroup: [UIMenuElement?] = containsWebPages ? [
-            action(tabs, UserText.shareLinks(withCount: tabs.count), "Share-Apple-16", longPressMenuShareLinks),
-            action(indexes, UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16", longPressMenuBookmarkTabs),
-            tabs.count == 1 ? action(indexes, UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", longPressMenuSelectTabs) : nil,
-        ] : []
-
-        var title = tabs.count > 1 ? UserText.numberOfSelectedTabsForMenuTitle(withCount: tabs.count) : ""
+        let containsWebPages = tabs.contains(where: { $0.link != nil })
+    
+        let title = tabs.count > 1 ? UserText.numberOfSelectedTabsForMenuTitle(withCount: tabs.count)
+            // If there's a single web page tab use the hostname, failing that don't provide a title
+            : tabs.first?.link?.url.host?.droppingWwwPrefix() ?? ""
         
-        // Single tab with hostname, use that instead
-        if tabs.count == 1, let host = tabs.first?.link?.url.host?.droppingWwwPrefix() {
-            title = host
-        }
+        let showCloseOthers = tabs.count < tabCount
+        
+        // Show selection if it's a single tab, but NOT if it's the home page in selection mode ¯\_(ツ)_/¯
+        // See point 3: https://app.asana.com/0/1209499866654340/1209424833903137
+        // See point 4: https://app.asana.com/0/1209499866654340/1209424833902043
+        let showSelectionCheck = tabs.count == 1 && (containsWebPages || !isEditing)
         
         return UIMenu(title: title, children: [
-            UIMenu(title: "", options: .displayInline, children: actionGroup.compactMap { $0 }),
+            UIMenu(title: "", options: .displayInline, children: [
+                containsWebPages ? action(tabs, UserText.shareLinks(withCount: tabs.count), "Share-Apple-16", longPressMenuShareLinks) : nil,
+                containsWebPages ? action(indexes, UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16", longPressMenuBookmarkTabs) : nil,
+                showSelectionCheck ? action(indexes, UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", longPressMenuSelectTabs) : nil,
+            ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
                 action(indexes, UserText.closeTabs(withCount: tabs.count), "Close-16", destructive: true, longPressMenuCloseTabs)
@@ -409,8 +412,8 @@ extension TabSwitcherViewController {
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                action(indexes, UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", destructive: true, longPressMenuCloseOtherTabs)
-            ]),
+                showCloseOthers ? action(indexes, UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", destructive: true, longPressMenuCloseOtherTabs) : nil
+            ].compactMap { $0 }),
         ].compactMap { $0 })
     }
 

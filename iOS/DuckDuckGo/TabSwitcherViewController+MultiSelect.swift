@@ -271,43 +271,36 @@ extension TabSwitcherViewController {
     var allPagesCount: Int {
         tabsModel.tabs.compactMap(\.link).count
     }
-   
-    func createMultiSelectionMenuForPad() -> UIMenu {
-        return UIMenu(title: "")
-    }
-    
-    // https://app.asana.com/0/1209499866654340/1209424833903149
-    func createMultiSelectionMenuForPhone() -> UIMenu {
-        if selectedTabs.isEmpty {
-            return UIMenu(title: "", children: [
-                action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", {}),
-            ])
-        }
-        
+
+    func createMultiSelectionMenu() -> UIMenu {
         let otherTabCount = max(0, tabCount - selectedTabs.count)
         return UIMenu(title: "", children: [
             
             UIMenu(title: "", options: .displayInline, children: [
-                otherTabCount > 0 ? action(UserText.tabSwitcherCloseOtherTabs(withCount: otherTabCount), "Tab-Close-16", destructive: true, {}) : nil,
+                interfaceMode.isLarge && selectedTabs.count == tabCount ? action(UserText.deselectAllTabs, "Check-Circle-16", {}) : nil,
+                interfaceMode.isLarge && selectedTabs.count < tabCount ? action(UserText.selectAllTabs, "Check-Circle-16", {}) : nil,
+            ].compactMap { $0 }),
+
+            UIMenu(title: "", options: .displayInline, children: [
+                // Always use plural here
+                !selectedTabs.isEmpty && otherTabCount > 0 ? action(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", destructive: true, {}) : nil,
             ].compactMap { $0 }),
             
-            action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", {}),
-            action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", {}),
+            UIMenu(title: "", options: .displayInline, children: [
+                !selectedTabs.isEmpty ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", {}) : nil,
+                !selectedTabs.isEmpty ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", {}) : nil,
+            ].compactMap { $0 }),
+            
+            UIMenu(title: "", options: .displayInline, children: [
+                selectedTabs.isEmpty ? action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", {}) : nil,
+            ].compactMap { $0 })
         ])
     }
     
-    func createMultiSelectionMenu() -> UIMenu {
-        if interfaceMode.isLarge {
-            return createMultiSelectionMenuForPad()
-        } else {
-            return createMultiSelectionMenuForPhone()
-        }
-    }
-
     func createEditMenu() -> UIMenu {
         return UIMenu(children: [
             // Force plural version for the menu - this really means "switch to select tabs mode"
-            action(UserText.tabSwitcherSelectTabs(withCount: 2), systemImage: "checkmark.circle", { [weak self] in
+            action(UserText.tabSwitcherSelectTabs(withCount: 2), "Check-Circle-16", { [weak self] in
                 guard let self else { return }
                 self.editMenuSelectAll()
             }),
@@ -566,13 +559,6 @@ extension TabSwitcherViewController {
     func action(_ title: String, _ imageNamed: String, destructive: Bool = false, _ handler: @escaping () -> Void) -> UIAction {
         let attributes: UIAction.Attributes = destructive ? .destructive : []
         return UIAction(title: title, image: UIImage(named: imageNamed), attributes: attributes) { _ in
-            handler()
-        }
-    }
-
-    func action(_ title: String, systemImage: String, destructive: Bool = false, _ handler: @escaping () -> Void) -> UIAction {
-        let attributes: UIAction.Attributes = destructive ? .destructive : []
-        return UIAction(title: title, image: UIImage(systemName: systemImage), attributes: attributes) { _ in
             handler()
         }
     }

@@ -38,6 +38,8 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
+    var wasPromptShown: Bool { get }
+
     /// Gets the prompt type based on the user's eligibility for the experiment.
     ///
     /// This function checks if the user is eligible for the "Popover vs Banner Experiment" by evaluating the following conditions:
@@ -68,6 +70,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let featureFlagger: FeatureFlagger
+    private let repository: DefaultBrowserAndDockPromptRepository
 
     private var cancellables: Set<AnyCancellable> = []
 
@@ -79,10 +82,12 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     init(dockCustomization: DockCustomization = DockCustomizer(),
          defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl()) {
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.featureFlagger = featureFlagger
+        self.repository = repository
 
         subscribeToLocalOverride()
     }
@@ -109,6 +114,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         } else {
             return isDefaultBrowser ? nil : .setAsDefaultPrompt
         }
+    }
+
+    var wasPromptShown: Bool {
+        repository.wasPromptShown()
     }
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
@@ -142,10 +151,12 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             conversionWindowDays: Constants.conversionWindowDays,
             value: Constants.value
         )
+
+        repository.setPromptShown(true)
     }
 
     func onPromptDismissed() {
-        /// TODO: Save a flag in user defaults so we do not show the popover or banner again.
+        repository.setPromptShown(true)
     }
 
     // MARK: - Private

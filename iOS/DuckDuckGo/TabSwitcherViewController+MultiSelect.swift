@@ -37,15 +37,15 @@ extension TabSwitcherViewController {
     }
 
     func bookmarkTabs(withIndexes indices: [Int], title: String, message: String) {
-        func tabsToBookmarks() {
-            let model = MenuBookmarksViewModel(bookmarksDatabase: self.bookmarksDatabase, syncService: self.syncService)
+        func tabsToBookmarks(_ controller: TabSwitcherViewController) {
+            let model = MenuBookmarksViewModel(bookmarksDatabase: controller.bookmarksDatabase, syncService: controller.syncService)
             model.favoritesDisplayMode = AppDependencyProvider.shared.appSettings.favoritesDisplayMode
-            let result = self.bookmarkTabs(withIndices: indices, viewModel: model)
-            self.displayBookmarkAllStatusMessage(with: result, openTabsCount: self.tabsModel.tabs.count)
+            let result = controller.bookmarkTabs(withIndices: indices, viewModel: model)
+            self.displayBookmarkAllStatusMessage(with: result, openTabsCount: controller.tabsModel.tabs.count)
         }
 
         if indices.count == 1 {
-            tabsToBookmarks()
+            tabsToBookmarks(self)
         } else {
             let alert = UIAlertController(title: title,
                                           message: message,
@@ -53,7 +53,7 @@ extension TabSwitcherViewController {
             alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
             alert.addAction(title: UserText.actionBookmark, style: .default) { [weak self] in
                 guard let self else { return }
-                tabsToBookmarks()
+                tabsToBookmarks(self)
             }
             present(alert, animated: true, completion: nil)
         }
@@ -316,15 +316,13 @@ extension TabSwitcherViewController {
         return UIMenu(children: [
             // Force plural version for the menu - this really means "switch to select tabs mode"
             action(UserText.tabSwitcherSelectTabs(withCount: 2), "Check-Circle-16", { [weak self] in
-                guard let self else { return }
-                self.editMenuSelectAll()
+                self?.editMenuSelectAll()
             }),
 
             UIMenu(title: "", options: [.displayInline], children: [
                 // Zero forces the 'generic' close all tabs string
                 destructive(UserText.closeAllTabs(withCount: 0), "Tab-Close-16", { [weak self] in
-                    guard let self else { return }
-                    self.editMenuCloseAllTabs()
+                    self?.editMenuCloseAllTabs()
                 })
             ]),
         ])
@@ -394,39 +392,33 @@ extension TabSwitcherViewController {
 
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
-            guard let self else { return }
-            self.bookmarkTabs(withIndexes: self.tabsModel.tabs.indices.map { $0 },
-                              title: UserText.alertTitleBookmarkAll(withCount: tabCount),
-                              message: UserText.alertBookmarkAllMessage)
+            self?.bookmarkTabs(withIndexes: self!.tabsModel.tabs.indices.map { $0 },
+                               title: UserText.alertTitleBookmarkAll(withCount: self!.tabCount),
+                               message: UserText.alertBookmarkAllMessage)
         }
 
         barsHandler.plusButton.accessibilityLabel = UserText.keyCommandNewTab
         barsHandler.plusButton.primaryAction = action(image: "Add-24", { [weak self] in
-            guard let self else { return }
-            self.addNewTab()
+            self?.addNewTab()
         })
 
         barsHandler.fireButton.primaryAction = action(image: "FireLeftPadded") { [weak self] in
-            guard let self else { return }
-            self.burn(sender: self.barsHandler.fireButton)
+            self?.burn(sender: self!.barsHandler.fireButton)
         }
 
         barsHandler.doneButton.primaryAction = action(UserText.navigationTitleDone) { [weak self] in
-            guard let self else { return }
-            self.onDonePressed(self.barsHandler.doneButton)
+            self?.onDonePressed(self!.barsHandler.doneButton)
         }
 
         barsHandler.editButton.title = UserText.actionGenericEdit
         barsHandler.editButton.menu = createEditMenu()
 
         barsHandler.selectAllButton.primaryAction = action(UserText.selectAllTabs) { [weak self] in
-            guard let self else { return }
-            self.selectAllTabs()
+            self?.selectAllTabs()
         }
 
         barsHandler.deselectAllButton.primaryAction = action(UserText.deselectAllTabs) { [weak self] in
-            guard let self else { return }
-            self.deselectAllTabs()
+            self?.deselectAllTabs()
         }
 
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
@@ -436,8 +428,7 @@ extension TabSwitcherViewController {
 
         barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
-            guard let self else { return }
-            self.closeSelectedTabs()
+            self?.closeSelectedTabs()
         }
     }
 

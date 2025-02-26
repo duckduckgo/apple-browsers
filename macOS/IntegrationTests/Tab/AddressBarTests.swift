@@ -928,6 +928,8 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func test_ZoomLevelNonDefault_ThenZoomButtonIsVisible() async throws {
+        XCTFail("forced test failure")
+
         // GIVEN
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: webViewConfiguration)
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))

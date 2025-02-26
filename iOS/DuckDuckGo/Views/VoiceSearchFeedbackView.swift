@@ -80,11 +80,16 @@ extension VoiceSearchFeedbackView {
             .padding(.bottom, voiceCircleVerticalPadding)
             .padding(.top, voiceCircleVerticalPadding)
 
+            Picker("", selection: $speechModel.selectedOption) {
+                Text("Search")
+                    .tag(0)
 
-            GlassySegmentedControl(selectedOption: $speechModel.selectedOption)
-                .frame(width: 300, height: 60)
-                .padding(.bottom, 10)
-
+                Text("Duck.ai")
+                    .tag(1)
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .frame(width: 220)
+            .padding(.bottom, 20)
 
             Text(UserText.voiceSearchFooterOld)
                 .font(.footnote)
@@ -115,8 +120,10 @@ extension VoiceSearchFeedbackView {
             speechModel.finish()
         } label: {
             Circle()
-                .foregroundColor(Colors.innerCircle)
+                .foregroundColor(speechModel.selectedOptionType == .aiChat ? Colors.innerAIChatCircle: Colors.innerCircle)
                 .frame(width: CircleSize.inner.width, height: CircleSize.inner.height, alignment: .center)
+                .animation(.easeInOut, value: speechModel.selectedOptionType) // Add animation here
+
         }
     }
     
@@ -130,12 +137,14 @@ extension VoiceSearchFeedbackView {
     
     private var outerCircle: some View {
         Circle()
-            .foregroundColor(Colors.outerCircle)
+            .foregroundColor(speechModel.selectedOptionType == .aiChat ? Colors.outerAIChatCircle: Colors.outerCircle)
             .frame(width: CircleSize.outer.width,
                    height: CircleSize.outer.height,
                    alignment: .center)
             .scaleEffect(outerCircleScale)
             .animation(outerCircleAnimation, value: outerCircleScale)
+            .animation(.easeInOut, value: speechModel.selectedOptionType) // Add animation here
+
     }
 }
 
@@ -156,6 +165,10 @@ extension VoiceSearchFeedbackView {
     private struct Colors {
         static let innerCircle = Color(UIColor(hex: "3969EF"))
         static let footerText = Color(UIColor(hex: "888888"))
+
+        static let innerAIChatCircle = Color(UIColor(hex: "876ECB"))
+        static let outerAIChatCircle = Color(UIColor(hex: "876ECB")).opacity(0.2)
+
         static let outerCircle = Color(UIColor(hex: "7295F6")).opacity(0.2)
         static let cancelButton = Color("VoiceSearchCancelColor")
         static let speechFeedback = Color("VoiceSearchSpeechFeedbackColor")

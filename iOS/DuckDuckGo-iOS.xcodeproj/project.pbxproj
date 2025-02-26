@@ -219,7 +219,6 @@
 		31DE43C42C2C60E800F8C51F /* DuckPlayerModalPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31DE43C32C2C60E800F8C51F /* DuckPlayerModalPresenter.swift */; };
 		31DE43C62C2DA70A00F8C51F /* DuckPlayer-ModalAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = 31DE43C52C2DA70A00F8C51F /* DuckPlayer-ModalAnimation.json */; };
 		31E2655F2D66392E002B5624 /* VoiceSearchFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */; };
-		31E265602D66392E002B5624 /* GlassySegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E2655D2D66392E002B5624 /* GlassySegmentedControl.swift */; };
 		31E69A63280F4CB600478327 /* DuckUI in Frameworks */ = {isa = PBXBuildFile; productRef = 31E69A62280F4CB600478327 /* DuckUI */; };
 		31E77B272D038BBC006F1C9F /* OmnibarAccessoryHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E77B262D038BB9006F1C9F /* OmnibarAccessoryHandlerTests.swift */; };
 		3712091E2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */; };
@@ -1716,7 +1715,6 @@
 		31DE43C12C2C480D00F8C51F /* DuckPlayerFeaturePresentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerFeaturePresentationView.swift; sourceTree = "<group>"; };
 		31DE43C32C2C60E800F8C51F /* DuckPlayerModalPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerModalPresenter.swift; sourceTree = "<group>"; };
 		31DE43C52C2DA70A00F8C51F /* DuckPlayer-ModalAnimation.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "DuckPlayer-ModalAnimation.json"; sourceTree = "<group>"; };
-		31E2655D2D66392E002B5624 /* GlassySegmentedControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassySegmentedControl.swift; sourceTree = "<group>"; };
 		31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSearchFeedbackView.swift; sourceTree = "<group>"; };
 		31E77B262D038BB9006F1C9F /* OmnibarAccessoryHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmnibarAccessoryHandlerTests.swift; sourceTree = "<group>"; };
 		3712091D2C21E390003ADF3D /* RemoteMessagingStoreErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingStoreErrorHandling.swift; sourceTree = "<group>"; };
@@ -4132,7 +4130,6 @@
 		31E2655C2D66390B002B5624 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				31E2655D2D66392E002B5624 /* GlassySegmentedControl.swift */,
 				31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */,
 			);
 			path = Views;
@@ -8974,7 +8971,6 @@
 				2DC3FC65C6D9DA634426672D /* AutofillNoAuthAvailableView.swift in Sources */,
 				6F03CAFC2C32C6F6004179A8 /* NewTabPageMessagesModel.swift in Sources */,
 				31E2655F2D66392E002B5624 /* VoiceSearchFeedbackView.swift in Sources */,
-				31E265602D66392E002B5624 /* GlassySegmentedControl.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -70,7 +70,7 @@ jobs:
         cd shared-web-tests
         brew install python@3.9 && /opt/homebrew/bin/python3.9 -m venv venv39 && source venv39/bin/activate
         sudo npm run install-hosts
-        export DERIVED_DATA_PATH="$project_root/DerivedData"
+        export DERIVED_DATA_PATH="$(pwd)/../DerivedData"
         export TARGET_DEVICE="iPhone-16"
         export TARGET_OS="iOS-18-2"
         npm run test | tee test-output.log

@@ -123,7 +123,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObjec
 
     let featureName = Constants.featureName
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: subscriptionManager.url(for: .baseURL).host ?? OriginDomains.duckduckgo)
+        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
     var originalMessage: WKScriptMessage?

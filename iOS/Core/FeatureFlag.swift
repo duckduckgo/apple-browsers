@@ -76,6 +76,18 @@ public enum FeatureFlag: String {
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
+
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case networkProtectionRiskyDomainsProtection
+
+    /// Umbrella flag for experimental browser theming and appearance
+    /// https://app.asana.com/0/1206226850447395/1209291055975934
+    case experimentalBrowserTheming
+
+    case alternativeColorScheme
+
+    /// https://app.asana.com/0/1206488453854252/1208706841336530
+    case privacyProOnboardingCTAMarch25
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -83,6 +95,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
+        case .privacyProOnboardingCTAMarch25:
+            PrivacyProOnboardingCTAMarch25Cohort.self
         default:
             nil
         }
@@ -92,7 +106,9 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25:
+            return true
+        case .networkProtectionRiskyDomainsProtection:
             return true
         default:
             return false
@@ -177,6 +193,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .enabled
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .networkProtectionRiskyDomainsProtection:
+            return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .experimentalBrowserTheming:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .alternativeColorScheme:
+            return .internalOnly()
+        case .privacyProOnboardingCTAMarch25:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
         }
     }
 }
@@ -189,6 +213,13 @@ extension FeatureFlagger {
 }
 
 public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
+    case control
+    /// Treatment cohort where the experiment modifications are applied.
+    case treatment
+}
+
+public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

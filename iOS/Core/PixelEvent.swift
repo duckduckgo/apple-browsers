@@ -581,10 +581,6 @@ extension Pixel {
         case crashReportCRCIDMissing
         case crashReportingSubmissionFailed
 
-        case dbMigrationError
-        case dbRemovalError
-        case dbDestroyError
-        case dbDestroyFileError
         case dbContainerInitializationError
         case dbInitializationError
         case dbSaveExcludedHTTPSDomainsError
@@ -960,6 +956,14 @@ extension Pixel {
         case duckPlayerContingencyLearnMoreClicked
         case duckPlayerNewTabSettingOn
         case duckPlayerNewTabSettingOff
+        case duckPlayerYouTubeSignInErrorImpression
+        case duckPlayerYouTubeAgeRestrictedErrorImpression
+        case duckPlayerYouTubeNoEmbedErrorImpression
+        case duckPlayerYouTubeUnknownErrorImpression
+        case duckPlayerYouTubeSignInErrorDaily
+        case duckPlayerYouTubeAgeRestrictedErrorDaily
+        case duckPlayerYouTubeNoEmbedErrorDaily
+        case duckPlayerYouTubeUnknownErrorDaily
 
         // MARK: enhanced statistics
         case usageSegments
@@ -1550,10 +1554,6 @@ extension Pixel.Event {
         case .crashReportCRCIDMissing: return "m_crashreporting_crcid-missing"
         case .crashReportingSubmissionFailed: return "m_crashreporting_submission-failed"
         case .crashOnCrashHandlersSetUp: return "m_d_crash_on_handlers_setup"
-        case .dbMigrationError: return "m_d_dbme"
-        case .dbRemovalError: return "m_d_dbre"
-        case .dbDestroyError: return "m_d_dbde"
-        case .dbDestroyFileError: return "m_d_dbdf"
         case .dbContainerInitializationError: return "m_d_database_container_error"
         case .dbInitializationError: return "m_d_dbie"
         case .dbSaveExcludedHTTPSDomainsError: return "m_d_dbsw"
@@ -1968,6 +1968,14 @@ extension Pixel.Event {
         case .duckPlayerContingencyLearnMoreClicked: return "duckplayer_ios_contingency_learn-more-clicked"
         case .duckPlayerNewTabSettingOn: return "duckplayer_ios_newtab_setting-on"
         case .duckPlayerNewTabSettingOff: return "duckplayer_ios_newtab_setting-off"
+        case .duckPlayerYouTubeSignInErrorImpression: return "duckplayer_youtube-signin-error_impression"
+        case .duckPlayerYouTubeAgeRestrictedErrorImpression: return "duckplayer_youtube-age-restricted-error_impression"
+        case .duckPlayerYouTubeNoEmbedErrorImpression: return "duckplayer_youtube-no-embed-error_impression"
+        case .duckPlayerYouTubeUnknownErrorImpression: return "duckplayer_youtube-unknown-error_impression"
+        case .duckPlayerYouTubeSignInErrorDaily: return "duckplayer_youtube-signin-error_daily-unique"
+        case .duckPlayerYouTubeAgeRestrictedErrorDaily: return "duckplayer_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerYouTubeNoEmbedErrorDaily: return "duckplayer_youtube-no-embed-error_daily-unique"
+        case .duckPlayerYouTubeUnknownErrorDaily: return "duckplayer_youtube-unknown-error_daily-unique"
 
         // MARK: Enhanced statistics
         case .usageSegments: return "m_retention_segments"

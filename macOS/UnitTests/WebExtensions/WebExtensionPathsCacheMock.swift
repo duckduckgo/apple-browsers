@@ -18,7 +18,7 @@
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 14.4, *)
+@available(macOS 15.3, *)
 final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
 
     var cache: [String] = []

@@ -67,6 +67,7 @@ public enum PrivacyFeature: String {
     case htmlNewTabPage
     case tabManager
     case webViewStateRestoration
+    case experimentalBrowserTheming
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -150,6 +151,10 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// Enforce routes for the VPN to fix TunnelVision
     /// https://app.asana.com/0/72649045549333/1208617860225199/f
     case enforceRoutes
+
+    /// Risky Domain Protection for VPN
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case riskyDomainsProtection
 }
 
 public enum SyncSubfeature: String, PrivacySubfeature {
@@ -181,6 +186,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case useUnifiedFeedback
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
+    case privacyProOnboardingCTAMarch25
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -193,6 +199,7 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case pip
     case autoplay
     case openInNewTab
+    case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
 }
 

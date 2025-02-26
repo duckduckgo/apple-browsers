@@ -24,19 +24,19 @@ final class OnboardingConfiguration {
 
     lazy var daxDialogs = DaxDialogs.shared
 
-    func migrate() {
+    func migrateToNewOnboarding() {
         // Hide Dax Dialogs if users already completed old onboarding.
         DaxDialogsOnboardingMigrator().migrateFromOldToNewOboarding()
     }
 
     // assign it here, because "did become active" is already too late and "viewWillAppear"
     // has already been called on the HomeViewController so won't show the home row CTA
-    func onVariantAssigned() {
+    func adjustDialogsForUITesting() {
         let launchOptionsHandler = LaunchOptionsHandler()
 
         // MARK: perform first time launch logic here
         // If it's running UI Tests check if the onboarding should be in a completed state.
-        if launchOptionsHandler.isUITesting && launchOptionsHandler.isOnboardingCompleted {
+        if launchOptionsHandler.onboardingStatus.isOverriddenCompleted {
             daxDialogs.dismiss()
         } else {
             daxDialogs.primeForUse()

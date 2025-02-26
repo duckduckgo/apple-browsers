@@ -73,9 +73,6 @@
 /* Left label for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.left" = "Left Shortcut";
 
-/* Description for listing custom shortcuts */
-"widget.gallery.customshortcuts.edit.option.description" = "Shortcut Option";
-
 /* Right label for editing custom shortcuts */
 "widget.gallery.customshortcuts.edit.right" = "Right Shortcut";
 

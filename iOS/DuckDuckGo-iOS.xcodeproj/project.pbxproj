@@ -546,6 +546,7 @@
 		85371D242121B9D500920548 /* new_tab.json in Resources */ = {isa = PBXBuildFile; fileRef = 85371D232121B9D400920548 /* new_tab.json */; };
 		85372447220DD103009D09CD /* UIKeyCommandExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85372446220DD103009D09CD /* UIKeyCommandExtension.swift */; };
 		85374D3C21AC41E700FF5A1E /* FavoritesHomeViewSectionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85374D3B21AC41E700FF5A1E /* FavoritesHomeViewSectionRenderer.swift */; };
+		853807922D6E638000CE1455 /* AlertPlaygroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853807912D6E638000CE1455 /* AlertPlaygroundView.swift */; };
 		853A717620F62FE800FE60BC /* Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717520F62FE800FE60BC /* Pixel.swift */; };
 		853A717820F645FB00FE60BC /* PixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853A717720F645FB00FE60BC /* PixelTests.swift */; };
 		853C5F6121C277C7001F7A05 /* global.swift in Sources */ = {isa = PBXBuildFile; fileRef = 853C5F6021C277C7001F7A05 /* global.swift */; };
@@ -2035,6 +2036,7 @@
 		85371D232121B9D400920548 /* new_tab.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = new_tab.json; sourceTree = "<group>"; };
 		85372446220DD103009D09CD /* UIKeyCommandExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKeyCommandExtension.swift; sourceTree = "<group>"; };
 		85374D3B21AC41E700FF5A1E /* FavoritesHomeViewSectionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesHomeViewSectionRenderer.swift; sourceTree = "<group>"; };
+		853807912D6E638000CE1455 /* AlertPlaygroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPlaygroundView.swift; sourceTree = "<group>"; };
 		853A717520F62FE800FE60BC /* Pixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Pixel.swift; sourceTree = "<group>"; };
 		853A717720F645FB00FE60BC /* PixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelTests.swift; sourceTree = "<group>"; };
 		853C5F6021C277C7001F7A05 /* global.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = global.swift; sourceTree = "<group>"; };
@@ -4998,6 +5000,7 @@
 				6FB1FE9C2C24D4060075B68B /* NewTabPageSectionsDebugView */,
 				9F9A922F2C86AACB001D036D /* OnboardingDebugView */,
 				31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */,
+				853807912D6E638000CE1455 /* AlertPlaygroundView.swift */,
 				98A860EE2C4682E00077FE4D /* BookmarksDebugViewController.swift */,
 				4B0295182537BC6700E00CEF /* ConfigurationDebugViewController.swift */,
 				CBFCB30D2B2CD47800253E9E /* ConfigurationURLDebugViewController.swift */,
@@ -8413,6 +8416,7 @@
 				8569E1702D52C9A4004A3CB7 /* TabSwitcherBarsStateHandler.swift in Sources */,
 				9FE08BDC2C2A88FA001D5EBC /* OnboardingIntroViewController.swift in Sources */,
 				3157B43527F497F50042D3D7 /* SaveLoginViewController.swift in Sources */,
+				853807922D6E638000CE1455 /* AlertPlaygroundView.swift in Sources */,
 				C14D43012B45D6CD00ACA4DC /* AutofillDebugViewController.swift in Sources */,
 				856F28D72D3EC5FA00A88211 /* TabSwitcherViewController+MultiSelect.swift in Sources */,
 				853C5F6121C277C7001F7A05 /* global.swift in Sources */,

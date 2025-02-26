@@ -79,7 +79,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let pinnedTabsManager = PinnedTabsManager()
-    let pinnedTabsManagerProvider: PinnedTabsManagerProviding = PinnedTabsManagerProvider()
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -302,6 +302,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         onboardingStateMachine = ContextualOnboardingStateMachine()
+
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
         // Configure Subscription
         subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)

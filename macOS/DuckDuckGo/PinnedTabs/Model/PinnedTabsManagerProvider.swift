@@ -26,8 +26,19 @@ protocol PinnedTabsManagerProviding {
 
 class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
+    private let tabsPreferences: TabsPreferences
+
+    init(tabsPreferences: TabsPreferences = TabsPreferences.shared) {
+        self.tabsPreferences = tabsPreferences
+    }
+
+    @MainActor
+    private var windowControllerManager: WindowControllersManagerProtocol {
+        return WindowControllersManager.shared
+    }
+
     var arePerWindowPinnedTabsEnabled: Bool {
-        return true
+        return !tabsPreferences.sharedPinnedTabs
     }
 
     func pinnedTabsManager() -> PinnedTabsManager {
@@ -41,7 +52,7 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
     @MainActor
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
         if arePerWindowPinnedTabsEnabled {
-            let tabCollectionViewModel = WindowControllersManager.shared.allTabCollectionViewModels.first { tabCollectionViewModel in
+            let tabCollectionViewModel = windowControllerManager.allTabCollectionViewModels.first { tabCollectionViewModel in
                 tabCollectionViewModel.tabCollection.tabs.contains(tab)
             }
             return tabCollectionViewModel?.pinnedTabsManager
@@ -49,5 +60,10 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
             return Application.appDelegate.pinnedTabsManager
         }
     }
+
+    //TODO: Migrate when switching
+
+
+    // TODO: State restoration
 
 }

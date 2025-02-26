@@ -48,13 +48,14 @@ struct QuickActionsEntry: TimelineEntry {
 
 @available(iOS 17.0, *)
 struct ConfigurationIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Configure Shortcuts"
-    static var description = IntentDescription("Choose your shortcuts")
+    /// LocalizedStringResource requires a string literal
+    static var title = LocalizedStringResource("widget.gallery.customshortcuts.edit.title")
+    static var description = IntentDescription(LocalizedStringResource("widget.gallery.customshortcuts.edit.description"))
 
-    @Parameter(title: "Left Shortcut", default: .duckAI)
+    @Parameter(title: LocalizedStringResource("widget.gallery.customshortcuts.edit.left"), default: .duckAI)
     var leftShortcut: ShortcutOption
 
-    @Parameter(title: "Right Shortcut", default: .passwords)
+    @Parameter(title: LocalizedStringResource("widget.gallery.customshortcuts.edit.right"), default: .passwords)
     var rightShortcut: ShortcutOption
 
     init(leftShortcut: ShortcutOption, rightShortcut: ShortcutOption) {

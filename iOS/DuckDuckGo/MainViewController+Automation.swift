@@ -23,11 +23,10 @@ extension MainViewController {
     
     func executeScript(_ javaScriptString: String,
                        args: [String: Any] = [:]) async -> Result<Any, any Error>? {
-        var result = await currentTab?.executeScript(javaScriptString, args: args)
-        guard let result = result else {
+        guard let result = await currentTab?.executeScript(javaScriptString, args: args) else {
             return .failure(NSError(domain: "MainViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to execute script"]))
         }
-        return .success(result)
+        return result
     }
 
 }

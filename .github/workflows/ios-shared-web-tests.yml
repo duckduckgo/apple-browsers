@@ -69,5 +69,6 @@ jobs:
     - name: Run tests
       run: |
         cd shared-web-tests
+        brew install python@3.9 && /opt/homebrew/bin/python3.9 -m venv venv39 && source venv39/bin/activate
         npm run test
   

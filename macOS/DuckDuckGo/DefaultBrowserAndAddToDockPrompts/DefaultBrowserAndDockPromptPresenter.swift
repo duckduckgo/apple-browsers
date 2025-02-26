@@ -17,6 +17,7 @@
 //
 
 import SwiftUIExtensions
+import Combine
 
 enum DefaultBrowserAndDockPromptPresentationType {
     case banner
@@ -24,8 +25,9 @@ enum DefaultBrowserAndDockPromptPresentationType {
 }
 
 protocol DefaultBrowserAndDockPromptPresenting {
+    var bannerDismissedPublisher: AnyPublisher<Void, Never> { get }
+
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
-                         hideBanner: @escaping () -> Void,
                          bannerViewHandler: (BannerMessageViewController) -> Void)
 }
 
@@ -33,6 +35,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     static let shared = DefaultBrowserAndDockPromptPresenter()
 
     private let coordinator: DefaultBrowserAndDockPrompt
+    private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
     private var popover: NSPopover?
 
@@ -40,16 +43,21 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         self.coordinator = coordinator
     }
 
+    var bannerDismissedPublisher: AnyPublisher<Void, Never> {
+        bannerDismissedSubject.eraseToAnyPublisher()
+    }
+
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
-                         hideBanner: @escaping () -> Void,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard let type = coordinator.tryToShowPrompt() else {
+        guard let type = coordinator.getPromptType() else {
             return
         }
 
         switch type {
         case .banner:
-            bannerViewHandler(getBanner(closeAction: hideBanner)!)
+            guard let banner = getBanner() else { return }
+
+            bannerViewHandler(banner)
         case .popover:
             guard let view = popoverAnchorProvider() else { return }
 
@@ -72,7 +80,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         }
     }
 
-    private func getBanner(closeAction: @escaping (() -> Void)) -> BannerMessageViewController? {
+    private func getBanner() -> BannerMessageViewController? {
         guard let type = coordinator.evaluatePromptEligibility else {
             return nil
         }
@@ -83,9 +91,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation() },
+            buttonAction: {
+                self.coordinator.onPromptConfirmation()
+                self.bannerDismissedSubject.send()
+            },
             closeAction: {
-                closeAction()
+                self.bannerDismissedSubject.send()
                 self.coordinator.onPromptDismissed()
             })
     }
@@ -97,7 +108,10 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
-            buttonAction: { self.coordinator.onPromptConfirmation() },
+            buttonAction: {
+                self.coordinator.onPromptConfirmation()
+                self.popover?.close()
+            },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()

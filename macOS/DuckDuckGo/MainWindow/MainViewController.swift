@@ -50,6 +50,7 @@ final class MainViewController: NSViewController {
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var bannerPromptObserver: Any?
+    private var bannerDismissedCancellable: AnyCancellable?
 
     private var bookmarksBarIsVisible: Bool {
         return bookmarksBarViewController.parent != nil
@@ -499,12 +500,16 @@ final class MainViewController: NSViewController {
                                                selector: #selector(tryToShowSetAsDefaultAndAddtoDockIfNeeded),
                                                name: .showPromptForSetAsDefaultBrowserAndAddToDock,
                                                object: nil)
+
+        bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher
+            .sink { [weak self] in
+                self?.hideBanner()
+            }
     }
 
     @objc private func tryToShowSetAsDefaultAndAddtoDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            hideBanner: hideBanner,
             bannerViewHandler: showMessageBanner)
     }
 

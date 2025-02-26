@@ -38,17 +38,17 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
-    /// Attempts to show a prompt to the user based on their eligibility for the experiment.
+    /// Gets the prompt type based on the user's eligibility for the experiment.
     ///
     /// This function checks if the user is eligible for the "Popover vs Banner Experiment" by evaluating the following conditions:
     /// 1. The user has completed the onboarding process (`wasOnboardingCompleted`).
-    /// 2. At least two days have passed since the user's first launch of the app (`AppDelegate.twoDaysPassedSinceFirstLaunch`).
+    /// 2. The user is not a new user, this means a week had passed since the first launch (`AppDelegate.isNewUser`).
     /// 3. The `evaluatePromptEligibility` closure is not `nil`, indicating that the user has not set the user as default or did not add the browser to the dock.
     ///
     /// If the user is eligible, the function resolves the user's cohort for the "Popover vs Banner Experiment" feature flag. Based on the user's cohort, the function will post a notification to display either a banner prompt or a popover prompt for the default browser setting.
     ///
     /// - Note: The `FeatureFlag.PopoverVSBannerExperimentCohort` enum represents the different cohorts for the experiment, with the `control` cohort not displaying any prompt.
-    func tryToShowPrompt() -> DefaultBrowserAndDockPromptPresentationType?
+    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
 
     func onPromptConfirmation()
     func onPromptDismissed()
@@ -111,8 +111,9 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    func tryToShowPrompt() -> DefaultBrowserAndDockPromptPresentationType? {
+    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
         guard isUserEligibleForExperiment else { return nil }
+
         guard let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.popoverVsBannerExperiment) as? FeatureFlag.PopoverVSBannerExperimentCohort else { return nil }
 
         switch cohort {

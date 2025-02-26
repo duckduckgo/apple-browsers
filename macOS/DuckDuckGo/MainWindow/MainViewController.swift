@@ -518,7 +518,7 @@ final class MainViewController: NSViewController {
             if bookmarksBarVisibilityManager.isBookmarksBarVisible {
                 return self.bookmarksBarViewController.view
             } else {
-                return self.navigationBarViewController.view
+                return self.navigationBarViewController.addressBarViewController?.view
             }
         }
 

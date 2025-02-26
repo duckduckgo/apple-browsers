@@ -364,7 +364,8 @@ extension TabSwitcherViewController {
             }),
 
             UIMenu(title: "", options: [.displayInline], children: [
-                action(UserText.closeAllTabs(withCount: tabsModel.count), "Tab-Close-16", destructive: true, { [weak self] in
+                // Zero forces the 'generic' close all tabs string
+                action(UserText.closeAllTabs(withCount: 0), "Tab-Close-16", destructive: true, { [weak self] in
                     guard let self else { return }
                     self.editMenuCloseAllTabs()
                 })

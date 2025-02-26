@@ -477,7 +477,7 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Share Links</string>
+			<string>Share %d Links</string>
 			<key>one</key>
 			<string>Share Link</string>
 		</dict>
@@ -509,9 +509,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Bookmark Selected Tabs</string>
+			<string>Bookmark %d Tabs</string>
 			<key>one</key>
-			<string>Bookmark Selected Tab</string>
+			<string>Bookmark This Tab</string>
 		</dict>
 	</dict>
 	<key>tabsBookmarked.withCount</key>

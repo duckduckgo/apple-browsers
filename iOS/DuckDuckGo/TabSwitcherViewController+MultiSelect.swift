@@ -271,88 +271,37 @@ extension TabSwitcherViewController {
     var allPagesCount: Int {
         tabsModel.tabs.compactMap(\.link).count
     }
-
-    fileprivate func addLargeInterfaceMultiSelectMenuItemsIfNeeded(_ children: inout [UIMenuElement]) {
-        guard self.interfaceMode.isLarge else { return }
-
-        if selectedTabs.count == tabsModel.count {
-            children.append(action(UserText.deselectAllTabs, systemImage: "circle") { [weak self] in
-                guard let self else { return }
-                self.selectModeDeselectAllTabs()
-            })
-        } else {
-            children.append(action(UserText.selectAllTabs, systemImage: "checkmark.circle", { [weak self] in
-                guard let self else { return }
-                self.selectModeSelectAllTabs()
-            }))
+   
+    func createMultiSelectionMenuForPad() -> UIMenu {
+        return UIMenu(title: "")
+    }
+    
+    // https://app.asana.com/0/1209499866654340/1209424833903149
+    func createMultiSelectionMenuForPhone() -> UIMenu {
+        if selectedTabs.isEmpty {
+            return UIMenu(title: "", children: [
+                action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", {}),
+            ])
         }
-    }
-    
-    fileprivate func addSelectedPagesMultiSelectMenuItemsIfNeeded(_ children: inout [UIMenuElement]) {
-
-        // Only show these if there's at least one non-home page tab selected
-        guard selectedPagesCount > 0 else { return }
-
-        // But use the total count for determining the text (Tab vs Tabs)
-        let selectedTabsCount = selectedTabs.count
-        children.append(UIMenu(title: "", options: .displayInline, children: [
-            action(UserText.shareSelectedTabs(withCount: selectedTabsCount), "Share-Apple-16", { [weak self] in
-                guard let self else { return }
-                self.selectModeShareLinks()
-            }),
-            action(UserText.bookmarkSelectedTabs(withCount: selectedTabsCount), "Bookmark-Add-16", { [weak self] in
-                guard let self else { return }
-                self.selectModeBookmarkSelected()
-            }),
-        ]))
-    }
-    
-    fileprivate func addBookmarkMultiSelectMenuItemIfNeeded(_ children: inout [UIMenuElement]) {
-        guard selectedTabs.isEmpty else { return  }
-        children.append(UIMenu(title: "", options: .displayInline, children: [
-            action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", { [weak self] in
-                guard let self else { return }
-                self.selectModeBookmarkAll()
-            }),
-        ]))
-    }
-    
-    fileprivate func addCloseOptionsToMultiSelectMenuItemIfNeeded(_ children: inout [UIMenuElement]) {
-        guard selectedTabs.count > 0 && tabsModel.count > selectedTabs.count else { return }
-        if interfaceMode.isLarge {
-            children.append(UIMenu(title: "", options: .displayInline, children: [
-                action(UserText.closeTabs(withCount: selectedTabs.count), "Close-16", destructive: true, { [weak self] in
-                    guard let self else { return }
-                    self.selectModeCloseSelectedTabs()
-                }),
-            ]))
-        } else {
-            children.append(UIMenu(title: "", options: .displayInline, children: [
-                action(UserText.tabSwitcherCloseOtherTabs(withCount: tabsModel.count - selectedTabs.count), "Tab-Close-16", destructive: true, { [weak self] in
-                    guard let self else { return }
-                    self.selectModeCloseOtherTabs()
-                }),
-            ]))
-        }
+        
+        let otherTabCount = max(0, tabCount - selectedTabs.count)
+        return UIMenu(title: "", children: [
+            
+            UIMenu(title: "", options: .displayInline, children: [
+                otherTabCount > 0 ? action(UserText.tabSwitcherCloseOtherTabs(withCount: otherTabCount), "Tab-Close-16", destructive: true, {}) : nil,
+            ].compactMap { $0 }),
+            
+            action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", {}),
+            action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", {}),
+        ])
     }
     
     func createMultiSelectionMenu() -> UIMenu {
-        var children = [UIMenuElement]()
-        
-        addLargeInterfaceMultiSelectMenuItemsIfNeeded(&children)
-
-        // share
-        // bookmark
-        addSelectedPagesMultiSelectMenuItemsIfNeeded(&children)
-
-        // bookmark all
-        addBookmarkMultiSelectMenuItemIfNeeded(&children)
-
-        // close (large UI only)
-        // close other
-        addCloseOptionsToMultiSelectMenuItemIfNeeded(&children)
-
-        return UIMenu(title: "", children: children)
+        if interfaceMode.isLarge {
+            return createMultiSelectionMenuForPad()
+        } else {
+            return createMultiSelectionMenuForPhone()
+        }
     }
 
     func createEditMenu() -> UIMenu {
@@ -371,15 +320,6 @@ extension TabSwitcherViewController {
                 })
             ]),
         ])
-    }
-
-    /// Trim title text explicitly. UIMenu supports display preferences on iOS 17.4 to
-    ///  limit the number of title lines but that doesn't appear to work here.
-    func trimMenuTitleIfNeeded(_ s: String, _ maxLength: Int) -> String {
-        if s.count > maxLength {
-            return s.prefix(maxLength) + "..."
-        }
-        return s
     }
 
     /// Takes indexes of tabs to create long menu for.  Interally creates tab array for those indexes, then passes either tabs or indexes to the handles in order to try and reduce the amount of

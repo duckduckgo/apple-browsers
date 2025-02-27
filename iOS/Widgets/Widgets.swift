@@ -234,7 +234,8 @@ struct Widgets: WidgetBundle {
 
     private func makeWidgets() -> some Widget {
         if #available(iOS 17, *) {
-            return WidgetBundleBuilder.buildBlock(QuickActionsWidget(),
+            return WidgetBundleBuilder.buildBlock(QuickActionsSmallWidget(),
+                                                  QuickActionsMediumWidget(),
                                                   FavoritesWidget(),
                                                   PasswordsWidget(),
                                                   VPNBundle().body,

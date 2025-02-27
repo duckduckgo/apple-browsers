@@ -246,5 +246,15 @@ struct UserText {
     static let quickActionsWidgetEditShortcutsDescription = NSLocalizedString("widget.gallery.customshortcuts.edit.description",
                                                                   value: "Choose your shortcuts",
                                                                   comment: "Description for editing custom shortcuts")
+
+    //MARK: - Quick Actions Medium
+
+    static let quickActionsMediumWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.quickactions.medium.display.name",
+                                                                  value: "Shortcuts",
+                                                                  comment: "Display name for medium quick actions widget in widget gallery")
+
+    static let quickActionsMediumWidgetGalleryDescription = NSLocalizedString("widget.gallery.quickactions.medium.display.description",
+                                                                  value: "Shortcuts to your favorite actions.",
+                                                                  comment: "Description of medium quickActions widget in widget gallery")
 }
 

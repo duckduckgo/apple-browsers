@@ -84,6 +84,10 @@ class TabSwitcherViewController: UIViewController {
     weak var delegate: TabSwitcherDelegate!
     weak var tabsModel: TabsModel!
     weak var previewsSource: TabPreviewsSource!
+    
+    var selectedTabs: [IndexPath] {
+        collectionView.indexPathsForSelectedItems ?? []
+    }
 
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
@@ -237,13 +241,13 @@ class TabSwitcherViewController: UIViewController {
         delegate?.tabSwitcher(self, editBookmarkForUrl: url)
     }
 
-    func bookmarkTabs(withIndices indexes: [Int], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
+    func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
         var newCount = 0
         var urls = [URL]()
 
-        indexes.compactMap {
-            tabsModel.safeGetTabAt($0)
+        indexPaths.compactMap {
+            tabsModel.safeGetTabAt($0.row)
         }.forEach { tab in
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
@@ -419,7 +423,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         guard !indexPaths.isEmpty else { return nil }
         
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            return self.createLongPressMenuForTabs(atIndexes: indexPaths.map { $0.row })
+            return self.createLongPressMenuForTabs(atIndexPaths: indexPaths)
         }
 
         return configuration

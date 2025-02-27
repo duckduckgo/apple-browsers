@@ -510,7 +510,8 @@ final class MainViewController: NSViewController {
     @objc private func tryToShowSetAsDefaultAndAddtoDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner)
+            bannerViewHandler: showMessageBanner
+        )
     }
 
     private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {

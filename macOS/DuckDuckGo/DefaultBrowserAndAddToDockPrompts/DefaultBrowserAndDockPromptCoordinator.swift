@@ -21,7 +21,6 @@ import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
 import FeatureFlags
-import PixelKit
 
 protocol DefaultBrowserAndDockPrompt {
     /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
@@ -144,13 +143,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         case .setAsDefaultPrompt:
             setAsDefaultBrowserAction()
         }
-
-        PixelKit.fireExperimentPixel(
-            for: FeatureFlag.popoverVsBannerExperiment.rawValue,
-            metric: Constants.userSetAsDefaultOrAddedToDock,
-            conversionWindowDays: Constants.conversionWindowDays,
-            value: Constants.value
-        )
 
         repository.setPromptShown(true)
     }

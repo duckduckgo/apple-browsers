@@ -42,13 +42,16 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
+    private let featureFlagger: FeatureFlagger
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          userDefaults: UserDefaults = .standard,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          notificationCenter: NotificationCenter = .default) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
@@ -69,15 +72,19 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAIChatFeatureEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
+        featureFlagger.isFeatureOn(.aiChat)
+    }
+
+    var isAIChatVoiceSearchFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatVoiceSearch)
     }
 
     var isAIChatAddressBarShortcutFeatureEnabled: Bool {
-        return isFeatureEnabled(for: .addressBarShortcut)
+        featureFlagger.isFeatureOn(.aiChatAddressBarShortcut)
     }
 
     var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool {
-        return isFeatureEnabled(for: .browsingToolbarShortcut)
+        featureFlagger.isFeatureOn(.aiChatBrowsingToolbarShortcut)
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -96,10 +103,6 @@ struct AIChatSettings: AIChatSettingsProvider {
         notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
     }
 
-    private func isFeatureEnabled(for subfeature: AIChatSubfeature) -> Bool {
-        return privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(subfeature)
-    }
-    
     private func getSettingsData(_ value: SettingsValue) -> String {
         if let value = remoteSettings[value.rawValue] as? String {
             return value

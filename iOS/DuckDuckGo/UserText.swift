@@ -1504,6 +1504,10 @@ But if you *do* want a peek under the hood, you can find more information about 
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
     // MARK: - AI Chat
+
+    public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
+    public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
+
     public static let aiChatFeatureName = NSLocalizedString("duckai.settings.title", value: "Duck.ai", comment: "Settings screen cell text for AI Chat settings")
 
     static let aiChatSettingsCaptionWithLinkMarkdown = NSLocalizedString("duckai.preferences.text.markdown", value: """
@@ -1513,6 +1517,8 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
     public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Show Duck.ai in Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
 
     public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Show Duck.ai in Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
+
+    public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Show Duck.ai in Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

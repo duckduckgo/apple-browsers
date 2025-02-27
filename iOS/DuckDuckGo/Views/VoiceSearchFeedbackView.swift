@@ -81,10 +81,10 @@ extension VoiceSearchFeedbackView {
             .padding(.top, voiceCircleVerticalPadding)
 
             Picker("", selection: $speechModel.selectedOption) {
-                Text("Search")
+                Text(UserText.voiceSearchToggleSearch)
                     .tag(0)
 
-                Text("Duck.ai")
+                Text(UserText.voiceSearchToggleAIChat)
                     .tag(1)
             }
             .pickerStyle(SegmentedPickerStyle())

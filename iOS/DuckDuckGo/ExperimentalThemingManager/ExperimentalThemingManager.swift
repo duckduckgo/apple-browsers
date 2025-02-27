@@ -39,12 +39,12 @@ struct ExperimentalThemingManager {
         updateNeededDependencies()
     }
 
-    var isAlternativeColorSchemeEnabled: Bool {
-        isExperimentalThemingEnabled && featureFlagger.isFeatureOn(for: FeatureFlag.alternativeColorScheme, allowOverride: true)
+    var isWarmColorPaletteEnabled: Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.warmColorTheme, allowOverride: true)
     }
 
-    func toggleAlternativeColorScheme() {
-        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.alternativeColorScheme)
+    func toggleWarmColorPalette() {
+        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.warmColorTheme)
 
         updateNeededDependencies()
     }

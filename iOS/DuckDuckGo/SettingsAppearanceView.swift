@@ -62,8 +62,8 @@ struct SettingsAppearanceView: View {
                                      accessory: .toggle(isOn: viewModel.experimentalThemingBinding))
 
                     if viewModel.state.isExperimentalThemingEnabled {
-                        SettingsCellView(label: UserText.settingsExperimentalColorsSwitch,
-                                         accessory: .toggle(isOn: viewModel.alternativeColorsBinding))
+                        SettingsCellView(label: UserText.settingsExperimentalWarmColorsSwitch,
+                                         accessory: .toggle(isOn: viewModel.warmColorsPaletteBinding))
                     }
                 }
             }

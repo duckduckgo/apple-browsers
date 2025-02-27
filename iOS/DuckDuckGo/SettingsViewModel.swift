@@ -172,12 +172,12 @@ final class SettingsViewModel: ObservableObject {
             })
         }
 
-    var alternativeColorsBinding: Binding<Bool> {
+    var warmColorsPaletteBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.isAlternativeColorSchemeEnabled },
+            get: { self.state.isWarmColorPaletteEnabled },
             set: { _ in
-                self.experimentalThemingManager.toggleAlternativeColorScheme()
-                self.state.isAlternativeColorSchemeEnabled = self.experimentalThemingManager.isAlternativeColorSchemeEnabled
+                self.experimentalThemingManager.toggleWarmColorPalette()
+                self.state.isWarmColorPaletteEnabled = self.experimentalThemingManager.isWarmColorPaletteEnabled
             })
     }
 
@@ -511,7 +511,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
-            isAlternativeColorSchemeEnabled: experimentalThemingManager.isAlternativeColorSchemeEnabled,
+            isWarmColorPaletteEnabled: experimentalThemingManager.isWarmColorPaletteEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

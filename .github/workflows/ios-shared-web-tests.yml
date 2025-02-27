@@ -74,6 +74,7 @@ jobs:
         export DERIVED_DATA_PATH="$derived_data_path"
         export TARGET_DEVICE="iPhone-16"
         export TARGET_OS="iOS-18-2"
+        set -o pipefail
         npm run test | tee test-output.log
 
     - name: Upload logs when workflow failed

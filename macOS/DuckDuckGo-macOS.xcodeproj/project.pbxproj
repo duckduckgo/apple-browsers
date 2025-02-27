@@ -14995,7 +14995,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
-				TEST = TEST;
 			};
 			name = CI;
 		};
@@ -15344,7 +15343,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
-				TEST = TEST;
 			};
 			name = Debug;
 		};
@@ -15352,7 +15350,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
-				TEST = TEST;
 			};
 			name = Release;
 		};
@@ -15381,7 +15378,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
-				TEST = TEST;
 			};
 			name = Review;
 		};

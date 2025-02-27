@@ -56,8 +56,8 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
 
     public enum Constants {
         public static let baseTdsURLString = "https://staticcdn.duckduckgo.com/trackerblocking/"
-        public static let defaultTrackerDataURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds-deliberately-bad-change-dont-merge.json")!
-        public static let defaultPrivacyConfigurationURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config-deliberately-bad-change-dont-merge.json")!
+        public static let defaultTrackerDataURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json")!
+        public static let defaultPrivacyConfigurationURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json")!
     }
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,

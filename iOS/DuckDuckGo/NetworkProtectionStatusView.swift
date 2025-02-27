@@ -275,9 +275,16 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func settings() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsTitle, destination: NetworkProtectionVPNSettingsView())
+            NavigationLink(destination: NetworkProtectionVPNSettingsView()) {
+                HStack {
+                    Image("Settings-24")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                    Text(UserText.netPVPNSettingsTitle)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
         } header: {
             Text(UserText.netPStatusViewSettingsSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
         }
@@ -287,18 +294,33 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func about() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsFAQ, destination: LazyView(NetworkProtectionFAQView()))
+            NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
+                HStack {
+                    Image("Help-24")
+                    Text(UserText.netPVPNSettingsFAQ)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
 
             if statusModel.usesUnifiedFeedbackForm {
-                NavigationLink(
-                    UserText.subscriptionFeedback,
-                    destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))
-                )
+                NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
+                    HStack {
+                        Image("Support-24")
+                        Text(UserText.subscriptionFeedback)
+                    }
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
             } else {
+                NavigationLink(destination: LazyView(VPNFeedbackFormCategoryView())) {
+                    HStack {
+                        Image("Support-24")
+                        Text(UserText.netPVPNSettingsShareFeedback)
+                    }
+                    .daxBodyRegular()
+                    .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
                 NavigationLink(UserText.netPVPNSettingsShareFeedback, destination: LazyView(VPNFeedbackFormCategoryView()))
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))

@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1740608289920,
+    "version": 1740392927241,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -681,7 +681,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "417d2c40ff3b99f06b3f2551cbd13440"
+            "hash": "f2985a340604b46ce099df9390a1680d"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -10289,7 +10289,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "b2838b64df58ada9f78c3d346c3bec0c"
+            "hash": "0b107946c190c79cf97d02403eddd880"
         },
         "trackingCookies1p": {
             "settings": {

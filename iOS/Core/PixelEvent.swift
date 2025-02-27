@@ -552,10 +552,6 @@ extension Pixel {
         case crashReportCRCIDMissing
         case crashReportingSubmissionFailed
 
-        case dbMigrationError
-        case dbRemovalError
-        case dbDestroyError
-        case dbDestroyFileError
         case dbContainerInitializationError
         case dbInitializationError
         case dbSaveExcludedHTTPSDomainsError
@@ -1500,10 +1496,6 @@ extension Pixel.Event {
         case .crashReportCRCIDMissing: return "m_crashreporting_crcid-missing"
         case .crashReportingSubmissionFailed: return "m_crashreporting_submission-failed"
         case .crashOnCrashHandlersSetUp: return "m_d_crash_on_handlers_setup"
-        case .dbMigrationError: return "m_d_dbme"
-        case .dbRemovalError: return "m_d_dbre"
-        case .dbDestroyError: return "m_d_dbde"
-        case .dbDestroyFileError: return "m_d_dbdf"
         case .dbContainerInitializationError: return "m_d_database_container_error"
         case .dbInitializationError: return "m_d_dbie"
         case .dbSaveExcludedHTTPSDomainsError: return "m_d_dbsw"

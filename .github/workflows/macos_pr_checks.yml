@@ -239,7 +239,7 @@ jobs:
       if: always() # always run even if the previous step fails
       with:
         check_name: "Test Report: ${{ matrix.flavor }}"
-        report_paths: '${{ matrix.flavor }}*.xml'
+        report_paths: 'macOS/${{ matrix.flavor }}*.xml'
         check_retries: true
 
     - name: Update Asana with failed unit tests
@@ -262,7 +262,7 @@ jobs:
       if: failure()
       with:
         name: ${{ matrix.flavor }}-unittests-xcodebuild.log
-        path: ${{ matrix.flavor }}-unittests-xcodebuild.log
+        path: macOS/${{ matrix.flavor }}-unittests-xcodebuild.log
         retention-days: 7
 
     - name: Upload failed unit tests xcresult
@@ -270,7 +270,7 @@ jobs:
       if: failure()
       with:
         name: ${{ matrix.flavor }}-unittests.xcresult
-        path: ${{ matrix.flavor }}-unittests.xcresult
+        path: macOS/${{ matrix.flavor }}-unittests.xcresult
         retention-days: 7
 
     - name: Upload failed integration tests log
@@ -278,7 +278,7 @@ jobs:
       if: failure()
       with:
         name: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
-        path: ${{ matrix.flavor }}-integrationtests-xcodebuild.log
+        path: macOS/${{ matrix.flavor }}-integrationtests-xcodebuild.log
         retention-days: 7
 
     - name: Upload failed integration tests xcresult
@@ -286,7 +286,7 @@ jobs:
       if: failure()
       with:
         name: ${{ matrix.flavor }}-integrationtests.xcresult
-        path: ${{ matrix.flavor }}-integrationtests.xcresult
+        path: macOS/${{ matrix.flavor }}-integrationtests.xcresult
         retention-days: 7
 
     - name: Fetch latest commit author

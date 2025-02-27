@@ -44,6 +44,7 @@ protocol UpdateControllerProtocol: AnyObject {
 
     func checkForUpdateRespectingRollout()
     func checkForUpdateSkippingRollout()
+    func runUpdateFromMenuItem()
     func runUpdate()
 
     var areAutomaticUpdatesEnabled: Bool { get set }
@@ -266,6 +267,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @objc func openUpdatesPage() {
         notificationPresenter.openUpdatesPage()
+    }
+
+    @objc func runUpdateFromMenuItem() {
+        if shouldForceUpdateCheck {
+            openUpdatesPage()
+        }
+
+        runUpdate()
     }
 
     @objc func runUpdate() {

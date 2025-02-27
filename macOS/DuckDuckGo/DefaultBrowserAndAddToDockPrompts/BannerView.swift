@@ -94,6 +94,5 @@ struct BannerView: View {
 
         .background(Color.bannerBackground)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }

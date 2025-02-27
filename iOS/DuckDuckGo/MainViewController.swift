@@ -2649,6 +2649,11 @@ extension MainViewController: TabSwitcherDelegate {
             self.segueToEditBookmark(bookmark)
         }
     }
+    
+    func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+        updateCurrentTab()
+    }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
         if tabManager.count == 1 {

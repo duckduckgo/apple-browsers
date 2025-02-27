@@ -137,6 +137,13 @@ public class TabsModel: NSObject, NSCoding {
         currentIndex = current - 1
     }
 
+    /// This *does not* add a new empty tab after removing the items.
+    func remove(_ indexPaths: [IndexPath]) {
+        let indexes = Set(indexPaths.map { $0.row })
+        self.tabs = tabs.enumerated().filter { !indexes.contains($0.offset) }.map { $0.element }
+        currentIndex = tabs.indices.contains(currentIndex) ? currentIndex : tabs.count - 1
+    }
+
     func remove(tab: Tab) {
         if let index = indexOf(tab: tab) {
             remove(at: index)

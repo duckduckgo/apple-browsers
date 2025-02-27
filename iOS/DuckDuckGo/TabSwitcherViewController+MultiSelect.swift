@@ -177,16 +177,7 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
-
-            // TODO performance check
-            indexPaths.compactMap {
-                self.tabsModel.safeGetTabAt($0.row)
-            }.forEach {
-                self.deleteTab(tab: $0)
-            }
-            self.collectionView.reloadData()
-            self.refreshTitle()
-            self.updateUIForSelectionMode()
+            self.deleteTabsAtIndexPaths(indexPaths)
         })
 
         present(alert, animated: true)
@@ -536,8 +527,7 @@ extension TabSwitcherViewController {
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {
         if indexPaths.count == 1 {
             // No confirmation for a single tab
-            guard let tab = self.tabsModel.safeGetTabAt(tabsModel.currentIndex) else { return }
-            self.deleteTab(tab: tab)
+            self.deleteTabsAtIndexPaths(indexPaths)
             return
         }
         
@@ -547,10 +537,7 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
         alert.addAction(title: UserText.closeTabs(withCount: indexPaths.count), style: .destructive) { [weak self] in
             guard let self else { return }
-            indexPaths.forEach { indexPath in
-                guard let tab = self.tabsModel.safeGetTabAt(indexPath.row) else { return }
-                self.deleteTab(tab: tab)
-            }
+            self.deleteTabsAtIndexPaths(indexPaths)
         }
         present(alert, animated: true, completion: nil)
     }

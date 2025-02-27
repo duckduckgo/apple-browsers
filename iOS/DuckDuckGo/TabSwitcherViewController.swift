@@ -306,35 +306,37 @@ class TabSwitcherViewController: UIViewController {
 
 extension TabSwitcherViewController: TabViewCellDelegate {
 
-    func deleteTab(tab: Tab) {
-        guard let index = tabsModel.indexOf(tab: tab) else { return }
-        let isLastTab = tabsModel.count == 1
-        if isLastTab {
-            // Will be dismissed, so no need to process incoming updates
-            canUpdateCollection = false
-            delegate.tabSwitcher(self, didRemoveTab: tab)
-            DispatchQueue.global(qos: .background).async {
-                Favicons.shared.clearCache(.tabs, clearMemoryCache: true)
-            }
-        } else {
-            collectionView.performBatchUpdates({
-                isProcessingUpdates = true
-                delegate.tabSwitcher(self, didRemoveTab: tab)
-                currentSelection = tabsModel.currentIndex
-                collectionView.deleteItems(at: [IndexPath(row: index, section: 0)])
-            }, completion: { _ in
-                self.isProcessingUpdates = false
-                guard let current = self.currentSelection else { return }
-                self.refreshTitle()
-                self.collectionView.reloadItems(at: [IndexPath(row: current, section: 0)])
-                self.updateUIForSelectionMode()
+    func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
+        let shouldDismiss = tabsModel.count == indexPaths.count
 
-                // remove favicon from tabs cache when no other tabs have that domain
-                self.removeFavicon(forTab: tab)
-            })
+        collectionView.performBatchUpdates {
+            isProcessingUpdates = true
+            tabsModel.remove(indexPaths)
+            currentSelection = tabsModel.currentIndex
+            collectionView.deleteItems(at: indexPaths)
+        } completion: { _ in
+            self.isProcessingUpdates = false
+            if self.tabsModel.tabs.isEmpty {
+                self.tabsModel.add(tab: Tab())
+            }
+            self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
+            self.refreshTitle()
+            self.updateUIForSelectionMode()
+            if shouldDismiss {
+                self.dismiss()
+            } else {
+                self.currentSelection = self.tabsModel.currentIndex
+            }
         }
     }
     
+    func deleteTab(tab: Tab) {
+        guard let index = tabsModel.indexOf(tab: tab) else { return }
+        deleteTabsAtIndexPaths([
+            IndexPath(row: index, section: 0)
+        ])
+    }
+
     func isCurrent(tab: Tab) -> Bool {
         return currentSelection == tabsModel.indexOf(tab: tab)
     }

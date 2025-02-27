@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import BrowserServicesKit
 import Combine
 import SwiftUI
 import Common
 import FeatureFlags
+import Foundation
 import NetworkExtension
 import NetworkProtection
 import NetworkProtectionProxy
@@ -28,14 +29,9 @@ import NetworkProtectionUI
 import Networking
 import PixelKit
 import os.log
-
-#if NETP_SYSTEM_EXTENSION
+import Subscription
 import SystemExtensionManager
 import SystemExtensions
-#endif
-
-import Subscription
-import BrowserServicesKit
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
 typealias NetworkProtectionConfigChangeHandler = () -> Void
@@ -420,7 +416,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Activate System Extension
 
-#if NETP_SYSTEM_EXTENSION
     /// Ensures that the system extension is activated if necessary.
     ///
     private func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
@@ -464,7 +459,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             return
         }
     }
-#endif
 
     // MARK: - Starting & Stopping the VPN
 
@@ -539,14 +533,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         controllerErrorStore.lastErrorMessage = nil
 
         do {
-#if NETP_SYSTEM_EXTENSION
-            try await activateSystemExtension { [weak self] in
-                // If we're waiting for user approval we wanna make sure the
-                // onboarding step is set correctly.  This can be useful to
-                // help prevent the value from being de-synchronized.
-                self?.onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue
+            if await networkExtensionController.isUsingSystemExtension {
+                try await activateSystemExtension { [weak self] in
+                    // If we're waiting for user approval we wanna make sure the
+                    // onboarding step is set correctly.  This can be useful to
+                    // help prevent the value from being de-synchronized.
+                    self?.onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue
+                }
             }
-#endif
 
             let tunnelManager: NETunnelProviderManager
 

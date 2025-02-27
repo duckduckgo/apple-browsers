@@ -100,7 +100,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
 
         let pixelSource: String
 
-#if NETP_SYSTEM_EXTENSION
+#if !APPSTORE
         pixelSource = "vpnAgent"
 #else
         pixelSource = "vpnAgentAppStore"
@@ -169,15 +169,14 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         Bundle.tunnelExtensionBundleID
     }
 
-    private lazy var networkExtensionController = NetworkExtensionController(extensionBundleID: tunnelExtensionBundleID)
-
-    private var storeProxySettingsInProviderConfiguration: Bool {
-#if NETP_SYSTEM_EXTENSION
-        true
+    private lazy var networkExtensionController: NetworkExtensionController = {
+#if APPSTORE
+        let availableExtensions: NetworkExtensionController.AvailableExtensions = .both(appexBundleID: "TO-DO", sysexBundleID: "TO-DO")
 #else
-        false
+        let availableExtensions: NetworkExtensionController.AvailableExtensions = .sysex(sysexBundleID: "TO-DO")
 #endif
-    }
+        return NetworkExtensionController(availableExtensions: availableExtensions, featureFlagger: featureFlagger)
+    }()
 
     private let tunnelSettings: VPNSettings
     private lazy var userDefaults = UserDefaults.netP
@@ -204,7 +203,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = TransparentProxyController(
             extensionID: proxyExtensionBundleID,
-            storeSettingsInProviderConfiguration: storeProxySettingsInProviderConfiguration,
             settings: proxySettings,
             eventHandler: eventHandler) { [weak self] manager in
                 guard let self else { return }

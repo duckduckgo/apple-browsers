@@ -71,7 +71,7 @@ final class NetworkProtectionDebugUtilities {
         UserDefaults.netP.resetVPNReportSiteIssuesDontAskAgain()
     }
 
-    func removeSystemExtensionAndAgents() async throws {
+    func removeVPNNetworkExtensionAndAgents() async throws {
         try await vpnUninstaller.removeSystemExtension()
         vpnUninstaller.removeAgents()
     }

@@ -75,11 +75,13 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
+        guard await networkExtensionController.isUsingSystemExtension else {
+            return
+        }
+
         await tunnelController.stop()
         try await networkExtensionController.deactivateSystemExtension()
         defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)
-#endif
     }
 
     func removeVPNConfiguration() async throws {

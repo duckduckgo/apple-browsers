@@ -1958,6 +1958,7 @@
 		7B8FDD222CDD88CB00720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD212CDD88CB00720907 /* FeatureFlags */; };
 		7B8FDD242CDD88D300720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD232CDD88D300720907 /* FeatureFlags */; };
 		7B8FDD262CDD88D900720907 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FDD252CDD88D900720907 /* FeatureFlags */; };
+		7B8FE0AA2D6F74C7004CF744 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */; };
 		7B934C412A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */; };
 		7B93A68B2D4A5AF200E9FFC1 /* ExcludedAppsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */; };
 		7B93A68C2D4A5AF200E9FFC1 /* ExcludedAppsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */; };
@@ -5396,6 +5397,7 @@
 				4BCBE45C2BA7E18500FC75A1 /* Subscription in Frameworks */,
 				7B23668E2C09FAFA002D393F /* VPNAppLauncher in Frameworks */,
 				7BA7CC612AD1211C0042E5CE /* Networking in Frameworks */,
+				7B8FE0AA2D6F74C7004CF744 /* SystemExtensionManager in Frameworks */,
 				F198C71C2BD18A61000BF24D /* PixelKit in Frameworks */,
 				02A15D982C88D79D001A4237 /* Persistence in Frameworks */,
 				37E307A92D072A1E00599500 /* Common in Frameworks */,
@@ -10587,6 +10589,7 @@
 				02A15D972C88D79D001A4237 /* Persistence */,
 				7B8FDD212CDD88CB00720907 /* FeatureFlags */,
 				37E307A82D072A1E00599500 /* Common */,
+				7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */,
 			);
 			productName = DuckDuckGoAgentAppStore;
 			productReference = 4B2D06692A13318400DE1F49 /* DuckDuckGo VPN App Store.app */;
@@ -16540,6 +16543,10 @@
 		7B8FDD252CDD88D900720907 /* FeatureFlags */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FeatureFlags;
+		};
+		7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SystemExtensionManager;
 		};
 		7B97CD582B7E0B57004FEF43 /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;

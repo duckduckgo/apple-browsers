@@ -59,14 +59,6 @@ public final class TransparentProxyController {
     public let setup: ManagerSetupCallback
 
     private var internalManager: NETransparentProxyManager?
-
-    /// Whether the proxy settings should be stored in the provider configuration.
-    ///
-    /// We recommend setting this to true if the provider is running in a System Extension and can't access
-    /// shared `TransparentProxySettings`.  If the provider is in an App Extension you should instead
-    /// use a shared `TransparentProxySettings` and set this to false.
-    ///
-    private let storeSettingsInProviderConfiguration: Bool
     public let settings: TransparentProxySettings
     private let notificationCenter: NotificationCenter
     private var cancellables = Set<AnyCancellable>()
@@ -79,16 +71,12 @@ public final class TransparentProxyController {
     ///     - extensionID: the bundleID for the extension that contains the ``TransparentProxyProvider``.
     ///         This class DOES NOT take any responsibility in installing the system extension.  It only uses
     ///         the extensionID to identify the appropriate manager configuration to load / save.
-    ///     - storeSettingsInProviderConfiguration: whether the provider configuration will be used for storing
-    ///         the proxy settings.  Should be `true` when using a System Extension and `false` when using
-    ///         an App Extension.
     ///     - settings: the settings to use for this proxy.
     ///     - dryMode: whether this class is initialized in dry mode.
     ///     - setup: a callback that will be called whenever a ``NETransparentProxyManager`` needs
     ///         to be setup.
     ///
     public init(extensionID: String,
-                storeSettingsInProviderConfiguration: Bool,
                 settings: TransparentProxySettings,
                 notificationCenter: NotificationCenter = .default,
                 dryMode: Bool = false,
@@ -101,7 +89,6 @@ public final class TransparentProxyController {
         self.settings = settings
         self.setup = setup
         self.eventHandler = eventHandler
-        self.storeSettingsInProviderConfiguration = storeSettingsInProviderConfiguration
 
         subscribeToProviderConfigurationChanges()
         subscribeToSettingsChanges()
@@ -193,10 +180,6 @@ public final class TransparentProxyController {
     }
 
     private func setupAdditionalProviderConfiguration(_ manager: NETransparentProxyManager) throws {
-        guard storeSettingsInProviderConfiguration else {
-            return
-        }
-
         guard let providerProtocol = manager.protocolConfiguration as? NETunnelProviderProtocol else {
             throw StartError.couldNotRetrieveProtocolConfiguration
         }

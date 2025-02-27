@@ -16,14 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
+import NetworkExtension
 import NetworkProtection
 import NetworkProtectionUI
-
-#if NETP_SYSTEM_EXTENSION
 import SystemExtensionManager
 import SystemExtensions
-#endif
 
 /// The VPN's network extension session object.
 ///
@@ -31,35 +30,84 @@ import SystemExtensions
 ///
 final class NetworkExtensionController {
 
-#if NETP_SYSTEM_EXTENSION
-    private let systemExtensionManager: SystemExtensionManager
-    private let defaults: UserDefaults
-#endif
-
-    init(extensionBundleID: String, defaults: UserDefaults = .netP) {
-#if NETP_SYSTEM_EXTENSION
-        systemExtensionManager = SystemExtensionManager(extensionBundleID: extensionBundleID)
-        self.defaults = defaults
-#endif
+    enum AvailableExtensions {
+        case both(appexBundleID: String, sysexBundleID: String)
+        case sysex(sysexBundleID: String)
     }
 
+    private let availableExtensions: AvailableExtensions
+    private let featureFlagger: FeatureFlagger
+    private let systemExtensionManager: SystemExtensionManager
+    private let defaults: UserDefaults
+
+    init(availableExtensions: AvailableExtensions, featureFlagger: FeatureFlagger, defaults: UserDefaults = .netP) {
+
+        self.availableExtensions = availableExtensions
+        self.defaults = defaults
+        self.featureFlagger = featureFlagger
+
+        switch availableExtensions {
+            case .both(_, sysexBundleID: let sysexBundleID):
+                systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
+            case .sysex(sysexBundleID: let sysexBundleID):
+                systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
+        }
+    }
 }
 
 extension NetworkExtensionController {
 
+    /// Whether the controller is using a System Extension or an App Extension.
+    ///
+    var isUsingSystemExtension: Bool {
+        get async {
+            switch availableExtensions {
+            case .both(let appexBundleID, _):
+                return await !isConfigurationInstalled(extensionBundleID: appexBundleID)
+            case .sysex:
+                return true
+            }
+        }
+    }
+
+    private func isConfigurationInstalled(extensionBundleID: String) async -> Bool {
+        await withCheckedContinuation { continuation in
+            let manager = NEVPNManager.shared()
+
+            manager.loadFromPreferences { error in
+                guard error == nil else {
+                    continuation.resume(returning: false)
+                    return
+                }
+
+                if let protocolConfigs = manager.protocolConfiguration as? NETunnelProviderProtocol,
+                   protocolConfigs.providerBundleIdentifier == extensionBundleID {
+                    continuation.resume(returning: true)
+                } else {
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+
     func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
-#if NETP_SYSTEM_EXTENSION
+        guard await isUsingSystemExtension else {
+            return
+        }
+
         if let extensionVersion = try await systemExtensionManager.activate(waitingForUserApproval: waitingForUserApproval) {
 
             NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = extensionVersion
         }
 
         try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)
-#endif
     }
 
     func deactivateSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
+        guard await isUsingSystemExtension else {
+            return
+        }
+
         do {
             try await systemExtensionManager.deactivate()
         } catch OSSystemExtensionError.extensionNotFound {
@@ -68,7 +116,6 @@ extension NetworkExtensionController {
         } catch {
             throw error
         }
-#endif
     }
 
 }

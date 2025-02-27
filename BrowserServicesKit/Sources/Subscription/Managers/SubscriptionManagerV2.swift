@@ -168,7 +168,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         self.pixelHandler = pixelHandler
         self.autoRecoveryHandler = autoRecoveryHandler
 
-#if !NETP_SYSTEM_EXTENSION
         switch currentEnvironment.purchasePlatform {
         case .appStore:
             if #available(macOS 12.0, iOS 15.0, *) {
@@ -179,7 +178,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         case .stripe:
             break
         }
-#endif
     }
 
     public var canPurchase: Bool {

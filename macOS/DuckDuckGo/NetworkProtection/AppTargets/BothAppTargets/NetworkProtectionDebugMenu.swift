@@ -71,7 +71,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
                 NSMenuItem.separator() // Resetting single components should go below this point
 
-                NSMenuItem(title: "Remove Network Extension and Login Items", action: #selector(NetworkProtectionDebugMenu.removeSystemExtensionAndAgents))
+                NSMenuItem(title: "Remove Network Extension and Login Items", action: #selector(NetworkProtectionDebugMenu.removeVPNNetworkExtensionAndAgents(_:)))
                     .targetting(self)
 
                 NSMenuItem(title: "Remove VPN configuration", action: #selector(NetworkProtectionDebugMenu.removeVPNConfiguration(_:)))
@@ -210,12 +210,12 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     /// Removes the system extension and agents for DuckDuckGo VPN.
     ///
-    @objc func removeSystemExtensionAndAgents(_ sender: Any?) {
+    @objc func removeVPNNetworkExtensionAndAgents(_ sender: Any?) {
         Task { @MainActor in
-            guard case .alertFirstButtonReturn = await NSAlert.removeSystemExtensionAndAgentsAlert().runModal() else { return }
+            guard case .alertFirstButtonReturn = await NSAlert.removeVPNNetworkExtensionAndAgentsAlert().runModal() else { return }
 
             do {
-                try await debugUtilities.removeSystemExtensionAndAgents()
+                try await debugUtilities.removeVPNNetworkExtensionAndAgents()
             } catch {
                 await NSAlert(error: error).runModal()
             }

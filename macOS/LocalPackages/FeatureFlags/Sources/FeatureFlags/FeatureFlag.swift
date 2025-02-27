@@ -41,6 +41,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209150117333883/f
     case networkProtectionAppExclusions
 
+    /// https://app.asana.com/0/0/1209402073283584
+    case networkProtectionAppStoreSysex
+
     /// https://app.asana.com/0/72649045549333/1208231259093710/f
     case networkProtectionUserTips
 
@@ -72,7 +75,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -107,6 +110,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
+            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
+        case .networkProtectionAppStoreSysex:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionUserTips:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))

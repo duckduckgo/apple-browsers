@@ -280,13 +280,11 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
         do {
-            try await ipcClient.uninstall(.all)
+            try await ipcClient.uninstall(.systemExtension)
         } catch {
             throw UninstallError.systemExtensionError(error)
         }
-#endif
     }
 
     private func unpinNetworkProtection() {

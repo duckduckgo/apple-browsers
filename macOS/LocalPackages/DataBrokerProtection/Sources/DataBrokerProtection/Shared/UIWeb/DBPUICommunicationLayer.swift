@@ -23,6 +23,11 @@ import UserScript
 import Common
 import os.log
 
+enum DBPDeviceCapability: String, Codable {
+    case useUnifiedFeedback
+    case excludeVpnTraffic
+}
+
 protocol DBPUICommunicationDelegate: AnyObject {
     func getHandshakeUserData() -> DBPUIHandshakeUserData?
     func saveProfile() async throws
@@ -130,7 +135,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func handshake(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIHandshake.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIHandshake.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse handshake message")
             throw DBPUIError.malformedRequest
         }
@@ -179,7 +184,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func addNameToCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIUserProfileName.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIUserProfileName.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse addNameToCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -193,7 +198,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func setNameAtIndexInCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUINameAtIndex.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUINameAtIndex.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse removeNameFromCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -207,7 +212,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func removeNameAtIndexFromCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIIndex.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIIndex.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse removeNameAtIndexFromCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -221,7 +226,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func setBirthYearForCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIBirthYear.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIBirthYear.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse setBirthYearForCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -235,7 +240,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func addAddressToCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIUserProfileAddress.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIUserProfileAddress.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse addAddressToCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -249,7 +254,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func setAddressAtIndexInCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIAddressAtIndex.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIAddressAtIndex.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse removeAddressFromCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -263,7 +268,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func removeAddressAtIndexFromCurrentUserProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-                let result = try? JSONDecoder().decode(DBPUIIndex.self, from: data) else {
+              let result = try? JSONDecoder().decode(DBPUIIndex.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse removeNameAtIndexFromCurrentUserProfile message")
             throw DBPUIError.malformedRequest
         }
@@ -313,7 +318,13 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        [PrivacyProSubfeature.useUnifiedFeedback.rawValue: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback)]
+#if APPSTORE
+        let vpnExclusionSupport = false
+#else
+        let vpnExclusionSupport = true
+#endif
+        return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
+                DBPDeviceCapability.excludeVpnTraffic: vpnExclusionSupport]
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

@@ -252,6 +252,24 @@ final class AutomationServer {
         self.respond(on: connection, response: "{\"error\": \"\(error)\"}")
     }
 
+    func encodeToJsonString(_ value: Any) -> String {
+        do {
+            if let encodableValue = value as? Encodable {
+                let jsonData = try JSONEncoder().encode(AnyEncodable(encodableValue))
+                return String(data: jsonData, encoding: .utf8) ?? "{}"
+            } else if JSONSerialization.isValidJSONObject(value) {
+                let jsonData = try JSONSerialization.data(withJSONObject: value, options: .prettyPrinted)
+                return String(data: jsonData, encoding: .utf8) ?? "{}"
+            } else {
+                Logger.automationServer.info("Have value that can't be encoded: \(String(describing: value))")
+                return "{\"error\": \"Value is not a valid JSON object\"}"
+            }
+        } catch {
+            Logger.automationServer.info("Failed to encode: \(String(describing: value))")
+            return "{\"error\": \"JSON encoding failed: \(error)\"}"
+        }
+    }
+
     func executeScript(_ script: String, args: [String: Any], on connection: NWConnection) async {
         Logger.automationServer.info("Going to execute script: \(script)")
         let result = await main.executeScript(script, args: args)
@@ -271,15 +289,7 @@ final class AutomationServer {
                 encoder.outputFormatting = .prettyPrinted
                 Logger.automationServer.info("Have success value to execute script: \(String(describing: value))")
                 
-                // Serialize the value to JSON if possible
-                if JSONSerialization.isValidJSONObject(value) {
-                    let jsonData = try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted])
-                    jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-                } else {
-                    Logger.automationServer.info("Have value that can't be encoded: \(String(describing: value))")
-                    jsonString = "{\"error\": \"Value is not a valid JSON object\"}"
-                }
-                
+                let jsonString = encodeToJsonString(value)
                 // Send the response back with the JSON string
                 self.respond(on: connection, response: jsonString)
             }

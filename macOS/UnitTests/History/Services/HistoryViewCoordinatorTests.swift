@@ -34,7 +34,7 @@ final class HistoryViewCoordinatorTests: XCTestCase {
         firePixelCalls.removeAll()
 
         coordinator = HistoryViewCoordinator(
-            historyCoordinator: MockHistoryGroupingDataSource(),
+            historyCoordinator: CapturingHistoryGroupingDataSource(),
             notificationCenter: notificationCenter,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )

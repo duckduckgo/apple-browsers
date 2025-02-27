@@ -22,6 +22,28 @@ import SubscriptionTestingUtilities
 
 final class SubscriptionURLTests: XCTestCase {
 
+    func testExpectedDefaultBaseSubscriptionURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions")!
+
+        // When
+        let url = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testExpectedDefaultBaseSubscriptionURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging")!
+
+        // When
+        let url = SubscriptionURL.baseURL.subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
     func testProductionURLs() throws {
         let allURLTypes: [SubscriptionURL] = [.baseURL,
                                               .purchase,

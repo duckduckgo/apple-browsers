@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Onboarding
+import DuckUI
 
 // MARK: - OnboardingView
 
@@ -54,6 +55,16 @@ struct OnboardingView: View {
                 landingView
             case let .onboarding(viewState):
                 onboardingDialogView(state: viewState)
+#if DEBUG || ALPHA
+                    .safeAreaInset(edge: .bottom) {
+                        Button {
+                            model.overrideOnboardingCompleted()
+                        } label: {
+                            Text(UserText.Onboarding.Intro.skip)
+                        }
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
+                    }
+#endif
             }
         }
     }

@@ -71,7 +71,12 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
         case .history where isHistorySpecialPageSupported && featureFlagger.isFeatureOn(.historyView):
-            handleSpecialPages(urlSchemeTask: urlSchemeTask)
+            switch requestURL.type {
+            case .favicon:
+                handleFavicon(urlSchemeTask: urlSchemeTask)
+            default:
+                handleSpecialPages(urlSchemeTask: urlSchemeTask)
+            }
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }

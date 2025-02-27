@@ -2229,7 +2229,8 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Tietoja";
-
+/* about tagline */
+"settings.about.tagline" = "Suojaus ja tietosuoja takaavat mielenrauhan.";
 /* about page */
 "settings.about.text.new" = "DuckDuckGo on riippumaton verkkosuojausta tarjoava yritys kaikille, jotka haluavat saada henkilökohtaiset tietonsa takaisin hallintaansa.\n\nUskomme, että paras tapa suojata henkilötietojasi hakkereilta, huijareilta ja tietosuojaa loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset [valitsevat Chromen ja muiden selainten sijaan DuckDuckGon hakeakseen ja selatakseen verkossa](ddgQuickLink://duckduckgo.com/compare-privacy). Selaimeemme sisältyvä hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Lisäksi selaimemme on ilmainen – ansaitsemme rahaa [tietosuojaa kunnioittavilla hakumainoksilla](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), emme hyödyntämällä tietojasi. \n\nLisäksi tarjoamme myös [Privacy Pron](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), selaimeemme integroidun 3-in-1-tilauspalvelun. Privacy Pron tilaajat saavat entistä paremman tietosuojan nopealla ja yksinkertaisella [VPN:llä](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan verkkotoimintaasi. Tämä palvelu etsii ja poistaa henkilötietosi käyttäjiä etsiviltä sivustoilta ja palauttaa henkilöllisyytesi, jos se varastetaan.\n\nOta henkilökohtaiset tietosi takaisin hallintaasi selaimella, joka on suunniteltu tietojen suojaamiseen, ei tietojen keräämiseen.";
 

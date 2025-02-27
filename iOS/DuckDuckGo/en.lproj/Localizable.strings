@@ -2201,6 +2201,9 @@ https://duckduckgo.com/mac";
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "About";
 
+/* about tagline */
+"settings.about.tagline" = "Protection. Privacy. Peace of Mind.";
+
 /* about page */
 "settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
 

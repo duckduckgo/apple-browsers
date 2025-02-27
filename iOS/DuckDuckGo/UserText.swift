@@ -860,7 +860,9 @@ public struct UserText {
         let message = NSLocalizedString("autofill.logins.search.no-results.subtitle", value: "for '%@'", comment: "Subtitle displayed when there are no results on Autofill search, example : No Result (Title) for Duck (Subtitle)")
         return message.format(arguments: query)
     }
-    
+
+    public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
+
     public static let aboutText = NSLocalizedString("settings.about.text.new", value: """
 DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
 

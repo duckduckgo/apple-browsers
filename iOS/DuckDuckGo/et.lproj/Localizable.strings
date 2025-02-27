@@ -2229,7 +2229,8 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Teave";
-
+/* about tagline */
+"settings.about.tagline" = "Kaitse. Privaatsus. Meelerahu.";
 /* about page */
 "settings.about.text.new" = "DuckDuckGo on sõltumatu veebikaitseettevõte kõikidele, kes tahavad oma isikliku teabe üle kontrolli tagasi saada.\n\nUsume, et parim viis teie isikuandmete kaitsmiseks häkkerite, petturite ja eraelu puutumatust rikkuvate ettevõtete eest on nende kogumise täielik vältimine. Seetõttu valivad miljonid inimesed [DuckDuckGo Chrome'i ja teiste brauserite asemel](ddgQuickLink://duckduckgo.com/compare-privacy), et internetis otsida ja sirvida. Meie sisseehitatud otsingumootor on nagu Google, kuid ei jälgi kunagi teie otsinguid. Ja meie sirvimiskaitsed, nagu reklaamijälgijate ja küpsiste blokeerimine, aitavad takistada teistel ettevõtetel teie andmeid kogumast. Ja veel: meie brauser on tasuta — teenime raha [privaatsust austavate otsingureklaamidega](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), mitte sinu andmeid ära kasutades. \n\nLisaks pakume ka [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), meie kolm-ühes tellimusteenust, mis on integreeritud meie brauserisse. Privacy Pro tellijad saavad veelgi parema privaatsuse kaitse kiire ja lihtsa [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/)-iga, mis aitab kaitsta teie veebitegevust, teenusega, mis leiab ja eemaldab teie isikuandmed inimesteotsingu saitidelt, ja teenusega, mis taastab teie identiteedi varguse korral.\n\nVõtke tagasi kontroll oma isikuandmete üle brauseriga, mis on loodud andmete kaitsmiseks ja mitte nende kogumiseks.";
 

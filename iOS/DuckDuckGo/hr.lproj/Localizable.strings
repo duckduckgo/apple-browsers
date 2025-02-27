@@ -2229,7 +2229,8 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "O nama";
-
+/* about tagline */
+"settings.about.tagline" = "Zaštita. Privatnost. Bezbrižnost.";
 /* about page */
 "settings.about.text.new" = "DuckDuckGo je neovisna tvrtka za zaštitu privatnosti na internetu za svakoga tko želi preuzeti kontrolu nad svojim osobnim podacima.Mi vjerujemo da je najbolji način zaštite tvojih osobnih podataka od hakera, prevaranata i tvrtki koje narušavaju privatnost spriječiti prikupljanje takvih podataka. Zato milijuni ljudi [biraju DuckDuckGo umjesto Chromea i drugih preglednika](ddgQuickLink://duckduckgo.com/compare-privacy) za pretraživanje i pregledavanje interneta. Naša ugrađena tražilica je poput Googlea, ali nikad ne prati tvoja pretraživanja. Uz to, naša zaštita pri pregledavanju, poput blokiranja praćenja oglasa i blokiranja kolačića, pomaže spriječiti druge tvrtke da prikupljaju tvoje podatke. Napominjemo i da je naš preglednik besplatan — mi zarađujemo od [oglasa koji poštuju privatnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), a ne iskorištavanjem tvojih podataka. \n\nOsim toga, nudimo i [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), našu pretplatničku uslugu tri-u-jednom, integriranu u naš preglednik. Pretplatnici na Privacy Pro dobivaju još veću zaštitu privatnosti putem brzog i jednostavnog [VPN-a](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) koji pomaže osigurati tvoju online aktivnost, zatim usluge koja pronalazi i uklanja tvoje osobne podatke s web-mjesta za pronalaženje ljudi te usluge koja vraća tvoj identitet u slučaju krađe.\n\nPreuzmi kontrolu nad svojim osobnim podacima uz preglednik dizajniran za zaštitu, a ne za prikupljanje podataka.";
 

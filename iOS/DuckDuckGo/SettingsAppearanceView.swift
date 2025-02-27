@@ -38,8 +38,8 @@ struct SettingsAppearanceView: View {
 
                 // Theme
                 SettingsPickerCellView(label: UserText.settingsTheme,
-                                       options: ThemeName.allCases,
-                                       selectedOption: viewModel.themeBinding)
+                                       options: ThemeStyle.allCases,
+                                       selectedOption: viewModel.themeStyleBinding)
             }
 
             Section(header: Text(UserText.addressBar)) {

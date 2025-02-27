@@ -205,9 +205,9 @@ public struct UserText {
     // Accessibility label - DO NOT LOCALISE
     public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
 
-    public static let themeNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
-    public static let themeNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
-    public static let themeNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
+    public static let themeStyleNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
+    public static let themeStyleNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
+    public static let themeStyleNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
     
     public static let themeAccessoryDefault = NSLocalizedString("theme.acc.default", value: "System", comment: "Short entry for Default System theme")
     public static let themeAccessoryLight = NSLocalizedString("theme.acc.light", value: "Light", comment: "Light Theme entry")

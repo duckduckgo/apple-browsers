@@ -63,7 +63,7 @@ struct SettingsState {
     }
     
     // Appearance properties
-    var appTheme: ThemeName
+    var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
     var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
@@ -124,7 +124,7 @@ struct SettingsState {
 
     static var defaults: SettingsState {
         return SettingsState(
-            appTheme: .systemDefault,
+            appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: .fireRising,
             textZoom: TextZoom(enabled: false, level: .percent100),

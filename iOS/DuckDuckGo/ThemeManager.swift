@@ -58,13 +58,13 @@ class ThemeManager {
         updateUserInterfaceStyle()
     }
 
-    public func enableTheme(with name: ThemeName) {
-        appSettings.currentThemeName = name
+    public func setThemeStyle(_ style: ThemeStyle) {
+        appSettings.currentThemeStyle = style
         updateUserInterfaceStyle()
     }
 
     func updateUserInterfaceStyle(window: UIWindow? = UIApplication.shared.firstKeyWindow) {
-        switch appSettings.currentThemeName {
+        switch appSettings.currentThemeStyle {
 
         case .dark:
             window?.overrideUserInterfaceStyle = .dark

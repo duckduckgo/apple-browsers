@@ -110,13 +110,13 @@ final class SettingsViewModel: ObservableObject {
     
     // MARK: Bindings
     
-    var themeBinding: Binding<ThemeName> {
-        Binding<ThemeName>(
-            get: { self.state.appTheme },
+    var themeStyleBinding: Binding<ThemeStyle> {
+        Binding<ThemeStyle>(
+            get: { self.state.appThemeStyle },
             set: {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
-                self.state.appTheme = $0
-                ThemeManager.shared.enableTheme(with: $0)
+                self.state.appThemeStyle = $0
+                ThemeManager.shared.setThemeStyle($0)
             }
         )
     }
@@ -504,7 +504,7 @@ extension SettingsViewModel {
     @MainActor
     private func initState() {
         self.state = SettingsState(
-            appTheme: appSettings.currentThemeName,
+            appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),

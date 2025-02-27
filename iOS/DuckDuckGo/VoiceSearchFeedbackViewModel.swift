@@ -20,6 +20,7 @@
 import Foundation
 import Core
 import UIKit
+import AIChat
 
 enum VoiceSearchTarget: Int {
     case SERP = 0
@@ -53,10 +54,11 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
             storedSearchTarget = searchTarget.rawValue
         }
     }
-    
+
     weak var delegate: VoiceSearchFeedbackViewModelDelegate?
     private let speechRecognizer: SpeechRecognizerProtocol
     private var isSilent = true
+    private let aiChatSettings: AIChatSettingsProvider
     private let maxWordsCount = 30
     private var recognizedWords: String? {
         didSet {
@@ -68,9 +70,19 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
         }
     }
 
-    internal init(speechRecognizer: SpeechRecognizerProtocol) {
+    var shouldDisplayAIChatOption: Bool {
+        aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled
+    }
+
+    internal init(speechRecognizer: SpeechRecognizerProtocol, aiChatSettings: AIChatSettingsProvider) {
         self.speechRecognizer = speechRecognizer
-        searchTarget = VoiceSearchTarget(rawValue: self.storedSearchTarget) ?? .SERP
+        self.aiChatSettings = aiChatSettings
+
+        if aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled {
+            searchTarget = VoiceSearchTarget(rawValue: self.storedSearchTarget) ?? .SERP
+        } else {
+            searchTarget = .SERP
+        }
     }
 
     func startSpeechRecognizer() {

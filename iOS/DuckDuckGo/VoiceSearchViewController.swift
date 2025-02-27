@@ -52,7 +52,7 @@ class VoiceSearchViewController: UIViewController {
     }
     
     private func installSpeechView() {
-        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer)
+        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings())
         model.delegate = self
         let speechView = VoiceSearchFeedbackView(speechModel: model)
         let controller = UIHostingController(rootView: speechView)

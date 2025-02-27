@@ -79,6 +79,10 @@ struct AIChatSettings: AIChatSettingsProvider {
         featureFlagger.isFeatureOn(.aiChatVoiceSearch)
     }
 
+    var isAIChatVoiceSearchUserSettingsEnabled: Bool {
+        userDefaults.showAIChatVoiceSearch && isAIChatVoiceSearchFeatureEnabled
+    }
+
     var isAIChatAddressBarShortcutFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChatAddressBarShortcut)
     }
@@ -94,6 +98,11 @@ struct AIChatSettings: AIChatSettingsProvider {
 
     func enableAIChatAddressBarUserSettings(enable: Bool) {
         userDefaults.showAIChatAddressBar = enable
+        triggerSettingsChangedNotification()
+    }
+
+    func enableAIChatVoiceSearchUserSettings(enable: Bool) {
+        userDefaults.showAIChatVoiceSearch = enable
         triggerSettingsChangedNotification()
     }
 
@@ -117,10 +126,13 @@ private extension UserDefaults {
     enum Keys {
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
+        static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
+
     }
 
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
+    static let showAIChatVoiceSearchDefaultValue = true
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {
@@ -130,6 +142,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatBrowsingMenu else { return }
             set(newValue, forKey: Keys.showAIChatBrowsingMenu)
+        }
+    }
+
+    @objc dynamic var showAIChatVoiceSearch: Bool {
+        get {
+            value(forKey: Keys.showAIChatVoiceSearch) as? Bool ?? Self.showAIChatVoiceSearchDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatVoiceSearch else { return }
+            set(newValue, forKey: Keys.showAIChatVoiceSearch)
         }
     }
 

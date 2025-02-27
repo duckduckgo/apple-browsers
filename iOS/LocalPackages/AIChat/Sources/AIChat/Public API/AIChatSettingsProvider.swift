@@ -41,9 +41,16 @@ public protocol AIChatSettingsProvider {
     /// The local feature flag for the AI Chat shortcut in voice search.
     var isAIChatVoiceSearchFeatureEnabled: Bool { get }
 
+    /// The user settings state for the AI Chat voice search
+    var isAIChatVoiceSearchUserSettingsEnabled: Bool { get }
+
     /// Updates the user settings state for the AI Chat browsing menu.
     func enableAIChatBrowsingMenuUserSettings(enable: Bool)
 
     /// Updates the user settings state for the AI Chat address bar.
     func enableAIChatAddressBarUserSettings(enable: Bool)
+
+    /// Updates the user settings state for the AI Chat voice search
+    func enableAIChatVoiceSearchUserSettings(enable: Bool)
+
 }

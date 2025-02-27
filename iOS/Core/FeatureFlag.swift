@@ -197,7 +197,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNewTabPage:
             return .enabled
         case .aiChatVoiceSearch:
-            return .disabled
+            return .enabled
         case .aiChatBrowsingToolbarShortcut:
             return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
         case .aiChatAddressBarShortcut:

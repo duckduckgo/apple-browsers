@@ -514,7 +514,7 @@ extension SettingsViewModel {
                                          isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
                                          isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
         )
-        
+
         updateRecentlyVisitedSitesVisibility()
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
@@ -946,9 +946,9 @@ extension SettingsViewModel {
 
     var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
+            get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
             set: { newValue in
-                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
+                self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
             }
         )
     }

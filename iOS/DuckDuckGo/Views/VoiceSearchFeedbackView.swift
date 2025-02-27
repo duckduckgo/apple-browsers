@@ -80,13 +80,16 @@ extension VoiceSearchFeedbackView {
             .padding(.bottom, voiceCircleVerticalPadding)
             .padding(.top, voiceCircleVerticalPadding)
 
-            Picker("", selection: $speechModel.searchTarget) {
-                Text(UserText.voiceSearchToggleSearch).tag(VoiceSearchTarget.SERP)
-                Text(UserText.voiceSearchToggleAIChat).tag(VoiceSearchTarget.AIChat)
+            if speechModel.shouldDisplayAIChatOption {
+                Picker("", selection: $speechModel.searchTarget) {
+                    Text(UserText.voiceSearchToggleSearch).tag(VoiceSearchTarget.SERP)
+                    Text(UserText.voiceSearchToggleAIChat).tag(VoiceSearchTarget.AIChat)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .frame(width: 220)
+                .padding(.bottom, 20)
+
             }
-            .pickerStyle(SegmentedPickerStyle())
-            .frame(width: 220)
-            .padding(.bottom, 20)
 
             Text(UserText.voiceSearchFooterOld)
                 .font(.footnote)
@@ -182,11 +185,13 @@ struct VoiceSearchFeedbackView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             ForEach(ColorScheme.allCases, id: \.self) {
-                VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer()))
+                VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
+                                                                                  aiChatSettings: AIChatSettings()))
                     .preferredColorScheme($0)
             }
 
-            VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer()))
+            VoiceSearchFeedbackView(speechModel: VoiceSearchFeedbackViewModel(speechRecognizer: PreviewMockSpeechRecognizer(),
+                                                                              aiChatSettings: AIChatSettings()))
                 .previewInterfaceOrientation(.landscapeRight)
         }
     }

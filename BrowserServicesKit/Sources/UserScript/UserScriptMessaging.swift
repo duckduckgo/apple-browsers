@@ -293,7 +293,7 @@ public enum HostnameMatchingRule {
     public static func makeExactRule(for url: URL) -> HostnameMatchingRule? {
         guard let host = url.host else { return nil }
 
-        if let port = url.port, port != 0 {
+        if let port = url.port, port > 0 {
             return .exact(hostname: host + ":\(port)")
         } else {
             return .exact(hostname: host)

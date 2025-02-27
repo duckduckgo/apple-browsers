@@ -283,6 +283,7 @@ extension TabSwitcherViewController {
         let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
         let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabCount
         let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabCount
+        let canClose = interfaceMode.isLarge && selectedTabs.count > 0
 
         return UIMenu(title: "", children: [
             
@@ -294,13 +295,6 @@ extension TabSwitcherViewController {
                     self?.selectAllTabs()
                 }) : nil,
             ].compactMap { $0 }),
-
-            UIMenu(title: "", options: .displayInline, children: [
-                // Always use plural here
-                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
-                    self?.selectModeCloseOtherTabs()
-                }) : nil,
-            ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
                 selectedTabsContainsWebPages ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
@@ -310,7 +304,20 @@ extension TabSwitcherViewController {
                     self?.selectModeBookmarkSelected()
                 }) : nil,
             ].compactMap { $0 }),
-            
+                        
+            UIMenu(title: "", options: .displayInline, children: [
+                // Always use plural here
+                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
+                    self?.selectModeCloseOtherTabs()
+                }) : nil,
+            ].compactMap { $0 }),
+
+            UIMenu(title: "", options: .displayInline, children: [
+                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), "Close-16", { [weak self] in
+                    self?.selectModeCloseSelectedTabs()
+                }) : nil,
+            ].compactMap { $0 }),
+
             UIMenu(title: "", options: .displayInline, children: [
                 canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", { [weak self] in
                     self?.selectModeBookmarkAll()

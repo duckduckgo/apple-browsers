@@ -1,7 +1,5 @@
 # DuckDuckGo iOS
 
-Temp change to force iOS workflows to run
-
 > [!IMPORTANT]  
 > 👋 Thanks for your interest in DuckDuckGo! The source code for this project has been moved to [duckduckgo/apple-browsers](https://github.com/duckduckgo/apple-browsers) and this repo no longer accepts contributions.
 > Please file any bug reports or feature requests in the new repo.

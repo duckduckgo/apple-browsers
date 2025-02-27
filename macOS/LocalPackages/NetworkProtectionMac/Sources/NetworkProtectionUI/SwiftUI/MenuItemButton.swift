@@ -21,7 +21,7 @@ import SwiftUI
 
 struct MenuItemButton: View {
 
-    struct Detail {
+    private struct Detail {
         let text: String
         let color: Color
     }

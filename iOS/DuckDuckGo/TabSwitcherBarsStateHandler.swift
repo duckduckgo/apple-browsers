@@ -114,9 +114,9 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableLarge:
             topBarLeftButtonItems = [
-                editButton,
+                self.totalTabsCount > 1 ? editButton : nil,
                 tabSwitcherStyleButton,
-            ]
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarLeftButtonItems = [
@@ -148,8 +148,8 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
-                editButton,
-            ]
+                self.totalTabsCount > 1 ? editButton : nil,
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarRightButtonItems = [

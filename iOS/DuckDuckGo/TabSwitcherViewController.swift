@@ -308,11 +308,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
         if isLastTab {
             // Will be dismissed, so no need to process incoming updates
             canUpdateCollection = false
-
             delegate.tabSwitcher(self, didRemoveTab: tab)
-            currentSelection = tabsModel.currentIndex
-            refreshTitle()
-            collectionView.reloadData()
             DispatchQueue.global(qos: .background).async {
                 Favicons.shared.clearCache(.tabs, clearMemoryCache: true)
             }
@@ -327,7 +323,8 @@ extension TabSwitcherViewController: TabViewCellDelegate {
                 guard let current = self.currentSelection else { return }
                 self.refreshTitle()
                 self.collectionView.reloadItems(at: [IndexPath(row: current, section: 0)])
-                
+                self.updateUIForSelectionMode()
+
                 // remove favicon from tabs cache when no other tabs have that domain
                 self.removeFavicon(forTab: tab)
             })

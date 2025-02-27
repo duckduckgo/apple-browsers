@@ -533,9 +533,8 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {
-        if indexPaths.count == 1 && indexPaths.first?.row == tabsModel.currentIndex {
-            // Skip the confirmation for the current tab,
-            //  see https://app.asana.com/0/1209499866654340/1209424833902030
+        if indexPaths.count == 1 {
+            // No confirmation for a single tab
             guard let tab = self.tabsModel.safeGetTabAt(tabsModel.currentIndex) else { return }
             self.deleteTab(tab: tab)
             return

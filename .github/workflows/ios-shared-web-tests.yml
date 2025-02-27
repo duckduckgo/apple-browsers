@@ -91,7 +91,7 @@ jobs:
     name: Create Asana Task
     needs: [shared-web-tests]
 
-    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+    if: failure() && github.ref_name == 'jkt/shared-web-tests' && github.run_attempt == 1
 
     runs-on: ubuntu-latest
 
@@ -106,4 +106,18 @@ jobs:
           asana-section-id: 1209511873385229
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
 
-  
+  close-asana-task:
+    name: Close Asana Task
+    needs: [shared-web-tests]
+
+    if: success() && github.ref_name == 'jkt/shared-web-tests' && github.run_attempt > 1
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Close Asana Task
+        uses: ./.github/actions/asana-failed-pr-checks
+        with:
+          action: close-task
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}

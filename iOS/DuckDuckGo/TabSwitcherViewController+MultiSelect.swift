@@ -537,11 +537,11 @@ extension TabSwitcherViewController {
             return
         }
         
-        let alert = UIAlertController(title: UserText.alertTitleCloseTabs(withCount: 1),
-                                      message: UserText.alertMessageCloseTabs(withCount: 1),
+        let alert = UIAlertController(title: UserText.alertTitleCloseTabs(withCount: indexes.count),
+                                      message: UserText.alertMessageCloseTabs(withCount: indexes.count),
                                       preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: UserText.actionCancel, style: .cancel))
-        alert.addAction(title: UserText.closeTabs(withCount: 1), style: .destructive) { [weak self] in
+        alert.addAction(title: UserText.closeTabs(withCount: indexes.count), style: .destructive) { [weak self] in
             guard let self else { return }
             indexes.forEach { index in
                 guard let tab = self.tabsModel.safeGetTabAt(index) else { return }

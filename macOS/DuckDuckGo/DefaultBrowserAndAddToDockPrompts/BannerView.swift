@@ -83,7 +83,7 @@ struct BannerView: View {
                 Button(action: {
                     viewModel.closeAction()
                 }) {
-                    Image(.closeSmall)
+                    Image(.closeLarge)
                         .foregroundColor(.blackWhite100)
                         .padding()
                 }

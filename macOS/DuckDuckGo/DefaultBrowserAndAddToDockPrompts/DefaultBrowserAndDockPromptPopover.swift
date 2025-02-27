@@ -26,7 +26,7 @@ final class DefaultBrowserAndDockPromptPopover: NSPopover {
         super.init()
 
         shouldHideAnchor = true
-        behavior = .semitransient
+        behavior = .applicationDefined
         contentViewController = viewController
     }
 

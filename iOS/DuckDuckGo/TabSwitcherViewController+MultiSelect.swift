@@ -26,10 +26,6 @@ import Bookmarks
 // TODO fire pixels from the source specific action implementations
 extension TabSwitcherViewController {
 
-    var tabCount: Int {
-        collectionView.indexPathsForSelectedItems?.count ?? 0
-    }
-
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String) {
         func tabsToBookmarks(_ controller: TabSwitcherViewController) {
             let model = MenuBookmarksViewModel(bookmarksDatabase: controller.bookmarksDatabase, syncService: controller.syncService)
@@ -258,13 +254,15 @@ extension TabSwitcherViewController {
     }
     
     func createMultiSelectionMenu() -> UIMenu {
-        let otherTabCount = max(0, tabCount - selectedTabs.count)
+        let otherTabCount = max(0, tabsModel.count - selectedTabs.count)
         let selectedTabs = selectedTabs.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
         let selectedTabsContainsWebPages = selectedTabs.contains(where: { $0.link != nil })
+        let canShare = selectedTabsContainsWebPages
+        let canAddBookmarks = selectedTabsContainsWebPages
         let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
         let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
-        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabCount
-        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabCount
+        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabsModel.count
+        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
         let canClose = interfaceMode.isLarge && selectedTabs.count > 0
 
         return UIMenu(title: "", children: [
@@ -279,10 +277,10 @@ extension TabSwitcherViewController {
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                selectedTabsContainsWebPages ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
+                canShare ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
                     self?.selectModeShareLinks()
                 }) : nil,
-                selectedTabsContainsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", { [weak self] in
+                canAddBookmarks ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", { [weak self] in
                     self?.selectModeBookmarkSelected()
                 }) : nil,
             ].compactMap { $0 }),
@@ -390,7 +388,7 @@ extension TabSwitcherViewController {
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
             self?.bookmarkTabs(withIndexPaths: self!.tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
-                               title: UserText.alertTitleBookmarkAll(withCount: self!.tabCount),
+                               title: UserText.alertTitleBookmarkAll(withCount: self!.tabsModel.count),
                                message: UserText.alertBookmarkAllMessage)
         }
 
@@ -459,7 +457,7 @@ extension TabSwitcherViewController {
 
     func selectModeBookmarkAll() {
         bookmarkTabs(withIndexPaths: tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
-                     title: UserText.alertTitleBookmarkAll(withCount: tabCount),
+                     title: UserText.alertTitleBookmarkAll(withCount: tabsModel.count),
                      message: UserText.alertBookmarkAllMessage)
     }
 

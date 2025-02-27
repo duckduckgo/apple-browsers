@@ -431,7 +431,7 @@ extension TabSwitcherViewController {
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
-        barsHandler.menuButton.isEnabled = barsHandler.menuButton.menu?.children.isEmpty == false
+        barsHandler.menuButton.isEnabled = barsHandler.menuButtonHasChildren()
 
         barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in

@@ -163,5 +163,14 @@ class TabSwitcherBarsStateHandler {
 
         }
     }
+    
+    func menuButtonHasChildren() -> Bool {
+        for child in menuButton.menu?.children ?? [] {
+            if (child as? UIMenu)?.children.isEmpty == false {
+                return true
+            }
+        }
+        return false
+    }
 
 }

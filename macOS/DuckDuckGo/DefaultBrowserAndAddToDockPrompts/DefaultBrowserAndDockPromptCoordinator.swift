@@ -178,6 +178,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             .sink { (_, cohort) in
                 guard let _ = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
 
+                /// For testing purposes when we override the local features and because we want to show the prompt.
+                /// We set the set prompt flag to false in case it was show in the past.
+                self.repository.setPromptShown(false)
+
                 NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
             }
             .store(in: &cancellables)

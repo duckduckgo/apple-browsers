@@ -42,7 +42,7 @@ final class AutomationServer {
     let main: MainViewController
 
     init(main: MainViewController, port: Int?) {
-        let port = port ?? 8786
+        let port = port ?? 8788
         self.main = main
         Logger.automationServer.info("Starting automation server on port \(port)")
         do {
@@ -264,8 +264,11 @@ final class AutomationServer {
         self.respond(on: connection, response: "{\"error\": \"\(error)\"}")
     }
 
-    func encodeToJsonString(_ value: Any) -> String {
+    func encodeToJsonString(_ value: Any?) -> String {
         do {
+            guard let value else {
+                return "null"
+            }
             if let encodableValue = value as? Encodable {
                 let jsonData = try JSONEncoder().encode(AnyEncodable(encodableValue))
                 return String(data: jsonData, encoding: .utf8) ?? "{}"
@@ -283,7 +286,8 @@ final class AutomationServer {
     }
 
     func executeScript(_ script: String, args: [String: Any], on connection: NWConnection) async {
-        Logger.automationServer.info("Going to execute script: \(script)")
+        Logger.automationServer.info("Script: \(script), Args: \(args)")
+        Logger.automationServer.info("Environment Variables: \(ProcessInfo.processInfo.environment)")
         let result = await main.executeScript(script, args: args)
         Logger.automationServer.info("Have result to execute script: \(String(describing: result))")
         guard let result else {

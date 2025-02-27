@@ -22,9 +22,9 @@ import UIKit
 extension MainViewController {
     
     func executeScript(_ javaScriptString: String,
-                       args: [String: Any] = [:]) async -> Result<Any, any Error>? {
+                       args: [String: Any] = [:]) async -> Result<Any?, any Error>? {
         guard let result = await currentTab?.executeScript(javaScriptString, args: args) else {
-            return .failure(NSError(domain: "MainViewController", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to execute script"]))
+            return .failure(NSError(domain: "MainViewCongtroller", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to execute script"]))
         }
         return result
     }

@@ -42,16 +42,18 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     private let apiClient: APIClient.Mockable
     private let dataManager: DataManaging
+    private let featureFlagger: MaliciousSiteProtectionFeatureFlagger?
     private let eventMapping: EventMapping<Event>
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping)
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, featureFlagger: MaliciousSiteProtectionFeatureFlagger?, eventMapping: EventMapping<Event>) {
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, featureFlagger: featureFlagger, eventMapping: eventMapping)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, featureFlagger: MaliciousSiteProtectionFeatureFlagger?, eventMapping: EventMapping<Event>) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
+        self.featureFlagger = featureFlagger
     }
 
     private func checkLocalFilters(hostHash: String, canonicalUrl: URL, for threatKind: ThreatKind) async -> Bool {
@@ -96,7 +98,9 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         // The hash prefix list serves as a representation of the entire database:
         // every malicious website will have a hash prefix that it collides with.
         var hashPrefixMatchingThreatKinds = [ThreatKind]()
-        for threatKind in ThreatKind.allCases { // e.g., phishing, malware, etc.
+        let isScamProtectionEnabled = featureFlagger?.isScamProtectionEnabled ?? false
+        let threadKinds = isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
+        for threatKind in threadKinds { // e.g., phishing, malware, etc.
             let hashPrefixes = await dataManager.dataSet(for: .hashPrefixes(threatKind: threatKind))
             if hashPrefixes.contains(hashPrefix) {
                 hashPrefixMatchingThreatKinds.append(threatKind)

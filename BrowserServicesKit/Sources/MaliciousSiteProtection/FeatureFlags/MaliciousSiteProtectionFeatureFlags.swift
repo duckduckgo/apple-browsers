@@ -24,6 +24,8 @@ public protocol MaliciousSiteProtectionFeatureFlagger {
     /// - Returns: `true` if malicious site protection is enabled; otherwise, `false`.
     var isMaliciousSiteProtectionEnabled: Bool { get }
 
+    var isScamProtectionEnabled: Bool { get }
+
     /// Checks if should detect malicious threats for a specific domain.
     /// - Parameter domain: The domain to check for malicious threat.
     /// - Returns: `true` if should check for malicious threats for the specified domain; otherwise, `false`.
@@ -55,21 +57,27 @@ public enum MaliciousSiteProtectionFeatureSettings: String {
 public struct MaliciousSiteProtectionFeatureFlags {
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let isMaliciousSiteProtectionEnabledGetter: () -> Bool
+    private let isScamProtectionEnabledGetter: () -> Bool
 
     private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
         privacyConfigManager.privacyConfig.settings(for: .maliciousSiteProtection)
     }
 
     public init(privacyConfigManager: PrivacyConfigurationManaging,
-                isMaliciousSiteProtectionEnabled: @escaping () -> Bool) {
+                isMaliciousSiteProtectionEnabled: @escaping () -> Bool,
+                isScamProtectionEnabledGetter: @escaping () -> Bool) {
         self.privacyConfigManager = privacyConfigManager
         self.isMaliciousSiteProtectionEnabledGetter = isMaliciousSiteProtectionEnabled
+        self.isScamProtectionEnabledGetter = isScamProtectionEnabledGetter
     }
 }
 
 // MARK: - MaliciousSiteProtectionFeatureFlagger
 
 extension MaliciousSiteProtectionFeatureFlags: MaliciousSiteProtectionFeatureFlagger {
+    public var isScamProtectionEnabled: Bool {
+        return isScamProtectionEnabledGetter()
+    }
 
     public var isMaliciousSiteProtectionEnabled: Bool {
         return isMaliciousSiteProtectionEnabledGetter()

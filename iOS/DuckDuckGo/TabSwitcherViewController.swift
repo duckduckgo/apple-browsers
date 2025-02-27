@@ -491,11 +491,13 @@ extension TabSwitcherViewController: TabObserver {
         guard !isProcessingUpdates, canUpdateCollection else {
             return
         }
-
+        
         collectionView.performBatchUpdates({}, completion: { [weak self] completed in
             guard completed, let self = self else { return }
             if let index = self.tabsModel.indexOf(tab: tab), index < self.collectionView.numberOfItems(inSection: 0) {
-                self.collectionView.reconfigureItems(at: [IndexPath(row: index, section: 0)])
+                UIView.performWithoutAnimation {
+                    self.collectionView.reconfigureItems(at: [IndexPath(row: index, section: 0)])
+                }
             }
         })
     }

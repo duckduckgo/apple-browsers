@@ -21,6 +21,7 @@ import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
 import FeatureFlags
+import PixelKit
 
 protocol DefaultBrowserAndDockPrompt {
     /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
@@ -37,8 +38,6 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Returns: The appropriate `DefaultBrowserAndDockPromptType` value, or `nil` if the user is not eligible for any prompt.
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? { get }
 
-    var wasPromptShown: Bool { get }
-
     /// Gets the prompt type based on the user's eligibility for the experiment.
     ///
     /// This function checks if the user is eligible for the "Popover vs Banner Experiment" by evaluating the following conditions:
@@ -51,8 +50,9 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Note: The `FeatureFlag.PopoverVSBannerExperimentCohort` enum represents the different cohorts for the experiment, with the `control` cohort not displaying any prompt.
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
 
+    func markPromptAsShown()
+    func wasPromptShown() -> Bool
     func onPromptConfirmation()
-    func onPromptDismissed()
 }
 
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
@@ -115,8 +115,13 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    var wasPromptShown: Bool {
-        repository.wasPromptShown()
+    static func fireSetAsDefaultAddToDockExperimentPixel() {
+        PixelKit.fireExperimentPixel(
+            for: DefaultBrowserAndDockPromptCoordinator.Constants.subfeatureID,
+            metric: DefaultBrowserAndDockPromptCoordinator.Constants.userSetAsDefaultOrAddedToDock,
+            conversionWindowDays: DefaultBrowserAndDockPromptCoordinator.Constants.conversionWindowDays,
+            value: DefaultBrowserAndDockPromptCoordinator.Constants.value
+        )
     }
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
@@ -131,6 +136,14 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
+    func wasPromptShown() -> Bool {
+        return repository.wasPromptShown()
+    }
+
+    func markPromptAsShown() {
+        repository.setPromptShown(true)
+    }
+
     func onPromptConfirmation() {
         guard let type = evaluatePromptEligibility else { return }
 
@@ -143,15 +156,17 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         case .setAsDefaultPrompt:
             setAsDefaultBrowserAction()
         }
-
-        repository.setPromptShown(true)
-    }
-
-    func onPromptDismissed() {
-        repository.setPromptShown(true)
     }
 
     // MARK: - Private
+
+    private func setAsDefaultBrowserAction() {
+        do {
+            try defaultBrowserProvider.presentDefaultBrowserPrompt()
+        } catch {
+            defaultBrowserProvider.openSystemPreferences()
+        }
+    }
 
     private func subscribeToLocalOverride() {
         guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
@@ -166,13 +181,5 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
                 NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
             }
             .store(in: &cancellables)
-    }
-
-    private func setAsDefaultBrowserAction() {
-        do {
-            try defaultBrowserProvider.presentDefaultBrowserPrompt()
-        } catch {
-            defaultBrowserProvider.openSystemPreferences()
-        }
     }
 }

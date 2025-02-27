@@ -21,7 +21,6 @@ import Combine
 import Common
 import os.log
 import Persistence
-import PixelKit
 
 protocol DockCustomization {
     var isAddedToDock: Bool { get }
@@ -121,12 +120,7 @@ final class DockCustomizer: DockCustomization {
     @discardableResult
     func addToDock() -> Bool {
         PixelExperiment.fireOnboardingAddToDockRequestedPixel()
-        PixelKit.fireExperimentPixel(
-            for: DefaultBrowserAndDockPromptCoordinator.Constants.subfeatureID,
-            metric: DefaultBrowserAndDockPromptCoordinator.Constants.userSetAsDefaultOrAddedToDock,
-            conversionWindowDays: DefaultBrowserAndDockPromptCoordinator.Constants.conversionWindowDays,
-            value: DefaultBrowserAndDockPromptCoordinator.Constants.value
-        )
+        DefaultBrowserAndDockPromptCoordinator.fireSetAsDefaultAddToDockExperimentPixel()
 
         let appPath = Bundle.main.bundleURL.path
         guard !isAddedToDock,

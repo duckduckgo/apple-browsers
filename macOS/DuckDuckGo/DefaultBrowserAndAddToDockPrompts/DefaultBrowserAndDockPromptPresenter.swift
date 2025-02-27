@@ -25,8 +25,23 @@ enum DefaultBrowserAndDockPromptPresentationType {
 }
 
 protocol DefaultBrowserAndDockPromptPresenting {
+    /// Publisher to let know the banner was dismissed.
+    ///
+    /// This is used, for example, to close the banner in all windows when it gets closed in one.
     var bannerDismissedPublisher: AnyPublisher<Void, Never> { get }
 
+    /// Attempts to show the SAD/ATT prompt to the user, either as a popover or a banner, based on the user's eligibility for the experiment.
+    ///
+    /// - Parameter popoverAnchorProvider: A closure that provides the anchor view for the popover. If the popover is eligible to be shown, it will be displayed relative to this view.
+    /// - Parameter bannerViewHandler: A closure that takes a `BannerMessageViewController` instance, which can be used to configure and present the banner.
+    ///
+    /// The function first checks the user's eligibility for the experiment. Depending on which cohort the user falls into, the function will attempt to show either a popover or a banner.
+    ///
+    /// If the user is eligible for the popover, it will be displayed relative to the view provided by the `popoverAnchorProvider` closure, and it will be dismissed once the user interacts with it (either by confirming or dismissing the popover).
+    ///
+    /// If the user is eligible for the banner, the function uses the `bannerViewHandler` closure to configure and present the banner. This allows the caller to customize the appearance and behavior of the banner as needed.
+    ///
+    /// The popover is more ephemeral and will only be shown in a single window, while the banner is more persistent and will be shown in all windows until the user takes an action on it.
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void)
 }
@@ -49,7 +64,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard !coordinator.wasPromptShown, let type = coordinator.getPromptType() else { return }
+        guard !coordinator.wasPromptShown(), let type = coordinator.getPromptType() else { return }
 
         switch type {
         case .banner:
@@ -70,6 +85,10 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             return
         }
 
+        /// For the popover we mark it as shown when the user actions on it.
+        /// Given that we want to show the banner in all windows.
+        coordinator.markPromptAsShown()
+
         if popover != nil {
             self.showPopover(positionedBelow: view)
         } else {
@@ -85,17 +104,20 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
         let content = DefaultBrowserAndDockPromptContent.banner(type)
 
+        /// We mark the banner as shown when it gets actioned (eithe dismiss or confirmation)
+        /// Given that we want to show the banner in all windows.
         return BannerMessageViewController(
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
             buttonAction: {
                 self.coordinator.onPromptConfirmation()
+                self.coordinator.markPromptAsShown()
                 self.bannerDismissedSubject.send()
             },
             closeAction: {
                 self.bannerDismissedSubject.send()
-                self.coordinator.onPromptDismissed()
+                self.coordinator.markPromptAsShown()
             })
     }
 
@@ -113,7 +135,6 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()
-                self.coordinator.onPromptDismissed()
             },
             shouldShowCloseButton: false,
             shouldPresentMultiline: true,

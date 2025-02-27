@@ -136,7 +136,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .popoverVsBannerExperiment:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         }
     }
 }

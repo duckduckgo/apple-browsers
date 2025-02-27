@@ -357,7 +357,8 @@ extension TabSwitcherViewController {
         // Show selection if it's a single tab, but NOT if it's the home page in selection mode ¯\_(ツ)_/¯
         // See point 3: https://app.asana.com/0/1209499866654340/1209424833903137
         // See point 4: https://app.asana.com/0/1209499866654340/1209424833902043
-        let canSelect = tabs.count == 1 && (containsWebPages || !isEditing)
+        // Also: https://app.asana.com/0/1209499866654340/1209503836757555
+        let canSelect = !isEditing && tabs.count == 1 && (containsWebPages || !isEditing)
         
         return UIMenu(title: title, children: [
             UIMenu(title: "", options: .displayInline, children: [

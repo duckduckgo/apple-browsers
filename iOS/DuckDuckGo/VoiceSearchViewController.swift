@@ -24,11 +24,6 @@ protocol VoiceSearchViewControllerDelegate: AnyObject {
     func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget)
 }
 
-enum VoiceSearchTarget {
-    case search
-    case aiChat
-}
-
 class VoiceSearchViewController: UIViewController {
     weak var delegate: VoiceSearchViewControllerDelegate?
     private let speechRecognizer = SpeechRecognizer()

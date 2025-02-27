@@ -80,12 +80,12 @@ extension VoiceSearchFeedbackView {
             .padding(.bottom, voiceCircleVerticalPadding)
             .padding(.top, voiceCircleVerticalPadding)
 
-            Picker("", selection: $speechModel.selectedOption) {
+            Picker("", selection: $speechModel.searchTarget) {
                 Text(UserText.voiceSearchToggleSearch)
-                    .tag(0)
+                    .tag(VoiceSearchTarget.SERP)
 
                 Text(UserText.voiceSearchToggleAIChat)
-                    .tag(1)
+                    .tag(VoiceSearchTarget.AIChat)
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 220)
@@ -120,10 +120,9 @@ extension VoiceSearchFeedbackView {
             speechModel.finish()
         } label: {
             Circle()
-                .foregroundColor(speechModel.selectedOptionType == .aiChat ? Colors.innerAIChatCircle: Colors.innerCircle)
+                .foregroundColor(speechModel.searchTarget == .AIChat ? Colors.innerAIChatCircle: Colors.innerCircle)
                 .frame(width: CircleSize.inner.width, height: CircleSize.inner.height, alignment: .center)
-                .animation(.easeInOut, value: speechModel.selectedOptionType) // Add animation here
-
+                .animation(.easeInOut, value: speechModel.searchTarget)
         }
     }
     
@@ -137,13 +136,13 @@ extension VoiceSearchFeedbackView {
     
     private var outerCircle: some View {
         Circle()
-            .foregroundColor(speechModel.selectedOptionType == .aiChat ? Colors.outerAIChatCircle: Colors.outerCircle)
+            .foregroundColor(speechModel.searchTarget == .AIChat ? Colors.outerAIChatCircle: Colors.outerCircle)
             .frame(width: CircleSize.outer.width,
                    height: CircleSize.outer.height,
                    alignment: .center)
             .scaleEffect(outerCircleScale)
             .animation(outerCircleAnimation, value: outerCircleScale)
-            .animation(.easeInOut, value: speechModel.selectedOptionType) // Add animation here
+            .animation(.easeInOut, value: speechModel.searchTarget)
 
     }
 }

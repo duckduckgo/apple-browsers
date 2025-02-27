@@ -21,7 +21,7 @@ import XCTest
 
 class FingerprintUITest: XCTestCase {
 
-    private let bookmarkTitle = "DuckDuckGo - Protection. Privacy. Peace of Mind."
+    private let bookmarkTitle = "DuckDuckGo - Your protection, our priority."
 
     override func setUpWithError() throws {
         try super.setUpWithError()

@@ -24,12 +24,13 @@ extension Logger {
 }
 
 
+@MainActor
 final class AutomationServer {
     let listener: NWListener
     let main: MainViewController
 
     init(main: MainViewController, port: Int?) {
-        var port = port ?? 8786
+        let port = port ?? 8786
         self.main = main
         Logger.automationServer.info("Starting automation server on port \(port)")
         do {
@@ -38,26 +39,29 @@ final class AutomationServer {
             Logger.automationServer.error("Failed to start listener: \(error)")
             fatalError("Failed to start automation listener: \(error)")
         }
-        listener.newConnectionHandler = handleConnection
+        listener.newConnectionHandler = { connection in
+            Task { @MainActor in
+                self.handleConnection(connection)
+            }
+        }
         listener.start(queue: .main)
         // Output server started
         Logger.automationServer.info("Automation server started on port \(port)")
     }
     
-    @MainActor
     func receive(from connection: NWConnection) {
         connection.receive(
             minimumIncompleteLength: 1,
             maximumLength: connection.maximumDatagramSize
-        ) { content, _, isComplete, error in
+        ) { (content: Data?, context: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
             switch connection.state {
             case .ready:
                 break // Connection is valid, continue
             case .cancelled, .failed:
-                Logger.automationServer.info("Connection is no longer valid \(connection.state) \(String(describing: error)) \(String(describing: content)).")
+                Logger.automationServer.info("Connection is no longer valid \(String(describing: connection.state)) \(String(describing: error)) \(String(describing: content)).")
                 return
             default:
-                Logger.automationServer.info("Connection is in state \(connection.state).")
+                Logger.automationServer.info("Connection is in state \(String(describing: connection.state)).")
                 return
             }
             Logger.automationServer.info("Received request! \(String(describing: content)) \(isComplete) \(String(describing: error))")
@@ -69,19 +73,20 @@ final class AutomationServer {
 
             if let content {
                 Logger.automationServer.info("Handling content")
-                Task {
+                Task { @MainActor in
                     await self.processContentWhenReady(connection: connection, content: content)
                 }
             }
 
             if !isComplete {
                 Logger.automationServer.info("Handling not complete")
-                self.receive(from: connection)
+                Task { @MainActor in
+                    self.receive(from: connection)
+                }
             }
         }
     }
-    
-    @MainActor
+
     func processContentWhenReady(connection: NWConnection, content: Data) async {
         // Check if loading
         while self.main.currentTab?.isLoading ?? false {
@@ -98,7 +103,6 @@ final class AutomationServer {
         return url.queryItems?.first(where: { $0.name == param })?.value
     }
 
-    @MainActor
     func handleConnection(_ connection: NWConnection, _ content: Data) {
         Logger.automationServer.info("Handling request!")
         let stringContent = String(decoding: content, as: UTF8.self)
@@ -149,7 +153,6 @@ final class AutomationServer {
         }
     }
 
-    @MainActor
     func navigate(on connection: NWConnection, url: URLComponents) {
         let navigateUrlString = getQueryStringParameter(url: url, param: "url") ?? ""
         let navigateUrl = URL(string: navigateUrlString)!
@@ -157,7 +160,6 @@ final class AutomationServer {
         self.respond(on: connection, response: "done")
     }
 
-    @MainActor
     func execute(on connection: NWConnection, url: URLComponents) {
         let script = getQueryStringParameter(url: url, param: "script") ?? ""
         var args: [String: String] = [:]
@@ -180,7 +182,6 @@ final class AutomationServer {
         }
     }
 
-    @MainActor
     func getWindowHandle(on connection: NWConnection, url: URLComponents) {
         let handle = self.main.currentTab
         guard let handle else {
@@ -190,7 +191,6 @@ final class AutomationServer {
         self.respond(on: connection, response: handle.tabModel.uid)
     }
 
-    @MainActor
     func getWindowHandles(on connection: NWConnection, url: URLComponents) {
         let handles = self.main.tabManager.model.tabs.map({ tab in
             let tabView = self.main.tabManager.controller(for: tab)!
@@ -206,20 +206,17 @@ final class AutomationServer {
         }
     }
 
-    @MainActor
     func closeWindow(on connection: NWConnection, url: URLComponents) {
         self.main.closeTab(self.main.currentTab!.tabModel)
         self.respond(on: connection, response: "{\"success\":true}")
     }
 
-    @MainActor
     func switchToWindow(on connection: NWConnection, url: URLComponents) {
         guard let handleString = getQueryStringParameter(url: url, param: "handle") else {
             self.respondError(on: connection, error: "Invalid window handle")
             return
         }
         Logger.automationServer.info("Switch to window \(handleString)")
-        let tabToSelect: TabViewController? = nil
         if let tabIndex = self.main.tabManager.model.tabs.firstIndex(where: { tab in
             guard let tabView = self.main.tabManager.controller(for: tab) else {
                 return false
@@ -227,14 +224,13 @@ final class AutomationServer {
             return tabView.tabModel.uid == handleString
         }) {
             Logger.automationServer.info("found tab \(tabIndex)")
-            self.main.tabManager.select(tabAt: tabIndex)
+            let _ = self.main.tabManager.select(tabAt: tabIndex)
             self.respond(on: connection, response: "{\"success\":true}")
         } else {
             self.respondError(on: connection, error: "Invalid window handle")
         }
     }
 
-    @MainActor
     func newWindow(on connection: NWConnection, url: URLComponents) {
         self.main.newTab()
         let handle = self.main.tabManager.current(createIfNeeded: true)
@@ -276,15 +272,9 @@ final class AutomationServer {
                 Logger.automationServer.info("Have success value to execute script: \(String(describing: value))")
                 
                 // Serialize the value to JSON if possible
-                if value == nil {
-                    jsonString = "{}"
-                } else if JSONSerialization.isValidJSONObject(value) {
-                    do {
-                        let jsonData = try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted])
-                        jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
-                    } catch {
-                        jsonString = "{\"error\": \"Failed to serialize value: \(error.localizedDescription)\"}"
-                    }
+                if JSONSerialization.isValidJSONObject(value) {
+                    let jsonData = try JSONSerialization.data(withJSONObject: value, options: [.prettyPrinted])
+                    jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
                 } else {
                     Logger.automationServer.info("Have value that can't be encoded: \(String(describing: value))")
                     jsonString = "{\"error\": \"Value is not a valid JSON object\"}"
@@ -310,10 +300,7 @@ final class AutomationServer {
                 Connection: close
                 
                 """
-                var valueString = ""
-                if let stringValue = response as? String {
-                    valueString = stringValue
-                }
+                var valueString = response
                 let responseObject = Response(message: valueString)
                 let encoder = JSONEncoder()
                 encoder.outputFormatting = .prettyPrinted
@@ -335,7 +322,6 @@ final class AutomationServer {
         }
     }
     
-    @MainActor
     func handleConnection(_ connection: NWConnection) {
         connection.start(queue: .main)
         self.receive(from: connection)

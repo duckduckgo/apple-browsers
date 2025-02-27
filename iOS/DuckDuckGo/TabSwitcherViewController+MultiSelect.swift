@@ -255,7 +255,8 @@ extension TabSwitcherViewController {
 
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
-                           totalTabsCount: tabsModel.count)
+                           totalTabsCount: tabsModel.count,
+                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }))
 
         topBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems

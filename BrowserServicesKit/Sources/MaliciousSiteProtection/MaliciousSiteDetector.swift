@@ -90,6 +90,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     public func evaluate(_ url: URL) async -> ThreatKind? {
         guard let canonicalHost = url.canonicalHost(),
               let canonicalUrl = url.canonicalURL() else { return .none }
+        let isScamProtectionEnabled = featureFlagger?.isScamProtectionEnabled ?? false
 
         let hostHash = canonicalHost.sha256
         let hashPrefix = String(hostHash.prefix(Constants.hashPrefixStoreLength))
@@ -98,7 +99,6 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         // The hash prefix list serves as a representation of the entire database:
         // every malicious website will have a hash prefix that it collides with.
         var hashPrefixMatchingThreatKinds = [ThreatKind]()
-        let isScamProtectionEnabled = featureFlagger?.isScamProtectionEnabled ?? false
         let threadKinds = isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
         for threatKind in threadKinds { // e.g., phishing, malware, etc.
             let hashPrefixes = await dataManager.dataSet(for: .hashPrefixes(threatKind: threatKind))
@@ -128,6 +128,9 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         if let match {
             let threatKind = match.category.flatMap(ThreatKind.init) ?? hashPrefixMatchingThreatKinds[0]
             await fireErrorPageShown(threatKind: threatKind, clientSideHit: false)
+            if !isScamProtectionEnabled && threatKind == .scam {
+                return .none
+            }
             return threatKind
         }
 

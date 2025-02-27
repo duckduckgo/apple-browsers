@@ -1359,6 +1359,19 @@ struct UserText {
         static let buttonTitle = NSLocalizedString("site.not.working.button.title", value: "Let Us Know", comment: "Button title that appears on a dialog asking users about possible breakage of a site")
     }
 
+    // MARK: - Set as Default and Add To Dock Prompts
+
+    static let addDuckDuckGoToDockPopoverTitle = NSLocalizedString("sat.att.add-to-dock.popover.title", value: "Add DuckDuckGo to your Dock.", comment: "Title of the Add to Dock popover")
+    static let defaultPopoverTitleForSATandATT = NSLocalizedString("sat.att.default.popover.title", value: "Let DuckDuckGo protect more of what you do online", comment: "Title of the popover when adding DuckDuckGo to the Dock and setting as default browser")
+    static let addToDockPopoverPromptMessage = NSLocalizedString("sat.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Message of the popover when adding DuckDuckGo to the Dock")
+    static let setAsDefaultPopoverPromptMessage = NSLocalizedString("sat.att.set-as-default.popover.message", value: "Make us your default browser so all site links open in DuckDuckGo", comment: "Message of the popover when setting DuckDuckGo as default browser")
+    static let bothSetAsDefaultPopoverAndAddToDockPromptMessage = NSLocalizedString("sat.att.both.popover.message", value: "Make us your default browser so all site links open in DuckDuckGo, and add us to your Dock for quick access.", comment: "Message of the popover when setting DuckDuckGo as default browser and adding to Dock")
+    static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Message of the banner when adding DuckDuckGo to the Dock")
+    static let bothSetAsDefaultBannerAndAddToDockPromptMessage = NSLocalizedString("sat.att.add-to-dock.popover.message", value: "Protect more of what you do online", comment: "Default message of the banner when adding DuckDuckGo to the Dock and/or setting as default browser")
+    static let addToDockPopoverPrimaryAction = NSLocalizedString("sat.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Primary action of the popover when adding DuckDuckGo to the Dock")
+    static let bothSetAsDefaultPopoverAndAddToDockPromptPrimaryAction = NSLocalizedString("sat.att.both.popover.primary", value: "Set As Default Browser", comment: "Primary action of the popover when adding DuckDuckGo to the Dock and/or setting as default browser")
+
+
     // MARK: - Privacy Pro
 
     // Key: "subscription.menu.item"

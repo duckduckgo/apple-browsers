@@ -31,9 +31,9 @@ enum DefaultBrowserAndDockPromptContent {
         case let .popover(content):
             switch content {
             case .addToDockPrompt:
-                return "Add DuckDuckGo to your Dock"
+                return UserText.addDuckDuckGoToDockPopoverTitle
             default:
-                return "Let DuckDuckGo protect more of what you do online"
+                return UserText.defaultPopoverTitleForSATandATT
             }
         default:
             return nil
@@ -60,16 +60,16 @@ enum DefaultBrowserAndDockPromptContent {
         case let .popover(content):
             switch content {
             case .addToDockPrompt:
-                return "Get quick access to protected browsing when you add DuckDuckGo to your Dock."
+                return UserText.addToDockPopoverPromptMessage
             case .setAsDefaultPrompt:
-                return "Make us your default browser so all site links open in DuckDuckGo"
+                return UserText.setAsDefaultPopoverPromptMessage
             case .bothDefaultBrowserAndDockPrompt:
-                return "Make us your default browser so all site links open in DuckDuckGo, and add us to your Dock for quick access."
+                return UserText.bothSetAsDefaultPopoverAndAddToDockPromptMessage
             }
         case let .banner(content):
             switch content {
-            case .addToDockPrompt: return "Get quick access to protected browsing"
-            default: return "Protect more of what you do online"
+            case .addToDockPrompt: return UserText.addToDockBannerPromptMessage
+            default: return UserText.bothSetAsDefaultBannerAndAddToDockPromptMessage
             }
         }
     }
@@ -78,13 +78,13 @@ enum DefaultBrowserAndDockPromptContent {
         switch self {
         case let .popover(content):
             switch content {
-            case .addToDockPrompt: return "Add To Dock"
-            default: return "Set As Default Browser"
+            case .addToDockPrompt: return UserText.addToDockPopoverPrimaryAction
+            default: return UserText.bothSetAsDefaultPopoverAndAddToDockPromptPrimaryAction
             }
         case let .banner(content):
             switch content {
-            case .addToDockPrompt: return "Add DuckDuckGo To Dock..."
-            default: return "Set DuckDuckGo As Default Browser..."
+            case .addToDockPrompt: return UserText.addDuckDuckGoToDock
+            default: return UserText.setAsDefaultBrowser.appending("...")
             }
         }
     }
@@ -92,7 +92,7 @@ enum DefaultBrowserAndDockPromptContent {
     var secondaryButtonTitle: String? {
         switch self {
         case .popover:
-            return "Not Now"
+            return UserText.notNow
         default:
             return nil
         }

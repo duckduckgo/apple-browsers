@@ -61088,6 +61088,102 @@
         }
       }
     },
+    "sat.att.add-to-dock.banner.message" : {
+      "comment" : "Message of the banner when adding DuckDuckGo to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing"
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.popover.message" : {
+      "comment" : "Default message of the banner when adding DuckDuckGo to the Dock and/or setting as default browser\nMessage of the popover when adding DuckDuckGo to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing when you add DuckDuckGo to your Dock."
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.popover.primary" : {
+      "comment" : "Primary action of the popover when adding DuckDuckGo to the Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.popover.title" : {
+      "comment" : "Title of the Add to Dock popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock."
+          }
+        }
+      }
+    },
+    "sat.att.both.popover.message" : {
+      "comment" : "Message of the popover when setting DuckDuckGo as default browser and adding to Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make us your default browser so all site links open in DuckDuckGo, and add us to your Dock for quick access."
+          }
+        }
+      }
+    },
+    "sat.att.both.popover.primary" : {
+      "comment" : "Primary action of the popover when adding DuckDuckGo to the Dock and/or setting as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default Browser"
+          }
+        }
+      }
+    },
+    "sat.att.default.popover.title" : {
+      "comment" : "Title of the popover when adding DuckDuckGo to the Dock and setting as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Let DuckDuckGo protect more of what you do online"
+          }
+        }
+      }
+    },
+    "sat.att.set-as-default.popover.message" : {
+      "comment" : "Message of the popover when setting DuckDuckGo as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make us your default browser so all site links open in DuckDuckGo"
+          }
+        }
+      }
+    },
     "save" : {
       "comment" : "Save button",
       "extractionState" : "extracted_with_value",
@@ -62092,9 +62188,6 @@
           }
         }
       }
-    },
-    "Set As Default Browser" : {
-
     },
     "settings" : {
       "comment" : "Menu item for opening settings",

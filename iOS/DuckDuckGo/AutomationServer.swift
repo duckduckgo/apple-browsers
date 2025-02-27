@@ -54,10 +54,10 @@ final class AutomationServer {
             case .ready:
                 break // Connection is valid, continue
             case .cancelled, .failed:
-                print("Connection is no longer valid \(connection.state) \(String(describing: error)) \(String(describing: content)).")
+                Logger.automationServer.info("Connection is no longer valid \(connection.state) \(String(describing: error)) \(String(describing: content)).")
                 return
             default:
-                print("Connection is in state \(connection.state).")
+                Logger.automationServer.info("Connection is in state \(connection.state).")
                 return
             }
             Logger.automationServer.info("Received request! \(String(describing: content)) \(isComplete) \(String(describing: error))")
@@ -85,7 +85,7 @@ final class AutomationServer {
     func processContentWhenReady(connection: NWConnection, content: Data) async {
         // Check if loading
         while self.main.currentTab?.isLoading ?? false {
-            print("Still loading, waiting...")
+            Logger.automationServer.info("Still loading, waiting...")
             try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
         }
 

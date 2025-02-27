@@ -20,9 +20,16 @@ import Foundation
 import HistoryView
 
 final class CapturingActionsHandler: ActionsHandling {
+    func showDeleteDialog(for range: DataModel.HistoryRange) async -> DataModel.DeleteDialogResponse {
+        showDeleteDialogCalls.append(range)
+        return await showDeleteDialog(range)
+    }
+
     func open(_ url: URL) {
         openCalls.append(url)
     }
 
+    var showDeleteDialogCalls: [DataModel.HistoryRange] = []
+    var showDeleteDialog: (DataModel.HistoryRange) async -> DataModel.DeleteDialogResponse = { _ in .delete }
     var openCalls: [URL] = []
 }

@@ -60,13 +60,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
 
-    private static let allowedDomains = [ "duckduckgo.com" ]
-    
-    private var webViewSettings =  AsyncHeadlessWebViewSettings(bounces: false,
-                                                                allowedDomains: allowedDomains,
-                                                                contentBlocking: false)
-        
+    private let webViewSettings: AsyncHeadlessWebViewSettings
+
     init(purchaseURL: URL,
+         isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: SubscriptionManager,
@@ -75,9 +72,32 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+
+        self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
+                                                            allowedDomains: Self.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                                                                isInternalUser: isInternalUser),
+                                                            contentBlocking: false)
+
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
+    }
+
+    // Allowed domains
+    internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
+        var allowedDomains = Set<String>()
+
+        // Allow navigation to baseURLs domain
+        allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
+
+        // For internal user allow these domains as required for DUO based authentication flow
+        if isInternalUser {
+            allowedDomains.formUnion(["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"])
+        }
+
+        assert(!allowedDomains.isEmpty, "Allowed domains should not be empty.")
+        return Array(allowedDomains)
     }
 
     // Observe transaction status

@@ -118,7 +118,8 @@ struct SettingsRootView: View {
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                privacyProDataReporter: viewModel.privacyProDataReporter,
-                                                               tld: AppDependencyProvider.shared.storageCache.tld)
+                                                               tld: AppDependencyProvider.shared.storageCache.tld,
+                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
             .environmentObject(subscriptionNavigationCoordinator)
 
         case .restoreFlow:

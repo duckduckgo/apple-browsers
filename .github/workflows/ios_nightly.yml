@@ -49,7 +49,7 @@ jobs:
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS ATB UI Tests" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.1" \
+          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -92,7 +92,7 @@ jobs:
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS Fingerprinting UI Tests" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.1" \
+          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \

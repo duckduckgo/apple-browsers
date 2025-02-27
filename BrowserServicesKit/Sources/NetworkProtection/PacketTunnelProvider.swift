@@ -99,7 +99,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     public enum TunnelError: LocalizedError, CustomNSError, SilentErrorConvertible {
         // Tunnel Setup Errors - 0+
-        case startingTunnelWithoutAuthToken(internalError: Error)
+        case startingTunnelWithoutAuthToken(internalError: Error?)
         case couldNotGenerateTunnelConfiguration(internalError: Error)
         case simulateTunnelFailureError
         case tokenReset
@@ -113,7 +113,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         public var errorDescription: String? {
             switch self {
             case .startingTunnelWithoutAuthToken(let internalError):
-                return "Missing auth token at startup: \(internalError)"
+                return "Missing auth token at startup: \(internalError.debugDescription)"
             case .vpnAccessRevoked:
                 return "VPN disconnected due to expired subscription"
             case .couldNotGenerateTunnelConfiguration(let internalError):
@@ -148,9 +148,14 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                     .appRequestedCancellation,
                     .tokenReset:
                 return [:]
-            case .couldNotGenerateTunnelConfiguration(let underlyingError),
-                    .startingTunnelWithoutAuthToken(let underlyingError):
+            case .couldNotGenerateTunnelConfiguration(let underlyingError):
                 return [NSUnderlyingErrorKey: underlyingError]
+            case .startingTunnelWithoutAuthToken(let underlyingError):
+                if let underlyingError {
+                    return [NSUnderlyingErrorKey: underlyingError]
+                } else {
+                    return [:]
+                }
             }
         }
 
@@ -558,7 +563,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case .useExisting:
             break
         case .reset:
-            settings.dnsSettings = .default
+            settings.dnsSettings = .ddg(blockRiskyDomains: settings.isBlockRiskyDomainsOn)
         }
     }
 
@@ -688,6 +693,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         do {
             try await load(options: startupOptions)
             Logger.networkProtection.log("Startup options loaded correctly")
+
+#if os(iOS)
+            if (try? await tokenHandler.getToken()) == nil {
+                throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
+            }
+#endif
         } catch {
             if startupOptions.startupMethod == .automaticOnDemand {
                 // If the VPN was started by on-demand without the basic prerequisites for

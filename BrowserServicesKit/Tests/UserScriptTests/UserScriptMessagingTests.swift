@@ -187,6 +187,51 @@ class UserScriptMessagingTests: XCTestCase {
     }
 }
 
+class HostnameMatchingRuleTests: XCTestCase {
+
+    func testMakingExactRuleBasedOnURL() throws {
+        // Given
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"))
+
+        // When
+        let result = HostnameMatchingRule.makeExactRule(for: url)
+
+        // Then
+        if case let .exact(hostname) = result {
+            XCTAssertEqual(hostname, "duckduckgo.com")
+        } else {
+            XCTFail("Result rule incorrect")
+        }
+    }
+
+    func testMakingExactRuleBasedOnURLWithPort() throws {
+        // Given
+        let url = try XCTUnwrap(URL(string: "http://localhost:1234/subscriptions"))
+
+        // When
+        let result = HostnameMatchingRule.makeExactRule(for: url)
+
+        // Then
+        if case let .exact(hostname) = result {
+            XCTAssertEqual(hostname, "localhost:1234")
+        } else {
+            XCTFail("Result rule incorrect")
+        }
+    }
+
+    func testMakingExactRuleWhenURLHasNoHostname() throws {
+        // Given
+        let url = try XCTUnwrap(URL(string: "zzz"))
+        XCTAssertNil(url.host)
+
+        // When
+        let result = HostnameMatchingRule.makeExactRule(for: url)
+
+        // Then
+        XCTAssertNil(result)
+    }
+}
+
 /// A helper for registering a test delegate and creating a MockMsg based on the
 /// incoming dictionary (which represents a message coming from a webview)
 ///

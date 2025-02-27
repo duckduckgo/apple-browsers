@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1739554171092,
+    "version": 1740392927241,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -516,6 +516,18 @@
                     "domain": "russafasingluten.com"
                 },
                 {
+                    "domain": "capita.com"
+                },
+                {
+                    "domain": "capita.co.uk"
+                },
+                {
+                    "domain": "katieloxton.com"
+                },
+                {
+                    "domain": "servustv.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -696,7 +708,7 @@
                     }
                 }
             },
-            "hash": "92a7c1bf0f3cbdaa45ed3da845fc6c6e"
+            "hash": "96ff7ac29c795aade0586399b7387c4f"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -1634,7 +1646,7 @@
             ],
             "features": {
                 "tdsNextExperimentBaseline": {
-                    "state": "enabled",
+                    "state": "disabled",
                     "rollout": {
                         "steps": [
                             {
@@ -1649,6 +1661,30 @@
                     "cohorts": [
                         {
                             "name": "control",
+                            "weight": 0
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 0
+                        }
+                    ]
+                },
+                "tdsNextExperimentFeb25": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 50
+                            }
+                        ]
+                    },
+                    "settings": {
+                        "controlUrl": "v5/current/ios-tds.json",
+                        "treatmentUrl": "v5/temp/ios-tds-ab-test.json"
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
                             "weight": 1
                         },
                         {
@@ -1658,7 +1694,7 @@
                     ]
                 }
             },
-            "hash": "606fecd9435da3f4928299a0d305f6bd"
+            "hash": "6017120e0ff4908c3de32274ac94a97d"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1756,6 +1792,10 @@
                     {
                         "domain": "ihg.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2383"
+                    },
+                    {
+                        "domain": "maxcomply.app",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2759"
                     }
                 ],
                 "ddgDefaultSites": [
@@ -1779,13 +1819,16 @@
                     },
                     {
                         "domain": "ihg.com"
+                    },
+                    {
+                        "domain": "maxcomply.app"
                     }
                 ],
                 "omitVersionSites": []
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "e577ccb473bdb7ada49c4d3c6e79cf01"
+            "hash": "a2c3260596659b37a3899e58df3b5d78"
         },
         "dbp": {
             "state": "disabled",
@@ -2801,6 +2844,15 @@
                         ]
                     },
                     {
+                        "domain": "bloomberglaw.com",
+                        "rules": [
+                            {
+                                "selector": "[class^='HeaderAdSpot_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "bostonglobe.com",
                         "rules": [
                             {
@@ -3296,6 +3348,26 @@
                             {
                                 "selector": ".feed-b",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "margin-top",
+                                        "value": "0px"
+                                    }
+                                ]
+                            },
+                            {
+                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "top",
+                                        "value": "0px"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -4169,6 +4241,19 @@
                             },
                             {
                                 "selector": "#nbcsports-leaderboard",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "ndtvprofit.com",
+                        "rules": [
+                            {
+                                "selector": "[class*='ad-with-placeholder']",
+                                "type": "closest-empty"
+                            },
+                            {
+                                "selector": "[class*='ad-wrapper']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5471,7 +5556,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "8872a956e5aad97cde08df18d7dd85a6"
+            "hash": "46caec99a4c60e350d22764028ceed89"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6359,7 +6444,26 @@
                     "minSupportedVersion": "7.148.0"
                 },
                 "privacyProFreeTrialJan25": {
-                    "state": "disabled",
+                    "state": "enabled",
+                    "targets": [
+                        {
+                            "localeCountry": "US"
+                        }
+                    ],
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ],
+                    "minSupportedVersion": "7.157.0"
+                },
+                "privacyProOnboardingCTAMarch25": {
+                    "state": "internal",
                     "targets": [
                         {
                             "localeCountry": "US"
@@ -6377,7 +6481,7 @@
                     ]
                 }
             },
-            "hash": "7dabbf34a403f84e319734457444a7af"
+            "hash": "36991c04e3d5243c571034aa598e05e3"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",
@@ -8104,6 +8208,7 @@
                                     "thesimsresource.com",
                                     "tradersync.com",
                                     "vanguardplan.com",
+                                    "vizio.com",
                                     "xpn.org"
                                 ]
                             }
@@ -9638,6 +9743,16 @@
                             }
                         ]
                     },
+                    "theadex.com": {
+                        "rules": [
+                            {
+                                "rule": "dmp.theadex.com/",
+                                "domains": [
+                                    "servustv.com"
+                                ]
+                            }
+                        ]
+                    },
                     "theplatform.com": {
                         "rules": [
                             {
@@ -9870,6 +9985,7 @@
                             {
                                 "rule": "dev.visualwebsiteoptimizer.com/j.php",
                                 "domains": [
+                                    "arlo.com",
                                     "searchhudforeclosures.com"
                                 ]
                             }
@@ -10095,7 +10211,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "856b689c920d896b149774d16d0348f0"
+            "hash": "68586b2e6d375213cf617209a1f018f7"
         },
         "trackingCookies1p": {
             "settings": {

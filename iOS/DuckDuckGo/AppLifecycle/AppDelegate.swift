@@ -20,31 +20,11 @@
 import UIKit
 import Core
 
-public extension NSNotification.Name {
-
-    static let appDidEncounterUnrecoverableState = Notification.Name("com.duckduckgo.app.unrecoverable.state")
-
-}
-
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    private let appStateMachine: AppStateMachine = AppStateMachine()
+    private let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     var window: UIWindow?
-
-    override init() {
-        super.init()
-        NotificationCenter.default.addObserver(forName: .databaseDidEncounterInsufficientDiskSpace,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            self?.application(UIApplication.shared, willTerminateWithReason: .insufficientDiskSpace)
-        }
-        NotificationCenter.default.addObserver(forName: .appDidEncounterUnrecoverableState,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            self?.application(UIApplication.shared, willTerminateWithReason: .unrecoverableState)
-        }
-    }
 
     /// See: `Launching.swift`
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
@@ -73,30 +53,21 @@ public extension NSNotification.Name {
         appStateMachine.handle(.didEnterBackground)
     }
 
-    /// See: `Terminating.swift`
-    /// **Note** This is *not* the system function `applicationWillTerminate(_:)`, and it is *not* called by the system.
-    /// This is used to handle force crashes due to unrecoverable errors (e.g., low disk space) and display an alert beforehand.
-    func application(_ application: UIApplication, willTerminateWithReason terminationReason: UIApplication.TerminationReason) {
-        appStateMachine.handle(.willTerminate(terminationReason))
-    }
-
-    /// See: `Foreground.swift` -> `handleShortcutItem(_:)`
+    /// See: `LaunchActionHandler.swift` -> `handleShortcutItem(_:)`
     func application(_ application: UIApplication,
                      performActionFor shortcutItem: UIApplicationShortcutItem,
                      completionHandler: @escaping (Bool) -> Void) {
         appStateMachine.handle(.handleShortcutItem(shortcutItem))
     }
 
-    /// See: `Foreground.swift` -> `openURL(_:)`
+    /// See: `LaunchActionHandler.swift` -> `openURL(_:)`
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         appStateMachine.handle(.openURL(url))
         return true
     }
 
     func application(_ application: UIApplication, performFetchWithCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-
         Logger.lifecycle.debug(#function)
-
         AppConfigurationFetch().start(isBackgroundFetch: true) { result in
             switch result {
             case .noData:
@@ -115,12 +86,15 @@ public extension NSNotification.Name {
     /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
     /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
     var debugPrivacyProDataReporter: PrivacyProDataReporting? {
-        (appStateMachine.currentState as? Foreground)?.appDependencies.reportingService.privacyProDataReporter
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            return (foregroundHandling as? Foreground)?.services.reportingService.privacyProDataReporter
+        }
+        return nil
     }
 
     func debugRefreshRemoteMessages() {
-        if let remoteMessagingService = (appStateMachine.currentState as? Foreground)?.appDependencies.remoteMessagingService {
-            remoteMessagingService.refreshRemoteMessages()
+        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
+            (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
         }
     }
 

@@ -511,7 +511,7 @@ I blocked them!
 			<key>other</key>
 			<string>Bookmark %d Tabs</string>
 			<key>one</key>
-			<string>Bookmark This Tab</string>
+			<string>Bookmark Tab</string>
 		</dict>
 	</dict>
 	<key>tabsBookmarked.withCount</key>

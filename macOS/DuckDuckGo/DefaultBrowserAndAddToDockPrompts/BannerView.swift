@@ -80,19 +80,14 @@ struct BannerView: View {
 
                 Spacer()
 
-                Button(action: {
+                HoverButton(image: .closeLarge, cornerRadius: 8) {
                     viewModel.closeAction()
-                }) {
-                    Image(.closeLarge)
-                        .foregroundColor(.blackWhite100)
-                        .padding()
                 }
-                .buttonStyle(BorderlessButtonStyle())
+                .padding(.trailing, 10)
             }
             .padding(.leading, 19)
         }
-
-        .background(Color.bannerBackground)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(Color.bannerBackground)
     }
 }

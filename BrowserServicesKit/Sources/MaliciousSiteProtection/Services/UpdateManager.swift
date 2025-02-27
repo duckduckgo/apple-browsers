@@ -73,6 +73,11 @@ public struct UpdateManager: InternalUpdateManaging {
     }
 
     func updateData<DataKey: MaliciousSiteDataKey>(for key: DataKey) async throws {
+        let isScamProtectionEnabled = featureFlags?.isScamProtectionEnabled ?? false
+        if !isScamProtectionEnabled && key.threatKind == .scam {
+            return
+        }
+
         // load currently stored data set
         var dataSet = await dataManager.dataSet(for: key)
         let oldRevision = dataSet.revision

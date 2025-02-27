@@ -27,12 +27,14 @@ class MaliciousSiteDetectorTests: XCTestCase {
     private var mockDataManager: MockMaliciousSiteProtectionDataManager!
     private var mockEventMapping: MockEventMapping!
     private var detector: MaliciousSiteDetector!
+    private var featureFlagger: MockMaliciousSiteProtectionFeatureFlags!
 
     override func setUp() async throws {
         mockAPIClient = MockMaliciousSiteProtectionAPIClient()
         mockDataManager = MockMaliciousSiteProtectionDataManager()
         mockEventMapping = MockEventMapping()
-        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping)
+        featureFlagger = MockMaliciousSiteProtectionFeatureFlags()
+        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, featureFlagger: featureFlagger, eventMapping: mockEventMapping)
     }
 
     override func tearDown() async throws {
@@ -52,6 +54,32 @@ class MaliciousSiteDetectorTests: XCTestCase {
         let result = await detector.evaluate(url)
 
         XCTAssertEqual(result, .phishing)
+    }
+
+    func testIsScamWithLocalFilterHitReturnsNilIfFlagOff() async throws {
+        featureFlagger.isScamProtectionEnabled = false
+        let filter = Filter(hash: "5392ef04dc5f963fe5bc9545365de61312d7070df12aafff87e65ec55a7803a4", regex: ".*scam.*")
+        try await mockDataManager.store(FilterDictionary(revision: 0, items: [filter]), for: .filterSet(threatKind: .scam))
+        try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["5392ef04"]), for: .hashPrefixes(threatKind: .scam))
+
+        let url = URL(string: "https://scam.com/")!
+
+        let result = await detector.evaluate(url)
+
+        XCTAssertNil(result)
+    }
+
+    func testIsScamWithLocalFilterHit() async throws {
+        featureFlagger.isScamProtectionEnabled = true
+        let filter = Filter(hash: "5392ef04dc5f963fe5bc9545365de61312d7070df12aafff87e65ec55a7803a4", regex: ".*scam.*")
+        try await mockDataManager.store(FilterDictionary(revision: 0, items: [filter]), for: .filterSet(threatKind: .scam))
+        try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["5392ef04"]), for: .hashPrefixes(threatKind: .scam))
+
+        let url = URL(string: "https://scam.com/")!
+
+        let result = await detector.evaluate(url)
+
+        XCTAssertEqual(result, .scam)
     }
 
     func testIsMaliciousWithApiMatch() async throws {

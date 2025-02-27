@@ -277,35 +277,42 @@ extension TabSwitcherViewController {
 
     func createMultiSelectionMenu() -> UIMenu {
         let otherTabCount = max(0, tabCount - selectedTabs.count)
+        let selectedTabs = selectedTabs.map { tabsModel.safeGetTabAt($0) }.compactMap { $0 }
+        let selectedTabsContainsWebPages = selectedTabs.contains(where: { $0.link != nil })
+        let canCloseOther = !selectedTabs.isEmpty && otherTabCount > 0
+        let canBookmarkAll = selectedTabs.isEmpty && self.tabsModel.tabs.contains(where: { $0.link != nil })
+        let canShowDeselectAll = interfaceMode.isLarge && selectedTabs.count == tabCount
+        let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabCount
+
         return UIMenu(title: "", children: [
             
             UIMenu(title: "", options: .displayInline, children: [
-                interfaceMode.isLarge && selectedTabs.count == tabCount ? action(UserText.deselectAllTabs, "Check-Circle-16", { [weak self] in
+                canShowDeselectAll ? action(UserText.deselectAllTabs, "Check-Circle-16", { [weak self] in
                     self?.deselectAllTabs()
                 }) : nil,
-                interfaceMode.isLarge && selectedTabs.count < tabCount ? action(UserText.selectAllTabs, "Check-Circle-16", { [weak self] in
+                canShowSelectAll ? action(UserText.selectAllTabs, "Check-Circle-16", { [weak self] in
                     self?.selectAllTabs()
                 }) : nil,
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                !selectedTabs.isEmpty && otherTabCount > 0 ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
+                canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
                     self?.selectModeCloseOtherTabs()
                 }) : nil,
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                !selectedTabs.isEmpty ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
+                selectedTabsContainsWebPages ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
                     self?.selectModeShareLinks()
                 }) : nil,
-                !selectedTabs.isEmpty ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", { [weak self] in
+                selectedTabsContainsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: selectedTabs.count), "Bookmark-Add-16", { [weak self] in
                     self?.selectModeBookmarkSelected()
                 }) : nil,
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                selectedTabs.isEmpty ? action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", { [weak self] in
+                canBookmarkAll ? action(UserText.tabSwitcherBookmarkAllTabs, "Bookmark-All-16", { [weak self] in
                     self?.selectModeBookmarkAll()
                 }) : nil,
             ].compactMap { $0 })
@@ -338,12 +345,12 @@ extension TabSwitcherViewController {
             // If there's a single web page tab use the hostname, failing that don't provide a title
             : tabs.first?.link?.url.host?.droppingWwwPrefix() ?? ""
         
-        let showCloseOthers = tabs.count < tabCount
+        let canCloseOthers = tabs.count < tabCount
         
         // Show selection if it's a single tab, but NOT if it's the home page in selection mode ¯\_(ツ)_/¯
         // See point 3: https://app.asana.com/0/1209499866654340/1209424833903137
         // See point 4: https://app.asana.com/0/1209499866654340/1209424833902043
-        let showSelectionCheck = tabs.count == 1 && (containsWebPages || !isEditing)
+        let canSelect = tabs.count == 1 && (containsWebPages || !isEditing)
         
         return UIMenu(title: title, children: [
             UIMenu(title: "", options: .displayInline, children: [
@@ -353,7 +360,7 @@ extension TabSwitcherViewController {
                 containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16",  { [weak self] in
                     self?.longPressMenuBookmarkTabs(indexes: indexes)
                 }) : nil,
-                showSelectionCheck ? action(UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", { [weak self] in
+                canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", { [weak self] in
                     self?.longPressMenuSelectTabs(indexes: indexes)
                 }) : nil,
             ].compactMap { $0 }),
@@ -366,7 +373,7 @@ extension TabSwitcherViewController {
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                showCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
+                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
                     self?.longPressMenuCloseOtherTabs(indexesToRetain: indexes)
                 }) : nil
             ].compactMap { $0 }),

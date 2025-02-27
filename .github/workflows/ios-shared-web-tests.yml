@@ -83,7 +83,7 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          test-output.log
+          shared-web-tests/test-output.log
         retention-days: 7
 
 

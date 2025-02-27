@@ -23,6 +23,18 @@ extension Logger {
     static var automationServer = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Automation Server") }()
 }
 
+struct AnyEncodable: Encodable {
+    private let encode: (Encoder) throws -> Void
+
+    init<T: Encodable>(_ value: T) {
+        self.encode = value.encode(to:)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        try encode(encoder)
+    }
+}
+
 
 @MainActor
 final class AutomationServer {
@@ -277,24 +289,18 @@ final class AutomationServer {
         guard let result else {
             return
         }
-        do {
-            switch result {
-            case .failure(let error):
-                self.respond(on: connection, response: "{\"error\": \"\(error)\"}")
-            case .success(let value):
-                var jsonString: String = ""
-                
-                // Try to encode the value to JSON
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = .prettyPrinted
-                Logger.automationServer.info("Have success value to execute script: \(String(describing: value))")
-                
-                let jsonString = encodeToJsonString(value)
-                // Send the response back with the JSON string
-                self.respond(on: connection, response: jsonString)
-            }
-        } catch {
+        switch result {
+        case .failure(let error):
             self.respond(on: connection, response: "{\"error\": \"\(error)\"}")
+        case .success(let value):
+            // Try to encode the value to JSON
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            Logger.automationServer.info("Have success value to execute script: \(String(describing: value))")
+            
+            let jsonString = encodeToJsonString(value)
+            // Send the response back with the JSON string
+            self.respond(on: connection, response: jsonString)
         }
     }
     

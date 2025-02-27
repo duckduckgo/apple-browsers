@@ -65,15 +65,18 @@ struct QuickActionsMediumEntry: TimelineEntry {
 struct QuickActionsMediumWidgetView: View {
     var entry: QuickActionsMediumEntry
 
-    private let shortcuts: [ShortcutOption] = [.passwords, .voiceSearch, .favorites, .emailProtection]
+    private let shortcuts: [ShortcutOption] = [.duckAI,
+                                               .passwords,
+                                               .favorites,
+                                               .emailProtection]
 
     var body: some View {
         ZStack {
             VStack(alignment: .center, spacing: 0) {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
-                    Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(.aiChat24))
+                    Link(destination: DeepLinks.voiceSearch) {
+                        CircleIconView(image: Image(.microphoneSolid24))
                     }
                 }
 

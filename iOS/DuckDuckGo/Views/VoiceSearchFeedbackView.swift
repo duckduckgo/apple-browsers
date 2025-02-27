@@ -40,7 +40,7 @@ struct VoiceSearchFeedbackView: View {
 // MARK: - Animation
 
 extension VoiceSearchFeedbackView {
-    
+
     private var outerCircleScale: CGFloat {
         switch speechModel.animationType {
         case .pulse(let scale):
@@ -49,7 +49,7 @@ extension VoiceSearchFeedbackView {
             return volume
         }
     }
-    
+
     private var outerCircleAnimation: Animation {
         switch speechModel.animationType {
         case .pulse:
@@ -63,7 +63,7 @@ extension VoiceSearchFeedbackView {
 // MARK: - Views
 
 extension VoiceSearchFeedbackView {
-    
+
     private var voiceFeedbackView: some View {
         VStack {
             Spacer()
@@ -71,7 +71,7 @@ extension VoiceSearchFeedbackView {
                 .multilineTextAlignment(.center)
                 .foregroundColor(Colors.speechFeedback)
                 .padding(.horizontal)
-            
+
             ZStack {
                 outerCircle
                 innerCircle
@@ -81,11 +81,8 @@ extension VoiceSearchFeedbackView {
             .padding(.top, voiceCircleVerticalPadding)
 
             Picker("", selection: $speechModel.searchTarget) {
-                Text(UserText.voiceSearchToggleSearch)
-                    .tag(VoiceSearchTarget.SERP)
-
-                Text(UserText.voiceSearchToggleAIChat)
-                    .tag(VoiceSearchTarget.AIChat)
+                Text(UserText.voiceSearchToggleSearch).tag(VoiceSearchTarget.SERP)
+                Text(UserText.voiceSearchToggleAIChat).tag(VoiceSearchTarget.AIChat)
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 220)
@@ -96,10 +93,10 @@ extension VoiceSearchFeedbackView {
                 .multilineTextAlignment(.center)
                 .foregroundColor(Colors.footerText)
                 .frame(width: footerWidth)
-            
+
         } .padding(.bottom, footerTextPadding)
     }
-    
+
     private var cancelButton: some View {
         HStack {
             Button {
@@ -114,7 +111,7 @@ extension VoiceSearchFeedbackView {
         .padding(.horizontal)
         .padding(.top)
     }
-    
+
     private var innerCircle: some View {
         Button {
             speechModel.finish()
@@ -125,7 +122,7 @@ extension VoiceSearchFeedbackView {
                 .animation(.easeInOut, value: speechModel.searchTarget)
         }
     }
-    
+
     private var micImage: some View {
         Image(micIconName)
             .resizable()
@@ -133,7 +130,7 @@ extension VoiceSearchFeedbackView {
             .frame(width: micSize.width, height: micSize.height)
             .foregroundColor(.white)
     }
-    
+
     private var outerCircle: some View {
         Circle()
             .foregroundColor(speechModel.searchTarget == .AIChat ? Colors.outerAIChatCircle: Colors.outerCircle)
@@ -155,12 +152,12 @@ extension VoiceSearchFeedbackView {
     private var voiceCircleVerticalPadding: CGFloat { sizeClass == .regular ? 60 : 43 }
     private var footerTextPadding: CGFloat { sizeClass == .regular ? 43 : 8 }
     private var micSize: CGSize { CGSize(width: 32, height: 32) }
-    
+
     private struct CircleSize {
         static let inner = CGSize(width: 56, height: 56)
         static let outer = CGSize(width: 120, height: 120)
     }
-    
+
     private struct Colors {
         static let innerCircle = Color(UIColor(hex: "3969EF"))
         static let footerText = Color(UIColor(hex: "888888"))
@@ -172,7 +169,7 @@ extension VoiceSearchFeedbackView {
         static let cancelButton = Color("VoiceSearchCancelColor")
         static let speechFeedback = Color("VoiceSearchSpeechFeedbackColor")
     }
-    
+
     private struct AnimationDuration {
         static let pulse = 2.5
         static let speech = 0.1
@@ -197,12 +194,12 @@ struct VoiceSearchFeedbackView_Previews: PreviewProvider {
 
 private struct PreviewMockSpeechRecognizer: SpeechRecognizerProtocol {
     var isAvailable: Bool = false
-    
+
     static func requestMicAccess(withHandler handler: @escaping (Bool) -> Void) { }
-    
+
     func getVolumeLevel(from channelData: UnsafeMutablePointer<Float>) -> Float { 10 }
-    
+
     func startRecording(resultHandler: @escaping (String?, Error?, Bool) -> Void, volumeCallback: @escaping (Float) -> Void) { }
-    
+
     func stopRecording() { }
 }

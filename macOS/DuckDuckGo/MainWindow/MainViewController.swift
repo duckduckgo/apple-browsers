@@ -305,7 +305,14 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            let backgroundColor: NSColor = (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+            let backgroundColor: NSColor = {
+                if isBannerViewVisible {
+                    return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                } else {
+                    return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                }
+            }()
+
             mainView.divider.backgroundColor = backgroundColor
         }
     }
@@ -526,16 +533,28 @@ final class MainViewController: NSViewController {
         return nil
     }
 
+    var isBannerViewVisible: Bool {
+        mainView.bannerHeightConstraint.constant != 0
+    }
+
     private func showMessageBanner(banner: BannerMessageViewController) {
         if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
         mainView.bannerHeightConstraint.animator().constant = 48
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        }
     }
 
     private func hideBanner() {
         mainView.bannerContainerView.subviews.forEach { $0.removeFromSuperview() }
         mainView.bannerHeightConstraint.animator().constant = 0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        }
     }
 
     // MARK: - First responder

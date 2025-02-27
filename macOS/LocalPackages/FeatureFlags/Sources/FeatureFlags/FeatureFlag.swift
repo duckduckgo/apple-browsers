@@ -112,7 +112,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppExclusions:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
-            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
+            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionUserTips:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
         case .networkProtectionEnforceRoutes:

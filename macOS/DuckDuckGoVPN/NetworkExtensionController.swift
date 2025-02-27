@@ -63,6 +63,10 @@ extension NetworkExtensionController {
         get async {
             switch availableExtensions {
             case .both(let appexBundleID, _):
+                guard featureFlagger.isFeatureOn(.networkProtectionAppStoreSysex) else {
+                    return false
+                }
+
                 return await !isConfigurationInstalled(extensionBundleID: appexBundleID)
             case .sysex:
                 return true

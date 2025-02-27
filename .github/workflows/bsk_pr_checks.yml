@@ -11,6 +11,7 @@ on:
       - 'BrowserServicesKit/**'
   pull_request:
     paths:
+      - '.github/**'
       - 'BrowserServicesKit/**'
 
 jobs:

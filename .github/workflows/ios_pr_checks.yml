@@ -12,6 +12,7 @@ on:
       - 'iOS/**'
   pull_request:
     paths:
+      - '.github/**'
       - 'BrowserServicesKit/**'
       - 'iOS/**'
   workflow_call:

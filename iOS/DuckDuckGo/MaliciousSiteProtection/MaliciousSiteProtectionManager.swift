@@ -45,6 +45,7 @@ final class MaliciousSiteProtectionManager {
             apiEnvironment: api.environment,
             service: api.service,
             dataManager: dataManager,
+            featureFlagger: maliciousSiteProtectionFeatureFlagger,
             eventMapping: MaliciousSiteProtectionEventMapper.debugEvents
         )
     }
@@ -91,6 +92,8 @@ extension MaliciousSiteProtectionManager {
         case (.filterSet, .phishing): "phishingFilterSet.json"
         case (.hashPrefixSet, .malware): "malwareHashPrefixes.json"
         case (.filterSet, .malware): "malwareFilterSet.json"
+        case (.hashPrefixSet, .scam): "scamHashPrefixes.json"
+        case (.filterSet, .scam): "scamFilterSet.json"
         }
     }
     

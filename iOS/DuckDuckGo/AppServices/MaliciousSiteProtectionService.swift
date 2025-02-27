@@ -56,6 +56,7 @@ final class MaliciousSiteProtectionService {
             apiEnvironment: maliciousSiteProtectionAPI.environment,
             service: maliciousSiteProtectionAPI.service,
             dataManager: maliciousSiteProtectionDataManager,
+            featureFlags: maliciousSiteProtectionFeatureFlagger,
             eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
             updateIntervalProvider: remoteIntervalProvider
         )
@@ -98,6 +99,9 @@ extension MaliciousSiteProtectionFeatureFlags {
             privacyConfigManager: privacyConfigManager,
             isMaliciousSiteProtectionEnabled: {
                 featureFlagger.isFeatureOn(.maliciousSiteProtection)
+            },
+            isScamProtectionEnabledGetter: {
+                featureFlagger.isFeatureOn(.scamSiteProtection)
             }
         )
     }

@@ -80,14 +80,19 @@ struct QuickActionsMediumWidgetView: View {
                     }
                 }
 
-                HStack(spacing: 22) {
-                    ForEach(shortcuts, id: \.self) { shortcut in
+                HStack {
+                    ForEach(shortcuts.indices, id: \.self) { index in
+                        let shortcut = shortcuts[index]
+
                         Link(destination: shortcut.destination) {
                             QuickActionView(shortcut: shortcut)
                         }
+
+                        if index < shortcuts.count - 1 {
+                            Spacer()
+                        }
                     }
                 }
-                .frame(maxWidth: .infinity)
             }
             .padding(.bottom, 8)
         }

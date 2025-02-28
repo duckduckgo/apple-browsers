@@ -102,12 +102,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     private let errorObserver: ConnectionErrorObserver
     private var cancellables: Set<AnyCancellable> = []
 
-    // MARK: - Tips
-
-    var canShowTips: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionUserTips)
-    }
-
     /// Whether the "Add Widget" education sheet should be presented to the user.
     ///
     @Published
@@ -205,7 +199,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.dnsSettings = settings.dnsSettings
 
         self.tipsModel = VPNTipsModel(
-            isTipFeatureEnabled: featureFlagger.isFeatureOn(.networkProtectionUserTips),
             statusObserver: statusObserver,
             vpnSettings: settings)
 

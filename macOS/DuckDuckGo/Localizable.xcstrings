@@ -27546,6 +27546,66 @@
         }
       }
     },
+    "history.delete.dialog.burn.checkbox" : {
+      "comment" : "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Also delete cookies and site data"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.burn.checkbox.explanation" : {
+      "comment" : "Explanation of what deleting site data means.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        }
+      }
+    },
+    "history.delete.dialog.message" : {
+      "comment" : "Message in a dialog asking the user to confirm deleting history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Do you want to delete history items (%d)?"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.message.markdown" : {
+      "comment" : "Message in a dialog asking the user to confirm deleting history. Please make sure to keep **%d** intact",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Do you want to delete history items (**%d**)?"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete history?"
+          }
+        }
+      }
+    },
     "history.menu.clear.all.history.description" : {
       "comment" : "Description in the alert with the confirmation to clear all data",
       "extractionState" : "extracted_with_value",
@@ -65959,6 +66019,9 @@
         }
       }
     },
+    "today" : {
+      "comment" : "Date section in history view indicating current day"
+    },
     "tooltip.addToFavorites" : {
       "comment" : "Tooltip for add to favorites button",
       "extractionState" : "extracted_with_value",
@@ -73754,6 +73817,9 @@
           }
         }
       }
+    },
+    "yesterday" : {
+      "comment" : "Date section in history view indicating previous day"
     },
     "You'll be asked to enter your Primary Password for %@.\n\nImported passwords are encrypted and only stored on this computer." : {
       "comment" : "Warning that Firefox-based browser name (%@) data import would require entering a Primary Password for the browser.",

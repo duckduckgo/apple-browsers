@@ -51,8 +51,6 @@ final class SubscriptionITPViewModel: ObservableObject {
     }
     
     private var currentURL: URL?
-    private static let allowedDomains = [ "duckduckgo.com" ]
-    
     private var externalLinksViewModel: SubscriptionExternalLinkViewModel?
     // Limit navigation to these external domains
     private var externalAllowedDomains = ["irisidentityprotection.com"]
@@ -60,14 +58,17 @@ final class SubscriptionITPViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
 
-    init(subscriptionManager: SubscriptionManager) {
+    init(subscriptionManager: SubscriptionManager, isInternalUser: Bool = false) {
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
         self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager)
 
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
+                                                                             isInternalUser: isInternalUser)
+
         let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                           allowedDomains: Self.allowedDomains,
+                                                           allowedDomains: allowedDomains,
                                                            contentBlocking: false)
         
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
@@ -109,8 +110,8 @@ final class SubscriptionITPViewModel: ObservableObject {
                 guard let self = self, let url = url else { return }
                 
                 // Check if allowedDomains is empty or if the URL is valid or part of the allowed domains
-                if Self.allowedDomains.isEmpty ||
-                    Self.allowedDomains.contains(where: { url.isPart(ofDomain: $0) }),
+                if let allowedDomains = self.webViewModel.allowedDomains,
+                    allowedDomains.isEmpty || allowedDomains.contains(where: { url.isPart(ofDomain: $0) }),
                     self.shouldNavigateToExternalURL == nil {
                     self.isDownloadableContent = false
                     self.currentURL = url

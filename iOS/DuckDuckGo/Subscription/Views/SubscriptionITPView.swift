@@ -35,7 +35,8 @@ struct SubscriptionActivityViewController: UIViewControllerRepresentable {
 struct SubscriptionITPView: View {
         
     @Environment(\.dismiss) var dismiss
-    @StateObject var viewModel = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager)
+    @StateObject var viewModel = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                          isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser)
     @State private var shouldShowNavigationBar = false
     @State private var isShowingActivityView = false
     

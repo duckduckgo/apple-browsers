@@ -1,5 +1,5 @@
 //
-//  SubscriptionTokenHandlingMock.swift
+//  SubscriptionTokenHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,28 +17,15 @@
 //
 
 import Foundation
-import NetworkProtection
-import Common
 
-public class SubscriptionTokenHandlingMock: SubscriptionTokenHandling {
+/// Generic protocol for handling auth token V1 or V2 in targets like NetworkProtection that don't import Subscription
+public protocol SubscriptionTokenHandling {
 
-    public var token: String?
-    public func getToken() async throws -> String {
-        guard let token else {
-            throw NetworkProtectionClientError.invalidAuthToken
-        }
-        return token
-    }
+    @discardableResult func getToken() async throws -> String
 
-    public func removeToken() async throws {
-        token = nil
-    }
+    func removeToken() async throws
 
-    public func refreshToken() async throws {
+    func refreshToken() async throws
 
-    }
-
-    public func adoptToken(_ someKindOfToken: Any) async throws {
-
-    }
+    func adoptToken(_ someKindOfToken: Any) async throws
 }

@@ -60,7 +60,7 @@ final class SubscriptionITPViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
 
-    init(subscriptionManager: SubscriptionManager) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()

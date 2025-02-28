@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling.swift
+//  AccountManager+SubscriptionTokenHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,28 +18,27 @@
 
 import Foundation
 import Common
+import Networking
+import os.log
 
-extension NetworkProtectionKeychainTokenStore: SubscriptionTokenHandling {
+extension DefaultAccountManager: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
-        guard let token = try fetchToken() else {
-            throw NetworkProtectionError.noAuthTokenFound
+        guard let accessToken = accessToken else {
+            throw SubscriptionManagerError.tokenUnavailable(error: nil)
         }
-        return token
+        return accessToken
     }
 
     public func removeToken() async throws {
-        try deleteToken()
+        assertionFailure("Unsupported")
     }
 
     public func refreshToken() async throws {
-        // Unused in Auth V1
+        assertionFailure("Unsupported")
     }
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
-        guard let token = someKindOfToken as? String else {
-            throw NetworkProtectionError.invalidAuthToken
-        }
-        try store(token)
+        assertionFailure("Unsupported")
     }
 }

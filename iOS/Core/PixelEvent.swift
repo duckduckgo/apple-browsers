@@ -804,6 +804,9 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
+        case privacyProDeadTokenDetected
+        case authV1MigrationFailed
+        case authV1MigrationSucceeded
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1769,6 +1772,9 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
+        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
+        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
+        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 

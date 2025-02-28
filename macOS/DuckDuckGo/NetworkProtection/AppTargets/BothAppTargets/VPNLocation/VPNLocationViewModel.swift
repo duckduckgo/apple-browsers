@@ -22,7 +22,8 @@ import NetworkProtection
 import PixelKit
 
 final class VPNLocationViewModel: ObservableObject {
-    private static var cachedLocations: [VPNCountryItemModel]?
+    private static var cachedLocations: [NetworkProtectionLocation]?
+    private static var cachedCountryItems: [VPNCountryItemModel]?
     private let locationListRepository: NetworkProtectionLocationListRepository
     private let settings: VPNSettings
     private var selectedLocation: VPNSettings.SelectedLocation
@@ -53,8 +54,8 @@ final class VPNLocationViewModel: ObservableObject {
         self.settings = settings
         selectedLocation = settings.selectedLocation
         self.isNearestSelected = selectedLocation == .nearest
-        if let cachedLocations = Self.cachedLocations {
-            state = .loaded(countryItems: cachedLocations)
+        if let cachedCountryItems = Self.cachedCountryItems {
+            state = .loaded(countryItems: cachedCountryItems)
         } else {
             state = .loading
         }
@@ -93,10 +94,14 @@ final class VPNLocationViewModel: ObservableObject {
 
     @MainActor
     private func reloadList() async {
-        guard let locations = try? await locationListRepository.fetchLocationList().sortedByName() else { return }
+        guard let locations = (try? await locationListRepository.fetchLocationList().sortedByName()) ?? Self.cachedLocations else {
+            return
+        }
+
         if locations.isEmpty {
             PixelKit.fire(GeneralPixel.networkProtectionGeoswitchingNoLocations, frequency: .legacyDailyAndCount)
         }
+
         let isNearestSelected = selectedLocation == .nearest
         self.isNearestSelected = isNearestSelected
         var countryItems = [VPNCountryItemModel]()
@@ -138,7 +143,9 @@ final class VPNLocationViewModel: ObservableObject {
                 )
             )
         }
-        Self.cachedLocations = countryItems
+
+        Self.cachedLocations = locations
+        Self.cachedCountryItems = countryItems
         state = .loaded(countryItems: countryItems)
     }
 }

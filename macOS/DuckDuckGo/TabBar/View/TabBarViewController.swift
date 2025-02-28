@@ -68,9 +68,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
-    private let pinnedTabsViewModel: PinnedTabsViewModel?
-    private let pinnedTabsView: PinnedTabsView?
-    private let pinnedTabsHostingView: PinnedTabsHostingView?
+    private var pinnedTabsViewModel: PinnedTabsViewModel?
+    private var pinnedTabsView: PinnedTabsView?
+    private var pinnedTabsHostingView: PinnedTabsHostingView?
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
     var shouldDisplayTabPreviews: Bool = true
     private var selectionIndexCancellable: AnyCancellable?
@@ -136,6 +137,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToTabModeChanges()
         setupAddTabButton()
         setupAsBurnerWindowIfNeeded()
+        subscribeToPinnedTabsSettingChanged()
     }
 
     override func viewWillAppear() {
@@ -187,6 +189,31 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         selectionIndexCancellable = tabCollectionViewModel.$selectionIndex.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.reloadSelection()
         }
+    }
+
+    private func subscribeToPinnedTabsSettingChanged() {
+        pinnedTabsManagerProvider.settingChangedPublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] index in
+                guard let self = self else { return }
+                updatePinnedTabsViews()
+            }.store(in: &cancellables)
+    }
+
+
+    private func updatePinnedTabsViews() {
+        guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else {
+            return
+        }
+        let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
+        let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
+        self.pinnedTabsViewModel = pinnedTabsViewModel
+        self.pinnedTabsView = pinnedTabsView
+        self.pinnedTabsHostingView?.removeFromSuperview()
+        self.pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
+
+        setupPinnedTabsView()
     }
 
     private func setupFireButton() {

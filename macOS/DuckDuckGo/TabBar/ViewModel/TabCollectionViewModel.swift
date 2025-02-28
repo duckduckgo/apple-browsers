@@ -68,7 +68,12 @@ final class TabCollectionViewModel: NSObject {
 
     var changesEnabled = true
 
-    private(set) var pinnedTabsManager: PinnedTabsManager?
+    private(set) var pinnedTabsManager: PinnedTabsManager? {
+        didSet {
+            subscribeToPinnedTabsManager()
+        }
+    }
+    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding?
 
     /**
      * Contains view models for local tabs
@@ -114,6 +119,7 @@ final class TabCollectionViewModel: NSObject {
     private var shouldBlockPinnedTabsManagerUpdates: Bool = false
 
     private var cancellables = Set<AnyCancellable>()
+    private var pinnedTabsManagerCancellable: Cancellable?
 
     private var tabsPreferences: TabsPreferences
     private var startupPreferences: StartupPreferences
@@ -129,20 +135,22 @@ final class TabCollectionViewModel: NSObject {
     init(
         tabCollection: TabCollection,
         selectionIndex: Int = 0,
-        pinnedTabsManager: PinnedTabsManager?,
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = StartupPreferences.shared,
         tabsPreferences: TabsPreferences = TabsPreferences.shared
     ) {
         self.tabCollection = tabCollection
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.burnerMode = burnerMode
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         super.init()
 
+        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self)
         subscribeToTabs()
         subscribeToPinnedTabsManager()
+        subscribeToPinnedTabsSettingChanged()
         subscribeToSelectedTab()
 
         if tabCollection.tabs.isEmpty {
@@ -156,14 +164,14 @@ final class TabCollectionViewModel: NSObject {
                      burnerMode: BurnerMode = .regular) {
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,
-                  pinnedTabsManager: Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsManager(),
+                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                   burnerMode: burnerMode)
     }
 
     convenience init(burnerMode: BurnerMode = .regular) {
         let tabCollection = TabCollection()
         self.init(tabCollection: tabCollection,
-                  pinnedTabsManager:  Application.appDelegate.pinnedTabsManagerProvider.pinnedTabsManager(),
+                  pinnedTabsManagerProvider:  Application.appDelegate.pinnedTabsManagerProvider,
                   burnerMode: burnerMode)
     }
 
@@ -715,13 +723,21 @@ final class TabCollectionViewModel: NSObject {
         select(at: selectionIndex, forceChange: forceChange)
     }
 
+    private func subscribeToPinnedTabsSettingChanged() {
+        pinnedTabsManagerProvider?.settingChangedPublisher
+            .dropFirst()
+            .sink { [weak self] index in
+                guard let self = self else { return }
+                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)
+            }.store(in: &cancellables)
+    }
+
     private func subscribeToPinnedTabsManager() {
-        pinnedTabsManager?.didUnpinTabPublisher
+        pinnedTabsManagerCancellable = pinnedTabsManager?.didUnpinTabPublisher
             .filter { [weak self] _ in self?.shouldBlockPinnedTabsManagerUpdates == false }
             .sink { [weak self] index in
                 self?.handleTabUnpinnedInAnotherTabCollectionViewModel(at: index)
             }
-            .store(in: &cancellables)
     }
 
     private func subscribeToTabs() {

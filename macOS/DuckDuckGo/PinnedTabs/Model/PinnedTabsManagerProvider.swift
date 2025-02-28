@@ -16,11 +16,16 @@
 //  limitations under the License.
 //
 
+import Combine
+
 protocol PinnedTabsManagerProviding {
 
     var arePerWindowPinnedTabsEnabled: Bool { get }
-    func pinnedTabsManager() -> PinnedTabsManager
+    func getNewPinnedTabsManager(shouldMigrate: Bool,
+                                 tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager?
+
+    var settingChangedPublisher: AnyPublisher<Void, Never> { get }
 
 }
 
@@ -28,8 +33,15 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
     private let tabsPreferences: TabsPreferences
 
+    var settingChangedPublisher: AnyPublisher<Void, Never>
+
     init(tabsPreferences: TabsPreferences = TabsPreferences.shared) {
         self.tabsPreferences = tabsPreferences
+
+        settingChangedPublisher = tabsPreferences.$sharedPinnedTabs
+            .map { _ in () }
+            .receive(on: DispatchQueue.main)
+            .eraseToAnyPublisher()
     }
 
     @MainActor
@@ -37,14 +49,60 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
         return WindowControllersManager.shared
     }
 
+    @MainActor
+    private var allPerWindowPinnedTabsManagers: [PinnedTabsManager] {
+        return windowControllerManager.allTabCollectionViewModels
+            .compactMap { $0.pinnedTabsManager }
+            .filter { $0 !== Application.appDelegate.pinnedTabsManager }
+    }
+
     var arePerWindowPinnedTabsEnabled: Bool {
         return !tabsPreferences.sharedPinnedTabs
     }
 
-    func pinnedTabsManager() -> PinnedTabsManager {
+    @MainActor
+    func getNewPinnedTabsManager(shouldMigrate: Bool = false,
+                                 tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager {
         if arePerWindowPinnedTabsEnabled {
-            return PinnedTabsManager()
+            let newPinnedTabsManager = PinnedTabsManager()
+
+            let isActiveWindow = windowControllerManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel === tabCollectionViewModel
+            if shouldMigrate && isActiveWindow {
+                for currentlyPinnedTab in Application.appDelegate.pinnedTabsManager.tabCollection.tabs {
+                    // Duplicate tabs and add to new pinned tabs manager
+                    guard let url = currentlyPinnedTab.url else {
+                        continue
+                    }
+                    let newTab = Tab(content: .url(url, source: .ui))
+                    newPinnedTabsManager.pin(newTab)
+                }
+
+                // Clear pinned tabs
+                Application.appDelegate.pinnedTabsManager.tabCollection.removeAll()
+            }
+            return newPinnedTabsManager
         } else {
+            if shouldMigrate {
+                // Collect tabs from per-window pinned tabs managers
+                var tabs = [Tab]()
+                for perWindowPinnedTabManager in allPerWindowPinnedTabsManagers {
+                    for pinnedTab in perWindowPinnedTabManager.tabCollection.tabs {
+                        if !tabs.contains(where: { $0.content == pinnedTab.content }) {
+                            tabs.append(pinnedTab)
+                        }
+                    }
+                }
+
+                // Remove from original place
+                for perWindowPinnedTabManager in allPerWindowPinnedTabsManagers {
+                    perWindowPinnedTabManager.tabCollection.removeAll()
+                }
+
+                // Add to the shared pinned tabs manager
+                for tab in tabs {
+                    Application.appDelegate.pinnedTabsManager.pin(tab)
+                }
+            }
             return Application.appDelegate.pinnedTabsManager
         }
     }
@@ -60,9 +118,6 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
             return Application.appDelegate.pinnedTabsManager
         }
     }
-
-    //TODO: Migrate when switching
-
 
     // TODO: State restoration
 

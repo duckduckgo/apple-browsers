@@ -117,7 +117,8 @@ final class WindowsManager {
 
         let tabCollectionViewModel: TabCollectionViewModel = {
             if popUp {
-                return .init(tabCollection: tabCollection, pinnedTabsManager: nil, burnerMode: tab.burnerMode)
+                //TODO: Don't show pinned tabs
+                return .init(tabCollection: tabCollection, burnerMode: tab.burnerMode)
             }
             return .init(tabCollection: tabCollection, burnerMode: tab.burnerMode)
         }()

@@ -23,6 +23,7 @@ public enum FeatureFlag: String, CaseIterable {
     case debugMenu
     case sslCertificatesBypass
     case maliciousSiteProtection
+    case scamSiteProtection
 
     /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
     /// https://app.asana.com/0/1199230911884351/1205979030848528/f
@@ -78,7 +79,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .scamSiteProtection:
             return true
         case .testExperiment:
             return true
@@ -134,6 +135,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .testExperiment:
             return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
+        case .scamSiteProtection:
+            return .disabled
         }
     }
 }

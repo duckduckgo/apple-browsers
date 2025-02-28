@@ -34,6 +34,8 @@ extension MaliciousSiteProtectionManager {
         case (.filterSet, .phishing): "phishingFilterSet.json"
         case (.hashPrefixSet, .malware): "malwareHashPrefixes.json"
         case (.filterSet, .malware): "malwareFilterSet.json"
+        case (.hashPrefixSet, .scam): "scamHashPrefixes.json"
+        case (.filterSet, .scam): "scamFilterSet.json"
         }
     }
 
@@ -52,6 +54,8 @@ extension MaliciousSiteProtectionManager {
             static let phishingEmbeddedFilterSetDataSHA = "4e52518aba04b0fd360fada76c9899001d3137d4a745cc13c484a54115a0fcd8"
             static let malwareEmbeddedHashPrefixDataSHA = "6b5eb296e9e10ae9ea41c5b5356f532226d647e4f3b832c30ac670102446ea7a"
             static let malwareEmbeddedFilterSetDataSHA = "4dc971fffaf244ee99267f28222a2c116743e35ef837dcbc0199693ed6a691cd"
+            static let scamEmbeddedHashPrefixDataSHA = ""
+            static let scamEmbeddedFilterSetDataSHA = ""
         }
 
         func revision(for dataType: MaliciousSiteProtection.DataManager.StoredDataType) -> Int {
@@ -72,6 +76,8 @@ extension MaliciousSiteProtectionManager {
             case (.filterSet, .phishing): Constants.phishingEmbeddedFilterSetDataSHA
             case (.hashPrefixSet, .malware): Constants.malwareEmbeddedHashPrefixDataSHA
             case (.filterSet, .malware): Constants.malwareEmbeddedFilterSetDataSHA
+            case (.hashPrefixSet, .scam): Constants.scamEmbeddedHashPrefixDataSHA
+            case (.filterSet, .scam): Constants.scamEmbeddedFilterSetDataSHA
             }
         }
 
@@ -136,8 +142,8 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
         }()
 
         let apiEnvironment = apiEnvironment ?? MaliciousSiteDetector.APIEnvironment.production
-        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents)
-        self.updateManager = MaliciousSiteProtection.UpdateManager(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, updateIntervalProvider: updateIntervalProvider ?? Self.updateInterval)
+        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, featureFlagger: featureFlags, eventMapping: Self.debugEvents)
+        self.updateManager = MaliciousSiteProtection.UpdateManager(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, featureFlags: featureFlags, eventMapping: Self.debugEvents, updateIntervalProvider: updateIntervalProvider ?? Self.updateInterval)
         self.detectionPreferences = detectionPreferences
 
         self.setupBindings()
@@ -179,7 +185,7 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
     }
 
     private func startUpdateTasks() {
-        self.updateTask = updateManager.startPeriodicUpdates()
+//        self.updateTask = updateManager.startPeriodicUpdates()
     }
 
     private func stopUpdateTasks() {
@@ -202,6 +208,6 @@ extension FeatureFlagger {
     func maliciousSiteProtectionFeatureFlags(configManager: PrivacyConfigurationManaging? = nil) -> MaliciousSiteProtectionFeatureFlags {
         let configManager = configManager ?? AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
         return .init(privacyConfigManager: configManager,
-                     isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) })
+                     isMaliciousSiteProtectionEnabled: { self.isFeatureOn(.maliciousSiteProtection) }, isScamProtectionEnabledGetter: { self.isFeatureOn(.scamSiteProtection) })
     }
 }

@@ -419,6 +419,8 @@ final class TabViewModel {
                     title = UserText.phishingErrorPageTabTitle
                 case .malware:
                     title = UserText.malwareErrorPageTabTitle
+                case .scam:
+                    title = "Warning: Site May Be Scammy"
                 }
             default:
                 title = UserText.tabErrorTitle
@@ -506,7 +508,7 @@ final class TabViewModel {
             return .redAlertCircle16
         case .some(let error as MaliciousSiteError):
             switch error.code {
-            case .phishing, .malware:
+            case .phishing, .malware, .scam:
                 return .redAlertCircle16
             }
         default:

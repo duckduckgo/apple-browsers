@@ -149,7 +149,7 @@ extension AppDelegate {
 
     @objc func reopenAllWindowsFromLastSession(_ sender: Any?) {
         DispatchQueue.main.async {
-            self.stateRestorationManager.restoreLastSessionState(interactive: true)
+            self.stateRestorationManager.restoreLastSessionState(interactive: true, includeRegularTabs: true)
         }
     }
 

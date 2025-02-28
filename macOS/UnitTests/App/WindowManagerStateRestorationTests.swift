@@ -96,7 +96,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             return XCTFail("Could not unarchive WindowManagerStateRestoration")
         }
 
-        XCTAssertTrue(areTabsEqual(restored.pinnedTabs!.tabs, pinnedTabs))
+        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
         for (idx, window) in state.windows.enumerated() {

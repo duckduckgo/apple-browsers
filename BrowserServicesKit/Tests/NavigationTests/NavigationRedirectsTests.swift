@@ -1009,8 +1009,6 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     }
 
     func testWhenServerRedirectIsInterruptedThenDidFailProvisionalIsCalled() throws {
-        throw XCTSkip("Flaky, see https://app.asana.com/0/1200194497630846/1205018266972898/f")
-
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [urls, data] request in
@@ -1052,8 +1050,6 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
     }
 
     func testWhenCustomSchemeNavigationIsInterruptedByNewRequestThenDidFailIsCalled() throws {
-        throw XCTSkip("Flaky, see https://app.asana.com/0/1200194497630846/1205018266972898/f")
-
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         let lock = NSLock()
@@ -1096,13 +1092,13 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         waitForExpectations(timeout: 5)
 
         assertHistory(ofResponderAt: 0, equalsTo: [
-            .navigationAction(req(urls.testScheme), .other, src: main()),
+            .navigationAction(req(urls.testScheme), .other, src: main(responderIdx: 0)),
             .willStart(Nav(action: navAct(1), .approved, isCurrent: false)),
             .didStart(Nav(action: navAct(1), .started)),
             .response(Nav(action: navAct(1), .responseReceived, resp: .resp(urls.testScheme, status: nil, data.html.count))),
             .didCommit(Nav(action: navAct(1), .responseReceived, resp: resp(0), .committed)),
 
-            .navigationAction(NavAction(req(urls.local4), .other, from: history[1], src: main(urls.testScheme))),
+            .navigationAction(NavAction(req(urls.local4), .other, from: history[1], src: main(urls.testScheme, responderIdx: 0))),
             .willStart(Nav(action: navAct(2), .approved, isCurrent: false)),
 
             .didFail(Nav(action: navAct(1), .failed(WKError(NSURLErrorCancelled)), resp: resp(0), .committed, isCurrent: false), NSURLErrorCancelled),

@@ -24,4 +24,27 @@ extension Calendar {
 		return numberOfDays.day
 	}
 
+    /**
+     * This function calculates the date of the most recent weekday before `referenceDate`.
+     *
+     * > `weekday` must be between 1 and 7 inclusive (Sunday through Saturday) following possible values of `DateComponents.weekday`.
+     *
+     * When `weekday` matches the weekday of `referenceDate`, a date 1 week ago is returned.
+     * The time of the day in a returned date matches the time of `referenceDate`.
+     *
+     * - Seealso: `DateComponents.weekday`.
+     */
+    public func firstWeekday(_ weekday: Int, before referenceDate: Date) -> Date {
+        assert((1...7).contains(weekday), "Weekday must be between 1 and 7 (as per DateComponents API)")
+
+        // ensure weekday is between 1 and 7
+        let adjustedWeekday: Int = min(max(weekday, 1), 7)
+
+        let referenceWeekday = component(.weekday, from: referenceDate)
+        var daysDiff = referenceWeekday - adjustedWeekday
+        if daysDiff <= 0 { // same weekday
+            daysDiff += 7
+        }
+        return referenceDate.daysAgo(daysDiff)
+    }
 }

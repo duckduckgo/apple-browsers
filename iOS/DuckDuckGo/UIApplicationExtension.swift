@@ -22,6 +22,13 @@ import Subscription
 
 extension UIApplication {
 
+    enum TerminationError: Error {
+
+        case insufficientDiskSpace
+        case unrecoverableState
+
+    }
+
     // MARK: notification settings
 
     private static let notificationSettingsURL: URL? = {
@@ -60,13 +67,6 @@ extension UIApplication {
     }
 
     // MARK: app delegate helpers
-
-    enum TerminationReason {
-
-        case insufficientDiskSpace
-        case unrecoverableState
-
-    }
 
     func setWindow(_ window: UIWindow?) {
         (delegate as? AppDelegate)?.window = window

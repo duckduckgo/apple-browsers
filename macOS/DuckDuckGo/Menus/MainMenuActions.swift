@@ -592,7 +592,7 @@ extension MainViewController {
             guard case .alertFirstButtonReturn = response else {
                 return
             }
-            FireCoordinator.fireViewModel.fire.burnVisits(of: visits,
+            FireCoordinator.fireViewModel.fire.burnVisits(visits,
                                                           except: FireproofDomains.shared,
                                                           isToday: isToday)
         })
@@ -822,7 +822,7 @@ extension MainViewController {
     }
 
     @objc func crashOnCxxException(_ sender: Any?) {
-        throwTestCppExteption()
+        throwTestCppException()
     }
 
     @objc func resetSecureVaultData(_ sender: Any?) {

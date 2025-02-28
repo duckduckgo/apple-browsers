@@ -346,9 +346,9 @@ public class DefaultFeatureFlagger: FeatureFlagger {
             guard internalUserDecider.isInternalUser else {
                 return false
             }
-            return isEnabled(featureType)
+            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
         case .remoteReleasable(let featureType):
-            return isEnabled(featureType)
+            return isEnabled(featureType, defaultValue: featureFlag.defaultValue)
         }
     }
 
@@ -415,12 +415,12 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func isEnabled(_ featureType: PrivacyConfigFeatureLevel) -> Bool {
+    private func isEnabled(_ featureType: PrivacyConfigFeatureLevel, defaultValue: Bool) -> Bool {
         switch featureType {
         case .feature(let feature):
-            return privacyConfigManager.privacyConfig.isEnabled(featureKey: feature)
+            return privacyConfigManager.privacyConfig.isEnabled(featureKey: feature, defaultValue: defaultValue)
         case .subfeature(let subfeature):
-            return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature)
+            return privacyConfigManager.privacyConfig.isSubfeatureEnabled(subfeature, defaultValue: defaultValue)
         }
     }
 }

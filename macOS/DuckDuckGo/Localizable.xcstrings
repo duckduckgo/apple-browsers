@@ -58970,7 +58970,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set As Default"
+            "value" : "Set DuckDuckGo As Default Browser"
           }
         },
         "es" : {
@@ -61132,18 +61132,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Add DuckDuckGo to your Dock."
-          }
-        }
-      }
-    },
-    "sat.att.both.popover.message" : {
-      "comment" : "Message of the popover when setting DuckDuckGo as default browser and adding to Dock",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Make us your default browser so all site links open in DuckDuckGo, and add us to your Dock for quick access."
           }
         }
       }

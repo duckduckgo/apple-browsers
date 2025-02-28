@@ -46,10 +46,10 @@ final class HistoryViewOnboardingViewController: NSHostingController<HistoryView
         let view = HistoryViewOnboardingView(model: viewModel)
         super.init(rootView: view)
     }
-    
+
     @MainActor @preconcurrency required dynamic init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private let viewModel: HistoryViewOnboardingViewModel
 }

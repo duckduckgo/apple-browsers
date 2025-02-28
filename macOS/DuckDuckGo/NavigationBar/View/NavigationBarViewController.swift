@@ -263,6 +263,14 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
+    /**
+     * Presents History View onboarding.
+     *
+     * This is gater by the decider that takes into account whether the user is new,
+     * whether they've seen the popover already and whether the feature flag is enabled.
+     *
+     * > `force` parameter is only used by `HistoryDebugMenu`.
+     */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
         Task { @MainActor in
             guard force || HistoryViewOnboardingDecider().shouldPresentOnboarding, view.window?.isKeyWindow == true else {

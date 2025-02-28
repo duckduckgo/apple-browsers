@@ -106,6 +106,7 @@ public struct PopoverMessageView: View {
                         .frame(minHeight: 22)
                         .lineLimit(nil)
                         .multilineTextAlignment(.center)
+                        .fixMultilineScrollableText()
                 }
 
                 Text(viewModel.message)
@@ -113,6 +114,7 @@ public struct PopoverMessageView: View {
                     .frame(minHeight: 22)
                     .lineLimit(nil)
                     .multilineTextAlignment(.center)
+                    .fixMultilineScrollableText()
             }.if(viewModel.shouldPresentMultiline) { view in
                 view.frame(width: 300, alignment: .leading)
             }

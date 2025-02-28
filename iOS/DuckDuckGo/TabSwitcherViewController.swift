@@ -363,7 +363,6 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
         let cellIdentifier = tabSwitcherSettings.isGridViewEnabled ? TabViewCell.gridReuseIdentifier : TabViewCell.listReuseIdentifier
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as? TabViewCell else {
             fatalError("Failed to dequeue cell \(cellIdentifier) as TabViewCell")
@@ -387,13 +386,13 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
 extension TabSwitcherViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-        currentSelection = indexPath.row
         if isEditing {
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             updateUIForSelectionMode()
             refreshTitle()
         } else {
+            currentSelection = indexPath.row
+            Pixel.fire(pixel: .tabSwitcherSwitchTabs)
             markCurrentAsViewedAndDismiss()
         }
     }
@@ -429,16 +428,6 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         }
 
         return configuration
-    }
-
-    func collectionView(_ collectionView: UICollectionView, willEndContextMenuInteraction configuration: UIContextMenuConfiguration, animator: (any UIContextMenuInteractionAnimating)?) {
-        if let selected = collectionView.indexPathsForSelectedItems {
-            collectionView.reloadItems(at: selected)
-            selected.forEach {
-                collectionView.selectItem(at: $0, animated: false, scrollPosition: [])
-                self.collectionView(collectionView, didSelectItemAt: $0)
-            }
-        }
     }
 
 }

@@ -50,7 +50,7 @@ enum DefaultBrowserAndDockPromptContent {
         case let .banner(content):
             switch content {
             case .addToDockPrompt: return .attIconBanner
-            default: return .greenShield
+            default: return .daxBannerView
             }
         }
     }
@@ -61,10 +61,10 @@ enum DefaultBrowserAndDockPromptContent {
             switch content {
             case .addToDockPrompt:
                 return UserText.addToDockPopoverPromptMessage
-            case .setAsDefaultPrompt:
+            case .setAsDefaultPrompt, .bothDefaultBrowserAndDockPrompt:
                 return UserText.setAsDefaultPopoverPromptMessage
-            case .bothDefaultBrowserAndDockPrompt:
-                return UserText.bothSetAsDefaultPopoverAndAddToDockPromptMessage
+//            case .bothDefaultBrowserAndDockPrompt:
+//                return UserText.bothSetAsDefaultPopoverAndAddToDockPromptMessage
             }
         case let .banner(content):
             switch content {
@@ -84,7 +84,7 @@ enum DefaultBrowserAndDockPromptContent {
         case let .banner(content):
             switch content {
             case .addToDockPrompt: return UserText.addDuckDuckGoToDock
-            default: return UserText.setAsDefaultBrowser.appending("...")
+            default: return UserText.setAsDefaultBrowser
             }
         }
     }

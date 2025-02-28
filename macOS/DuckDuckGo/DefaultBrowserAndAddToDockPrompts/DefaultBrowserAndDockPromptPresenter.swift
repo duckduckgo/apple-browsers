@@ -89,12 +89,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         /// Given that we want to show the banner in all windows.
         coordinator.markPromptAsShown()
 
-        if popover != nil {
-            self.showPopover(positionedBelow: view)
-        } else {
-            self.initializePopover(with: content)
-            self.showPopover(positionedBelow: view)
-        }
+        self.initializePopover(with: content)
+        self.showPopover(positionedBelow: view) 
     }
 
     private func getBanner() -> BannerMessageViewController? {

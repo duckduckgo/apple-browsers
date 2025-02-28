@@ -58963,55 +58963,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo als Standard-Browser festlegen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set DuckDuckGo As Default Browser"
+            "value" : "Set As Default"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Establece DuckDuckGo como tu navegador predeterminado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Définir DuckDuckGo comme navigateur par défaut"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Imposta DuckDuckGo come browser predefinito"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo instellen als standaardbrowser"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Definir o DuckDuckGo como navegador predefinido"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Сделать DuckDuckGo браузером по умолчанию"
           }
         }
@@ -61155,7 +61155,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set As Default Browser"
+            "value" : "Set As Default"
           }
         }
       }
@@ -61167,7 +61167,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Let DuckDuckGo protect more of what you do online"
+            "value" : "Make DuckDuckGo your default browser"
           }
         }
       }
@@ -61179,7 +61179,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Make us your default browser so all site links open in DuckDuckGo"
+            "value" : "Open all site links in DuckDuckGo to protect more of what you do online."
           }
         }
       }

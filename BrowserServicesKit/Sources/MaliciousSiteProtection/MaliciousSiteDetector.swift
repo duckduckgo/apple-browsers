@@ -42,14 +42,14 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     private let apiClient: APIClient.Mockable
     private let dataManager: DataManaging
-    private let featureFlagger: MaliciousSiteProtectionFeatureFlagger?
+    private let featureFlagger: MaliciousSiteProtectionFeatureFlagger
     private let eventMapping: EventMapping<Event>
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, featureFlagger: MaliciousSiteProtectionFeatureFlagger?, eventMapping: EventMapping<Event>) {
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, featureFlagger: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>) {
         self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, featureFlagger: featureFlagger, eventMapping: eventMapping)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, featureFlagger: MaliciousSiteProtectionFeatureFlagger?, eventMapping: EventMapping<Event>) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, featureFlagger: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
@@ -90,7 +90,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     public func evaluate(_ url: URL) async -> ThreatKind? {
         guard let canonicalHost = url.canonicalHost(),
               let canonicalUrl = url.canonicalURL() else { return .none }
-        let isScamProtectionEnabled = featureFlagger?.isScamProtectionEnabled ?? false
+        let isScamProtectionEnabled = featureFlagger.isScamProtectionEnabled
 
         let hostHash = canonicalHost.sha256
         let hashPrefix = String(hostHash.prefix(Constants.hashPrefixStoreLength))

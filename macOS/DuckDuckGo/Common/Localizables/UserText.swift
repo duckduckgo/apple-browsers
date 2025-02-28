@@ -265,6 +265,7 @@ struct UserText {
     static let sslErrorPageTabTitle = NSLocalizedString("ssl.error.page.tab.title", value: "Warning: Site May Be Insecure", comment: "Title shown in an error page tab that warn users of security risks on a website due to SSL issues")
     static let phishingErrorPageTabTitle = NSLocalizedString("phishing.error.page.tab.title", value: "Warning: Site May Be Deceptive", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Phishing.")
     static let malwareErrorPageTabTitle = NSLocalizedString("malware.error.page.tab.title", value: "Warning: Site May Be Malicious", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malware.")
+    static let scamErrorPageTabTitle = NSLocalizedString("scam.error.page.tab.title", value: "Warning: Site May Be Scam", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Scam.")
 
     static let openSystemPreferences = NSLocalizedString("open.preferences", value: "Open System Preferences", comment: "Open System Preferences (to re-enable permission for the App) (up to and including macOS 12")
     static let openSystemSettings = NSLocalizedString("open.settings", value: "Open System Settings…", comment: "This string represents a prompt or button label prompting the user to open system settings")

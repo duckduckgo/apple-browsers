@@ -420,7 +420,7 @@ final class TabViewModel {
                 case .malware:
                     title = UserText.malwareErrorPageTabTitle
                 case .scam:
-                    title = "Warning: Site May Be Scammy"
+                    title = UserText.scamErrorPageTabTitle
                 }
             default:
                 title = UserText.tabErrorTitle

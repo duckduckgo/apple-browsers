@@ -69,13 +69,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-<<<<<<< HEAD
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .scamSiteProtection:
-            return true
-        case .testExperiment:
-=======
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG:
->>>>>>> main
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .scamSiteProtection:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -123,15 +117,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-<<<<<<< HEAD
-        case .testExperiment:
-            return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
         case .scamSiteProtection:
-            return .disabled
-=======
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
->>>>>>> main
         }
     }
 }

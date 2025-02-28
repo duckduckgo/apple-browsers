@@ -3,7 +3,8 @@
 #
 ## The following URLs shall match the one in the client.
 ## Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
-API_URL="https://duckduckgo.com/api/protection"
+#API_URL="https://duckduckgo.com/api/protection"
+API_URL="https://8ded-20-93-28-24.ngrok-free.app/api/protection/"
 
 work_dir="${PWD}/DuckDuckGo/MaliciousSiteProtection"
 def_filename="${work_dir}/MaliciousSiteProtectionManager.swift"
@@ -82,6 +83,9 @@ if [[ "$old_revision" -lt "$new_revision" ]] || [[ "$*" == *"-f"* ]]; then
 
     performUpdate malware hashPrefix "${work_dir}/malwareHashPrefixes.json"
     performUpdate malware filterSet "${work_dir}/malwareFilterSet.json"
+
+    performUpdate malware hashPrefix "${work_dir}/scamHashPrefixes.json"
+    performUpdate malware filterSet "${work_dir}/scamFilterSet.json"
 
     updateRevision
 else

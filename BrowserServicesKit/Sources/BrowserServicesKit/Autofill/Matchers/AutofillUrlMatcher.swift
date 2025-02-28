@@ -73,4 +73,11 @@ public struct AutofillDomainNameUrlMatcher: AutofillUrlMatcher {
         return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
     }
 
+    public func extractTLD(domain: String, tld: TLD) -> String? {
+        guard var urlComponents = normalizeSchemeForAutofill(domain) else { return nil }
+        guard urlComponents.host != .localhost else { return domain }
+        return urlComponents.eTLDplus1WithPort(tld: tld)
+
+    }
+
 }

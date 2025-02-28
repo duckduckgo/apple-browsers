@@ -119,8 +119,9 @@ public struct UserText {
     
     public static let favoriteMenuRemove = NSLocalizedString("favorite.menu.remove", value: "Remove", comment: "")
     public static let favoriteMenuEdit = NSLocalizedString("favorite.menu.edit", value: "Edit", comment: "")
-    
-    public static let emptyBookmarks = NSLocalizedString("empty.bookmarks", value: "No bookmarks added yet", comment: "Empty list state placholder")
+
+    public static let emptyBookmarks = NSLocalizedString("empty.bookmarks", value: "No bookmarks added yet", comment: "Empty list state placeholder title")
+    public static let emptyBookmarksSubtitle = NSLocalizedString("empty.bookmarks.subtitle", value: "If your bookmarks are saved in another browser, you can import them into DuckDuckGo.", comment: "Empty list state placeholder subtitle")
     public static let bookmarkSearchBarPlaceholder = NSLocalizedString("bookmark.searchbar.placeholder", value: "Search", comment: "Placeholder in the bookmarks search bar")
     public static let noMatchesFound = NSLocalizedString("empty.search", value: "No matches found", comment: "Empty search placeholder on bookmarks search")
     
@@ -152,11 +153,12 @@ public struct UserText {
     public static let addFolderScreenTitle = NSLocalizedString("bookmark.addFolder.title", value: "Add Folder", comment: "Add folder screen title")
     
     public static let moreBookmarkButton = NSLocalizedString("bookmark.moreButton", value: "More", comment: "More options button text")
-    
-    public static let importExportBookmarksTitle = NSLocalizedString("bookmarks.importExport.title", value: "Import an HTML file of bookmarks from another browser, or export your existing bookmarks.", comment: "Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks")
-    public static let importBookmarksActionTitle = NSLocalizedString("bookmarks.importAction.title", value: "Import HTML File", comment: "Title of option to import HTML")
-    public static let exportBookmarksActionTitle = NSLocalizedString("bookmarks.exportAction.title", value: "Export HTML File", comment: "Title of option to export HTML")
-    public static let importBookmarksFooterButton = NSLocalizedString("bookmarks.importExport.footer.button.title", value: "Import bookmark file from another browser", comment: "Import bookmark file button text")
+
+    public static let importExportBookmarksTitle = NSLocalizedString("bookmarks.importExport.title", value: "Import bookmarks from other popular browsers.", comment: "Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks")
+    public static let importBookmarksActionHtmlTitle = NSLocalizedString("bookmarks.importAction.html.title", value: "Import HTML File", comment: "Title of option to import HTML")
+    public static let importBookmarksActionTitle = NSLocalizedString("bookmarks.importAction.title", value: "Import Bookmarks", comment: "Title of option to import HTML")
+    public static let exportBookmarksActionHtmlTitle = NSLocalizedString("bookmarks.exportAction.html.title", value: "Export HTML File", comment: "Title of option to export HTML")
+    public static let exportBookmarksActionTitle = NSLocalizedString("bookmarks.exportAction.title", value: "Export Bookmarks", comment: "Title of option to export bookmarks as HTML")
     public static let importBookmarksSuccessMessage = NSLocalizedString("bookmarks.import.success.message", value: "Your bookmarks have been imported.", comment: "Confirmation message that bookmarks have been imported")
     public static let importBookmarksFailedMessage = NSLocalizedString("bookmarks.import.failed.message", value: "Sorry, we aren’t able to import this file.", comment: "Failure message when bookmarks failed to import")
     public static let exportBookmarksShareSuccessMessage = NSLocalizedString("bookmarks.export.share.success.message", value: "Your bookmarks have been shared.", comment: "Confirmation message that bookmarks have been shared successfully to another app")
@@ -851,7 +853,8 @@ public struct UserText {
     public static let autofillLoginDetailsNotes = NSLocalizedString("autofill.logins.details.notes", value:"Notes", comment: "Notes label for login details on autofill")
     public static let autofillEmptyViewTitle = NSLocalizedString("autofill.logins.empty-view.title", value:"No passwords saved yet", comment: "Title for view displayed when autofill has no items")
     public static let autofillEmptyViewSubtitle = NSLocalizedString("autofill.logins.empty-view.subtitle.first.paragraph", value:"You can import saved passwords from another browser into DuckDuckGo.", comment: "Subtitle for view displayed when no autofill passwords have been saved")
-    public static let autofillEmptyViewButtonTitle = NSLocalizedString("autofill.logins.empty-view.button.title", value:"Import Passwords", comment: "Title for button to Import Passwords when autofill has no items")
+    public static let autofillEmptyViewImportButtonTitle = NSLocalizedString("autofill.logins.empty-view.button.title", value:"Import Passwords", comment: "Title for button to Import Passwords when autofill has no items")
+    public static let autofillEmptyViewImportViaSyncButtonTitle = NSLocalizedString("autofill.logins.empty-view.import-via-sync.button.title", value:"Sync Desktop Passwords", comment: "Title for button to sync with the desktop app to fetch your passwords when autofill has no items")
 
     public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "Learn More", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
 
@@ -1004,18 +1007,18 @@ But if you *do* want a peek under the hood, you can find more information about 
     static let autofillActivate = NSLocalizedString("pm.activate", value: "Reactivate", comment: "Activate button")
 
     // Autofill Password Import
-    public static let autofillImportPasswordsTitle = NSLocalizedString("autofill.import.passwords.title", value:"How To Import Passwords", comment: "Title for screen to import passwords")
-    public static let autofillImportPasswordsSubtitle = NSLocalizedString("autofill.import.passwords.subtitle", value:"Import passwords in the desktop version of the DuckDuckGo browser, then sync across devices.", comment: "Subtitle for screen to import passwords")
-    public static let autofillImportPasswordsGetBrowserButton = NSLocalizedString("autofill.import.passwords.get-browser-button", value:"Get Desktop Browser", comment: "Button label to get link to download the desktop browser")
-    public static let autofillImportPasswordsSyncButton = NSLocalizedString("autofill.import.passwords.sync-button", value:"Sync With Desktop", comment: "Button label to sync passwords with desktop browser")
-    public static let autofillImportPasswordsInstructionsTitle = NSLocalizedString("autofill.import.passwords.instructions.title", value:"Import from the desktop browser:", comment: "Title for section with instructions to import passwords")
-    public static let autofillImportPasswordsInstructionsStep1 = NSLocalizedString("autofill.import.passwords.instructions.step1", value:"Open DuckDuckGo on Mac or Windows", comment: "Step 1 for instructions to import passwords")
-    public static let autofillImportPasswordsInstructionsStep2 = NSLocalizedString("autofill.import.passwords.instructions.step2", value:"Go to %@ > %@", comment: "Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords'")
-    public static let autofillImportPasswordsInstructionsStep2Settings = NSLocalizedString("autofill.import.passwords.instructions.step2.settings", value:"Settings", comment: "first parameter for autofill.import.passwords.instructions.step2")
-    public static let autofillImportPasswordsInstructionsStep2Autofill = NSLocalizedString("autofill.import.passwords.instructions.step2.passwords", value:"Passwords", comment: "second parameter for autofill.import.passwords.instructions.step2")
-    public static let autofillImportPasswordsInstructionsStep3 = NSLocalizedString("autofill.import.passwords.instructions.step3", value:"Select %@ and follow the steps to import", comment: "Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps'")
-    public static let autofillImportPasswordsInstructionsStep3Import = NSLocalizedString("autofill.import.passwords.instructions.step3.import", value:"Import Passwords...", comment: "Parameter for autofill.import.passwords.instructions.step3")
-    public static let autofillImportPasswordsInstructionsStep4 = NSLocalizedString("autofill.import.passwords.instructions.step4", value:"Once imported on your computer you can set up sync on this %@", comment: "Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device")
+    public static let autofillImportPasswordsViaSyncTitle = NSLocalizedString("autofill.import.passwords.via.sync.title", value:"How To Import Passwords", comment: "Title for screen to import passwords")
+    public static let autofillImportPasswordsViaSyncSubtitle = NSLocalizedString("autofill.import.passwords.via.sync.subtitle", value:"Import passwords in the desktop version of the DuckDuckGo browser, then sync across devices.", comment: "Subtitle for screen to import passwords")
+    public static let autofillImportPasswordsViaSyncGetBrowserButton = NSLocalizedString("autofill.import.passwords.via.sync.get-browser-button", value:"Get Desktop Browser", comment: "Button label to get link to download the desktop browser")
+    public static let autofillImportPasswordsViaSyncSyncButton = NSLocalizedString("autofill.import.passwords.via.sync.sync-button", value:"Sync With Desktop", comment: "Button label to sync passwords with desktop browser")
+    public static let autofillImportPasswordsViaSyncInstructionsTitle = NSLocalizedString("autofill.import.passwords.via.sync.instructions.title", value:"Import from the desktop browser:", comment: "Title for section with instructions to import passwords")
+    public static let autofillImportPasswordsViaSyncInstructionsStep1 = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step1", value:"Open DuckDuckGo on Mac or Windows", comment: "Step 1 for instructions to import passwords")
+    public static let autofillImportPasswordsViaSyncInstructionsStep2 = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step2", value:"Go to %@ > %@", comment: "Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords'")
+    public static let autofillImportPasswordsViaSyncInstructionsStep2Settings = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step2.settings", value:"Settings", comment: "first parameter for autofill.import.passwords.instructions.step2")
+    public static let autofillImportPasswordsViaSyncInstructionsStep2Autofill = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step2.passwords", value:"Passwords", comment: "second parameter for autofill.import.passwords.instructions.step2")
+    public static let autofillImportPasswordsViaSyncInstructionsStep3 = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step3", value:"Select %@ and follow the steps to import", comment: "Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps'")
+    public static let autofillImportPasswordsViaSyncInstructionsStep3Import = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step3.import", value:"Import Passwords...", comment: "Parameter for autofill.import.passwords.instructions.step3")
+    public static let autofillImportPasswordsViaSyncInstructionsStep4 = NSLocalizedString("autofill.import.passwords.via.sync.instructions.step4", value:"Once imported on your computer you can set up sync on this %@", comment: "Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device")
     public static let deviceTypeiPhone = NSLocalizedString("device.type.iphone", value:"iPhone", comment: "Device type is iPhone")
     public static let deviceTypeiPad = NSLocalizedString("device.type.pad", value:"iPad", comment: "Device type is iPad")
     public static let deviceTypeDefault = NSLocalizedString("device.type.default", value:"device", comment: "Default string used if users device is not iPhone or iPad")
@@ -1634,4 +1637,51 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
             static let gotIt =  NSLocalizedString("onboarding.addToDock.buttons.gotIt", value: "Got It", comment: "Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding.")
         }
     }
+
+    // MARK :- Data Import
+
+    public static let dataImportPasswordsTitle = NSLocalizedString("data.import.passwords.title", value:"Import Passwords to DuckDuckGo", comment: "Title for screen to import passwords")
+    public static let dataImportPasswordsSubtitle = NSLocalizedString("data.import.passwords.subtitle", value:"Select the file containing passwords exported from Safari or Chrome. This is usually a ZIP or CSV file.", comment: "Subtitle for screen to import passwords")
+    public static let dataImportPasswordsFileButton = NSLocalizedString("data.import.passwords.file-button", value:"Import Passwords File...", comment: "Button label to select zip or csv file for importing")
+    public static let dataImportPasswordsInstructionHeader = NSLocalizedString("data.import.passwords.instructions.header", value:"How to export passwords", comment: "Header for section with instructions for how to export passwords from Safari or Chrome")
+    public static let dataImportBookmarksInstructionHeader = NSLocalizedString("data.import.bookmarks.instructions.header", value:"How to export bookmarks from Safari", comment: "Header for section with instructions for how to export bookmarks from Safari")
+    public static let dataImportPasswordsInstructionSelector = NSLocalizedString("data.import.passwords.instructions.selector", value:"Export From", comment: "Text next to selector for which browser to export passwords from (Safari | Chrome)")
+    public static let dataImportPasswordsInstructionSafari = NSLocalizedString("data.import.passwords.instructions.selector.safari", value:"Safari", comment: "Export instructions selector for Safari")
+    public static let dataImportPasswordsInstructionChrome = NSLocalizedString("data.import.passwords.instructions.selector.chrome", value:"Google Chrome", comment: "Export instructions selector for Chrome")
+    public static let dataImportPasswordsInstructionsTitle = NSLocalizedString("data.import.passwords.instructions.title", value:"How to export Passwords from Safari:", comment: "Title for section with instructions to export passwords from Safari")
+    public static let dataImportInstructionsSafariStep1 = NSLocalizedString("data.import.passwords.instructions.safari.step1", value:"Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).", comment: "Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).'")
+    public static let dataImportInstructionsSafariStep2Passwords = NSLocalizedString("data.import.instructions.safari.step2.passwords", value:"Select **Export**, and on the next screen select **Passwords** and **Save to Downloads**.", comment: "Step 2 for instructions to export passwords from Safari")
+    public static let dataImportInstructionsSafariStep2Bookmarks = NSLocalizedString("data.import.instructions.safari.step2", value:"Select **Export**, and on the next screen select **Bookmarks** and **Save to Downloads**.", comment: "Step 2 for instructions to export bookmarks from Safari")
+
+    public static let dataImportBookmarksTitle = NSLocalizedString("data.import.bookmarks.title", value:"Import Bookmarks to DuckDuckGo", comment: "Title for screen to import bookmarks")
+    public static let dataImportBookmarksSubtitle = NSLocalizedString("data.import.bookmarks.subtitle", value:"Select the file containing bookmarks. This is usually a ZIP or HTML file.", comment: "Subtitle for screen to import bookmarks")
+    public static let dataImportBookmarksFileButton = NSLocalizedString("data.import.bookmarks.file-button", value:"Import Bookmarks File...", comment: "Button label to select zip or html file for importing")
+
+
+    public static let dataImportFailedNoDataInZipErrorMessage = NSLocalizedString("data.import.failed.no-data-in-zip-error-message", value:"No supported data found in the zip file. Please review the Safari export instructions and try again.", comment: "Error message displayed when no supported data is found in the zip file")
+    public static let dataImportFailedReadErrorMessage = NSLocalizedString("data.import.failed.zip-read-error-message", value:"The %@ file could not be read. There may be an issue with the data in the file.", comment: "Error message displayed when the (csv|html|zip) file can't be read.")
+    public static let dataImportFileTypeCsv = NSLocalizedString("data.import.file-type.csv", value:"CSV", comment: "File type for CSV files")
+    public static let dataImportFileTypeHtml = NSLocalizedString("data.import.file-type.html", value:"HTML", comment: "File type for HTML files")
+    public static let dataImportFileTypeZip = NSLocalizedString("data.import.file-type.zip", value:"ZIP", comment: "File type for ZIP files")
+    public static let dataImportFailedUnsupportedFileErrorMessage = NSLocalizedString("data.import.failed.unsupported-file-error-message", value:"The file selected is not supported. Please select a different file and try again.", comment: "Error message displayed when the user has selected an unsupported file")
+
+    public static let dataImportPasswordsInstructionsChromeStep1 = NSLocalizedString("data.import.passwords.instructions.chrome.step1", value:"In Chrome, go to **Google Password Manager** and then **Settings**.", comment: "Step 1 for instructions to import passwords from Chrome")
+    public static let dataImportPasswordsInstructionsChromeStep2 = NSLocalizedString("data.import.passwords.instructions.chrome.step2", value:"Select **Export passwords**, then **Save to Files** and save the file in a folder that you can remember.", comment: "Step 2 for instructions to import passwords.")
+
+    public static let zipContentSelectionTitle = NSLocalizedString("zip.content.import.types.title", value: "What do you want to import?", comment: "Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords)")
+    public static let zipContentSelectionPasswords = NSLocalizedString("zip.content.import.type.passwords", value: "Passwords", comment: "Option to select to import passwords")
+    public static let zipContentSelectionBookmarks = NSLocalizedString("zip.content.import.type.bookmarks", value: "Bookmarks", comment: "Option to select to import bookmarks")
+    public static let zipContentSelectionButtonContinue = NSLocalizedString("zip.content.import.type.button.title.continue", value:"Continue", comment: "Title of button to continue after selecting what data to import")
+
+    public static let dataImportSummaryTitle = NSLocalizedString("data.import.summary.complete.title", value:"Import complete!", comment: "Title for screen shown after attempting to import data (passwords / bookmarks)")
+    public static let dataImportSummaryPasswordsSubtitle = NSLocalizedString("data.import.summary.passwords.subtitle", value:"You can now delete the passwords file.", comment: "Subtitle for screen shown after after attempting to import passwords from file")
+    public static let dataImportSummaryPasswordsSuccess = NSLocalizedString("data.import.summary.passwords.success", value:"Passwords", comment: "Data import summary of how many passwords were successfully imported.")
+    public static let dataImportSummaryBookmarksSuccess = NSLocalizedString("data.import.summary.bookmarks.success", value:"Bookmarks", comment: "Data import summary of how many bookmarks were successfully imported.")
+    public static let dataImportSummaryFailed = NSLocalizedString("data.import.summary.failed", value:"Failed to import", comment: "Data import summary of how many items failed to import.")
+    public static let dataImportSummaryDuplicates = NSLocalizedString("data.import.summary.duplicates", value:"Duplicates Skipped", comment: "Data import summary of how many items were not imported as they were duplicates.")
+    public static let dataImportSummaryDone = NSLocalizedString("data.import.summary.button.title.done", value:"Done", comment: "Title of button to dismiss the screen")
+    public static let dataImportSummarySync = NSLocalizedString("data.import.summary.button.title.sync", value:"Sync & Back Up %@", comment: "Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import")
+    public static let dataImportSummarySyncPasswords = NSLocalizedString("data.import.summary.button.title.sync.passwords", value: "Passwords", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
+    public static let dataImportSummarySyncBookmarks = NSLocalizedString("data.import.summary.button.title.sync.bookmarks", value: "Bookmarks", comment: "Parameter for autofill.import.passwords.complete.button.title.sync")
+    public static let dataImportSummarySyncData = NSLocalizedString("data.import.summary.button.title.sync.data", value: "Data", comment: "Parameter for data.import.summary.button.title.sync")
 }

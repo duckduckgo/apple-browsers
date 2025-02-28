@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Atbloķēt DuckDuckGo.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Vai tiešām vēlies dzēst visas grāmatzīmes? Šo darbību nevar atsaukt.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Pierakstīties";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Paslēpt paroli";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Iegūsti galddatora pārlūku";
+"autofill.import.passwords.via.sync.get-browser-button" = "Iegūsti galddatora pārlūku";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Atver DuckDuckGo Mac vai Windows datorā";
+"autofill.import.passwords.via.sync.instructions.step1" = "Atver DuckDuckGo Mac vai Windows datorā";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Ej uz %1$@ > %2$@";
+"autofill.import.passwords.via.sync.instructions.step2" = "Ej uz %1$@ > %2$@";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Paroles";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Paroles";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Iestatījumi";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Iestatījumi";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Izvēlies %@ un veic importēšanas darbības";
+"autofill.import.passwords.via.sync.instructions.step3" = "Izvēlies %@ un veic importēšanas darbības";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importēt paroles...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Importēt paroles...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Kad esi importējis datorā, vari iestatīt sinhronizāciju šajā %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "Kad esi importējis datorā, vari iestatīt sinhronizāciju šajā %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importēšana no galddatora pārlūka:";
+"autofill.import.passwords.via.sync.instructions.title" = "Importēšana no galddatora pārlūka:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importē paroles DuckDuckGo pārlūka galddatora versijā un pēc tam sinhronizē tās visās ierīcēs.";
+"autofill.import.passwords.via.sync.subtitle" = "Importē paroles DuckDuckGo pārlūka galddatora versijā un pēc tam sinhronizē tās visās ierīcēs.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sinhronizēt ar galddatoru";
+"autofill.import.passwords.via.sync.sync-button" = "Sinhronizēt ar galddatoru";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Kā importēt paroles";
+"autofill.import.passwords.via.sync.title" = "Kā importēt paroles";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Atslēgt";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Importēt paroles";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Sinhronizēt darbvirsmas paroles";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Tu vari DuckDuckGo importēt saglabātās paroles no citas pārlūkprogrammas.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Tavas grāmatzīmes ir kopīgotas.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Eksportēt HTML failu";
+"bookmarks.exportAction.html.title" = "Eksportēt HTML failu";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Eksportēt grāmatzīmes";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Diemžēl mēs nevaram importēt šo failu.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Tavas grāmatzīmes ir importētas.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importēt HTML failu";
+"bookmarks.importAction.html.title" = "Importēt HTML failu";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importēt grāmatzīmju failu no citas pārlūkprogrammas";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Importēt grāmatzīmes";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Importē grāmatzīmju HTML failu no citas pārlūkprogrammas vai eksportē esošās grāmatzīmes.";
+"bookmarks.importExport.title" = "Importēt grāmatzīmes no citām populārām pārlūkprogrammām.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Ziņot par problēmu šajā vietnē";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Vai automātiski nosūtīt avārijas ziņojumus?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Kā eksportēt grāmatzīmes no Safari";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Atlasi failu, kurā ir grāmatzīmes. Parasti tas ir ZIP vai HTML fails.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Grāmatzīmju importēšana uz DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "Zip failā nav atrasti atbalstīti dati. Lūdzu, pārskati Safari eksportēšanas norādījumus un mēģini vēlreiz.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Atlasītais fails netiek atbalstīts. Lūdzu, izvēlies citu failu un mēģini vēlreiz.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Failu %@ nevarēja nolasīt. Iespējams, radusies problēma ar failā esošajiem datiem.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Atlasi **Eksportēt**, nākamajā ekrānā atlasi **Grāmatzīmes** un tad **Saglabāt lejupielādēs**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Atlasi **Eksportēt**, nākamajā ekrānā atlasi **Paroles** un tad **Saglabāt lejupielādēs**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Importēt paroļu failu...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "Pārlūkā Chrome atver sadaļu **Google paroļu pārvaldnieks** un tad **Iestatījumi**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Atlasi **Eksportēt paroles**, pēc tam **Saglabāt failos** un failu saglabā mapē, kuras nosaukumu vari atcerēties.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Kā eksportēt paroles";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Atver ⚙️ **Iestatījum**, meklēšanas joslā ieraksti \"Eksportēt” un Safari atlasi rezultātu **Eksportēt**, lai dotos tieši uz šo opciju (vai iestatījumos atver sadaļu Lietotnes > Safari).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Eksportēt no";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Kā eksportēt paroles no Safari:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Izvēlies failu, kurā ir paroles, kas eksportētas no Safari vai Chrome. Parasti tas ir ZIP vai CSV fails.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Importēt paroles DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Grāmatzīmes";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Gatavs";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Sinhronizē un dublē %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Grāmatzīmes";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Dati";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Paroles";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Importēšana pabeigta!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Dublikāti ir izlaisti";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Neizdevās importēt";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Tagad vari izdzēst paroļu failu.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Paroles";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Iepriekšējais mēnesis";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Atkļūdošana";
+
+/* No comment provided by engineer. */
+"Delete All" = "Dzēst visus";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "ierīcē";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Paslēp savu e-pastu un\nbloķē izsekotājus";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Vēl nav pievienota neviena grāmatzīme";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Ja tavas grāmatzīmes ir saglabātas citā pārlūkā,\nvari tās importēt DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Sakritības nav atrastas";
@@ -3147,4 +3267,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Iegūsti DuckDuckGo operētājsistēmai Windows!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Grāmatzīmes";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Turpināt";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Paroles";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Ko tu gribi importēt?";
 

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Otključaj DuckDuckGo.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Jesi li siguran da želiš izbrisati sve oznake? Ova se radnja ne može poništiti.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijava";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Sakrij lozinku";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Nabavi preglednik za PC";
+"autofill.import.passwords.via.sync.get-browser-button" = "Nabavi preglednik za PC";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Otvori DuckDuckGo na Macu ili u Windowsima";
+"autofill.import.passwords.via.sync.instructions.step1" = "Otvori DuckDuckGo na Macu ili u Windowsima";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Idi na %1$@ > %2$@";
+"autofill.import.passwords.via.sync.instructions.step2" = "Idi na %1$@ > %2$@";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Lozinke";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Lozinke";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Postavke";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Postavke";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Odaberi %@ i slijedi korake za uvoz";
+"autofill.import.passwords.via.sync.instructions.step3" = "Odaberi %@ i slijedi korake za uvoz";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Uvezi lozinke...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Uvezi lozinke...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Nakon uvoza na svoje računalo možeš postaviti sinkronizaciju na ovom uređaju %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "Nakon uvoza na svoje računalo možeš postaviti sinkronizaciju na ovom uređaju %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Uvoz iz preglednika PC-a:";
+"autofill.import.passwords.via.sync.instructions.title" = "Uvoz iz preglednika PC-a:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Uvezi lozinke u stolnu verziju preglednika DuckDuckGo, a zatim sinkroniziraj preko uređaja.";
+"autofill.import.passwords.via.sync.subtitle" = "Uvezi lozinke u stolnu verziju preglednika DuckDuckGo, a zatim sinkroniziraj preko uređaja.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sinkronizacija s preglednikom na PC-u";
+"autofill.import.passwords.via.sync.sync-button" = "Sinkronizacija s preglednikom na PC-u";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Kako uvesti lozinke";
+"autofill.import.passwords.via.sync.title" = "Kako uvesti lozinke";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Onemogući";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Uvezi lozinke";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Sinkroniziraj lozinke za radnu površinu";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Možeš uvesti spremljene lozinke iz drugog preglednika u DuckDuckGo.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Vaše su oznake podijeljene.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Izvezi HTML datoteku";
+"bookmarks.exportAction.html.title" = "Izvezi HTML datoteku";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Izvezi oznake";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Nažalost, ne možemo uvesti ovu datoteku.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Vaše su oznake izvezene.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Uvezi HTML datoteku";
+"bookmarks.importAction.html.title" = "Uvezi HTML datoteku";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Uvezite datoteku oznaka iz drugog preglednika";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Uvoz knjižnih oznaka";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Uvezite HTML datoteku oznaka iz drugog preglednika ili izvezite postojeće oznake.";
+"bookmarks.importExport.title" = "Uvezi oznake iz drugih popularnih preglednika.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Prijavi problem na ovom web-mjestu";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatski slati izvješća o padu?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Uvezi datoteku knjižnih oznaka...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Kako izvesti oznake iz Safarija";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Odaberi datoteku koja sadrži knjižne oznake. Ovo je obično ZIP ili HTML datoteka.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Uvezi knjižne oznake u DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "U zip datoteci nisu pronađeni podržani podaci. Pregledaj upute za izvoz Safarija i pokušaj ponovno.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Odabrana datoteka nije podržana. Odaberi drugu datoteku i pokušaj ponovno.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Nije moguće pročitati %@ datoteku. Možda postoji problem s podacima u datoteci.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Odaberi **Izvoz**, a na sljedećem zaslonu odaberi **Knjižne oznake** i **Spremi u Preuzimanja**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Odaberi **Izvoz**, a na sljedećem zaslonu odaberi **Lozinke** i **Spremi u preuzimanja**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Uvezi datoteku s lozinkama...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "U Chromeu, idi na **Google Password Manager**, a zatim na **Postavke**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Odaberi **Izvoz lozinki**, zatim **Spremi u datoteke** i spremi datoteku u mapu koju možeš zapamtiti.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Kako izvesti lozinke";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Otvori ⚙️ **Postavke**, upiši \"Izvoz\" u traku za pretraživanje i odaberi rezultat **Izvoz** za Safari kako bi se odmah prebacilo na opciju (ili idi na Aplikacije > Safari u Postavkama).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Izvoz iz";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chromea";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safarija";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Kako izvesti lozinke iz Safarija:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Odaberi datoteku koja sadrži lozinke izvezene iz Safarija ili Chromea. To je obično ZIP ili CSV datoteka.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Uvezi lozinke u DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Knjižne oznake";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Gotovo";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Sinkroniziraj i sigurnosno kopiraj %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Knjižne oznake";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "podatke";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Lozinke";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Uvoz dovršen!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Preskočeni duplikati";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Uvoz nije uspio";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Sada možeš izbrisati datoteku lozinki.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Lozinke";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Prošli mjesec";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Ispravi pogreške";
+
+/* No comment provided by engineer. */
+"Delete All" = "Izbriši sve";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "uređaj";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Sakrij svoju e-poštu i \n blokiraj tragače";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Još nema dodanih knjižnih oznaka";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Ako su tvoje oznake spremljene u drugom pregledniku, možeš ih \n uvesti u DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Nema pronađenih rezultata";
@@ -3147,4 +3267,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Nabavi DuckDuckGo za Windows!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Knjižne oznake";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Nastavi";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Lozinke";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Što želiš uvesti?";
 

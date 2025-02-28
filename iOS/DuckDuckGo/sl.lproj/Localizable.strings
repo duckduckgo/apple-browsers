@@ -971,6 +971,9 @@
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kako izvoziti gesla";
 
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Odprite ⚙️ **Nastavitve**, v iskalno vrstico vnesite »Izvozi« in izberite rezultat **Izvozi** za Safari, da greste neposredno na možnost (ali pojdite v meni Aplikacije > Safari v nastavitvah).";
+
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Izvoz iz";
 

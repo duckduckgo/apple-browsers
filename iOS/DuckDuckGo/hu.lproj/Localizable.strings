@@ -971,6 +971,9 @@
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Jelszavak exportálásának módja";
 
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Nyisd meg a ⚙️ **Beállítások** menüt, írd be az „Exportálás” szót a keresősávba, és az **Exportálás** találat kiválasztásával lépj közvetlenül erre az opcióra a Safariban (vagy lépj a Beállítások > Alkalmazások > Safari menüpontra).";
+
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Exportálás a következőből:";
 

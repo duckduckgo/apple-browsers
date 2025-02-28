@@ -971,6 +971,9 @@
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Comment exporter des mots de passe";
 
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Ouvrez ⚙️ **Réglages**, tapez « Exporter » dans la barre de recherche et sélectionnez le résultat **Exporter** pour que Safari accède directement à l'option (ou allez dans Applications > Safari dans Réglages).";
+
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Exporter depuis";
 

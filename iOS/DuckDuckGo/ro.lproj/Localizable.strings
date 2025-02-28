@@ -971,6 +971,9 @@
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Cum să exporți parolele";
 
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Deschide ⚙️ **Setări**, tastează „Exportă” în bara de căutare și alege rezultatul **Exportă** pentru Safari pentru a accesa direct opțiunea (sau accesează Aplicații > Safari, din Setări).";
+
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Exportă din";
 

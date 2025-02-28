@@ -971,6 +971,9 @@
 /* Header for section with instructions for how to export passwords from Safari or Chrome */
 "data.import.passwords.instructions.header" = "Kako izvesti lozinke";
 
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Otvori ⚙️ **Postavke**, upiši \"Izvoz\" u traku za pretraživanje i odaberi rezultat **Izvoz** za Safari kako bi se odmah prebacilo na opciju (ili idi na Aplikacije > Safari u Postavkama).";
+
 /* Text next to selector for which browser to export passwords from (Safari | Chrome) */
 "data.import.passwords.instructions.selector" = "Izvoz iz";
 

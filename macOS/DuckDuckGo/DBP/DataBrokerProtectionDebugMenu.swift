@@ -119,6 +119,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNExclusion))
+                .targetting(self)
+            NSMenuItem(title: "Reset VPN Bypass Onboarding", action: #selector(DataBrokerProtectionDebugMenu.resetVPNExclusionOnboarding))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             statusMenuIconMenu.targetting(self)
 
             NSMenuItem(title: "Show DB Browser", action: #selector(DataBrokerProtectionDebugMenu.showDatabaseBrowser))
@@ -126,8 +133,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             NSMenuItem(title: "Force Profile Removal", action: #selector(DataBrokerProtectionDebugMenu.showForceOptOutWindow))
                 .targetting(self)
             NSMenuItem(title: "Force broker JSON files update", action: #selector(DataBrokerProtectionDebugMenu.forceBrokerJSONFilesUpdate))
-                .targetting(self)
-            NSMenuItem(title: "Toggle VPN Exclusion", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNExclusion))
                 .targetting(self)
             NSMenuItem(title: "Run Personal Information Removal Debug Mode", action: #selector(DataBrokerProtectionDebugMenu.runCustomJSON))
                 .targetting(self)
@@ -279,6 +284,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 DataBrokerProtectionSettings(defaults: .dbp).bypassVPN
             )
         }
+    }
+
+    @objc private func resetVPNExclusionOnboarding() {
+        DataBrokerProtectionSettings(defaults: .dbp).bypassVPNUsed = false
     }
 
     @objc private func toggleShowStatusMenuItem() {

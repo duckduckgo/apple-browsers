@@ -41,7 +41,7 @@ struct AsyncHeadlessWebViewSettings {
     }
 
     internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
-        let duoAuthenticationDomains = ["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
+        let duoAuthenticationDomains = ["duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
         var allowedDomains = Set<String>()
 
         // Allow navigation to baseURLs domain

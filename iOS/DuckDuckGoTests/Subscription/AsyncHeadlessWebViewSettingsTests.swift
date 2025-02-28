@@ -52,7 +52,7 @@ final class AsyncHeadlessWebViewSettingsTests: XCTestCase {
         // Given
         let baseURL = try XCTUnwrap(URL(string: "https://duck.co/subscriptions"))
         let isInternalUser = true
-        let domainsRequiredForDUOAuthentication = ["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
+        let domainsRequiredForDUOAuthentication = ["duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
 
         // When
         let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)

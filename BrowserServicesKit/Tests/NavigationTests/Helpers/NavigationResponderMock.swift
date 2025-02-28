@@ -188,8 +188,7 @@ class NavigationResponderMock: NavigationResponder {
     var mainFrame: FrameInfo? {
         for event in history {
             if case .navigationAction(let navAction, _, _) = event,
-               // sometimes main frame id is 2
-               [4, 2].contains(navAction.navigationAction.sourceFrame.handle.frameID) {
+               navAction.navigationAction.sourceFrame.isMainFrame {
 
                 return navAction.navigationAction.sourceFrame
             }

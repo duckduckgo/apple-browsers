@@ -122,12 +122,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    // MARK: - Enforce Routes
-
-    private var enforceRoutes: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionEnforceRoutes)
-    }
-
     // MARK: - Initializers
 
     init(accountManager: AccountManager,
@@ -292,7 +286,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
         options[NetworkProtectionOptionKey.selectedEnvironment] = AppDependencyProvider.shared.vpnSettings
             .selectedEnvironment.rawValue as NSString
-        if let data = try? JSONEncoder().encode(AppDependencyProvider.shared.vpnSettings.dnsSettings) {
+
+        ensureRiskyDomainsEnabledIfNeeded()
+        var dnsSettings = settings.dnsSettings
+        if dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
+            dnsSettings = .ddg(blockRiskyDomains: false)
+        }
+        if let data = try? JSONEncoder().encode(dnsSettings) {
             options[NetworkProtectionOptionKey.dnsSettings] = NSData(data: data)
         }
 
@@ -307,6 +307,19 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
             throw StartError.startVPNFailed(error)
+        }
+    }
+
+    private func ensureRiskyDomainsEnabledIfNeeded() {
+        // If current dnsSettings is .ddg with blockRiskyDomains false,
+        // and we haven't yet defaulted, and the risky domains protection feature is on,
+        // then update dnsSettings to .ddg(blockRiskyDomains: true) and mark the flag.
+        if case .ddg(let blockRiskyDomains) = settings.dnsSettings,
+           !blockRiskyDomains,
+           !settings.didBlockRiskyDomainsDefaultToTrue,
+           featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
+            settings.dnsSettings = .ddg(blockRiskyDomains: true)
+            settings.didBlockRiskyDomainsDefaultToTrue = true
         }
     }
 
@@ -364,7 +377,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.disconnectOnSleep = false
 
             // Enforce routes
-            protocolConfiguration.enforceRoutes = enforceRoutes
+            protocolConfiguration.enforceRoutes = true
 
             // We will control excluded networks through includedRoutes / excludedRoutes
             protocolConfiguration.excludeLocalNetworks = false

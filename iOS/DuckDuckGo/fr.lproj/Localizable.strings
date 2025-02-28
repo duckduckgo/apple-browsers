@@ -1949,9 +1949,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Sur n'importe quel site, ouvrez le menu ••• et sélectionnez **Ajouter un favori** pour l'ajouter à votre nouvelle page d'onglet.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gérés";
 
@@ -2484,8 +2481,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Protection contre le pistage sur le Web";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo bloque automatiquement les traqueurs cachés lorsque vous naviguez sur le Web.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Bloquez plus de 150 000 domaines signalés comme hébergeant des logiciels malveillants, des attaques de phishing et des escroqueries en ligne grâce à une liste de blocage au niveau du DNS. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Blocage et filtrage de contenu";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Bloquer les domaines à risque";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Sélectionnez l'option qui décrit le mieux le problème rencontré.";

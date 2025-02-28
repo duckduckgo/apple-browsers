@@ -61,6 +61,7 @@ jobs:
 
     - name: Build iOS
       run: |
+        xcodebuild -downloadPlatform iOS -buildVersion 18.2
         source .maestro/common.sh
         project_root=$(pwd)
         build_app

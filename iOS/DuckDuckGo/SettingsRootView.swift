@@ -126,6 +126,7 @@ struct SettingsRootView: View {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                                                            subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            onDisappear: {})
         case .duckPlayer:
             SettingsDuckPlayerView().environmentObject(viewModel)

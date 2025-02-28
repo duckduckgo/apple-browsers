@@ -70,7 +70,8 @@ enum SubscriptionContainerViewFactory {
 
     static func makeRestoreFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
                                 subscriptionManager: SubscriptionManager,
-                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability) -> some View {
+                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                internalUserDecider: InternalUserDecider) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                              subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
@@ -86,6 +87,7 @@ enum SubscriptionContainerViewFactory {
 
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
+            isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
@@ -101,6 +103,7 @@ enum SubscriptionContainerViewFactory {
     static func makeEmailFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
                               subscriptionManager: SubscriptionManager,
                               subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                              internalUserDecider: InternalUserDecider,
                               onDisappear: @escaping () -> Void) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
                                                              storePurchaseManager: subscriptionManager.storePurchaseManager(),
@@ -116,6 +119,7 @@ enum SubscriptionContainerViewFactory {
                                                                                  accountManager: subscriptionManager.accountManager)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
+            isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
             subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,

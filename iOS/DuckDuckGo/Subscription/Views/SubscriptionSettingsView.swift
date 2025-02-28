@@ -88,6 +88,7 @@ struct SubscriptionSettingsView: View {
                     navigationCoordinator: subscriptionNavigationCoordinator,
                     subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                     subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                     onDisappear: {
                         Task {
                             await viewModel.fetchAndUpdateAccountEmail(

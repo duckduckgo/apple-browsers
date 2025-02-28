@@ -105,9 +105,26 @@ public final class DataBrokerProtectionSettings {
         get {
             defaults.dataBrokerProtectionBypassVPN
         }
-        
         set {
             defaults.dataBrokerProtectionBypassVPN = newValue
+
+            if newValue {
+                bypassVPNUsed = true
+            }
+        }
+    }
+
+    public var bypassVPNUsedPublisher: AnyPublisher<Bool, Never> {
+        defaults.dataBrokerProtectionBypassVPNUsedPublisher
+    }
+
+    public var bypassVPNUsed: Bool {
+        get {
+            defaults.dataBrokerProtectionBypassVPNUsed
+        }
+
+        set {
+            defaults.dataBrokerProtectionBypassVPNUsed = newValue
         }
     }
 }
@@ -125,6 +142,11 @@ extension UserDefaults {
     static let bypassVPNDefaultValue = true
     private var bypassVPNKey: String {
         "dataBrokerProtectionBypassVPN"
+    }
+
+    static let bypassVPNUsedDefaultValue = false
+    private var bypassVPNUsedKey: String {
+        "hasShownBypassOnboarding"
     }
 
     // MARK: - Environment
@@ -190,5 +212,24 @@ extension UserDefaults {
 
     var dataBrokerProtectionBypassVPNPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.dataBrokerProtectionBypassVPN).eraseToAnyPublisher()
+    }
+
+    @objc
+    dynamic var dataBrokerProtectionBypassVPNUsed: Bool {
+        get {
+            value(forKey: bypassVPNUsedKey) as? Bool ?? Self.bypassVPNUsedDefaultValue
+        }
+
+        set {
+            guard newValue != dataBrokerProtectionBypassVPNUsed else {
+                return
+            }
+
+            set(newValue, forKey: bypassVPNUsedKey)
+        }
+    }
+
+    var dataBrokerProtectionBypassVPNUsedPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.dataBrokerProtectionBypassVPNUsed).eraseToAnyPublisher()
     }
 }

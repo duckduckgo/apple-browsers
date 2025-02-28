@@ -295,6 +295,19 @@ class TabManager {
         save()
         return controller
     }
+    
+    func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
+        indexPaths.forEach {
+            let tab = model.get(tabAt: $0.row)
+            previewsSource.removePreview(forTab: tab)
+            if let controller = controller(for: tab) {
+                removeFromCache(controller)
+            }
+            interactionStateSource?.removeStateForTab(tab)
+        }
+        model.remove(indexPaths)
+        save()
+    }
 
     func remove(at index: Int) {
         let tab = model.get(tabAt: index)

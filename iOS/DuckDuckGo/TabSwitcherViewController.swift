@@ -82,7 +82,6 @@ class TabSwitcherViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
 
     weak var delegate: TabSwitcherDelegate!
-    weak var tabsModel: TabsModel!
     weak var previewsSource: TabPreviewsSource!
     
     var selectedTabs: [IndexPath] {
@@ -106,6 +105,10 @@ class TabSwitcherViewController: UIViewController {
     var interfaceMode: InterfaceMode = .singleSelectNormal
 
     let featureFlagger: FeatureFlagger
+    let tabManager: TabManager
+    var tabsModel: TabsModel {
+        tabManager.model
+    }
 
     let barsHandler = TabSwitcherBarsStateHandler()
 
@@ -113,11 +116,13 @@ class TabSwitcherViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
-                   favicons: Favicons = Favicons.shared) {
+                   favicons: Favicons = Favicons.shared,
+                   tabManager: TabManager) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
+        self.tabManager = tabManager
         super.init(coder: coder)
     }
 
@@ -311,7 +316,7 @@ extension TabSwitcherViewController: TabViewCellDelegate {
 
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
-            tabsModel.remove(indexPaths)
+            tabManager.bulkRemoveTabs(indexPaths)
             currentSelection = tabsModel.currentIndex
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in

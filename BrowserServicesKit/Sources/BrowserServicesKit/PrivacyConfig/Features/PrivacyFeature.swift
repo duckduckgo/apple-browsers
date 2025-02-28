@@ -232,4 +232,5 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
+    case scamProtection
 }

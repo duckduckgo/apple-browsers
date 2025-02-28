@@ -188,7 +188,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:
-            return .disabled
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         }
     }
 }

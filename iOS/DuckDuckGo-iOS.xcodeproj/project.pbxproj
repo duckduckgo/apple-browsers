@@ -3954,8 +3954,8 @@
 		3151F0E827357F8F00226F58 /* VoiceSearch */ = {
 			isa = PBXGroup;
 			children = (
-				31E2655C2D66390B002B5624 /* Views */,
 				3151F0EF2735802800226F58 /* VoiceSearchViewController.swift */,
+				31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */,
 				3151F0EB27357FEE00226F58 /* VoiceSearchFeedbackViewModel.swift */,
 				31DD208327395A5A008FB313 /* VoiceSearchHelper.swift */,
 				3151F0E927357FBA00226F58 /* SpeechRecognizer.swift */,
@@ -4137,14 +4137,6 @@
 				31DE43C32C2C60E800F8C51F /* DuckPlayerModalPresenter.swift */,
 			);
 			path = Modal;
-			sourceTree = "<group>";
-		};
-		31E2655C2D66390B002B5624 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				31E2655E2D66392E002B5624 /* VoiceSearchFeedbackView.swift */,
-			);
-			path = Views;
 			sourceTree = "<group>";
 		};
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {

@@ -3036,10 +3036,11 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
 
         switch target {
         case .SERP:
-            Pixel.fire(pixel: .voiceSearchDone)
+            Pixel.fire(pixel: .voiceSearchSERPDone)
             loadQuery(query)
 
         case .AIChat:
+            Pixel.fire(pixel: .voiceSearchAIChatDone)
             performCancel()
             openAIChat(query, autoSend: true)
         }

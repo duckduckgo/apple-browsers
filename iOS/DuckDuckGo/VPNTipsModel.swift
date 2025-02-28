@@ -39,16 +39,13 @@ public final class VPNTipsModel: ObservableObject {
         }
     }
 
-    private var isTipFeatureEnabled: Bool
     private let vpnSettings: VPNSettings
     private var cancellables = Set<AnyCancellable>()
 
-    public init(isTipFeatureEnabled: Bool,
-                statusObserver: ConnectionStatusObserver,
+    public init(statusObserver: ConnectionStatusObserver,
                 vpnSettings: VPNSettings) {
 
         self.connectionStatus = statusObserver.recentValue
-        self.isTipFeatureEnabled = isTipFeatureEnabled
         self.vpnSettings = vpnSettings
 
         if #available(iOS 18.0, *) {
@@ -61,10 +58,6 @@ public final class VPNTipsModel: ObservableObject {
     deinit {
         geoswitchingStatusUpdateTask?.cancel()
         geoswitchingStatusUpdateTask = nil
-    }
-
-    var canShowTips: Bool {
-        isTipFeatureEnabled
     }
 
     // MARK: - Subscriptions

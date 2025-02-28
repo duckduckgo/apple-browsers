@@ -122,12 +122,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    // MARK: - Enforce Routes
-
-    private var enforceRoutes: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionEnforceRoutes)
-    }
-
     // MARK: - Initializers
 
     init(accountManager: AccountManager,
@@ -383,7 +377,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.disconnectOnSleep = false
 
             // Enforce routes
-            protocolConfiguration.enforceRoutes = enforceRoutes
+            protocolConfiguration.enforceRoutes = true
 
             // We will control excluded networks through includedRoutes / excludedRoutes
             protocolConfiguration.excludeLocalNetworks = false

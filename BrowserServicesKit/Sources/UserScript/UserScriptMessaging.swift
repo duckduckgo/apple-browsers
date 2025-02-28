@@ -289,6 +289,16 @@ extension BrokerError: LocalizedError {
 public enum HostnameMatchingRule {
     case etldPlus1(hostname: String)
     case exact(hostname: String)
+
+    public static func makeExactRule(for url: URL) -> HostnameMatchingRule? {
+        guard let host = url.host else { return nil }
+
+        if let port = url.port, port > 0 {
+            return .exact(hostname: host + ":\(port)")
+        } else {
+            return .exact(hostname: host)
+        }
+    }
 }
 
 /// Force consumers to be explicit about the difference between accepting messages

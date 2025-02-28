@@ -150,13 +150,7 @@ public final class StatusBarMenu: NSObject {
                 activeSitePublisher: activeSitePublisher,
                 uiActionHandler: uiActionHandler)
 
-            // We don't use tips in the status menu app.
-            let tipsFeatureFlagPublisher = CurrentValuePublisher<Bool, Never>(
-                initialValue: false,
-                publisher: Just(false).eraseToAnyPublisher())
-
-            let tipsModel = VPNTipsModel(featureFlagPublisher: tipsFeatureFlagPublisher,
-                                         statusObserver: statusReporter.statusObserver,
+            let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,
                                          forMenuApp: true,
                                          vpnSettings: VPNSettings(defaults: userDefaults),

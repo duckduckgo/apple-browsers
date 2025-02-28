@@ -104,12 +104,18 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UserDefaultsWrapper(key: .automaticUpdates, defaultValue: true)
     var areAutomaticUpdatesEnabled: Bool {
-        didSet {
-            Logger.updates.log("areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled, privacy: .public)")
-            if oldValue != areAutomaticUpdatesEnabled {
+        willSet {
+            if newValue != areAutomaticUpdatesEnabled {
                 userDriver?.cancelAndDismissCurrentUpdate()
-                try? configureUpdater()
-                checkForUpdateSkippingRollout()
+                updater = nil
+            }
+        }
+        didSet {
+            if oldValue != areAutomaticUpdatesEnabled {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    try? self?.configureUpdater()
+                    self?.checkForUpdateSkippingRollout()
+                }
             }
         }
     }

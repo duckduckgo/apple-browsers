@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling.swift
+//  SubscriptionManagerV2+SubscriptionTokenHandling.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,28 +18,29 @@
 
 import Foundation
 import Common
+import Networking
+import os.log
 
-extension NetworkProtectionKeychainTokenStore: SubscriptionTokenHandling {
+extension DefaultSubscriptionManagerV2: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
-        guard let token = try fetchToken() else {
-            throw NetworkProtectionError.noAuthTokenFound
-        }
-        return token
+        return try await getTokenContainer(policy: .localValid).accessToken
     }
 
     public func removeToken() async throws {
-        try deleteToken()
+        removeTokenContainer()
     }
 
     public func refreshToken() async throws {
-        // Unused in Auth V1
+        try await getTokenContainer(policy: .localForceRefresh)
     }
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
-        guard let token = someKindOfToken as? String else {
-            throw NetworkProtectionError.invalidAuthToken
+        if let tokenContainer = someKindOfToken as? TokenContainer {
+            adopt(tokenContainer: tokenContainer)
+        } else {
+            Logger.subscription.fault("Trying to adopt the wrong kind of token")
+            assertionFailure("Trying to adopt the wrong kind of token")
         }
-        try store(token)
     }
 }

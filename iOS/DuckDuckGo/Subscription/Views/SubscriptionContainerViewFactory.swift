@@ -56,13 +56,13 @@ enum SubscriptionContainerViewFactory {
             redirectPurchaseURL: redirectPurchaseURL,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
-            subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                subscriptionAttributionOrigin: origin,
-                                                                appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                appStoreAccountManagementFlow: appStoreAccountManagementFlow,
-                                                                privacyProDataReporter: privacyProDataReporter)
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: origin,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow,
+                                                                       privacyProDataReporter: privacyProDataReporter)
         )
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
             .environmentObject(navigationCoordinator)
@@ -87,12 +87,12 @@ enum SubscriptionContainerViewFactory {
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             userScript: SubscriptionPagesUserScript(),
-            subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                subscriptionAttributionOrigin: nil,
-                                                                appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                appStoreAccountManagementFlow: appStoreAccountManagementFlow)
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: nil,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow)
         )
         return SubscriptionContainerView(currentView: .restore, viewModel: viewModel)
             .environmentObject(navigationCoordinator)
@@ -117,16 +117,96 @@ enum SubscriptionContainerViewFactory {
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             userScript: SubscriptionPagesUserScript(),
-            subFeature: SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                subscriptionAttributionOrigin: nil,
-                                                                appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                appStoreAccountManagementFlow: appStoreAccountManagementFlow)
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: nil,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       appStoreAccountManagementFlow: appStoreAccountManagementFlow)
         )
         return SubscriptionContainerView(currentView: .email, viewModel: viewModel)
             .environmentObject(navigationCoordinator)
             .onDisappear(perform: { onDisappear() })
     }
 
+    // MARK: - V2
+
+    static func makeSubscribeFlowV2(redirectURLComponents: URLComponents?,
+                                    navigationCoordinator: SubscriptionNavigationCoordinator,
+                                    subscriptionManager: SubscriptionManagerV2,
+                                    subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                    privacyProDataReporter: PrivacyProDataReporting?,
+                                    tld: TLD) -> some View {
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+
+        let redirectPurchaseURL: URL? = {
+            guard let redirectURLComponents else { return nil }
+            return subscriptionManager.urlForPurchaseFromRedirect(redirectURLComponents: redirectURLComponents, tld: tld)
+        }()
+
+        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+
+
+        let viewModel = SubscriptionContainerViewModel(
+            subscriptionManager: subscriptionManager,
+            userScript: SubscriptionPagesUserScript(),
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                         subscriptionAttributionOrigin: origin,
+                                                                         appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         privacyProDataReporter: privacyProDataReporter)
+        )
+        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
+            .environmentObject(navigationCoordinator)
+    }
+
+
+    static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
+                                  subscriptionManager: SubscriptionManagerV2,
+                                  subscriptionFeatureAvailability: SubscriptionFeatureAvailability) -> some View {
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+        let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                                                       subscriptionAttributionOrigin: nil,
+                                                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                                                       appStoreRestoreFlow: appStoreRestoreFlow)
+        let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
+                                                       userScript: SubscriptionPagesUserScript(),
+                                                       subFeature: subscriptionPagesUseSubscriptionFeature)
+        return SubscriptionContainerView(currentView: .restore, viewModel: viewModel)
+            .environmentObject(navigationCoordinator)
+    }
+
+    static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
+                                subscriptionManager: SubscriptionManagerV2,
+                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                onDisappear: @escaping () -> Void) -> some View {
+        let appStoreRestoreFlow: AppStoreRestoreFlowV2 = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                                                                                      storePurchaseManager: subscriptionManager.storePurchaseManager())
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+        let viewModel = SubscriptionContainerViewModel(
+            subscriptionManager: subscriptionManager,
+            userScript: SubscriptionPagesUserScript(),
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                         subscriptionAttributionOrigin: nil,
+                                                                         appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow)
+        )
+        return SubscriptionContainerView(currentView: .email, viewModel: viewModel)
+            .environmentObject(navigationCoordinator)
+            .onDisappear(perform: { onDisappear() })
+    }
 }

@@ -1,5 +1,5 @@
 //
-//  DefaultNetworkProtectionVisibility.swift
+//  Logger+Pixel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -18,24 +18,8 @@
 //
 
 import Foundation
-import BrowserServicesKit
-import Waitlist
-import NetworkProtection
-import Core
-import Subscription
-import Networking
-import Common
+import os.log
 
-struct DefaultNetworkProtectionVisibility: NetworkProtectionFeatureVisibility {
-
-    private let tokenHandler: any SubscriptionTokenHandling
-
-    init(tokenHandler: any SubscriptionTokenHandling) {
-        self.tokenHandler = tokenHandler
-    }
-
-    func shouldShowVPNShortcut() async -> Bool {
-        let token = try? await tokenHandler.getToken()
-        return token != nil
-    }
+public extension Logger {
+    static var pixels = { Logger(subsystem: "Pixels", category: "") }()
 }

@@ -591,9 +591,9 @@ final class BookmarkListViewModelTests: XCTestCase {
             })
         }
     }
-    
+
     func testWhenURLIsBookmarkThenEntityReturned() async throws {
-  
+
         let context = bookmarkListViewModel.context
 
         let bookmarkTree = BookmarkTree {
@@ -606,7 +606,6 @@ final class BookmarkListViewModelTests: XCTestCase {
             XCTAssertNotNil(bookmarkListViewModel.bookmark(for: URL(string: "https://example.com")!))
             XCTAssertNil(bookmarkListViewModel.bookmark(for: URL(string: "https://example2.com")!))
         }
-        
     }
 }
 

@@ -318,19 +318,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.log(step, named: "Tunnel Wake")
 
             switch step {
-            case .begin:
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionTunnelWakeAttempt,
-                    frequency: .legacyDailyAndCount,
-                    includeAppVersionParameter: true)
+            case .begin, .success: break
             case .failure(let error):
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionTunnelWakeFailure(error),
-                    frequency: .legacyDailyAndCount,
-                    includeAppVersionParameter: true)
-            case .success:
-                PixelKit.fire(
-                    NetworkProtectionPixelEvent.networkProtectionTunnelWakeSuccess,
                     frequency: .legacyDailyAndCount,
                     includeAppVersionParameter: true)
             }

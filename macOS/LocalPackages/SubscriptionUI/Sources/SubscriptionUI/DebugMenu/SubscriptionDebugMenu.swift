@@ -25,6 +25,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     var currentEnvironment: SubscriptionEnvironment
     var updateServiceEnvironment: (SubscriptionEnvironment.ServiceEnvironment) -> Void
     var updatePurchasingPlatform: (SubscriptionEnvironment.PurchasePlatform) -> Void
+    var updateCustomBaseSubscriptionURL: (URL?) -> Void
     var openSubscriptionTab: (URL) -> Void
 
     private var purchasePlatformItem: NSMenuItem?
@@ -44,6 +45,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     public init(currentEnvironment: SubscriptionEnvironment,
                 updateServiceEnvironment: @escaping (SubscriptionEnvironment.ServiceEnvironment) -> Void,
                 updatePurchasingPlatform: @escaping (SubscriptionEnvironment.PurchasePlatform) -> Void,
+                updateCustomBaseSubscriptionURL: @escaping (URL?) -> Void,
                 currentViewController: @escaping () -> NSViewController?,
                 openSubscriptionTab: @escaping (URL) -> Void,
                 subscriptionManager: SubscriptionManager,
@@ -51,6 +53,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
+        self.updateCustomBaseSubscriptionURL = updateCustomBaseSubscriptionURL
         self.currentViewController = currentViewController
         self.openSubscriptionTab = openSubscriptionTab
         self.subscriptionManager = subscriptionManager
@@ -86,6 +89,10 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         let environmentItem = NSMenuItem(title: "Environment", action: nil, target: nil)
         environmentItem.submenu = makeEnvironmentSubmenu()
         menu.addItem(environmentItem)
+
+        let customBaseSubscriptionURLItem = NSMenuItem(title: "Custom Base Subscription URL", action: nil, target: nil)
+        customBaseSubscriptionURLItem.submenu = makeCustomBaseSubscriptionURLSubmenu()
+        menu.addItem(customBaseSubscriptionURLItem)
 
         menu.addItem(.separator())
         let storefrontID = SKPaymentQueue.default().storefront?.identifier ?? "nil"
@@ -152,6 +159,23 @@ public final class SubscriptionDebugMenu: NSMenuItem {
             productionItem.target = nil
         }
         menu.addItem(productionItem)
+
+        let disclaimerItem = NSMenuItem(title: "⚠️ App restart required! The changes are persistent", action: nil, target: nil)
+        menu.addItem(disclaimerItem)
+
+        return menu
+    }
+
+    private func makeCustomBaseSubscriptionURLSubmenu() -> NSMenu {
+        let menu = NSMenu(title: "Set custom base subscription URL:")
+
+        let customURLString = subscriptionManager.currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? " -"
+        menu.addItem(withTitle: "Custom URL: \(customURLString)", action: nil, keyEquivalent: "")
+
+        menu.addItem(.separator())
+
+        menu.addItem(NSMenuItem(title: "Update custom base subscription URL", action: #selector(setCustomBaseSubscriptionURL), target: self))
+        menu.addItem(NSMenuItem(title: "Reset configuration to default", action: #selector(resetCustomBaseSubscriptionURL), target: self))
 
         let disclaimerItem = NSMenuItem(title: "⚠️ App restart required! The changes are persistent", action: nil, target: nil)
         menu.addItem(disclaimerItem)
@@ -327,6 +351,62 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         closeTheApp()
     }
 
+    // MARK: - Custom base subscription URL
+
+    @IBAction func setCustomBaseSubscriptionURL(_ sender: Any?) {
+        let currentCustomBaseSubscriptionURL = subscriptionManager.currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? ""
+        let defaultBaseSubscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production).absoluteString
+
+        let alert = makeAlert(title: "Are you sure you want to change the base subscription URL?",
+                              message: """
+                                                  This setting IS persisted between app runs. The custom base subscription URL is used for front-end URLs. Custom URL is only used when internal user mode is enabled.
+
+                                                  This action will close the app, do you want to proceed?
+                              """,
+                              buttonNames: ["Yes", "No"])
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        textField.maximumNumberOfLines = 1
+        textField.lineBreakMode = .byTruncatingTail
+        textField.stringValue = currentCustomBaseSubscriptionURL
+        textField.placeholderString = defaultBaseSubscriptionURL
+        alert.accessoryView = textField
+        alert.window.initialFirstResponder = alert.accessoryView
+        textField.currentEditor()?.selectAll(nil)
+
+        if alert.runModal() != .cancel {
+            guard let textField = alert.accessoryView as? NSTextField,
+                  let newURL = URL(string: textField.stringValue),
+                  newURL != self.subscriptionManager.currentEnvironment.customBaseSubscriptionURL
+            else {
+                return
+            }
+
+            guard newURL.scheme != nil else {
+                self.showAlert(title: "URL is missing a scheme")
+                return
+            }
+
+            self.updateCustomBaseSubscriptionURL(newURL)
+            closeTheApp()
+        }
+    }
+
+    @IBAction func resetCustomBaseSubscriptionURL(_ sender: Any?) {
+        let alert = makeAlert(title: "Are you sure you want to reset the base subscription URL?",
+                              message: """
+                                                  This setting IS persisted between app runs. The custom base subscription URL is used for front-end URLs. Custom URL is only used when internal user mode is enabled.
+
+                                                  This action will close the app, do you want to proceed?
+                              """,
+                              buttonNames: ["Yes", "No"])
+        let response = alert.runModal()
+        guard case .alertFirstButtonReturn = response else { return }
+
+        self.updateCustomBaseSubscriptionURL(nil)
+        closeTheApp()
+    }
+
     func closeTheApp() {
       NSApp.terminate(self)
     }
@@ -388,6 +468,24 @@ public final class SubscriptionDebugMenu: NSMenuItem {
             alert.addButton(withTitle: buttonName)
         }
         alert.accessoryView = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 0))
+        return alert
+    }
+}
+
+extension NSAlert {
+    static func customURLAlert(value: String?, placeholder: String?) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = "Set custom URL:"
+        alert.addButton(withTitle: "Ok")
+        alert.addButton(withTitle: "Cancel")
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        textField.maximumNumberOfLines = 1
+        textField.lineBreakMode = .byTruncatingTail
+        textField.stringValue = value ?? ""
+        textField.placeholderString = placeholder
+        alert.accessoryView = textField
+        alert.window.initialFirstResponder = alert.accessoryView
+        textField.currentEditor()?.selectAll(nil)
         return alert
     }
 }

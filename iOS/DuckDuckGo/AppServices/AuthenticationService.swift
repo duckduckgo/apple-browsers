@@ -19,34 +19,50 @@
 
 import Foundation
 
+protocol AuthenticationServiceProtocol {
+
+    func authenticate() async
+
+}
+
 final class AuthenticationService {
 
-    private let authenticator = Authenticator()
-    private let overlayWindowManager: OverlayWindowManager
-    private let privacyStore: PrivacyStore = PrivacyUserDefaults()
+    private let authenticator: Authenticating
+    private let overlayWindowManager: OverlayWindowManaging
+    private let privacyStore: PrivacyStore
 
-    private var shouldAuthenticate: Bool {
-         privacyStore.authenticationEnabled && authenticator.canAuthenticate()
-    }
-
-    init(overlayWindowManager: OverlayWindowManager) {
+    init(authenticator: Authenticating = Authenticator(),
+         overlayWindowManager: OverlayWindowManaging,
+         privacyStore: PrivacyStore = PrivacyUserDefaults()) {
+        self.authenticator = authenticator
         self.overlayWindowManager = overlayWindowManager
+        self.privacyStore = privacyStore
     }
 
-    @MainActor
-    func resume() async {
-        guard shouldAuthenticate else {
-            return
-        }
-        let authenticationViewController = showAuthenticationScreen()
-        authenticationViewController.delegate = self
-        await authenticate(with: authenticationViewController)
-    }
+    // MARK: - Suspend
 
-    func onBackground() {
+    func suspend() {
         if privacyStore.authenticationEnabled {
             overlayWindowManager.displayBlankSnapshotWindow()
         }
+    }
+
+}
+
+extension AuthenticationService: AuthenticationServiceProtocol {
+
+    @MainActor
+    func authenticate() async {
+        guard shouldAuthenticate else {
+            return
+        }
+        overlayWindowManager.removeOverlay()
+        let authenticationViewController = showAuthenticationScreen()
+        await authenticate(with: authenticationViewController)
+    }
+
+    private var shouldAuthenticate: Bool {
+         privacyStore.authenticationEnabled && authenticator.canAuthenticate()
     }
 
     @MainActor
@@ -61,8 +77,10 @@ final class AuthenticationService {
     }
 
     private func showAuthenticationScreen() -> AuthenticationViewController {
-        overlayWindowManager.removeOverlay()
-        return overlayWindowManager.displayAuthenticationWindow()
+        let authenticationViewController = AuthenticationViewController.loadFromStoryboard()
+        authenticationViewController.delegate = self
+        overlayWindowManager.displayOverlay(with: authenticationViewController)
+        return authenticationViewController
     }
 
 }

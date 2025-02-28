@@ -240,7 +240,7 @@ final class FireTests: XCTestCase {
         XCTAssertNotEqual(tabCollectionViewModel.allTabsCount, 0)
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
-        fire.burnVisits(of: [],
+        fire.burnVisits([],
                         except: FireproofDomains.shared,
                         isToday: true,
                         completion: {
@@ -285,7 +285,7 @@ final class FireTests: XCTestCase {
             HistoryEntry(identifier: UUID(), url: .duckDuckGo, failedToLoad: false, numberOfTotalVisits: 1, lastVisit: Date(), visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false),
             HistoryEntry(identifier: UUID(), url: .duckDuckGoEmail, failedToLoad: false, numberOfTotalVisits: 1, lastVisit: Date(), visits: [], numberOfTrackersBlocked: 0, blockedTrackingEntities: [], trackersFound: false),
         ]
-        fire.burnVisits(of: [
+        fire.burnVisits([
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[0]),
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[1]),
                         ],

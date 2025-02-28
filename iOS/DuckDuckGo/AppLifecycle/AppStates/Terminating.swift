@@ -19,32 +19,34 @@
 
 import UIKit
 
-struct Terminating: AppState {
+struct Terminating: TerminatingHandling {
+
+    let terminationError: UIApplication.TerminationError
 
     init() {
+        Logger.lifecycle.info("Terminating: \(#function)")
         fatalError("App is in unrecoverable state")
     }
 
-    init(terminationReason: UIApplication.TerminationReason,
+    init(terminationError: UIApplication.TerminationError,
          application: UIApplication = UIApplication.shared) {
-        alertAndTerminate(application: application, terminationReason: terminationReason)
+        Logger.lifecycle.info("Terminating: \(#function)")
+        self.terminationError = terminationError
+        alertAndTerminate(application: application)
     }
 
-    private func alertAndTerminate(application: UIApplication, terminationReason: UIApplication.TerminationReason) {
+    private func alertAndTerminate(application: UIApplication) {
         let alertController: UIAlertController
-        switch terminationReason {
+        switch terminationError {
         case .insufficientDiskSpace:
             alertController = CriticalAlerts.makeInsufficientDiskSpaceAlert()
         case .unrecoverableState:
             alertController = CriticalAlerts.makePreemptiveCrashAlert()
         }
-        application.window?.rootViewController?.present(alertController, animated: true, completion: nil)
+
+        let window = UIWindow.makeBlank()
+        application.setWindow(window)
+        window.rootViewController?.present(alertController, animated: true, completion: nil)
     }
-
-}
-
-extension Terminating {
-
-    mutating func handle(action: AppAction) { }
 
 }

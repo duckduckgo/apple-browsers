@@ -433,11 +433,16 @@ extension DistributedNavigationDelegateTestsBase {
     // MARK: FrameInfo mocking
 
     func main(webView webViewArg: WKWebView? = nil, _ current: URL = .empty, secOrigin: SecurityOrigin? = nil, responderIdx: Int? = nil) -> FrameInfo {
-        if let responderIdx, let mainFrame = responder(at: responderIdx).mainFrame {
+        if let responderIdx, let mainFrame = responder(at: responderIdx).mainFrame, current == .empty, secOrigin == nil {
             return mainFrame
         }
         return withWebView { webView in
-            FrameInfo(webView: webViewArg ?? webView, handle: webViewArg?.mainFrameHandle ?? webView.mainFrameHandle, isMainFrame: true, url: current, securityOrigin: secOrigin ?? current.securityOrigin)
+            let handle = if let responderIdx, let mainFrame = responder(at: responderIdx).mainFrame {
+                mainFrame.handle
+            } else {
+                webViewArg?.mainFrameHandle ?? webView.mainFrameHandle
+            }
+            return FrameInfo(webView: webViewArg ?? webView, handle: handle, isMainFrame: true, url: current, securityOrigin: secOrigin ?? current.securityOrigin)
         }
     }
 

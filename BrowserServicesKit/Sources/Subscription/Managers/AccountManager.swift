@@ -36,6 +36,7 @@ public protocol AccountManager {
     func storeAccount(token: String, email: String?, externalID: String?)
     func signOut(skipNotification: Bool)
     func signOut()
+    func removeAccessToken() throws
 
     // Entitlements
     func hasEntitlement(forProductName productName: Entitlement.ProductName, cachePolicy: APICachePolicy) async -> Result<Bool, Error>
@@ -217,6 +218,10 @@ public final class DefaultAccountManager: AccountManager {
         if !skipNotification {
             NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
         }
+    }
+
+    public func removeAccessToken() throws {
+        try accessTokenStorage.removeAccessToken()
     }
 
     // MARK: -

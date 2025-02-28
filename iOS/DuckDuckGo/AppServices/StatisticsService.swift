@@ -1,5 +1,5 @@
 //
-//  UserAgentConfiguration.swift
+//  StatisticsService.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,18 +18,24 @@
 //
 
 import Foundation
-import Networking
 import Core
 
-final class UserAgentConfiguration {
+public extension NSNotification.Name {
 
-    static func configureAPIRequestUserAgent() {
-        APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
-    }
+    static let didLoadStatisticsOnForeground = Notification.Name("com.duckduckgo.app.didLoadStatisticsOnForeground")
 
-    // Called at the end of launching due to some race condition in the IPC layer when spawning a WebView for content blocking compilation.
-    static func configureUserBrowsingUserAgent() {
-        _ = DefaultUserAgentManager.shared
+}
+
+final class StatisticsService {
+
+    private lazy var statisticsLoader: StatisticsLoader = .shared
+
+    // MARK: - Resume
+
+    func resume() {
+        statisticsLoader.load {
+            NotificationCenter.default.post(name: .didLoadStatisticsOnForeground, object: nil)
+        }
     }
 
 }

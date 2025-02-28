@@ -22,9 +22,12 @@ import UIKit
 final class ScreenshotService: NSObject {
 
     private let window: UIWindow
+    private let mainViewController: MainViewController
 
-    init(window: UIWindow) {
+    init(window: UIWindow,
+         mainViewController: MainViewController) {
         self.window = window
+        self.mainViewController = mainViewController
         super.init()
         window.windowScene?.screenshotService?.delegate = self
     }
@@ -35,8 +38,7 @@ extension ScreenshotService: UIScreenshotServiceDelegate {
 
     func screenshotService(_ screenshotService: UIScreenshotService,
                            generatePDFRepresentationWithCompletion completionHandler: @escaping (Data?, Int, CGRect) -> Void) {
-        guard let mainViewController = window.rootViewController as? MainViewController,
-              let webView = mainViewController.currentTab?.webView else {
+        guard let webView = mainViewController.currentTab?.webView else {
             completionHandler(nil, 0, .zero)
             return
         }

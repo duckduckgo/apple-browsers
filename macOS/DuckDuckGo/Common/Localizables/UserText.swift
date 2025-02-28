@@ -207,6 +207,30 @@ struct UserText {
     static let mainMenuHelp = NSLocalizedString("Help", comment: "Main Menu Help")
     static let mainMenuHelpDuckDuckGoHelp = NSLocalizedString("DuckDuckGo Help", comment: "Main Menu Help item")
 
+    // MARK: - History
+    static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
+    static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
+
+    static let deleteHistory = NSLocalizedString("history.delete.dialog.title", value: "Delete history?", comment: "Title of a dialog asking the user to confirm deleting history")
+    static func deleteHistoryMessage(items: Int) -> String {
+        let localized = {
+            if #available(macOS 12.0, *) {
+                return NSLocalizedString("history.delete.dialog.message.markdown",
+                                         value: "Do you want to delete history items (**%d**)?",
+                                         comment: "Message in a dialog asking the user to confirm deleting history. Please make sure to keep **%d** intact")
+            } else {
+                return NSLocalizedString("history.delete.dialog.message",
+                                         value: "Do you want to delete history items (%d)?",
+                                         comment: "Message in a dialog asking the user to confirm deleting history")
+            }
+        }()
+        return String(format: localized, items)
+    }
+    static let deleteCookiesAndSiteData = NSLocalizedString("history.delete.dialog.burn.checkbox", value: "Also delete cookies and site data", comment: "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries")
+    static let deleteCookiesAndSiteDataExplanation = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation", value: "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
+
+    // MARK: -
+
     static let duplicateTab = NSLocalizedString("duplicate.tab", value: "Duplicate Tab", comment: "Menu item. Duplicate as a verb")
     static let pinTab = NSLocalizedString("pin.tab", value: "Pin Tab", comment: "Menu item. Pin as a verb")
     static let unpinTab = NSLocalizedString("unpin.tab", value: "Unpin Tab", comment: "Menu item. Unpin as a verb")

@@ -1,8 +1,8 @@
 //
-//  TabInteractionStateConfiguration.swift
+//  Logger+Pixel.swift
 //  DuckDuckGo
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,14 +18,8 @@
 //
 
 import Foundation
+import os.log
 
-final class TabInteractionStateConfiguration {
-
-    static func configure(autoClearService: AutoClearService, mainViewController: MainViewController) {
-        if !autoClearService.isClearingEnabled {
-            // If not using autoclear, make sure there are no leftover states on disk.
-            mainViewController.tabManager.removeLeftoverInteractionStates()
-        }
-    }
-
+public extension Logger {
+    static var pixels = { Logger(subsystem: "Pixels", category: "") }()
 }

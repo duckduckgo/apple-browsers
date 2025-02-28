@@ -18,6 +18,7 @@
 
 import Foundation
 
+/// Generic protocol for handling auth token V1 or V2 in targets like NetworkProtection that don't import Subscription
 public protocol SubscriptionTokenHandling {
 
     @discardableResult func getToken() async throws -> String

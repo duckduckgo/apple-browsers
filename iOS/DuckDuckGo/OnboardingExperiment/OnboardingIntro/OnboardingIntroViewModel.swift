@@ -117,6 +117,12 @@ final class OnboardingIntroViewModel: ObservableObject {
         onCompletingOnboardingIntro?()
     }
 
+#if DEBUG || ALPHA
+    public func overrideOnboardingCompleted() {
+        LaunchOptionsHandler().overrideOnboardingCompleted()
+        onCompletingOnboardingIntro?()
+    }
+#endif
 }
 
 // MARK: - Private

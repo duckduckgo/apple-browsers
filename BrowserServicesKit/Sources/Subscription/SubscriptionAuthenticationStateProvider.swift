@@ -1,6 +1,5 @@
 //
-//  HistoryManagerConfiguration.swift
-//  DuckDuckGo
+//  SubscriptionAuthenticationStateProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,11 +18,6 @@
 
 import Foundation
 
-final class HistoryManagerConfiguration {
-
-    func onVariantAssigned() {
-        // New users don't see the message
-        HistoryMessageManager().dismiss()
-    }
-
+public protocol SubscriptionAuthenticationStateProvider {
+    var isUserAuthenticated: Bool { get }
 }

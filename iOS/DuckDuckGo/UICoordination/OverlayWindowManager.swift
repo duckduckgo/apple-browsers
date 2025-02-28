@@ -20,7 +20,16 @@
 import UIKit
 import BrowserServicesKit
 
-final class OverlayWindowManager {
+protocol OverlayWindowManaging {
+
+    func displayBlankSnapshotWindow()
+    func displayOverlay(with viewController: UIViewController)
+    func removeOverlay()
+    func removeNonAuthenticationOverlay()
+
+}
+
+final class OverlayWindowManager: OverlayWindowManaging {
 
     private var overlayWindow: UIWindow?
 
@@ -42,25 +51,16 @@ final class OverlayWindowManager {
         self.aiChatSettings = aiChatSettings
     }
 
-    @discardableResult
-    func displayBlankSnapshotWindow() -> BlankSnapshotViewController {
+    func displayBlankSnapshotWindow() {
         let blankSnapshotViewController = BlankSnapshotViewController(addressBarPosition: appSettings.currentAddressBarPosition,
                                                                       aiChatSettings: aiChatSettings,
                                                                       voiceSearchHelper: voiceSearchHelper,
                                                                       featureFlagger: featureFlagger)
         blankSnapshotViewController.delegate = self
         displayOverlay(with: blankSnapshotViewController)
-        return blankSnapshotViewController
     }
 
-    @discardableResult
-    func displayAuthenticationWindow() -> AuthenticationViewController {
-        let authenticationViewController = AuthenticationViewController.loadFromStoryboard()
-        displayOverlay(with: authenticationViewController)
-        return authenticationViewController
-    }
-
-    private func displayOverlay(with viewController: UIViewController) {
+    func displayOverlay(with viewController: UIViewController) {
         guard overlayWindow == nil else { return }
 
         overlayWindow = UIWindow(frame: window.frame)

@@ -113,7 +113,12 @@ final class VPNLocationViewModel: ObservableObject {
                 cityPickerItems = currentLocation.cities.map { currentCity in
                     return VPNCityItemModel(cityName: currentCity.name)
                 }
-                selectedCityItem = location.city.flatMap(VPNCityItemModel.init(cityName:)) ?? .nearest
+
+                if isCountrySelected {
+                    selectedCityItem = location.city.flatMap(VPNCityItemModel.init(cityName:)) ?? .nearest
+                } else {
+                    selectedCityItem = .nearest
+                }
             case .nearest:
                 isCountrySelected = false
                 cityPickerItems = currentLocation.cities.map { currentCity in

@@ -88,7 +88,6 @@ extension VoiceSearchFeedbackView {
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 220)
                 .padding(.bottom, 20)
-
             }
 
             Text(UserText.voiceSearchFooterOld)

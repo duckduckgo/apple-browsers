@@ -226,10 +226,12 @@ class TabSwitcherViewController: UIViewController {
             ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericEdit, onAction: {
                 self.editBookmark(results.urls.first)
             })
-        } else {
+        } else if results.newCount > 0 {
             ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericUndo, onAction: {
                 self.removeBookmarks(results.urls)
             })
+        } else { // Zero
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount))
         }
     }
     

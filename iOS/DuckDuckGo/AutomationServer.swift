@@ -65,7 +65,7 @@ final class AutomationServer {
         connection.receive(
             minimumIncompleteLength: 1,
             maximumLength: connection.maximumDatagramSize
-        ) { (content: Data?, context: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
+        ) { (content: Data?, _: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
             switch connection.state {
             case .ready:
                 break // Connection is valid, continue
@@ -117,7 +117,7 @@ final class AutomationServer {
 
     func handleConnection(_ connection: NWConnection, _ content: Data) {
         Logger.automationServer.info("Handling request!")
-        let stringContent = String(decoding: content, as: UTF8.self)
+        let stringContent = String(bytes: content, encoding: .utf8) ?? ""
         // Log first line of string:
         if let firstLine = stringContent.components(separatedBy: CharacterSet.newlines).first {
             Logger.automationServer.info("First line: \(firstLine)")
@@ -236,7 +236,7 @@ final class AutomationServer {
             return tabView.tabModel.uid == handleString
         }) {
             Logger.automationServer.info("found tab \(tabIndex)")
-            let _ = self.main.tabManager.select(tabAt: tabIndex)
+            _ = self.main.tabManager.select(tabAt: tabIndex)
             self.respond(on: connection, response: "{\"success\":true}")
         } else {
             self.respondError(on: connection, error: "Invalid window handle")

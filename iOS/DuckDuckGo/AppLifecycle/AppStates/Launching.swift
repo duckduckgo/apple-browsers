@@ -178,7 +178,7 @@ struct Launching: LaunchingHandling {
         guard let rootViewController = window.rootViewController as? MainViewController else {
             return
         }
-        let _ = AutomationServer(main: rootViewController, port: launchOptionsHandler.automationPort)
+        _ = AutomationServer(main: rootViewController, port: launchOptionsHandler.automationPort)
     }
 }
 

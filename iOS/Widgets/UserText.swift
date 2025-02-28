@@ -222,7 +222,7 @@ struct UserText {
         value: "Quickly start a new AI chat in Duck.ai",
         comment: "Description shown to the user when adding the Duck.ai lock screen widget")
 
-    //MARK: - Quick Actions
+    // MARK: - Quick Actions
     static let quickActionsWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.customshortcuts.display.name",
                                                                   value: "Custom Shortcuts",
                                                                   comment: "Display name for quick actions widget in widget gallery")
@@ -247,7 +247,7 @@ struct UserText {
                                                                   value: "Choose your shortcuts",
                                                                   comment: "Description for editing custom shortcuts")
 
-    //MARK: - Quick Actions Medium
+    // MARK: - Quick Actions Medium
 
     static let quickActionsMediumWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.quickactions.medium.display.name",
                                                                   value: "Shortcuts",
@@ -257,4 +257,3 @@ struct UserText {
                                                                   value: "Shortcuts to your favorite actions.",
                                                                   comment: "Description of medium quickActions widget in widget gallery")
 }
-

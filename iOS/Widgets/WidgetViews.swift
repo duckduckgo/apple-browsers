@@ -79,7 +79,6 @@ struct FavoriteView: View {
 
 
 struct FavoritesRowView: View {
-
     var entry: Provider.Entry
     var start: Int
     var end: Int
@@ -95,9 +94,7 @@ struct FavoritesRowView: View {
 
             }
         }
-
     }
-
 }
 
 struct FavoritesGridView: View {

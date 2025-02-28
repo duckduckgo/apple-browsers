@@ -49,7 +49,7 @@ struct QuickActionsMediumProvider: TimelineProvider {
         completion(entry)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsMediumEntry>) -> ()) {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsMediumEntry>) -> Void) {
         let entry = QuickActionsMediumEntry(date: Date())
         let timeline = Timeline(entries: [entry], policy: .never)
         completion(timeline)

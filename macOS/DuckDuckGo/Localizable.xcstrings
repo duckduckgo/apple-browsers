@@ -61268,6 +61268,18 @@
         }
       }
     },
+    "scam.error.page.tab.title" : {
+      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Scam.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warning: Site May Be Scam"
+          }
+        }
+      }
+    },
     "scroll.to.find.app.settings" : {
       "comment" : "Setup of the integration with Bitwarden app",
       "extractionState" : "extracted_with_value",

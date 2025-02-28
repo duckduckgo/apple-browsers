@@ -34,7 +34,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     var clock: TestClock<Duration>!
     var willSleep: ((TimeInterval) -> Void)?
     var updateTask: Task<Void, Error>?
-    var featureFlagger:MockMaliciousSiteProtectionFeatureFlags!
+    var featureFlagger: MockMaliciousSiteProtectionFeatureFlags!
     private var mockEventMapping: MockEventMapping!
 
     override func setUp() async throws {
@@ -95,7 +95,6 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
             "a379a6f6"
         ]))
     }
-
 
     func testUpdateFilterSet() async throws {
         try await updateManager.updateData(for: .filterSet(threatKind: .phishing))

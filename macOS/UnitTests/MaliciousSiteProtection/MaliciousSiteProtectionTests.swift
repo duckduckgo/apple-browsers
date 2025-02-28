@@ -27,6 +27,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MaliciousSiteProtectionTests: XCTestCase {
+    var isScamProtectionEnabled = true
     lazy var phishingDetection: MaliciousSiteProtectionManager! = { () -> MaliciousSiteProtectionManager in
         let configManager = MockPrivacyConfigurationManager()
         let privacyConfig = MockPrivacyConfiguration()
@@ -34,7 +35,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
             if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
         }
         configManager.privacyConfig = privacyConfig
-        return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlags: MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configManager, isMaliciousSiteProtectionEnabled: { true }))
+        return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlags: MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configManager, isMaliciousSiteProtectionEnabled: { true }, isScamProtectionEnabledGetter: { self.isScamProtectionEnabled }))
     }()
     var apiService: MockAPIService!
     var mockDetector: MockMaliciousSiteDetector!
@@ -70,6 +71,12 @@ final class MaliciousSiteProtectionTests: XCTestCase {
         let isMalicious = await phishingDetection.evaluate(URL(string: "https://malware.com")!)
         XCTAssertNil(isMalicious)
     }
+    func testWhenFeatureDisabled_scamIsNotDetected() async {
+        isScamProtectionEnabled = true
+        MaliciousSiteProtectionPreferences.shared.isEnabled = false
+        let isMalicious = await phishingDetection.evaluate(URL(string: "https://scam.com")!)
+        XCTAssertNil(isMalicious)
+    }
 
     func testDidNotLoadAndStartDataActivities_IfFeatureDisabled() async {
         MaliciousSiteProtectionPreferences.shared.isEnabled = false
@@ -90,6 +97,18 @@ final class MaliciousSiteProtectionTests: XCTestCase {
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
         let isMalicious = await phishingDetection.evaluate(URL(string: "https://malware.com")!)
         XCTAssertEqual(isMalicious, .malware)
+    }
+
+    func testWhenScamDetected_scamThreatReturned() async {
+        MaliciousSiteProtectionPreferences.shared.isEnabled = true
+        let isMalicious = await phishingDetection.evaluate(URL(string: "https://scam.com")!)
+        XCTAssertEqual(isMalicious, .scam)
+    }
+
+    func testWhenScamDetected_andScamProtectionOff_nosThreatReturned() async {
+        MaliciousSiteProtectionPreferences.shared.isEnabled = false
+        let isMalicious = await phishingDetection.evaluate(URL(string: "https://scam.com")!)
+        XCTAssertNil(isMalicious)
     }
 
     func testIsNotMalicious() async {

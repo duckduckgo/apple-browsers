@@ -68,6 +68,8 @@ struct SettingsState {
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
+    var isExperimentalThemingEnabled: Bool
+    var isAlternativeColorSchemeEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -123,6 +125,8 @@ struct SettingsState {
             textZoom: TextZoom(enabled: false, level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
+            isExperimentalThemingEnabled: false,
+            isAlternativeColorSchemeEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

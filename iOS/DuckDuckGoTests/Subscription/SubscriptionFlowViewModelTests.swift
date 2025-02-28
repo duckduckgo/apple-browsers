@@ -2,7 +2,7 @@
 //  SubscriptionFlowViewModelTests.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,82 +23,45 @@ import XCTest
 import SubscriptionTestingUtilities
 
 final class SubscriptionFlowViewModelTests: XCTestCase {
-    private var sut: SubscriptionFlowViewModel!
-    
-    let subscriptionManager: SubscriptionManager = {
-        let accountManager = AccountManagerMock()
-        let subscriptionService = DefaultSubscriptionEndpointService(currentServiceEnvironment: .production)
-        let authService = DefaultAuthEndpointService(currentServiceEnvironment: .production)
-        let subscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
-        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
-        return SubscriptionManagerMock(accountManager: accountManager,
-                                       subscriptionEndpointService: subscriptionService,
-                                       authEndpointService: authService,
-                                       storePurchaseManager: storePurchaseManager,
-                                       currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
-                                                                                   purchasePlatform: .appStore),
-                                       canPurchase: true,
-                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
-    }()
 
-    let subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock.enabled
+    func testAllowedDomainsOnlyContainsBaseURLHostWhenInternalUserModeDisabled() async throws {
+        // Given
+        let baseURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/subscriptions"))
+        let isInternalUser = false
 
-    func testWhenInitWithOriginThenSubscriptionFlowPurchaseURLHasOriginSet() {
-        // GIVEN
-        let origin = "test_origin"
-        let queryParameter = URLQueryItem(name: "origin", value: "test_origin")
-        let expectedURL = SubscriptionURL.purchase.subscriptionURL(environment: .production).appending(percentEncodedQueryItem: queryParameter)
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                               accountManager: subscriptionManager.accountManager,
-                                                               appStoreRestoreFlow: appStoreRestoreFlow,
-                                                               authEndpointService: subscriptionManager.authEndpointService)
-        let appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: subscriptionManager.authEndpointService,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 accountManager: subscriptionManager.accountManager)
+        // When
+        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
-        // WHEN
-        sut = .init(origin: origin, userScript: .init(), subFeature: .init(subscriptionManager: subscriptionManager,
-                                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                           subscriptionAttributionOrigin: nil,
-                                                                           appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                           appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                           appStoreAccountManagementFlow: appStoreAccountManagementFlow),
-                    subscriptionManager: subscriptionManager)
-        
-        // THEN
-        XCTAssertEqual(sut.purchaseURL, expectedURL)
+        // Then
+        XCTAssertEqual([baseURL.host!], result)
     }
-    
-    func testWhenInitWithoutOriginThenSubscriptionFlowPurchaseURLDoesNotHaveOriginSet() {
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
-        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                               accountManager: subscriptionManager.accountManager,
-                                                               appStoreRestoreFlow: appStoreRestoreFlow,
-                                                               authEndpointService: subscriptionManager.authEndpointService)
-        let appStoreAccountManagementFlow = DefaultAppStoreAccountManagementFlow(authEndpointService: subscriptionManager.authEndpointService,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 accountManager: subscriptionManager.accountManager)
 
-        // WHEN
-        sut = .init(origin: nil, userScript: .init(), subFeature: .init(subscriptionManager: subscriptionManager,
-                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                                        subscriptionAttributionOrigin: nil,
-                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
-                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                        appStoreAccountManagementFlow: appStoreAccountManagementFlow),
-                    subscriptionManager: subscriptionManager)
-        
-        // THEN
-        XCTAssertEqual(sut.purchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .production))
+    func testAllowedDomainsContainsCustomBaseURLHostWhenInternalUserModeDisabled() async throws {
+        // Given
+        let baseURL = try XCTUnwrap(URL(string: "https://use-devtesting2.duckduckgo.comc/subscriptions"))
+        let isInternalUser = false
+
+        // When
+        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
+
+        // Then
+        XCTAssertEqual([baseURL.host!], result)
     }
-    
+
+    func testAllowedDomainsContainsBaseURLHostAndDUORequiredHostsWhenInternalUserModeEnabled() async throws {
+        // Given
+        let baseURL = try XCTUnwrap(URL(string: "https://duck.co/subscriptions"))
+        let isInternalUser = true
+        let domainsRequiredForDUOAuthentication = ["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
+
+        // When
+        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
+
+        // Then
+        XCTAssertTrue(result.contains(baseURL.host!))
+
+        domainsRequiredForDUOAuthentication.forEach { duoDomain in
+            XCTAssertTrue(result.contains(duoDomain))
+        }
+    }
 }

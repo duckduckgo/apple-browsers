@@ -43,8 +43,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.api: "Make API Call",
         Sections.appstore: "App Store",
         Sections.environment: "Environment",
+        Sections.customBaseSubscriptionURL: "Custom Base Subscription URL",
         Sections.pixels: "Promo Pixel Parameters",
-        Sections.metadata: "StoreKit Metadata"
+        Sections.metadata: "StoreKit Metadata",
+        Sections.featureFlags: "Feature Flags"
     ]
 
     enum Sections: Int, CaseIterable {
@@ -52,6 +54,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case api
         case appstore
         case environment
+        case customBaseSubscriptionURL
         case pixels
         case metadata
         case featureFlags
@@ -76,6 +79,11 @@ final class SubscriptionDebugViewController: UITableViewController {
     enum EnvironmentRows: Int, CaseIterable {
         case staging
         case production
+    }
+
+    enum CustomBaseSubscriptionURLRows: Int, CaseIterable {
+        case current
+        case reset
     }
 
     enum PixelsRows: Int, CaseIterable {
@@ -112,6 +120,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
+        cell.textLabel?.textColor = UIColor.label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
 
@@ -164,6 +173,26 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
+        case .customBaseSubscriptionURL:
+            switch CustomBaseSubscriptionURLRows(rawValue: indexPath.row) {
+            case .current:
+                if let currentURL = subscriptionManager.currentEnvironment.customBaseSubscriptionURL {
+                    cell.textLabel?.text = currentURL.absoluteString
+                } else {
+                    cell.textLabel?.text = " - "
+                }
+
+                cell.textLabel?.sizeToFit()
+                cell.detailTextLabel?.sizeToFit()
+                cell.textLabel?.numberOfLines = 0
+            case .reset:
+                cell.textLabel?.text = "Edit Custom URL"
+                cell.textLabel?.textColor = UIColor(designSystemColor: .accent)
+            case .none:
+                break
+            }
+
+
         case .pixels:
             switch PixelsRows(rawValue: indexPath.row) {
             case .randomize:
@@ -206,6 +235,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .api: return SubscriptionRows.allCases.count
         case .appstore: return AppStoreRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
+        case .customBaseSubscriptionURL: return CustomBaseSubscriptionURLRows.allCases.count
         case .pixels: return PixelsRows.allCases.count
         case .metadata: return MetadataRows.allCases.count
         case .featureFlags: return FeatureFlagRows.allCases.count
@@ -237,6 +267,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .environment:
             guard let subEnv: EnvironmentRows = EnvironmentRows(rawValue: indexPath.row) else { return }
             changeSubscriptionEnvironment(envRows: subEnv)
+        case .customBaseSubscriptionURL:
+            switch CustomBaseSubscriptionURLRows(rawValue: indexPath.row) {
+            case .reset: presentCustomBaseSubscriptionURLAlert(at: indexPath)
+            default: break
+            }
         case .pixels:
             switch PixelsRows(rawValue: indexPath.row) {
             case .randomize: showRandomizedParamters()
@@ -447,6 +482,90 @@ final class SubscriptionDebugViewController: UITableViewController {
                 settings.selectedEnvironment = .staging
             }
             NetworkProtectionLocationListCompositeRepository.clearCache()
+        }
+    }
+
+    private func setCustomBaseSubscriptionURL(_ url: URL?) {
+
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+
+        if currentSubscriptionEnvironment.customBaseSubscriptionURL != url {
+            var newSubscriptionEnvironment = currentSubscriptionEnvironment
+            newSubscriptionEnvironment.customBaseSubscriptionURL = url
+
+            // Save Subscription environment
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+        }
+    }
+
+    private func presentCustomBaseSubscriptionURLAlert(at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "Set a custom base subscription URL", message: nil, preferredStyle: .alert)
+
+        alert.addTextField { textField in
+            textField.placeholder = SubscriptionURL.baseURL.subscriptionURL(environment: .production).absoluteString
+            textField.text = self.subscriptionManager.currentEnvironment.customBaseSubscriptionURL?.absoluteString
+        }
+
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
+            self.tableView.reloadData()
+        }
+        alert.addAction(cancelAction)
+
+        let resetAction = UIAlertAction(title: "Clear and reset to default", style: .destructive) { _ in
+            self.presentConfirmationForCustomBaseSubscriptionURLAlert(url: nil)
+        }
+        alert.addAction(resetAction)
+
+        let submitAction = UIAlertAction(title: "Update custom URL", style: .default) { _ in
+            guard let inputString = alert.textFields?.first?.text,
+                  let newURL = URL(string: inputString),
+                  newURL != self.subscriptionManager.currentEnvironment.customBaseSubscriptionURL
+            else {
+                return
+            }
+
+            guard newURL.scheme != nil else {
+                self.showAlert(title: "URL is missing a scheme")
+                return
+            }
+
+            self.presentConfirmationForCustomBaseSubscriptionURLAlert(url: newURL)
+        }
+        alert.addAction(submitAction)
+
+        let cell = self.tableView.cellForRow(at: indexPath)!
+        present(controller: alert, fromView: cell)
+    }
+
+    private func presentConfirmationForCustomBaseSubscriptionURLAlert(url: URL?) {
+        let messageFirstLine = {
+            if let url {
+                "Are you sure you want to change the base subscription URL to `\(url.absoluteString)` ?"
+            } else {
+                "Are you sure you want to reset the base subscription URL?"
+            }
+        }()
+
+        let message = """
+                    \(messageFirstLine)
+                    
+                    This setting IS persisted between app runs. The custom base subscription URL is used for front-end URLs. Custom URL is only used when internal user mode is enabled.
+                    
+                    This action will close the app, do you want to proceed?
+                    """
+        let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
+                                                message: message,
+                                                preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
+            self?.setCustomBaseSubscriptionURL(url)
+            // Close the app
+            exit(0)
+        })
+        let okAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertController.addAction(okAction)
+        DispatchQueue.main.async {
+            self.present(alertController, animated: true, completion: nil)
         }
     }
 

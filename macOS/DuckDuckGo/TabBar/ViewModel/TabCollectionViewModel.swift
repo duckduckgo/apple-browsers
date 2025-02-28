@@ -91,7 +91,7 @@ final class TabCollectionViewModel: NSObject {
             oldValue?.tab.renderTabSnapshot()
 
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 if let oldValue {
                     WebExtensionManager.shared.eventsListener.didDeselectTabs([oldValue.tab])
                 }

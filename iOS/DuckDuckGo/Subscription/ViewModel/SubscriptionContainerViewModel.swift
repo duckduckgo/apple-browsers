@@ -31,13 +31,18 @@ final class SubscriptionContainerViewModel: ObservableObject {
     let email: SubscriptionEmailViewModel
 
     init(subscriptionManager: SubscriptionManager,
-         origin: String?,
+         redirectPurchaseURL: URL? = nil,
+         isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          subFeature: SubscriptionPagesUseSubscriptionFeature) {
+
         self.userScript = userScript
+
         subFeature.cleanup()
         self.subFeature = subFeature
-        self.flow = SubscriptionFlowViewModel(origin: origin,
+
+        self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
+                                              isInternalUser: isInternalUser,
                                               userScript: userScript,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager)

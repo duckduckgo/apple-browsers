@@ -237,15 +237,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.log(step, named: "Tunnel Wake")
 
             switch step {
-            case .begin:
-                Pixel.fire(pixel: .networkProtectionTunnelWakeAttempt)
+            case .begin, .success: break
             case .failure(let error):
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelWakeFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              error: error)
-            case .success:
-                DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelWakeSuccess,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             }
         case .failureRecoveryAttempt(let step):
             vpnLogger.log(step)

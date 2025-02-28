@@ -104,12 +104,18 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     @UserDefaultsWrapper(key: .automaticUpdates, defaultValue: true)
     var areAutomaticUpdatesEnabled: Bool {
-        didSet {
-            Logger.updates.log("areAutomaticUpdatesEnabled: \(self.areAutomaticUpdatesEnabled, privacy: .public)")
-            if oldValue != areAutomaticUpdatesEnabled {
+        willSet {
+            if newValue != areAutomaticUpdatesEnabled {
                 userDriver?.cancelAndDismissCurrentUpdate()
-                try? configureUpdater()
-                checkForUpdateSkippingRollout()
+                updater = nil
+            }
+        }
+        didSet {
+            if oldValue != areAutomaticUpdatesEnabled {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                    try? self?.configureUpdater()
+                    self?.checkForUpdateSkippingRollout()
+                }
             }
         }
     }
@@ -138,7 +144,14 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         super.init()
 
         try? configureUpdater()
+
+#if DEBUG
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
+            checkForUpdateRespectingRollout()
+        }
+#else
         checkForUpdateRespectingRollout()
+#endif
     }
 
     func checkNewApplicationVersion() {
@@ -182,10 +195,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
+#if DEBUG
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
+            updater?.updateCheckInterval = 10_800
+        } else {
+            updater?.updateCheckInterval = 0
+        }
+        updater?.automaticallyChecksForUpdates = false
+        updater?.automaticallyDownloadsUpdates = false
+#else
         // We don't want SUAutomaticallyUpdate enabled because it interferes with our custom updater UI
         if updater?.automaticallyDownloadsUpdates == true {
             updater?.automaticallyDownloadsUpdates = false
         }
+#endif
 
         updateProcessCancellable = userDriver.updateProgressPublisher
             .assign(to: \.updateProgress, onWeaklyHeld: self)

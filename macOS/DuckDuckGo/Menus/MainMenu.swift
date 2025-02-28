@@ -753,9 +753,15 @@ final class MainMenu: NSMenu {
                 DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
             }
 
+            let updateCustomBaseSubscriptionURL: (URL?) -> Void = { url in
+                currentEnvironment.customBaseSubscriptionURL = url
+                DefaultSubscriptionManager.save(subscriptionEnvironment: currentEnvironment, userDefaults: subscriptionUserDefaults)
+            }
+
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
                                   updateServiceEnvironment: updateServiceEnvironment,
                                   updatePurchasingPlatform: updatePurchasingPlatform,
+                                  updateCustomBaseSubscriptionURL: updateCustomBaseSubscriptionURL,
                                   currentViewController: { WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController },
                                   openSubscriptionTab: { WindowControllersManager.shared.showTab(with: .subscription($0)) },
                                   subscriptionManager: Application.appDelegate.subscriptionManager,
@@ -770,7 +776,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
 
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 NSMenuItem.separator()
                 NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu())
                 NSMenuItem.separator()

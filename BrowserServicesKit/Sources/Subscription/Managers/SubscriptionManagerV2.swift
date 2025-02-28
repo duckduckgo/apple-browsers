@@ -84,7 +84,13 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider {
     func getProducts() async throws -> [GetProductsItem]
 
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManagerV2
+
+    /// Subscription feature related URL that matches current environment
     func url(for type: SubscriptionURL) -> URL
+
+    /// Purchase page URL when launched as a result of intercepted `/pro` navigation.
+    /// It is created based on current `SubscriptionURL.purchase` and inherits designated URL components from the source page that triggered redirect.
+    func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
 
     func getCustomerPortalURL() async throws -> URL
 
@@ -148,19 +154,22 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let pixelHandler: PixelHandler
     private let autoRecoveryHandler: AutoRecoveryHandler
     public let currentEnvironment: SubscriptionEnvironment
+    private let isInternalUserEnabled: () -> Bool
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: @escaping PixelHandler,
-                autoRecoveryHandler: @escaping AutoRecoveryHandler) {
+                autoRecoveryHandler: @escaping AutoRecoveryHandler,
+                isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.subscriptionEndpointService = subscriptionEndpointService
         self.currentEnvironment = subscriptionEnvironment
         self.pixelHandler = pixelHandler
         self.autoRecoveryHandler = autoRecoveryHandler
+        self.isInternalUserEnabled = isInternalUserEnabled
 
 #if !NETP_SYSTEM_EXTENSION
         switch currentEnvironment.purchasePlatform {
@@ -285,7 +294,28 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     // MARK: - URLs
 
     public func url(for type: SubscriptionURL) -> URL {
-        type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+        if let customBaseSubscriptionURL = currentEnvironment.customBaseSubscriptionURL,
+           isInternalUserEnabled() {
+            return type.subscriptionURL(withCustomBaseURL: customBaseSubscriptionURL, environment: currentEnvironment.serviceEnvironment)
+        }
+
+        return type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+    }
+
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
+        let defaultPurchaseURL = url(for: .purchase)
+
+        if var purchaseURLComponents = URLComponents(url: defaultPurchaseURL, resolvingAgainstBaseURL: true) {
+
+            purchaseURLComponents.addingSubdomain(from: redirectURLComponents, tld: tld)
+            purchaseURLComponents.addingPort(from: redirectURLComponents)
+            purchaseURLComponents.addingFragment(from: redirectURLComponents)
+            purchaseURLComponents.addingQueryItems(from: redirectURLComponents)
+
+            return purchaseURLComponents.url ?? defaultPurchaseURL
+        }
+
+        return defaultPurchaseURL
     }
 
     public func getCustomerPortalURL() async throws -> URL {

@@ -80,7 +80,7 @@ struct BannerView: View {
 
                 Spacer()
 
-                HoverButton(image: .closeLarge, cornerRadius: 8) {
+                HoverButton(image: .closeLarge, cornerRadius: 6) {
                     viewModel.closeAction()
                 }
                 .padding(.trailing, 10)

@@ -48,10 +48,7 @@ enum DefaultBrowserAndDockPromptContent {
             default: return .addAsDefaultPopoverIcon
             }
         case let .banner(content):
-            switch content {
-            case .addToDockPrompt: return .attIconBanner
-            default: return .daxBannerView
-            }
+            return .daxBannerView
         }
     }
 
@@ -63,8 +60,6 @@ enum DefaultBrowserAndDockPromptContent {
                 return UserText.addToDockPopoverPromptMessage
             case .setAsDefaultPrompt, .bothDefaultBrowserAndDockPrompt:
                 return UserText.setAsDefaultPopoverPromptMessage
-//            case .bothDefaultBrowserAndDockPrompt:
-//                return UserText.bothSetAsDefaultPopoverAndAddToDockPromptMessage
             }
         case let .banner(content):
             switch content {

@@ -12,6 +12,7 @@ on:
       - 'macOS/**'
   pull_request:
     paths:
+      - '.github/**'
       - 'BrowserServicesKit/**'
       - 'macOS/**'
   workflow_call:

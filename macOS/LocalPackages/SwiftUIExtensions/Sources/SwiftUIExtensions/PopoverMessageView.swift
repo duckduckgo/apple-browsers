@@ -20,11 +20,6 @@ import AppKit
 import Foundation
 import SwiftUI
 
-public enum PopoverMessageViewAlignment {
-    case horizontal
-    case vertical
-}
-
 public final class PopoverMessageViewModel: ObservableObject {
     @Published var title: String?
     @Published var message: String
@@ -35,7 +30,6 @@ public final class PopoverMessageViewModel: ObservableObject {
     @Published public var secondaryButtonAction: (() -> Void)?
     var shouldShowCloseButton: Bool
     var shouldPresentMultiline: Bool
-    var alignment: PopoverMessageViewAlignment
 
     public init(title: String?,
                 message: String,
@@ -45,8 +39,7 @@ public final class PopoverMessageViewModel: ObservableObject {
                 secondaryButtonText: String? = nil,
                 secondaryButtonAction: (() -> Void)? = nil,
                 shouldShowCloseButton: Bool = false,
-                shouldPresentMultiline: Bool = true,
-                alignment: PopoverMessageViewAlignment = .horizontal) {
+                shouldPresentMultiline: Bool = true) {
         self.title = title
         self.message = message
         self.image = image
@@ -56,7 +49,6 @@ public final class PopoverMessageViewModel: ObservableObject {
         self.secondaryButtonAction = secondaryButtonAction
         self.shouldShowCloseButton = shouldShowCloseButton
         self.shouldPresentMultiline = shouldPresentMultiline
-        self.alignment = alignment
     }
 }
 
@@ -77,92 +69,14 @@ public struct PopoverMessageView: View {
         ZStack {
             ClickableViewRepresentable(onClick: onClick)
                 .background(Color.clear)
-            switch viewModel.alignment {
-            case .horizontal:
-                if let title = viewModel.title {
-                    messageWithTitleBody(title)
-                } else {
-                    messageBody
-                }
-            case .vertical:
-                verticalWith(message: viewModel.message, title: viewModel.title)
+
+            if let title = viewModel.title {
+                messageWithTitleBody(title)
+            } else {
+                messageBody
             }
         }
-    }
-
-    @ViewBuilder
-    private func verticalWith(message: String, title: String? = nil) -> some View {
-        VStack {
-            if let image = viewModel.image {
-                Image(nsImage: image)
-                    .padding(.bottom, 8)
-            }
-
-            VStack(alignment: .center, spacing: 12) {
-                if let title = title {
-                    Text(title)
-                        .font(Font.system(size: 15))
-                        .fontWeight(.bold)
-                        .frame(minHeight: 22)
-                        .lineLimit(nil)
-                        .multilineTextAlignment(.center)
-                        .fixMultilineScrollableText()
-                }
-
-                Text(viewModel.message)
-                    .font(Font.system(size: 13))
-                    .frame(minHeight: 22)
-                    .lineLimit(nil)
-                    .multilineTextAlignment(.center)
-                    .fixMultilineScrollableText()
-            }.if(viewModel.shouldPresentMultiline) { view in
-                view.frame(width: 300, alignment: .leading)
-            }
-            .padding(.bottom, 20)
-
-            if let text = viewModel.buttonText,
-               let action = viewModel.buttonAction {
-
-                if let secondaryActionText = viewModel.secondaryButtonText,
-                   let secondaryAction = viewModel.secondaryButtonAction {
-                    HStack(spacing: 8) {
-                        Button {
-                            secondaryAction()
-                            onClose?()
-                        } label: {
-                            Text(secondaryActionText)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .buttonStyle(StandardButtonStyle())
-
-                        Button {
-                            action()
-                            onClose?()
-                        } label: {
-                            Text(text)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
-                    }
-                    .frame(height: 28)
-                    .frame(maxWidth: .infinity)
-                } else {
-                    Button {
-                        action()
-                        onClose?()
-                    } label: {
-                        Text(text)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                    .buttonStyle(DefaultActionButtonStyle(enabled: true))
-                    .frame(height: 28)
-                }
-            }
-        }
-        .frame(width: 344)
-        .padding([.leading, .trailing], 16)
-        .padding(.bottom, 8)
-        .padding(.top, 20)
+        .background(Color.yellow)
     }
 
     @ViewBuilder

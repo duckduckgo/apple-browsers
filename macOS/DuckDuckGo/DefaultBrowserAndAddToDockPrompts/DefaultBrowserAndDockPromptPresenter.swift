@@ -117,9 +117,9 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             })
     }
 
-    private func createPopover(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<PopoverMessageView> {
+    private func createPopover(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<DefaultBrowserAndDockPromptPopoverView> {
         let content = DefaultBrowserAndDockPromptContent.popover(type)
-        let viewModel = PopoverMessageViewModel(
+        let viewModel = DefaultBrowserAndDockPromptPopoverViewModel(
             title: content.title,
             message: content.message,
             image: content.icon,
@@ -128,15 +128,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 self.coordinator.onPromptConfirmation()
                 self.popover?.close()
             },
-            secondaryButtonText: content.secondaryButtonTitle,
+            secondaryButtonText: content.secondaryButtonTitle!, // TODO: Fix
             secondaryButtonAction: {
                 self.popover?.close()
-            },
-            shouldShowCloseButton: false,
-            shouldPresentMultiline: true,
-            alignment: .vertical)
+            })
 
-        let contentView = PopoverMessageView(viewModel: viewModel, onClick: nil, onClose: nil)
+        let contentView = DefaultBrowserAndDockPromptPopoverView(viewModel: viewModel)
 
         return NSHostingController(rootView: contentView)
     }

@@ -17,12 +17,99 @@
 //
 
 import SwiftUI
+import Combine
 import SwiftUIExtensions
+
+public final class DefaultBrowserAndDockPromptPopoverViewModel: ObservableObject {
+    @Published var title: String?
+    @Published var message: String
+    @Published var image: NSImage
+    @Published var buttonText: String
+    @Published public var buttonAction: () -> Void
+    @Published var secondaryButtonText: String
+    @Published public var secondaryButtonAction: () -> Void
+
+    public init(title: String?,
+                message: String,
+                image: NSImage,
+                buttonText: String,
+                buttonAction: @escaping () -> Void,
+                secondaryButtonText: String,
+                secondaryButtonAction: @escaping () -> Void) {
+        self.title = title
+        self.message = message
+        self.image = image
+        self.buttonText = buttonText
+        self.buttonAction = buttonAction
+        self.secondaryButtonText = secondaryButtonText
+        self.secondaryButtonAction = secondaryButtonAction
+    }
+}
+
+struct DefaultBrowserAndDockPromptPopoverView: View {
+    @ObservedObject var viewModel: DefaultBrowserAndDockPromptPopoverViewModel
+
+    init(viewModel: DefaultBrowserAndDockPromptPopoverViewModel) {
+        self.viewModel = viewModel
+    }
+
+    var body: some View {
+        VStack {
+            Image(nsImage: viewModel.image)
+                .padding(.bottom, 8)
+
+            VStack(alignment: .center, spacing: 12) {
+                if let title = viewModel.title {
+                    Text(title)
+                        .font(Font.system(size: 15))
+                        .fontWeight(.bold)
+                        .frame(minHeight: 22)
+                        .lineLimit(nil)
+                        .multilineTextAlignment(.center)
+                        .fixMultilineScrollableText()
+                }
+
+                Text(viewModel.message)
+                    .font(Font.system(size: 13))
+                    .frame(minHeight: 22)
+                    .lineLimit(nil)
+                    .multilineTextAlignment(.center)
+                    .fixMultilineScrollableText()
+            }
+            .frame(width: 300, alignment: .leading)
+            .padding(.bottom, 20)
+
+            HStack(spacing: 8) {
+                Button {
+                    self.viewModel.secondaryButtonAction()
+                } label: {
+                    Text(viewModel.secondaryButtonText)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .buttonStyle(StandardButtonStyle())
+
+                Button {
+                    self.viewModel.buttonAction()
+                } label: {
+                    Text(viewModel.buttonText)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            }
+            .frame(height: 28)
+            .frame(maxWidth: .infinity)
+        }
+        .frame(width: 344)
+        .padding([.leading, .trailing, .bottom], 16)
+        .padding(.top, 20)
+    }
+}
 
 final class DefaultBrowserAndDockPromptPopover: NSPopover {
     private static let topInset: CGFloat = 22
+    private var eventMonitor: Any?
 
-    init(viewController: NSHostingController<PopoverMessageView>) {
+    init(viewController: NSHostingController<DefaultBrowserAndDockPromptPopoverView>) {
         super.init()
 
         shouldHideAnchor = true

@@ -40,22 +40,8 @@ struct AutofillSettingStatus {
     }()
 
     private static func refreshCanAuthenticate() -> Bool {
-        var result = false
-
-        let performAuthenticationCheck = {
-            var error: NSError?
-            result = LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
-        }
-        
-        if Thread.isMainThread {
-            performAuthenticationCheck()
-        } else {
-            DispatchQueue.main.sync {
-                performAuthenticationCheck()
-            }
-        }
-        
-        return result
+        var error: NSError?
+        return LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
     }
 
     /// Clears the cached device authentication status when the app goes to the background

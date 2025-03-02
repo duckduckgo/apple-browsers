@@ -26,8 +26,6 @@ public final class PopoverMessageViewModel: ObservableObject {
     @Published var image: NSImage?
     @Published var buttonText: String?
     @Published public var buttonAction: (() -> Void)?
-    @Published var secondaryButtonText: String?
-    @Published public var secondaryButtonAction: (() -> Void)?
     var shouldShowCloseButton: Bool
     var shouldPresentMultiline: Bool
 
@@ -36,8 +34,6 @@ public final class PopoverMessageViewModel: ObservableObject {
                 image: NSImage? = nil,
                 buttonText: String? = nil,
                 buttonAction: (() -> Void)? = nil,
-                secondaryButtonText: String? = nil,
-                secondaryButtonAction: (() -> Void)? = nil,
                 shouldShowCloseButton: Bool = false,
                 shouldPresentMultiline: Bool = true) {
         self.title = title
@@ -45,8 +41,6 @@ public final class PopoverMessageViewModel: ObservableObject {
         self.image = image
         self.buttonText = buttonText
         self.buttonAction = buttonAction
-        self.secondaryButtonText = secondaryButtonText
-        self.secondaryButtonAction = secondaryButtonAction
         self.shouldShowCloseButton = shouldShowCloseButton
         self.shouldPresentMultiline = shouldPresentMultiline
     }

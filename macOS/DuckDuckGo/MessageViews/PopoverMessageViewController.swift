@@ -19,7 +19,6 @@
 import AppKit
 import SwiftUI
 import SwiftUIExtensions
-
 final class PopoverMessageViewController: NSHostingController<PopoverMessageView>, NSPopoverDelegate {
 
     enum Constants {
@@ -40,8 +39,6 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
          image: NSImage? = nil,
          buttonText: String? = nil,
          buttonAction: (() -> Void)? = nil,
-         secondaryButtonText: String? = nil,
-         secondaryButtonAction: (() -> Void)? = nil,
          shouldShowCloseButton: Bool = false,
          presentMultiline: Bool = false,
          autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
@@ -52,8 +49,6 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
                                                  image: image,
                                                  buttonText: buttonText,
                                                  buttonAction: buttonAction,
-                                                 secondaryButtonText: secondaryButtonText,
-                                                 secondaryButtonAction: secondaryButtonAction,
                                                  shouldShowCloseButton: shouldShowCloseButton,
                                                  shouldPresentMultiline: presentMultiline)
         self.onDismiss = onDismiss

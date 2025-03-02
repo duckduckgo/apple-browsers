@@ -66,6 +66,7 @@ struct BannerView: View {
 
     var body: some View {
         VStack {
+            Spacer()
             HStack(spacing: 12) {
                 Image(nsImage: viewModel.image)
 
@@ -86,6 +87,13 @@ struct BannerView: View {
                 .padding(.trailing, 10)
             }
             .padding(.leading, 19)
+
+            Spacer()
+
+            Divider()
+                .frame(height: 1)
+                .frame(maxWidth: .infinity)
+                .background(Color.black.opacity(0.09))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(Color.bannerBackground)

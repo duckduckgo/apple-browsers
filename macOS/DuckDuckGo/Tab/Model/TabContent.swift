@@ -351,4 +351,13 @@ extension TabContent {
         }
     }
 
+    var canBeMuted: Bool {
+        switch self {
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .onboardingDeprecated, .dataBrokerProtection, .none, .releaseNotes, .identityTheftRestoration, .subscription:
+            return false
+        default:
+            return true
+        }
+    }
+
 }

@@ -117,6 +117,14 @@ final class DefaultBrowserAndDockPromptPopover: NSPopover {
         contentViewController = viewController
     }
 
+    override func keyDown(with event: NSEvent) {
+        if event.keyCode == 53 { // ESC key
+            self.performClose(nil)
+        } else {
+            super.keyDown(with: event)
+        }
+    }
+
     required init?(coder: NSCoder) {
         fatalError("DefaultBrowserAndDockPromptPopover: Bad initializer")
     }

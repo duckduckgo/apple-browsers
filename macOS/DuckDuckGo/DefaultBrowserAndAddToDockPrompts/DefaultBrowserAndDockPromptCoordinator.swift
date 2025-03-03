@@ -48,11 +48,18 @@ protocol DefaultBrowserAndDockPrompt {
     /// If the user is eligible, the function resolves the user's cohort for the "Popover vs Banner Experiment" feature flag. Based on the user's cohort, the function will post a notification to display either a banner prompt or a popover prompt for the default browser setting.
     ///
     /// - Note: The `FeatureFlag.PopoverVSBannerExperimentCohort` enum represents the different cohorts for the experiment, with the `control` cohort not displaying any prompt.
-    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType?
+    func getPromptType(experimentDecider: DefaultBrowserAndDockPromptExperimentDeciding) -> DefaultBrowserAndDockPromptPresentationType?
 
     func markPromptAsShown()
     func wasPromptShown() -> Bool
     func onPromptConfirmation()
+}
+
+extension DefaultBrowserAndDockPrompt {
+
+    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
+        getPromptType(experimentDecider: DefaultBrowserAndDockPromptExperimentDecider(isEligibleForPrompt: evaluatePromptEligibility != nil))
+    }
 }
 
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
@@ -70,30 +77,22 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let featureFlagger: FeatureFlagger
     private let repository: DefaultBrowserAndDockPromptRepository
+    private let isSparkleBuild: Bool
 
     private var cancellables: Set<AnyCancellable> = []
-
-#if SPARKLE
-    private let isSparkleBuild: Bool = true
-#else
-    private let isSparkleBuild: Bool = false
-#endif
 
     init(dockCustomization: DockCustomization = DockCustomizer(),
          defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl()) {
+         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl(),
+         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.featureFlagger = featureFlagger
         self.repository = repository
+        self.isSparkleBuild = applicationBuildType.isSparkleBuild
 
         subscribeToLocalOverride()
-    }
-
-    private var isUserEligibleForExperiment: Bool {
-        let wasOnboardingCompleted = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted
-        return !AppDelegate.isNewUser && wasOnboardingCompleted && evaluatePromptEligibility != nil
     }
 
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
@@ -124,10 +123,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         )
     }
 
-    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
-        guard isUserEligibleForExperiment else { return nil }
+    func getPromptType(experimentDecider: DefaultBrowserAndDockPromptExperimentDeciding) -> DefaultBrowserAndDockPromptPresentationType? {
+        guard experimentDecider.isUserEligibleForExperiment else { return nil }
 
-        guard let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.popoverVsBannerExperiment) as? FeatureFlag.PopoverVSBannerExperimentCohort else { return nil }
+        guard let cohort = featureFlagger.resolveCohort(for: FeatureFlag.popoverVsBannerExperiment) as? FeatureFlag.PopoverVSBannerExperimentCohort else { return nil }
 
         switch cohort {
         case .control: return nil

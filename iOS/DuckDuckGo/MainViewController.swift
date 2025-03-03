@@ -3036,15 +3036,19 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
         controller.dismiss(animated: true, completion: nil)
         guard let query = query else { return }
 
-        switch target {
-        case .SERP:
-            Pixel.fire(pixel: .voiceSearchSERPDone)
-            loadQuery(query)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
 
-        case .AIChat:
-            Pixel.fire(pixel: .voiceSearchAIChatDone)
-            performCancel()
-            openAIChat(query, autoSend: true)
+            switch target {
+            case .SERP:
+                Pixel.fire(pixel: .voiceSearchSERPDone)
+                self.loadQuery(query)
+
+            case .AIChat:
+                Pixel.fire(pixel: .voiceSearchAIChatDone)
+                self.performCancel()
+                self.openAIChat(query, autoSend: true)
+            }
         }
     }
 }

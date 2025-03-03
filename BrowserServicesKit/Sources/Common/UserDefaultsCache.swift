@@ -44,7 +44,7 @@ public class UserDefaultsCache<ObjectType: Codable> {
         let object: ObjectType
     }
 
-    let logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "UserDefaultsCache") }()
+    let logger = { Logger(subsystem: "UserDefaultsCache", category: "") }()
     private var userDefaults: UserDefaults
     public private(set) var settings: UserDefaultsCacheSettings
 
@@ -65,8 +65,9 @@ public class UserDefaultsCache<ObjectType: Codable> {
         do {
             let data = try encoder.encode(cacheObject)
             userDefaults.set(data, forKey: key.rawValue)
-            logger.debug("Cache Set: \(String(describing: cacheObject))")
+            logger.debug("Cache Set: \(String(describing: cacheObject), privacy: .public)")
         } catch {
+            logger.fault("Failed to encode CacheObject: \(error, privacy: .public)")
             assertionFailure("Failed to encode CacheObject: \(error)")
         }
     }
@@ -77,21 +78,21 @@ public class UserDefaultsCache<ObjectType: Codable> {
         do {
             let cacheObject = try decoder.decode(CacheObject.self, from: data)
             if cacheObject.expires > Date() {
-                logger.debug("Cache Hit: \(ObjectType.self)")
+                logger.debug("Cache Hit: \(ObjectType.self, privacy: .public)")
                 return cacheObject.object
             } else {
-                logger.debug("Cache Miss: \(ObjectType.self)")
+                logger.debug("Cache Miss: \(ObjectType.self, privacy: .public)")
                 reset()  // Clear expired data
                 return nil
             }
         } catch let error {
-            logger.error("Cache Decode Error: \(error)")
+            logger.fault("Cache Decode Error: \(error, privacy: .public)")
             return nil
         }
     }
 
     public func reset() {
-        logger.debug("Cache Clean: \(ObjectType.self)")
+        logger.debug("Cache Clean: \(ObjectType.self, privacy: .public)")
         userDefaults.removeObject(forKey: key.rawValue)
     }
 }

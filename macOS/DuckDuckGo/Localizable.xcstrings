@@ -61434,31 +61434,67 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add DuckDuckGo to your Dock."
+            "value" : "Add DuckDuckGo to Your Dock."
           }
         }
       }
     },
-    "sat.att.both.popover.primary" : {
-      "comment" : "Primary action of the popover when adding DuckDuckGo to the Dock and/or setting as default browser",
+    "sat.att.both.popover.message" : {
+      "comment" : "Default message of the banner when adding DuckDuckGo to the Dock and setting as default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set As Default"
+            "value" : "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online."
           }
         }
       }
     },
-    "sat.att.default.popover.title" : {
+    "sat.att.both.popover.primary" : {
+      "comment" : "Primary action of the popover when adding DuckDuckGo to the Dock and setting as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Primary Browser"
+          }
+        }
+      }
+    },
+    "sat.att.both.popover.title" : {
       "comment" : "Title of the popover when adding DuckDuckGo to the Dock and setting as default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Make DuckDuckGo your Default Browser"
+            "value" : "Make DuckDuckGo Your Primary Browser"
+          }
+        }
+      }
+    },
+    "sat.att.default.popover.title" : {
+      "comment" : "Title of the popover when adding setting DuckDuckGo as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo Your Default Browser"
+          }
+        }
+      }
+    },
+    "sat.att.set-as-default.banner.message" : {
+      "comment" : "Message of the banner when setting DuckDuckGo as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo isn't your default browser. Get more protection"
           }
         }
       }
@@ -61471,6 +61507,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Open all site links in DuckDuckGo to protect more of what you do online."
+          }
+        }
+      }
+    },
+    "sat.att.set-as-default.prompt.primaary" : {
+      "comment" : "Message of the primary action when setting DuckDuckGo as default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
           }
         }
       }

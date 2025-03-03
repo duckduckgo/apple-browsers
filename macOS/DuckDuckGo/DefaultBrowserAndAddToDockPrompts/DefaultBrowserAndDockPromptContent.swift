@@ -32,8 +32,11 @@ enum DefaultBrowserAndDockPromptContent {
             switch content {
             case .addToDockPrompt:
                 return UserText.addDuckDuckGoToDockPopoverTitle
-            default:
-                return UserText.defaultPopoverTitleForSATandATT
+            case .setAsDefaultPrompt:
+                return UserText.setAsDefaultPopoverTitle
+            case .bothDefaultBrowserAndDockPrompt:
+                return UserText.bothSetAsDefaultAndAddToDockPopoverTitle
+
             }
         default:
             return nil
@@ -58,13 +61,16 @@ enum DefaultBrowserAndDockPromptContent {
             switch content {
             case .addToDockPrompt:
                 return UserText.addToDockPopoverPromptMessage
-            case .setAsDefaultPrompt, .bothDefaultBrowserAndDockPrompt:
+            case .setAsDefaultPrompt:
                 return UserText.setAsDefaultPopoverPromptMessage
+            case .bothDefaultBrowserAndDockPrompt:
+                return UserText.bothSetAsDefaultAndAddToDockPopoverMessage
             }
         case let .banner(content):
             switch content {
             case .addToDockPrompt: return UserText.addToDockBannerPromptMessage
-            default: return UserText.bothSetAsDefaultBannerAndAddToDockPromptMessage
+            case .setAsDefaultPrompt: return UserText.setAsDefaultBannerMessage
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultAndAddToDockBannerMessage
             }
         }
     }
@@ -74,12 +80,13 @@ enum DefaultBrowserAndDockPromptContent {
         case let .popover(content):
             switch content {
             case .addToDockPrompt: return UserText.addToDockPopoverPrimaryAction
-            default: return UserText.bothSetAsDefaultPopoverAndAddToDockPromptPrimaryAction
+            case .setAsDefaultPrompt: return UserText.setAsDefaultPrimaryAction
+            case .bothDefaultBrowserAndDockPrompt: return UserText.bothSetAsDefaultPopoverAndAddToDockPopoverPrimaryAction
             }
         case let .banner(content):
             switch content {
             case .addToDockPrompt: return UserText.addDuckDuckGoToDock
-            default: return UserText.bothSetAsDefaultPopoverAndAddToDockPromptPrimaryAction
+            default: return UserText.setAsDefaultPrimaryAction
             }
         }
     }

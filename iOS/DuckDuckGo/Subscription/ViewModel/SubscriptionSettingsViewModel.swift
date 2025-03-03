@@ -70,7 +70,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     public let enablesUnifiedFeedbackForm: Bool
 
-    init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager) {
+    init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager!) {
         self.subscriptionManager = subscriptionManager
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")

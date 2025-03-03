@@ -171,11 +171,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @Published public var animationsOn: Bool = false
 
-    public var enablesUnifiedFeedbackForm: Bool {
-        subscriptionManager.accountManager.isUserAuthenticated
-    }
-
-    public let subscriptionManager: SubscriptionManager
+    public var enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
                 settings: VPNSettings,
@@ -183,13 +179,13 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 serverInfoObserver: ConnectionServerInfoObserver,
                 errorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession(),
                 locationListRepository: NetworkProtectionLocationListRepository,
-                subscriptionManager: SubscriptionManager) {
+                enablesUnifiedFeedbackForm: Bool) {
         self.tunnelController = tunnelController
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
-        self.subscriptionManager = subscriptionManager
+        self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
 
         statusMessage = Self.message(for: statusObserver.recentValue)
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)

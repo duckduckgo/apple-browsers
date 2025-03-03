@@ -36,7 +36,7 @@ struct NetworkProtectionRootView: View {
                                                            statusObserver: AppDependencyProvider.shared.connectionObserver,
                                                            serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
                                                            locationListRepository: locationListRepository,
-                                                           subscriptionManager: subscriptionManager)
+                                                           enablesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated)
 
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),

@@ -87,7 +87,7 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
             pixelFiring.fire(pixel: .tabInteractionStateSourceFailedToWrite,
                              error: error,
                              includedParameters: [.appVersion],
-                             withAdditionalParameters: [:],
+                             withAdditionalParameters: ["dataSizeBytes": String(stateData.count)],
                              onComplete: { _ in })
         }
     }

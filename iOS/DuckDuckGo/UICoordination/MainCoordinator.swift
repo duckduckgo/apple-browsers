@@ -264,6 +264,14 @@ extension MainCoordinator: URLHandling {
         }
     }
 
+    func handleAIChatAppIconShortuct() {
+          controller.clearNavigationStack()
+          // Give the `clearNavigationStack` call time to complete.
+          DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+              self.controller.openAIChat()
+          }
+          Pixel.fire(pixel: .openAIChatFromIconShortcut)
+      }
 }
 
 extension MainCoordinator: ShortcutItemHandling {
@@ -275,6 +283,10 @@ extension MainCoordinator: ShortcutItemHandling {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
             presentNetworkProtectionStatusSettingsModal()
+        } else if item.type == ShortcutKey.aiChat {
+            handleAIChatAppIconShortuct()
+        } else if item.type == ShortcutKey.voiceSearch {
+            controller.onVoiceSearchPressed()
         }
     }
 

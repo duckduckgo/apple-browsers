@@ -49,3 +49,6 @@ vendor/
 node_modules/
 .build/
 release/
+
+## Build generated
+DerivedData/

@@ -63,14 +63,12 @@ public struct PopoverMessageView: View {
         ZStack {
             ClickableViewRepresentable(onClick: onClick)
                 .background(Color.clear)
-
             if let title = viewModel.title {
                 messageWithTitleBody(title)
             } else {
                 messageBody
             }
         }
-        .background(Color.yellow)
     }
 
     @ViewBuilder

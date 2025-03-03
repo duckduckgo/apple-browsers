@@ -2983,6 +2983,8 @@
 		BB80DDD62D75F15A00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDD42D75F0EC00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciding.swift */; };
 		BB80DDD82D75F36A00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDD72D75F36500ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift */; };
 		BB80DDD92D75F36A00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDD72D75F36500ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift */; };
+		BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
+		BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */; };
 		BB9BA2202D10BC72009229F3 /* TabBarRemoteMessageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */; };
 		BB9BA2212D10BC72009229F3 /* TabBarRemoteMessageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */; };
 		BB9BA2262D10C08F009229F3 /* TabBarRemoteMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BA2252D10C089009229F3 /* TabBarRemoteMessage.swift */; };
@@ -5081,6 +5083,7 @@
 		BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildType.swift; sourceTree = "<group>"; };
 		BB80DDD42D75F0EC00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptExperimentDeciding.swift; sourceTree = "<group>"; };
 		BB80DDD72D75F36500ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptExperimentDeciderTests.swift; sourceTree = "<group>"; };
+		BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresentingTests.swift; sourceTree = "<group>"; };
 		BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageViewModelTests.swift; sourceTree = "<group>"; };
 		BB9BA2252D10C089009229F3 /* TabBarRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessage.swift; sourceTree = "<group>"; };
 		BB9BA2282D10C0A3009229F3 /* TabBarActiveRemoteMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarActiveRemoteMessage.swift; sourceTree = "<group>"; };
@@ -9920,6 +9923,7 @@
 		BB80DDCD2D75E94600ED1FFF /* DefaultBrowserAndAddToDockPrompts */ = {
 			isa = PBXGroup;
 			children = (
+				BB80DDDA2D761EC400ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift */,
 				BB80DDD72D75F36500ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciderTests.swift */,
 				BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */,
 			);
@@ -12816,6 +12820,7 @@
 				B68412212B6A30680092F66A /* StringExtensionTests.swift in Sources */,
 				1D8C2FEE2B70F5D0005E4BBD /* MockViewSnapshotRenderer.swift in Sources */,
 				56D145F229E6F06D00E3488A /* MockBookmarkManager.swift in Sources */,
+				BB80DDDC2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
 				37D0469A2C7D037500AEAA50 /* CapturingUserBackgroundImagesManager.swift in Sources */,
 				56B234C02A84EFD800F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */,
 				3706FE19293F661700E42796 /* DeviceAuthenticatorTests.swift in Sources */,
@@ -14775,6 +14780,7 @@
 				EA8AE76A279FBDB20078943E /* ClickToLoadTDSTests.swift in Sources */,
 				B63ED0DA26AE7AF400A9DAD1 /* PermissionManagerMock.swift in Sources */,
 				374EF08329B751FC003D2E87 /* RecentlyClosedCoordinatorTests.swift in Sources */,
+				BB80DDDB2D761EC700ED1FFF /* DefaultBrowserAndDockPromptPresentingTests.swift in Sources */,
 				AA9C362825518C44004B1BA3 /* WebsiteDataStoreMock.swift in Sources */,
 				857E44652A9F70F300ED77A7 /* CampaignVariantTests.swift in Sources */,
 				3776582D27F71652009A6B35 /* WebsiteBreakageReportTests.swift in Sources */,

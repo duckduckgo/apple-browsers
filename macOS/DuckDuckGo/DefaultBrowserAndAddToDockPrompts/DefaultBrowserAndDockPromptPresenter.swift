@@ -18,6 +18,8 @@
 
 import SwiftUIExtensions
 import Combine
+import BrowserServicesKit
+import FeatureFlags
 
 enum DefaultBrowserAndDockPromptPresentationType {
     case banner
@@ -50,12 +52,21 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     static let shared = DefaultBrowserAndDockPromptPresenter()
 
     private let coordinator: DefaultBrowserAndDockPrompt
+    private let repository: DefaultBrowserAndDockPromptRepository
+    private let featureFlagger: FeatureFlagger
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
     private var popover: NSPopover?
+    private var cancellables: Set<AnyCancellable> = []
 
-    init(coordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator()) {
+    init(coordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator(),
+         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl(),
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.coordinator = coordinator
+        self.repository = repository
+        self.featureFlagger = featureFlagger
+
+        subscribeToLocalOverride()
     }
 
     var bannerDismissedPublisher: AnyPublisher<Void, Never> {
@@ -64,7 +75,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard !coordinator.wasPromptShown(), let type = coordinator.getPromptType() else { return }
+        guard !repository.wasPromptShown(), let type = coordinator.getPromptType() else { return }
 
         switch type {
         case .banner:
@@ -87,7 +98,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
         /// For the popover we mark it as shown when the user actions on it.
         /// Given that we want to show the banner in all windows.
-        coordinator.markPromptAsShown()
+        repository.setPromptShown(true)
 
         self.initializePopover(with: content)
         self.showPopover(positionedBelow: view) 
@@ -108,12 +119,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             buttonText: content.primaryButtonTitle,
             buttonAction: {
                 self.coordinator.onPromptConfirmation()
-                self.coordinator.markPromptAsShown()
+                self.repository.setPromptShown(true)
                 self.bannerDismissedSubject.send()
             },
             closeAction: {
                 self.bannerDismissedSubject.send()
-                self.coordinator.markPromptAsShown()
+                self.repository.setPromptShown(true)
             })
     }
 
@@ -146,5 +157,24 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func showPopover(positionedBelow view: NSView) {
         popover?.show(positionedBelow: view)
         popover?.contentViewController?.view.makeMeFirstResponder()
+    }
+
+    private func subscribeToLocalOverride() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.experimentFlagDidChangePublisher
+            .filter { $0.0 == .popoverVsBannerExperiment }
+            .sink { (_, cohort) in
+                guard let _ = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
+
+                /// For testing purposes when we override the local features and because we want to show the prompt.
+                /// We set the set prompt flag to false in case it was show in the past.
+                self.repository.setPromptShown(false)
+
+                NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
+            }
+            .store(in: &cancellables)
     }
 }

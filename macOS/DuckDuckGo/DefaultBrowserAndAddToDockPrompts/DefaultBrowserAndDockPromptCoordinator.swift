@@ -50,8 +50,7 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Note: The `FeatureFlag.PopoverVSBannerExperimentCohort` enum represents the different cohorts for the experiment, with the `control` cohort not displaying any prompt.
     func getPromptType(experimentDecider: DefaultBrowserAndDockPromptExperimentDeciding) -> DefaultBrowserAndDockPromptPresentationType?
 
-    func markPromptAsShown()
-    func wasPromptShown() -> Bool
+    /// Function called when the prompt CTA is called.
     func onPromptConfirmation()
 }
 
@@ -76,23 +75,16 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let featureFlagger: FeatureFlagger
-    private let repository: DefaultBrowserAndDockPromptRepository
     private let isSparkleBuild: Bool
-
-    private var cancellables: Set<AnyCancellable> = []
 
     init(dockCustomization: DockCustomization = DockCustomizer(),
          defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl(),
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.featureFlagger = featureFlagger
-        self.repository = repository
         self.isSparkleBuild = applicationBuildType.isSparkleBuild
-
-        subscribeToLocalOverride()
     }
 
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType? {
@@ -135,14 +127,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         }
     }
 
-    func wasPromptShown() -> Bool {
-        return repository.wasPromptShown()
-    }
-
-    func markPromptAsShown() {
-        repository.setPromptShown(true)
-    }
-
     func onPromptConfirmation() {
         guard let type = evaluatePromptEligibility else { return }
 
@@ -165,24 +149,5 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         } catch {
             defaultBrowserProvider.openSystemPreferences()
         }
-    }
-
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.experimentFlagDidChangePublisher
-            .filter { $0.0 == .popoverVsBannerExperiment }
-            .sink { (_, cohort) in
-                guard let _ = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
-
-                /// For testing purposes when we override the local features and because we want to show the prompt.
-                /// We set the set prompt flag to false in case it was show in the past.
-                self.repository.setPromptShown(false)
-
-                NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
-            }
-            .store(in: &cancellables)
     }
 }

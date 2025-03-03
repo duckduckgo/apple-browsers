@@ -29,6 +29,7 @@ import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
 import PixelExperimentKit
+import Networking
 
 protocol DependencyProvider {
 
@@ -43,8 +44,6 @@ protocol DependencyProvider {
     var configurationManager: ConfigurationManager { get }
     var configurationStore: ConfigurationStore { get }
     var pageRefreshMonitor: PageRefreshMonitor { get }
-    var subscriptionManager: SubscriptionManager { get }
-    var accountManager: AccountManager { get }
     var vpnFeatureVisibility: DefaultNetworkProtectionVisibility { get }
     var networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore { get }
     var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
@@ -53,6 +52,11 @@ protocol DependencyProvider {
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
 
+    // Subscription
+    var isAuthV2Enabled: Bool { get }
+    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
+    var subscriptionManager: (any SubscriptionManager)? { get }
+    var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -76,10 +80,17 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    let subscriptionManager: SubscriptionManager
-    var accountManager: AccountManager {
-        subscriptionManager.accountManager
+    let isAuthV2Enabled: Bool = false
+    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge {
+        if !isAuthV2Enabled {
+            return subscriptionManager!
+        } else {
+            return subscriptionManagerV2!
+        }
     }
+    var subscriptionManager: (any SubscriptionManager)?
+    var subscriptionManagerV2: (any SubscriptionManagerV2)?
+
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
     let networkProtectionTunnelController: NetworkProtectionTunnelController
@@ -104,52 +115,135 @@ final class AppDependencyProvider: DependencyProvider {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        // MARK: - Configure Subscription
+        // MARK: - Configure Subscription ------------------------------------------------------------------------------------------------------------
+
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-        vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+        var tokenHandler: any SubscriptionTokenHandling
+        var accessTokenProvider: () -> String?
 
-        let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
-                                                                 key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                                 settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-        let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-        let subscriptionService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionService,
-                                                                                     userDefaults: subscriptionUserDefaults)
+        if !isAuthV2Enabled {
+            // MARK: Subscription V1
+            vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
-        let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
-                                                   entitlementsCache: entitlementsCache,
-                                                   subscriptionEndpointService: subscriptionService,
-                                                   authEndpointService: authService)
+            let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
+                                                                     key: UserDefaultsCacheKey.subscriptionEntitlements,
+                                                                     settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
+            let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionEndpointService,
+                                                                                         userDefaults: subscriptionUserDefaults)
+            let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
+                                                       entitlementsCache: entitlementsCache,
+                                                       subscriptionEndpointService: subscriptionEndpointService,
+                                                       authEndpointService: authService)
 
-        let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
+            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
 
-        let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
-                                                             accountManager: accountManager,
-                                                             subscriptionEndpointService: subscriptionService,
-                                                             authEndpointService: authService,
-                                                             subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             isInternalUserEnabled: { ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser })
+            let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
+                                                                 accountManager: accountManager,
+                                                                 subscriptionEndpointService: subscriptionEndpointService,
+                                                                 authEndpointService: authService,
+                                                                 subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                 subscriptionEnvironment: subscriptionEnvironment,
+                                                                 isInternalUserEnabled: { ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser })
+            accountManager.delegate = subscriptionManager
 
-        accountManager.delegate = subscriptionManager
+            self.subscriptionManager = subscriptionManager
 
-        self.subscriptionManager = subscriptionManager
+            accessTokenProvider = {
+                return { accountManager.accessToken }
+            }()
+            tokenHandler = accountManager
+        } else {
+            // MARK: Subscription V2
+            vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
-        let accessTokenProvider: () -> String? = {
-            return { accountManager.accessToken }
-        }()
+            let configuration = URLSessionConfiguration.default
+            configuration.httpCookieStorage = nil
+            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+            let urlSession = URLSession(configuration: configuration,
+                                        delegate: SessionDelegate(),
+                                        delegateQueue: nil)
+            let apiService = DefaultAPIService(urlSession: urlSession)
+            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
 
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
+
+            // keychain storage
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
+                Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+            }
+            let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                                legacyTokenStorage: legacyAccountStorage,
+                                                authService: authService)
+
+            apiService.authorizationRefresherCallback = { _ in
+                guard let tokenContainer = tokenStorage.tokenContainer else {
+                    throw OAuthClientError.internalError("Missing refresh token")
+                }
+
+                if tokenContainer.decodedAccessToken.isExpired() {
+                    Logger.OAuth.debug("Refreshing tokens")
+                    let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                    return tokens.accessToken
+                } else {
+                    Logger.general.debug("Trying to refresh valid token, using the old one")
+                    return tokenContainer.accessToken
+                }
+            }
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
+                switch type {
+                case .deadToken:
+                    Pixel.fire(pixel: .privacyProDeadTokenDetected)
+                case .subscriptionIsActive:
+                    DailyPixel.fire(pixel: .privacyProSubscriptionActive)
+                case .v1MigrationFailed:
+                    Pixel.fire(pixel: .authV1MigrationFailed)
+                case .v1MigrationSuccessful:
+                    Pixel.fire(pixel: .authV1MigrationSucceeded)
+                }
+            }
+            let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+                                                                   oAuthClient: authClient,
+                                                                   subscriptionEndpointService: subscriptionEndpointService,
+                                                                   subscriptionEnvironment: subscriptionEnvironment,
+                                                                   pixelHandler: pixelHandler,
+                                                                   autoRecoveryHandler: {
+                // TODO: Implement
+            },
+                                                                   isInternalUserEnabled: {
+                ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
+            })
+            self.subscriptionManagerV2 = subscriptionManager
+
+            accessTokenProvider = {
+                var token: String?
+                // extremely ugly hack, will be removed as soon auth v1 is removed
+                let semaphore = DispatchSemaphore(value: 0)
+                Task {
+                    token = try? await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
+                    semaphore.signal()
+                }
+                semaphore.wait()
+                return { token }
+            }()
+            tokenHandler = subscriptionManager
+        }
+        vpnFeatureVisibility = DefaultNetworkProtectionVisibility(tokenHandler: tokenHandler)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
-
-        networkProtectionTunnelController = NetworkProtectionTunnelController(accountManager: accountManager,
-                                                                              tokenStore: networkProtectionKeychainTokenStore,
+        networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings)
-        vpnFeatureVisibility = DefaultNetworkProtectionVisibility(userDefaults: .networkProtectionGroupDefaults,
-                                                                  accountManager: accountManager)
+
     }
 
 }

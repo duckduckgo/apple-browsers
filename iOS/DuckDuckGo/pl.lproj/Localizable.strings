@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odblokuj DuckDuckGo.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Czy na pewno chcesz usunąć wszystkie zakładki? Nie można cofnąć tego działania.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Zaloguj się";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Ukryj hasło";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Pobierz przeglądarkę komputerową";
+"autofill.import.passwords.via.sync.get-browser-button" = "Pobierz przeglądarkę komputerową";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Otwórz DuckDuckGo na komputerze Mac lub w systemie Windows";
+"autofill.import.passwords.via.sync.instructions.step1" = "Otwórz DuckDuckGo na komputerze Mac lub w systemie Windows";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Przejdź do pozycji %1$@ > %2$@";
+"autofill.import.passwords.via.sync.instructions.step2" = "Przejdź do pozycji %1$@ > %2$@";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Hasła";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Hasła";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Ustawienia";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Ustawienia";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Wybierz %@ i postępuj zgodnie z instrukcjami importu";
+"autofill.import.passwords.via.sync.instructions.step3" = "Wybierz %@ i postępuj zgodnie z instrukcjami importu";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importuj hasła...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Importuj hasła...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Po zaimportowaniu na komputer możesz skonfigurować synchronizację na % @";
+"autofill.import.passwords.via.sync.instructions.step4" = "Po zaimportowaniu na komputer możesz skonfigurować synchronizację na % @";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Zaimportuj z przeglądarki komputerowej:";
+"autofill.import.passwords.via.sync.instructions.title" = "Zaimportuj z przeglądarki komputerowej:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Zaimportuj hasła w komputerowej wersji przeglądarki DuckDuckGo, a następnie zsynchronizuj je na różnych urządzeniach.";
+"autofill.import.passwords.via.sync.subtitle" = "Zaimportuj hasła w komputerowej wersji przeglądarki DuckDuckGo, a następnie zsynchronizuj je na różnych urządzeniach.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Synchronizuj z komputerem";
+"autofill.import.passwords.via.sync.sync-button" = "Synchronizuj z komputerem";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Jak zaimportować hasła";
+"autofill.import.passwords.via.sync.title" = "Jak zaimportować hasła";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Wyłącz";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Importuj hasła";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Synchronizuj hasła na komputerze";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Możesz importować zapisane hasła z innej przeglądarki do DuckDuckGo.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Zakładki zostały udostępnione.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Eksportuj plik HTML";
+"bookmarks.exportAction.html.title" = "Eksportuj plik HTML";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Eksportuj zakładki";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Niestety nie możemy zaimportować tego pliku.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Zakładki zostały zaimportowane.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importuj plik HTML";
+"bookmarks.importAction.html.title" = "Importuj plik HTML";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importuj plik z zakładkami z innej przeglądarki";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Importuj zakładki";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Zaimportuj plik HTML z zakładkami z innej przeglądarki lub wyeksportuj istniejące zakładki.";
+"bookmarks.importExport.title" = "Importuj zakładki z innych popularnych przeglądarek.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Zgłoś problem z tą witryną";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatycznie wysyłać raporty o awariach?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Importuj plik zakładek...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Jak wyeksportować zakładki z Safari";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Wybierz plik zawierający zakładki. Zwykle jest to plik ZIP lub HTML.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Importuj zakładki do DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "W pliku zip nie znaleziono obsługiwanych danych. Zapoznaj się z instrukcjami eksportu Safari i spróbuj ponownie.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Wybrany plik nie jest obsługiwany. Wybierz inny plik i spróbuj ponownie.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Nie można odczytać pliku %@. Może występować problem z danymi w pliku.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Wybierz opcję **Eksportuj**, a na następnym ekranie opcje **Zakładki** i **Zapisz w pobranych**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Wybierz opcję **Eksportuj**, a na następnym ekranie opcje **Hasła** i **Zapisz w pobranych**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Importuj plik haseł...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "W Chrome wybierz kolejno **Menedżer haseł Google**, a potem **Ustawienia**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Wybierz opcję **Eksportuj hasła**, a następnie **Zapisz w plikach** i zapisz plik w folderze, który zapamiętasz.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Jak eksportować hasła";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Otwórz ⚙️ **Ustawienia**, wpisz „Eksport” w pasku wyszukiwania i wybierz wynik **Eksport** dla Safari, aby przejść bezpośrednio do opcji (lub wybierz kolejno Aplikacje > Safari w Ustawieniach).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Eksport z";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Jak wyeksportować hasła z Safari:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Wybierz plik zawierający hasła wyeksportowane z przeglądarki Safari lub Chrome. Zwykle jest to plik ZIP lub CSV.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Importuj hasła do DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Zakładki";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Gotowe";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Synchronizacja i kopia zapasowa %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Zakładki";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Dane";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Hasła";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Import zakończony!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Pominięte duplikaty";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Nie udało się zaimportować";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Możesz teraz usunąć plik haseł.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Hasła";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Ostatni miesiąc";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Debugowanie";
+
+/* No comment provided by engineer. */
+"Delete All" = "Usuń wszystko";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "tym urządzeniu";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Ukryj swój adres e-mail i\nblokuj skrypty śledzące";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Nie dodano jeszcze żadnych zakładek";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Jeśli zakładki są zapisane w innej przeglądarce, możesz\nzaimportować je do DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Brak pasujących wyników";
@@ -3147,4 +3267,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pobierz DuckDuckGo dla systemu Windows.";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Zakładki";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Kontynuuj";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Hasła";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Co chcesz importować?";
 

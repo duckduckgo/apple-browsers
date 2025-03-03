@@ -102,18 +102,18 @@ protocol VPNMetadataCollector {
 final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     private let statusObserver: ConnectionStatusObserver
     private let serverInfoObserver: ConnectionServerInfoObserver
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let settings: VPNSettings
     private let defaults: UserDefaults
 
     init(statusObserver: ConnectionStatusObserver,
          serverInfoObserver: ConnectionServerInfoObserver,
-         accountManager: AccountManager = AppDependencyProvider.shared.subscriptionManager.accountManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          settings: VPNSettings = .init(defaults: .networkProtectionGroupDefaults),
          defaults: UserDefaults = .networkProtectionGroupDefaults) {
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
-        self.accountManager = accountManager
+        self.subscriptionManager = subscriptionManager
         self.settings = settings
         self.defaults = defaults
     }
@@ -149,11 +149,11 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             isInternalUser: isInternalUser
         )
     }
-    
+
     private func collectDeviceInfoMetadata() -> VPNMetadata.DeviceInfo {
         .init(osVersion: AppVersion.shared.osVersion, lowPowerModeEnabled: ProcessInfo.processInfo.isLowPowerModeEnabled)
     }
-    
+
     func collectNetworkInformation() async -> VPNMetadata.NetworkInfo {
         let monitor = NWPathMonitor()
         monitor.start(queue: DispatchQueue(label: "VPNMetadataCollector.NWPathMonitor.paths"))
@@ -242,13 +242,11 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
     }
 
     func collectPrivacyProInfo() async -> VPNMetadata.PrivacyProInfo {
-        let hasVPNEntitlement = (try? await accountManager.hasEntitlement(forProductName: .networkProtection).get()) ?? false
         return .init(
-            hasPrivacyProAccount: accountManager.isUserAuthenticated,
-            hasVPNEntitlement: hasVPNEntitlement
+            hasPrivacyProAccount: subscriptionManager.isUserAuthenticated,
+            hasVPNEntitlement: await subscriptionManager.isEnabled(feature: .networkProtection)
         )
     }
-
 }
 
 private extension NSError {

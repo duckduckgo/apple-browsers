@@ -268,7 +268,9 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                  subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
+                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
+                                                  subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,
                                                   deepLink: deepLinkTarget,

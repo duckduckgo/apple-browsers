@@ -171,7 +171,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @Published public var animationsOn: Bool = false
 
-    public var enablesUnifiedFeedbackForm: Bool
+    public let enablesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
                 settings: VPNSettings,

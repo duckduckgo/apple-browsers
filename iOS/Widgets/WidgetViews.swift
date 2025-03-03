@@ -76,8 +76,6 @@ struct FavoriteView: View {
     }
 }
 
-
-
 struct FavoritesRowView: View {
     var entry: Provider.Entry
     var start: Int
@@ -187,8 +185,6 @@ struct FavoritesWidgetView: View {
         }
     }
 }
-
-
 
 struct SearchWidgetView: View {
     var entry: Provider.Entry

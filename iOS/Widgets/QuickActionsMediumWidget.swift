@@ -44,7 +44,7 @@ struct QuickActionsMediumProvider: TimelineProvider {
         QuickActionsMediumEntry(date: Date())
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (QuickActionsMediumEntry) -> ()) {
+    func getSnapshot(in context: Context, completion: @escaping (QuickActionsMediumEntry) -> Void) {
         let entry = QuickActionsMediumEntry(date: Date())
         completion(entry)
     }

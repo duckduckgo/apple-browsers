@@ -141,6 +141,7 @@
 				<string>http</string>
 				<string>https</string>
 				<string>ddgOpenAIChat</string>
+				<string>ddgNewEmail</string>
 			</array>
 		</dict>
 	</array>

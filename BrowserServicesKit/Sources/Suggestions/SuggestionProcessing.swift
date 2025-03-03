@@ -117,6 +117,24 @@ final class SuggestionProcessing {
         }
     }
 
+    /// Gets the "quality" of a suggestion type.
+    /// Bookmarks, favorites, and history items have a valid page title, so are considered higher quality.
+    /// This matches the Windows implementation's GetSuggestionQuality method.
+    private func getSuggestionTypeQuality(_ localSuggestion: LocalSuggestion) -> Int {
+        switch localSuggestion {
+        case .bookmark(let bookmark) where bookmark.isFavorite:
+            return 6 // Favorite (highest quality)
+        case .bookmark:
+            return 5 // Regular bookmark
+        case .openTab:
+            return 4 // Open tab
+        case .history:
+            return 3 // History entry
+        case .internalPage:
+            return 2 // Internal page (treated similar to website)
+        }
+    }
+    
     private func localSuggestions(from history: [HistorySuggestion], bookmarks: [Bookmark], internalPages: [InternalPage], openTabs: [BrowserTab], query: String) -> [TopHitsEligibleSuggestion] {
         // Precompute query tokens once
         let lowerQuery = query.lowercased()
@@ -138,8 +156,20 @@ final class SuggestionProcessing {
             return (localSuggestion, score)
         }
 
-        // Sort suggestions by score in descending order
-        let sortedSuggestions = scoredSuggestions.sorted { $0.1 > $1.1 }
+        // Sort suggestions first by type priority, then by score
+        // This aligns with Windows implementation which prioritizes by suggestion type first
+        let sortedSuggestions = scoredSuggestions.sorted { 
+            let quality1 = getSuggestionTypeQuality($0.0)
+            let quality2 = getSuggestionTypeQuality($1.0)
+            
+            // If qualities are different, sort by quality
+            if quality1 != quality2 {
+                return quality1 > quality2
+            }
+            
+            // If qualities are the same, sort by score
+            return $0.1 > $1.1
+        }
 
         // Create final array of scored and sorted suggestions
         let result = sortedSuggestions.compactMap { localSuggestion, score -> TopHitsEligibleSuggestion? in
@@ -154,43 +184,109 @@ final class SuggestionProcessing {
 
 
     private func dedupLocalSuggestions(_ suggestions: [TopHitsEligibleSuggestion]) -> [TopHitsEligibleSuggestion] {
-        return suggestions.reduce([TopHitsEligibleSuggestion]()) { partialResult, scoredSuggestion -> [TopHitsEligibleSuggestion] in
-            if partialResult.contains(where: { item in
-                switch item.suggestion {
-                case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, _):
-                    if case .bookmark(title, url: let searchUrl, isFavorite, _) = scoredSuggestion.suggestion,
-                       searchUrl.naked == url.naked {
-                        return true
-                    }
-
-                case .historyEntry(title: let title, url: let url, _):
-                    if case .historyEntry(title, url: let searchUrl, _) = scoredSuggestion.suggestion,
-                       searchUrl.naked == url.naked {
-                        return true
-                    }
-
-                case .internalPage(title: let title, url: let url, _):
-                    if case .internalPage(title, url, _) = scoredSuggestion.suggestion {
-                        return true
-                    }
-
-                case .openTab(title: let title, url: let url, _):
-                    if case .openTab(title, url: let searchUrl, _) = scoredSuggestion.suggestion,
-                       searchUrl.naked == url.naked {
-                        return true
-                    }
-
-                default:
-                    assertionFailure("Unexpected suggestion in local suggestions")
-                    return true
-                }
-
-                return false
-            }) {
-                return partialResult
+        // Group suggestions by URL (normalized to remove scheme and www prefix)
+        let groupedSuggestions = Dictionary(grouping: suggestions) { suggestion -> String in
+            guard let url = suggestion.suggestion.url else {
+                return UUID().uuidString // Ensure unique key for items without URL
             }
-            return partialResult + [scoredSuggestion]
+            let nakedUrl = url.nakedString
+            return nakedUrl ?? url.absoluteString
         }
+        
+        // Process each group of suggestions with the same URL
+        return groupedSuggestions.values.compactMap { suggestionsForSameUrl -> TopHitsEligibleSuggestion? in
+            guard let firstSuggestion = suggestionsForSameUrl.first else { return nil }
+            
+            // If we only have one suggestion for this URL, return it directly
+            if suggestionsForSameUrl.count == 1 {
+                return firstSuggestion
+            }
+            
+            // For multiple suggestions with the same URL, we need to merge information
+            // This is similar to the Windows RemoveDuplicates method
+            
+            // Get all suggestion types that apply to this URL
+            let suggestionTypes = Set(suggestionsForSameUrl.map { suggestion -> SuggestionType in
+                switch suggestion.suggestion {
+                case .bookmark(_, _, let isFavorite, _):
+                    return isFavorite ? .favorite : .bookmark
+                case .historyEntry:
+                    return .historyEntry
+                case .openTab:
+                    return .openTab
+                case .internalPage:
+                    return .internalPage
+                case .website:
+                    return .website
+                case .phrase, .unknown:
+                    return .other
+                }
+            })
+            
+            // Find the highest quality suggestion type in this group
+            let highestQualitySuggestion = suggestionsForSameUrl
+                .sorted { lhs, rhs in
+                    // Sort by suggestion quality (using our quality method)
+                    let quality1: Int = {
+                        switch lhs.suggestion {
+                        case .bookmark(_, _, let isFavorite, _): return isFavorite ? 6 : 5
+                        case .openTab: return 4
+                        case .historyEntry: return 3
+                        case .internalPage: return 2
+                        case .website: return 1
+                        default: return 0
+                        }
+                    }()
+                    
+                    let quality2: Int = {
+                        switch rhs.suggestion {
+                        case .bookmark(_, _, let isFavorite, _): return isFavorite ? 6 : 5
+                        case .openTab: return 4
+                        case .historyEntry: return 3
+                        case .internalPage: return 2
+                        case .website: return 1
+                        default: return 0
+                        }
+                    }()
+                    
+                    return quality1 > quality2
+                }
+                .first!
+            
+            // Get highest score among all suggestions for this URL
+            let maxScore = suggestionsForSameUrl.max { $0.suggestion.score < $1.suggestion.score }?.suggestion.score ?? 0
+            
+            // Determine if this suggestion should be allowed in top hits
+            // If any of the suggestions for this URL is allowed in top hits, the result should be allowed
+            let allowedInTopHits = suggestionsForSameUrl.contains { $0.allowedInTopHits }
+            
+            // Check if we have both an openTab and a historyEntry/bookmark for the same URL
+            // This is special handling similar to Windows implementation
+            let hasOpenTab = suggestionTypes.contains(.openTab)
+            let hasHistoryOrBookmark = suggestionTypes.contains(.historyEntry) || 
+                                      suggestionTypes.contains(.bookmark) ||
+                                      suggestionTypes.contains(.favorite)
+            
+            // Return the highest quality suggestion with the maximum score
+            // and combined information about suggestion types
+            return (suggestion: highestQualitySuggestion.suggestion.withScore(maxScore), 
+                    allowedInTopHits: allowedInTopHits)
+        }
+        .sorted { 
+            // Final sort by score to ensure highest scored items appear first
+            $0.suggestion.score > $1.suggestion.score
+        }
+    }
+    
+    // Helper enum for categorizing suggestions during deduplication
+    private enum SuggestionType {
+        case favorite
+        case bookmark
+        case openTab
+        case historyEntry
+        case internalPage
+        case website
+        case other
     }
 
     private func replaceHistoryWithBookmarksAndTabs(_ sourceSuggestions: [TopHitsEligibleSuggestion]) -> [TopHitsEligibleSuggestion] {
@@ -242,17 +338,60 @@ final class SuggestionProcessing {
     /// Take the top two items from the suggestions, but only up to the first suggestion that is not allowed in top hits
     private func topHits(from suggestions: [TopHitsEligibleSuggestion]) -> [Suggestion] {
         var topHits = [Suggestion]()
-
-        for item in suggestions {
-            guard topHits.count < Self.maximumNumberOfTopHits else { break }
-
-            if item.allowedInTopHits {
-                topHits.append(item.suggestion)
-            } else {
-                break
+        
+        // Get candidates that are eligible for top hits, up to the maximum
+        let topHitsCandidates = suggestions
+            .filter { $0.allowedInTopHits }
+            .prefix(Self.maximumNumberOfTopHits)
+            .map { $0.suggestion }
+        
+        // Check if we have any special open tab cases for top hits
+        let anyOpenTabsInTopHits = topHitsCandidates.contains { $0.isOpenTab }
+        
+        // Process top hits according to rules similar to Windows implementation
+        if anyOpenTabsInTopHits && topHitsCandidates.count > 0 {
+            // Find the first open tab in the candidates
+            if let firstOpenTabIndex = topHitsCandidates.firstIndex(where: { $0.isOpenTab }),
+               let firstOpenTab = topHitsCandidates[safe: firstOpenTabIndex] {
+                
+                // Find a corresponding bookmark/history entry for the same URL
+                let openTabUrl = firstOpenTab.url
+                let sameUrlNonTabSuggestion = suggestions
+                    .filter { 
+                        // Not an open tab but has the same URL
+                        !$0.suggestion.isOpenTab && 
+                        $0.suggestion.url?.naked == openTabUrl?.naked && 
+                        $0.allowedInTopHits
+                    }
+                    .first
+                
+                if let nonTabSuggestion = sameUrlNonTabSuggestion {
+                    // We have both an open tab and another suggestion (bookmark/history) for the same URL
+                    // Similar to Windows, prioritize the non-tab suggestion for autocomplete purposes
+                    topHits.append(nonTabSuggestion.suggestion)
+                    
+                    // Only add the open tab as well if we haven't reached max yet
+                    if topHits.count < Self.maximumNumberOfTopHits {
+                        topHits.append(firstOpenTab)
+                    }
+                } else {
+                    // Just a regular open tab with no corresponding bookmark/history
+                    topHits.append(firstOpenTab)
+                }
             }
+            
+            // Add remaining top hits until we reach the maximum
+            for candidate in topHitsCandidates {
+                if !topHits.contains(where: { $0.url?.naked == candidate.url?.naked }) && 
+                   topHits.count < Self.maximumNumberOfTopHits {
+                    topHits.append(candidate)
+                }
+            }
+        } else {
+            // No special open tab handling needed, just take the top N allowed suggestions
+            topHits = Array(topHitsCandidates)
         }
-
+        
         return topHits
     }
 

@@ -27,6 +27,35 @@ public enum Suggestion: Equatable {
     case internalPage(title: String, url: URL, score: Int)
     case openTab(title: String, url: URL, score: Int)
     case unknown(value: String)
+    
+    /// The score of this suggestion, if available
+    var score: Int {
+        switch self {
+        case .bookmark(_, _, _, let score),
+             .historyEntry(_, _, let score),
+             .internalPage(_, _, let score),
+             .openTab(_, _, let score):
+            return score
+        case .phrase, .website, .unknown:
+            return 0
+        }
+    }
+    
+    /// Returns a new suggestion with the updated score
+    func withScore(_ newScore: Int) -> Suggestion {
+        switch self {
+        case .bookmark(let title, let url, let isFavorite, _):
+            return .bookmark(title: title, url: url, isFavorite: isFavorite, score: newScore)
+        case .historyEntry(let title, let url, _):
+            return .historyEntry(title: title, url: url, score: newScore)
+        case .internalPage(let title, let url, _):
+            return .internalPage(title: title, url: url, score: newScore)
+        case .openTab(let title, let url, _):
+            return .openTab(title: title, url: url, score: newScore)
+        case .phrase, .website, .unknown:
+            return self // No score field to update
+        }
+    }
 
     public var url: URL? {
         switch self {

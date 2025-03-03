@@ -41,6 +41,17 @@ public enum APICachePolicy {
     case reloadIgnoringLocalCacheData
     case returnCacheDataElseLoad
     case returnCacheDataDontLoad
+
+    public var subscriptionCachePolicy: SubscriptionCachePolicy {
+        switch self {
+        case .reloadIgnoringLocalCacheData:
+            return .reloadIgnoringLocalCacheData
+        case .returnCacheDataElseLoad:
+            return .returnCacheDataElseLoad
+        case .returnCacheDataDontLoad:
+            return .returnCacheDataDontLoad
+        }
+    }
 }
 
 public struct DefaultSubscriptionAPIService: SubscriptionAPIService {

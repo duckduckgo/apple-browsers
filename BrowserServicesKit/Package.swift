@@ -114,8 +114,9 @@ let package = Package(
         .target(
             name: "Bookmarks",
             dependencies: [
+                "BrowserServicesKit",
                 "Persistence",
-                "Common",
+                "Common"
             ],
             resources: [
                 .process("BookmarksModel.xcdatamodeld")

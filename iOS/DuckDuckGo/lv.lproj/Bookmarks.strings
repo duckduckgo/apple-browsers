@@ -13,9 +13,6 @@
 /* Class = "UILabel"; text = "No matches found"; ObjectID = "hqG-b3-Fq3"; */
 "hqG-b3-Fq3.text" = "Sakritības nav atrastas";
 
-/* Class = "UILabel"; text = "No bookmarks added yet"; ObjectID = "jdA-wE-Hkh"; */
-"jdA-wE-Hkh.text" = "Vēl nav pievienota neviena grāmatzīme";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "K2O-E5-pyF"; */
 "K2O-E5-pyF.text" = "Etiķete";
 
@@ -42,9 +39,6 @@
 
 /* Class = "UINavigationItem"; title = "Add Folder"; ObjectID = "qaZ-4Z-o70"; */
 "qaZ-4Z-o70.title" = "Pievienot mapi";
-
-/* Class = "UIButton"; normalTitle = "Import bookmark file from another browser"; ObjectID = "R7T-q4-qHz"; */
-"R7T-q4-qHz.normalTitle" = "Importēt grāmatzīmju failu no citas pārlūkprogrammas";
 
 /* Class = "UITextField"; placeholder = "Title"; ObjectID = "rT4-Yr-P8D"; */
 "rT4-Yr-P8D.placeholder" = "Nosaukums";

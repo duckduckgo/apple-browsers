@@ -217,7 +217,7 @@ extension TabSwitcherViewController {
         
         self.closeTabs(withIndexPaths: [IndexPath](otherIndexPaths),
                        confirmTitle: UserText.alertTitleCloseOtherTabs(withCount: otherIndexPaths.count),
-                       confirmMessage: UserText.alertMessageCloseOtherTabs(withCount:otherIndexPaths.count))
+                       confirmMessage: UserText.alertMessageCloseOtherTabs(withCount: otherIndexPaths.count))
     }
 
 }
@@ -345,7 +345,7 @@ extension TabSwitcherViewController {
                 containsWebPages ? action(UserText.shareLinks(withCount: tabs.count), "Share-Apple-16", { [weak self] in
                     self?.longPressMenuShareLinks(tabs: tabs)
                 }) : nil,
-                containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16",  { [weak self] in
+                containsWebPages ? action(UserText.bookmarkSelectedTabs(withCount: tabs.count), "Bookmark-Add-16", { [weak self] in
                     self?.longPressMenuBookmarkTabs(indexPaths: indexPaths)
                 }) : nil,
                 canSelect ? action(UserText.tabSwitcherSelectTabs(withCount: 1), "Check-Circle-16", { [weak self] in
@@ -550,19 +550,19 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
     
     func action(_ title: String, _ image: String = "", _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image:  image.isEmpty ? nil : UIImage(named: image)) { _ in
+        return UIAction(title: title, image: image.isEmpty ? nil : UIImage(named: image)) { _ in
             handler()
         }
     }
 
     func action(image: String, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: "", image:  UIImage(named: image)) { _ in
+        return UIAction(title: "", image: UIImage(named: image)) { _ in
             handler()
         }
     }
     
     func destructive(_ title: String, _ imageNamed: String, _ handler: @escaping () -> Void) -> UIAction {
-        return UIAction(title: title, image: UIImage(named: imageNamed), attributes:  .destructive) { _ in
+        return UIAction(title: title, image: UIImage(named: imageNamed), attributes: .destructive) { _ in
             handler()
         }
     }

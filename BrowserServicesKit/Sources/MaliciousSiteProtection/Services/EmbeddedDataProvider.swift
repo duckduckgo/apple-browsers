@@ -36,7 +36,7 @@ extension EmbeddedDataProviding {
         do {
             data = try self.data(withContentsOf: url)
 #if DEBUG
-            assert(data.sha256 == hash(for: dataType), "SHA mismatch for \(url.path) \(data.sha256) \(hash(for: dataType))")
+            assert(data.sha256 == hash(for: dataType), "SHA mismatch for \(url.path)")
 #endif
         } catch {
             fatalError("\(self): Could not load embedded data set at “\(url)”: \(error)")

@@ -58,6 +58,8 @@ final class SubscriptionITPViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
 
+    private let webViewSettings: AsyncHeadlessWebViewSettings
+
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, isInternalUser: Bool = false) {
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
@@ -67,10 +69,10 @@ final class SubscriptionITPViewModel: ObservableObject {
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
                                                                              isInternalUser: isInternalUser)
 
-        let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                           allowedDomains: allowedDomains,
-                                                           contentBlocking: false)
-        
+        self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
+                                                            allowedDomains: allowedDomains,
+                                                            contentBlocking: false)
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
@@ -108,9 +110,9 @@ final class SubscriptionITPViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] url in
                 guard let self = self, let url = url else { return }
-                
+
                 // Check if allowedDomains is empty or if the URL is valid or part of the allowed domains
-                if let allowedDomains = self.webViewModel.allowedDomains,
+                if let allowedDomains = self.webViewSettings.allowedDomains,
                     allowedDomains.isEmpty || allowedDomains.contains(where: { url.isPart(ofDomain: $0) }),
                     self.shouldNavigateToExternalURL == nil {
                     self.isDownloadableContent = false

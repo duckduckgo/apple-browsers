@@ -21,8 +21,6 @@ import Foundation
 import MaliciousSiteProtection
 import Common
 import Core
-import BrowserServicesKit
-import Combine
 
 typealias MaliciousSiteProtectionManaging = MaliciousSiteDetecting & MaliciousSiteProtectionDatasetsFetching
 
@@ -31,7 +29,6 @@ final class MaliciousSiteProtectionManager {
     private let dataFetcher: MaliciousSiteProtectionDatasetsFetching
     private let preferencesManager: MaliciousSiteProtectionPreferencesReading
     private let maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger
-    private var cancellables: Set<AnyCancellable> = []
     
     init(
         dataFetcher: MaliciousSiteProtectionDatasetsFetching,

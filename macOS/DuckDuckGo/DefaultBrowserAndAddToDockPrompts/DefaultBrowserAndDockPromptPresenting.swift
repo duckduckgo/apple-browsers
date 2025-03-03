@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPresenter.swift
+//  DefaultBrowserAndDockPromptPresenting.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,11 +21,6 @@ import Combine
 import BrowserServicesKit
 import FeatureFlags
 
-enum DefaultBrowserAndDockPromptPresentationType {
-    case banner
-    case popover
-}
-
 protocol DefaultBrowserAndDockPromptPresenting {
     /// Publisher to let know the banner was dismissed.
     ///
@@ -46,6 +41,11 @@ protocol DefaultBrowserAndDockPromptPresenting {
     /// The popover is more ephemeral and will only be shown in a single window, while the banner is more persistent and will be shown in all windows until the user takes an action on it.
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void)
+}
+
+enum DefaultBrowserAndDockPromptPresentationType {
+    case banner
+    case popover
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
@@ -101,7 +101,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         repository.setPromptShown(true)
 
         self.initializePopover(with: content)
-        self.showPopover(positionedBelow: view) 
+        self.showPopover(positionedBelow: view)
     }
 
     private func getBanner() -> BannerMessageViewController? {
@@ -139,7 +139,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 self.coordinator.onPromptConfirmation()
                 self.popover?.close()
             },
-            secondaryButtonText: content.secondaryButtonTitle!, // TODO: Fix
+            secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
                 self.popover?.close()
             })
@@ -167,7 +167,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         overridesHandler.experimentFlagDidChangePublisher
             .filter { $0.0 == .popoverVsBannerExperiment }
             .sink { (_, cohort) in
-                guard let _ = FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) else { return }
+                if FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) == nil { return }
 
                 /// For testing purposes when we override the local features and because we want to show the prompt.
                 /// We set the set prompt flag to false in case it was show in the past.

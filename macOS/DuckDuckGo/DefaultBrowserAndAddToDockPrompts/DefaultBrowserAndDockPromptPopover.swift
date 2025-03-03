@@ -26,7 +26,7 @@ public final class DefaultBrowserAndDockPromptPopoverViewModel: ObservableObject
     @Published var image: NSImage
     @Published var buttonText: String
     @Published public var buttonAction: () -> Void
-    @Published var secondaryButtonText: String
+    @Published var secondaryButtonText: String?
     @Published public var secondaryButtonAction: () -> Void
 
     public init(title: String?,
@@ -34,7 +34,7 @@ public final class DefaultBrowserAndDockPromptPopoverViewModel: ObservableObject
                 image: NSImage,
                 buttonText: String,
                 buttonAction: @escaping () -> Void,
-                secondaryButtonText: String,
+                secondaryButtonText: String?,
                 secondaryButtonAction: @escaping () -> Void) {
         self.title = title
         self.message = message
@@ -80,13 +80,15 @@ struct DefaultBrowserAndDockPromptPopoverView: View {
             .padding(.bottom, 20)
 
             HStack(spacing: 8) {
-                Button {
-                    self.viewModel.secondaryButtonAction()
-                } label: {
-                    Text(viewModel.secondaryButtonText)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if let secondaryButtonText = viewModel.secondaryButtonText {
+                    Button {
+                        self.viewModel.secondaryButtonAction()
+                    } label: {
+                        Text(secondaryButtonText)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                    .buttonStyle(StandardButtonStyle())
                 }
-                .buttonStyle(StandardButtonStyle())
 
                 Button {
                     self.viewModel.buttonAction()

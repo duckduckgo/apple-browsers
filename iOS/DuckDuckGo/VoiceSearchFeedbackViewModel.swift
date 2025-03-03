@@ -139,11 +139,13 @@ class VoiceSearchFeedbackViewModel: ObservableObject {
     }
 
     func cancel() {
+        assert(Thread.isMainThread)
         Pixel.fire(pixel: .voiceSearchCancelled)
         delegate?.voiceSearchFeedbackViewModel(self, didFinishQuery: nil, target: searchTarget)
     }
 
     func finish() {
+        assert(Thread.isMainThread)
         delegate?.voiceSearchFeedbackViewModel(self, didFinishQuery: recognizedWords, target: searchTarget)
     }
 }

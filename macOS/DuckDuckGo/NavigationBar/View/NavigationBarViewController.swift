@@ -273,7 +273,10 @@ final class NavigationBarViewController: NSViewController {
      */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
         Task { @MainActor in
-            guard force || HistoryViewOnboardingDecider().shouldPresentOnboarding, view.window?.isKeyWindow == true else {
+            guard force || HistoryViewOnboardingDecider().shouldPresentOnboarding,
+                  !tabCollectionViewModel.isBurner,
+                  view.window?.isKeyWindow == true
+            else {
                 return
             }
             popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in

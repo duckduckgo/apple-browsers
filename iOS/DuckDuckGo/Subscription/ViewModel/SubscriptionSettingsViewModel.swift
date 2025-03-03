@@ -24,6 +24,7 @@ import Subscription
 import Core
 import os.log
 import BrowserServicesKit
+import Networking
 
 final class SubscriptionSettingsViewModel: ObservableObject {
     
@@ -43,7 +44,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         var subscriptionInfo: PrivacyProSubscription?
         var isLoadingSubscriptionInfo: Bool = false
         var isLoadingEmailInfo: Bool = false
-
+        
         // Used to display stripe WebUI
         var stripeViewModel: SubscriptionExternalLinkViewModel?
         var isShowingStripeView: Bool = false
@@ -54,28 +55,28 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         // Used to display the FAQ WebUI
         var faqViewModel: SubscriptionExternalLinkViewModel
         var learnMoreViewModel: SubscriptionExternalLinkViewModel
-
+        
         init(faqURL: URL, learnMoreURL: URL) {
             self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL)
             self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL)
         }
     }
-
+    
     // Publish the currently selected feature
     @Published var selectedFeature: SettingsViewModel.SettingsDeepLinkSection?
     
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state: State
-
+    
     public let usesUnifiedFeedbackForm: Bool
-
-    init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager) {
+    
+    init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager!) {
         self.subscriptionManager = subscriptionManager
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
         self.usesUnifiedFeedbackForm = subscriptionManager.accountManager.isUserAuthenticated
-
+        
         setupNotificationObservers()
     }
     
@@ -94,7 +95,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataDontLoad,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
-
+            
             // Reload remote subscription and email state
             async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData,
                                                                             loadingIndicator: !hasLoadedEmailFromCache)
@@ -103,11 +104,11 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
         }
     }
-
+    
     private func fetchAndUpdateSubscriptionDetails(cachePolicy: APICachePolicy, loadingIndicator: Bool) async -> Bool {
         Logger.subscription.debug("\(#function)")
         guard let token = self.subscriptionManager.accountManager.accessToken else { return false }
-
+        
         if loadingIndicator { displaySubscriptionLoader(true) }
         let subscriptionResult = await self.subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token,
                                                                                                             cachePolicy: cachePolicy)
@@ -130,11 +131,11 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return false
         }
     }
-
+    
     func fetchAndUpdateAccountEmail(cachePolicy: APICachePolicy = .returnCacheDataElseLoad, loadingIndicator: Bool) async -> Bool {
         Logger.subscription.debug("\(#function)")
         guard let token = self.subscriptionManager.accountManager.accessToken else { return false }
-
+        
         switch cachePolicy {
         case .returnCacheDataDontLoad, .returnCacheDataElseLoad:
             DispatchQueue.main.async {
@@ -144,7 +145,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .reloadIgnoringLocalCacheData:
             break
         }
-
+        
         if loadingIndicator { displayEmailLoader(true) }
         switch await self.subscriptionManager.accountManager.fetchAccountDetails(with: token) {
         case .success(let details):
@@ -153,7 +154,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 self.state.subscriptionEmail = details.email
                 if loadingIndicator { self.displayEmailLoader(false) }
             }
-
+            
             // If fetched email is different then update accountManager
             if details.email != subscriptionManager.accountManager.email {
                 let externalID = subscriptionManager.accountManager.externalID
@@ -168,19 +169,19 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return false
         }
     }
-
+    
     private func displaySubscriptionLoader(_ show: Bool) {
         DispatchQueue.main.async {
             self.state.isLoadingSubscriptionInfo = show
         }
     }
-
+    
     private func displayEmailLoader(_ show: Bool) {
         DispatchQueue.main.async {
             self.state.isLoadingEmailInfo = show
         }
     }
-
+    
     func manageSubscription() {
         Logger.subscription.debug("User action: \(#function)")
         switch state.subscriptionInfo?.platform {
@@ -208,9 +209,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     @MainActor
     private func updateSubscriptionsStatusMessage(subscription: PrivacyProSubscription, date: Date, product: String, billingPeriod: PrivacyProSubscription.BillingPeriod) {
         let date = dateFormatter.string(from: date)
-
+        
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
-
+        
         switch subscription.status {
         case .autoRenewable:
             if hasActiveTrialOffer {
@@ -261,13 +262,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             state.isShowingFAQView = value
         }
     }
-
+    
     func displayLearnMoreView(_ value: Bool) {
         if value != state.isShowingLearnMoreView {
             state.isShowingLearnMoreView = value
         }
     }
-
+    
     func showConnectionError(_ value: Bool) {
         if value != state.isShowingConnectionError {
             DispatchQueue.main.async {
@@ -275,13 +276,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         }
     }
-
+    
     @MainActor
     func showTermsOfService() {
         let privacyPolicyQuickLinkURL = URL(string: AppDeepLinkSchemes.quickLink.appending(SettingsSubscriptionView.ViewConstants.privacyPolicyURL.absoluteString))!
         openURL(privacyPolicyQuickLinkURL)
     }
-
+    
     // MARK: -
     
     @MainActor private func manageAppleSubscription() async {
@@ -298,12 +299,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
         }
     }
-         
+    
     private func manageStripeSubscription() async {
         guard let token = subscriptionManager.accountManager.accessToken,
-                let externalID = subscriptionManager.accountManager.externalID else { return }
+              let externalID = subscriptionManager.accountManager.externalID else { return }
         let serviceResponse = await  subscriptionManager.subscriptionEndpointService.getCustomerPortalURL(accessToken: token, externalID: externalID)
-
+        
         // Get Stripe Customer Portal URL and update the model
         if case .success(let response) = serviceResponse {
             guard let url = URL(string: response.customerPortalUrl) else { return }
@@ -320,7 +321,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             self.displayStripeView(true)
         }
     }
-
+    
     @MainActor
     private func openURL(_ url: URL) {
         if UIApplication.shared.canOpenURL(url) {

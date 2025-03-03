@@ -42,7 +42,7 @@ protocol ShortcutItemHandling {
 final class MainCoordinator {
 
     let controller: MainViewController
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -55,10 +55,10 @@ final class MainCoordinator {
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
-         accountManager: AccountManager = AppDependencyProvider.shared.accountManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime) throws {
-        self.accountManager = accountManager
+        self.subscriptionManager = subscriptionManager
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -160,7 +160,7 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection), hasEntitlements {
+            if await subscriptionManager.isEnabled(feature: .networkProtection) {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()
@@ -264,6 +264,14 @@ extension MainCoordinator: URLHandling {
         }
     }
 
+    func handleAIChatAppIconShortuct() {
+          controller.clearNavigationStack()
+          // Give the `clearNavigationStack` call time to complete.
+          DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
+              self.controller.openAIChat()
+          }
+          Pixel.fire(pixel: .openAIChatFromIconShortcut)
+      }
 }
 
 extension MainCoordinator: ShortcutItemHandling {
@@ -275,6 +283,10 @@ extension MainCoordinator: ShortcutItemHandling {
             handleSearchPassword()
         } else if item.type == ShortcutKey.openVPNSettings {
             presentNetworkProtectionStatusSettingsModal()
+        } else if item.type == ShortcutKey.aiChat {
+            handleAIChatAppIconShortuct()
+        } else if item.type == ShortcutKey.voiceSearch {
+            controller.onVoiceSearchPressed()
         }
     }
 

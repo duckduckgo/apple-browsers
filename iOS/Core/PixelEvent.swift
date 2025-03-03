@@ -245,7 +245,9 @@ extension Pixel {
         case jsAlertShown
         
         case featureFlaggingInternalUserAuthenticated
-        
+
+        // MARK: Autofill pixels
+
         case autofillLoginsSaveLoginModalDisplayed
         case autofillLoginsSaveLoginModalConfirmed
         case autofillLoginsSaveLoginModalDismissed
@@ -359,6 +361,33 @@ extension Pixel {
         case secureVaultV4Migration
         case secureVaultV4MigrationSkipped
 
+        // MARK: Data Import pixels
+
+        case autofillImportPasswordsImportButtonTapped
+        case autofillImportPasswordsImportButtonShown
+        case autofillImportPasswordsOverflowMenuTapped
+        case bookmarksImportButtonTapped
+        case bookmarksImportButtonShown
+        case bookmarksImportOverflowMenuTapped
+        case importInstructionsDisplayed
+        case importInstructionsFileButtonTapped
+        case importInstructionsToggled
+        case importInstructionsFileSelectedZip
+        case importInstructionsFileSelectedHtml
+        case importInstructionsFileSelectedCsv
+        case importInstructionsCancelled
+        case importPreviewPromptDisplayed
+        case importPreviewPromptConfirmed
+        case importPreviewPromptDismissed
+        case importResultDisplayed
+        case importResultPasswordsSuccess
+        case importResultBookmarksSuccess
+        case importResultSyncButtonShown
+        case importResultSyncButtonTapped
+        case importResultPasswordsParsing
+        case importResultBookmarksParsing
+        case importResultUnzipping
+
         // MARK: Ad Click Attribution pixels
         
         case adClickAttributionDetected
@@ -392,8 +421,6 @@ extension Pixel {
         case networkProtectionTunnelUpdateSuccess
         case networkProtectionTunnelUpdateFailure
 
-        case networkProtectionTunnelWakeAttempt
-        case networkProtectionTunnelWakeSuccess
         case networkProtectionTunnelWakeFailure
 
         case networkProtectionEnableAttemptConnecting
@@ -806,6 +833,9 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
+        case privacyProDeadTokenDetected
+        case authV1MigrationFailed
+        case authV1MigrationSucceeded
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -973,6 +1003,7 @@ extension Pixel {
         case openAIChatFromWidgetQuickAction
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
+        case openAIChatFromIconShortcut
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1226,7 +1257,9 @@ extension Pixel.Event {
         case .jsAlertShown: return "m_js_alert_shown"
             
         case .featureFlaggingInternalUserAuthenticated: return "m_internal-user_authenticated"
-            
+
+            // MARK: Autofill pixels
+
         case .autofillLoginsSaveLoginModalDisplayed: return "m_autofill_logins_save_login_inline_displayed"
         case .autofillLoginsSaveLoginModalConfirmed: return "m_autofill_logins_save_login_inline_confirmed"
         case .autofillLoginsSaveLoginModalDismissed: return "m_autofill_logins_save_login_inline_dismissed"
@@ -1355,6 +1388,33 @@ extension Pixel.Event {
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
+            // MARK: Data Import pixels
+
+        case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
+        case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
+        case .autofillImportPasswordsOverflowMenuTapped: return "autofill_import_passwords_overflow_menu_tapped"
+        case .bookmarksImportButtonTapped: return "bookmarks_import_button_tapped"
+        case .bookmarksImportButtonShown: return "bookmarks_import_button_shown"
+        case .bookmarksImportOverflowMenuTapped: return "bookmarks_import_overflow_menu_tapped"
+        case .importInstructionsDisplayed: return "import_instructions_displayed"
+        case .importInstructionsFileButtonTapped: return "import_instructions_file_button_tapped"
+        case .importInstructionsToggled: return "import_instructions_toggled"
+        case .importInstructionsFileSelectedZip: return "import_instructions_file_selected-zip"
+        case .importInstructionsFileSelectedHtml: return "import_instructions_file_selected-html"
+        case .importInstructionsFileSelectedCsv: return "import_instructions_file_selected-csv"
+        case .importInstructionsCancelled: return "import_instructions_cancelled"
+        case .importPreviewPromptDisplayed: return "import_preview_prompt_displayed"
+        case .importPreviewPromptConfirmed: return "import_preview_prompt_confirmed"
+        case .importPreviewPromptDismissed: return "import_preview_prompt_dismissed"
+        case .importResultDisplayed: return "import_result_displayed"
+        case .importResultPasswordsSuccess: return "import_result_passwords_success"
+        case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
+        case .importResultSyncButtonShown: return "import_result_sync_button_shown"
+        case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
+        case .importResultPasswordsParsing: return "import_result_passwords_parsing"
+        case .importResultBookmarksParsing: return "import_result_bookmarks_parsing"
+        case .importResultUnzipping: return "import_result_unzipping"
+
             // MARK: Ad Click Attribution pixels
             
         case .adClickAttributionDetected: return "m_ad_click_detected"
@@ -1383,8 +1443,6 @@ extension Pixel.Event {
         case .networkProtectionTunnelUpdateAttempt: return "m_netp_tunnel_update_attempt"
         case .networkProtectionTunnelUpdateSuccess: return "m_netp_tunnel_update_success"
         case .networkProtectionTunnelUpdateFailure: return "m_netp_tunnel_update_failure"
-        case .networkProtectionTunnelWakeAttempt: return "m_netp_tunnel_wake_attempt"
-        case .networkProtectionTunnelWakeSuccess: return "m_netp_tunnel_wake_success"
         case .networkProtectionTunnelWakeFailure: return "m_netp_tunnel_wake_failure"
         case .networkProtectionEnableAttemptConnecting: return "m_netp_ev_enable_attempt"
         case .networkProtectionEnableAttemptSuccess: return "m_netp_ev_enable_attempt_success"
@@ -1773,6 +1831,9 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
+        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
+        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
+        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -1963,6 +2024,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
+
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

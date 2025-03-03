@@ -45,8 +45,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
     case networkProtectionTunnelUpdateSuccess
     case networkProtectionTunnelUpdateFailure(_ error: Error)
 
-    case networkProtectionTunnelWakeAttempt
-    case networkProtectionTunnelWakeSuccess
     case networkProtectionTunnelWakeFailure(_ error: Error)
 
     case networkProtectionServerMigrationAttempt
@@ -168,12 +166,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
 
         case .networkProtectionTunnelUpdateFailure:
             return "netp_tunnel_update_failure"
-
-        case .networkProtectionTunnelWakeAttempt:
-            return "netp_tunnel_wake_attempt"
-
-        case .networkProtectionTunnelWakeSuccess:
-            return "netp_tunnel_wake_success"
 
         case .networkProtectionTunnelWakeFailure:
             return "netp_tunnel_wake_failure"
@@ -410,8 +402,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionTunnelUpdateAttempt,
                 .networkProtectionTunnelUpdateSuccess,
                 .networkProtectionTunnelUpdateFailure,
-                .networkProtectionTunnelWakeAttempt,
-                .networkProtectionTunnelWakeSuccess,
                 .networkProtectionTunnelWakeFailure,
                 .networkProtectionEnableAttemptConnecting,
                 .networkProtectionEnableAttemptSuccess,
@@ -481,8 +471,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionTunnelStopSuccess,
                 .networkProtectionTunnelUpdateAttempt,
                 .networkProtectionTunnelUpdateSuccess,
-                .networkProtectionTunnelWakeAttempt,
-                .networkProtectionTunnelWakeSuccess,
                 .networkProtectionEnableAttemptConnecting,
                 .networkProtectionEnableAttemptSuccess,
                 .networkProtectionEnableAttemptFailure,

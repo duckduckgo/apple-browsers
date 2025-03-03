@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Oldd fel a DuckDuckGo-t.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Biztosan törlöd az összes könyvjelzőt? Ez a művelet nem vonható vissza.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Bejelentkezés";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Jelszó elrejtése";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Asztali böngésző letöltése";
+"autofill.import.passwords.via.sync.get-browser-button" = "Asztali böngésző letöltése";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Nyisd meg Mac vagy Windows rendszeren a DuckDuckGo böngészőt";
+"autofill.import.passwords.via.sync.instructions.step1" = "Nyisd meg Mac vagy Windows rendszeren a DuckDuckGo böngészőt";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Lépj a %1$@ > %2$@ menüpontra";
+"autofill.import.passwords.via.sync.instructions.step2" = "Lépj a %1$@ > %2$@ menüpontra";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Jelszavak";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Jelszavak";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Beállítások";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Beállítások";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Válaszd a %@ lehetőséget, és kövesd az importálás lépéseit";
+"autofill.import.passwords.via.sync.instructions.step3" = "Válaszd a %@ lehetőséget, és kövesd az importálás lépéseit";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Jelszavak importálása…";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Jelszavak importálása…";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "A számítógépre való importálás után beállíthatod a szinkronizálást ezen az %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "A számítógépre való importálás után beállíthatod a szinkronizálást ezen az %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importálás az asztali böngészőből:";
+"autofill.import.passwords.via.sync.instructions.title" = "Importálás az asztali böngészőből:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importálj jelszavakat a DuckDuckGo böngésző asztali verziójába, majd szinkronizáld őket az eszközök között.";
+"autofill.import.passwords.via.sync.subtitle" = "Importálj jelszavakat a DuckDuckGo böngésző asztali verziójába, majd szinkronizáld őket az eszközök között.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Szinkronizálás asztali böngészővel";
+"autofill.import.passwords.via.sync.sync-button" = "Szinkronizálás asztali böngészővel";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Jelszavak importálásának módja";
+"autofill.import.passwords.via.sync.title" = "Jelszavak importálásának módja";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Letilt";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Jelszavak importálása";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Asztali jelszavak szinkronizálása";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Importálhatod a mentett jelszavaidat egy másik böngészőből a DuckDuckGo böngészőjébe.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "A könyvjelzők meg lettek osztva.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "HTML-fájl exportálása";
+"bookmarks.exportAction.html.title" = "HTML-fájl exportálása";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Könyvjelzők exportálása";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Nem sikerült importálni a fájlt.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "A könyvjelzők importálva lettek.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "HTML-fájl importálása";
+"bookmarks.importAction.html.title" = "HTML-fájl importálása";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Könyvjelzőfájl importálása másik böngészőből";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Könyvjelzők importálása";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Könyvjelzőket tartalmazó HTML-fájl importálása másik gépről, vagy a meglévő könyvjelzők exportálása.";
+"bookmarks.importExport.title" = "Könyvjelzők importálása más népszerű böngészőkből.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Webhelyen fellépő probléma jelentése";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Hibajelentések automatikus küldése?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Könyvjelzők Safariból való exportálásának módja";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Válaszd ki a könyvjelzőket tartalmazó fájlt. Ez általában egy ZIP- vagy HTML-fájl.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Könyvjelzők importálása a DuckDuckGóba";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "A ZIP-fájlban nem találhatók támogatott adatok. Nézd át a Safari exportálási útmutatóját, és próbálkozz újra.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "A kiválasztott fájl nem támogatott. Válassz másik fájlt, és próbálkozz újra.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Nem sikerült beolvasni a %@-fájlt. Lehet, hogy probléma van a fájlban található adatokkal.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Válaszd az **Exportálás** lehetőséget, majd a következő képernyőn válaszd a **Könyvjelzők** és a **Mentés a letöltések közé** opciót.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Válaszd az **Exportálás** lehetőséget, majd a következő képernyőn válaszd a **Jelszavak** és a **Mentés a letöltések közé** opciót.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Jelszófájl importálása…";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "A Chrome-ban válaszd a **Google Jelszókezelő**, majd a **Beállítások** lehetőséget.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Válaszd a **Jelszavak exportálása**, majd a **Mentés fájlokba** lehetőséget, és mentsd a fájlt egy olyan mappába, amelyet meg tudsz jegyezni.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Jelszavak exportálásának módja";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Nyisd meg a ⚙️ **Beállítások** menüt, írd be az „Exportálás” szót a keresősávba, és az **Exportálás** találat kiválasztásával lépj közvetlenül erre az opcióra a Safariban (vagy lépj a Beállítások > Alkalmazások > Safari menüpontra).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Exportálás a következőből:";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Jelszavak Safariból való exportálásának módja:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Válaszd ki a Safariból vagy a Chrome-ból exportált jelszavakat tartalmazó fájlt. Ez általában egy ZIP- vagy CSV-fájl.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Jelszavak importálása a DuckDuckGóba";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Könyvjelzők";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Kész";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "%@ szinkronizálása és biztonsági mentése";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Könyvjelzők";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Adatok";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Jelszavak";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Importálás kész!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Kihagyott duplikátumok";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Nem sikerült importálni";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Most már törölheted a jelszófájlt.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Jelszavak";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Elmúlt hónapban";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Hibakeresés";
+
+/* No comment provided by engineer. */
+"Delete All" = "Összes törlése";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "eszközön";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "E-mail elrejtése és\nnyomkövetők blokkolása";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Még nincsenek könyvjelzők hozzáadva";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Ha a könyvjelzőid egy másik böngészőben vannak mentve,\nimportálhatod azokat a DuckDuckGo alkalmazásba.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Nincs találat";
@@ -2229,9 +2349,10 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Rólunk";
-
+/* about tagline */
+"settings.about.tagline" = "Védelem. Adatvédelem. Nyugalom.";
 /* about page */
-"settings.about.text" = "A 2008-ban alapított független internetes adatvédelmi cég, a DuckDuckGo egyszerű megoldást kínál azoknak, akiknek elegük van abból, hogy állandóan nyomon követik őket az interneten. Mi vagyunk annak a bizonyítéka, hogy kompromisszumok nélkül is lehet valódi online adatvédelmet biztosítani.\n\nA DuckDuckGo böngésző rendelkezik a böngészőktől elvárt funkciókkal, mint például könyvjelzők, lapok, jelszavak és egyéb funkciók, valamint több mint [egy tucat olyan hatékony adatvédelmi megoldással](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/), amelyet a legtöbb népszerű böngésző nem kínál alapértelmezés szerint. Ezek az egyedülállóan átfogó adatvédelmi megoldások segítenek megvédeni online tevékenységeid, legyen szó keresésről, böngészésről, e-mailezésről vagy sok minden másról.\n\nAdatvédelmi megoldásaink anélkül működnek, hogy bármit is tudnod kellene a technikai részletekről vagy bonyolult beállításokkal kellene foglalkoznod. Mindössze annyit kell tenned, hogy minden eszközödön a DuckDuckGo böngészőre váltasz, és máris igénybe veheted az alapértelmezés szerinti adatvédelmet.\n\nHa azonban *igazán* szeretnél bepillantani a motorháztető alá is, a [súgóoldalainkon](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/) további információkat találhatsz a DuckDuckGo adatvédelmi megoldásainak működéséről.";
+"settings.about.text.new" = "A DuckDuckGo független online adatvédelmi cég azoknak kínál megoldást, akik vissza akarják venni a személyes adataik feletti irányítást.\n\nÚgy gondoljuk, hogy a legjobb módja annak, hogy megvédjük a személyes adataidat a hekkerektől, a csalóktól és az adatvédelmet sértő cégektől, az, ha egyáltalán nem gyűjtjük be azokat. Emberek milliói ezért [választják a DuckDuckGót a Chrome és más böngészők helyett](ddgQuickLink://duckduckgo.com/compare-privacy) az online kereséshez és böngészéshez. Beépített keresőmotorunk olyan, mint a Google, de sosem követi a kereséseidet. Böngészési védelmeink, mint például a hirdetéskövetők és a cookie-k blokkolása, segítenek megakadályozni, hogy más cégek összegyűjtsék az adataidat. Ja, és a böngészőnk ingyenes – a bevételünket az [adatvédelmet tiszteletben tartó keresési hirdetésekből](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) szerezzük, nem az adataid kihasználásából. \n\nKínálatunkban szerepel továbbá a böngészőbe integrált három az egyben [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) szolgáltatás. A Privacy Pro előfizetői még nagyobb adatvédelmet élvezhetnek egy gyors és egyszerű [VPN-nel](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), melynek segítségével biztonságossá tehető az online tevékenység oly módon, hogy a szolgáltatás megkeresi és eltávolítja a személyek keresésére alkalmas webhelyeken elérhető személyes adatokat, illetve eltulajdonítás esetén visszaállítja a személyazonosságot.\n\nVedd vissza az irányítást a személyes adataid felett az adatgyűjtés helyett adatvédelemre tervezett böngészővel.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Kisegítő lehetőségek";
@@ -3147,4 +3268,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Töltsd le a DuckDuckGo Windows verzióját!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Könyvjelzők";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Folytatás";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Jelszavak";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Mit szeretnél importálni?";
 

@@ -119,29 +119,29 @@ public class TabsModel: NSObject, NSCoding {
     }
 
     func remove(at index: Int) {
-
+        let selectedTab = safeGetTabAt(currentIndex)
         tabs.remove(at: index)
-
-        let current = currentIndex
-
         if tabs.isEmpty {
             tabs.append(Tab())
-            currentIndex = 0
-            return
         }
-
-        if current == 0 || current < index {
-            return
-        }
-
-        currentIndex = current - 1
+        setCurrentTab(selectedTab)
     }
 
     /// This *does not* add a new empty tab after removing the items.
     func remove(_ indexPaths: [IndexPath]) {
+        let selectedTab = safeGetTabAt(currentIndex)
         let indexes = Set(indexPaths.map { $0.row })
         self.tabs = tabs.enumerated().filter { !indexes.contains($0.offset) }.map { $0.element }
-        currentIndex = tabs.indices.contains(currentIndex) ? currentIndex : tabs.count - 1
+        setCurrentTab(selectedTab)
+    }
+
+    private func setCurrentTab(_ tab: Tab?) {
+        if let tab, let index = indexOf(tab: tab) {
+            currentIndex = index
+        } else if currentIndex >= tabs.count {
+            currentIndex = tabs.count - 1
+        }
+        // Don't adjust the index, it'll be the 'next' tab
     }
 
     func remove(tab: Tab) {

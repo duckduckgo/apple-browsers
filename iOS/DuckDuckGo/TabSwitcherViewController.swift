@@ -319,9 +319,9 @@ extension TabSwitcherViewController: TabViewCellDelegate {
         collectionView.performBatchUpdates {
             isProcessingUpdates = true
             tabManager.bulkRemoveTabs(indexPaths)
-            currentSelection = tabsModel.currentIndex
             collectionView.deleteItems(at: indexPaths)
         } completion: { _ in
+            self.currentSelection = self.tabsModel.currentIndex
             self.isProcessingUpdates = false
             if self.tabsModel.tabs.isEmpty {
                 self.tabsModel.add(tab: Tab())
@@ -331,8 +331,6 @@ extension TabSwitcherViewController: TabViewCellDelegate {
             self.updateUIForSelectionMode()
             if shouldDismiss {
                 self.dismiss()
-            } else {
-                self.currentSelection = self.tabsModel.currentIndex
             }
         }
     }

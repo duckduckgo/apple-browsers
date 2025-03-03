@@ -77,10 +77,9 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
 
     func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
 
-        return .treatment
+        guard subscriptionManager.canPurchase else { return nil }
 
-        // TODO: Check PP eligibility
-        guard subscriptionManager.canPurchasePrivacyPro else { return nil }
+        return .treatment
 
         return featureFlagger.resolveCohort(for: FeatureFlag.privacyProOnboardingCTAMarch25)
                 as? PrivacyProOnboardingCTAMarch25Cohort

@@ -35,17 +35,20 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var onboardingExperimentCoordinator: OnboardingExperimentCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingManager: OnboardingAddToDockManaging
+    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(
         delegate: OnboardingNavigationDelegate?,
         onboardingExperimentCoordinator: OnboardingExperimentCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager()
+        onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
+        onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
     ) {
         self.delegate = delegate
         self.onboardingExperimentCoordinator = onboardingExperimentCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingManager = onboardingManager
+        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     @ViewBuilder
@@ -160,17 +163,22 @@ private extension NewTabDaxDialogFactory {
                                     message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
                                     proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
                                     dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
-                                    proceedAction: {
+                                    proceedAction: { [weak self] in
+                self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
                 NotificationCenter.default.post(
                     name: .settingsDeepLinkNotification,
                     object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: nil),
                     userInfo: nil
                 )
             },
-                                    dismissAction: onDismiss)
+                                    dismissAction: { [weak self] in
+                self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
+                onDismiss()
+            })
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
+            self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
 //            self?.onboardingExperimentCoordinator.privacyProPromotionDialogSeen = true
         }
     }

@@ -133,6 +133,10 @@ class SwipeTabsCoordinator: NSObject {
         }
         
         let indexPath = IndexPath(row: self.tabsModel.currentIndex, section: 0)
+        guard indexPath.row < collectionView.numberOfItems(inSection: 0) else {
+            assertionFailure("target row is equal to or greater than the number of items in the collection view")
+            return
+        }
         self.collectionView.scrollToItem(at: indexPath,
                                          at: .centeredHorizontally,
                                          animated: false)

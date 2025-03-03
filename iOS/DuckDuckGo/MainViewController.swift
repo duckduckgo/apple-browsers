@@ -230,7 +230,7 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-        aichatSettings: AIChatSettingsProvider
+        aiChatSettings: AIChatSettingsProvider
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -241,7 +241,7 @@ class MainViewController: UIViewController {
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
         self.appSettings = appSettings
-        self.aiChatSettings = aichatSettings
+        self.aiChatSettings = aiChatSettings
         self.previewsSource = previewsSource
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
@@ -358,7 +358,6 @@ class MainViewController: UIViewController {
 
         decorate()
 
-        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -389,7 +388,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -508,25 +507,28 @@ class MainViewController: UIViewController {
     }
     
     func startOnboardingFlowIfNotSeenBefore() {
-        
-        guard ProcessInfo.processInfo.environment["ONBOARDING"] != "false" else {
-            // explicitly skip onboarding, e.g. for integration tests
-            return
+        // Check if we override onboarding flag and show/hide onboarding accordingly
+        // If onboarding is not overridden, show onboarding only if users have not seen it.
+        let showOnboarding: Bool
+        switch LaunchOptionsHandler().onboardingStatus {
+        case .notOverridden:
+            showOnboarding = !tutorialSettings.hasSeenOnboarding
+        case let .overridden(.developer(isOnboardingCompleted)):
+            showOnboarding = !isOnboardingCompleted
+        case let .overridden(.uiTests(isOnboardingCompleted)):
+            // Set onboarding settings so state is persisted across app re-launches during UI Tests
+            tutorialSettings.hasSeenOnboarding = isOnboardingCompleted
+            showOnboarding = !tutorialSettings.hasSeenOnboarding
         }
 
-        let showOnboarding = !tutorialSettings.hasSeenOnboarding ||
-            // explicitly show onboarding, can be set in the scheme > Run > Environment Variables
-            ProcessInfo.processInfo.environment["ONBOARDING"] == "true"
         guard showOnboarding else { return }
-
         segueToDaxOnboarding()
-
     }
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection), hasEntitlements {
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            if await subscriptionManager.isEnabled(feature: .networkProtection) {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -1121,7 +1123,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func updateCurrentTab() {
-        if let currentTab = currentTab {
+        // prepopulate VC for current tab if needed
+        if let currentTab = tabManager.current(createIfNeeded: true) {
             select(tab: currentTab)
             viewCoordinator.omniBar.resignFirstResponder()
         } else {
@@ -1339,7 +1342,9 @@ class MainViewController: UIViewController {
             syncDataProviders: syncDataProviders,
             selectedAccount: nil,
             openSearch: openSearch,
-            source: source
+            source: source,
+            bookmarksDatabase: self.bookmarksDatabase,
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
         )
         autofillSettingsViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillSettingsViewController)
@@ -1544,8 +1549,8 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
-                if let origin = notification.userInfo?[AttributionParameter.origin] as? String {
-                    deepLinkTarget = .subscriptionFlow(origin: origin)
+                if let redirectURLComponents = notification.userInfo?[TabURLInterceptorParameter.interceptedURLComponents] as? URLComponents {
+                    deepLinkTarget = .subscriptionFlow(redirectURLComponents: redirectURLComponents)
                 } else {
                     deepLinkTarget = .subscriptionFlow()
                 }
@@ -1684,8 +1689,8 @@ class MainViewController: UIViewController {
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            guard case .success(false) = await accountManager.hasEntitlement(forProductName: .networkProtection) else { return }
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            guard await subscriptionManager.isEnabled(feature: .networkProtection) else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -2638,6 +2643,18 @@ extension MainViewController: TabSwitcherDelegate {
             showFireButtonPulse()
         }
     }
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
+        guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToEditBookmark(bookmark)
+        }
+    }
+    
+    func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+        updateCurrentTab()
+    }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
         if tabManager.count == 1 {
@@ -2715,13 +2732,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
     func showTabSwitcher(_ button: TabSwitcherButton) {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened)
         DailyPixel.fireDaily(.tabSwitcherOpenedDaily, withAdditionalParameters: TabSwitcherOpenDailyPixel().parameters(with: tabManager.model.tabs))
-        if currentTab?.url?.isDuckDuckGoSearch == true {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromSerp)
-        } else if currentTab?.url != nil {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromWebsite)
-        } else {
-            Pixel.fire(pixel: .tabSwitcherOpenedFromNewTabPage)
-        }
 
         performCancel()
         showTabSwitcher()

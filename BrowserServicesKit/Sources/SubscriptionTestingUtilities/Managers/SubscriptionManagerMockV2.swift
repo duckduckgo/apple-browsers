@@ -17,10 +17,12 @@
 //
 
 import Foundation
+import Common
 @testable import Networking
 @testable import Subscription
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
+    public var email: String?
 
     public init() {}
 
@@ -58,6 +60,11 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public var resultURL: URL!
     public func url(for type: Subscription.SubscriptionURL) -> URL {
         return resultURL
+    }
+
+    public var urlForPurchaseFromRedirect: URL!
+    public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
+        return urlForPurchaseFromRedirect
     }
 
     public var customerPortalURL: URL?
@@ -175,5 +182,37 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func removeAccessToken() {
         resultTokenContainer = nil
+    }
+
+    public func isEnabled(feature: Entitlement.ProductName) async -> Bool {
+        switch feature {
+        case .networkProtection:
+            return await isFeatureAvailableForUser(.networkProtection)
+        case .dataBrokerProtection:
+            return await isFeatureAvailableForUser(.dataBrokerProtection)
+        case .identityTheftRestoration:
+            return await isFeatureAvailableForUser(.identityTheftRestoration)
+        case .identityTheftRestorationGlobal:
+            return await isFeatureAvailableForUser(.identityTheftRestorationGlobal)
+        case .unknown:
+            return false
+        }
+    }
+
+    public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
+        await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
+            switch subscriptionFeatureV2.entitlement {
+            case .networkProtection:
+                return .networkProtection
+            case .dataBrokerProtection:
+                return .dataBrokerProtection
+            case .identityTheftRestoration:
+                return .identityTheftRestoration
+            case .identityTheftRestorationGlobal:
+                return .identityTheftRestorationGlobal
+            case .unknown:
+                return nil
+            }
+        }
     }
 }

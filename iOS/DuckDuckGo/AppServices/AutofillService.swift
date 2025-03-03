@@ -30,7 +30,7 @@ final class AutofillService {
 
     var syncService: SyncService?
 
-    func onLaunching() {
+    init() {
         if AppDependencyProvider.shared.appSettings.autofillIsNewInstallForOnByDefault == nil {
             AppDependencyProvider.shared.appSettings.setAutofillIsNewInstallForOnByDefault()
         }
@@ -73,25 +73,29 @@ final class AutofillService {
         )
     }
 
-    func onForeground() {
-        guard let syncService else {
-            assertionFailure("SyncService must be injected before calling onForeground.")
-            return
-        }
-        let importPasswordsStatusHandler = ImportPasswordsStatusHandler(syncService: syncService.sync)
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
-    }
-
-    func onBackground() {
-        autofillLoginSession.endSession()
-    }
-
     private func registerForAutofillEnabledChanges() {
         NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.autofillEnabledChange,
                                                object: nil,
                                                queue: nil) { _ in
             self.autofillPixelReporter?.updateAutofillEnabledStatus(AppDependencyProvider.shared.appSettings.autofillCredentialsEnabled)
         }
+    }
+
+    // MARK: - Resume
+
+    func resume() {
+        guard let syncService else {
+            assertionFailure("SyncService must be injected before calling onForeground.")
+            return
+        }
+        let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService.sync)
+        importPasswordsStatusHandler.checkSyncSuccessStatus()
+    }
+
+    // MARK: - Suspend
+
+    func suspend() {
+        autofillLoginSession.endSession()
     }
 
 }

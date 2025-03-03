@@ -88,7 +88,7 @@ final class TabViewModel {
             }
 
 #if !APPSTORE
-            if #available(macOS 14.4, *) {
+            if #available(macOS 15.3, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.zoomFactor], for: tab)
             }
 #endif
@@ -370,6 +370,8 @@ final class TabViewModel {
                 .bookmarksTrustedIndicator
         case .history:
             NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+        case .url(let url, _, _) where url.isHistory:
+            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
@@ -478,6 +480,8 @@ final class TabViewModel {
         case .bookmarks:
             Favicon.bookmarks
         case .history:
+            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
+        case .url(let url, _, _) where url.isHistory:
             NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
         case .subscription:
             Favicon.subscription

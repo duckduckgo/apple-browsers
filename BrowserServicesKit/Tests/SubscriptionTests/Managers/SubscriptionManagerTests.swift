@@ -17,17 +17,22 @@
 //
 
 import XCTest
+import Common
 @testable import Subscription
 import SubscriptionTestingUtilities
 
 final class SubscriptionManagerTests: XCTestCase {
 
-    private struct Constants {
+    struct Constants {
         static let userDefaultsSuiteName = "SubscriptionManagerTests"
 
         static let accessToken = UUID().uuidString
 
         static let invalidTokenError = APIServiceError.serverError(statusCode: 401, error: "invalid_token")
+
+        static let tld = TLD()
+
+        static let defaultBaseSubscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
     }
 
     var storePurchaseManager: StorePurchaseManagerMock!
@@ -91,15 +96,15 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testSetupForAppStore() async throws {
         // Given
+        let expectation = expectation(description: "UpdateAvailableProducts called")
+
         storePurchaseManager.onUpdateAvailableProducts = {
             self.storePurchaseManager.areProductsAvailable = true
+            expectation.fulfill()
         }
 
-        // When
-        // triggered on DefaultSubscriptionManager's init
-        try await Task.sleep(seconds: 0.5)
-
         // Then
+        await fulfillment(of: [expectation], timeout: 2.0)
         XCTAssertTrue(storePurchaseManager.updateAvailableProductsCalled)
         XCTAssertTrue(subscriptionManager.canPurchase)
     }

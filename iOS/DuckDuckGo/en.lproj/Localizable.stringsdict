@@ -299,11 +299,27 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Tabs</string>
+			<string>Close Tabs</string>
+			<key>one</key>
+			<string>Close Tab</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Close All %d Tabs</string>
 			<key>one</key>
 			<string>Close Tab</string>
 			<key>zero</key>
-			<string>Close Tab</string>
+			<string>Close All Tabs</string>
 		</dict>
 	</dict>
 	<key>alertTitleCloseSelectedTabs.withCount</key>
@@ -317,9 +333,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Selected Tabs?</string>
+			<string>Close %d tabs?</string>
 			<key>one</key>
-			<string>Close Selected Tab?</string>
+			<string>Close tab?</string>
 		</dict>
 	</dict>
 	<key>alertTitleCloseOtherTabs.withCount</key>
@@ -333,9 +349,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Other Tabs?</string>
+			<string>Close %d other tabs?</string>
 			<key>one</key>
-			<string>Close Other Tab?</string>
+			<string>Close other tab?</string>
 		</dict>
 	</dict>
 	<key>alertMessageCloseOtherTabs.withCount</key>
@@ -349,9 +365,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Are you sure you want to close %d other tabs?</string>
+			<string>Are you sure you want to close these tabs?</string>
 			<key>one</key>
-			<string>Are you sure you want to close the other tab?</string>
+			<string>Are you sure you want to close the tab?</string>
 		</dict>
 	</dict>
 	<key>alertTitleCloseTabs.withCount</key>
@@ -365,9 +381,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Close %d Tabs?</string>
+			<string>Close %d tabs?</string>
 			<key>one</key>
-			<string>Close Tab?</string>
+			<string>Close tab?</string>
 		</dict>
 	</dict>
 	<key>alertMessageCloseTabs.withCount</key>
@@ -381,7 +397,39 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Are you sure you want to close %d tabs?</string>
+			<string>Are you sure you want to close these tabs?</string>
+			<key>one</key>
+			<string>Are you sure you want to close this tab?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Close all %d tabs?</string>
+			<key>one</key>
+			<string>Close tab?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Are you sure you want to close all tabs?</string>
 			<key>one</key>
 			<string>Are you sure you want to close this tab?</string>
 		</dict>
@@ -429,7 +477,7 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Share Links</string>
+			<string>Share %d Links</string>
 			<key>one</key>
 			<string>Share Link</string>
 		</dict>
@@ -461,9 +509,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Bookmark Selected Tabs</string>
+			<string>Bookmark %d Tabs</string>
 			<key>one</key>
-			<string>Bookmark Selected Tab</string>
+			<string>Bookmark Tab</string>
 		</dict>
 	</dict>
 	<key>tabsBookmarked.withCount</key>
@@ -477,9 +525,9 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>%d tabs bookmarked.</string>
+			<string>%d bookmarks added</string>
 			<key>one</key>
-			<string>Tab bookmarked.</string>
+			<string>Bookmark added</string>
 		</dict>
 	</dict>
 	<key>alertTitleBookmarkSelectedTabs.withCount</key>
@@ -493,9 +541,25 @@ I blocked them!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>other</key>
-			<string>Bookmark %d Selected Tabs?</string>
+			<string>Bookmark %d tabs?</string>
 			<key>one</key>
-			<string>Bookmark Selected Tab?</string>
+			<string>Bookmark selected tab?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>Bookmark %d tabs?</string>
+			<key>one</key>
+			<string>Bookmark selected tab?</string>
 		</dict>
 	</dict>
 	<key>numberOfSelectedTabs.withCount</key>
@@ -508,8 +572,20 @@ I blocked them!
 			<string>NSStringPluralRuleType</string>
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
-			<key>one</key>
-			<string>%d Selected Tab</string>
+			<key>other</key>
+			<string>%d Selected</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
 			<key>other</key>
 			<string>%d Selected Tabs</string>
 		</dict>

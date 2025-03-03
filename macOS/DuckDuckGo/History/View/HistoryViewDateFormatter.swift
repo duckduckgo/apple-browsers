@@ -44,6 +44,7 @@ struct DefaultHistoryViewDateFormatter: HistoryViewDateFormatting {
         let formatter = DateFormatter()
         formatter.dateStyle = .full
         formatter.timeStyle = .none
+        formatter.formattingContext = .beginningOfSentence
         return formatter
     }()
 

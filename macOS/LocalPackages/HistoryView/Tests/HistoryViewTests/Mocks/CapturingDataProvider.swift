@@ -19,6 +19,7 @@
 import HistoryView
 
 final class CapturingDataProvider: DataProviding {
+
     var ranges: [DataModel.HistoryRange] {
         rangesCallCount += 1
         return _ranges
@@ -38,12 +39,12 @@ final class CapturingDataProvider: DataProviding {
         return await countVisibleVisits(range)
     }
 
-    func deleteVisits(for range: DataModel.HistoryRange) async {
-        deleteVisitsCalls.append(range)
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+        deleteVisitsCalls.append(query)
     }
 
-    func burnVisits(for range: DataModel.HistoryRange) async {
-        burnVisitsCalls.append(range)
+    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+        burnVisitsCalls.append(query)
     }
 
     // swiftlint:disable:next identifier_name
@@ -54,8 +55,8 @@ final class CapturingDataProvider: DataProviding {
     var countVisibleVisitsCalls: [DataModel.HistoryRange] = []
     var countVisibleVisits: (DataModel.HistoryRange) async -> Int = { _ in return 0 }
 
-    var deleteVisitsCalls: [DataModel.HistoryRange] = []
-    var burnVisitsCalls: [DataModel.HistoryRange] = []
+    var deleteVisitsCalls: [DataModel.HistoryQueryKind] = []
+    var burnVisitsCalls: [DataModel.HistoryQueryKind] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
     var visitsBatch: (DataModel.HistoryQueryKind, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _ in .init(finished: true, visits: []) }

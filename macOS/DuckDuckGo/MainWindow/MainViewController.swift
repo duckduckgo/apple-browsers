@@ -333,6 +333,8 @@ final class MainViewController: NSViewController {
             subscribeToFindInPage(of: tabViewModel)
             subscribeToTitleChange(of: tabViewModel)
             subscribeToTabContent(of: tabViewModel)
+
+            navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
         }
     }
 

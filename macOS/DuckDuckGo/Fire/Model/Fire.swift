@@ -74,7 +74,8 @@ final class Fire {
         case window(tabCollectionViewModel: TabCollectionViewModel,
                     selectedDomains: Set<String>)
         case allWindows(mainWindowControllers: [MainWindowController],
-                        selectedDomains: Set<String>)
+                        selectedDomains: Set<String>,
+                        customURLToOpen: URL?)
 
         var shouldPlayFireAnimation: Bool {
             switch self {
@@ -194,7 +195,7 @@ final class Fire {
     }
 
     @MainActor
-    func burnAll(completion: (() -> Void)? = nil) {
+    func burnAll(opening url: URL = .newtab, completion: (() -> Void)? = nil) {
         Logger.fire.debug("Fire started")
 
         let group = DispatchGroup()
@@ -202,7 +203,7 @@ final class Fire {
 
         burningData = .all
 
-        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set())
+        let entity = BurningEntity.allWindows(mainWindowControllers: windowControllerManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url)
 
         burnLastSessionState()
         burnDeletedBookmarks()
@@ -214,7 +215,7 @@ final class Fire {
         tabCleanupPreparer.prepareTabsForCleanup(tabViewModels) {
 
             group.enter()
-            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set())) {
+            self.burnTabs(burningEntity: .allWindows(mainWindowControllers: windowControllers, selectedDomains: Set(), customURLToOpen: url)) {
                 Task { @MainActor in
                     await self.burnWebCache()
                     await self.burnPrivacyStats()
@@ -251,6 +252,7 @@ final class Fire {
     func burnVisits(_ visits: [Visit],
                     except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
+                    urlToOpenIfWindowsAreClosed url: URL? = .newtab,
                     completion: (() -> Void)? = nil) {
 
         // Get domains to burn
@@ -275,7 +277,7 @@ final class Fire {
 
             // Burn all windows in case we are burning visits for today
             if isToday {
-                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains)
+                entity = .allWindows(mainWindowControllers: self.windowControllerManager.mainWindowControllers, selectedDomains: domains, customURLToOpen: url)
             } else {
                 entity = .none(selectedDomains: domains)
             }
@@ -321,7 +323,7 @@ final class Fire {
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
             closeWindow(of: tabCollectionViewModel)
-        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _):
+        case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
             mainWindowControllers.forEach {
                 $0.close()
             }
@@ -334,7 +336,11 @@ final class Fire {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             if self.windowControllerManager.mainWindowControllers.count == 0 {
-                NSApp.delegateTyped.newWindow(self)
+                if case let .allWindows(_, _, customURL) = entity, let customURL {
+                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false)
+                } else {
+                    WindowsManager.openNewWindow()
+                }
             }
         }
     }
@@ -518,7 +524,8 @@ final class Fire {
             burnPinnedTabs()
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
-                         selectedDomains: _):
+                         selectedDomains: _,
+                         customURLToOpen: _):
             mainWindowControllers.forEach {
                 $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
             }
@@ -536,7 +543,7 @@ final class Fire {
             return domains
         case .window(tabCollectionViewModel: _, selectedDomains: let domains):
             return domains
-        case .allWindows(mainWindowControllers: _, selectedDomains: let domains):
+        case .allWindows(mainWindowControllers: _, selectedDomains: let domains, customURLToOpen: _):
             return domains
         }
     }

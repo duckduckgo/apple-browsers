@@ -181,6 +181,7 @@ struct UserText {
     static let mainMenuHistory = NSLocalizedString("History", comment: "Main Menu ")
     static let mainMenuHistoryRecentlyClosed = NSLocalizedString("Recently Closed", comment: "Main Menu History item")
     static let mainMenuHistoryClearAllHistory = NSLocalizedString("Clear All History…", comment: "Main Menu History item")
+    static let mainMenuHistoryDeleteAllHistory = NSLocalizedString("Delete All History…", comment: "Main Menu History item")
     static let mainMenuHistoryManageBookmarks = NSLocalizedString("Manage Bookmarks", comment: "Main Menu History item")
     static let mainMenuHistoryFavoriteThisPage = NSLocalizedString("Favorite This Page…", comment: "Main Menu History item")
     static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows from Last Session", comment: "Main Menu History item")
@@ -208,26 +209,48 @@ struct UserText {
     static let mainMenuHelpDuckDuckGoHelp = NSLocalizedString("DuckDuckGo Help", comment: "Main Menu Help item")
 
     // MARK: - History
+    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Manage Your History", comment: "Title for the history view onboarding popover")
+    static let historyViewOnboardingMessage = NSLocalizedString("history.view.onboarding.message", value: "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited.", comment: "Message for the history view onboarding popover")
+    static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History Page", comment: "Accept button label on the history view onboarding popover")
+
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
     static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
 
     static let deleteHistory = NSLocalizedString("history.delete.dialog.title", value: "Delete history?", comment: "Title of a dialog asking the user to confirm deleting history")
-    static func deleteHistoryMessage(items: Int) -> String {
+    static let deleteAllHistory = NSLocalizedString("history.delete.all.dialog.title", value: "Delete all history?", comment: "Title of a dialog asking the user to confirm deleting all history")
+    static let deleteAllHistoryFromToday = NSLocalizedString("history.delete.today.dialog.title", value: "Delete all history from today?", comment: "Title of a dialog asking the user to confirm deleting history from today")
+    static let deleteAllHistoryFromYesterday = NSLocalizedString("history.delete.yesterday.dialog.title", value: "Delete all history from yesterday?", comment: "Title of a dialog asking the user to confirm deleting history from yesterday")
+    static func deleteHistory(for date: String) -> String {
+        let localized = NSLocalizedString("history.delete.date.dialog.title",
+                                          value: "Delete all history from\n%@?",
+                                          comment: "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date")
+        return String(format: localized, date)
+    }
+    static func deleteHistoryMessage(items: String) -> String {
         let localized = {
             if #available(macOS 12.0, *) {
                 return NSLocalizedString("history.delete.dialog.message.markdown",
-                                         value: "Do you want to delete history items (**%d**)?",
-                                         comment: "Message in a dialog asking the user to confirm deleting history. Please make sure to keep **%d** intact")
+                                         value: "**%@** items will be deleted.",
+                                         comment: "Message in a dialog asking the user to confirm deleting history items. Please make sure to keep **%@** intact. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (**%@**) will be deleted.'")
             } else {
                 return NSLocalizedString("history.delete.dialog.message",
-                                         value: "Do you want to delete history items (%d)?",
-                                         comment: "Message in a dialog asking the user to confirm deleting history")
+                                         value: "%@ items will be deleted",
+                                         comment: "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'")
             }
         }()
         return String(format: localized, items)
     }
     static let deleteCookiesAndSiteData = NSLocalizedString("history.delete.dialog.burn.checkbox", value: "Also delete cookies and site data", comment: "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries")
     static let deleteCookiesAndSiteDataExplanation = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation", value: "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
+    static let deleteCookiesAndSiteDataExplanationWithClosingTabs = NSLocalizedString("history.delete.dialog.burn.checkbox.explanation.with.closing.tabs", value: "This will close all tabs, log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted.", comment: "Explanation of what deleting site data means.")
+
+    static func openMultipleTabsAlertTitle(count: Int) -> String {
+        let localized = NSLocalizedString("open.multiple.tabs.alert.title",
+                                          value: "Open %d items in new tabs?",
+                                          comment: "Title of a dialog warning the user before opening multiple tabs with history items. NOTE: This term is only for English. For other languages, please translate the following term: 'Open multiple items (%d) in new tabs?'")
+        return String(format: localized, count)
+    }
+    static let openMultipleTabsAlertMessage = NSLocalizedString("open.multiple.tabs.alert.message", value: "Opening a lot of tabs at once may cause the browser to slow down.", comment: "Message of a dialog warning the user before opening multiple tabs with history items")
 
     // MARK: -
 
@@ -243,12 +266,18 @@ struct UserText {
     static let closeTabsToTheRight = NSLocalizedString("close.tabs.to.the.right", value: "Close Tabs to the Right", comment: "Menu item")
     static let openInNewTab = NSLocalizedString("open.in.new.tab", value: "Open in New Tab", comment: "Menu item that opens the link in a new tab")
     static let openInNewWindow = NSLocalizedString("open.in.new.window", value: "Open in New Window", comment: "Menu item that opens the link in a new window")
+    static let openInNewFireWindow = NSLocalizedString("open.in.new.fire.window", value: "Open in New Fire Window", comment: "Menu item that opens the link in a new Fire Window")
     static let openAllInNewTabs = NSLocalizedString("open.all.in.new.tabs", value: "Open All in New Tabs", comment: "Menu item that opens all the bookmarks in a folder to new tabs")
     static let openAllTabsInNewWindow = NSLocalizedString("open.all.tabs.in.new.window", value: "Open All in New Window", comment: "Menu item that opens all the bookmarks in a folder in a new window")
+    static let openAllInNewFireWindow = NSLocalizedString("open.all.in.new.fire.window", value: "Open All in New Fire Window", comment: "Menu item that opens all URLs in a new Fire Window")
     static let showFolderContents = NSLocalizedString("show.folder.contents", value: "Show Folder Contents", comment: "Menu item that shows the content of a folder ")
     static let editBookmark = NSLocalizedString("menu.bookmarks.edit", value: "Edit…", comment: "Menu item to edit a bookmark or a folder")
     static let addFolder = NSLocalizedString("menu.add.folder", value: "Add Folder…", comment: "Menu item to add a folder")
     static let showInFolder = NSLocalizedString("menu.show.in.folder", value: "Show in Folder", comment: "Menu item to show where a bookmark is located")
+
+    static let showAllHistoryFromThisSite = NSLocalizedString("show.all.history.from.this.site", value: "Show All History From This Site", comment: "Context menu item for showing history for a single URL domain")
+    static let addToBookmarks = NSLocalizedString("add.to.bookmarks", value: "Add to Bookmarks", comment: "Context menu item for adding a URL to bookmarks")
+    static let addAllToBookmarks = NSLocalizedString("add.all.to.bookmarks", value: "Add All to Bookmarks", comment: "Context menu item for adding all selected URLs to bookmarks")
 
     static let tabHomeTitle = NSLocalizedString("tab.home.title", value: "New Tab", comment: "Tab home title")
     static let tabUntitledTitle = NSLocalizedString("tab.empty.title", value: "Untitled", comment: "Title for an empty tab without a title")
@@ -739,7 +768,7 @@ struct UserText {
     static let autofill = NSLocalizedString("preferences.autofill", value: "Passwords", comment: "Show Autofill preferences")
 
     static let aboutDuckDuckGo = NSLocalizedString("preferences.about.about-duckduckgo", value: "About DuckDuckGo", comment: "About screen")
-    static let duckduckgoTagline = NSLocalizedString("preferences.about.duckduckgo-tagline", value: "Your protection, our priority.", comment: "About screen")
+    static let duckduckgoTagline = NSLocalizedString("preferences.about.duckduckgo-tagline-new", value: "Protection. Privacy. Peace of Mind.", comment: "About screen")
     static let setAsDefaultBrowser = NSLocalizedString("preferences.set-as-default", value: "Set DuckDuckGo As Default Browser", comment: "Menu option to set the browser as default")
     static let aboutUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.unsupported-device-info1", value: "DuckDuckGo is no longer providing browser updates for your version of macOS.", comment: "This string represents a message informing the user that DuckDuckGo is no longer providing browser updates for their version of macOS")
     static func aboutUnsupportedDeviceInfo2(version: String) -> String {
@@ -965,6 +994,7 @@ struct UserText {
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
     static let clearThisHistoryMenuItem = NSLocalizedString("history.menu.clear.this.history", value: "Clear This History…", comment: "Menu item to clear parts of history and data")
+    static let deleteThisHistoryMenuItem = NSLocalizedString("history.menu.delete.this.history", value: "Delete This History…", comment: "Menu item to delete parts of history and website data")
     static let recentlyVisitedMenuSection = NSLocalizedString("history.menu.recently.visited", value: "Recently Visited", comment: "Section header of the history menu")
     static let olderMenuItem = NSLocalizedString("history.menu.older", value: "Older…", comment: "Menu item representing older history")
 

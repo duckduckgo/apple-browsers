@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Atrakinti „DuckDuckGo“.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Ar tikrai nori ištrinti visas žymes? Šio veiksmo negalima atšaukti.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prisijungti";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Paslėpti slaptažodį";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Gaukite kompiuterio naršyklę";
+"autofill.import.passwords.via.sync.get-browser-button" = "Gaukite kompiuterio naršyklę";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Atidarykite „DuckDuckGo“ sistemoje „Mac“ arba „Windows“";
+"autofill.import.passwords.via.sync.instructions.step1" = "Atidarykite „DuckDuckGo“ sistemoje „Mac“ arba „Windows“";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Eiti į %1$@ > %2$@";
+"autofill.import.passwords.via.sync.instructions.step2" = "Eiti į %1$@ > %2$@";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Slaptažodžiai";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Slaptažodžiai";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Nustatymai";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Nustatymai";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Pasirinkite %@ ir atlikite importavimo veiksmus";
+"autofill.import.passwords.via.sync.instructions.step3" = "Pasirinkite %@ ir atlikite importavimo veiksmus";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importuoti slaptažodžius...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Importuoti slaptažodžius...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Kai importuosite į savo kompiuterį, galite nustatyti sinchronizavimą šiame %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "Kai importuosite į savo kompiuterį, galite nustatyti sinchronizavimą šiame %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importuoti iš kompiuterio naršyklės:";
+"autofill.import.passwords.via.sync.instructions.title" = "Importuoti iš kompiuterio naršyklės:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importuokite slaptažodžius „DuckDuckGo“ naršyklės versijoje kompiuteriui, tada sinchronizuokite juos visuose įrenginiuose.";
+"autofill.import.passwords.via.sync.subtitle" = "Importuokite slaptažodžius „DuckDuckGo“ naršyklės versijoje kompiuteriui, tada sinchronizuokite juos visuose įrenginiuose.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sinchronizavimas su kompiuteriu";
+"autofill.import.passwords.via.sync.sync-button" = "Sinchronizavimas su kompiuteriu";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Kaip importuoti slaptažodžius";
+"autofill.import.passwords.via.sync.title" = "Kaip importuoti slaptažodžius";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Išjungti";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Importuoti slaptažodžius";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Sinchronizuoti darbalaukio slaptažodžius";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Galite importuoti išsaugotus slaptažodžius iš kitos naršyklės į „DuckDuckGo“.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Jūsų žymelės bendrintos.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Eksportuoti HTML failą";
+"bookmarks.exportAction.html.title" = "Eksportuoti HTML failą";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Eksportuoti žymes";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Deja, negalime importuoti šį failą.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Jūsų žymelės importuotos.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importuoti HTML failą";
+"bookmarks.importAction.html.title" = "Importuoti HTML failą";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importuoti žymelės failą iš kitos naršyklės";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Importuoti žymes";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Eksportuoti HTML žymelių failą iš kitos naršyklės arba eksportuoti esamas žymeles.";
+"bookmarks.importExport.title" = "Importuok žymes iš kitų populiarių naršyklių.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Pranešti apie šios svetainės problemą";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatiškai siųsti pranešimus apie strigtis?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Importuoti žymės failą...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Kaip eksportuoti žymes iš „Safari“";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Pasirink failą, kuriame yra žymės. Paprastai tai būna ZIP arba HTML failas.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Importuok žymes į „DuckDuckGo“";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "Zip faile nerasta palaikomų duomenų. Prašome peržiūrėti „Safari“ eksportavimo instrukcijas ir pabandyti dar kartą.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Pasirinktas failas nepalaikomas. Prašome pasirinkti kitą failą ir bandyti dar kartą.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Nepavyko perskaityti %@ failo. Gali kilti problemų dėl faile esančių duomenų.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Pasirink **Eksportuoti**, o kitame ekrane pasirink **Žymės** ir **Išsaugoti atsisiuntimuose**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Pasirink **Eksportuoti**, o kitame ekrane pasirink **Slaptažodžiai** ir **Išsaugoti į atsisiuntimus**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Importuoti slaptažodžių failą...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "Chrome naršyklėje eik į **„Google“ slaptažodžių tvarkyklę** ir tada į **Nustatymai**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Pasirink **Eksportuoti slaptažodžius**, tada **Įrašyti į failus** ir išsaugok failą aplanke, kurį gali prisiminti.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Kaip eksportuoti slaptažodžius";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Atidaryk ⚙️ **Nustatymai**, paieškos juostoje įvesk „Eksportuoti“ ir pasirink **Eksportuoti** rezultatą į „Safari“, kad pereitum tiesiai į šią parinktį (arba eik į Programos > „Safari“ nustatymuose).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Eksportuoti iš";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "„Google Chrome“";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "„Safari“";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Kaip eksportuoti slaptažodžius iš „Safari“:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Pasirink failą, kuriame yra slaptažodžiai, eksportuoti iš „Safari“ arba „Chrome“. Paprastai tai būna ZIP arba CSV failas.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Importuoti slaptažodžius į „DuckDuckGo“";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Žymės";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Atlikta";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Sinchronizavimas ir atsarginės kopijos %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Žymės";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Duomenys";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Slaptažodžiai";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Importavimas baigtas!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Praleisti dublikatai";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Importuoti nepavyko";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Dabar gali ištrinti slaptažodžių failą.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Slaptažodžiai";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Praėjęs mėnuo";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Derinimas";
+
+/* No comment provided by engineer. */
+"Delete All" = "Ištrinti viską";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "įrenginys";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Paslėpkite savo el. paštą ir \n blokuokite stebėjimo priemones";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Žymių dar nepridėta";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Jei žymės yra išsaugotos kitoje naršyklėje,\ngalite jas importuoti į „DuckDuckGo“.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Atitikmenų nerasta";
@@ -2229,9 +2349,10 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Apie";
-
+/* about tagline */
+"settings.about.tagline" = "Apsauga. Privatumas. Ramybės jausmas.";
 /* about page */
-"settings.about.text" = "„DuckDuckGo“ yra nepriklausoma interneto privatumo bendrovė, įkurta 2008 metais ir skirta visiems, kurie pavargo nuo sekimo internete ir nori lengvo sprendimo. Esame įrodymas, kad galite gauti tikrą privatumo apsaugą internete be kompromisų.\n\n„DuckDuckGo“ naršyklėje yra funkcijos, kurių tikitės iš pagrindinės naršyklės, pvz., žymės, skirtukai, slaptažodžiai ir dar daugiau, taip pat [keliolika galingų privatumo apsaugos priemonių](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) pagal numatytuosius nustatymus nėra siūlomas daugelyje populiarių naršyklių. Šis unikalus išsamus privatumo apsaugos rinkinys padeda apsaugoti jūsų veiklą internete – nuo paieškos iki naršymo, el. pašto ir kt.\n\nMūsų privatumo apsaugos priemonės veikia nereikalaudamos nieko žinoti apie technines detales ar naudotis sudėtingais nustatymais. Tereikia visuose įrenginiuose perjungti naršyklę į „DuckDuckGo“ ir privatumas bus užtikrintas pagal numatytuosius nustatymus.\n\nTačiau jei norite žvilgtelėti po gaubtu, daugiau informacijos apie tai, kaip veikia „DuckDuckGo“ privatumo apsauga, galite rasti mūsų [pagalbos puslapiuose] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
+"settings.about.text.new" = "„DuckDuckGo“ yra nepriklausoma interneto apsaugos bendrovė, skirta visiems, norintiems susigrąžinti savo asmeninės informacijos kontrolę.Manome, kad geriausias būdas apsaugoti jūsų asmeninę informaciją nuo įsilaužėlių, sukčių ir į privatumą pasikėsinančių įmonių – visiškai sustabdyti jos rinkimą. Štai kodėl milijonai žmonių [pasirenka „DuckDuckGo“, o ne „Chrome“ ir kitas naršykles](ddgQuickLink://duckduckgo.com/compare-privacy) ieškoti ir naršyti internete. Mūsų integruota paieškos sistema yra kaip „Google“, bet niekada nestebi jūsų paieškų. O mūsų naršymo apsaugos priemonės, tokios kaip skelbimų sekimo ir slapukų blokavimas, padeda neleisti kitoms įmonėms rinkti jūsų duomenų. Beje, mūsų naršyklė yra nemokama – mes uždirbame iš [privatumą gerbiančių paieškos skelbimų](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), o ne išnaudodami jūsų duomenis. \n\nBe to, mes taip pat siūlome [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), trijų viename prenumeratos paslaugą, integruotą į mūsų naršyklę. „Privacy Pro“ prenumeratoriai gauna dar daugiau privatumo apsaugos su greitu ir paprastu naudoti [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kuris padeda apsaugoti naršymą internete, paslaugą, kuri randa ir pašalina asmeninę informaciją iš žmonių paieškos svetainių, ir paslaugą, kuri atkuria tapatybę, jei ji būtų pavogta.\n\nSusigrąžinkite savo asmeninės informacijos kontrolę naudodami naršyklę, sukurtą duomenų apsaugai, o ne jų rinkimui.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pritaikymas neįgaliems";
@@ -3147,4 +3268,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Gaukite „DuckDuckGo“, skirtą „Windows“!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Žymės";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Tęsti";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Slaptažodžiai";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Ką nori importuoti?";
 

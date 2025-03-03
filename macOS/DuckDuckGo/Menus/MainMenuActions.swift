@@ -564,38 +564,79 @@ extension MainViewController {
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
-        guard let window = view.window else {
-            assertionFailure("No window")
-            return
-        }
+        if featureFlagger.isFeatureOn(.historyView) {
+            Task {
+                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: HistoryCoordinator.shared)
+                await historyViewDataProvider.refreshData()
+                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
-        let alert = NSAlert.clearAllHistoryAndDataAlert()
-        alert.beginSheetModal(for: window, completionHandler: { response in
-            guard case .alertFirstButtonReturn = response else {
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                case .burn:
+                    FireCoordinator.fireViewModel.fire.burnAll()
+                case .delete:
+                    HistoryCoordinator.shared.burnAll {}
+                default:
+                    break
+                }
+            }
+        } else {
+            guard let window = view.window else {
+                assertionFailure("No window")
                 return
             }
-            FireCoordinator.fireViewModel.fire.burnAll()
-        })
+            let alert = NSAlert.clearAllHistoryAndDataAlert()
+            alert.beginSheetModal(for: window, completionHandler: { response in
+                guard case .alertFirstButtonReturn = response else {
+                    return
+                }
+                FireCoordinator.fireViewModel.fire.burnAll()
+            })
+        }
     }
 
     @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
-        guard let window = view.window else {
-            assertionFailure("No window")
-            return
-        }
-
-        let dateString = sender.dateString
         let isToday = sender.isToday
         let visits = sender.getVisits(featureFlagger: featureFlagger)
-        let alert = NSAlert.clearHistoryAndDataAlert(dateString: dateString)
-        alert.beginSheetModal(for: window, completionHandler: { response in
-            guard case .alertFirstButtonReturn = response else {
+
+        if featureFlagger.isFeatureOn(.historyView) {
+            let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = {
+                guard let dateString = sender.dateString else {
+                    return sender.isToday ? .today : .unspecified
+                }
+                return .formattedDate(dateString)
+            }()
+
+            Task {
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                case .burn:
+                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                                  except: FireproofDomains.shared,
+                                                                  isToday: isToday)
+                case .delete:
+                    HistoryCoordinator.shared.burnVisits(visits) {}
+                default:
+                    break
+                }
+            }
+        } else {
+            guard let window = view.window else {
+                assertionFailure("No window")
                 return
             }
-            FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                          except: FireproofDomains.shared,
-                                                          isToday: isToday)
-        })
+
+            let dateString = sender.dateString
+            let alert = NSAlert.clearHistoryAndDataAlert(dateString: dateString)
+            alert.beginSheetModal(for: window, completionHandler: { response in
+                guard case .alertFirstButtonReturn = response else {
+                    return
+                }
+                FireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                              except: FireproofDomains.shared,
+                                                              isToday: isToday)
+            })
+        }
     }
 
     // MARK: - Bookmarks

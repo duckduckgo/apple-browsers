@@ -54,7 +54,7 @@ final class NetworkProtectionStatusViewModelTests: XCTestCase {
                                                      statusObserver: statusObserver,
                                                      serverInfoObserver: serverInfoObserver,
                                                      locationListRepository: MockNetworkProtectionLocationListRepository(),
-                                                     subscriptionManager: subscriptionManager)
+                                                     enablesUnifiedFeedbackForm: false)
     }
 
     override func tearDown() {

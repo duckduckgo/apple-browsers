@@ -49,15 +49,13 @@ final class HistoryViewOnboardingViewModel: ObservableObject {
         self.ctaCallback = ctaCallback
     }
 
-    func markAsShown() {
-        settingsStorage.didShowOnboardingView = true
-    }
-
     func notNow() {
+        settingsStorage.didShowOnboardingView = true
         ctaCallback(false)
     }
 
     func showHistory() {
+        settingsStorage.didShowOnboardingView = true
         ctaCallback(true)
     }
 }

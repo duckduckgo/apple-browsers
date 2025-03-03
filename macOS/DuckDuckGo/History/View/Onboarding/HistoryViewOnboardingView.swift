@@ -62,9 +62,6 @@ struct HistoryViewOnboardingView: View {
         .padding(.top, 20)
         .padding(.bottom, 16)
         .frame(width: 384)
-        .onAppear {
-            model.markAsShown()
-        }
     }
 }
 

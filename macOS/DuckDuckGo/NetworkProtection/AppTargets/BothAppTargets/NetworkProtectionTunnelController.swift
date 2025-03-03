@@ -23,6 +23,7 @@ import Common
 import FeatureFlags
 import Foundation
 import NetworkExtension
+import NetworkExtensionResolver
 import NetworkProtection
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -66,9 +67,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private let accessTokenStorage: SubscriptionTokenKeychainStorage
 
-    // MARK: - Debug Options Support
+    // MARK: - Extensions Support
 
-    private let networkExtensionBundleID: String
+    private let availableExtensions: VPNNetworkExtensionResolver.AvailableExtensions
+    lazy var extensionResolver: VPNNetworkExtensionResolver = {
+        VPNNetworkExtensionResolver(availableExtensions: availableExtensions, featureFlagger: featureFlagger, isConfigurationInstalled: { [weak self] extensionBundleID in
+            await self?.isConfigurationInstalled(extensionBundleID: extensionBundleID) ?? true
+        })
+    }()
     private let networkExtensionController: NetworkExtensionController
 
     // MARK: - Notification Center
@@ -113,8 +119,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return internalManager
             }
 
+            let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
             let manager = try? await NETunnelProviderManager.loadAllFromPreferences().first { manager in
-                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == networkExtensionBundleID
+                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == extensionBundleID
             }
             internalManager = manager
             return manager
@@ -135,7 +143,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func setupAndSave(_ tunnelManager: NETunnelProviderManager) async throws {
-        setup(tunnelManager)
+        await setup(tunnelManager)
         try await tunnelManager.saveToPreferences()
         try await tunnelManager.loadFromPreferences()
     }
@@ -148,7 +156,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///         - notificationCenter: (meant for testing) the notification center that this object will use.
     ///         - logger: (meant for testing) the logger that this object will use.
     ///
-    init(networkExtensionBundleID: String,
+    init(availableExtensions: VPNNetworkExtensionResolver.AvailableExtensions,
          networkExtensionController: NetworkExtensionController,
          featureFlagger: FeatureFlagger,
          settings: VPNSettings,
@@ -156,8 +164,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          notificationCenter: NotificationCenter = .default,
          accessTokenStorage: SubscriptionTokenKeychainStorage) {
 
+        self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
-        self.networkExtensionBundleID = networkExtensionBundleID
         self.networkExtensionController = networkExtensionController
         self.notificationCenter = notificationCenter
         self.settings = settings
@@ -331,7 +339,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Setups the tunnel manager if it's not set up already.
     ///
     @MainActor
-    private func setup(_ tunnelManager: NETunnelProviderManager) {
+    private func setup(_ tunnelManager: NETunnelProviderManager) async {
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
         }
@@ -340,10 +348,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             tunnelManager.isEnabled = true
         }
 
+        let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
         tunnelManager.protocolConfiguration = {
             let protocolConfiguration = tunnelManager.protocolConfiguration as? NETunnelProviderProtocol ?? NETunnelProviderProtocol()
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
-            protocolConfiguration.providerBundleIdentifier = Bundle.tunnelExtensionBundleID
+            protocolConfiguration.providerBundleIdentifier = extensionBundleID
             protocolConfiguration.providerConfiguration = [
                 NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders,
             ]
@@ -415,6 +425,30 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     // MARK: - Activate System Extension
+
+    /// Checks if the specified configuration is installed.
+    ///
+    /// We first check if ``internalManager`` exists, and if it does exist we assume it represents the only installed configuration.
+    /// We do this because it's best to avoid calling `loadAllFromPreferences` excessively as it triggers VPN status updates when we do.
+    /// If it doesn't exist, we load all configurations and check if the one with the specified extension bundle ID exists.
+    ///
+    func isConfigurationInstalled(extensionBundleID: String) async -> Bool {
+
+        guard let internalManager,
+              let configuration = internalManager.protocolConfiguration as? NETunnelProviderProtocol,
+              internalManager.connection.status != .invalid else {
+
+            guard let allConfigurations = try? await NETunnelProviderManager.loadAllFromPreferences() else {
+                return false
+            }
+
+            return allConfigurations.contains { manager in
+                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == extensionBundleID
+            }
+        }
+
+        return configuration.providerBundleIdentifier == extensionBundleID
+    }
 
     /// Ensures that the system extension is activated if necessary.
     ///
@@ -533,7 +567,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         controllerErrorStore.lastErrorMessage = nil
 
         do {
-            if await networkExtensionController.isUsingSystemExtension {
+            if await extensionResolver.isUsingSystemExtension {
                 try await activateSystemExtension { [weak self] in
                     // If we're waiting for user approval we wanna make sure the
                     // onboarding step is set correctly.  This can be useful to

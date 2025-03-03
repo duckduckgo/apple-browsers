@@ -51,7 +51,9 @@ final class VPNUninstaller: VPNUninstalling {
         pixelKit?.fire(VPNUninstallAttempt.begin, frequency: .legacyDailyAndCount)
 
         do {
-            try await removeSystemExtension()
+            if await tunnelController.extensionResolver.isUsingSystemExtension {
+                try await removeSystemExtension()
+            }
             try await removeVPNConfiguration()
 
             if defaults.networkProtectionOnboardingStatus == .completed {
@@ -75,10 +77,6 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeSystemExtension() async throws {
-        guard await networkExtensionController.isUsingSystemExtension else {
-            return
-        }
-
         await tunnelController.stop()
         try await networkExtensionController.deactivateSystemExtension()
         defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)

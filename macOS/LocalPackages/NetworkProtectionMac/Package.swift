@@ -37,6 +37,7 @@ let package = Package(
         .package(path: "../../BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
+        .package(path: "../NetworkExtensionResolver"),
         .package(path: "../UDSHelper"),
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
@@ -64,6 +65,7 @@ let package = Package(
             name: "NetworkProtectionProxy",
             dependencies: [
                 "AppInfoRetriever",
+                "NetworkExtensionResolver",
                 .product(name: "NetworkProtection", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],

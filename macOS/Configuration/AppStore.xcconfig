@@ -88,11 +88,17 @@ PROXY_EXTENSION_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).proxy
 PROXY_EXTENSION_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).proxy
 PROXY_EXTENSION_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).proxy
 
-TUNNEL_EXTENSION_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_SYSEX_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).network-extension
+TUNNEL_SYSEX_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).network-extension
+TUNNEL_SYSEX_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).network-extension
+TUNNEL_SYSEX_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).network-extension
+TUNNEL_SYSEX_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).network-extension
+
+TUNNEL_APPEX_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
 
 // Distributed Notifications Prefix
 

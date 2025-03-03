@@ -26,6 +26,7 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
+import NetworkExtensionResolver
 import NetworkProtection
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -160,24 +161,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var cancellables = Set<AnyCancellable>()
-
-    var proxyExtensionBundleID: String {
-        Bundle.proxyExtensionBundleID
-    }
-
-    var tunnelExtensionBundleID: String {
-        Bundle.tunnelExtensionBundleID
-    }
-
-    private lazy var networkExtensionController: NetworkExtensionController = {
-#if APPSTORE
-        let availableExtensions: NetworkExtensionController.AvailableExtensions = .both(appexBundleID: "TO-DO", sysexBundleID: "TO-DO")
-#else
-        let availableExtensions: NetworkExtensionController.AvailableExtensions = .sysex(sysexBundleID: "TO-DO")
-#endif
-        return NetworkExtensionController(availableExtensions: availableExtensions, featureFlagger: featureFlagger)
-    }()
-
+    private lazy var networkExtensionController = NetworkExtensionController(sysexBundleID: Self.tunnelSysexBundleID, featureFlagger: featureFlagger)
     private let tunnelSettings: VPNSettings
     private lazy var userDefaults = UserDefaults.netP
     private lazy var proxySettings: TransparentProxySettings = {
@@ -202,7 +186,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         let eventHandler = TransparentProxyControllerEventHandler(logger: .transparentProxyLogger)
 
         let controller = TransparentProxyController(
-            extensionID: proxyExtensionBundleID,
+            extensionResolver: proxyExtensionResolver,
             settings: proxySettings,
             eventHandler: eventHandler) { [weak self] manager in
                 guard let self else { return }
@@ -213,10 +197,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     manager.isEnabled = true
                 }
 
+                let extensionBundleID = await proxyExtensionResolver.activeExtensionBundleID
+
                 manager.protocolConfiguration = {
                     let protocolConfiguration = manager.protocolConfiguration as? NETunnelProviderProtocol ?? NETunnelProviderProtocol()
                     protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
-                    protocolConfiguration.providerBundleIdentifier = self.proxyExtensionBundleID
+                    protocolConfiguration.providerBundleIdentifier = extensionBundleID
 
                     // always-on
                     protocolConfiguration.disconnectOnSleep = false
@@ -240,14 +226,43 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         return controller
     }()
 
+    private static let tunnelSysexBundleID = Bundle.tunnelSysexBundleID
+    private static let tunnelAppexBundleID = Bundle.tunnelAppexBundleID
+    private static let proxySysexBundleID = Bundle.tunnelSysexBundleID
+    private static let proxyAppexBundleID = Bundle.proxyAppexBundleID
+
+    private let tunnelExtensions: VPNNetworkExtensionResolver.AvailableExtensions = {
+#if APPSTORE
+        return .both(appexBundleID: tunnelAppexBundleID, sysexBundleID: tunnelSysexBundleID)
+#else
+        return .sysex(sysexBundleID: tunnelSysexBundleID)
+#endif
+    }()
+
+    private let proxyExtensions: VPNNetworkExtensionResolver.AvailableExtensions = {
+#if APPSTORE
+        return .both(appexBundleID: proxyAppexBundleID, sysexBundleID: proxySysexBundleID)
+#else
+        return .sysex(sysexBundleID: proxySysexBundleID)
+#endif
+    }()
+
     @MainActor
-    private lazy var tunnelController = NetworkProtectionTunnelController(
-        networkExtensionBundleID: tunnelExtensionBundleID,
-        networkExtensionController: networkExtensionController,
-        featureFlagger: featureFlagger,
-        settings: tunnelSettings,
-        defaults: userDefaults,
-        accessTokenStorage: accessTokenStorage)
+    private lazy var proxyExtensionResolver = VPNNetworkExtensionResolver(
+            availableExtensions: proxyExtensions,
+            featureFlagger: featureFlagger,
+            isConfigurationInstalled: tunnelController.isConfigurationInstalled(extensionBundleID:))
+
+    @MainActor
+    private lazy var tunnelController: NetworkProtectionTunnelController = {
+        return NetworkProtectionTunnelController(
+            availableExtensions: tunnelExtensions,
+            networkExtensionController: networkExtensionController,
+            featureFlagger: featureFlagger,
+            settings: tunnelSettings,
+            defaults: userDefaults,
+            accessTokenStorage: accessTokenStorage)
+    }()
 
     /// An IPC server that provides access to the tunnel controller.
     ///

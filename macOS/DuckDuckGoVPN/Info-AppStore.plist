@@ -6,12 +6,10 @@
 	<string>$(DISTRIBUTED_NOTIFICATIONS_PREFIX)</string>
 	<key>NETP_APP_GROUP</key>
 	<string>$(NETP_APP_GROUP)</string>
-	<key>PROXY_EXTENSION_BUNDLE_ID</key>
-	<string>$(PROXY_EXTENSION_BUNDLE_ID)</string>
 	<key>SUBSCRIPTION_APP_GROUP</key>
 	<string>$(SUBSCRIPTION_APP_GROUP)</string>
-	<key>TUNNEL_EXTENSION_BUNDLE_ID</key>
-	<string>$(TUNNEL_EXTENSION_BUNDLE_ID)</string>
+	<key>TUNNEL_APPEX_BUNDLE_ID</key>
+	<string>$(TUNNEL_APPEX_BUNDLE_ID)</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>CFBundleShortVersionString</key>
@@ -20,5 +18,9 @@
 	<string>$(IPC_APP_GROUP)</string>
 	<key>APP_CONFIGURATION_APP_GROUP</key>
 	<string>$(APP_CONFIGURATION_APP_GROUP)</string>
+	<key>TUNNEL_SYSEX_BUNDLE_ID</key>
+	<string>$(TUNNEL_SYSEX_BUNDLE_ID)</string>
+	<key>PROXY_APPEX_BUNDLE_ID</key>
+	<string>$(PROXY_APPEX_BUNDLE_ID)</string>
 </dict>
 </plist>

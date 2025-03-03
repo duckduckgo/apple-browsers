@@ -30,75 +30,21 @@ import SystemExtensions
 ///
 final class NetworkExtensionController {
 
-    enum AvailableExtensions {
-        case both(appexBundleID: String, sysexBundleID: String)
-        case sysex(sysexBundleID: String)
-    }
-
-    private let availableExtensions: AvailableExtensions
     private let featureFlagger: FeatureFlagger
     private let systemExtensionManager: SystemExtensionManager
     private let defaults: UserDefaults
 
-    init(availableExtensions: AvailableExtensions, featureFlagger: FeatureFlagger, defaults: UserDefaults = .netP) {
+    init(sysexBundleID: String, featureFlagger: FeatureFlagger, defaults: UserDefaults = .netP) {
 
-        self.availableExtensions = availableExtensions
         self.defaults = defaults
         self.featureFlagger = featureFlagger
-
-        switch availableExtensions {
-            case .both(_, sysexBundleID: let sysexBundleID):
-                systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
-            case .sysex(sysexBundleID: let sysexBundleID):
-                systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
-        }
+        systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
     }
 }
 
 extension NetworkExtensionController {
 
-    /// Whether the controller is using a System Extension or an App Extension.
-    ///
-    var isUsingSystemExtension: Bool {
-        get async {
-            switch availableExtensions {
-            case .both(let appexBundleID, _):
-                guard featureFlagger.isFeatureOn(.networkProtectionAppStoreSysex) else {
-                    return false
-                }
-
-                return await !isConfigurationInstalled(extensionBundleID: appexBundleID)
-            case .sysex:
-                return true
-            }
-        }
-    }
-
-    private func isConfigurationInstalled(extensionBundleID: String) async -> Bool {
-        await withCheckedContinuation { continuation in
-            let manager = NEVPNManager.shared()
-
-            manager.loadFromPreferences { error in
-                guard error == nil else {
-                    continuation.resume(returning: false)
-                    return
-                }
-
-                if let protocolConfigs = manager.protocolConfiguration as? NETunnelProviderProtocol,
-                   protocolConfigs.providerBundleIdentifier == extensionBundleID {
-                    continuation.resume(returning: true)
-                } else {
-                    continuation.resume(returning: false)
-                }
-            }
-        }
-    }
-
     func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
-        guard await isUsingSystemExtension else {
-            return
-        }
-
         if let extensionVersion = try await systemExtensionManager.activate(waitingForUserApproval: waitingForUserApproval) {
 
             NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = extensionVersion
@@ -108,10 +54,6 @@ extension NetworkExtensionController {
     }
 
     func deactivateSystemExtension() async throws {
-        guard await isUsingSystemExtension else {
-            return
-        }
-
         do {
             try await systemExtensionManager.deactivate()
         } catch OSSystemExtensionError.extensionNotFound {

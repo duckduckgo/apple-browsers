@@ -40,7 +40,7 @@ final class SuggestionProcessing {
         self.urlFactory = urlFactory
     }
 
-    func result(for query: Query,
+    func result(for query: String,
                 from history: [HistorySuggestion],
                 bookmarks: [Bookmark],
                 internalPages: [InternalPage],
@@ -90,6 +90,68 @@ final class SuggestionProcessing {
                           duckduckgoSuggestions: dedupedDuckDuckGoSuggestions,
                           localSuggestions: localSuggestions.map(\.suggestion))
     }
+
+    // MARK: - History and Bookmarks
+
+    enum LocalSuggestion {
+        case bookmark(Bookmark)
+        case history(HistorySuggestion)
+        case internalPage(InternalPage)
+        case openTab(BrowserTab)
+
+        func isAlowedInTopHits(platform: Platform) -> Bool {
+            switch self {
+            case .history(let historyEntry):
+                let areVisitsLow = historyEntry.numberOfVisits < 4
+                let allowedInTopHits = !(historyEntry.failedToLoad
+                                         || (areVisitsLow && !historyEntry.url.isRoot))
+                return allowedInTopHits
+            case .bookmark(let bookmark):
+                switch platform {
+                case .desktop: return bookmark.isFavorite
+                case .mobile: return true
+                }
+            case .internalPage, .openTab:
+                return false
+            }
+        }
+    }
+
+    private func localSuggestions(from history: [HistorySuggestion], bookmarks: [Bookmark], internalPages: [InternalPage], openTabs: [BrowserTab], query: String) -> [TopHitsEligibleSuggestion] {
+        // Precompute query tokens once
+        let lowerQuery = query.lowercased()
+        let queryTokens = lowerQuery.tokenized()
+
+        // Build local suggestions with proper type ordering (similar to Windows implementation)
+        let localSuggestions = [
+            bookmarks.map(LocalSuggestion.bookmark),
+            openTabs.map(LocalSuggestion.openTab),
+            history.map(LocalSuggestion.history),
+            internalPages.map(LocalSuggestion.internalPage),
+        ].joined()
+
+        // First pass: score all items
+        let scoredSuggestions = localSuggestions.compactMap { localSuggestion -> (LocalSuggestion, Int)? in
+            let score = ScoringService.score(for: localSuggestion, lowerQuery: lowerQuery, queryTokens: queryTokens)
+
+            guard score > 0 else { return nil } // Filter out suggestions with zero score
+            return (localSuggestion, score)
+        }
+
+        // Sort suggestions by score in descending order
+        let sortedSuggestions = scoredSuggestions.sorted { $0.1 > $1.1 }
+
+        // Create final array of scored and sorted suggestions
+        let result = sortedSuggestions.compactMap { localSuggestion, score -> TopHitsEligibleSuggestion? in
+            if let suggestion = Suggestion(localSuggestion: localSuggestion, score: score) {
+                return (suggestion: suggestion, allowedInTopHits: localSuggestion.isAlowedInTopHits(platform: platform))
+            }
+            return nil
+        }
+
+        return result
+    }
+
 
     private func dedupLocalSuggestions(_ suggestions: [TopHitsEligibleSuggestion]) -> [TopHitsEligibleSuggestion] {
         return suggestions.reduce([TopHitsEligibleSuggestion]()) { partialResult, scoredSuggestion -> [TopHitsEligibleSuggestion] in
@@ -175,79 +237,10 @@ final class SuggestionProcessing {
             }
     }
 
-    // MARK: - History and Bookmarks
-
-    fileprivate enum LocalSuggestion {
-        case bookmark(Bookmark)
-        case history(HistorySuggestion)
-        case internalPage(InternalPage)
-        case openTab(BrowserTab)
-
-        func isAlowedInTopHits(platform: Platform) -> Bool {
-            switch self {
-            case .history(let historyEntry):
-                let areVisitsLow = historyEntry.numberOfVisits < 4
-                let allowedInTopHits = !(historyEntry.failedToLoad
-                                         || (areVisitsLow && !historyEntry.url.isRoot))
-                return allowedInTopHits
-            case .bookmark(let bookmark):
-                switch platform {
-                case .desktop: return bookmark.isFavorite
-                case .mobile: return true
-                }
-            case .internalPage, .openTab:
-                return false
-            }
-        }
-    }
-
-    private func localSuggestions(from history: [HistorySuggestion], bookmarks: [Bookmark], internalPages: [InternalPage], openTabs: [BrowserTab], query: Query) -> [(suggestion: Suggestion, allowedInTopHits: Bool)] {
-        let localSuggestions: [LocalSuggestion] = bookmarks.map(LocalSuggestion.bookmark) + openTabs.map(LocalSuggestion.openTab) + history.map(LocalSuggestion.history) + internalPages.map(LocalSuggestion.internalPage)
-        let queryTokens = Score.tokens(from: query)
-
-        let result: [(suggestion: Suggestion, allowedInTopHits: Bool)] = localSuggestions
-            // Score items
-            .map { suggestion -> (suggestion: LocalSuggestion, score: Score) in
-                let score = switch suggestion {
-                case .bookmark(let bookmark):
-                    Score(bookmark: bookmark, query: query, queryTokens: queryTokens)
-                case .history(let historyEntry):
-                    Score(historyEntry: historyEntry, query: query, queryTokens: queryTokens)
-                case .internalPage(let internalPage):
-                    Score(internalPage: internalPage, query: query, queryTokens: queryTokens)
-                case .openTab(let tab):
-                    Score(browserTab: tab, query: query)
-                }
-
-                return (suggestion, score)
-            }
-            // Filter not relevant
-            .filter { $0.score > 0 }
-            // Sort according to the score
-            .sorted {
-                switch ($0.suggestion, $1.suggestion) {
-                // place open tab suggestions on top
-                case (.openTab, .openTab): break
-                case (.openTab, _): return true
-                case (_, .openTab): return false
-                default: break
-                }
-                return $0.score > $1.score
-            }
-            // Create suggestion array
-            .compactMap { localSuggestion, score in
-                Suggestion(localSuggestion: localSuggestion, score: score).map { suggestion in
-                    (suggestion: suggestion, allowedInTopHits: localSuggestion.isAlowedInTopHits(platform: platform))
-                }
-            }
-
-        return result
-    }
-
     // MARK: - Top Hits
 
     /// Take the top two items from the suggestions, but only up to the first suggestion that is not allowed in top hits
-    private func topHits(from suggestions: [(suggestion: Suggestion, allowedInTopHits: Bool)]) -> [Suggestion] {
+    private func topHits(from suggestions: [TopHitsEligibleSuggestion]) -> [Suggestion] {
         var topHits = [Suggestion]()
 
         for item in suggestions {

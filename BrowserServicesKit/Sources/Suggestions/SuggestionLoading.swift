@@ -20,7 +20,7 @@ import Foundation
 
 public protocol SuggestionLoading: AnyObject {
 
-    func getSuggestions(query: Query,
+    func getSuggestions(query: String,
                         usingDataSource dataSource: SuggestionLoadingDataSource,
                         completion: @escaping (SuggestionResult?, Error?) -> Void)
 
@@ -43,7 +43,7 @@ public class SuggestionLoader: SuggestionLoading {
         self.urlFactory = urlFactory
     }
 
-    public func getSuggestions(query: Query,
+    public func getSuggestions(query: String,
                                usingDataSource dataSource: SuggestionLoadingDataSource,
                                completion: @escaping (SuggestionResult?, Error?) -> Void) {
 

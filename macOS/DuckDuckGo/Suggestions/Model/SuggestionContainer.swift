@@ -52,7 +52,7 @@ final class SuggestionContainer {
     // Used for presenting the same suggestions after the removal of the local suggestion
     private(set) var suggestionDataCache: Data?
 
-    private var latestQuery: Query?
+    private var latestQuery: String?
 
     private let urlSession: URLSession
 

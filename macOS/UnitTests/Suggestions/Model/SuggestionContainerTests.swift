@@ -207,7 +207,9 @@ final class SuggestionContainerTests: XCTestCase {
         suggestionContainer.getSuggestions(for: input.query)
         let actualResult = try await resultPromise.get()
 
-        assert(TestExpectations(actualResult, query: testScenario.input.query, windows: testScenario.input.windows), named: name, matches: testScenario.expectations)
+        assert(TestExpectations(from: actualResult, query: testScenario.input.query, windows: testScenario.input.windows),
+               named: name,
+               match: testScenario.expectations)
     }
 
 }
@@ -248,18 +250,33 @@ extension SuggestionContainerTests {
     }
 
     struct Bookmark: Decodable, Suggestions.Bookmark {
+        enum CodingKeys: String, CodingKey {
+            case title
+            case url="uri"
+            case isFavorite
+        }
         let title: String
-        let url: String
+        var url: String
         let isFavorite: Bool
     }
 
     struct HistoryEntry: Decodable, Suggestions.HistorySuggestion {
-        var identifier: UUID
-        var title: String?
+        enum CodingKeys: String, CodingKey {
+            case title
+            case url = "uri"
+            case numberOfVisits = "visitCount"
+            case _lastVisit = "lastVisit"
+            case _failedToLoad = "failedToLoad"
+        }
+        let title: String?
         let url: URL
         let numberOfVisits: Int
-        var lastVisit: Date
-        var failedToLoad: Bool
+        let _lastVisit: Date?
+        var lastVisit: Date { _lastVisit ?? .distantPast }
+        let _failedToLoad: Bool?
+        var failedToLoad: Bool { _failedToLoad ?? false }
+
+        var identifier: UUID { UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
     }
 
     struct Window: Decodable {
@@ -361,7 +378,7 @@ extension SuggestionContainerTests {
     func assert<Value: Encodable>(
       _ value: @autoclosure () throws -> Value,
       named name: String,
-      matches anotherValue: Value,
+      match anotherValue: Value,
       file: StaticString = #file,
       testName: String = #function,
       line: UInt = #line
@@ -433,6 +450,14 @@ extension SuggestionContainerTests {
                 case openTab
                 case internalPage
             }
+            enum CodingKeys: String, CodingKey {
+                case type
+                case title
+                case subtitle
+                case uri
+                case tabId
+                case score
+            }
 
             let type: SuggestionType
             let title: String
@@ -440,13 +465,30 @@ extension SuggestionContainerTests {
             let uri: String?
             let tabId: UUID?
             let score: Int
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.type = try container.decode(SuggestionType.self, forKey: .type)
+                self.title = try container.decode(String.self, forKey: .title)
+                self.subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
+                self.uri = try container.decodeIfPresent(String.self, forKey: .uri)
+                self.tabId = try container.decodeIfPresent(UUID.self, forKey: .tabId)
+                self.score = try container.decode(Int.self, forKey: .score)
+            }
+            init(type: SuggestionType, title: String, subtitle: String?, uri: String?, tabId: UUID?, score: Int = 1) {
+                self.type = type
+                self.title = title
+                self.subtitle = subtitle ?? ""
+                self.uri = uri
+                self.tabId = tabId
+                self.score = score
+            }
         }
 
         let topHits: [ExpectedSuggestion]
         let searchSuggestions: [ExpectedSuggestion]
         let localSuggestions: [ExpectedSuggestion]
 
-        init?(_ result: SuggestionResult?, query: String, windows: [SuggestionContainerTests.Window]) {
+        init?(from result: SuggestionResult?, query: String, windows: [SuggestionContainerTests.Window]) {
             guard let result else { return nil }
             self.topHits = result.topHits.compactMap { $0.expectedSuggestion(query: query, windows: windows) }
             self.searchSuggestions = result.duckduckgoSuggestions.compactMap { $0.expectedSuggestion(query: query, windows: windows) }

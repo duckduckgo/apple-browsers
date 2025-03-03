@@ -25,7 +25,6 @@ import NetworkProtection
 import NetworkProtectionIPC
 import os.log
 import BrokenSitePrompt
-import SwiftUI
 
 final class MainViewController: NSViewController {
     private(set) lazy var mainView = MainView(frame: NSRect(x: 0, y: 0, width: 600, height: 660))

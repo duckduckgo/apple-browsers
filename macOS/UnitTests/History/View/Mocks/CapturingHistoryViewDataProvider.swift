@@ -1,5 +1,5 @@
 //
-//  CapturingDataProvider.swift
+//  CapturingHistoryViewDataProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,8 +17,9 @@
 //
 
 import HistoryView
+@testable import DuckDuckGo_Privacy_Browser
 
-final class CapturingDataProvider: DataProviding {
+final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
 
     var ranges: [DataModel.HistoryRange] {
         rangesCallCount += 1
@@ -26,7 +27,7 @@ final class CapturingDataProvider: DataProviding {
     }
 
     func refreshData() {
-        refreshDataCallCount += 1
+        resetCacheCallCount += 1
     }
 
     func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
@@ -34,32 +35,51 @@ final class CapturingDataProvider: DataProviding {
         return await visitsBatch(query, limit, offset)
     }
 
-    func countVisibleVisits(for range: DataModel.HistoryRange) async -> Int {
-        countVisibleVisitsCalls.append(range)
-        return await countVisibleVisits(range)
+    func deleteVisits(for identifiers: [VisitIdentifier]) async {
+        deleteVisitsForIdentifierCalls.append(identifiers)
+    }
+
+    func burnVisits(for identifiers: [VisitIdentifier]) async {
+        burnVisitsForIdentifiersCalls.append(identifiers)
+    }
+
+    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
+        countVisibleVisitsCalls.append(query)
+        return await countVisibleVisits(query)
     }
 
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
-        deleteVisitsCalls.append(query)
+        deleteVisitsMatchingQueryCalls.append(query)
     }
 
     func burnVisits(matching query: DataModel.HistoryQueryKind) async {
-        burnVisitsCalls.append(query)
+        burnVisitsMatchingQueryCalls.append(query)
+    }
+
+    func titles(for urls: [URL]) -> [URL: String] {
+        titlesForURLsCalls.append(urls)
+        return titlesForURLs(urls)
     }
 
     // swiftlint:disable:next identifier_name
     var _ranges: [DataModel.HistoryRange] = []
     var rangesCallCount: Int = 0
-    var refreshDataCallCount: Int = 0
+    var resetCacheCallCount: Int = 0
 
-    var countVisibleVisitsCalls: [DataModel.HistoryRange] = []
-    var countVisibleVisits: (DataModel.HistoryRange) async -> Int = { _ in return 0 }
+    var countVisibleVisitsCalls: [DataModel.HistoryQueryKind] = []
+    var countVisibleVisits: (DataModel.HistoryQueryKind) async -> Int = { _ in return 0 }
 
-    var deleteVisitsCalls: [DataModel.HistoryQueryKind] = []
-    var burnVisitsCalls: [DataModel.HistoryQueryKind] = []
+    var deleteVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+    var burnVisitsMatchingQueryCalls: [DataModel.HistoryQueryKind] = []
+
+    var deleteVisitsForIdentifierCalls: [[VisitIdentifier]] = []
+    var burnVisitsForIdentifiersCalls: [[VisitIdentifier]] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
     var visitsBatch: (DataModel.HistoryQueryKind, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _ in .init(finished: true, visits: []) }
+
+    var titlesForURLsCalls: [[URL]] = []
+    var titlesForURLs: ([URL]) -> [URL: String] = { _ in [:] }
 
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind

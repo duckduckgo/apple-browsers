@@ -18,46 +18,6 @@
 
 import SwiftUIExtensions
 
-final class HistoryViewDeleteDialogModel: ObservableObject {
-    enum Response {
-        case unknown, noAction, delete, burn
-    }
-    let entriesCount: Int
-    @Published var shouldBurn: Bool = true
-    @Published private(set) var response: Response = .unknown
-
-    init(entriesCount: Int) {
-        self.entriesCount = entriesCount
-    }
-
-    func cancel() {
-        response = .noAction
-    }
-
-    func delete() {
-        response = shouldBurn ? .burn : .delete
-    }
-}
-
-protocol HistoryViewDeleteDialogPresenting {
-    @MainActor
-    func showDialog(for itemsCount: Int) async -> HistoryViewDeleteDialogModel.Response
-}
-
-final class DefaultHistoryViewDeleteDialogPresenter: HistoryViewDeleteDialogPresenting {
-    @MainActor
-    func showDialog(for itemsCount: Int) async -> HistoryViewDeleteDialogModel.Response {
-        await withCheckedContinuation { continuation in
-            let parentWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window
-            let model = HistoryViewDeleteDialogModel(entriesCount: itemsCount)
-            let dialog = HistoryViewDeleteDialog(model: model)
-            dialog.show(in: parentWindow) {
-                continuation.resume(returning: model.response)
-            }
-        }
-    }
-}
-
 struct HistoryViewDeleteDialog: ModalView {
 
     @ObservedObject var model: HistoryViewDeleteDialogModel
@@ -68,12 +28,12 @@ struct HistoryViewDeleteDialog: ModalView {
             Image(.historyBurn)
 
             VStack(spacing: 12) {
-                Text(UserText.deleteHistory)
+                Text(model.title)
                     .multilineTextAlignment(.center)
                     .fixMultilineScrollableText()
                     .font(.system(size: 15).weight(.semibold))
 
-                Text(.init(UserText.deleteHistoryMessage(items: model.entriesCount)))
+                Text(.init(UserText.deleteHistoryMessage(items: model.entriesCountString)))
                     .multilineTextAlignment(.center)
                     .fixMultilineScrollableText()
                     .font(.system(size: 13))
@@ -84,12 +44,11 @@ struct HistoryViewDeleteDialog: ModalView {
                         .fixMultilineScrollableText()
                         .toggleStyle(.checkbox)
 
-                    Text(UserText.deleteCookiesAndSiteDataExplanation)
+                    Text(model.dataClearingExplanation)
                         .fixMultilineScrollableText()
                         .foregroundColor(.blackWhite60)
-                        .frame(width: 242)
                         .font(.system(size: 11))
-                        .padding(.leading, 16)
+                        .padding(.leading, 19)
                 }
                 .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
                 .background(RoundedRectangle(cornerRadius: 8.0).stroke(.blackWhite5))

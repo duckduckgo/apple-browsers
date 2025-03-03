@@ -213,7 +213,7 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
     var saveBookmarksInNewFolderNamedCalled = false
     var capturedWebsitesInfo: [WebsiteInfo]?
     var capturedNewFolderName: String?
-    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: ParentFolderType) {
+    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType) {
         saveBookmarksInNewFolderNamedCalled = true
         capturedWebsitesInfo = websitesInfo
         capturedNewFolderName = folderName

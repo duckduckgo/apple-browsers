@@ -1,5 +1,5 @@
 //
-//  ActionsHandling.swift
+//  CapturingContextMenuPresenter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,13 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import HistoryView
 
-public protocol ActionsHandling {
-    @MainActor func open(_ url: URL) async
+final class CapturingContextMenuPresenter: HistoryView.ContextMenuPresenting {
+    func showContextMenu(_ menu: NSMenu) {
+        showContextMenuCalls.append(menu)
+    }
 
-    @MainActor func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse
-    @MainActor func showDeleteDialog(for entries: [String]) async -> DataModel.DeleteDialogResponse
-
-    @MainActor func showContextMenu(for entries: [String], using presenter: ContextMenuPresenting) async -> DataModel.DeleteDialogResponse
+    var showContextMenuCalls: [NSMenu] = []
 }

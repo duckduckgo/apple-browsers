@@ -57,7 +57,7 @@ extension SubscriptionManagerV2Tests {
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
-            subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore),
+            subscriptionEnvironment: stagingEnvironment,
             pixelHandler: { _ in },
             autoRecoveryHandler: {
                 if let overrideTokenResponse = self.overrideTokenResponse {

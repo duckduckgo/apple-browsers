@@ -21,17 +21,22 @@ import History
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockHistoryGroupingDataSource: HistoryGroupingDataSource {
+final class CapturingHistoryGroupingDataSource: HistoryGroupingDataSource, HistoryDeleting {
+    func delete(_ visits: [Visit]) async {
+        deleteCalls.append(visits)
+    }
+
     var history: BrowsingHistory? = []
+    var deleteCalls: [[Visit]] = []
 }
 
 final class HistoryGroupingProviderTests: XCTestCase {
-    private var dataSource: MockHistoryGroupingDataSource!
+    private var dataSource: CapturingHistoryGroupingDataSource!
     private var featureFlagger: MockFeatureFlagger!
     private var provider: HistoryGroupingProvider!
 
     override func setUp() async throws {
-        dataSource = MockHistoryGroupingDataSource()
+        dataSource = CapturingHistoryGroupingDataSource()
         featureFlagger = MockFeatureFlagger()
         provider = HistoryGroupingProvider(dataSource: dataSource, featureFlagger: featureFlagger)
     }

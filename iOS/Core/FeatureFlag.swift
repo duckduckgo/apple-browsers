@@ -51,12 +51,6 @@ public enum FeatureFlag: String {
     case aiChat
     case aiChatDeepLink
     case tabManagerMultiSelection
-
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
     
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
@@ -167,12 +161,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autcompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .crashReportOptInStatusResetting:

@@ -51,5 +51,10 @@ final class HistoryViewOnboardingViewController: NSHostingController<HistoryView
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        viewModel.markAsShown()
+    }
+
     private let viewModel: HistoryViewOnboardingViewModel
 }

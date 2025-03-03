@@ -26,6 +26,8 @@ import DDGSync
 import DesignResourcesKit
 import SwiftUI
 import os.log
+import Persistence
+import Bookmarks
 
 enum AutofillSettingsSource: String {
     case settings
@@ -53,10 +55,13 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     weak var detailsViewController: AutofillLoginDetailsViewController?
     private let viewModel: AutofillLoginListViewModel
     private lazy var emptyView: UIView = {
-        let emptyView = AutofillItemsEmptyView { [weak self] in
-            self?.segueToImport()
+        let emptyView = AutofillItemsEmptyView(importButtonAction: { [weak self] in
+            self?.segueToFileImport()
+            Pixel.fire(pixel: .autofillImportPasswordsImportButtonTapped)
+        }, importViaSyncButtonAction: { [weak self] in
+            self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImportNoPasswords)
-        }
+        })
 
         let hostingController = UIHostingController(rootView: emptyView)
         var size = hostingController.sizeThatFits(in: UIScreen.main.bounds.size)
@@ -96,7 +101,11 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     private lazy var moreBarButtonItem = UIBarButtonItem(customView: moreButton)
 
     private lazy var moreMenu: UIMenu = {
-        return UIMenu(children: [editAction(), importAction()])
+        if #available(iOS 18.2, *) {
+            return UIMenu(children: [editAction(), importFileAction(), importViaSyncAction()])
+        } else {
+            return UIMenu(children: [editAction(), importViaSyncAction()])
+        }
     }()
 
     private lazy var deleteAllButtonItem: UIBarButtonItem = {
@@ -135,7 +144,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
         searchController.searchBar.placeholder = UserText.autofillLoginListSearchPlaceholder
         navigationItem.hidesSearchBarWhenScrolling = false
         definesPresentationContext = true
-        
+
         return searchController
     }()
 
@@ -182,6 +191,8 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     var selectedAccount: SecureVaultModels.WebsiteAccount?
     var openSearch: Bool
     let source: AutofillSettingsSource
+    private let bookmarksDatabase: CoreDataDatabase
+    private let favoritesDisplayMode: FavoritesDisplayMode
 
     init(appSettings: AppSettings,
          currentTabUrl: URL? = nil,
@@ -190,7 +201,9 @@ final class AutofillLoginSettingsListViewController: UIViewController {
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
          openSearch: Bool = false,
-         source: AutofillSettingsSource) {
+         source: AutofillSettingsSource,
+         bookmarksDatabase: CoreDataDatabase,
+         favoritesDisplayMode: FavoritesDisplayMode) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
@@ -200,6 +213,8 @@ final class AutofillLoginSettingsListViewController: UIViewController {
         self.selectedAccount = selectedAccount
         self.openSearch = openSearch
         self.source = source
+        self.bookmarksDatabase = bookmarksDatabase
+        self.favoritesDisplayMode = favoritesDisplayMode
         super.init(nibName: nil, bundle: nil)
 
         authenticate()
@@ -220,11 +235,11 @@ final class AutofillLoginSettingsListViewController: UIViewController {
 
         Pixel.fire(pixel: .autofillManagementOpened, withAdditionalParameters: ["source": source.rawValue])
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = UserText.autofillLoginListTitle
@@ -302,7 +317,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
         detailsViewController = detailsController
         return detailsController
     }
-    
+
     func showAccountDetails(_ account: SecureVaultModels.WebsiteAccount, animated: Bool = true) {
         let detailsController = makeAccountDetailsScreen(account)
         navigationController?.pushViewController(detailsController, animated: animated)
@@ -332,7 +347,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
                 self?.updateViewState()
             }
             .store(in: &cancellables)
-        
+
         viewModel.$sections
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -349,7 +364,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
              .store(in: &cancellables)
 
     }
-    
+
     private func configureNotification() {
         addObserver(for: UIApplication.didBecomeActiveNotification, selector: #selector(appDidBecomeActiveCallback))
         addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
@@ -372,7 +387,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
             return
         }
     }
-    
+
     @objc private func appWillResignActiveCallback() {
         viewModel.lockUI()
     }
@@ -380,12 +395,12 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     @objc private func authenticatorInvalidateContext() {
         viewModel.authenticateInvalidateContext()
     }
-    
+
     private func authenticate() {
         viewModel.authenticate {[weak self] error in
             guard let self = self else { return }
             self.viewModel.isAuthenticating = false
-            
+
             if error != nil {
                 if error != .noAuthAvailable {
                     self.delegate?.autofillLoginSettingsListViewControllerDidFinish(self)
@@ -397,27 +412,46 @@ final class AutofillLoginSettingsListViewController: UIViewController {
             }
         }
     }
-    
+
     private func editAction() -> UIAction {
-        return UIAction(title: UserText.actionGenericEdit) { [weak self] _ in
+        return UIAction(title: UserText.actionGenericEdit, image: UIImage(named: "Edit-16")) { [weak self] _ in
             self?.setEditing(true, animated: true)
         }
     }
 
-    private func importAction() -> UIAction {
-        return UIAction(title: UserText.autofillEmptyViewButtonTitle) { [weak self] _ in
-            self?.segueToImport()
+    private func importFileAction() -> UIAction {
+        return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: UIImage(named: "Import-16")) { [weak self] _ in
+            self?.segueToFileImport()
+            Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
+        }
+    }
+
+    private func importViaSyncAction() -> UIAction {
+        return UIAction(title: UserText.autofillEmptyViewImportViaSyncButtonTitle, image: UIImage(named: "Sync-16")) { [weak self] _ in
+            self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImport)
         }
     }
 
-    private func segueToImport() {
-        let importController = ImportPasswordsViewController(syncService: syncService)
+    private func segueToFileImport() {
+        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
+                                                  bookmarksDatabase: bookmarksDatabase,
+                                                  favoritesDisplayMode: favoritesDisplayMode,
+                                                  tld: tld)
+        let dataImportViewController = DataImportViewController(importManager: dataImportManager,
+                                                                importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                                syncService: syncService)
+        dataImportViewController.delegate = self
+        navigationController?.pushViewController(dataImportViewController, animated: true)
+    }
+
+    private func segueToImportViaSync() {
+        let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
         importController.delegate = self
         navigationController?.pushViewController(importController, animated: true)
     }
 
-    private func segueToSync(source: String? = nil) {
+    func segueToSync(source: String? = nil) {
         if let settingsVC = self.navigationController?.children.first as? SettingsHostingController {
             navigationController?.popToRootViewController(animated: true)
             if let source = source {
@@ -537,8 +571,8 @@ final class AutofillLoginSettingsListViewController: UIViewController {
                                   actionTitle: UserText.actionGenericUndo,
                                   presentationLocation: .withoutBottomBar,
                                   onAction: {
-                                      shouldDeleteAccounts = false
-                                  }, onDidDismiss: {
+            shouldDeleteAccounts = false
+        }, onDidDismiss: {
             if shouldDeleteAccounts {
                 if self.viewModel.deleteAllCredentials() {
                     self.syncService.scheduler.notifyDataChanged()
@@ -555,7 +589,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     // MARK: Subviews Setup
 
     private func updateViewState() {
-        
+
         switch viewModel.viewState {
         case .showItems:
             tableView.tableFooterView = nil
@@ -743,7 +777,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
         view.addSubview(lockedView)
         view.addSubview(noAuthAvailableView)
     }
-    
+
     private func installConstraints() {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         emptySearchView.translatesAutoresizingMaskIntoConstraints = false
@@ -785,7 +819,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
     }
 
     // MARK: Cell Methods
-    
+
     private func credentialCell(for tableView: UITableView, item: AutofillLoginItem, indexPath: IndexPath) -> AutofillListItemTableViewCell {
         let cell = tableView.dequeueCell(ofType: AutofillListItemTableViewCell.self, for: indexPath)
         cell.item = item
@@ -793,7 +827,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
         cell.backgroundColor = UIColor(designSystemColor: .surface)
         return cell
     }
-    
+
     private func enableAutofillCell(for tableView: UITableView, indexPath: IndexPath) -> EnableAutofillSettingsTableViewCell {
         let cell = tableView.dequeueCell(ofType: EnableAutofillSettingsTableViewCell.self, for: indexPath)
         cell.delegate = self
@@ -830,7 +864,7 @@ final class AutofillLoginSettingsListViewController: UIViewController {
 // MARK: UITableViewDelegate
 
 extension AutofillLoginSettingsListViewController: UITableViewDelegate {
-    
+
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         switch viewModel.sections[indexPath.section] {
         case .enableAutofill:
@@ -839,10 +873,10 @@ extension AutofillLoginSettingsListViewController: UITableViewDelegate {
             return 60
         }
     }
-    
+
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        
+
         switch viewModel.sections[indexPath.section] {
         case .enableAutofill:
             switch EnableAutofillRows(rawValue: indexPath.row) {
@@ -907,15 +941,15 @@ extension AutofillLoginSettingsListViewController: UITableViewDelegate {
 // MARK: UITableViewDataSource
 
 extension AutofillLoginSettingsListViewController: UITableViewDataSource {
-    
+
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         viewModel.rowsInSection(section)
     }
-    
+
     func numberOfSections(in tableView: UITableView) -> Int {
         viewModel.sections.count
     }
-    
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         switch viewModel.sections[indexPath.section] {
         case .enableAutofill:
@@ -937,11 +971,11 @@ extension AutofillLoginSettingsListViewController: UITableViewDataSource {
             return credentialCell(for: tableView, item: items[indexPath.row], indexPath: indexPath)
         }
     }
-    
+
     func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
         tableView.isEditing ? .delete : .none
     }
-    
+
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         switch viewModel.sections[indexPath.section] {
         case .credentials(_, let items), .suggestions(_, let items):
@@ -972,7 +1006,7 @@ extension AutofillLoginSettingsListViewController: UITableViewDataSource {
             break
         }
     }
-    
+
     func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch viewModel.sections[section] {
         case .enableAutofill:
@@ -981,21 +1015,21 @@ extension AutofillLoginSettingsListViewController: UITableViewDataSource {
             return title
         }
     }
-    
+
     func sectionIndexTitles(for tableView: UITableView) -> [String]? {
         viewModel.viewState == .showItems ? UILocalizedIndexedCollation.current().sectionIndexTitles : []
     }
-    
+
     func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int {
         var closestSoFar = 0
         var exactMatchIndex: Int?
         for (index, section) in viewModel.sections.enumerated() {
             if case .credentials(let sectionTitle, _) = section {
-                
+
                 if let first = title.first, !first.isLetter {
                     return viewModel.sections.count - 1
                 }
-                
+
                 let result = sectionTitle.localizedCaseInsensitiveCompare(title)
                 if result == .orderedSame {
                     exactMatchIndex = index
@@ -1008,7 +1042,7 @@ extension AutofillLoginSettingsListViewController: UITableViewDataSource {
         }
         return exactMatchIndex ?? closestSoFar
     }
-    
+
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         switch viewModel.sections[indexPath.section] {
         case .credentials, .suggestions:
@@ -1047,11 +1081,11 @@ extension AutofillLoginSettingsListViewController: AutofillLoginDetailsViewContr
     }
 }
 
-// MARK: ImportPasswordsViewControllerDelegate
+// MARK: ImportPasswordsViaSyncViewControllerDelegate
 
-extension AutofillLoginSettingsListViewController: ImportPasswordsViewControllerDelegate {
+extension AutofillLoginSettingsListViewController: ImportPasswordsViaSyncViewControllerDelegate {
 
-    func importPasswordsViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViewController) {
+    func importPasswordsViaSyncViewControllerDidRequestOpenSync(_ viewController: ImportPasswordsViaSyncViewController) {
         segueToSync()
     }
 
@@ -1066,7 +1100,7 @@ extension AutofillLoginSettingsListViewController: EnableAutofillSettingsTableVi
         } else {
             Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
         }
-        
+
         viewModel.isAutofillEnabledInSettings = value
         updateViewState()
     }
@@ -1199,6 +1233,16 @@ extension AutofillLoginSettingsListViewController: AutofillHeaderViewDelegate {
         }
     }
 }
+
+// MARK: ImportPasswordsViewControllerDelegate
+
+extension AutofillLoginSettingsListViewController: DataImportViewControllerDelegate {
+
+    func dataImportViewControllerDidFinish(_ viewController: DataImportViewController) {
+        viewModel.updateData()
+    }
+}
+
 
 extension NSNotification.Name {
     static let autofillFailureReport: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.autofillFailureReport")

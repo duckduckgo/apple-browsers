@@ -37,7 +37,7 @@ public final class SubscriptionCookieManager: SubscriptionCookieManaging {
 
     private static let defaultRefreshTimeInterval: TimeInterval = .hours(4)
 
-    private let subscriptionManager: SubscriptionManager
+    private let tokenProvider: any SubscriptionTokenProvider
     private let currentCookieStore: @MainActor () -> HTTPCookieStore?
     private let eventMapping: EventMapping<SubscriptionCookieManagerEvent>
 
@@ -45,20 +45,20 @@ public final class SubscriptionCookieManager: SubscriptionCookieManaging {
     private let refreshTimeInterval: TimeInterval
     private var isSettingSubscriptionCookieEnabled: Bool = false
 
-    convenience nonisolated public required init(subscriptionManager: SubscriptionManager,
+    convenience nonisolated public required init(tokenProvider: any SubscriptionTokenProvider,
                                                  currentCookieStore: @MainActor @escaping () -> HTTPCookieStore?,
                                                  eventMapping: EventMapping<SubscriptionCookieManagerEvent>) {
-        self.init(subscriptionManager: subscriptionManager,
+        self.init(tokenProvider: tokenProvider,
                   currentCookieStore: currentCookieStore,
                   eventMapping: eventMapping,
                   refreshTimeInterval: SubscriptionCookieManager.defaultRefreshTimeInterval)
     }
 
-    nonisolated public required init(subscriptionManager: SubscriptionManager,
+    nonisolated public required init(tokenProvider: any SubscriptionTokenProvider,
                                      currentCookieStore: @MainActor @escaping () -> HTTPCookieStore?,
                                      eventMapping: EventMapping<SubscriptionCookieManagerEvent>,
                                      refreshTimeInterval: TimeInterval) {
-        self.subscriptionManager = subscriptionManager
+        self.tokenProvider = tokenProvider
         self.currentCookieStore = currentCookieStore
         self.eventMapping = eventMapping
         self.refreshTimeInterval = refreshTimeInterval
@@ -85,7 +85,7 @@ public final class SubscriptionCookieManager: SubscriptionCookieManaging {
                   let cookieStore = await currentCookieStore()
             else { return }
 
-            guard let accessToken = subscriptionManager.accountManager.accessToken else {
+            guard let accessToken = try? await tokenProvider.getAccessToken() else {
                 Logger.subscription.error("[SubscriptionCookieManager] Handle .accountDidSignIn - can't set the cookie, token is missing")
                 eventMapping.fire(.errorHandlingAccountDidSignInTokenIsMissing)
                 return
@@ -125,7 +125,7 @@ public final class SubscriptionCookieManager: SubscriptionCookieManaging {
         Logger.subscription.info("[SubscriptionCookieManager] Refresh subscription cookie")
         updateLastRefreshDateToNow()
 
-        let accessToken: String? = subscriptionManager.accountManager.accessToken
+        let accessToken = try? await tokenProvider.getAccessToken()
         let subscriptionCookie = await cookieStore.fetchCurrentSubscriptionCookie()
 
         let noCookieOrWithUnexpectedValue = (accessToken ?? "") != subscriptionCookie?.value

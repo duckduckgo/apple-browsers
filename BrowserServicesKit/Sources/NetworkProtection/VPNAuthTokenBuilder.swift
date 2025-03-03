@@ -18,6 +18,7 @@
 
 import Foundation
 import Networking
+import Common
 
 public struct VPNAuthTokenBuilder {
 

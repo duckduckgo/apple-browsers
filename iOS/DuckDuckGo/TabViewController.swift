@@ -433,7 +433,7 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionManager.canPurchase
+            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
 
         super.init(coder: aDecoder)

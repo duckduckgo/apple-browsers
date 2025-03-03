@@ -1,5 +1,5 @@
 //
-//  SubscriptionTokenHandling.swift
+//  SubscriptionAuthenticationStateProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,13 +18,6 @@
 
 import Foundation
 
-public protocol SubscriptionTokenHandling {
-
-    @discardableResult func getToken() async throws -> String
-
-    func removeToken() async throws
-
-    func refreshToken() async throws
-
-    func adoptToken(_ someKindOfToken: Any) async throws
+public protocol SubscriptionAuthenticationStateProvider {
+    var isUserAuthenticated: Bool { get }
 }

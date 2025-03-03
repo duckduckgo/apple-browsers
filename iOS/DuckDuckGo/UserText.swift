@@ -81,7 +81,12 @@ public struct UserText {
     
     public static let alertSaveBookmark = NSLocalizedString("alert.title.save.bookmark", value: "Save Bookmark", comment: "Save Bookmark action")
     public static let alertSaveFavorite = NSLocalizedString("alert.title.save.favorite", value: "Save Favorite", comment: "Save Favorite action")
-    public static let alertBookmarkAllTitle = NSLocalizedString("alert.title.bookmarkAll", value: "Bookmark All Tabs?", comment: "Question from confirmation dialog")
+    
+    public static func alertTitleBookmarkAll(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkAll.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
     public static let alertBookmarkAllMessage = NSLocalizedString("alert.message.bookmarkAll", value: "Existing bookmarks will not be duplicated.", comment: "")
     
     public static let alertDisableProtection = NSLocalizedString("alert.title.disable.protection", value: "Add to Unprotected Sites", comment: "Disable protection alert")
@@ -227,6 +232,11 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func numberOfSelectedTabsForMenuTitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "numberOfSelectedTabsForMenuTitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func openTab(withTitle title: String, atAddress address: String) -> String {
         let message = NSLocalizedString("tab.open.with.title.and.address", value: "Open \"%@\" at %@", comment: "Accesibility label: first string is website title, second is address")
         return message.format(arguments: title, address)
@@ -249,6 +259,16 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func closeAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "closeAllTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func alertTitleCloseAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertTitleCloseAllTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func alertTitleCloseSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleCloseSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -261,6 +281,11 @@ public struct UserText {
 
     public static func alertTitleCloseTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleCloseTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func alertMessageCloseAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertMessageCloseAllTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
 

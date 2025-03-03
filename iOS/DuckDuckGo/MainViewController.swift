@@ -358,7 +358,6 @@ class MainViewController: UIViewController {
 
         decorate()
 
-        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -389,7 +388,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -2643,6 +2642,18 @@ extension MainViewController: TabSwitcherDelegate {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+    }
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
+        guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToEditBookmark(bookmark)
+        }
+    }
+    
+    func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+        updateCurrentTab()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {

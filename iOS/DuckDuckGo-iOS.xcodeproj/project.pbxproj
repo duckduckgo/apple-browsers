@@ -6786,11 +6786,11 @@
 		F1386BA21E6846320062FC3C /* TabSwitcher */ = {
 			isa = PBXGroup;
 			children = (
-				8569E16F2D52C993004A3CB7 /* TabSwitcherBarsStateHandler.swift */,
 				9872D204247DCAC100CEF398 /* TabPreviewsSource.swift */,
 				85DFEDF824CF3D0E00973FE7 /* TabsBarCell.swift */,
 				8586A10F24CCCD040049720E /* TabsBarViewController.swift */,
 				F1ED309B1EDC2EA400651986 /* TabSwitcher.storyboard */,
+				8569E16F2D52C993004A3CB7 /* TabSwitcherBarsStateHandler.swift */,
 				F1617C181E573EA800DEDCAF /* TabSwitcherDelegate.swift */,
 				6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */,
 				984D035B24AE15CD0066CFB8 /* TabSwitcherSettings.swift */,

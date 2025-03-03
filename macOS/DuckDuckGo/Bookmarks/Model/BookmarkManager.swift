@@ -34,7 +34,7 @@ protocol BookmarkManager: AnyObject {
     func getBookmark(forVariantUrl variantURL: URL) -> Bookmark?
     func getBookmarkFolder(withId id: String) -> BookmarkFolder?
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?) -> Bookmark?
-    func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: ParentFolderType)
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType)
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void)
     func remove(bookmark: Bookmark, undoManager: UndoManager?)
     func remove(folder: BookmarkFolder, undoManager: UndoManager?)
@@ -229,7 +229,7 @@ final class LocalBookmarkManager: BookmarkManager {
         return bookmark
     }
 
-    func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: ParentFolderType) {
+    func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType) {
         bookmarkStore.saveBookmarks(for: websitesInfo, inNewFolderNamed: folderName, withinParentFolder: parent)
         loadBookmarks()
         requestSync()

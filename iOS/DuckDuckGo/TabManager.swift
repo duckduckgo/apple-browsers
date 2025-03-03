@@ -296,6 +296,22 @@ class TabManager {
         return controller
     }
 
+    /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the
+    ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
+    ///   number of items.
+    func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
+        indexPaths.forEach {
+            let tab = model.get(tabAt: $0.row)
+            previewsSource.removePreview(forTab: tab)
+            if let controller = controller(for: tab) {
+                removeFromCache(controller)
+            }
+            interactionStateSource?.removeStateForTab(tab)
+        }
+        model.remove(indexPaths)
+        save()
+    }
+
     func remove(at index: Int) {
         let tab = model.get(tabAt: index)
         previewsSource.removePreview(forTab: tab)

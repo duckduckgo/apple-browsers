@@ -89,6 +89,20 @@ public extension DataModel.HistoryRange {
         return startDate ..< nextDay
     }
 
+    /**
+     * Calculates the date of the receiver, respective to `referenceDate` indicating current day.
+     *
+     * - `.older` and `.all` return `nil` because they span more than 1 day.
+     */
+    func date(for referenceDate: Date) -> Date? {
+        guard self != .all, self != .older, let weekday = weekday(for: referenceDate) else {
+            return nil
+        }
+        let calendar = Calendar.autoupdatingCurrent
+        let startOfDayReferenceDate = referenceDate.startOfDay
+        return self == .today ? startOfDayReferenceDate : calendar.firstWeekday(weekday, before: startOfDayReferenceDate)
+    }
+
     // MARK: - Private
 
     private init?(weekday: Int) {

@@ -75,7 +75,7 @@ class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
         return nil
     }
 
-    func makeBookmarks(for websitesInfo: [DuckDuckGo_Privacy_Browser.WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: DuckDuckGo_Privacy_Browser.ParentFolderType) {}
+    func makeBookmarks(for websitesInfo: [DuckDuckGo_Privacy_Browser.WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: DuckDuckGo_Privacy_Browser.ParentFolderType) {}
 
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void) {}
 

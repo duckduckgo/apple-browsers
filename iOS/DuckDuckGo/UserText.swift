@@ -81,7 +81,12 @@ public struct UserText {
     
     public static let alertSaveBookmark = NSLocalizedString("alert.title.save.bookmark", value: "Save Bookmark", comment: "Save Bookmark action")
     public static let alertSaveFavorite = NSLocalizedString("alert.title.save.favorite", value: "Save Favorite", comment: "Save Favorite action")
-    public static let alertBookmarkAllTitle = NSLocalizedString("alert.title.bookmarkAll", value: "Bookmark All Tabs?", comment: "Question from confirmation dialog")
+    
+    public static func alertTitleBookmarkAll(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkAll.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
     public static let alertBookmarkAllMessage = NSLocalizedString("alert.message.bookmarkAll", value: "Existing bookmarks will not be duplicated.", comment: "")
     
     public static let alertDisableProtection = NSLocalizedString("alert.title.disable.protection", value: "Add to Unprotected Sites", comment: "Disable protection alert")
@@ -227,6 +232,11 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func numberOfSelectedTabsForMenuTitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "numberOfSelectedTabsForMenuTitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func openTab(withTitle title: String, atAddress address: String) -> String {
         let message = NSLocalizedString("tab.open.with.title.and.address", value: "Open \"%@\" at %@", comment: "Accesibility label: first string is website title, second is address")
         return message.format(arguments: title, address)
@@ -249,6 +259,16 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    public static func closeAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "closeAllTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func alertTitleCloseAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertTitleCloseAllTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+
     public static func alertTitleCloseSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleCloseSelectedTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
@@ -261,6 +281,11 @@ public struct UserText {
 
     public static func alertTitleCloseTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleCloseTabs.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func alertMessageCloseAllTabs(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "alertMessageCloseAllTabs.withCount", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
 
@@ -863,15 +888,17 @@ public struct UserText {
         let message = NSLocalizedString("autofill.logins.search.no-results.subtitle", value: "for '%@'", comment: "Subtitle displayed when there are no results on Autofill search, example : No Result (Title) for Duck (Subtitle)")
         return message.format(arguments: query)
     }
-    
-    public static let aboutText = NSLocalizedString("settings.about.text", value: """
-DuckDuckGo is the independent Internet privacy company founded in 2008 for anyone who’s tired of being tracked online and wants an easy solution. We’re proof you can get real privacy protection online without tradeoffs.
 
-The DuckDuckGo browser comes with the features you expect from a go-to browser, like bookmarks, tabs, passwords, and more, plus over [a dozen powerful privacy protections](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) not offered in most popular browsers by default. This uniquely comprehensive set of privacy protections helps protect your online activities, from searching to browsing, emailing, and more.
+    public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
-Our privacy protections work without having to know anything about the technical details or deal with complicated settings. All you have to do is switch your browser to DuckDuckGo across all your devices and you get privacy by default.
+    public static let aboutText = NSLocalizedString("settings.about.text.new", value: """
+DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.
 
-But if you *do* want a peek under the hood, you can find more information about how DuckDuckGo privacy protections work on our [help pages](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).
+We believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. 
+
+In addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.
+
+Take back control of your personal information with the browser designed for data protection, not data collection.
 """, comment: "about page")
 
     public static let autofillEnableSettings = NSLocalizedString("autofill.logins.list.enable", value:"Save and autofill passwords", comment: "Title for a toggle that enables autofill")

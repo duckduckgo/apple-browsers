@@ -245,7 +245,9 @@ extension Pixel {
         case jsAlertShown
         
         case featureFlaggingInternalUserAuthenticated
-        
+
+        // MARK: Autofill pixels
+
         case autofillLoginsSaveLoginModalDisplayed
         case autofillLoginsSaveLoginModalConfirmed
         case autofillLoginsSaveLoginModalDismissed
@@ -358,6 +360,33 @@ extension Pixel {
 
         case secureVaultV4Migration
         case secureVaultV4MigrationSkipped
+
+        // MARK: Data Import pixels
+
+        case autofillImportPasswordsImportButtonTapped
+        case autofillImportPasswordsImportButtonShown
+        case autofillImportPasswordsOverflowMenuTapped
+        case bookmarksImportButtonTapped
+        case bookmarksImportButtonShown
+        case bookmarksImportOverflowMenuTapped
+        case importInstructionsDisplayed
+        case importInstructionsFileButtonTapped
+        case importInstructionsToggled
+        case importInstructionsFileSelectedZip
+        case importInstructionsFileSelectedHtml
+        case importInstructionsFileSelectedCsv
+        case importInstructionsCancelled
+        case importPreviewPromptDisplayed
+        case importPreviewPromptConfirmed
+        case importPreviewPromptDismissed
+        case importResultDisplayed
+        case importResultPasswordsSuccess
+        case importResultBookmarksSuccess
+        case importResultSyncButtonShown
+        case importResultSyncButtonTapped
+        case importResultPasswordsParsing
+        case importResultBookmarksParsing
+        case importResultUnzipping
 
         // MARK: Ad Click Attribution pixels
         
@@ -1227,7 +1256,9 @@ extension Pixel.Event {
         case .jsAlertShown: return "m_js_alert_shown"
             
         case .featureFlaggingInternalUserAuthenticated: return "m_internal-user_authenticated"
-            
+
+            // MARK: Autofill pixels
+
         case .autofillLoginsSaveLoginModalDisplayed: return "m_autofill_logins_save_login_inline_displayed"
         case .autofillLoginsSaveLoginModalConfirmed: return "m_autofill_logins_save_login_inline_confirmed"
         case .autofillLoginsSaveLoginModalDismissed: return "m_autofill_logins_save_login_inline_dismissed"
@@ -1355,6 +1386,33 @@ extension Pixel.Event {
 
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
+
+            // MARK: Data Import pixels
+
+        case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
+        case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
+        case .autofillImportPasswordsOverflowMenuTapped: return "autofill_import_passwords_overflow_menu_tapped"
+        case .bookmarksImportButtonTapped: return "bookmarks_import_button_tapped"
+        case .bookmarksImportButtonShown: return "bookmarks_import_button_shown"
+        case .bookmarksImportOverflowMenuTapped: return "bookmarks_import_overflow_menu_tapped"
+        case .importInstructionsDisplayed: return "import_instructions_displayed"
+        case .importInstructionsFileButtonTapped: return "import_instructions_file_button_tapped"
+        case .importInstructionsToggled: return "import_instructions_toggled"
+        case .importInstructionsFileSelectedZip: return "import_instructions_file_selected-zip"
+        case .importInstructionsFileSelectedHtml: return "import_instructions_file_selected-html"
+        case .importInstructionsFileSelectedCsv: return "import_instructions_file_selected-csv"
+        case .importInstructionsCancelled: return "import_instructions_cancelled"
+        case .importPreviewPromptDisplayed: return "import_preview_prompt_displayed"
+        case .importPreviewPromptConfirmed: return "import_preview_prompt_confirmed"
+        case .importPreviewPromptDismissed: return "import_preview_prompt_dismissed"
+        case .importResultDisplayed: return "import_result_displayed"
+        case .importResultPasswordsSuccess: return "import_result_passwords_success"
+        case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
+        case .importResultSyncButtonShown: return "import_result_sync_button_shown"
+        case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
+        case .importResultPasswordsParsing: return "import_result_passwords_parsing"
+        case .importResultBookmarksParsing: return "import_result_bookmarks_parsing"
+        case .importResultUnzipping: return "import_result_unzipping"
 
             // MARK: Ad Click Attribution pixels
             

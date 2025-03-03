@@ -52,10 +52,10 @@ final class HistoryMenu: NSMenu {
     private let location: Location
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider = .init(dataSource: HistoryCoordinator.shared), featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider? = nil, featureFlagger: FeatureFlagger? = nil) {
         self.location = location
-        self.historyGroupingProvider = historyGroupingProvider
-        self.featureFlagger = featureFlagger
+        self.historyGroupingProvider = historyGroupingProvider ?? HistoryGroupingProvider(dataSource: HistoryCoordinator.shared)
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
 
@@ -150,6 +150,7 @@ final class HistoryMenu: NSMenu {
 
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
+    @MainActor
     private func addRecentlyVisited() {
         recentlyVisitedMenuItems = [recentlyVisitedHeaderMenuItem]
         let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 12)
@@ -169,6 +170,7 @@ final class HistoryMenu: NSMenu {
 
     private var historyGroupingsMenuItems = [NSMenuItem]()
 
+    @MainActor
     private func addHistoryGroupings() {
         let groupings = historyGroupingProvider.getVisitGroupings()
         var firstWeek = [HistoryGrouping](), older = [HistoryGrouping]()

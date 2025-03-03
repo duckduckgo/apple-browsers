@@ -73,14 +73,16 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning = FireHistoryBurner(),
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        featureFlagger: FeatureFlagger? = nil,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
         self.fireDailyPixel = fireDailyPixel
-        historyGroupingProvider = HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger)
+        historyGroupingProvider = { @MainActor in
+            HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
+        }
     }
 
     var ranges: [DataModel.HistoryRange] {
@@ -158,12 +160,12 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     // MARK: - Private
 
     @MainActor
-    private func populateVisits() {
+    private func populateVisits() async {
         var olderHistoryItems = [DataModel.HistoryItem]()
         var olderVisits = [Visit]()
 
         // generate groupings by day and set aside "older" days.
-        groupings = historyGroupingProvider.getVisitGroupings()
+        groupings = await historyGroupingProvider().getVisitGroupings()
             .compactMap { historyGrouping -> HistoryViewGrouping? in
                 guard let grouping = HistoryViewGrouping(historyGrouping, dateFormatter: dateFormatter) else {
                     return nil
@@ -295,12 +297,13 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         return items
     }
 
-    private let historyGroupingProvider: HistoryGroupingProvider
+    /// This is an async accessor in order to be able to feed it with `NSApp.delegateTyped.featureFlagger`
+    /// Could be refactored into a simple property once the feture flag is removed.
+    private let historyGroupingProvider: () async -> HistoryGroupingProvider
     private let historyDataSource: HistoryDataSource
     private let dateFormatter: HistoryViewDateFormatting
     private let historyBurner: HistoryBurning
 
-    /// this is to be optimized: https://app.asana.com/0/72649045549333/1209339909309306
     private var groupings: [HistoryViewGrouping] = []
     private var historyItems: [DataModel.HistoryItem] = []
 

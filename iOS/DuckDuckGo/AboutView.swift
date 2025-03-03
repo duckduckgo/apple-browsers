@@ -47,6 +47,8 @@ struct AboutViewText: View {
 
             Text(UserText.aboutProtectionTagline)
                 .daxHeadline()
+                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 32)
 
             Rectangle()
                 .frame(width: 80, height: 0.5)

@@ -141,7 +141,7 @@ public class TabsModel: NSObject, NSCoding {
         } else if currentIndex >= tabs.count {
             currentIndex = tabs.count - 1
         }
-        // Don't adjust the index, it'll be the 'next' tab
+        // Else: don't adjust the index as it'll be the 'next' tab
     }
 
     func remove(tab: Tab) {

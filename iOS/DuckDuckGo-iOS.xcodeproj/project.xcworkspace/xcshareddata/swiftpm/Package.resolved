@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "695df496504a9a98ee15a32ad1be25c94a5bb532",
-        "version" : "7.20.0"
+        "revision" : "f7c579bc18d91093114036d37ef41c48e4977fb8",
+        "version" : "7.23.0"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "3a9606fd26e9a54bf369cc241e6fa3b2571eb13a",
-        "version" : "16.2.1"
+        "revision" : "b5976277a68e18f93edb0d853889e461e06557fa",
+        "version" : "16.2.2"
       }
     },
     {
@@ -176,8 +176,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "f2f3774fd116a305136b6866e5e7cb7dff39d8f2",
-        "version" : "3.10.1"
+        "revision" : "45305d32cfb830faebcaa9a7aea66ad342637518",
+        "version" : "3.11.1"
       }
     },
     {
@@ -212,8 +212,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/sync_crypto",
       "state" : {
-        "revision" : "cc726cebb67367466bc31ced4784e16d44ac68d1",
-        "version" : "0.4.0"
+        "revision" : "4e383fa27d3386a48e01a43fd890540a7d8656aa",
+        "version" : "0.5.0"
       }
     },
     {
@@ -239,8 +239,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "b444594f79844b0d6d76d70fbfb3f7f71728f938",
-        "version" : "1.5.1"
+        "revision" : "39de59b2d47f7ef3ca88a039dff3084688fe27f4",
+        "version" : "1.5.2"
       }
     },
     {

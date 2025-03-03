@@ -248,8 +248,8 @@ final class Fire {
 
     // Burns visit passed to the method but preserves other visits of same domains
     @MainActor
-    func burnVisits(of visits: [Visit],
-                    except fireproofDomains: FireproofDomains,
+    func burnVisits(_ visits: [Visit],
+                    except fireproofDomains: DomainFireproofStatusProviding,
                     isToday: Bool,
                     completion: (() -> Void)? = nil) {
 

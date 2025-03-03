@@ -130,6 +130,7 @@ struct DebugTogglesView: View {
             Toggle(isOn: $model.isInternalUser) {
                 Label {
                     Text(verbatim: "Internal User")
+                        .accessibilityIdentifier("Settings.Debug.InternalUser.identifier")
                 } icon: {
                     Image(systemName: "flask")
                 }

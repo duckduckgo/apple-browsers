@@ -19,7 +19,7 @@
 import Foundation
 import Common
 
-public protocol SubscriptionManager {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
     // Dependencies
     var accountManager: AccountManager { get }
     var subscriptionEndpointService: SubscriptionEndpointService { get }
@@ -53,19 +53,22 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public let authEndpointService: AuthEndpointService
     public let subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache
     public let currentEnvironment: SubscriptionEnvironment
+    private let isInternalUserEnabled: () -> Bool
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
                 accountManager: AccountManager,
                 subscriptionEndpointService: SubscriptionEndpointService,
                 authEndpointService: AuthEndpointService,
                 subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache,
-                subscriptionEnvironment: SubscriptionEnvironment) {
+                subscriptionEnvironment: SubscriptionEnvironment,
+                isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.accountManager = accountManager
         self.subscriptionEndpointService = subscriptionEndpointService
         self.authEndpointService = authEndpointService
         self.subscriptionFeatureMappingCache = subscriptionFeatureMappingCache
         self.currentEnvironment = subscriptionEnvironment
+        self.isInternalUserEnabled = isInternalUserEnabled
 
         switch currentEnvironment.purchasePlatform {
         case .appStore:
@@ -161,7 +164,12 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     // MARK: - URLs
 
     public func url(for type: SubscriptionURL) -> URL {
-        type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+        if let customBaseSubscriptionURL = currentEnvironment.customBaseSubscriptionURL,
+           isInternalUserEnabled() {
+            return type.subscriptionURL(withCustomBaseURL: customBaseSubscriptionURL, environment: currentEnvironment.serviceEnvironment)
+        }
+
+        return type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
     }
 
     public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
@@ -191,5 +199,25 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         case .failure:
             return []
         }
+    }
+}
+
+extension DefaultSubscriptionManager: SubscriptionTokenProvider {
+    public func getAccessToken() async throws -> String {
+        guard let token = accountManager.accessToken else {
+            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+        }
+        return token
+    }
+
+    public func removeAccessToken() {
+        try? accountManager.removeAccessToken()
+    }
+}
+
+extension DefaultSubscriptionManager: SubscriptionAuthenticationStateProvider {
+
+    public var isUserAuthenticated: Bool {
+        accountManager.isUserAuthenticated
     }
 }

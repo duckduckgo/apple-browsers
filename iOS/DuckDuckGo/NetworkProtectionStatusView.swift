@@ -354,35 +354,32 @@ struct NetworkProtectionStatusView: View {
     @available(iOS 18.0, *)
     @ViewBuilder
     private func geoswitchingTipView() -> some View {
-        if statusModel.canShowTips {
-            TipView(tipsModel.geoswitchingTip)
-                .removeGroupedListStyleInsets()
-                .tipCornerRadius(0)
-                .tipBackground(Color(designSystemColor: .surface))
-                .onAppear {
-                    tipsModel.handleGeoswitchingTipShown()
-                }
-                .task {
-                    var previousStatus = tipsModel.geoswitchingTip.status
+        TipView(tipsModel.geoswitchingTip)
+            .removeGroupedListStyleInsets()
+            .tipCornerRadius(0)
+            .tipBackground(Color(designSystemColor: .surface))
+            .onAppear {
+                tipsModel.handleGeoswitchingTipShown()
+            }
+            .task {
+                var previousStatus = tipsModel.geoswitchingTip.status
 
-                    for await status in tipsModel.geoswitchingTip.statusUpdates {
-                        if case .invalidated(let reason) = status {
-                            if case .available = previousStatus {
-                                tipsModel.handleGeoswitchingTipInvalidated(reason)
-                            }
+                for await status in tipsModel.geoswitchingTip.statusUpdates {
+                    if case .invalidated(let reason) = status {
+                        if case .available = previousStatus {
+                            tipsModel.handleGeoswitchingTipInvalidated(reason)
                         }
-
-                        previousStatus = status
                     }
+
+                    previousStatus = status
                 }
-        }
+            }
     }
 
     @available(iOS 18.0, *)
     @ViewBuilder
     private func snoozeTipView() -> some View {
-        if statusModel.canShowTips,
-           statusModel.hasServerInfo {
+        if statusModel.hasServerInfo {
 
             TipView(tipsModel.snoozeTip, action: statusModel.snoozeActionHandler(action:))
                 .removeGroupedListStyleInsets()
@@ -410,8 +407,7 @@ struct NetworkProtectionStatusView: View {
     @available(iOS 18.0, *)
     @ViewBuilder
     private func widgetTipView() -> some View {
-        if statusModel.canShowTips,
-           !statusModel.isNetPEnabled && !statusModel.isSnoozing {
+        if !statusModel.isNetPEnabled && !statusModel.isSnoozing {
 
             TipView(tipsModel.widgetTip, action: statusModel.widgetActionHandler(action:))
                 .removeGroupedListStyleInsets()

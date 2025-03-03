@@ -501,6 +501,10 @@ final class MainViewController: NSViewController {
 
     // MARK: - Set As Default and Add To Dock Prompts configuration
 
+    var isBannerViewVisible: Bool {
+        mainView.bannerHeightConstraint.constant != 0
+    }
+
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(tryToShowSetAsDefaultAndAddtoDockIfNeeded),
@@ -532,12 +536,8 @@ final class MainViewController: NSViewController {
         return nil
     }
 
-    var isBannerViewVisible: Bool {
-        mainView.bannerHeightConstraint.constant != 0
-    }
-
     private func showMessageBanner(banner: BannerMessageViewController) {
-        if mainView.bannerHeightConstraint.constant != 0 { return } // If view is being shown already we do not want to show it.
+        if isBannerViewVisible { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
         mainView.bannerHeightConstraint.animator().constant = 48

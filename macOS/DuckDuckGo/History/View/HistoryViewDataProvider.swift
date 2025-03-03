@@ -20,36 +20,17 @@ import BrowserServicesKit
 import Foundation
 import History
 import HistoryView
-
-protocol HistoryBurning: AnyObject {
-    func burn(_ visits: [Visit], animated: Bool) async
-}
-
-final class FireHistoryBurner: HistoryBurning {
-    let fireproofDomains: DomainFireproofStatusProviding
-    let fire: () async -> Fire
-
-    init(fireproofDomains: DomainFireproofStatusProviding = FireproofDomains.shared, fire: (() async -> Fire)? = nil) {
-        self.fireproofDomains = fireproofDomains
-        self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
-    }
-
-    func burn(_ visits: [Visit], animated: Bool) async {
-        await withCheckedContinuation { continuation in
-            Task { @MainActor in
-                await fire().burnVisits(visits, except: fireproofDomains, isToday: animated) {
-                    continuation.resume()
-                }
-            }
-        }
-    }
-}
+import PixelKit
 
 protocol HistoryDeleting: AnyObject {
     func delete(_ visits: [Visit]) async
 }
 
-extension HistoryCoordinator: HistoryDeleting {
+protocol HistoryDataSource: HistoryGroupingDataSource, HistoryDeleting {
+    var historyDictionary: [URL: HistoryEntry]? { get }
+}
+
+extension HistoryCoordinator: HistoryDataSource {
     func delete(_ visits: [Visit]) async {
         await withCheckedContinuation { continuation in
             burnVisits(visits) {
@@ -77,18 +58,31 @@ struct HistoryViewGrouping {
     }
 }
 
-final class HistoryViewDataProvider: HistoryView.DataProviding {
+protocol HistoryViewDataProviding: HistoryView.DataProviding {
+
+    func titles(for urls: [URL]) -> [URL: String]
+
+    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int
+    func deleteVisits(for identifiers: [VisitIdentifier]) async
+    func burnVisits(for identifiers: [VisitIdentifier]) async
+}
+
+final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     init(
-        historyGroupingDataSource: HistoryGroupingDataSource & HistoryDeleting,
+        historyDataSource: HistoryDataSource,
         historyBurner: HistoryBurning = FireHistoryBurner(),
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+        featureFlagger: FeatureFlagger? = nil,
+        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
     ) {
         self.dateFormatter = dateFormatter
-        self.historyGroupingDataSource = historyGroupingDataSource
+        self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        historyGroupingProvider = HistoryGroupingProvider(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger)
+        self.fireDailyPixel = fireDailyPixel
+        historyGroupingProvider = { @MainActor in
+            HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
+        }
     }
 
     var ranges: [DataModel.HistoryRange] {
@@ -100,44 +94,78 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
     func refreshData() async {
         lastQuery = nil
         await populateVisits()
+        fireDailyPixel(HistoryViewPixel.historyPageShown)
     }
 
     func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> HistoryView.DataModel.HistoryItemsBatch {
-        let items = perform(query)
+        let items = await perform(query)
         let visits = items.chunk(with: limit, offset: offset)
         let finished = offset + limit >= items.count
         return DataModel.HistoryItemsBatch(finished: finished, visits: visits)
     }
 
-    func countVisibleVisits(for range: DataModel.HistoryRange) async -> Int {
-        guard range != .all else {
-            return historyItems.count
+    func countVisibleVisits(matching query: DataModel.HistoryQueryKind) async -> Int {
+        guard let lastQuery, lastQuery.query == query else {
+            let items = await perform(query)
+            return items.count
         }
-        return groupings.first(where: { $0.range == range })?.items.count ?? 0
+        return lastQuery.items.count
     }
 
-    func deleteVisits(for range: DataModel.HistoryRange) async {
-        let visits = await allVisits(for: range)
-        await historyGroupingDataSource.delete(visits)
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async {
+        let visits = await allVisits(matching: query)
+        await historyDataSource.delete(visits)
         await refreshData()
     }
 
-    func burnVisits(for range: DataModel.HistoryRange) async {
-        let visits = await allVisits(for: range)
-        let animated = range == .today || range == .all
+    func burnVisits(matching query: DataModel.HistoryQueryKind) async {
+        guard query != .rangeFilter(.all) else {
+            await historyBurner.burnAll()
+            await refreshData()
+            return
+        }
+        let visits = await allVisits(matching: query)
+
+        guard !visits.isEmpty else {
+            return
+        }
+
+        let animated = query == .rangeFilter(.today)
         await historyBurner.burn(visits, animated: animated)
         await refreshData()
+    }
+
+    func deleteVisits(for identifiers: [VisitIdentifier]) async {
+        let visits = await visits(for: identifiers)
+        await historyDataSource.delete(visits)
+        await refreshData()
+    }
+
+    func burnVisits(for identifiers: [VisitIdentifier]) async {
+        let visits = await visits(for: identifiers)
+        await historyBurner.burn(visits, animated: false)
+        await refreshData()
+    }
+
+    func titles(for urls: [URL]) -> [URL: String] {
+        guard let historyDictionary = historyDataSource.historyDictionary else {
+            return [:]
+        }
+
+        return urls.reduce(into: [URL: String]()) { partialResult, url in
+            partialResult[url] = historyDictionary[url]?.title
+        }
     }
 
     // MARK: - Private
 
     @MainActor
-    private func populateVisits() {
+    private func populateVisits() async {
         var olderHistoryItems = [DataModel.HistoryItem]()
         var olderVisits = [Visit]()
 
         // generate groupings by day and set aside "older" days.
-        groupings = historyGroupingProvider.getVisitGroupings()
+        groupings = await historyGroupingProvider().getVisitGroupings()
             .compactMap { historyGrouping -> HistoryViewGrouping? in
                 guard let grouping = HistoryViewGrouping(historyGrouping, dateFormatter: dateFormatter) else {
                     return nil
@@ -162,6 +190,17 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
         self.historyItems = groupings.flatMap(\.items)
     }
 
+    private func allVisits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
+        switch query {
+        case .searchTerm(let searchTerm):
+            return await allVisits(matching: searchTerm)
+        case .domainFilter(let domain):
+            return await allVisits(matchingDomain: domain)
+        case .rangeFilter(let range):
+            return await allVisits(for: range)
+        }
+    }
+
     private func allVisits(for range: DataModel.HistoryRange) async -> [Visit] {
         guard let history = await fetchHistory() else {
             return []
@@ -175,6 +214,55 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
         return allVisits.filter { dateRange.contains($0.date) }
     }
 
+    private func allVisits(matching searchTerm: String) async -> [Visit] {
+        guard let history = await fetchHistory() else {
+            return []
+        }
+
+        return history.reduce(into: [Visit]()) { partialResult, historyEntry in
+            if historyEntry.matches(searchTerm) {
+                partialResult.append(contentsOf: historyEntry.visits)
+            }
+        }
+    }
+
+    private func allVisits(matchingDomain domain: String) async -> [Visit] {
+        guard let history = await fetchHistory() else {
+            return []
+        }
+
+        return history.reduce(into: [Visit]()) { partialResult, historyEntry in
+            if historyEntry.matchesDomain(domain) {
+                partialResult.append(contentsOf: historyEntry.visits)
+            }
+        }
+    }
+
+    /**
+     * Fetches all visits matching given `identifiers`.
+     *
+     * This function is used for deleting items in History View. Items in history view
+     * are deduplicated by day, so if an item is requested to be deleted, we have to
+     * find and delete all visits matching that item for a given day (because only
+     * the newest one on a given day is shown in the History View).
+     *
+     * The procedure here is to go through all identifiers and retrieve visits from history
+     * that match identifier's URL and are on the same date as identifier's date.
+     */
+    private func visits(for identifiers: [VisitIdentifier]) async -> [Visit] {
+        guard let historyDictionary = historyDataSource.historyDictionary else {
+            return []
+        }
+
+        return identifiers.reduce(into: [Visit]()) { partialResult, identifier in
+            guard let visitsForIdentifier = historyDictionary[identifier.url]?.visits else {
+                return
+            }
+            let visitsMatchingDay = visitsForIdentifier.filter { $0.date.isSameDay(identifier.date) }
+            partialResult.append(contentsOf: visitsMatchingDay)
+        }
+    }
+
     /**
      * This function is here to ensure that history is accessed on the main thread.
      *
@@ -182,13 +270,15 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
      */
     @MainActor
     private func fetchHistory() async -> BrowsingHistory? {
-        historyGroupingDataSource.history
+        historyDataSource.history
     }
 
-    private func perform(_ query: DataModel.HistoryQueryKind) -> [DataModel.HistoryItem] {
+    private func perform(_ query: DataModel.HistoryQueryKind) async -> [DataModel.HistoryItem] {
         if let lastQuery, lastQuery.query == query {
             return lastQuery.items
         }
+
+        await refreshData()
 
         let items: [DataModel.HistoryItem] = {
             switch query {
@@ -197,9 +287,9 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
             case .rangeFilter(let range):
                 return groupings.first(where: { $0.range == range })?.items ?? []
             case .searchTerm(let term):
-                return historyItems.filter { $0.title.localizedCaseInsensitiveContains(term) || $0.url.localizedCaseInsensitiveContains(term) }
+                return historyItems.filter { $0.matches(term) }
             case .domainFilter(let domain):
-                return historyItems.filter { URL(string: $0.url)?.host == domain }
+                return historyItems.filter { $0.matchesDomain(domain) }
             }
         }()
 
@@ -207,12 +297,13 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
         return items
     }
 
-    private let historyGroupingProvider: HistoryGroupingProvider
-    private let historyGroupingDataSource: HistoryGroupingDataSource & HistoryDeleting
+    /// This is an async accessor in order to be able to feed it with `NSApp.delegateTyped.featureFlagger`
+    /// Could be refactored into a simple property once the feture flag is removed.
+    private let historyGroupingProvider: () async -> HistoryGroupingProvider
+    private let historyDataSource: HistoryDataSource
     private let dateFormatter: HistoryViewDateFormatting
     private let historyBurner: HistoryBurning
 
-    /// this is to be optimized: https://app.asana.com/0/72649045549333/1209339909309306
     private var groupings: [HistoryViewGrouping] = []
     private var historyItems: [DataModel.HistoryItem] = []
 
@@ -229,6 +320,43 @@ final class HistoryViewDataProvider: HistoryView.DataProviding {
 
     /// The last query from the FE, i.e. filtered items list.
     private var lastQuery: QueryInfo?
+    private var fireDailyPixel: (PixelKitEvent) -> Void
+}
+
+protocol SearchableHistoryEntry {
+    func matches(_ searchTerm: String) -> Bool
+    func matchesDomain(_ domain: String) -> Bool
+}
+
+extension HistoryEntry: SearchableHistoryEntry {
+    /**
+     * Search term matching checks title and URL (case insensitive).
+     */
+    func matches(_ searchTerm: String) -> Bool {
+        (title ?? "").localizedCaseInsensitiveContains(searchTerm) || url.absoluteString.localizedCaseInsensitiveContains(searchTerm)
+    }
+
+    /**
+     * Domain matching is done by etld+1.
+     *
+     * This means that that `example.com` would match all of the following:
+     * - `example.com`
+     * - `www.example.com`
+     * - `www.cdn.example.com`
+     */
+    func matchesDomain(_ domain: String) -> Bool {
+        (etldPlusOne ?? url.host) == domain
+    }
+}
+
+extension HistoryView.DataModel.HistoryItem: SearchableHistoryEntry {
+    func matches(_ searchTerm: String) -> Bool {
+        title.localizedCaseInsensitiveContains(searchTerm) || url.localizedCaseInsensitiveContains(searchTerm)
+    }
+
+    func matchesDomain(_ domain: String) -> Bool {
+        (etldPlusOne ?? self.domain) == domain
+    }
 }
 
 extension HistoryView.DataModel.HistoryItem {
@@ -257,7 +385,7 @@ extension HistoryView.DataModel.HistoryItem {
         }()
 
         self.init(
-            id: historyEntry.identifier.uuidString,
+            id: VisitIdentifier(historyEntry: historyEntry, date: visit.date).description,
             url: historyEntry.url.absoluteString,
             title: title,
             domain: historyEntry.url.host ?? historyEntry.url.absoluteString,

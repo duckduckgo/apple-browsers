@@ -876,6 +876,18 @@
         }
       }
     },
+    "add.all.to.bookmarks" : {
+      "comment" : "Context menu item for adding all selected URLs to bookmarks",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add All to Bookmarks"
+          }
+        }
+      }
+    },
     "add.bookmark.name" : {
       "comment" : "New bookmark folder dialog folder name field heading",
       "extractionState" : "extracted_with_value",
@@ -1052,6 +1064,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить ссылку на закладки"
+          }
+        }
+      }
+    },
+    "add.to.bookmarks" : {
+      "comment" : "Context menu item for adding a URL to bookmarks",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add to Bookmarks"
           }
         }
       }
@@ -17967,6 +17991,9 @@
         }
       }
     },
+    "Delete All History…" : {
+      "comment" : "Main Menu History item"
+    },
     "delete-bookmark" : {
       "comment" : "Delete Bookmark button",
       "extractionState" : "extracted_with_value",
@@ -27546,6 +27573,30 @@
         }
       }
     },
+    "history.delete.all.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting all history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all history?"
+          }
+        }
+      }
+    },
+    "history.delete.date.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all history from\n%@?"
+          }
+        }
+      }
+    },
     "history.delete.dialog.burn.checkbox" : {
       "comment" : "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries",
       "extractionState" : "extracted_with_value",
@@ -27570,26 +27621,38 @@
         }
       }
     },
-    "history.delete.dialog.message" : {
-      "comment" : "Message in a dialog asking the user to confirm deleting history",
+    "history.delete.dialog.burn.checkbox.explanation.with.closing.tabs" : {
+      "comment" : "Explanation of what deleting site data means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Do you want to delete history items (%d)?"
+            "value" : "This will close all tabs, log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        }
+      }
+    },
+    "history.delete.dialog.message" : {
+      "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ items will be deleted"
           }
         }
       }
     },
     "history.delete.dialog.message.markdown" : {
-      "comment" : "Message in a dialog asking the user to confirm deleting history. Please make sure to keep **%d** intact",
+      "comment" : "Message in a dialog asking the user to confirm deleting history items. Please make sure to keep **%@** intact. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (**%@**) will be deleted.'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Do you want to delete history items (**%d**)?"
+            "value" : "**%@** items will be deleted."
           }
         }
       }
@@ -27602,6 +27665,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete history?"
+          }
+        }
+      }
+    },
+    "history.delete.today.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting history from today",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all history from today?"
+          }
+        }
+      }
+    },
+    "history.delete.yesterday.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting history from yesterday",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete all history from yesterday?"
           }
         }
       }
@@ -28026,6 +28113,18 @@
         }
       }
     },
+    "history.menu.delete.this.history" : {
+      "comment" : "Menu item to delete parts of history and website data",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete This History…"
+          }
+        }
+      }
+    },
     "history.menu.older" : {
       "comment" : "Menu item representing older history",
       "extractionState" : "extracted_with_value",
@@ -28142,6 +28241,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Недавно посещенные"
+          }
+        }
+      }
+    },
+    "history.view.onboarding.accept" : {
+      "comment" : "Accept button label on the history view onboarding popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "View History Page"
+          }
+        }
+      }
+    },
+    "history.view.onboarding.message" : {
+      "comment" : "Message for the history view onboarding popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+          }
+        }
+      }
+    },
+    "history.view.onboarding.title" : {
+      "comment" : "Title for the history view onboarding popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Manage Your History"
           }
         }
       }
@@ -42913,6 +43048,18 @@
         }
       }
     },
+    "open.all.in.new.fire.window" : {
+      "comment" : "Menu item that opens all URLs in a new Fire Window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open All in New Fire Window"
+          }
+        }
+      }
+    },
     "open.all.in.new.tabs" : {
       "comment" : "Menu item that opens all the bookmarks in a folder to new tabs",
       "extractionState" : "extracted_with_value",
@@ -43393,6 +43540,18 @@
         }
       }
     },
+    "open.in.new.fire.window" : {
+      "comment" : "Menu item that opens the link in a new Fire Window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open in New Fire Window"
+          }
+        }
+      }
+    },
     "open.in.new.tab" : {
       "comment" : "Menu item that opens the link in a new tab",
       "extractionState" : "extracted_with_value",
@@ -43629,6 +43788,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть ссылку в новой вкладке"
+          }
+        }
+      }
+    },
+    "open.multiple.tabs.alert.message" : {
+      "comment" : "Message of a dialog warning the user before opening multiple tabs with history items",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Opening a lot of tabs at once may cause the browser to slow down."
+          }
+        }
+      }
+    },
+    "open.multiple.tabs.alert.title" : {
+      "comment" : "Title of a dialog warning the user before opening multiple tabs with history items. NOTE: This term is only for English. For other languages, please translate the following term: 'Open multiple items (%d) in new tabs?'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open %d items in new tabs?"
           }
         }
       }
@@ -56439,7 +56622,7 @@
     },
     "preferences.about.duckduckgo-tagline" : {
       "comment" : "About screen",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -56493,6 +56676,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ваша защита — наш приоритет."
+          }
+        }
+      }
+    },
+    "preferences.about.duckduckgo-tagline-new" : {
+      "comment" : "About screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schutz. Privatsphäre. Extra an Sicherheit."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protection. Privacy. Peace of Mind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protección. Privacidad. Tranquilidad."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protection. Confidentialité. Tranquillité d'esprit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protezione. Privacy.  Serenità."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bescherming. Privacy. Gemoedsrust."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochrona. Prywatność. Spokój."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteção. Privacidade. Tranquilidade."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита. Конфиденциальность. Спокойствие."
           }
         }
       }
@@ -63759,6 +64002,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать вкладки и панель закладок в полноэкранном режиме"
+          }
+        }
+      }
+    },
+    "show.all.history.from.this.site" : {
+      "comment" : "Context menu item for showing history for a single URL domain",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show All History From This Site"
           }
         }
       }

@@ -333,7 +333,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testScamDetectedThenDDGLoaded_tabIsNotMarkedMalware() async throws {
+    func testScamDetectedThenDDGLoaded_tabIsNotMarkedScam() async throws {
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))

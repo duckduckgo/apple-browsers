@@ -591,6 +591,22 @@ final class BookmarkListViewModelTests: XCTestCase {
             })
         }
     }
+
+    func testWhenURLIsBookmarkThenEntityReturned() async throws {
+
+        let context = bookmarkListViewModel.context
+
+        let bookmarkTree = BookmarkTree {
+            Bookmark(id: "1", url: "https://example.com", favoritedOn: [.mobile, .desktop, .unified])
+        }
+
+        context.performAndWait {
+            bookmarkTree.createEntities(in: context)
+            try! context.save()
+            XCTAssertNotNil(bookmarkListViewModel.bookmark(for: URL(string: "https://example.com")!))
+            XCTAssertNil(bookmarkListViewModel.bookmark(for: URL(string: "https://example2.com")!))
+        }
+    }
 }
 
 extension BookmarkEntity {

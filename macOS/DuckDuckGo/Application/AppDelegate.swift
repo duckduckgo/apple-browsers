@@ -97,7 +97,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
-    private(set) lazy var historyViewCoordinator: HistoryViewCoordinator = HistoryViewCoordinator(historyCoordinator: HistoryCoordinator.shared)
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
         settingsModel: homePageSettingsModel,
@@ -142,25 +141,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionPixelsHandler())
-    }()
-
-    private lazy var vpnRedditSessionWorkaround: VPNRedditSessionWorkaround = {
-        let ipcClient = VPNControllerXPCClient.shared
-        let statusReporter = DefaultNetworkProtectionStatusReporter(
-            statusObserver: ipcClient.connectionStatusObserver,
-            serverInfoObserver: ipcClient.serverInfoObserver,
-            connectionErrorObserver: ipcClient.connectionErrorObserver,
-            connectivityIssuesObserver: ConnectivityIssueObserverThroughDistributedNotifications(),
-            controllerErrorMessageObserver: ControllerErrorMesssageObserverThroughDistributedNotifications(),
-            dataVolumeObserver: ipcClient.dataVolumeObserver,
-            knownFailureObserver: KnownFailureObserverThroughDistributedNotifications()
-        )
-
-        return VPNRedditSessionWorkaround(
-            accountManager: subscriptionManager.accountManager,
-            ipcClient: ipcClient,
-            statusReporter: statusReporter
-        )
     }()
 
     private var didFinishLaunching = false
@@ -308,7 +288,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return WindowControllersManager.shared
         })
 
-        subscriptionCookieManager = SubscriptionCookieManager(subscriptionManager: subscriptionManager, currentCookieStore: {
+        subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
             WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
         }, eventMapping: SubscriptionCookieManageEventPixelMapping())
 
@@ -570,10 +550,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task { @MainActor in
-            await vpnRedditSessionWorkaround.installRedditSessionWorkaround()
-        }
-
-        Task { @MainActor in
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
@@ -583,12 +559,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService.initializeIfNeeded()
         syncService.scheduler.notifyAppLifecycleEvent()
         SyncDiagnosisHelper(syncService: syncService).diagnoseAccountStatus()
-    }
-
-    func applicationDidResignActive(_ notification: Notification) {
-        Task { @MainActor in
-            await vpnRedditSessionWorkaround.removeRedditSessionWorkaround()
-        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

@@ -29,17 +29,14 @@ struct NetworkProtectionRootView: View {
     let feedbackFormModel: UnifiedFeedbackFormViewModel
 
     init() {
-        let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
-        let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-        let locationListRepository = NetworkProtectionLocationListCompositeRepository(accountManager: accountManager)
-        let usesUnifiedFeedbackForm = accountManager.isUserAuthenticated
+        let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        let locationListRepository = NetworkProtectionLocationListCompositeRepository()
         statusViewModel = NetworkProtectionStatusViewModel(tunnelController: AppDependencyProvider.shared.networkProtectionTunnelController,
                                                            settings: AppDependencyProvider.shared.vpnSettings,
                                                            statusObserver: AppDependencyProvider.shared.connectionObserver,
                                                            serverInfoObserver: AppDependencyProvider.shared.serverInfoObserver,
                                                            locationListRepository: locationListRepository,
-                                                           usesUnifiedFeedbackForm: usesUnifiedFeedbackForm,
-                                                           subscriptionManager: subscriptionManager)
+                                                           usesUnifiedFeedbackForm: subscriptionManager.isUserAuthenticated)
 
         feedbackFormModel = UnifiedFeedbackFormViewModel(subscriptionManager: subscriptionManager,
                                                          apiService: DefaultAPIService(),

@@ -26,7 +26,9 @@ final class MockAutoClear: AutoClearing {
 
     var isClearingEnabledValue = false
     var clearDataIfEnabledCalled = false
-    var clearDataIfEnabledAndTimeExpiredCalled = false
+    var didTimeExpired = true
+    var isClearingDueCalled = false
+    var clearDataDueToTimeExpiredCalled = false
     var startClearingTimerCalled = false
     var lastLaunchingValue: Bool?
     var lastBaseTimeInterval: TimeInterval?
@@ -40,9 +42,13 @@ final class MockAutoClear: AutoClearing {
         lastLaunchingValue = launching
     }
 
-    func clearDataIfEnabledAndTimeExpired(baseTimeInterval: TimeInterval, applicationState: DataStoreWarmup.ApplicationState) async {
-        clearDataIfEnabledAndTimeExpiredCalled = true
-        lastBaseTimeInterval = baseTimeInterval
+    var isClearingDue: Bool {
+        isClearingDueCalled = true
+        return didTimeExpired
+    }
+
+    func clearDataDueToTimeExpired(applicationState: DataStoreWarmup.ApplicationState) async {
+        clearDataDueToTimeExpiredCalled = true
     }
 
     func startClearingTimer(_ time: TimeInterval) {
@@ -81,13 +87,28 @@ final class AutoClearServiceTests {
                                                 overlayWindowManager: mockOverlayWindowManager)
 
         // When
-        let startTime = Date().timeIntervalSince1970
         autoClearService.resume()
 
         // Then
         await autoClearService.autoClearTask?.value
-        #expect(mockAutoClear.clearDataIfEnabledAndTimeExpiredCalled)
-        #expect(mockAutoClear.lastBaseTimeInterval ?? 0 >= startTime)
+        #expect(mockAutoClear.isClearingDueCalled)
+        #expect(mockAutoClear.clearDataDueToTimeExpiredCalled)
+    }
+
+    @Test("resume() should not start data clear but should remove overlay instead")
+    func testResumeWithoutClearingWhenTimeThresholdNotMet() async {
+        // Given
+        mockAutoClear.didTimeExpired = false
+        let autoClearService = AutoClearService(autoClear: mockAutoClear,
+                                                overlayWindowManager: mockOverlayWindowManager)
+
+        // When
+        autoClearService.resume()
+
+        // Then
+        #expect(mockAutoClear.isClearingDueCalled)
+        #expect(!mockAutoClear.clearDataDueToTimeExpiredCalled)
+        #expect(mockOverlayWindowManager.removeNonAuthenticationOverlayCalled)
     }
 
     @Test("suspend() should display blank snapshot and should start clearing timer")
@@ -97,15 +118,12 @@ final class AutoClearServiceTests {
         let autoClearService = AutoClearService(autoClear: mockAutoClear,
                                                 overlayWindowManager: mockOverlayWindowManager)
 
-        let startTime = Date().timeIntervalSince1970
-
         // When
         autoClearService.suspend()
 
         // Then
         #expect(mockOverlayWindowManager.displayBlankSnapshotWindowCalled)
         #expect(mockAutoClear.startClearingTimerCalled)
-        #expect(mockAutoClear.lastBaseTimeInterval ?? 0 >= startTime)
     }
 
     @Test("suspend() when clearing disabled should not display blank snapshot and should start clearing timer")

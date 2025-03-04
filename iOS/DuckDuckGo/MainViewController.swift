@@ -358,7 +358,6 @@ class MainViewController: UIViewController {
 
         decorate()
 
-        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -389,7 +388,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -528,8 +527,8 @@ class MainViewController: UIViewController {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection), hasEntitlements {
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            if await subscriptionManager.isEnabled(feature: .networkProtection) {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -1343,7 +1342,9 @@ class MainViewController: UIViewController {
             syncDataProviders: syncDataProviders,
             selectedAccount: nil,
             openSearch: openSearch,
-            source: source
+            source: source,
+            bookmarksDatabase: self.bookmarksDatabase,
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
         )
         autofillSettingsViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillSettingsViewController)
@@ -1688,8 +1689,8 @@ class MainViewController: UIViewController {
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            guard case .success(false) = await accountManager.hasEntitlement(forProductName: .networkProtection) else { return }
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            guard await subscriptionManager.isEnabled(feature: .networkProtection) else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -2641,6 +2642,18 @@ extension MainViewController: TabSwitcherDelegate {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+    }
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
+        guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToEditBookmark(bookmark)
+        }
+    }
+    
+    func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+        updateCurrentTab()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {

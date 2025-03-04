@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Отключване на DuckDuckGo.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Сигурни ли сте, че искате да изтриете всички отметки? Това действие не може да бъде отменено.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Влизане";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Скриване на паролата";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Вземете браузъра за работен плот";
+"autofill.import.passwords.via.sync.get-browser-button" = "Вземете браузъра за работен плот";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Отворете DuckDuckGo на Mac или Windows";
+"autofill.import.passwords.via.sync.instructions.step1" = "Отворете DuckDuckGo на Mac или Windows";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Отидете на „%1$@ > %2$@“";
+"autofill.import.passwords.via.sync.instructions.step2" = "Отидете на „%1$@ > %2$@“";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Пароли";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Пароли";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Настройки";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Настройки";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Изберете „%@“ и следвайте стъпките за импортиране";
+"autofill.import.passwords.via.sync.instructions.step3" = "Изберете „%@“ и следвайте стъпките за импортиране";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Импортиране на пароли...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Импортиране на пароли...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "След като бъдат импортирани на вашия компютър, можете да настроите синхронизирането на %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "След като бъдат импортирани на вашия компютър, можете да настроите синхронизирането на %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Импортиране от браузъра на работния плот:";
+"autofill.import.passwords.via.sync.instructions.title" = "Импортиране от браузъра на работния плот:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Импортирайте пароли в десктоп версията на браузъра DuckDuckGo, след което ги синхронизирайте с различни устройства.";
+"autofill.import.passwords.via.sync.subtitle" = "Импортирайте пароли в десктоп версията на браузъра DuckDuckGo, след което ги синхронизирайте с различни устройства.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Синхронизиране с браузъра на работния плот";
+"autofill.import.passwords.via.sync.sync-button" = "Синхронизиране с браузъра на работния плот";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Как се импортират пароли";
+"autofill.import.passwords.via.sync.title" = "Как се импортират пароли";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Забрани";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Импортиране на пароли";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Синхронизиране на паролите от работния плот";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Можете да импортирате запазени пароли от друг браузър в DuckDuckGo.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Вашите отметки са споделени.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Експортиране на HTML файл";
+"bookmarks.exportAction.html.title" = "Експортиране на HTML файл";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Експортиране на отметки";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "За съжаление не успяхме да импортираме този файл.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Вашите отметки са импортирани.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Импортиране на HTML файл";
+"bookmarks.importAction.html.title" = "Импортиране на HTML файл";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Импортиране на файл с отметки от друг браузър";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Импортиране на отметки";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Импортирайте HTML файл с отметки от друг браузър или експортирайте съществуващите отметки.";
+"bookmarks.importExport.title" = "Импортирайте отметки от други популярни браузъри.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Докладване на проблем с този сайт";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Автоматично изпращане на доклади за сривове?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Импортиране на файл с отметки...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Как да експортирате отметки от Safari";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Изберете файла с отметките. Обикновено това е файл с формат ZIP или HTML.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Импортиране на отметки в DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "В zip файла не са открити поддържани данни. Вижте инструкциите за експортиране на Safari и опитайте отново.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Избраният файл не се поддържа. Изберете друг файл и опитайте отново.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Файлът %@ не може да бъде прочетен. Възможно е да има проблем с данните във файла.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Изберете **Export** (Експортиране), а на следващия екран изберете **Bookmarks** (Отметки) и **Save to Downloads** (Запазване в изтеглени файлове).";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Изберете **Export** (Експортиране), а на следващия екран изберете **Passwords** (Пароли) и **Save to Downloads** (Запазване в изтеглени файлове).";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Импортиране на файл с пароли...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "В Chrome отворете **Google Password Manager** (Управление на пароли в Google) и след това изберете **Settings** (Настройки).";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Изберете **Export passwords** (Експортиране на пароли), след това **Save to Files** (Запазване във файлове) и запазете файла в папка, която можете да запомните.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Как се експортират пароли";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Отворете ⚙️ **Settings** (Настройки), въведете „Export“ (Експортиране) в лентата за търсене и изберете резултата **Export** (Експортиране) за Safari, за да преминете директно към опцията (или в Settings (Настройки) отворете Apps (Приложения) > Safari).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Експортиране от";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Как се експортират пароли от Safari:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Изберете файла с паролите, експортирани от Safari или Chrome. Обикновено това е файл с формат ZIP или CSV.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Импортиране на пароли в DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Отметки";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Готово";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Синхронизиране и архивиране %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Отметки";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Данни";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Пароли";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Импортирането е завършено!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Пропуснати дубликати";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Неуспешно импортиране";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Вече можете да изтриете файла с паролите.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Пароли";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Миналия месец";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Отстраняване на грешки";
+
+/* No comment provided by engineer. */
+"Delete All" = "Изтриване на всички";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "устройство";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Скрийте имейл адреса си и\nблокирайте тракерите";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Все още няма добавени отметки";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Ако имате запазени отметки в друг браузър, можете\nда ги импортирате в DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Няма намерени съвпадения";
@@ -2229,9 +2349,10 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "За нас";
-
+/* about tagline */
+"settings.about.tagline" = "Защита. Поверителност. Спокойствие.";
 /* about page */
-"settings.about.text" = "DuckDuckGo е независима компания, основана през 2008 г., за защита на личните данни в интернет за всеки, на когото му е омръзнало да бъде проследяван онлайн и иска лесно решение на проблема. Ние сме доказателство, че можете да получите реална и безкомпромисна защита на личните данни онлайн.\n\nБраузърът DuckDuckGo притежава функциите, които очаквате от един основен браузър, като отметки, раздели, пароли и много други, както и [редица мощни защити на поверителността](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/), които не се предлагат в повечето популярни браузъри по подразбиране. Този уникален и комплексен набор от защити на поверителността предлага сигурност при онлайн дейностите – търсене, сърфиране, изпращане на имейли и др.\n\nЗа да работят, нашите защити на поверителността не изискват да имате технически познания или да се извършвате сложни настройки. Необходимо е да използвате браузъра DuckDuckGo на всички Ваши устройства и ще получите поверителност по подразбиране.\n\nНо ако *наистина* искате да надникнете зад кулисите, и да разберете как работят защитите на поверителността на DuckDuckGo, можете да намерите повече информация на нашите [страници за помощ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
+"settings.about.text.new" = "DuckDuckGo е независима компания за онлайн защита за всеки, който иска да си върне контрола върху личната информация.\n\nНие вярваме, че най-добрият начин за защита на личната информация от хакери, измамници и компании, които не зачитат поверителността, е тя изобщо да не бъде събирана. Ето защо милиони хора [избират DuckDuckGo пред Chrome и други браузъри](ddgQuickLink://duckduckgo.com/compare-privacy) за търсене и сърфиране онлайн. Нашата вградена търсачка е като Google, но никога не следи какво търсите. А нашите защити при сърфиране, като блокиране на рекламни тракери и блокиране на бисквитки, помагат да спрем събирането на Вашите данни от други компании. Освен това нашият браузър е безплатен – ние печелим пари от [реклами при търсене, които зачитат поверителността](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), а не чрез експлоатация на вашите данни. \n\nВ допълнение към това предлагаме и [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), абонаментна услуга „три в едно“, интегрирана в нашия браузър. Абонатите на Privacy Pro получават още по-добра защита на личните данни с бърза и лесна [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) услуга, която помага да защитите дейността си онлайн; услуга, която намира и премахва личната Ви информация от сайтове за търсене на хора; и услуга, която възстановява самоличността Ви, ако бъде открадната.\n\nВърнете си контрола върху личната информация с браузъра, предназначен за защита на данните, а не за събиране на данните.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Достъпност";
@@ -3147,4 +3268,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Вземете DuckDuckGo за Windows!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Отметки";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Продължи";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Пароли";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Какво искате да импортирате?";
 

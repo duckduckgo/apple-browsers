@@ -71,7 +71,12 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
         case .history where isHistorySpecialPageSupported && featureFlagger.isFeatureOn(.historyView):
-            handleSpecialPages(urlSchemeTask: urlSchemeTask)
+            switch requestURL.type {
+            case .favicon:
+                handleFavicon(urlSchemeTask: urlSchemeTask)
+            default:
+                handleSpecialPages(urlSchemeTask: urlSchemeTask)
+            }
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }
@@ -353,6 +358,12 @@ private extension DuckURLSchemeHandler {
     }
 }
 
+extension URL {
+    var isHistory: Bool {
+        return isDuckURLScheme && host == "history"
+    }
+}
+
 private extension URL {
 
     enum URLType {
@@ -407,10 +418,6 @@ private extension URL {
 
     var isFavicon: Bool {
         return isDuckURLScheme && host == "favicon"
-    }
-
-    var isHistory: Bool {
-        return isDuckURLScheme && host == "history"
     }
 
     var isCustomBackgroundImage: Bool {

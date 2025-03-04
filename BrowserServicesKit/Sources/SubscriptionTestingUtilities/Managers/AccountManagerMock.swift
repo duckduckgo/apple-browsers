@@ -107,4 +107,8 @@ public final class AccountManagerMock: AccountManager {
         checkForEntitlementsCalled = true
         return onCheckForEntitlements!(waitTime, retryCount)
     }
+
+    public func removeAccessToken() throws {
+        accessToken = nil
+    }
 }

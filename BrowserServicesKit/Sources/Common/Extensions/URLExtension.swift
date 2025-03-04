@@ -314,6 +314,19 @@ extension URL {
         return components.url
     }
 
+    public func replacing(path: String?) -> URL {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
+        components.path = ""
+
+        guard let url = components.url else { return self }
+
+        if let path {
+            return url.appendingPathComponent(path)
+        } else {
+            return url
+        }
+    }
+
     public func appending(_ path: String) -> URL {
         if #available(macOS 13.0, iOS 16.0, *) {
             return appending(path: path)

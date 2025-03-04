@@ -21,6 +21,7 @@ import Foundation
 // MARK: - URLs, ex URL+Subscription
 
 public enum SubscriptionURL {
+
     case baseURL
     case purchase
     case faq
@@ -33,42 +34,68 @@ public enum SubscriptionURL {
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
 
-    public func subscriptionURL(environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
+    public enum StaticURLs {
+        public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
+        static let manageSubscriptionsInMacAppStoreURL = URL(string: "macappstores://apps.apple.com/account/subscriptions")!
+        static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
+    }
+
+    public func subscriptionURL(withCustomBaseURL baseURL: URL = StaticURLs.defaultBaseSubscriptionURL, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
+        let url: URL = {
+            switch self {
+            case .baseURL:
+                baseURL
+            case .purchase:
+                baseURL
+            case .faq:
+                StaticURLs.helpPagesURL
+            case .activateViaEmail:
+                baseURL.appendingPathComponent("activate")
+            case .addEmail:
+                baseURL.appendingPathComponent("add-email")
+            case .manageEmail:
+                baseURL.appendingPathComponent("manage")
+            case .activateSuccess:
+                baseURL.appendingPathComponent("activate/success")
+            case .addEmailToSubscriptionSuccess:
+                baseURL.appendingPathComponent("add-email/success")
+            case .addEmailToSubscriptionOTP:
+                baseURL.appendingPathComponent("add-email/otp")
+            case .manageSubscriptionsInAppStore:
+                StaticURLs.manageSubscriptionsInMacAppStoreURL
+            case .identityTheftRestoration:
+                baseURL.replacing(path: "identity-theft-restoration")
+            }
+        }()
+
+        if environment == .staging, hasStagingVariant {
+            return url.forStaging()
+        }
+
+        return url
+    }
+
+    private var hasStagingVariant: Bool {
         switch self {
-        case .baseURL:
-            switch environment {
-            case .production:
-                URL(string: "https://duckduckgo.com/subscriptions")!
-            case .staging:
-                URL(string: "https://duckduckgo.com/subscriptions?environment=staging")!
-            }
-        case .purchase:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment)
-        case .faq:
-            URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
-        case .activateViaEmail:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("activate")
-        case .addEmail:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("add-email")
-        case .manageEmail:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("manage")
-        case .activateSuccess:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("activate/success")
-        case .addEmailToSubscriptionSuccess:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("add-email/success")
-        case .addEmailToSubscriptionOTP:
-            SubscriptionURL.baseURL.subscriptionURL(environment: environment).appendingPathComponent("add-email/otp")
-        case .manageSubscriptionsInAppStore:
-            URL(string: "macappstores://apps.apple.com/account/subscriptions")!
-        case .identityTheftRestoration:
-            switch environment {
-            case .production:
-                URL(string: "https://duckduckgo.com/identity-theft-restoration")!
-            case .staging:
-                URL(string: "https://duckduckgo.com/identity-theft-restoration?environment=staging")!
-            }
+        case .faq, .manageSubscriptionsInAppStore:
+            false
+        default:
+            true
         }
     }
+}
+
+fileprivate extension URL {
+
+    enum EnvironmentParameter {
+        static let name = "environment"
+        static let staging = "staging"
+    }
+
+    func forStaging() -> URL {
+        self.appendingParameter(name: EnvironmentParameter.name, value: EnvironmentParameter.staging)
+    }
+
 }
 
 extension URL {

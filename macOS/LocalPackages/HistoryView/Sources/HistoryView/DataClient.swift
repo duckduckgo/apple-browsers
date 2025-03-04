@@ -23,23 +23,12 @@ import os.log
 import UserScriptActionsManager
 import WebKit
 
-public enum HistoryViewFilter {
-    case all
-    case today
-    case yesterday
-    case twoDaysAgo
-    case threeDaysAgo
-    case fourDaysAgo
-    case fiveOrMoreDaysAgo
-    case recentlyClosed
-}
-
 public protocol DataProviding: AnyObject {
     var ranges: [DataModel.HistoryRange] { get }
-
-    func resetCache()
-
-    func visits(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
+    func refreshData() async
+    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
+    func deleteVisits(matching query: DataModel.HistoryQueryKind) async
+    func burnVisits(matching query: DataModel.HistoryQueryKind) async
 }
 
 public enum HistoryViewEvent: Equatable {
@@ -51,11 +40,18 @@ public final class DataClient: HistoryViewUserScriptClient {
     private var cancellables = Set<AnyCancellable>()
     private let dataProvider: DataProviding
     private let actionsHandler: ActionsHandling
+    private let contextMenuPresenter: ContextMenuPresenting
     private let errorHandler: EventMapping<HistoryViewEvent>?
 
-    public init(dataProvider: DataProviding, actionsHandler: ActionsHandling, errorHandler: EventMapping<HistoryViewEvent>?) {
+    public init(
+        dataProvider: DataProviding,
+        actionsHandler: ActionsHandling,
+        contextMenuPresenter: ContextMenuPresenting = DefaultContextMenuPresenter(),
+        errorHandler: EventMapping<HistoryViewEvent>?
+    ) {
         self.dataProvider = dataProvider
         self.actionsHandler = actionsHandler
+        self.contextMenuPresenter = contextMenuPresenter
         self.errorHandler = errorHandler
         super.init()
     }
@@ -63,8 +59,13 @@ public final class DataClient: HistoryViewUserScriptClient {
     enum MessageName: String, CaseIterable {
         case initialSetup
         case getRanges
+        case deleteDomain
+        case deleteRange
+        case deleteTerm
         case open
         case query
+        case entriesMenu = "entries_menu"
+        case entriesDelete = "entries_delete"
         case reportInitException
         case reportPageException
     }
@@ -73,8 +74,13 @@ public final class DataClient: HistoryViewUserScriptClient {
         userScript.registerMessageHandlers([
             MessageName.initialSetup.rawValue: { [weak self] in try await self?.initialSetup(params: $0, original: $1) },
             MessageName.getRanges.rawValue: { [weak self] in try await self?.getRanges(params: $0, original: $1) },
+            MessageName.deleteDomain.rawValue: { [weak self] in try await self?.deleteDomain(params: $0, original: $1) },
+            MessageName.deleteRange.rawValue: { [weak self] in try await self?.deleteRange(params: $0, original: $1) },
+            MessageName.deleteTerm.rawValue: { [weak self] in try await self?.deleteTerm(params: $0, original: $1) },
             MessageName.query.rawValue: { [weak self] in try await self?.query(params: $0, original: $1) },
             MessageName.open.rawValue: { [weak self] in try await self?.open(params: $0, original: $1) },
+            MessageName.entriesMenu.rawValue: { [weak self] in try await self?.entriesMenu(params: $0, original: $1) },
+            MessageName.entriesDelete.rawValue: { [weak self] in try await self?.entriesDelete(params: $0, original: $1) },
             MessageName.reportInitException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
             MessageName.reportPageException.rawValue: { [weak self] in try await self?.reportException(params: $0, original: $1) },
         ])
@@ -88,7 +94,7 @@ public final class DataClient: HistoryViewUserScriptClient {
         let env = "production"
 #endif
 
-        dataProvider.resetCache()
+        await dataProvider.refreshData()
 
         return DataModel.Configuration(
             env: env,
@@ -103,10 +109,31 @@ public final class DataClient: HistoryViewUserScriptClient {
     }
 
     @MainActor
+    private func deleteDomain(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: DataModel.DeleteDomainRequest = DecodableHelper.decode(from: params) else { return nil }
+        let action = await actionsHandler.showDeleteDialog(for: .domainFilter(request.domain))
+        return DataModel.DeleteRangeResponse(action: action)
+    }
+
+    @MainActor
+    private func deleteRange(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: DataModel.DeleteRangeRequest = DecodableHelper.decode(from: params) else { return nil }
+        let action = await actionsHandler.showDeleteDialog(for: .rangeFilter(request.range))
+        return DataModel.DeleteRangeResponse(action: action)
+    }
+
+    @MainActor
+    private func deleteTerm(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: DataModel.DeleteTermRequest = DecodableHelper.decode(from: params) else { return nil }
+        let action = await actionsHandler.showDeleteDialog(for: .searchTerm(request.term))
+        return DataModel.DeleteRangeResponse(action: action)
+    }
+
+    @MainActor
     private func query(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let query: DataModel.HistoryQuery = DecodableHelper.decode(from: params) else { return nil }
 
-        let batch = await dataProvider.visits(for: query.query, limit: query.limit, offset: query.offset)
+        let batch = await dataProvider.visitsBatch(for: query.query, limit: query.limit, offset: query.offset)
         return DataModel.HistoryQueryResponse(info: .init(finished: batch.finished, query: query.query), value: batch.visits)
     }
 
@@ -116,8 +143,22 @@ public final class DataClient: HistoryViewUserScriptClient {
             return nil
         }
         guard let url = URL(string: action.url), url.isValid else { return nil }
-        actionsHandler.open(url)
+        await actionsHandler.open(url)
         return nil
+    }
+
+    @MainActor
+    private func entriesMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: DataModel.EntriesMenuRequest = DecodableHelper.decode(from: params) else { return nil }
+        let action = await actionsHandler.showContextMenu(for: request.ids, using: contextMenuPresenter)
+        return DataModel.DeleteRangeResponse(action: action)
+    }
+
+    @MainActor
+    private func entriesDelete(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: DataModel.EntriesMenuRequest = DecodableHelper.decode(from: params) else { return nil }
+        let action = await actionsHandler.showDeleteDialog(for: request.ids)
+        return DataModel.DeleteRangeResponse(action: action)
     }
 
     private func reportException(params: Any, original: WKScriptMessage) async throws -> Encodable? {

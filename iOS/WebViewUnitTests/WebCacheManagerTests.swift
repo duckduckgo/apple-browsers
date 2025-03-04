@@ -55,6 +55,15 @@ class WebCacheManagerTests: XCTestCase {
     let dataStoreCleaner = MockDataStoreCleaner()
     let observationsCleaner = MockObservationsCleaner()
 
+    override func setUp() async throws {
+        // Ensure no cookies left over from other tests
+        await clearCookies()
+    }
+
+    override func tearDown() async throws {
+        await clearCookies()
+    }
+
     func test_whenNewInstall_ThenUsesDefaultPersistence() async {
         let dataStore = await WKWebsiteDataStore.current()
         let defaultStore = await WKWebsiteDataStore.default()
@@ -191,6 +200,15 @@ class WebCacheManagerTests: XCTestCase {
             dataStoreCleaner: dataStoreCleaner,
             observationsCleaner: observationsCleaner
         )
+    }
+
+    @MainActor
+    private func clearCookies() async {
+        let dataStore = WKWebsiteDataStore.default()
+        let allCookies = await dataStore.httpCookieStore.allCookies()
+        for cookie in allCookies {
+            await dataStore.httpCookieStore.deleteCookie(cookie)
+        }
     }
 }
 

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -259,6 +262,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Ξεκλείδωμα DuckDuckGo.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Θέλετε σίγουρα να διαγράψετε όλους τους σελιδοδείκτες; Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Είσοδος";
 
@@ -329,40 +335,40 @@
 "autofill.hide-password" = "Απόκρυψη κωδικού πρόσβασης";
 
 /* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Αποκτήστε το πρόγραμμα περιήγησης για υπολογιστές";
+"autofill.import.passwords.via.sync.get-browser-button" = "Αποκτήστε το πρόγραμμα περιήγησης για υπολογιστές";
 
 /* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Ανοίξτε το DuckDuckGo σε Mac ή Windows";
+"autofill.import.passwords.via.sync.instructions.step1" = "Ανοίξτε το DuckDuckGo σε Mac ή Windows";
 
 /* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Μεταβείτε στις επιλογές %1$@ > %2$@";
+"autofill.import.passwords.via.sync.instructions.step2" = "Μεταβείτε στις επιλογές %1$@ > %2$@";
 
 /* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Κωδικός πρόσβασης";
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Κωδικός πρόσβασης";
 
 /* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Ρυθμίσεις";
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Ρυθμίσεις";
 
 /* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Επιλέξτε %@ και ακολουθήστε τα βήματα για εισαγωγή";
+"autofill.import.passwords.via.sync.instructions.step3" = "Επιλέξτε %@ και ακολουθήστε τα βήματα για εισαγωγή";
 
 /* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Εισαγωγή κωδικών πρόσβασης...";
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Εισαγωγή κωδικών πρόσβασης...";
 
 /* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Μόλις εισαχθεί στον υπολογιστή σας, μπορείτε να ρυθμίσετε το συγχρονισμό σε %@";
+"autofill.import.passwords.via.sync.instructions.step4" = "Μόλις εισαχθεί στον υπολογιστή σας, μπορείτε να ρυθμίσετε το συγχρονισμό σε %@";
 
 /* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Εισαγωγή από το πρόγραμμα περιήγησης για υπολογιστές:";
+"autofill.import.passwords.via.sync.instructions.title" = "Εισαγωγή από το πρόγραμμα περιήγησης για υπολογιστές:";
 
 /* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Εισαγάγετε κωδικούς πρόσβασης στην έκδοση του προγράμματος περιήγησης DuckDuckGo για υπολογιστές και έπειτα συγχρονίστε τους σε όλες τις συσκευές.";
+"autofill.import.passwords.via.sync.subtitle" = "Εισαγάγετε κωδικούς πρόσβασης στην έκδοση του προγράμματος περιήγησης DuckDuckGo για υπολογιστές και έπειτα συγχρονίστε τους σε όλες τις συσκευές.";
 
 /* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Συγχρονισμός με υπολογιστή";
+"autofill.import.passwords.via.sync.sync-button" = "Συγχρονισμός με υπολογιστή";
 
 /* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Τρόπος εισαγωγής κωδικών πρόσβασης";
+"autofill.import.passwords.via.sync.title" = "Τρόπος εισαγωγής κωδικών πρόσβασης";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Απενεργοποίηση";
@@ -462,6 +468,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Εισαγωγή κωδικών πρόσβασης";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Συγχρονισμός κωδικών πρόσβασης υπολογιστών";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Μπορείτε να εισαγάγετε αποθηκευμένους κωδικούς πρόσβασης από άλλο πρόγραμμα περιήγησης στο DuckDuckGo.";
@@ -765,7 +774,10 @@
 "bookmarks.export.share.success.message" = "Η κοινοποίηση των σελιδοδεικτών σας έχει πραγματοποιηθεί.";
 
 /* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Εξαγωγή αρχείου HTML";
+"bookmarks.exportAction.html.title" = "Εξαγωγή αρχείου HTML";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Εξαγωγή σελιδοδεικτών";
 
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Δυστυχώς, δεν μπορούμε να κάνουμε εισαγωγή αυτού του αρχείου.";
@@ -774,13 +786,13 @@
 "bookmarks.import.success.message" = "Η εισαγωγή των σελιδοδεικτών σας έχει πραγματοποιηθεί.";
 
 /* Title of option to import HTML */
-"bookmarks.importAction.title" = "Εισαγωγή αρχείου HTML";
+"bookmarks.importAction.html.title" = "Εισαγωγή αρχείου HTML";
 
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Εισαγωγή αρχείου με σελιδοδείκτες από άλλο πρόγραμμα περιήγησης";
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Εισαγωγή σελιδοδεικτών";
 
 /* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Κάντε εισαγωγή ενός αρχείου HTML με σελιδοδείκτες από άλλο πρόγραμμα περιήγησης, ή κάντε εξαγωγή των σελιδοδεικτών που διαθέτετε ήδη.";
+"bookmarks.importExport.title" = "Εισαγωγή σελιδοδεικτών από άλλα δημοφιλή προγράμματα περιήγησης.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Αναφορά προβλήματος με αυτόν τον ιστότοπο";
@@ -911,6 +923,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Αυτόματη αποστολή αναφορών σφαλμάτων;";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Πώς να εξαγάγετε σελιδοδείκτες από το Safari";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Επίλεξε το αρχείο που περιέχει σελιδοδείκτες. Αυτό είναι συνήθως ένα αρχείο ZIP ή HTML.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Εισαγωγή σελιδοδεικτών στο DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "Δεν βρέθηκαν υποστηριζόμενα δεδομένα στο συμπιεσμένο αρχείο. Ελέγξτε τις οδηγίες εξαγωγής του Safari και προσπαθήστε ξανά.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Το αρχείο που επιλέχθηκε δεν υποστηρίζεται. Επίλεξε διαφορετικό αρχείο και προσπαθήστε ξανά.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Δεν ήταν δυνατή η ανάγνωση του αρχείου %@. Ενδέχεται να υπάρχει πρόβλημα με τα δεδομένα στο αρχείο.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Επίλεξε **Εξαγωγή** και στην επόμενη οθόνη επίλεξε **Σελιδοδείκτες** και **Αποθήκευση στις λήψεις**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Επίλεξε **Εξαγωγή** και στην επόμενη οθόνη επίλεξε **Κωδικοί πρόσβασης** και **Αποθήκευση στις λήψεις**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Εισαγωγή αρχείου κωδικών πρόσβασης...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "Στον Chrome, μεταβείτε στο **Διαχειριστής κωδικών πρόσβασης Google** και μετά στις **Ρυθμίσεις**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Επίλεξε **Εξαγωγή κωδικών πρόσβασης**, μετά **Αποθήκευση σε αρχεία** και αποθήκευσε το αρχείο σε έναν φάκελο που μπορείτε να θυμάστε.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Τρόπος εξαγωγής κωδικών πρόσβασης";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Άνοιξε τις ⚙️ **Ρυθμίσεις**, πληκτρολόγησε «Εξαγωγή» στη γραμμή αναζήτησης και διάλεξε το αποτέλεσμα **Εξαγωγή** για το Safari, ώστε να μεταβείτε απευθείας στην επιλογή (ή πήγαινε στο Apps > Safari στις Ρυθμίσεις).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Εξαγωγή από";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Πώς να εξαγάγετε κωδικούς πρόσβασης από το Safari:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Επίλεξε το αρχείο που περιέχει κωδικούς πρόσβασης που εξάγονται από το Safari ή το Chrome. Αυτό είναι συνήθως ένα αρχείο ZIP ή CSV.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Εισαγωγή κωδικών πρόσβασης στο DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Σελιδοδείκτες";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Ολοκληρώθηκε";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Σελιδοδείκτες";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Δεδομένα";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Κωδικός πρόσβασης";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Η εισαγωγή ολοκληρώθηκε!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Παραλείφθηκαν διπλότυπα";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Αποτυχία εισαγωγής";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Μπορείτε τώρα να διαγράψετε το αρχείο κωδικών πρόσβασης.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Κωδικός πρόσβασης";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Προηγούμενος μήνας";
 
@@ -994,6 +1108,9 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
+
+/* No comment provided by engineer. */
+"Delete All" = "Διαγραφή όλων";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "συσκευή";
@@ -1199,8 +1316,11 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Απόκρυψη του email σας και \n αποκλεισμός εφαρμογών παρακολούθησης";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Δεν προστέθηκαν σελιδοδείκτες ακόμα";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Εάν οι σελιδοδείκτες σας είναι αποθηκευμένοι σε άλλο πρόγραμμα περιήγησης, \nμπορείτε να τους εισάγετε στο DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
@@ -2229,9 +2349,10 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Σχετικά";
-
+/* about tagline */
+"settings.about.tagline" = "Προστασία. Ιδιωτικότητα. Ηρεμία.";
 /* about page */
-"settings.about.text" = "Το DuckDuckGo αποτελεί την ανεξάρτητη εταιρεία προστασίας προσωπικών δεδομένων στο διαδίκτυο που ιδρύθηκε το 2008 για όσους έχουν βαρεθεί να παρακολουθούνται στο διαδίκτυο και επιθυμούν μια εύκολη λύση. Αποτελούμε τρανή απόδειξη ότι μπορείτε να αποκτήσετε πραγματική προστασία του απορρήτου σας στο διαδίκτυο χωρίς συμβιβασμούς.\n\nο πρόγραμμα περιήγησης DuckDuckGo διαθέτει τις λειτουργίες που περιμένετε από ένα πρόγραμμα περιήγησης, όπως σελιδοδείκτες, καρτέλες, κωδικούς πρόσβασης και πολλά άλλα, καθώς και πάνω από [δώδεκα ισχυρές λειτουργίες προστασίες απορρήτου](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) που δεν προσφέρονται από τα περισσότερα δημοφιλή προγράμματα περιήγησης βάσει προεπιλογής. Αυτό το μοναδικά ολοκληρωμένο σύνολο προστασίας του απορρήτου συμβάλλει στην προστασία των διαδικτυακών δραστηριοτήτων σας, από αναζήτηση έως περιήγηση, αποστολή email και πολλά άλλα.\n\nΗ προστασία απορρήτου μας λειτουργεί χωρίς να χρειάζεται να γνωρίζετε τις τεχνικές λεπτομέρειες ή να ασχολείστε με περίπλοκες ρυθμίσεις. Το μόνο που έχετε να κάνετε είναι να αλλάξετε το πρόγραμμα περιήγησής σας σε DuckDuckGo σε όλες τις συσκευές σας και θα έχετε ιδιωτικότητα βάσει προεπιλογής.\n\nΑλλά αν *θέλετε* να ρίξετε μια αναλυτική ματιά, μπορείτε να βρείτε περισσότερες πληροφορίες σχετικά με το πώς λειτουργούν οι προστασίες απορρήτου του DuckDuckGo στις [σελίδες της ενότητας Βοήθεια](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
+"settings.about.text.new" = "Η DuckDuckGo αποτελεί ανεξάρτητη εταιρεία διαδικτυακής προστασίας για οποιονδήποτε επιθυμεί να ανακτήσει τον έλεγχο των προσωπικών πληροφοριών του.Πιστεύουμε ότι ο καλύτερος τρόπος για να προστατέψετε τις προσωπικές πληροφορίες σας από χάκερ, απατεώνες και εταιρείες που παραβιάζουν την ιδιωτικότητα είναι να μη συλλέγονται καθόλου. Αυτός είναι ο λόγος για τον οποίον εκατομμύρια άνθρωποι [επιλέγουν το DuckDuckGo έναντι του Chrome και άλλων προγραμμάτων περιήγησης] (ddgQuickLink://duckduckgo.com/compare-privacy) για να πραγματοποιήσουν αναζητήσεις και να περιηγηθούν στο διαδίκτυο Η ενσωματωμένη μηχανή αναζήτησής μας είναι σαν της Google, ωστόσο δεν παρακολουθεί ποτέ τις αναζητήσεις σας. Και οι προστασίες περιήγησής μας, όπως ο αποκλεισμός παρακολούθησης διαφημίσεων και ο αποκλεισμός cookie, βοηθούν ώστε να σταματήσουν άλλες εταιρείες να συλλέγουν τα δεδομένα σας. Και, φυσικά, το πρόγραμμα περιήγησής μας είναι δωρεάν. Κερδίζουμε χρήματα από [διαφημίσεις αναζήτησης που σέβονται την ιδιωτικότητα], (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), όχι από την εκμετάλλευση των δεδομένων σας.\n\nΕπιπλέον, προσφέρουμε επίσης το [Privacy Pro] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/),, μια συνδρομητική υπηρεσία τρία σε ένα, ενσωματωμένη στο πρόγραμμα περιήγησής μας. Οι συνδρομητές του Privacy Pro απολαμβάνουν ακόμα μεγαλύτερη προστασία απορρήτου με ένα γρήγορο και απλό [VPN] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), που βοηθά στην ασφάλεια της διαδικτυακής δραστηριότητάς σας, μια υπηρεσία που εντοπίζει και αφαιρεί τα προσωπικά στοιχεία σας από ιστότοπους εύρεσης ατόμων και μια υπηρεσία που αποκαθιστά την ταυτότητά σας σε περίπτωση κλοπής.\n\nΑνακτήστε τον έλεγχο των προσωπικών πληροφοριών σας με το πρόγραμμα περιήγησης που έχει σχεδιαστεί για προστασία δεδομένων και όχι για συλλογή δεδομένων.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Προσβασιμότητα";
@@ -3147,4 +3268,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Αποκτήστε το DuckDuckGo για Windows!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Σελιδοδείκτες";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Συνέχεια";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Κωδικός πρόσβασης";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Τι θέλετε να εισαγάγετε;";
 

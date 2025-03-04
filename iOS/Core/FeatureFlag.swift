@@ -51,12 +51,6 @@ public enum FeatureFlag: String {
     case aiChat
     case aiChatDeepLink
     case tabManagerMultiSelection
-
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
     
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
@@ -85,6 +79,9 @@ public enum FeatureFlag: String {
     case experimentalBrowserTheming
 
     case alternativeColorScheme
+
+    /// https://app.asana.com/0/1206488453854252/1208706841336530
+    case privacyProOnboardingCTAMarch25
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -92,6 +89,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
+        case .privacyProOnboardingCTAMarch25:
+            PrivacyProOnboardingCTAMarch25Cohort.self
         default:
             nil
         }
@@ -101,7 +100,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25:
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
@@ -162,12 +161,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autcompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .crashReportOptInStatusResetting:
@@ -194,6 +189,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
         case .alternativeColorScheme:
             return .internalOnly()
+        case .privacyProOnboardingCTAMarch25:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
         }
     }
 }
@@ -206,6 +203,13 @@ extension FeatureFlagger {
 }
 
 public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
+    case control
+    /// Treatment cohort where the experiment modifications are applied.
+    case treatment
+}
+
+public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

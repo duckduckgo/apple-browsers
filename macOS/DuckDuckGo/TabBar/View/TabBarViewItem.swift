@@ -27,6 +27,7 @@ struct OtherTabBarViewItemsState {
 }
 
 protocol TabBarViewModel {
+    var tabContent: Tab.TabContent { get }
     var titlePublisher: Published<String>.Publisher { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }
@@ -783,6 +784,7 @@ extension TabBarViewItem: NSMenuDelegate {
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
         muteUnmuteMenuItem.target = self
+        muteUnmuteMenuItem.isEnabled = tabViewModel?.tabContent.canBeMuted == true
         menu.addItem(muteUnmuteMenuItem)
     }
 

@@ -57,7 +57,7 @@ final class SubscriptionCookieManagerTests: XCTestCase {
                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
         cookieStore = MockHTTPCookieStore()
 
-        subscriptionCookieManager = SubscriptionCookieManager(subscriptionManager: subscriptionManager,
+        subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager,
                                                               currentCookieStore: { self.cookieStore },
                                                               eventMapping: MockSubscriptionCookieManageEventPixelMapping(),
                                                               refreshTimeInterval: .seconds(1))

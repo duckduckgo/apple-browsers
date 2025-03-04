@@ -23,6 +23,6 @@ import Subscription
 public protocol NetworkProtectionFeatureVisibility {
 
     /// Whether to show VPN shortcut on the home screen
-    func shouldShowVPNShortcut() -> Bool
+    func shouldShowVPNShortcut() async -> Bool
 
 }

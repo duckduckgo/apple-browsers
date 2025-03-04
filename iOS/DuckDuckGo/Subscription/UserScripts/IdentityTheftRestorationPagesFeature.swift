@@ -51,7 +51,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
 
     let featureName: String = Constants.featureName
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
+        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .identityTheftRestoration)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
     var originalMessage: WKScriptMessage?

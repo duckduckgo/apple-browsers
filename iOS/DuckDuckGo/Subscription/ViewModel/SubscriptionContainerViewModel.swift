@@ -48,7 +48,8 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                               subscriptionManager: subscriptionManager)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
                                                     subFeature: subFeature)
-        self.email = SubscriptionEmailViewModel(userScript: userScript,
+        self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
+                                                userScript: userScript,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager)
     }

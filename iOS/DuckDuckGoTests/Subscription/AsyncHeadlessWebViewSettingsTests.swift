@@ -1,5 +1,5 @@
 //
-//  SubscriptionFlowViewModelTests.swift
+//  AsyncHeadlessWebViewSettingsTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,7 +22,7 @@ import XCTest
 @testable import Subscription
 import SubscriptionTestingUtilities
 
-final class SubscriptionFlowViewModelTests: XCTestCase {
+final class AsyncHeadlessWebViewSettingsTests: XCTestCase {
 
     func testAllowedDomainsOnlyContainsBaseURLHostWhenInternalUserModeDisabled() async throws {
         // Given
@@ -30,7 +30,7 @@ final class SubscriptionFlowViewModelTests: XCTestCase {
         let isInternalUser = false
 
         // When
-        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
+        let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
         // Then
         XCTAssertEqual([baseURL.host!], result)
@@ -42,7 +42,7 @@ final class SubscriptionFlowViewModelTests: XCTestCase {
         let isInternalUser = false
 
         // When
-        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
+        let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
         // Then
         XCTAssertEqual([baseURL.host!], result)
@@ -52,10 +52,10 @@ final class SubscriptionFlowViewModelTests: XCTestCase {
         // Given
         let baseURL = try XCTUnwrap(URL(string: "https://duck.co/subscriptions"))
         let isInternalUser = true
-        let domainsRequiredForDUOAuthentication = ["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
+        let domainsRequiredForDUOAuthentication = ["duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
 
         // When
-        let result = SubscriptionFlowViewModel.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
+        let result = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: baseURL, isInternalUser: isInternalUser)
 
         // Then
         XCTAssertTrue(result.contains(baseURL.host!))

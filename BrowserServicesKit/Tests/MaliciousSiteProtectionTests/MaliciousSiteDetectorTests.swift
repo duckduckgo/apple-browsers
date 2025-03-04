@@ -27,14 +27,13 @@ class MaliciousSiteDetectorTests: XCTestCase {
     private var mockDataManager: MockMaliciousSiteProtectionDataManager!
     private var mockEventMapping: MockEventMapping!
     private var detector: MaliciousSiteDetector!
-    private var featureFlagger: MockMaliciousSiteProtectionFeatureFlags!
+    private var isScamProtectionSupported = false
 
     override func setUp() async throws {
         mockAPIClient = MockMaliciousSiteProtectionAPIClient()
         mockDataManager = MockMaliciousSiteProtectionDataManager()
         mockEventMapping = MockEventMapping()
-        featureFlagger = MockMaliciousSiteProtectionFeatureFlags()
-        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, featureFlagger: featureFlagger, eventMapping: mockEventMapping)
+        detector = MaliciousSiteDetector(apiClient: mockAPIClient, dataManager: mockDataManager, eventMapping: mockEventMapping, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
     }
 
     override func tearDown() async throws {
@@ -57,7 +56,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
     }
 
     func testIsScamWithLocalFilterHitReturnsNilIfFlagOff() async throws {
-        featureFlagger.isScamProtectionEnabled = false
+        isScamProtectionSupported = false
         let filter = Filter(hash: "5392ef04dc5f963fe5bc9545365de61312d7070df12aafff87e65ec55a7803a4", regex: ".*scam.*")
         try await mockDataManager.store(FilterDictionary(revision: 0, items: [filter]), for: .filterSet(threatKind: .scam))
         try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["5392ef04"]), for: .hashPrefixes(threatKind: .scam))
@@ -70,7 +69,7 @@ class MaliciousSiteDetectorTests: XCTestCase {
     }
 
     func testIsScamWithLocalFilterHit() async throws {
-        featureFlagger.isScamProtectionEnabled = true
+        isScamProtectionSupported = true
         let filter = Filter(hash: "5392ef04dc5f963fe5bc9545365de61312d7070df12aafff87e65ec55a7803a4", regex: ".*scam.*")
         try await mockDataManager.store(FilterDictionary(revision: 0, items: [filter]), for: .filterSet(threatKind: .scam))
         try await mockDataManager.store(HashPrefixSet(revision: 0, items: ["5392ef04"]), for: .hashPrefixes(threatKind: .scam))

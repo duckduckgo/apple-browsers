@@ -30,6 +30,7 @@ final class MaliciousSiteProtectionManagerTests {
     private var dataManager: MaliciousSiteProtection.DataManager!
     private var preferencesManagerMock: MockMaliciousSiteProtectionPreferencesManager!
     private var featureFlaggerMock: MockMaliciousSiteProtectionFeatureFlags!
+    private var scamProtectionSupported = false
 
     init() {
         dataManager = MaliciousSiteProtection.DataManager(
@@ -47,7 +48,8 @@ final class MaliciousSiteProtectionManagerTests {
             dataManager: dataManager,
             detector: mockDetector,
             preferencesManager: preferencesManagerMock,
-            maliciousSiteProtectionFeatureFlagger: featureFlaggerMock
+            maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
+            supportedThreatsProvider: { return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } }
         )
     }
 

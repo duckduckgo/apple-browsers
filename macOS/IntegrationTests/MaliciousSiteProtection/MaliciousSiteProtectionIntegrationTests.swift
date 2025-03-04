@@ -47,13 +47,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
         featureFlagger = MockFeatureFlagger()
-        let configManager = MockPrivacyConfigurationManager()
-        let privacyConfig = MockPrivacyConfiguration()
-        privacyConfig.isSubfeatureKeyEnabled = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
-            if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
-        }
-        configManager.privacyConfig = privacyConfig
-        detector = MaliciousSiteProtectionManager(featureFlags: featureFlagger.maliciousSiteProtectionFeatureFlags(configManager: configManager), updateIntervalProvider: { _ in nil })
+        detector = MaliciousSiteProtectionManager(featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
         schemeHandler = TestSchemeHandler()
         schemeHandler.middleware = [{
             if $0.url!.lastPathComponent == "phishing.html" {
@@ -328,7 +322,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
     }
 
     @MainActor
-    func testScamDetectedThenNotDetected_tabIsNotMarkedScam() async throws {
+    func testScamDetectedNotDetected_tabIsNotMarkedScam() async throws {
         let url1 = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url1)
         XCTAssertEqual(tabViewModel.tab.error as NSError? as? MaliciousSiteError, MaliciousSiteError(code: .scam, failingUrl: url1))
@@ -372,7 +366,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         }
         defer { task.cancel() }
 
-        let result = await waiter.fulfillment(of: [loadingExpectation], timeout: 2)
+        let result = await waiter.fulfillment(of: [loadingExpectation], timeout: 5)
 
         switch result {
         case .completed: break

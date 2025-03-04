@@ -36,7 +36,8 @@ final class MaliciousSiteProtectionManager {
         dataManager: MaliciousSiteProtection.DataManager,
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         preferencesManager: MaliciousSiteProtectionPreferencesReading,
-        maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger
+        maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger,
+        supportedThreatsProvider: @escaping SupportedThreatsProvider
     ) {
         self.dataFetcher = dataFetcher
         self.preferencesManager = preferencesManager
@@ -45,8 +46,7 @@ final class MaliciousSiteProtectionManager {
             apiEnvironment: api.environment,
             service: api.service,
             dataManager: dataManager,
-            featureFlagger: maliciousSiteProtectionFeatureFlagger,
-            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents, supportedThreatsProvider: supportedThreatsProvider
         )
     }
 }

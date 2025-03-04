@@ -29,7 +29,7 @@ class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
 
     override func setUp() {
         configurationManagerMock = PrivacyConfigurationManagerMock()
-        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled }, isScamProtectionEnabledGetter: { [unowned self] in isScamProtectionEnabled })
+        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled })
     }
 
     // MARK: - Web Error Page
@@ -45,36 +45,12 @@ class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    func testWhenThreatDetectionEnabled_AndScamFeatureFlagIsOn_ThenReturnTrue() throws {
-        // GIVEN
-        isFeatureEnabled = true
-        isScamProtectionEnabled = true
-
-        // WHEN
-        let result = sut.isScamProtectionEnabled
-
-        // THEN
-        XCTAssertTrue(result)
-    }
-
     func testWhenThreatDetectionEnabled_AndFeatureFlagIsOff_ThenReturnFalse() throws {
         // GIVEN
         isFeatureEnabled = false
 
         // WHEN
         let result = sut.isMaliciousSiteProtectionEnabled
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
-    func testWhenThreatDetectionEnabled_AndScamFeatureFlagIsOff_ThenReturnFalse() throws {
-        // GIVEN
-        isFeatureEnabled = true
-        isScamProtectionEnabled = false
-
-        // WHEN
-        let result = sut.isScamProtectionEnabled
 
         // THEN
         XCTAssertFalse(result)
@@ -128,7 +104,7 @@ class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
             MaliciousSiteProtectionFeatureSettings.hashPrefixUpdateFrequency.rawValue: 10,
             MaliciousSiteProtectionFeatureSettings.filterSetUpdateFrequency.rawValue: 50
         ]
-        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled }, isScamProtectionEnabledGetter: { [unowned self] in isScamProtectionEnabled })
+        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled })
 
         // WHEN
         let hashPrefixUpdateFrequency = sut.hashPrefixUpdateFrequency
@@ -143,7 +119,7 @@ class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
         // GIVEN
         let privacyConfigMock = configurationManagerMock.privacyConfig as! PrivacyConfigurationMock
         privacyConfigMock.settings[.maliciousSiteProtection] = [:]
-        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled }, isScamProtectionEnabledGetter: { [unowned self] in isScamProtectionEnabled })
+        sut = MaliciousSiteProtectionFeatureFlags(privacyConfigManager: configurationManagerMock, isMaliciousSiteProtectionEnabled: { [unowned self] in isFeatureEnabled })
 
         // WHEN
         let hashPrefixUpdateFrequency = sut.hashPrefixUpdateFrequency

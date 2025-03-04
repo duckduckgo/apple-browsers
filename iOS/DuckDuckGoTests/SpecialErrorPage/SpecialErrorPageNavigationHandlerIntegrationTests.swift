@@ -59,7 +59,8 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
             ),
             detector: MockMaliciousSiteDetector(),
             preferencesManager: preferencesManager,
-            maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlags
+            maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlags,
+            supportedThreatsProvider: { return [] }
         )
         maliciousSiteProtectionNavigationHandler = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: maliciousSiteProtectionManager)
         

@@ -46,7 +46,7 @@ public struct UpdateManager: InternalUpdateManaging {
     private let updateIntervalProvider: UpdateIntervalProvider
     private let sleeper: Sleeper
     private let updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage
-    private let featureFlags: MaliciousSiteProtectionFeatureFlagger
+    private let supportedThreatsProvider: SupportedThreatsProvider
 
     #if os(iOS)
     public var lastHashPrefixSetUpdateDate: Date {
@@ -58,23 +58,23 @@ public struct UpdateManager: InternalUpdateManaging {
     }
     #endif
 
-    public init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, featureFlags: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, featureFlags: featureFlags, eventMapping: eventMapping, updateIntervalProvider: updateIntervalProvider)
+    public init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, updateIntervalProvider: updateIntervalProvider, supportedThreatsProvider: supportedThreatsProvider)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, featureFlags: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>, sleeper: Sleeper = .default, updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage = UpdateManagerInfoStore(), updateIntervalProvider: @escaping UpdateIntervalProvider) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, sleeper: Sleeper = .default, updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage = UpdateManagerInfoStore(), updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
         self.updateIntervalProvider = updateIntervalProvider
         self.sleeper = sleeper
         self.updateInfoStorage = updateInfoStorage
-        self.featureFlags = featureFlags
+        self.supportedThreatsProvider = supportedThreatsProvider
     }
 
     func updateData<DataKey: MaliciousSiteDataKey>(for key: DataKey) async throws {
-        let isScamProtectionEnabled = featureFlags.isScamProtectionEnabled
-        if !isScamProtectionEnabled && key.threatKind == .scam {
+        let supportedThreats = supportedThreatsProvider()
+        if !supportedThreats.contains(key.threatKind) {
             return
         }
 
@@ -121,9 +121,9 @@ public struct UpdateManager: InternalUpdateManaging {
         Task.detached {
             // run update jobs in background for every data type
             try await withThrowingTaskGroup(of: Never.self) { group in
-                let isScamProtectionEnabled = featureFlags.isScamProtectionEnabled
-                let filteredDataType = isScamProtectionEnabled ? DataManager.StoredDataType.allCases : DataManager.StoredDataType.allCases.filter { $0.threatKind != .scam }
-                for dataType in filteredDataType {
+                let supportedThreats = supportedThreatsProvider()
+                let filteredDataTypes = DataManager.StoredDataType.allCases.filter { supportedThreats.contains($0.threatKind) }
+                for dataType in filteredDataTypes {
                     // get update interval from provider
                     guard let updateInterval = updateIntervalProvider(dataType) else { continue }
                     guard updateInterval > 0 else {
@@ -153,9 +153,9 @@ public struct UpdateManager: InternalUpdateManaging {
         Task {
             // run update jobs in background for every data type
             await withTaskGroup(of: Bool.self) { group in
-                let isScamProtectionEnabled = featureFlags.isScamProtectionEnabled
-                let filteredDataType = isScamProtectionEnabled ? DataManager.StoredDataType.dataTypes(for: datasetType) : DataManager.StoredDataType.dataTypes(for: datasetType).filter { $0.threatKind != .scam }
-                for dataType in filteredDataType {
+                let supportedThreats = supportedThreatsProvider()
+                let filteredDataTypes = DataManager.StoredDataType.allCases.filter { supportedThreats.contains($0.threatKind) }
+                for dataType in filteredDataTypes {
                     group.addTask {
                         do {
                             try await self.updateData(for: dataType.dataKey)

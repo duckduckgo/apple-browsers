@@ -28,6 +28,8 @@ public protocol MaliciousSiteDetecting {
     func evaluate(_ url: URL) async -> ThreatKind?
 }
 
+public typealias SupportedThreatsProvider = () -> [ThreatKind]
+
 /// Class responsible for detecting malicious sites by evaluating URLs against local filters and an external API.
 /// entry point: `func evaluate(_: URL) async -> ThreatKind?`
 public final class MaliciousSiteDetector: MaliciousSiteDetecting {
@@ -42,18 +44,19 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     private let apiClient: APIClient.Mockable
     private let dataManager: DataManaging
-    private let featureFlagger: MaliciousSiteProtectionFeatureFlagger
     private let eventMapping: EventMapping<Event>
+    private let supportedThreatsProvider: SupportedThreatsProvider
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, featureFlagger: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, featureFlagger: featureFlagger, eventMapping: eventMapping)
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider
+    ) {
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, featureFlagger: MaliciousSiteProtectionFeatureFlagger, eventMapping: EventMapping<Event>) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
-        self.featureFlagger = featureFlagger
+        self.supportedThreatsProvider = supportedThreatsProvider
     }
 
     private func checkLocalFilters(hostHash: String, canonicalUrl: URL, for threatKind: ThreatKind) async -> Bool {
@@ -90,7 +93,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     public func evaluate(_ url: URL) async -> ThreatKind? {
         guard let canonicalHost = url.canonicalHost(),
               let canonicalUrl = url.canonicalURL() else { return .none }
-        let isScamProtectionEnabled = featureFlagger.isScamProtectionEnabled
+        let supportedThreats = supportedThreatsProvider()
 
         let hostHash = canonicalHost.sha256
         let hashPrefix = String(hostHash.prefix(Constants.hashPrefixStoreLength))
@@ -99,8 +102,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         // The hash prefix list serves as a representation of the entire database:
         // every malicious website will have a hash prefix that it collides with.
         var hashPrefixMatchingThreatKinds = [ThreatKind]()
-        let threadKinds = isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
-        for threatKind in threadKinds { // e.g., phishing, malware, etc.
+        for threatKind in supportedThreats { // e.g., phishing, malware, etc.
             let hashPrefixes = await dataManager.dataSet(for: .hashPrefixes(threatKind: threatKind))
             if hashPrefixes.contains(hashPrefix) {
                 hashPrefixMatchingThreatKinds.append(threatKind)
@@ -127,10 +129,10 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         let match = await checkApiMatches(hostHash: hostHash, canonicalUrl: canonicalUrl)
         if let match {
             let threatKind = match.category.flatMap(ThreatKind.init) ?? hashPrefixMatchingThreatKinds[0]
-            await fireErrorPageShown(threatKind: threatKind, clientSideHit: false)
-            if !isScamProtectionEnabled && threatKind == .scam {
+            if !supportedThreats.contains(threatKind) {
                 return .none
             }
+            await fireErrorPageShown(threatKind: threatKind, clientSideHit: false)
             return threatKind
         }
 

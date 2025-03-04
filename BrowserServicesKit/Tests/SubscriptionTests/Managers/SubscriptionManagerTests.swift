@@ -96,15 +96,15 @@ final class SubscriptionManagerTests: XCTestCase {
 
     func testSetupForAppStore() async throws {
         // Given
-        let expectation = expectation(description: "UpdateAvailableProducts called")
-
         storePurchaseManager.onUpdateAvailableProducts = {
             self.storePurchaseManager.areProductsAvailable = true
-            expectation.fulfill()
         }
 
+        // When
+        // triggered on DefaultSubscriptionManager's init
+        try await Task.sleep(seconds: 0.5)
+
         // Then
-        await fulfillment(of: [expectation], timeout: 2.0)
         XCTAssertTrue(storePurchaseManager.updateAvailableProductsCalled)
         XCTAssertTrue(subscriptionManager.canPurchase)
     }

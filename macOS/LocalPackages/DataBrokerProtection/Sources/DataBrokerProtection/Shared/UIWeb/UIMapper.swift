@@ -154,7 +154,7 @@ struct MapperToUI {
         if scansInTheLastEightDays.isEmpty {
             return DBPUIScanDate(date: currentDate.timeIntervalSince1970, dataBrokers: [DBPUIDataBroker]())
         } else {
-            return DBPUIScanDate(date: scansInTheLastEightDays.first!.date!, dataBrokers: scansInTheLastEightDays)
+            return DBPUIScanDate(date: scansInTheLastEightDays.last!.date!, dataBrokers: scansInTheLastEightDays)
         }
     }
 

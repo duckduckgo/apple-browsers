@@ -76,7 +76,7 @@
 		1E53508F2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E53508E2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift */; };
 		1E6A4D692984208800A371D3 /* LocaleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E6A4D682984208800A371D3 /* LocaleExtension.swift */; };
 		1E722729292EB24D003B5F53 /* AppSettingsMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AD9E3C28D46FD50019CDE9 /* AppSettingsMock.swift */; };
-		1E7851452D6F267D006AFBE1 /* SubscriptionFlowViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7851442D6F267D006AFBE1 /* SubscriptionFlowViewModelTests.swift */; };
+		1E7851452D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */; };
 		1E7A71172934EB6400B7EA19 /* OmniBarNotificationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7A71162934EB6400B7EA19 /* OmniBarNotificationAnimator.swift */; };
 		1E7A71192934EC6100B7EA19 /* OmniBarNotificationContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7A71182934EC6100B7EA19 /* OmniBarNotificationContainerView.swift */; };
 		1E7A711C2934EEBC00B7EA19 /* OmniBarNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E7A711B2934EEBC00B7EA19 /* OmniBarNotification.swift */; };
@@ -1614,7 +1614,7 @@
 		1E4FAA6527D8DFC800ADC5B3 /* CompleteDownloadRowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteDownloadRowViewModel.swift; sourceTree = "<group>"; };
 		1E53508E2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift"; sourceTree = "<group>"; };
 		1E6A4D682984208800A371D3 /* LocaleExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleExtension.swift; sourceTree = "<group>"; };
-		1E7851442D6F267D006AFBE1 /* SubscriptionFlowViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFlowViewModelTests.swift; sourceTree = "<group>"; };
+		1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncHeadlessWebViewSettingsTests.swift; sourceTree = "<group>"; };
 		1E7A71162934EB6400B7EA19 /* OmniBarNotificationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotificationAnimator.swift; sourceTree = "<group>"; };
 		1E7A71182934EC6100B7EA19 /* OmniBarNotificationContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotificationContainerView.swift; sourceTree = "<group>"; };
 		1E7A711B2934EEBC00B7EA19 /* OmniBarNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OmniBarNotification.swift; sourceTree = "<group>"; };
@@ -7185,7 +7185,7 @@
 				F1BDDBF92C340D9C00459306 /* SubscriptionContainerViewModelTests.swift */,
 				F1BDDBFB2C340D9C00459306 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */,
 				1E4E6C562C78B8540059C0FA /* StorePurchaseManagerTests.swift */,
-				1E7851442D6F267D006AFBE1 /* SubscriptionFlowViewModelTests.swift */,
+				1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */,
 			);
 			path = Subscription;
 			sourceTree = "<group>";
@@ -9217,7 +9217,7 @@
 				31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */,
 				1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */,
 				85C11E532090B23A00BFFEB4 /* UserDefaultsHomeRowReminderStorageTests.swift in Sources */,
-				1E7851452D6F267D006AFBE1 /* SubscriptionFlowViewModelTests.swift in Sources */,
+				1E7851452D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift in Sources */,
 				F1DA2F7D1EBCF23700313F51 /* ExternalUrlSchemeTests.swift in Sources */,
 				9FDEC7B62C8FDFD600C7A692 /* OnboardingManagerMock.swift in Sources */,
 				F198D78E1E39762C0088DA8A /* StringExtensionTests.swift in Sources */,

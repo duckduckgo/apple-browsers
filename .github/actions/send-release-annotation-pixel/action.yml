@@ -25,12 +25,7 @@ runs:
           exit 1
         fi
 
-        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-          pixel_name="m_new_release_debug_${{ inputs.platform }}"
-        else
-          pixel_name="m_new_release_${{ inputs.platform }}"
-        fi
-
+        pixel_name="m_new_release_${{ inputs.platform }}"
         status=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://improving.duckduckgo.com/t/${pixel_name}?appVersion=${{ inputs.version }}")
         
         if [[ $status -ge 200 && $status -lt 300 ]]; then

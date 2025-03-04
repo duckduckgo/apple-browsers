@@ -1123,7 +1123,10 @@ final class NavigationBarViewController: NSViewController {
         aiChatButton.menu = menu
         aiChatButton.toolTip = UserText.aiChat
 
-        aiChatButton.isHidden = !(LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut)
+        let isFeatureEnabled = LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut
+        let isPopUpWindow = view.window?.isPopUpWindow ?? false
+
+        aiChatButton.isHidden = !isFeatureEnabled || isPopUpWindow
     }
 }
 
@@ -1154,7 +1157,7 @@ extension NavigationBarViewController: NSMenuDelegate {
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
         }
 
-        if aiChatMenuConfig.isFeatureEnabledForToolbarShortcut {
+        if !isPopUpWindow && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut {
             let aiChatTitle = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
             menu.addItem(withTitle: aiChatTitle, action: #selector(toggleAIChatPanelPinning), keyEquivalent: "L")
         }

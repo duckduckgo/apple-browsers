@@ -127,6 +127,7 @@ struct SettingsRootView: View {
                 SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)
@@ -147,14 +148,16 @@ struct SettingsRootView: View {
                                                                      subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                      subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                      privacyProDataReporter: viewModel.privacyProDataReporter,
-                                                                     tld: AppDependencyProvider.shared.storageCache.tld)
+                                                                     tld: AppDependencyProvider.shared.storageCache.tld,
+                                                                     internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
                 .environmentObject(subscriptionNavigationCoordinator)
 
             case .restoreFlow:
                 SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                               subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               onDisappear: {})
+                                                                 subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)
             case .netP:

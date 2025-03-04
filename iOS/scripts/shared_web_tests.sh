@@ -80,3 +80,8 @@ fi
 echo "Starting test run:"
 export DERIVED_DATA_PATH="$(pwd)/../../DerivedData/" && npm run test | tee ../../tmp/test-out.txt
 cd ../..
+# Deactivate the Python virtual environment
+if [ -n "$VIRTUAL_ENV" ]; then
+    echo "Deactivating Python virtual environment"
+    deactivate
+fi

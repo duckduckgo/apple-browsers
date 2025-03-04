@@ -68,7 +68,7 @@ final class OnboardingViewModel: ObservableObject {
     }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
-    private static var _isOnboardingFinished: Bool
+    static var _isOnboardingFinished: Bool
 
     @MainActor
     private(set) static var isOnboardingFinished: Bool {

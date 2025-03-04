@@ -7924,6 +7924,7 @@
 				B6ABC5952B4861D4008343B9 /* FocusableTextField.swift */,
 				B6F9BDE32B45CD1900677B33 /* ModalView.swift */,
 				C1372EF32BBC5BAD003F8793 /* SecureTextField.swift */,
+				BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */,
 			);
 			path = SwiftUI;
 			sourceTree = "<group>";
@@ -10040,7 +10041,6 @@
 				BB80DDD42D75F0EC00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciding.swift */,
 				BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */,
 				BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */,
-				BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */,
 				BBDE00212D6DE73600109F88 /* DefaultBrowserAndDockPromptNotifications.swift */,
 				BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */,
 				BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */,

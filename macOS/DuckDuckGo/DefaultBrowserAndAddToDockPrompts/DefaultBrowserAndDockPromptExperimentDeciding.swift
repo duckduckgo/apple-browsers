@@ -25,7 +25,7 @@ final class DefaultBrowserAndDockPromptExperimentDecider: DefaultBrowserAndDockP
     private let isNewUser: Bool
     private let isEligibleForPrompt: Bool
 
-    init(wasOnboardingCompleted: Bool = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted && OnboardingViewModel._isOnboardingFinished,
+    init(wasOnboardingCompleted: Bool = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted || OnboardingViewModel._isOnboardingFinished,
          isNewUser: Bool = AppDelegate.isNewUser,
          isEligibleForPrompt: Bool) {
         self.wasOnboardingCompleted = wasOnboardingCompleted

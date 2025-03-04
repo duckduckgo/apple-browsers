@@ -86,6 +86,17 @@ final class SubscriptionURLTests: XCTestCase {
         }
     }
 
+    func testIdentityTheftRestorationURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/identity-theft-restoration")!
+
+        // When
+        let url = SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
     func testStaticURLs() throws {
         let faqProductionURL = SubscriptionURL.faq.subscriptionURL(environment: .production)
         let faqStagingURL = SubscriptionURL.faq.subscriptionURL(environment: .staging)
@@ -126,5 +137,40 @@ final class SubscriptionURLTests: XCTestCase {
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?foo=bar")!
 
         XCTAssertEqual(url.forComparison(), expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForProduction() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions-test")!
+
+        // When
+        let url = SubscriptionURL.baseURL.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, customBaseURL)
+    }
+
+    func testCustomBaseSubscriptionURLForAddEmailURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = customBaseURL.appendingPathComponent("add-email")
+
+        // When
+        let url = SubscriptionURL.addEmail.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForIdentityTheftRestorationURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/identity-theft-restoration")!
+
+        // When
+        let url = SubscriptionURL.identityTheftRestoration.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
     }
 }

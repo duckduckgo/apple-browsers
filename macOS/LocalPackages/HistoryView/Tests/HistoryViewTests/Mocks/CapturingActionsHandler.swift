@@ -20,16 +20,30 @@ import Foundation
 import HistoryView
 
 final class CapturingActionsHandler: ActionsHandling {
-    func showDeleteDialog(for range: DataModel.HistoryRange) async -> DataModel.DeleteDialogResponse {
-        showDeleteDialogCalls.append(range)
-        return await showDeleteDialog(range)
+
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> HistoryView.DataModel.DeleteDialogResponse {
+        showDeleteDialogForQueryCalls.append(query)
+        return await showDeleteDialogForQuery(query)
+    }
+
+    func showDeleteDialog(for entries: [String]) async -> HistoryView.DataModel.DeleteDialogResponse {
+        showDeleteDialogForEntriesCalls.append(entries)
+        return await showDeleteDialogForEntries(entries)
+    }
+
+    func showContextMenu(for entries: [String], using presenter: any ContextMenuPresenting) async -> DataModel.DeleteDialogResponse {
+        return .noAction
     }
 
     func open(_ url: URL) {
         openCalls.append(url)
     }
 
-    var showDeleteDialogCalls: [DataModel.HistoryRange] = []
-    var showDeleteDialog: (DataModel.HistoryRange) async -> DataModel.DeleteDialogResponse = { _ in .delete }
+    var showDeleteDialogForQueryCalls: [DataModel.HistoryQueryKind] = []
+    var showDeleteDialogForQuery: (DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse = { _ in .delete }
+
+    var showDeleteDialogForEntriesCalls: [[String]] = []
+    var showDeleteDialogForEntries: ([String]) async -> DataModel.DeleteDialogResponse = { _ in .delete }
+
     var openCalls: [URL] = []
 }

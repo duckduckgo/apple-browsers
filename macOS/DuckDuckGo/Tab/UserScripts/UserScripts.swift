@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import HistoryView
 import UserScript
 import WebKit
 import Subscription
@@ -51,6 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
+    let historyViewUserScript: HistoryViewUserScript?
 
     init(with sourceProvider: ScriptSourceProviding) {
         clickToLoadScript = ClickToLoadUserScript()
@@ -79,6 +81,14 @@ final class UserScripts: UserScriptsProvider {
                                                                     languageCode: lenguageCode)
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
+            let historyViewUserScript = HistoryViewUserScript()
+            sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
+            self.historyViewUserScript = historyViewUserScript
+        } else {
+            historyViewUserScript = nil
+        }
 
         specialPages = SpecialPagesUserScript()
 
@@ -121,6 +131,10 @@ final class UserScripts: UserScriptsProvider {
 #endif
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
+            }
+
+            if let historyViewUserScript {
+                specialPages.registerSubfeature(delegate: historyViewUserScript)
             }
             userScripts.append(specialPages)
         }

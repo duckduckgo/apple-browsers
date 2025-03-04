@@ -47,13 +47,15 @@ struct SettingsSubscriptionView: View {
     var subscriptionRestoreView: some View {
         SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                          subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
-                                                         subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability)
+                                                         subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                                                         internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
     }
 
     var subscriptionRestoreViewV2: some View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                                                           subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability)
+                                                           subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                                                           internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
     }
 
     private var manageSubscriptionView: some View {

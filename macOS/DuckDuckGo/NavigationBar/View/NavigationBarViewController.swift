@@ -42,7 +42,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var goBackButton: NSButton!
     @IBOutlet weak var goForwardButton: NSButton!
     @IBOutlet weak var refreshOrStopButton: NSButton!
-    @IBOutlet weak var optionsButton: NSButton!
+    @IBOutlet weak var optionsButton: MouseOverButton!
     @IBOutlet weak var bookmarkListButton: MouseOverButton!
     @IBOutlet weak var passwordManagementButton: MouseOverButton!
     @IBOutlet weak var homeButton: MouseOverButton!
@@ -114,6 +114,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    private let featureFlagger: FeatureFlagger
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -131,14 +132,39 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-                       brokenSitePromptLimiter: BrokenSitePromptLimiter) -> NavigationBarViewController {
+                       brokenSitePromptLimiter: BrokenSitePromptLimiter,
+                       featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, networkProtectionFeatureActivation: networkProtectionFeatureActivation, downloadListCoordinator: downloadListCoordinator, dragDropManager: dragDropManager, networkProtectionPopoverManager: networkProtectionPopoverManager, networkProtectionStatusReporter: networkProtectionStatusReporter, autofillPopoverPresenter: autofillPopoverPresenter, aiChatMenuConfig: aiChatMenuConfig, brokenSitePromptLimiter: brokenSitePromptLimiter)
+            self.init(
+                coder: coder,
+                tabCollectionViewModel: tabCollectionViewModel,
+                networkProtectionFeatureActivation: networkProtectionFeatureActivation,
+                downloadListCoordinator: downloadListCoordinator,
+                dragDropManager: dragDropManager,
+                networkProtectionPopoverManager: networkProtectionPopoverManager,
+                networkProtectionStatusReporter: networkProtectionStatusReporter,
+                autofillPopoverPresenter: autofillPopoverPresenter,
+                aiChatMenuConfig: aiChatMenuConfig,
+                brokenSitePromptLimiter: brokenSitePromptLimiter,
+                featureFlagger: featureFlagger
+            )
         }!
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, networkProtectionFeatureActivation: NetworkProtectionFeatureActivation, downloadListCoordinator: DownloadListCoordinator, dragDropManager: BookmarkDragDropManager, networkProtectionPopoverManager: NetPPopoverManager, networkProtectionStatusReporter: NetworkProtectionStatusReporter, autofillPopoverPresenter: AutofillPopoverPresenter,
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable, brokenSitePromptLimiter: BrokenSitePromptLimiter) {
+    init?(
+        coder: NSCoder,
+        tabCollectionViewModel: TabCollectionViewModel,
+        networkProtectionFeatureActivation: NetworkProtectionFeatureActivation,
+        downloadListCoordinator: DownloadListCoordinator,
+        dragDropManager: BookmarkDragDropManager,
+        networkProtectionPopoverManager: NetPPopoverManager,
+        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
+        autofillPopoverPresenter: AutofillPopoverPresenter,
+        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+        brokenSitePromptLimiter: BrokenSitePromptLimiter,
+        featureFlagger: FeatureFlagger
+    ) {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -148,6 +174,7 @@ final class NavigationBarViewController: NSViewController {
         self.dragDropManager = dragDropManager
         self.aiChatMenuConfig = aiChatMenuConfig
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
+        self.featureFlagger = featureFlagger
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
         super.init(coder: coder)
@@ -233,6 +260,34 @@ final class NavigationBarViewController: NSViewController {
             NSLayoutConstraint.activate(addressBarStack.addConstraints(to: view, [
                 .leading: .leading(multiplier: 1.0, const: 72)
             ]))
+        }
+    }
+
+    /**
+     * Presents History View onboarding.
+     *
+     * This is gater by the decider that takes into account whether the user is new,
+     * whether they've seen the popover already and whether the feature flag is enabled.
+     *
+     * > `force` parameter is only used by `HistoryDebugMenu`.
+     */
+    func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
+        Task { @MainActor in
+            guard force || HistoryViewOnboardingDecider().shouldPresentOnboarding,
+                  !tabCollectionViewModel.isBurner,
+                  view.window?.isKeyWindow == true
+            else {
+                return
+            }
+            popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
+                guard let self else { return }
+
+                popovers.closeHistoryViewOnboardingViewPopover()
+
+                if showHistory {
+                    tabCollectionViewModel.insertOrAppendNewTab(.history, selected: true)
+                }
+            }
         }
     }
 
@@ -1068,7 +1123,10 @@ final class NavigationBarViewController: NSViewController {
         aiChatButton.menu = menu
         aiChatButton.toolTip = UserText.aiChat
 
-        aiChatButton.isHidden = !(LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut)
+        let isFeatureEnabled = LocalPinningManager.shared.isPinned(.aiChat) && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut
+        let isPopUpWindow = view.window?.isPopUpWindow ?? false
+
+        aiChatButton.isHidden = !isFeatureEnabled || isPopUpWindow
     }
 }
 
@@ -1099,7 +1157,7 @@ extension NavigationBarViewController: NSMenuDelegate {
             menu.addItem(withTitle: networkProtectionTitle, action: #selector(toggleNetworkProtectionPanelPinning), keyEquivalent: "")
         }
 
-        if aiChatMenuConfig.isFeatureEnabledForToolbarShortcut {
+        if !isPopUpWindow && aiChatMenuConfig.isFeatureEnabledForToolbarShortcut {
             let aiChatTitle = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
             menu.addItem(withTitle: aiChatTitle, action: #selector(toggleAIChatPanelPinning), keyEquivalent: "L")
         }

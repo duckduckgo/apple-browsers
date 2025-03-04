@@ -53,3 +53,4 @@ release/
 ## Build generated
 DerivedData/
 xcodebuild.log
+tmp

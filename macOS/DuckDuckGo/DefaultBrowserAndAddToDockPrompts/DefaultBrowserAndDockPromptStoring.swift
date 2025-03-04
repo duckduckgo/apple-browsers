@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptRepository.swift
+//  DefaultBrowserAndDockPromptStoring.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
-protocol DefaultBrowserAndDockPromptRepository {
+protocol DefaultBrowserAndDockPromptStoring {
     func setPromptShown(_ shown: Bool)
     func wasPromptShown() -> Bool
 }
 
-final class DefaultBrowserAndDockPromptRepositoryImpl: DefaultBrowserAndDockPromptRepository {
+final class DefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStoring {
     private static let promptShownKey = "DefaultBrowserAndDockPromptShown"
 
     private let userDefaults: UserDefaults

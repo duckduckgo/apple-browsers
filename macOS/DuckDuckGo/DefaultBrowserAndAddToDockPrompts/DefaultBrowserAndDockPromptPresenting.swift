@@ -52,7 +52,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     static let shared = DefaultBrowserAndDockPromptPresenter()
 
     private let coordinator: DefaultBrowserAndDockPrompt
-    private let repository: DefaultBrowserAndDockPromptRepository
+    private let repository: DefaultBrowserAndDockPromptStoring
     private let featureFlagger: FeatureFlagger
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
@@ -60,7 +60,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private var cancellables: Set<AnyCancellable> = []
 
     init(coordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator(),
-         repository: DefaultBrowserAndDockPromptRepository = DefaultBrowserAndDockPromptRepositoryImpl(),
+         repository: DefaultBrowserAndDockPromptStoring = DefaultBrowserAndDockPromptStore(),
          featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         self.coordinator = coordinator
         self.repository = repository

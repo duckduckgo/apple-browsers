@@ -199,7 +199,7 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
     }
 }
 
-final class MockDefaultBrowserAndDockPromptRepository: DefaultBrowserAndDockPromptRepository {
+final class MockDefaultBrowserAndDockPromptRepository: DefaultBrowserAndDockPromptStoring {
     var wasPromptShownCalled = false
     var wasSetPromptShownCalled = false
     private var wasPromptShownInternal = false

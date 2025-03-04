@@ -43,6 +43,8 @@ public struct UserDefaultsWrapper<T> {
 
         case daxIsDismissed = "com.duckduckgo.ios.daxOnboardingIsDismissed"
         case daxHomeScreenMessagesSeen = "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen"
+        case daxTryAnonymousSearchShown = "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown"
+        case daxTryVisitSiteShown = "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown"
         case daxBrowsingAfterSearchShown = "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown"
         case daxBrowsingWithTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown"
         case daxBrowsingWithoutTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown"

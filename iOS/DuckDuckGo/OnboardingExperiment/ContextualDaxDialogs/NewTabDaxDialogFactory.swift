@@ -69,6 +69,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
+            self?.contextualOnboardingLogic.setTryAnonymousSearchMessageSeen()
             self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTrySearchUnique)
         }
     }
@@ -81,6 +82,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
+            self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
             self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
         }
     }

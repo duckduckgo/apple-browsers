@@ -528,7 +528,7 @@ final class DaxDialog: XCTestCase {
         XCTAssertNil(result2)
     }
 
-    func testWhenVisitWebsiteSeen_OnReload_VisitWebsiteReturned() {
+    func testWhenVisitWebsiteSeen_OnReload_VisitWebsiteNotReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
@@ -542,11 +542,11 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .afterSearch)
-        XCTAssertEqual(result2?.type, .visitWebsite)
-        XCTAssertEqual(result2, result3)
+        XCTAssertNil(result2)
+        XCTAssertNil(result3)
     }
 
-    func testWhenVisitWebsiteSeen_OnLoadingAnotherSearch_NilIseturned() {
+    func testWhenVisitWebsiteSeen_OnLoadingAnotherSearch_NilIsReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
@@ -560,7 +560,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .afterSearch)
-        XCTAssertEqual(result2?.type, .visitWebsite)
+        XCTAssertNil(result2)
         XCTAssertNil(result3)
     }
 

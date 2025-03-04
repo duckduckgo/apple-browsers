@@ -70,7 +70,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .afterSearch:
             rootView = AnyView(
                 afterSearchDialog(
-                    shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog,
+                    shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog && !contextualOnboardingSettings.userHasSeenTryVisitSiteDialog,
                     delegate: delegate,
                     afterSearchPixelEvent: spec.pixelName,
                     onSizeUpdate: onSizeUpdate
@@ -225,6 +225,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 protocol ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool { get }
     var userHasSeenFireDialog: Bool { get }
+    var userHasSeenTryVisitSiteDialog: Bool { get }
 }
 
 extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
@@ -237,6 +238,10 @@ extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
     
     var userHasSeenFireDialog: Bool {
         fireMessageExperimentShown
+    }
+
+    var userHasSeenTryVisitSiteDialog: Bool {
+        tryVisitASiteShown
     }
 
 }

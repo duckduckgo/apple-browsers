@@ -3042,24 +3042,24 @@ extension MainViewController: UIDropInteractionDelegate {
 // MARK: - VoiceSearchViewControllerDelegate
 
 extension MainViewController: VoiceSearchViewControllerDelegate {
-    
+
     func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
-        controller.dismiss(animated: true, completion: nil)
-        guard let query = query else { return }
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            Pixel.fire(pixel: .voiceSearchSERPDone)
+            loadQuery(query)
 
-            switch target {
-            case .SERP:
-                Pixel.fire(pixel: .voiceSearchSERPDone)
-                self.loadQuery(query)
-
-            case .AIChat:
-                Pixel.fire(pixel: .voiceSearchAIChatDone)
-                self.performCancel()
-                self.openAIChat(query, autoSend: true)
-            }
+        case .AIChat:
+            Pixel.fire(pixel: .voiceSearchAIChatDone)
+            performCancel()
+            openAIChat(query, autoSend: true)
         }
     }
 }

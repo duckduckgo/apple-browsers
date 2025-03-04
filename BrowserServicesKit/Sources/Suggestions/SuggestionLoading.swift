@@ -30,6 +30,7 @@ public class SuggestionLoader: SuggestionLoading {
 
     static let remoteSuggestionsUrl = URL(string: "https://duckduckgo.com/ac/")!
     static let searchParameter = "q"
+    static let isNavParameter = "is_nav"
 
     public enum SuggestionLoaderError: Error {
         case noDataSource
@@ -68,7 +69,7 @@ public class SuggestionLoader: SuggestionLoading {
             dataSource.suggestionLoading(self,
                                          suggestionDataFromUrl: Self.remoteSuggestionsUrl,
                                          withParameters: [ Self.searchParameter: query,
-                                                           "is_nav": "1", // Enables is_nav in the JSON response
+                                                           Self.isNavParameter: "1", // Enables is_nav in the JSON response
                                                          ]) { data, error in
                 defer { group.leave() }
                 guard let data = data else {

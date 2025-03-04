@@ -941,6 +941,9 @@ protocol NewWindowPolicyDecisionMaker {
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
             switch content {
             case .newtab, .bookmarks, .settings:
+#if DEBUG
+                guard case .normal = NSApp.runType else { return false }
+#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground

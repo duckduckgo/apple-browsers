@@ -1,7 +1,7 @@
 //
 //  SetExtension.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Common
+public extension Set {
 
-extension Set where Element == String {
-
-    func convertedToETLDPlus1(tld: TLD) -> Set<String> {
-        var transformedSet = Set<String>()
-        for domain in self {
-            if let eTLDPlus1Domain = tld.eTLDplus1(domain) {
-                transformedSet.insert(eTLDPlus1Domain)
-            }
-        }
-        return transformedSet
+    @inlinable func intersects<S: Sequence>(_ other: S) -> Bool where Element == S.Element {
+        !isDisjoint(with: other)
     }
 
 }

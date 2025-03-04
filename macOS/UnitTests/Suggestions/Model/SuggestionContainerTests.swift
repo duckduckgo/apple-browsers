@@ -17,8 +17,10 @@
 //
 
 import Combine
+import Common
 import History
 import NetworkingTestingUtils
+import os.log
 import SnapshotTesting
 import Suggestions
 import XCTest
@@ -133,6 +135,7 @@ final class SuggestionContainerTests: XCTestCase {
             }
 
             // Run the test for each scenario
+            Logger.tests.info("Running JSON test scenario: \(fileURL.lastPathComponent)")
             try await runJsonTestScenario(testScenario, named: fileURL.deletingPathExtension().lastPathComponent)
         }
     }
@@ -205,11 +208,11 @@ final class SuggestionContainerTests: XCTestCase {
         // Get the compiled suggestions
         let resultPromise = suggestionContainer.$result.dropFirst().timeout(1).first().promise()
         suggestionContainer.getSuggestions(for: input.query)
-        let actualResult = try await resultPromise.get()
 
-        assert(TestExpectations(from: actualResult, query: testScenario.input.query, windows: testScenario.input.windows),
-               named: name,
-               match: testScenario.expectations)
+        let actualResults = try await resultPromise.get()
+        let testResults = TestExpectations(from: actualResults, query: testScenario.input.query, windows: testScenario.input.windows)
+
+        assert(testResults, named: name, match: testScenario.expectations)
     }
 
 }
@@ -260,7 +263,7 @@ extension SuggestionContainerTests {
         let isFavorite: Bool
     }
 
-    struct HistoryEntry: Decodable, Suggestions.HistorySuggestion {
+    struct HistoryEntry: Decodable, Hashable, Suggestions.HistorySuggestion {
         enum CodingKeys: String, CodingKey {
             case title
             case url = "uri"
@@ -276,7 +279,22 @@ extension SuggestionContainerTests {
         let _failedToLoad: Bool?
         var failedToLoad: Bool { _failedToLoad ?? false }
 
-        var identifier: UUID { UUID(uuidString: "00000000-0000-0000-0000-000000000000")! }
+        var identifier: UUID { Self.uuidFromHash(self.hashValue) }
+
+        private static func uuidFromHash(_ hash: Int) -> UUID {
+            // Convert the integer hash to a string
+            let hashString = String(hash)
+
+            // Create a UUID from the hash string by padding/truncating to fit UUID format
+            let paddedHashString = hashString.padding(toLength: 32, withPad: "0", startingAt: 0)
+
+            // Format the string to match UUID format (8-4-4-4-12)
+            let uuidString = "\(paddedHashString.prefix(8))-\(paddedHashString.dropFirst(8).prefix(4))-\(paddedHashString.dropFirst(12).prefix(4))-\(paddedHashString.dropFirst(16).prefix(4))-\(paddedHashString.dropFirst(20).prefix(12))"
+
+            // Create and return a UUID from the formatted string
+            return UUID(uuidString: uuidString)!
+        }
+
     }
 
     struct Window: Decodable {
@@ -465,21 +483,35 @@ extension SuggestionContainerTests {
             let uri: String?
             let tabId: UUID?
             let score: Int
+
             init(from decoder: Decoder) throws {
                 let container = try decoder.container(keyedBy: CodingKeys.self)
                 self.type = try container.decode(SuggestionType.self, forKey: .type)
                 self.title = try container.decode(String.self, forKey: .title)
                 self.subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
-                self.uri = try container.decodeIfPresent(String.self, forKey: .uri)
-                self.tabId = try container.decodeIfPresent(UUID.self, forKey: .tabId)
+                self.uri = try container.decodeIfPresent(String.self, forKey: .uri).flatMap { urlString in
+                    // Convert percent-encoded sequences to upper case to match macOS `String.addingPercentEncoding` implementation
+                    guard let qStartIdx = urlString.firstIndex(of: "?") else { return urlString }
+                    let qEndIdx = urlString[qStartIdx...].firstIndex(of: "#") ?? urlString.endIndex
+                    var urlString = urlString
+                    let percentEncoursedSequencesRegex = regex(#"(%[0-9a-f]{2})"#)
+                    let matches = percentEncoursedSequencesRegex.matches(in: urlString, options: [], range: NSRange(qStartIdx..<qEndIdx, in: urlString))
+                    for match in matches {
+                        urlString.replaceSubrange(match.range(in: urlString)!, with: urlString[match.range(in: urlString)!].uppercased())
+                    }
+                    return urlString
+                }
+                let tabId = try container.decodeIfPresent(UUID.self, forKey: .tabId)
+                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : tabId
                 self.score = try container.decode(Int.self, forKey: .score)
             }
+
             init(type: SuggestionType, title: String, subtitle: String?, uri: String?, tabId: UUID?, score: Int = 1) {
                 self.type = type
                 self.title = title
                 self.subtitle = subtitle ?? ""
                 self.uri = uri
-                self.tabId = tabId
+                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : tabId
                 self.score = score
             }
         }
@@ -509,7 +541,7 @@ private extension Suggestion {
         let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query)
         switch self {
         case .phrase(phrase: let phrase):
-            return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: nil, tabId: nil, score: 0)
+            return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)
 
         case .website(url: let url):
             return .init(type: .website, title: url.absoluteString, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: 0)

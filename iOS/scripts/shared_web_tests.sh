@@ -6,6 +6,7 @@ if ! python3 --version | grep -q "3.9"; then
     if ! brew list python@3.9 >/dev/null 2>&1; then
         brew install python@3.9
     fi
+    # shellcheck source=/dev/null
     /opt/homebrew/bin/python3.9 -m venv /tmp/venv39 && [ -f /tmp/venv39/bin/activate ] && . /tmp/venv39/bin/activate
 fi
 
@@ -46,12 +47,8 @@ if [ -f "$IOS_HASH_FILE" ] && cmp -s "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"; then
     echo "iOS source files have not changed, skipping build."
 else
     echo "iOS source files have changed, building app."
-    if [ -f ".maestro/common.sh" ]; then
-        . .maestro/common.sh
-    else
-        echo "‼️ Error: .maestro/common.sh not found."
-        exit 1
-    fi
+    # shellcheck source=/dev/null
+    . .maestro/common.sh
     build_app
     cp "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"
 fi

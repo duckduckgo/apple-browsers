@@ -23,10 +23,8 @@ import Common
 extension Bundle {
 
     private enum VPNInfoKey: String {
-        //case tunnelAppexBundleID = "TUNNEL_EXTENSION_BUNDLE_ID"
         case tunnelAppexBundleID = "TUNNEL_APPEX_BUNDLE_ID"
         case tunnelSysexBundleID = "TUNNEL_SYSEX_BUNDLE_ID"
-        //case proxyAppexBundleID = "PROXY_EXTENSION_BUNDLE_ID"
         case proxyAppexBundleID = "PROXY_APPEX_BUNDLE_ID"
         case proxySysexBundleID = "PROXY_SYSEX_BUNDLE_ID"
     }

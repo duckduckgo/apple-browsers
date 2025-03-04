@@ -56,9 +56,7 @@ final class VPNUninstaller: VPNUninstalling {
             }
             try await removeVPNConfiguration()
 
-            if defaults.networkProtectionOnboardingStatus == .completed {
-                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
-            }
+            await resetOnboardingStatus()
 
             defaults.networkProtectionShouldShowVPNUninstalledMessage = true
             pixelKit?.fire(VPNUninstallAttempt.success, frequency: .legacyDailyAndCount)
@@ -92,8 +90,16 @@ final class VPNUninstaller: VPNUninstalling {
 
         try await manager.removeFromPreferences()
 
+        await resetOnboardingStatus()
+    }
+
+    private func resetOnboardingStatus() async {
         if defaults.networkProtectionOnboardingStatus == .completed {
-            defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+            if await tunnelController.extensionResolver.isUsingSystemExtension {
+                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+            } else {
+                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+            }
         }
     }
 }

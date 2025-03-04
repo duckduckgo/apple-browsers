@@ -2042,6 +2042,7 @@
 		7BCB90C32C1863BA008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCB90C12C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift */; };
 		7BD069402D7711F100A7FF32 /* VPNExtensionManagement in Frameworks */ = {isa = PBXBuildFile; productRef = 7BD0693F2D7711F100A7FF32 /* VPNExtensionManagement */; };
 		7BD069422D7711F800A7FF32 /* VPNExtensionManagement in Frameworks */ = {isa = PBXBuildFile; productRef = 7BD069412D7711F800A7FF32 /* VPNExtensionManagement */; };
+		7BD069432D7714D800A7FF32 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9D26A565DA0013B453 /* BundleExtension.swift */; };
 		7BD1688E2AD4A4C400D24876 /* NetworkExtensionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD1688D2AD4A4C400D24876 /* NetworkExtensionController.swift */; };
 		7BD3AF5D2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */; };
 		7BD7B0012C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
@@ -13343,6 +13344,7 @@
 			files = (
 				4B4BEC3D2A11B56B001D9AC5 /* DuckDuckGoNotificationsAppDelegate.swift in Sources */,
 				4B4BEC412A11B5BD001D9AC5 /* NetworkProtectionUNNotificationsPresenter.swift in Sources */,
+				7BD069432D7714D800A7FF32 /* BundleExtension.swift in Sources */,
 				4B4BEC432A11B5C7001D9AC5 /* Bundle+VPN.swift in Sources */,
 				4B4BEC452A11B5EE001D9AC5 /* UserText+NetworkProtectionExtensions.swift in Sources */,
 				4B4BEC422A11B5C7001D9AC5 /* NetworkProtectionOptionKeyExtension.swift in Sources */,

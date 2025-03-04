@@ -66,6 +66,10 @@ final class AIChatWebViewController: UIViewController {
     private func setupWebView() {
         view.addSubview(webView)
 
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = chatModel.inspectableWebView
+        }
+
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),

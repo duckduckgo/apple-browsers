@@ -67,12 +67,6 @@
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Søk i passord";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Søk, chat på Duck.ai eller se passordene dine.";
-
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Snarveier";
-
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Søk eller besøk favorittsider privat med ett trykk.";
 

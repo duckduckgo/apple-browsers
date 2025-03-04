@@ -1,7 +1,8 @@
 //
-//  UpdateMenuItemFactory.swift
+//  MainViewController+Automation.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,20 +17,16 @@
 //  limitations under the License.
 //
 
-#if SPARKLE
+import UIKit
 
-import Cocoa
-
-final class UpdateMenuItemFactory {
-
-    static func menuItem(for update: Update) -> NSMenuItem {
-        let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
-        item.target = Application.appDelegate.updateController
-        item.action = #selector(UpdateController.runUpdateFromMenuItem)
-        item.image = NSImage.updateMenuItemIcon
-        return item
+extension MainViewController {
+    
+    func executeScript(_ javaScriptString: String,
+                       args: [String: Any] = [:]) async -> Result<Any?, any Error>? {
+        guard let result = await currentTab?.executeScript(javaScriptString, args: args) else {
+            return .failure(NSError(domain: "MainViewCongtroller", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to execute script"]))
+        }
+        return result
     }
 
 }
-
-#endif

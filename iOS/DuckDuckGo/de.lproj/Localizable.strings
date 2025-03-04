@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -220,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Synchronisieren und sichern ist angehalten";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Alle Tabs mit Lesezeichen versehen?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Zu ungeschützten Websites hinzufügen";
 
@@ -261,9 +255,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo entsperren.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Bist du sicher, dass du alle Lesezeichen löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Anmelden";
@@ -333,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Passwort ausblenden";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.via.sync.get-browser-button" = "Desktop-Browser herunterladen";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.step1" = "Öffne DuckDuckGo auf Mac oder Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.via.sync.instructions.step2" = "Gehe zu %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Passwörter";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.settings" = "Einstellungen";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.via.sync.instructions.step3" = "Wähle %@ aus und folge den Schritten zum Importieren";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.via.sync.instructions.step3.import" = "Passwörter importieren …";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.via.sync.instructions.step4" = "Sobald du sie auf deinen Computer importiert hast, kannst du die Synchronisierung auf diesem %@ einrichten";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.title" = "Aus dem Desktop-Browser importieren:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.via.sync.subtitle" = "Importiere Passwörter in der Desktop-Version des DuckDuckGo-Browsers und synchronisiere sie dann auf allen Geräten.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.via.sync.sync-button" = "Mit Desktop synchronisieren";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Wie man Passwörter importiert";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Deaktivieren";
@@ -468,9 +423,6 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Passwörter importieren";
-
-/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
-"autofill.logins.empty-view.import-via-sync.button.title" = "Desktop-Passwörter synchronisieren";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Du kannst gespeicherte Passwörter aus einem anderen Browser in DuckDuckGo importieren.";
@@ -773,26 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Deine Lesezeichen wurden geteilt.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.html.title" = "HTML-Datei exportieren";
-
-/* Title of option to export bookmarks as HTML */
-"bookmarks.exportAction.title" = "Lesezeichen exportieren";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Leider können wir diese Datei nicht importieren.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Deine Lesezeichen wurden importiert.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.html.title" = "HTML-Datei importieren";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Lesezeichen importieren";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Lesezeichen aus anderen beliebten Browsern importieren.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Ein Problem mit dieser Website melden";
@@ -808,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Dein Bericht hilft, DuckDuckGo für alle zu verbessern!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Stornieren ist nur einmal erlaubt";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bestätigen";
@@ -923,108 +863,6 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatisch Absturzberichte senden?";
 
-/* Button label to select zip or html file for importing */
-"data.import.bookmarks.file-button" = "Lesezeichendatei importieren ...";
-
-/* Header for section with instructions for how to export bookmarks from Safari */
-"data.import.bookmarks.instructions.header" = "So exportierst du Lesezeichen aus Safari";
-
-/* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Wähle die Datei mit den Lesezeichen aus. Dabei handelt es sich in der Regel um eine ZIP- oder HTML-Datei.";
-
-/* Title for screen to import bookmarks */
-"data.import.bookmarks.title" = "Lesezeichen in DuckDuckGo importieren";
-
-/* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "In der ZIP-Datei wurden keine unterstützten Daten gefunden. Bitte lies die Exportanweisungen für Safari und versuche es erneut.";
-
-/* Error message displayed when the user has selected an unsupported file */
-"data.import.failed.unsupported-file-error-message" = "Die ausgewählte Datei wird nicht unterstützt. Bitte wähle eine andere Datei aus und versuche es erneut.";
-
-/* Error message displayed when the (csv|html|zip) file can't be read. */
-"data.import.failed.zip-read-error-message" = "Die %@-Datei konnte nicht gelesen werden. Möglicherweise gibt es ein Problem mit den Daten in der Datei.";
-
-/* File type for CSV files */
-"data.import.file-type.csv" = "CSV";
-
-/* File type for HTML files */
-"data.import.file-type.html" = "HTML";
-
-/* File type for ZIP files */
-"data.import.file-type.zip" = "ZIP";
-
-/* Step 2 for instructions to export bookmarks from Safari */
-"data.import.instructions.safari.step2" = "Wähle **Exportieren**. Wähle auf dem nächsten Bildschirm **Lesezeichen** und dann **In Downloads speichern**.";
-
-/* Step 2 for instructions to export passwords from Safari */
-"data.import.instructions.safari.step2.passwords" = "Wähle **Exportieren**. Wähle auf dem nächsten Bildschirm **Passwörter** und dann **In Downloads speichern**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Passwortdatei importieren …";
-
-/* Step 1 for instructions to import passwords from Chrome */
-"data.import.passwords.instructions.chrome.step1" = "Gehe in Chrome zu **Google Passwort Manager** und dann zu **Einstellungen**.";
-
-/* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Wähle **Passwörter exportieren**, dann **In Dateien speichern** und speichere die Datei in einem Ordner, den du dir merken kannst.";
-
-/* Header for section with instructions for how to export passwords from Safari or Chrome */
-"data.import.passwords.instructions.header" = "So exportierst du Passwörter";
-
-/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Öffne ⚙️ **Einstellungen**, gib „Exportieren“ in die Suchleiste ein und wähle das Ergebnis **Exportieren** für Safari, um direkt zur Option zu gelangen (oder gehe in den Einstellungen zu Apps > Safari).";
-
-/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
-"data.import.passwords.instructions.selector" = "Exportieren aus";
-
-/* Export instructions selector for Chrome */
-"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
-
-/* Export instructions selector for Safari */
-"data.import.passwords.instructions.selector.safari" = "Safari";
-
-/* Title for section with instructions to export passwords from Safari */
-"data.import.passwords.instructions.title" = "So exportierst du Passwörter aus Safari:";
-
-/* Subtitle for screen to import passwords */
-"data.import.passwords.subtitle" = "Wähle die Datei aus, die Passwörter enthält, die aus Safari oder Chrome exportiert wurden. Dabei handelt es sich in der Regel um eine ZIP- oder CSV-Datei.";
-
-/* Title for screen to import passwords */
-"data.import.passwords.title" = "Passwort in DuckDuckGo importieren";
-
-/* Data import summary of how many bookmarks were successfully imported. */
-"data.import.summary.bookmarks.success" = "Lesezeichen";
-
-/* Title of button to dismiss the screen */
-"data.import.summary.button.title.done" = "Fertig";
-
-/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
-"data.import.summary.button.title.sync" = "%@ synchronisieren und sichern";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.bookmarks" = "Lesezeichen";
-
-/* Parameter for data.import.summary.button.title.sync */
-"data.import.summary.button.title.sync.data" = "Daten";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.passwords" = "Passwörter";
-
-/* Title for screen shown after attempting to import data (passwords / bookmarks) */
-"data.import.summary.complete.title" = "Import abgeschlossen!";
-
-/* Data import summary of how many items were not imported as they were duplicates. */
-"data.import.summary.duplicates" = "Duplikate übersprungen";
-
-/* Data import summary of how many items failed to import. */
-"data.import.summary.failed" = "Import fehlgeschlagen";
-
-/* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "Du kannst die Passwortdatei jetzt löschen.";
-
-/* Data import summary of how many passwords were successfully imported. */
-"data.import.summary.passwords.success" = "Passwörter";
-
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Letzter Monat";
 
@@ -1108,9 +946,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Fehlerbehebung";
-
-/* No comment provided by engineer. */
-"Delete All" = "Alle löschen";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "Gerät";
@@ -1204,6 +1039,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Duck.ai im Browser-Menü anzeigen";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Duck.ai in der Sprachsuche anzeigen";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1318,9 +1156,6 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Noch keine Lesezeichen hinzugefügt";
-
-/* Empty list state placeholder subtitle */
-"empty.bookmarks.subtitle" = "Wenn deine Lesezeichen in einem anderen Browser gespeichert sind,\nkannst du sie in DuckDuckGo importieren.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Keine Treffer gefunden";
@@ -1789,6 +1624,9 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Browsing-Optionen";
+
+/* No comment provided by engineer. */
+"Message" = "Nachricht";
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Hostname der Nachrichtenrichtlinie";
@@ -2297,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Primäre/erste Aktion";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Datenschutz";
 
 /* Privacy Icon accessibility title */
@@ -2327,6 +2168,9 @@
 "search.hint.duckduckgo" = "Adresse suchen oder eingeben";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Sekundäre/zweite Aktion";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Lesezeichen";
 
 /* No comment provided by engineer. */
@@ -2349,10 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Über";
-/* about tagline */
-"settings.about.tagline" = "Schutz. Privatsphäre. Extra an Sicherheit.";
-/* about page */
-"settings.about.text.new" = "DuckDuckGo ist das unabhängige Unternehmen im Bereich Online-Schutz für alle, die die Kontrolle über ihre personenbezogene Daten zurückerlangen möchten.\n\nWir glauben, dass der beste Weg, deine persönlichen Daten vor Hackern, Betrügern und Unternehmen, die deine Privatsphäre verletzen, zu schützen, darin besteht, gar nicht erst zuzulassen, dass sie gesammelt werden. Deshalb entscheiden sich Millionen von Menschen [für DuckDuckGo anstelle von Chrome und anderen Browsern](ddgQuickLink://duckduckgo.com/compare-privacy), um online zu suchen und zu surfen. Unsere integrierte Suchmaschine ähnelt Google, trackt deine Suchanfragen jedoch nie. Und unsere Browsing-Schutzfunktionen, wie die Tracker-Blockade und das Blockieren von Cookies, helfen, zu verhindern, dass andere Unternehmen deine Daten sammeln. Oh, und unser Browser ist kostenlos – wir verdienen Geld mit [datenschutzfreundlichen Suchanzeigen](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nicht, indem wir deine Daten ausnutzen. \n\nZusätzlich bieten wir [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) an, einen Drei-in-Eins-Abonnementdienst, der in unseren Browser integriert ist. Abonnenten von Privacy Pro erhalten noch mehr Datenschutz: mit einem schnellen und einfachen [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), das deine Online-Aktivitäten schützt, einem Dienst, der deine persönlichen Daten von Personensuchmaschinen findet und entfernt, und einem Dienst, der deine Identität wiederherstellt, falls sie gestohlen wird.\n\nGewinne mit dem Browser, der für den Datenschutz und nicht für die Datensammlung entwickelt wurde, die Kontrolle über deine persönlichen Informationen zurück.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Barrierefreiheit";
@@ -2888,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Kostenlose Testphase aktiv";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUI-Benachrichtigung";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Wiederherstellungscode in Zwischenablage kopiert";
 
@@ -2987,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Diese Liste enthält Nachrichten, die angezeigt wurden, sowie maximal 1 Nachricht, die angezeigt werden soll. Es kann sein, dass noch weitere Nachrichten in der Konfiguration vorhanden sind, die noch nicht verarbeitet wurden.";
 
+/* No comment provided by engineer. */
+"Title" = "Titel";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Datenschutz für %@ deaktivieren";
 
@@ -2995,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Datenschutz für %@ aktivieren";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Suche";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Vorschläge für die Autovervollständigung";
@@ -3248,9 +3100,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Eine Nachricht von %@:";
 
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Willkommen auf der Duck-len Seite!";
-
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Suchst du nach der Mac-Version?";
 
@@ -3268,16 +3117,4 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hol dir DuckDuckGo für Windows!";
-
-/* Option to select to import bookmarks */
-"zip.content.import.type.bookmarks" = "Lesezeichen";
-
-/* Title of button to continue after selecting what data to import */
-"zip.content.import.type.button.title.continue" = "Fortsetzen";
-
-/* Option to select to import passwords */
-"zip.content.import.type.passwords" = "Passwörter";
-
-/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
-"zip.content.import.types.title" = "Was möchtest du importieren?";
 

@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -220,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Senkronizasyon ve Yedekleme Duraklatıldı";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Tüm Sekmelere Yer İmi Eklensin mi?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Korumasız Sitelere Ekle";
 
@@ -261,9 +255,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo'nun kilidini açın.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Tüm yer işaretlerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Oturum Aç";
@@ -333,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Parolayı gizle";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.via.sync.get-browser-button" = "Masaüstü Tarayıcısını Edinin";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.step1" = "DuckDuckGo'yu Mac veya Windows'ta açın";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.via.sync.instructions.step2" = "1$@ > %2$@ adresine gidin";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Şifreler";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.settings" = "Ayarlar";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.via.sync.instructions.step3" = "%@ seçeneğini seçin ve içe aktarma adımlarını izleyin";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.via.sync.instructions.step3.import" = "Şifreleri İçe Aktar...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.via.sync.instructions.step4" = "Bilgisayarınıza aktarıldıktan sonra bu %@ üzerinde senkronizasyon ayarlayabilirsiniz.";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.title" = "Masaüstü tarayıcısından içe aktarın:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.via.sync.subtitle" = "DuckDuckGo tarayıcısının masaüstü sürümünde şifreleri içe aktarın, ardından cihazlar arasında senkronize edin.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.via.sync.sync-button" = "Masaüstü ile Senkronize Et";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Şifreler Nasıl Aktarılır";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Devre dışı bırak";
@@ -468,9 +423,6 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Şifreleri İçe Aktar";
-
-/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
-"autofill.logins.empty-view.import-via-sync.button.title" = "Masaüstü Şifrelerini Senkronize Et";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Kayıtlı parolaları başka bir tarayıcıdan DuckDuckGo'ya aktarabilirsiniz.";
@@ -773,26 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Yer işaretleriniz paylaşıldı.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.html.title" = "HTML Dosyasını Dışarı Aktar";
-
-/* Title of option to export bookmarks as HTML */
-"bookmarks.exportAction.title" = "Yer İşaretlerini Dışa Aktar";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Ne yazık ki bu dosya içeri aktarılamıyor.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Yer işaretleriniz içeri aktarıldı.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.html.title" = "HTML Dosyasını İçeri Aktar";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Yer İmlerini İçe Aktar";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Diğer popüler tarayıcılardan yer işaretlerini içe aktarın.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Bu Siteyle İlgili Sorun Bildir";
@@ -808,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Raporunuz DuckDuckGo'yu herkes için daha iyi hale getirmeye yardımcı oluyor!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
 
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
@@ -923,108 +863,6 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Kilitlenme raporları otomatik olarak gönderilsin mi?";
 
-/* Button label to select zip or html file for importing */
-"data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
-
-/* Header for section with instructions for how to export bookmarks from Safari */
-"data.import.bookmarks.instructions.header" = "Yer işaretlerini Safari'den nasıl dışa aktarabilirim?";
-
-/* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Yer işaretlerini içeren dosyayı seçin. Bu genellikle bir ZIP veya HTML dosyasıdır.";
-
-/* Title for screen to import bookmarks */
-"data.import.bookmarks.title" = "Yer İşaretlerini DuckDuckGo'ya Aktarma";
-
-/* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "Zip dosyasında desteklenen herhangi bir veri bulunamadı. Lütfen Safari dışa aktarma talimatlarını inceleyin ve tekrar deneyin.";
-
-/* Error message displayed when the user has selected an unsupported file */
-"data.import.failed.unsupported-file-error-message" = "Seçilen dosya desteklenmiyor. Lütfen farklı bir dosya seçip tekrar deneyin.";
-
-/* Error message displayed when the (csv|html|zip) file can't be read. */
-"data.import.failed.zip-read-error-message" = "%@ dosyası okunamadı. Dosyadaki verilerde bir sorun olabilir.";
-
-/* File type for CSV files */
-"data.import.file-type.csv" = "CSV";
-
-/* File type for HTML files */
-"data.import.file-type.html" = "HTML";
-
-/* File type for ZIP files */
-"data.import.file-type.zip" = "ZIP";
-
-/* Step 2 for instructions to export bookmarks from Safari */
-"data.import.instructions.safari.step2" = "**Dışa Aktar**'ı ve sonraki ekranda **Yer İşaretleri** ve **İndirilenlere Kaydet**'i seçin.";
-
-/* Step 2 for instructions to export passwords from Safari */
-"data.import.instructions.safari.step2.passwords" = "**Dışa Aktar**'ı seçin ve sonraki ekranda **Şifreler** ve **İndirilenler'e Kaydet**'i seçin.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Şifre Dosyasını İçe Aktar...";
-
-/* Step 1 for instructions to import passwords from Chrome */
-"data.import.passwords.instructions.chrome.step1" = "Chrome'da **Google Şifre Yöneticisi**'ne ve ardından **Ayarlar**'a gidin.";
-
-/* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "**Şifreleri dışa aktar**'ı, ardından **Dosyalara Kaydet**'i seçin ve dosyayı hatırlayabileceğiniz bir klasöre kaydedin.";
-
-/* Header for section with instructions for how to export passwords from Safari or Chrome */
-"data.import.passwords.instructions.header" = "Şifreleri dışa aktarma";
-
-/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "⚙️ **Ayarlar**'ı açıp arama çubuğuna “Dışa aktar” yazın ve Safari'nin doğrudan seçeneğe gitmesi için **Dışa aktar** sonucunu seçin (veya Ayarlar'da Uygulamalar > Safari'ye gidin).";
-
-/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
-"data.import.passwords.instructions.selector" = "Şuradan Dışa Aktar:";
-
-/* Export instructions selector for Chrome */
-"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
-
-/* Export instructions selector for Safari */
-"data.import.passwords.instructions.selector.safari" = "Safari";
-
-/* Title for section with instructions to export passwords from Safari */
-"data.import.passwords.instructions.title" = "Safari'den şifreleri dışa aktarma:";
-
-/* Subtitle for screen to import passwords */
-"data.import.passwords.subtitle" = "Safari veya Chrome'dan dışa aktarılan şifreleri içeren dosyayı seçin. Bu genellikle bir ZIP veya CSV dosyasıdır.";
-
-/* Title for screen to import passwords */
-"data.import.passwords.title" = "Şifreleri DuckDuckGo'ya aktar";
-
-/* Data import summary of how many bookmarks were successfully imported. */
-"data.import.summary.bookmarks.success" = "Yer İmleri";
-
-/* Title of button to dismiss the screen */
-"data.import.summary.button.title.done" = "Bitti";
-
-/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
-"data.import.summary.button.title.sync" = "Senkronizasyon ve Yedekleme %@";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.bookmarks" = "Yer İmleri";
-
-/* Parameter for data.import.summary.button.title.sync */
-"data.import.summary.button.title.sync.data" = "Veri";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.passwords" = "Şifreler";
-
-/* Title for screen shown after attempting to import data (passwords / bookmarks) */
-"data.import.summary.complete.title" = "İçe aktarma tamamlandı!";
-
-/* Data import summary of how many items were not imported as they were duplicates. */
-"data.import.summary.duplicates" = "Atlanan Kopyalar";
-
-/* Data import summary of how many items failed to import. */
-"data.import.summary.failed" = "İçe aktarılamadı";
-
-/* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "Artık şifreler dosyasını silebilirsiniz.";
-
-/* Data import summary of how many passwords were successfully imported. */
-"data.import.summary.passwords.success" = "Şifreler";
-
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Geçen ay";
 
@@ -1108,9 +946,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
-
-/* No comment provided by engineer. */
-"Delete All" = "Tümünü Sil";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "cihaz";
@@ -1204,6 +1039,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı Menüsünde Duck.ai'yi Göster";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Sesli Aramada Duck.ai'yi Göster";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1318,9 +1156,6 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Henüz yer imi eklenmedi";
-
-/* Empty list state placeholder subtitle */
-"empty.bookmarks.subtitle" = "Yer imleriniz başka bir tarayıcıda kayıtlıysa, bunları DuckDuckGo'ya aktarabilirsiniz.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Eşleşme bulunamadı";
@@ -1789,6 +1624,9 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Göz Atma Menüsü";
+
+/* No comment provided by engineer. */
+"Message" = "Mesaj";
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Mesaj politikası ana bilgisayar adı";
@@ -2297,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "Tamam";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Birincil / İlk İşlem";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Gizlilik Korumaları";
 
 /* Privacy Icon accessibility title */
@@ -2327,6 +2168,9 @@
 "search.hint.duckduckgo" = "Adres ara veya gir";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "İkincil / İkinci İşlem";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Yer İmleri";
 
 /* No comment provided by engineer. */
@@ -2349,10 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Hakkında";
-/* about tagline */
-"settings.about.tagline" = "Koruma. Gizlilik. İçiniz rahat olsun.";
-/* about page */
-"settings.about.text.new" = "DuckDuckGo, kişisel bilgilerinin kontrolünü geri almak isteyen herkes için bağımsız bir online koruma şirketidir.\n\nKişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun, bu bilgilerin toplanmasını tamamen durdurmak olduğuna inanıyoruz. Bu yüzden milyonlarca insan internette arama yapmak ve gezinmek için [Chrome ve diğer tarayıcılar yerine DuckDuckGo'yu tercih ediyor](ddgQuickLink://duckduckgo.com/compare-privacy). Yerleşik arama motorumuz Google gibidir ancak aramalarınızı asla izlemez. Reklam izleyici engelleme ve çerez engelleme gibi tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını önlemeye de yardımcı olur. Ayrıca, tarayıcımız ücretsizdir. Verilerinizi kullanarak değil, [gizliliğe saygılı arama reklamlarından] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/) para kazanıyoruz. \n\nBuna ek olarak, tarayıcımıza entegre edilmiş üçü bir arada abonelik hizmeti [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)'yu da sunuyoruz. Privacy Pro aboneleri, internetteki etkinliğinizi güvence altına alan hızlı ve basit bir [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kişisel bilgilerinizi kişi bulma sitelerinden bulup kaldıran bir hizmet ve çalınması durumunda kimliğinizi geri yükleme özelliği ile daha fazla gizlilik koruması elde eder.\n\nVeri koruma için tasarlanmış, veri toplama amacı gütmeyen tarayıcıyla kişisel bilgilerinizin kontrolünü geri alın.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Erişilebilirlik";
@@ -2888,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ücretsiz Deneme Süresi Aktif";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUI Uyarısı";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Kurtarma kodu panoya kopyalandı";
 
@@ -2987,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Bu liste, gösterilmiş mesajların yanı sıra gösterilmesi planlanan en fazla 1 mesajı içerir. Yapılandırmada sunulacak daha fazla mesaj olabilir, ancak bunlar henüz işlenmemiştir.";
 
+/* No comment provided by engineer. */
+"Title" = "Title";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Gizlilik Koruması %@ için devre dışı";
 
@@ -2995,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Gizlilik Koruması %@ için etkinleştirildi";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Ara";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Otomatik tamamlama önerisi";
@@ -3248,9 +3100,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
 
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Duck Side'a hoş geldiniz!";
-
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac Sürümünü mü arıyorsunuz?";
 
@@ -3268,16 +3117,4 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Windows için DuckDuckGo'yu edinin!";
-
-/* Option to select to import bookmarks */
-"zip.content.import.type.bookmarks" = "Yer İmleri";
-
-/* Title of button to continue after selecting what data to import */
-"zip.content.import.type.button.title.continue" = "Devam et";
-
-/* Option to select to import passwords */
-"zip.content.import.type.passwords" = "Şifreler";
-
-/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
-"zip.content.import.types.title" = "Neyi içe aktarmak istiyorsunuz?";
 

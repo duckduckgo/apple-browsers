@@ -59266,7 +59266,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "DuckDuckGo als Standard-Browser festlegen"
           }
         },
@@ -59278,43 +59278,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Establece DuckDuckGo como tu navegador predeterminado"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Définir DuckDuckGo comme navigateur par défaut"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Imposta DuckDuckGo come browser predefinito"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "DuckDuckGo instellen als standaardbrowser"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Definir o DuckDuckGo como navegador predefinido"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Сделать DuckDuckGo браузером по умолчанию"
           }
         }

@@ -3,20 +3,20 @@
 # If we're not in python 3.9, switch to it
 if ! python3 --version | grep -q "3.9"; then
     # If we have 3.9 installed don't call remotely.
-    if ! brew list python@3.9 &>/dev/null; then
+    if ! brew list python@3.9 >/dev/null 2>&1; then
         brew install python@3.9
     fi
-    /opt/homebrew/bin/python3.9 -m venv /tmp/venv39 && source /tmp/venv39/bin/activate
+    /opt/homebrew/bin/python3.9 -m venv /tmp/venv39 && [ -f /tmp/venv39/bin/activate ] && . /tmp/venv39/bin/activate
 fi
 
 # Check that we have Rust installed:
-if ! command -v cargo &> /dev/null; then
+if ! command -v cargo > /dev/null 2>&1; then
     echo "‼️ Error: Rust is not installed. Please install Rust from https://rustup.rs/"
     exit 1
 fi
 
 # Check that we have npm installed:
-if ! command -v npm &> /dev/null; then
+if ! command -v npm > /dev/null 2>&1; then
     echo "‼️ Error: Node is not installed. Please install nvm https://github.com/nvm-sh/nvm"
     exit 1
 fi
@@ -46,7 +46,12 @@ if [ -f "$IOS_HASH_FILE" ] && cmp -s "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"; then
     echo "iOS source files have not changed, skipping build."
 else
     echo "iOS source files have changed, building app."
-    source .maestro/common.sh
+    if [ -f ".maestro/common.sh" ]; then
+        . .maestro/common.sh
+    else
+        echo "‼️ Error: .maestro/common.sh not found."
+        exit 1
+    fi
     build_app
     cp "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"
 fi
@@ -57,14 +62,14 @@ killall Simulator || true
 xcrun simctl erase all || true
 
 # Clone the shared-web-tests repo
-cd tmp
+cd tmp || exit
 
 if [ ! -d "shared-web-tests" ]; then
     git clone git@github.com:duckduckgo/shared-web-tests.git
     # submodules are not checked out by default
     git submodule update --init --recursive
 fi
-cd shared-web-tests
+cd shared-web-tests || exit
 
 # Build the test suite
 npm run build
@@ -78,8 +83,10 @@ else
 fi
 
 echo "Starting test run:"
-export DERIVED_DATA_PATH="$(pwd)/../../DerivedData/" && npm run test | tee ../../tmp/test-out.txt
-cd ../..
+DERIVED_DATA_PATH="$(pwd)/../../DerivedData/"
+export DERIVED_DATA_PATH
+npm run test | tee ../../tmp/test-out.txt
+cd ../.. || exit
 # Deactivate the Python virtual environment
 if [ -n "$VIRTUAL_ENV" ]; then
     echo "Deactivating Python virtual environment"

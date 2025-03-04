@@ -19,9 +19,9 @@
 INFOPLIST_KEY_CFBundleDisplayName = DuckDuckGo VPN Network Extension
 
 CODE_SIGN_ENTITLEMENTS[config=CI][sdk=macosx*] =
-CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_Debug.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Release][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_Release.entitlements
-CODE_SIGN_ENTITLEMENTS[config=Review][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_Release.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Debug][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Release][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_SparkleDistribution.entitlements
+CODE_SIGN_ENTITLEMENTS[config=Review][sdk=macosx*] = NetworkProtectionSystemExtension/NetworkProtectionSystemExtension_SparkleDistribution.entitlements
 CODE_SIGN_STYLE[config=Debug][sdk=*] = Automatic
 
 CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application

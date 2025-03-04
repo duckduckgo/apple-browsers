@@ -4079,8 +4079,8 @@
 		4B1E6EEF27AB5E5D00F51793 /* NSPopUpButtonView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSPopUpButtonView.swift; sourceTree = "<group>"; };
 		4B1E6EF027AB5E5D00F51793 /* PasswordManagementItemList.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PasswordManagementItemList.swift; sourceTree = "<group>"; };
 		4B25375A2A11BE7300610219 /* com.duckduckgo.macos.vpn.network-extension.debug.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "com.duckduckgo.macos.vpn.network-extension.debug.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4B25376C2A11BF6D00610219 /* NetworkProtectionSystemExtension_Release.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionSystemExtension_Release.entitlements; sourceTree = "<group>"; };
-		4B25376D2A11BF6D00610219 /* NetworkProtectionSystemExtension_Debug.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionSystemExtension_Debug.entitlements; sourceTree = "<group>"; };
+		4B25376C2A11BF6D00610219 /* NetworkProtectionSystemExtension_SparkleDistribution.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionSystemExtension_SparkleDistribution.entitlements; sourceTree = "<group>"; };
+		4B25376D2A11BF6D00610219 /* NetworkProtectionSystemExtension.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = NetworkProtectionSystemExtension.entitlements; sourceTree = "<group>"; };
 		4B25376E2A11BF8B00610219 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		4B25376F2A11BF8B00610219 /* main.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4B26FAF82D5F0CA20037DD63 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../BrowserServicesKit; sourceTree = SOURCE_ROOT; };
@@ -4115,8 +4115,8 @@
 		4B4BEC382A11B509001D9AC5 /* DuckDuckGoNotificationsAppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckDuckGoNotificationsAppDelegate.swift; sourceTree = "<group>"; };
 		4B4D603D2A0B290200BCD287 /* NetworkProtectionAppExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NetworkProtectionAppExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B4D603E2A0B290200BCD287 /* NetworkExtension.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = NetworkExtension.framework; path = System/Library/Frameworks/NetworkExtension.framework; sourceTree = SDKROOT; };
-		4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = NetworkProtectionSystemExtension.xcconfig; sourceTree = "<group>"; };
-		4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = NetworkProtectionAppExtension.xcconfig; sourceTree = "<group>"; };
+		4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNSysex.xcconfig; sourceTree = "<group>"; };
+		4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNAppexAppStore.xcconfig; sourceTree = "<group>"; };
 		4B4D60512A0B293C00BCD287 /* ExtensionBase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ExtensionBase.xcconfig; sourceTree = "<group>"; };
 		4B4D605E2A0B29FA00BCD287 /* Bundle+VPN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+VPN.swift"; sourceTree = "<group>"; };
 		4B4D605F2A0B29FA00BCD287 /* NetworkProtectionOptionKeyExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionOptionKeyExtension.swift; sourceTree = "<group>"; };
@@ -6621,9 +6621,9 @@
 		4B18E32C2A1ECF1F005D0AAA /* NetworkProtection */ = {
 			isa = PBXGroup;
 			children = (
+				4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */,
 				7B2E36722D6DF04000A08CB7 /* DuckDuckGoVPNSysexAppStore.xcconfig */,
-				4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */,
-				4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */,
+				4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */,
 				7BDA36F62B7E06A300AD5388 /* VPNProxyExtension.xcconfig */,
 			);
 			path = NetworkProtection;
@@ -6658,8 +6658,8 @@
 				4B25376E2A11BF8B00610219 /* Info.plist */,
 				4B25376F2A11BF8B00610219 /* main.swift */,
 				7B2E52242A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift */,
-				4B25376D2A11BF6D00610219 /* NetworkProtectionSystemExtension_Debug.entitlements */,
-				4B25376C2A11BF6D00610219 /* NetworkProtectionSystemExtension_Release.entitlements */,
+				4B25376D2A11BF6D00610219 /* NetworkProtectionSystemExtension.entitlements */,
+				4B25376C2A11BF6D00610219 /* NetworkProtectionSystemExtension_SparkleDistribution.entitlements */,
 			);
 			path = NetworkProtectionSystemExtension;
 			sourceTree = "<group>";
@@ -15198,28 +15198,28 @@
 		};
 		4B2537672A11BE7700610219 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */;
+			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
 			};
 			name = Debug;
 		};
 		4B2537682A11BE7700610219 /* CI */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */;
+			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
 			};
 			name = CI;
 		};
 		4B2537692A11BE7700610219 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */;
+			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
 		};
 		4B25376A2A11BE7700610219 /* Review */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* NetworkProtectionSystemExtension.xcconfig */;
+			baseConfigurationReference = 4B4D604F2A0B293C00BCD287 /* DuckDuckGoVPNSysex.xcconfig */;
 			buildSettings = {
 			};
 			name = Review;
@@ -15322,28 +15322,28 @@
 		};
 		4B4D60492A0B290300BCD287 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */;
+			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */;
 			buildSettings = {
 			};
 			name = Debug;
 		};
 		4B4D604A2A0B290300BCD287 /* CI */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */;
+			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */;
 			buildSettings = {
 			};
 			name = CI;
 		};
 		4B4D604B2A0B290300BCD287 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */;
+			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */;
 			buildSettings = {
 			};
 			name = Release;
 		};
 		4B4D604C2A0B290300BCD287 /* Review */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* NetworkProtectionAppExtension.xcconfig */;
+			baseConfigurationReference = 4B4D60502A0B293C00BCD287 /* DuckDuckGoVPNAppexAppStore.xcconfig */;
 			buildSettings = {
 			};
 			name = Review;

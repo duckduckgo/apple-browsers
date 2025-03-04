@@ -63,9 +63,7 @@ xcrun simctl erase all || true
 cd tmp || exit
 
 if [ ! -d "shared-web-tests" ]; then
-    git clone git@github.com:duckduckgo/shared-web-tests.git
-    # submodules are not checked out by default
-    git submodule update --init --recursive
+    git clone --recurse-submodules git@github.com:duckduckgo/shared-web-tests.git
 fi
 cd shared-web-tests || exit
 

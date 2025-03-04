@@ -1779,6 +1779,7 @@
 		4BBF0917282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF0916282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift */; };
 		4BBF09232830812900EE1418 /* FileSystemDSL.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF09222830812900EE1418 /* FileSystemDSL.swift */; };
 		4BBF0925283083EC00EE1418 /* FileSystemDSLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */; };
+		4BC99DF12D77AF28000E0527 /* BrowserServicesKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4BC99DF02D77AF28000E0527 /* BrowserServicesKit */; };
 		4BCBE4552BA7E16600FC75A1 /* NetworkProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2F565B2B38F93E001214C0 /* NetworkProtectionSubscriptionEventHandler.swift */; };
 		4BCBE4562BA7E16900FC75A1 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */; };
 		4BCBE4582BA7E17800FC75A1 /* SubscriptionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */; };
@@ -5641,6 +5642,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4BC99DF12D77AF28000E0527 /* BrowserServicesKit in Frameworks */,
 				9D9DE57D2C63AA2400D20B15 /* AppKitExtensions in Frameworks */,
 				4B0DAC152D76D0AB001BFBFE /* Common in Frameworks */,
 			);
@@ -11020,6 +11022,7 @@
 			packageProductDependencies = (
 				9D9DE57C2C63AA2400D20B15 /* AppKitExtensions */,
 				4B0DAC142D76D0AB001BFBFE /* Common */,
+				4BC99DF02D77AF28000E0527 /* BrowserServicesKit */,
 			);
 			productName = "sandbox-test-tool";
 			productReference = B6E6B9F32BA1FD90008AA7E1 /* sandbox-test-tool.app */;
@@ -16562,6 +16565,10 @@
 		4BA7C4DC2B3F64E500AFE511 /* LoginItems */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LoginItems;
+		};
+		4BC99DF02D77AF28000E0527 /* BrowserServicesKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = BrowserServicesKit;
 		};
 		4BCBE4572BA7E17800FC75A1 /* SubscriptionUI */ = {
 			isa = XCSwiftPackageProductDependency;

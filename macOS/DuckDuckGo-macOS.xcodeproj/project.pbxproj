@@ -1945,8 +1945,6 @@
 		7B624F172BA25C1F00A6C544 /* NetworkProtectionUI in Frameworks */ = {isa = PBXBuildFile; productRef = 7B624F162BA25C1F00A6C544 /* NetworkProtectionUI */; };
 		7B6545ED2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6545EC2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift */; };
 		7B6545EE2C0779D500115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6545EC2C0778BB00115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift */; };
-		7B7844482D75D9A500A96B77 /* NetworkExtensionResolver in Frameworks */ = {isa = PBXBuildFile; productRef = 7B7844472D75D9A500A96B77 /* NetworkExtensionResolver */; };
-		7B78444A2D75D9AA00A96B77 /* NetworkExtensionResolver in Frameworks */ = {isa = PBXBuildFile; productRef = 7B7844492D75D9AA00A96B77 /* NetworkExtensionResolver */; };
 		7B78444C2D75F7E200A96B77 /* TunnelExtensionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B78444B2D75F7DD00A96B77 /* TunnelExtensionResolver.swift */; };
 		7B78444D2D75F7E200A96B77 /* TunnelExtensionResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B78444B2D75F7DD00A96B77 /* TunnelExtensionResolver.swift */; };
 		7B7DFB202B7E736B009EA1A3 /* MacPacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */; };
@@ -2042,6 +2040,8 @@
 		7BC3E4662D6DF6B8009787CD /* WireGuard in Frameworks */ = {isa = PBXBuildFile; productRef = 7BC3E4652D6DF6B8009787CD /* WireGuard */; };
 		7BCB90C22C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCB90C12C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift */; };
 		7BCB90C32C1863BA008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCB90C12C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift */; };
+		7BD069402D7711F100A7FF32 /* VPNExtensionManagement in Frameworks */ = {isa = PBXBuildFile; productRef = 7BD0693F2D7711F100A7FF32 /* VPNExtensionManagement */; };
+		7BD069422D7711F800A7FF32 /* VPNExtensionManagement in Frameworks */ = {isa = PBXBuildFile; productRef = 7BD069412D7711F800A7FF32 /* VPNExtensionManagement */; };
 		7BD1688E2AD4A4C400D24876 /* NetworkExtensionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD1688D2AD4A4C400D24876 /* NetworkExtensionController.swift */; };
 		7BD3AF5D2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */; };
 		7BD7B0012C19D3830039D20A /* VPNIPCResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD7B0002C19D3830039D20A /* VPNIPCResources.swift */; };
@@ -4399,7 +4399,6 @@
 		7B6EC5E42AE2D8AF004FE6DF /* DuckDuckGoDBPAgentAppStore.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgentAppStore.xcconfig; sourceTree = "<group>"; };
 		7B6EC5E52AE2D8AF004FE6DF /* DuckDuckGoDBPAgent.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = DuckDuckGoDBPAgent.xcconfig; sourceTree = "<group>"; };
 		7B76E6852AD5D77600186A84 /* XPCHelper */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = XPCHelper; sourceTree = "<group>"; };
-		7B7844462D75D92900A96B77 /* NetworkExtensionResolver */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkExtensionResolver; sourceTree = "<group>"; };
 		7B78444B2D75F7DD00A96B77 /* TunnelExtensionResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelExtensionResolver.swift; sourceTree = "<group>"; };
 		7B7F5D202C526CE600826256 /* AddExcludedDomainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExcludedDomainView.swift; sourceTree = "<group>"; };
 		7B7F5D232C52725A00826256 /* AddExcludedDomainButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddExcludedDomainButtonsView.swift; sourceTree = "<group>"; };
@@ -5382,6 +5381,7 @@
 			files = (
 				F198C71A2BD18A5B000BF24D /* PixelKit in Frameworks */,
 				02A15D922C88D789001A4237 /* Configuration in Frameworks */,
+				7BD069422D7711F800A7FF32 /* VPNExtensionManagement in Frameworks */,
 				4B41EDAB2B1544B2001EEDF4 /* LoginItems in Frameworks */,
 				7B00997D2B6508B700FE7C31 /* NetworkProtectionProxy in Frameworks */,
 				7BEEA5122AD1235B00A9E72B /* NetworkProtectionIPC in Frameworks */,
@@ -5395,7 +5395,6 @@
 				7B23668C2C09FAF1002D393F /* VPNAppLauncher in Frameworks */,
 				EE7295ED2A545C0A008C0991 /* NetworkProtection in Frameworks */,
 				EE2F9C5B2B90F2FF00D45FC9 /* Subscription in Frameworks */,
-				7B7844482D75D9A500A96B77 /* NetworkExtensionResolver in Frameworks */,
 				7BEC182F2AD5D8DC00D30536 /* SystemExtensionManager in Frameworks */,
 				9D9DE5812C63BA0B00D20B15 /* AppKitExtensions in Frameworks */,
 			);
@@ -5406,12 +5405,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				4BCBE45C2BA7E18500FC75A1 /* Subscription in Frameworks */,
+				7BD069402D7711F100A7FF32 /* VPNExtensionManagement in Frameworks */,
 				7B23668E2C09FAFA002D393F /* VPNAppLauncher in Frameworks */,
 				7BA7CC612AD1211C0042E5CE /* Networking in Frameworks */,
 				7B8FE0AA2D6F74C7004CF744 /* SystemExtensionManager in Frameworks */,
 				F198C71C2BD18A61000BF24D /* PixelKit in Frameworks */,
 				02A15D982C88D79D001A4237 /* Persistence in Frameworks */,
-				7B78444A2D75D9AA00A96B77 /* NetworkExtensionResolver in Frameworks */,
 				37E307A92D072A1E00599500 /* Common in Frameworks */,
 				7BEEA5142AD1236300A9E72B /* NetworkProtectionIPC in Frameworks */,
 				02A15D962C88D797001A4237 /* Configuration in Frameworks */,
@@ -6294,7 +6293,6 @@
 				9DF2DB592C73B52F0025F43C /* Freemium */,
 				379D7A422D384E4F00E6E1CC /* HistoryView */,
 				9DB6E7222AA0DA7A00A17F3C /* LoginItems */,
-				7B7844462D75D92900A96B77 /* NetworkExtensionResolver */,
 				7B25FE322AD12C990012AFAB /* NetworkProtectionMac */,
 				374F18B32D006F940032EA4E /* NewTabPage */,
 				7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */,
@@ -10565,7 +10563,7 @@
 				02A15D932C88D78F001A4237 /* Persistence */,
 				7B8FDD1F2CDD88C500720907 /* FeatureFlags */,
 				37E307A62D072A1600599500 /* Common */,
-				7B7844472D75D9A500A96B77 /* NetworkExtensionResolver */,
+				7BD069412D7711F800A7FF32 /* VPNExtensionManagement */,
 			);
 			productName = DuckDuckGoAgent;
 			productReference = 4B2D06392A11CFBB00DE1F49 /* DuckDuckGo VPN.app */;
@@ -10607,7 +10605,7 @@
 				7B8FDD212CDD88CB00720907 /* FeatureFlags */,
 				37E307A82D072A1E00599500 /* Common */,
 				7B8FE0A92D6F74C7004CF744 /* SystemExtensionManager */,
-				7B7844492D75D9AA00A96B77 /* NetworkExtensionResolver */,
+				7BD0693F2D7711F100A7FF32 /* VPNExtensionManagement */,
 			);
 			productName = DuckDuckGoAgentAppStore;
 			productReference = 4B2D06692A13318400DE1F49 /* DuckDuckGo VPN App Store.app */;
@@ -16541,14 +16539,6 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionUI;
 		};
-		7B7844472D75D9A500A96B77 /* NetworkExtensionResolver */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = NetworkExtensionResolver;
-		};
-		7B7844492D75D9AA00A96B77 /* NetworkExtensionResolver */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = NetworkExtensionResolver;
-		};
 		7B7DFB212B7E7473009EA1A3 /* Networking */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 9807F643278CA16F00E1547B /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
@@ -16659,6 +16649,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 4B5235432C7BB14D00AFAF64 /* XCRemoteSwiftPackageReference "wireguard-apple" */;
 			productName = WireGuard;
+		};
+		7BD0693F2D7711F100A7FF32 /* VPNExtensionManagement */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VPNExtensionManagement;
+		};
+		7BD069412D7711F800A7FF32 /* VPNExtensionManagement */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = VPNExtensionManagement;
 		};
 		7BEC182E2AD5D8DC00D30536 /* SystemExtensionManager */ = {
 			isa = XCSwiftPackageProductDependency;

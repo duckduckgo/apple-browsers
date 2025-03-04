@@ -1,5 +1,5 @@
 //
-//  NetworkExtensionResolving.swift
+//  VPNExtensionResolving.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,6 +16,6 @@
 //  limitations under the License.
 //
 
-public protocol NetworkExtensionResolving {
+public protocol VPNExtensionResolving {
     var activeExtensionBundleID: String { get async }
 }

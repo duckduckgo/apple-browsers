@@ -19,11 +19,11 @@
 import Combine
 import Foundation
 import NetworkExtension
-import NetworkExtensionResolver
 import NetworkProtection
 import os.log
 import PixelKit
 import SystemExtensions
+import VPNExtensionManagement
 
 /// Controller for ``TransparentProxyProvider``
 ///
@@ -49,7 +49,7 @@ public final class TransparentProxyController {
 
     /// The proxy extension resolver.
     ///
-    private let extensionResolver: NetworkExtensionResolving
+    private let extensionResolver: VPNExtensionResolving
 
     /// The event handler
     ///
@@ -75,7 +75,7 @@ public final class TransparentProxyController {
     ///     - setup: a callback that will be called whenever a ``NETransparentProxyManager`` needs
     ///         to be setup.
     ///
-    public init(extensionResolver: NetworkExtensionResolving,
+    public init(extensionResolver: VPNExtensionResolving,
                 settings: TransparentProxySettings,
                 notificationCenter: NotificationCenter = .default,
                 dryMode: Bool = false,

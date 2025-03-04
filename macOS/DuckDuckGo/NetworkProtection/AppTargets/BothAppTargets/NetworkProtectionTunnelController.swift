@@ -23,7 +23,6 @@ import Common
 import FeatureFlags
 import Foundation
 import NetworkExtension
-import NetworkExtensionResolver
 import NetworkProtection
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -33,6 +32,7 @@ import os.log
 import Subscription
 import SystemExtensionManager
 import SystemExtensions
+import VPNExtensionManagement
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
 typealias NetworkProtectionConfigChangeHandler = () -> Void
@@ -69,9 +69,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Extensions Support
 
-    private let availableExtensions: VPNNetworkExtensionResolver.AvailableExtensions
-    lazy var extensionResolver: VPNNetworkExtensionResolver = {
-        VPNNetworkExtensionResolver(availableExtensions: availableExtensions, featureFlagger: featureFlagger, isConfigurationInstalled: { [weak self] extensionBundleID in
+    private let availableExtensions: VPNExtensionResolver.AvailableExtensions
+    lazy var extensionResolver: VPNExtensionResolver = {
+        VPNExtensionResolver(availableExtensions: availableExtensions, featureFlagger: featureFlagger, isConfigurationInstalled: { [weak self] extensionBundleID in
             await self?.isConfigurationInstalled(extensionBundleID: extensionBundleID) ?? true
         })
     }()
@@ -156,7 +156,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///         - notificationCenter: (meant for testing) the notification center that this object will use.
     ///         - logger: (meant for testing) the logger that this object will use.
     ///
-    init(availableExtensions: VPNNetworkExtensionResolver.AvailableExtensions,
+    init(availableExtensions: VPNExtensionResolver.AvailableExtensions,
          networkExtensionController: NetworkExtensionController,
          featureFlagger: FeatureFlagger,
          settings: VPNSettings,

@@ -1,5 +1,5 @@
 //
-//  TunnelExtensionResolver.swift
+//  VPNExtensionResolver.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,10 +17,10 @@
 //
 
 import BrowserServicesKit
-import NetworkExtensionResolver
 import FeatureFlags
+import VPNExtensionManagement
 
-class VPNNetworkExtensionResolver {
+class VPNExtensionResolver {
 
     public enum AvailableExtensions {
         case both(appexBundleID: String, sysexBundleID: String)
@@ -58,7 +58,7 @@ class VPNNetworkExtensionResolver {
     }
 }
 
-extension VPNNetworkExtensionResolver: NetworkExtensionResolving {
+extension VPNExtensionResolver: VPNExtensionResolving {
 
     var activeExtensionBundleID: String {
         get async {

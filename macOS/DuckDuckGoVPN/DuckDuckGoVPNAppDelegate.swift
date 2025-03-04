@@ -26,7 +26,6 @@ import FeatureFlags
 import LoginItems
 import Networking
 import NetworkExtension
-import NetworkExtensionResolver
 import NetworkProtection
 import NetworkProtectionProxy
 import NetworkProtectionUI
@@ -36,6 +35,7 @@ import ServiceManagement
 import Subscription
 import SwiftUICore
 import VPNAppLauncher
+import VPNExtensionManagement
 
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {
@@ -231,7 +231,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private static let proxySysexBundleID = Bundle.tunnelSysexBundleID
     private static let proxyAppexBundleID = Bundle.proxyAppexBundleID
 
-    private let tunnelExtensions: VPNNetworkExtensionResolver.AvailableExtensions = {
+    private let tunnelExtensions: VPNExtensionResolver.AvailableExtensions = {
 #if APPSTORE
         return .both(appexBundleID: tunnelAppexBundleID, sysexBundleID: tunnelSysexBundleID)
 #else
@@ -239,7 +239,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 #endif
     }()
 
-    private let proxyExtensions: VPNNetworkExtensionResolver.AvailableExtensions = {
+    private let proxyExtensions: VPNExtensionResolver.AvailableExtensions = {
 #if APPSTORE
         return .both(appexBundleID: proxyAppexBundleID, sysexBundleID: proxySysexBundleID)
 #else
@@ -248,7 +248,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     @MainActor
-    private lazy var proxyExtensionResolver = VPNNetworkExtensionResolver(
+    private lazy var proxyExtensionResolver = VPNExtensionResolver(
             availableExtensions: proxyExtensions,
             featureFlagger: featureFlagger,
             isConfigurationInstalled: tunnelController.isConfigurationInstalled(extensionBundleID:))

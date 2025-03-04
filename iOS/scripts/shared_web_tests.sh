@@ -48,7 +48,8 @@ if [ -f "$IOS_HASH_FILE" ] && cmp -s "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"; then
 else
     echo "iOS source files have changed, building app."
     # shellcheck source=/dev/null
-    . .maestro/common.sh
+    PROJECT_ROOT="$(realpath $(dirname $0)/../..)"
+    source .maestro/common.sh
     build_app
     cp "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"
 fi

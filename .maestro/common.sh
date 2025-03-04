@@ -4,7 +4,7 @@
 
 ## Constants
 
-project_root=$(realpath $(dirname $0)/..)
+project_root="${PROJECT_ROOT:-$(realpath $(dirname $0)/..)}"
 derived_data_path="$project_root"/DerivedData
 app_location="$derived_data_path/Build/Products/Debug-iphonesimulator/DuckDuckGo.app"
 device_uuid_path="$derived_data_path/device_uuid.txt"

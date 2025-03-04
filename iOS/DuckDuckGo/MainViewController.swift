@@ -1038,7 +1038,7 @@ class MainViewController: UIViewController {
             currentTab?.executeBookmarklet(url: url)
         }
     }
-    
+
     private func loadBackForwardItem(_ item: WKBackForwardListItem) {
         prepareTabForRequest {
             currentTab?.load(backForwardListItem: item)

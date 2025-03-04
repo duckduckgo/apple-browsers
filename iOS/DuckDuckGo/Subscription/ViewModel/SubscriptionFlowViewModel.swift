@@ -72,32 +72,17 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                                             isInternalUser: isInternalUser)
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                            allowedDomains: Self.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
-                                                                                                isInternalUser: isInternalUser),
+                                                            allowedDomains: allowedDomains,
                                                             contentBlocking: false)
 
 
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
-    }
-
-    // Allowed domains
-    internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
-        var allowedDomains = Set<String>()
-
-        // Allow navigation to baseURLs domain
-        allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
-
-        // For internal user allow these domains as required for DUO based authentication flow
-        if isInternalUser {
-            allowedDomains.formUnion(["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"])
-        }
-
-        assert(!allowedDomains.isEmpty, "Allowed domains should not be empty.")
-        return Array(allowedDomains)
     }
 
     // Observe transaction status

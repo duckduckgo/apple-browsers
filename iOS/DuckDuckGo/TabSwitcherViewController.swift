@@ -40,6 +40,7 @@ class TabSwitcherViewController: UIViewController {
     struct BookmarkAllResult {
         let newCount: Int
         let existingCount: Int
+        let urls: [URL]
     }
 
     enum InterfaceMode {
@@ -81,8 +82,11 @@ class TabSwitcherViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
 
     weak var delegate: TabSwitcherDelegate!
-    weak var tabsModel: TabsModel!
     weak var previewsSource: TabPreviewsSource!
+    
+    var selectedTabs: [IndexPath] {
+        collectionView.indexPathsForSelectedItems ?? []
+    }
 
     private(set) var bookmarksDatabase: CoreDataDatabase
     let syncService: DDGSyncing
@@ -101,6 +105,10 @@ class TabSwitcherViewController: UIViewController {
     var interfaceMode: InterfaceMode = .singleSelectNormal
 
     let featureFlagger: FeatureFlagger
+    let tabManager: TabManager
+    var tabsModel: TabsModel {
+        tabManager.model
+    }
 
     let barsHandler = TabSwitcherBarsStateHandler()
 
@@ -108,11 +116,13 @@ class TabSwitcherViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
-                   favicons: Favicons = Favicons.shared) {
+                   favicons: Favicons = Favicons.shared,
+                   tabManager: TabManager) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
+        self.tabManager = tabManager
         super.init(coder: coder)
     }
 
@@ -178,11 +188,10 @@ class TabSwitcherViewController: UIViewController {
         view.layoutIfNeeded()
         self.scrollToInitialTab()
     }
-
+    
     @objc func handleTap(gesture: UITapGestureRecognizer) {
-        // TODO FIX: If the user taps between tabs this will dismiss.
-        //  Only dimiss if it's in the big whitespace below the collection view.
-
+        guard gesture.tappedInWhitespaceAtEndOfCollectionView(collectionView) else { return }
+        
         if isEditing {
             transitionFromMultiSelect()
         } else {
@@ -213,28 +222,49 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func displayBookmarkAllStatusMessage(with results: BookmarkAllResult, openTabsCount: Int) {
-        if interfaceMode.isMultiSelection {
+        if results.newCount == 1 {
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericEdit, onAction: {
+                self.editBookmark(results.urls.first)
+            })
+        } else if results.newCount > 0 {
+            ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount), actionTitle: UserText.actionGenericUndo, onAction: {
+                self.removeBookmarks(results.urls)
+            })
+        } else { // Zero
             ActionMessageView.present(message: UserText.tabsBookmarked(withCount: results.newCount))
-        } else {
-            ActionMessageView.present(message: UserText.bookmarkAllTabsSaved)
         }
     }
+    
+    func removeBookmarks(_ url: [URL]) {
+        let model = BookmarkListViewModel(bookmarksDatabase: self.bookmarksDatabase, parentID: nil, favoritesDisplayMode: .default, errorEvents: nil)
+        url.forEach {
+            guard let entity = model.bookmark(for: $0) else { return }
+            model.softDeleteBookmark(entity)
+        }
+    }
+    
+    func editBookmark(_ url: URL?) {
+        guard let url else { return }
+        delegate?.tabSwitcher(self, editBookmarkForUrl: url)
+    }
 
-    func bookmarkTabs(withIndices indexes: [Int], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
+    func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], viewModel: MenuBookmarksInteracting) -> BookmarkAllResult {
         let tabs = self.tabsModel.tabs
         var newCount = 0
+        var urls = [URL]()
 
-        indexes.compactMap {
-            tabsModel.safeGetTabAt($0)
+        indexPaths.compactMap {
+            tabsModel.safeGetTabAt($0.row)
         }.forEach { tab in
             guard let link = tab.link else { return }
             if viewModel.bookmark(for: link.url) == nil {
                 viewModel.createBookmark(title: link.displayTitle, url: link.url)
                 favicons.loadFavicon(forDomain: link.url.host, intoCache: .fireproof, fromCache: .tabs)
                 newCount += 1
+                urls.append(link.url)
             }
         }
-        return .init(newCount: newCount, existingCount: tabs.count - newCount)
+        return .init(newCount: newCount, existingCount: tabs.count - newCount, urls: urls)
     }
 
     @IBAction func onAddPressed(_ sender: UIBarButtonItem) {
@@ -283,38 +313,35 @@ class TabSwitcherViewController: UIViewController {
 
 extension TabSwitcherViewController: TabViewCellDelegate {
 
-    func deleteTab(tab: Tab) {
-        guard let index = tabsModel.indexOf(tab: tab) else { return }
-        let isLastTab = tabsModel.count == 1
-        if isLastTab {
-            // Will be dismissed, so no need to process incoming updates
-            canUpdateCollection = false
+    func deleteTabsAtIndexPaths(_ indexPaths: [IndexPath]) {
+        let shouldDismiss = tabsModel.count == indexPaths.count
 
-            delegate.tabSwitcher(self, didRemoveTab: tab)
-            currentSelection = tabsModel.currentIndex
-            refreshTitle()
-            collectionView.reloadData()
-            DispatchQueue.global(qos: .background).async {
-                Favicons.shared.clearCache(.tabs, clearMemoryCache: true)
+        collectionView.performBatchUpdates {
+            isProcessingUpdates = true
+            tabManager.bulkRemoveTabs(indexPaths)
+            collectionView.deleteItems(at: indexPaths)
+        } completion: { _ in
+            self.currentSelection = self.tabsModel.currentIndex
+            self.isProcessingUpdates = false
+            if self.tabsModel.tabs.isEmpty {
+                self.tabsModel.add(tab: Tab())
             }
-        } else {
-            collectionView.performBatchUpdates({
-                isProcessingUpdates = true
-                delegate.tabSwitcher(self, didRemoveTab: tab)
-                currentSelection = tabsModel.currentIndex
-                collectionView.deleteItems(at: [IndexPath(row: index, section: 0)])
-            }, completion: { _ in
-                self.isProcessingUpdates = false
-                guard let current = self.currentSelection else { return }
-                self.refreshTitle()
-                self.collectionView.reloadItems(at: [IndexPath(row: current, section: 0)])
-                
-                // remove favicon from tabs cache when no other tabs have that domain
-                self.removeFavicon(forTab: tab)
-            })
+            self.delegate?.tabSwitcherDidBulkCloseTabs(tabSwitcher: self)
+            self.refreshTitle()
+            self.updateUIForSelectionMode()
+            if shouldDismiss {
+                self.dismiss()
+            }
         }
     }
     
+    func deleteTab(tab: Tab) {
+        guard let index = tabsModel.indexOf(tab: tab) else { return }
+        deleteTabsAtIndexPaths([
+            IndexPath(row: index, section: 0)
+        ])
+    }
+
     func isCurrent(tab: Tab) -> Bool {
         return currentSelection == tabsModel.indexOf(tab: tab)
     }
@@ -341,7 +368,6 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
     }
 
     public func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        
         let cellIdentifier = tabSwitcherSettings.isGridViewEnabled ? TabViewCell.gridReuseIdentifier : TabViewCell.listReuseIdentifier
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: cellIdentifier, for: indexPath) as? TabViewCell else {
             fatalError("Failed to dequeue cell \(cellIdentifier) as TabViewCell")
@@ -365,13 +391,13 @@ extension TabSwitcherViewController: UICollectionViewDataSource {
 extension TabSwitcherViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        Pixel.fire(pixel: .tabSwitcherSwitchTabs)
-        currentSelection = indexPath.row
         if isEditing {
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             updateUIForSelectionMode()
             refreshTitle()
         } else {
+            currentSelection = indexPath.row
+            Pixel.fire(pixel: .tabSwitcherSwitchTabs)
             markCurrentAsViewedAndDismiss()
         }
     }
@@ -387,7 +413,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
     }
     
     func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        return true
+        return !isEditing
     }
 
     func collectionView(_ collectionView: UICollectionView, targetIndexPathForMoveFromItemAt originalIndexPath: IndexPath,
@@ -401,29 +427,12 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
 
         // This can happen if you long press in the whitespace
         guard !indexPaths.isEmpty else { return nil }
-
-        let title = indexPaths.count == 1 ?
-            trimMenuTitleIfNeeded(tabsModel.get(tabAt: indexPaths[0].row).link?.displayTitle ?? "", 50) :
-        UserText.numberOfSelectedTabs(withCount: indexPaths.count)
-
+        
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
-            let menuItems = indexPaths.count == 1 ?
-                self.createLongPressMenuItemsForSingleTab(forIndex: indexPaths[0].row) :
-                self.createLongPressMenuItemsForMultipleTabs()
-            return UIMenu(title: title, children: menuItems.compactMap { $0 })
+            return self.createLongPressMenuForTabs(atIndexPaths: indexPaths)
         }
 
         return configuration
-    }
-
-    func collectionView(_ collectionView: UICollectionView, willEndContextMenuInteraction configuration: UIContextMenuConfiguration, animator: (any UIContextMenuInteractionAnimating)?) {
-        if let selected = collectionView.indexPathsForSelectedItems {
-            collectionView.reloadItems(at: selected)
-            selected.forEach {
-                collectionView.selectItem(at: $0, animated: false, scrollPosition: [])
-                self.collectionView(collectionView, didSelectItemAt: $0)
-            }
-        }
     }
 
 }
@@ -482,11 +491,13 @@ extension TabSwitcherViewController: TabObserver {
         guard !isProcessingUpdates, canUpdateCollection else {
             return
         }
-
+        
         collectionView.performBatchUpdates({}, completion: { [weak self] completed in
             guard completed, let self = self else { return }
             if let index = self.tabsModel.indexOf(tab: tab), index < self.collectionView.numberOfItems(inSection: 0) {
-                self.collectionView.reconfigureItems(at: [IndexPath(row: index, section: 0)])
+                UIView.performWithoutAnimation {
+                    self.collectionView.reconfigureItems(at: [IndexPath(row: index, section: 0)])
+                }
             }
         })
     }
@@ -514,7 +525,7 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController: UICollectionViewDragDelegate {
 
     func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: any UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-        return [UIDragItem(itemProvider: NSItemProvider())]
+        return isEditing ? [] : [UIDragItem(itemProvider: NSItemProvider())]
     }
 
     func collectionView(_ collectionView: UICollectionView, itemsForAddingTo session: any UIDragSession, at indexPath: IndexPath, point: CGPoint) -> [UIDragItem] {
@@ -562,4 +573,34 @@ extension TabSwitcherViewController: UICollectionViewDropDelegate {
 
     }
 
+}
+
+extension UITapGestureRecognizer {
+    
+    func tappedInWhitespaceAtEndOfCollectionView(_ collectionView: UICollectionView) -> Bool {
+        guard collectionView.indexPathForItem(at: self.location(in: collectionView)) == nil else { return false }
+        let location = self.location(in: collectionView)
+           
+        // Now check if the tap is in the whitespace area at the end
+        let lastSection = collectionView.numberOfSections - 1
+        let lastItemIndex = collectionView.numberOfItems(inSection: lastSection) - 1
+        
+        // Get the frame of the last item
+        // If there are no items in the last section, the entire area is whitespace
+       guard lastItemIndex >= 0 else { return true }
+        
+        let lastItemIndexPath = IndexPath(item: lastItemIndex, section: lastSection)
+        let lastItemFrame = collectionView.layoutAttributesForItem(at: lastItemIndexPath)?.frame ?? .zero
+        
+        // Check if the tap is below the last item.
+        // Add 10px buffer to ensure it's whitespace.
+        if location.y > lastItemFrame.maxY + 15 // below the bottom of the last item is definitely the end
+            || (location.x > lastItemFrame.maxX + 15 && location.y > lastItemFrame.minY) // to the right of the last item is the end as long as it's also at least below the start of the frame
+        {
+            // The tap is in the whitespace area at the end
+           return true
+        }
+
+        return false
+    }
 }

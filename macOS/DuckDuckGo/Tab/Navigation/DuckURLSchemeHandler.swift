@@ -359,6 +359,12 @@ private extension DuckURLSchemeHandler {
     }
 }
 
+extension URL {
+    var isHistory: Bool {
+        return isDuckURLScheme && host == "history"
+    }
+}
+
 private extension URL {
 
     enum URLType {
@@ -413,10 +419,6 @@ private extension URL {
 
     var isFavicon: Bool {
         return isDuckURLScheme && host == "favicon"
-    }
-
-    var isHistory: Bool {
-        return isDuckURLScheme && host == "history"
     }
 
     var isCustomBackgroundImage: Bool {

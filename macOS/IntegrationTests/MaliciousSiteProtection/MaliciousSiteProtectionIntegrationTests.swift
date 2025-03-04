@@ -344,7 +344,6 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         XCTAssertNil(tabErrorCode2)
     }
 
-
     // MARK: - Helper Methods
 
     @MainActor

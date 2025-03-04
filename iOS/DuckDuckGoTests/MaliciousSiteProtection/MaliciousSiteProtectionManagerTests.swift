@@ -49,7 +49,9 @@ final class MaliciousSiteProtectionManagerTests {
             detector: mockDetector,
             preferencesManager: preferencesManagerMock,
             maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
-            supportedThreatsProvider: { return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } }
+            supportedThreatsProvider: {
+                return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
+            }
         )
     }
 

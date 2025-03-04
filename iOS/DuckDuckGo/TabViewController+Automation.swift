@@ -23,28 +23,8 @@ extension TabViewController {
     public func executeScript(_ javaScriptString: String,
                               args: [String: Any] = [:]) async -> Result<Any?, any Error> {
         do {
-            var modifiedJavaScriptString = javaScriptString
-            // DEBUG
-            if javaScriptString.contains("window.__wptrunner_url") {
-                modifiedJavaScriptString = """
-                function getDocumentHTML() {
-                    return new Promise((resolve) => {
-                        if (document.readyState === "complete" || document.readyState === "interactive") {
-                        // Document is already ready, resolve immediately
-                        resolve(document.documentElement.innerHTML);
-                        } else {
-                        // Wait for the DOM to be fully loaded
-                        document.addEventListener("DOMContentLoaded", () => {
-                            resolve(document.documentElement.innerHTML);
-                        });
-                        }
-                    });
-                    }
-                return getDocumentHTML();
-                """
-            }
             var result = try await webView.callAsyncJavaScript(
-                modifiedJavaScriptString,
+                javaScriptString,
                 arguments: args,
                 in: nil,
                 contentWorld: .page

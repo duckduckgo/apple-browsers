@@ -1016,13 +1016,18 @@ extension Pixel {
         // MARK: DuckPlayer        
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
+        case duckPlayerViewFromYoutubeViaMainOverlayUnique
         case duckPlayerViewFromYoutubeViaHoverButton
         case duckPlayerViewFromYoutubeAutomatic
         case duckPlayerViewFromSERP
         case duckPlayerViewFromOther
         case duckPlayerOverlayYoutubeImpressions
+        case duckPlayerOverlayYoutubeImpressionsUnique
         case duckPlayerLandscapeLayoutImpressions
         case duckPlayerOverlayYoutubeWatchHere
+        case duckPlayerOverlayYoutubeWatchHereUnique
+        case duckPlayerOverlayYoutubeThumbnailPlay
+        case duckPlayerOverlayYoutubeThumbnailPlayUnique
         case duckPlayerSettingAlwaysDuckPlayer
         case duckPlayerSettingAlwaysSettings
         case duckPlayerSettingNeverSettings
@@ -2071,6 +2076,7 @@ extension Pixel.Event {
         // MARK: DuckPlayer
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
         case .duckPlayerViewFromYoutubeViaMainOverlay: return "duckplayer_view-from_youtube_main-overlay"
+        case .duckPlayerViewFromYoutubeViaMainOverlayUnique: return "duckplayer_view-from_youtube_main-overlay_unique"
         case .duckPlayerViewFromYoutubeViaHoverButton: return "duckplayer_view-from_youtube_hover-button"
         case .duckPlayerViewFromYoutubeAutomatic: return "duckplayer_view-from_youtube_automatic"
         case .duckPlayerViewFromSERP: return "duckplayer_view-from_serp"
@@ -2082,7 +2088,11 @@ extension Pixel.Event {
         case .duckPlayerSettingsNeverOverlaySERP: return "duckplayer_setting_never_overlay_serp"
         case .duckPlayerSettingsNeverOverlayYoutube: return "duckplayer_setting_never_overlay_youtube"
         case .duckPlayerOverlayYoutubeImpressions: return "duckplayer_overlay_youtube_impressions"
+        case .duckPlayerOverlayYoutubeImpressionsUnique: return "duckplayer_overlay_youtube_impressions_unique"
         case .duckPlayerOverlayYoutubeWatchHere: return "duckplayer_overlay_youtube_watch_here"
+        case .duckPlayerOverlayYoutubeWatchHereUnique: return "duckplayer_overlay_youtube_watch_here_unique"
+        case .duckPlayerOverlayYoutubeThumbnailPlay: return "duckplayer_overlay_youtube_thumbnail-play"
+        case .duckPlayerOverlayYoutubeThumbnailPlayUnique: return "duckplayer_overlay_youtube_thumbnail-play_unique"
         case .duckPlayerSettingNeverSettings: return "duckplayer_setting_never_settings"
         case .duckPlayerSettingBackToDefault: return "duckplayer_setting_back-to-default"
         case .duckPlayerWatchOnYoutube: return "duckplayer_watch_on_youtube"

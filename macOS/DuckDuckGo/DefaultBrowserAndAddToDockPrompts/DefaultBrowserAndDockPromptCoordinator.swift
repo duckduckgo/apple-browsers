@@ -108,10 +108,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     static func fireSetAsDefaultAddToDockExperimentPixel() {
         PixelKit.fireExperimentPixel(
-            for: DefaultBrowserAndDockPromptCoordinator.Constants.subfeatureID,
-            metric: DefaultBrowserAndDockPromptCoordinator.Constants.userSetAsDefaultOrAddedToDock,
-            conversionWindowDays: DefaultBrowserAndDockPromptCoordinator.Constants.conversionWindowDays,
-            value: DefaultBrowserAndDockPromptCoordinator.Constants.value
+            for: Constants.subfeatureID,
+            metric: Constants.userSetAsDefaultOrAddedToDock,
+            conversionWindowDays: Constants.conversionWindowDays,
+            value: Constants.value
         )
     }
 

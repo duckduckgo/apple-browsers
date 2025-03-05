@@ -20,33 +20,21 @@ import Common
 import Foundation
 
 struct ScoredSuggestion {
-    let suggestion: SuggestionType
-    var score: Int
-
-    var url: URL? {
-        switch suggestion {
-        case .bookmark(let bookmark):
-            return URL(string: bookmark.url)
-        case .historyEntry(let historyEntry):
-            return historyEntry.url
-        case .browserTab(let tab):
-            return tab.url
-        case .internalPage(let internalPage):
-            return internalPage.url
-        case .website(let url):
-            return url
-        case .phrase:
-            return nil
-        }
+    enum Kind: Hashable {
+        case phrase
+        case website
+        case bookmark
+        case favorite
+        case historyEntry
+        case internalPage
+        case browserTab
     }
 
-    var visitCount: Int {
-        if case .historyEntry(let historyEntry) = suggestion {
-            return historyEntry.numberOfVisits
-        }
-        return 0
-    }
-
+    var kind: Kind
+    var url: URL
+    var title: String
+    var visitCount: Int = 0
+    var score: Int = 0
 }
 
 struct ScoringService {
@@ -113,36 +101,39 @@ struct ScoringService {
         return score
     }
 
-    static func scored(lowerQuery: String, queryTokens: [String]?) -> (Bookmark) -> ScoredSuggestion? {
+    static func scored(lowerQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (Bookmark) -> ScoredSuggestion? {
         { bookmark in
-            guard let url = URL(string: bookmark.url) else { return nil }
+            guard let url = URL(string: bookmark.url), !isUrlIgnored(url) else { return nil }
             let score = score(title: bookmark.title, url: url, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(suggestion: .bookmark(bookmark), score: score)
+            return ScoredSuggestion(kind: bookmark.isFavorite ? .favorite : .bookmark, url: url, title: bookmark.title, score: score)
         }
     }
 
-    static func scored(lowerQuery: String, queryTokens: [String]?) -> (HistorySuggestion) -> ScoredSuggestion? {
+    static func scored(lowerQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (HistorySuggestion) -> ScoredSuggestion? {
         { historyEntry in
+            guard !isUrlIgnored(historyEntry.url) else { return nil }
             let score = score(title: historyEntry.title ?? "", url: historyEntry.url, visitCount: historyEntry.numberOfVisits, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(suggestion: .historyEntry(historyEntry), score: score)
+            return ScoredSuggestion(kind: .historyEntry, url: historyEntry.url, title: historyEntry.title ?? "", visitCount: historyEntry.numberOfVisits, score: score)
         }
     }
 
-    static func scored(lowerQuery: String, queryTokens: [String]?) -> (InternalPage) -> ScoredSuggestion? {
+    static func scored(lowerQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (InternalPage) -> ScoredSuggestion? {
         { internalPage in
+            guard !isUrlIgnored(internalPage.url) else { return nil }
             let score = score(title: internalPage.title, url: internalPage.url, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(suggestion: .internalPage(internalPage), score: score)
+            return ScoredSuggestion(kind: .internalPage, url: internalPage.url, title: internalPage.title, score: score)
         }
     }
 
-    static func scored(lowerQuery: String, queryTokens: [String]?) -> (BrowserTab) -> ScoredSuggestion? {
+    static func scored(lowerQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (BrowserTab) -> ScoredSuggestion? {
         { browserTab in
+            guard !isUrlIgnored(browserTab.url) else { return nil }
             let score = score(title: browserTab.title, url: browserTab.url, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(suggestion: .browserTab(browserTab), score: score)
+            return ScoredSuggestion(kind: .browserTab, url: browserTab.url, title: browserTab.title, score: score)
         }
     }
 

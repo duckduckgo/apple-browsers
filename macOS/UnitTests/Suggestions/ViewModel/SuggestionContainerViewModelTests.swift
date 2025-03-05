@@ -38,7 +38,8 @@ final class SuggestionContainerViewModelTests: XCTestCase {
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
                                                   bookmarkProvider: LocalBookmarkManager.shared,
-                                                  burnerMode: .regular)
+                                                  burnerMode: .regular,
+                                                  isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
     }
 
@@ -62,7 +63,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenSelectionIndexIsNilThenSelectedSuggestionViewModelIsNil() {
-        let suggestionContainer = SuggestionContainer(burnerMode: .regular)
+        let suggestionContainer = SuggestionContainer(burnerMode: .regular, isUrlIgnored: { _ in false })
         let suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
@@ -91,7 +92,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenSelectCalledWithIndexOutOfBoundsThenSelectedSuggestionViewModelIsNil() {
-        let suggestionContainer = SuggestionContainer(burnerMode: .regular)
+        let suggestionContainer = SuggestionContainer(burnerMode: .regular, isUrlIgnored: { _ in false })
         let suggestionListViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 
         suggestionListViewModel.select(at: 0)
@@ -313,7 +314,8 @@ final class SuggestionContainerViewModelTests: XCTestCase {
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
                                                   bookmarkProvider: LocalBookmarkManager.shared,
-                                                  burnerMode: .regular)
+                                                  burnerMode: .regular,
+                                                  isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 
         suggestionContainer.getSuggestions(for: "Duck")

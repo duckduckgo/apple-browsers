@@ -1,7 +1,7 @@
 //
 //  SuggestionProcessing.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -37,11 +37,11 @@ struct SuggestionProcessing {
     static let minimumNumberInSuggestionGroup = 5
 
     private let platform: Platform
-    private var urlFactory: (String) -> URL?
+    private var isUrlIgnored: (URL) -> Bool
 
-    init(platform: Platform, urlFactory: @escaping (String) -> URL?) {
+    init(platform: Platform, isUrlIgnored: @escaping (URL) -> Bool) {
         self.platform = platform
-        self.urlFactory = urlFactory
+        self.isUrlIgnored = isUrlIgnored
     }
 
     func result(for query: String,
@@ -55,21 +55,21 @@ struct SuggestionProcessing {
         let lowerQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let queryTokens = lowerQuery.tokenized()
 
-        // Get DuckDuckGo suggestions
-        let duckDuckGoSuggestions = (try? self.duckDuckGoSuggestions(from: apiResult)) ?? []
-        
         // STEP 1: Get DDG suggestions that point to a website
-        let duckDuckGoDomainSuggestions = duckDuckGoSuggestions.compactMap { suggestion -> ScoredSuggestion? in
-            guard case .website(url: let url) = suggestion, !isUrlIgnored(url) else { return nil }
-            return ScoredSuggestion(suggestion: .website(url), score: 0)
-        }
-        
+        let duckDuckGoDomainSuggestions = apiResult?.items.compactMap { suggestion -> ScoredSuggestion? in
+            guard suggestion.isNav == true,
+                  let phrase = suggestion.phrase,
+                  let url = URL(string: URL.NavigationalScheme.http.separated() + phrase),
+                  !isUrlIgnored(url) else { return nil }
+            return ScoredSuggestion(kind: .website, url: url, title: phrase)
+        } ?? []
+
         // STEP 2: Get best ordered matches from history, bookmarks, open tabs and internal pages (settings, bookmarks…)
         let allHistoryAndBookmarkAndOpenTabSuggestions = [
-            bookmarks.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens)),
-            openTabs.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens)),
-            history.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens)),
-            internalPages.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens)),
+            bookmarks.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens, isUrlIgnored: isUrlIgnored)),
+            openTabs.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens, isUrlIgnored: isUrlIgnored)),
+            history.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens, isUrlIgnored: isUrlIgnored)),
+            internalPages.compactMap(ScoringService.scored(lowerQuery: lowerQuery, queryTokens: queryTokens, isUrlIgnored: isUrlIgnored)),
         ]
             .joined()
             .sorted { $0.score > $1.score }
@@ -86,7 +86,6 @@ struct SuggestionProcessing {
         let topHitsDeduped = dedupedSuggestionTuples
             .filter { isTopHit($0.suggestion, $0.kinds) }
             .prefix(Self.maximumNumberOfTopHits)
-            .map(\.self)
 
         // STEP 6: Handle special case for open tab suggestions
         let finalTopHits = handleTopHitsOpenTabCase(topHitsDeduped)
@@ -108,13 +107,15 @@ struct SuggestionProcessing {
                       !topHits.contains(suggestion) else { return false } // Don't include items already in top hits
                 return true
             }
-            .map(\.suggestion)
             .prefix(countForHistoryAndBookmarksAndOpenTabs)
-            .map(\.self)
+            .compactMap { Suggestion($0.suggestion) }
 
         // STEP 10: Build search phrase suggestions
-        let duckDuckGoPhrases = duckDuckGoSuggestions
-            .filter { if case .phrase = $0 { return true } else { return false } }
+        let duckDuckGoPhrases = (apiResult?.items ?? [])
+            .compactMap { suggestion -> Suggestion? in
+                guard suggestion.isNav != true, let phrase = suggestion.phrase else { return nil }
+                return Suggestion.phrase(phrase: phrase)
+            }
             .prefix(Self.maximumNumberOfSuggestions - (topHits.count + historyAndBookmarksAndOpenTabs.count))
             .map(\.self)
 
@@ -122,169 +123,124 @@ struct SuggestionProcessing {
         return SuggestionResult(
             topHits: topHits,
             duckduckgoSuggestions: duckDuckGoPhrases,
-            localSuggestions: historyAndBookmarksAndOpenTabs.compactMap { Suggestion($0) }
+            localSuggestions: historyAndBookmarksAndOpenTabs
         )
     }
     
     /// Removes duplicate entries (based on the URL) from a list of suggestions.
     /// When duplicates are found, ones with more info (e.g. bookmarks) will take precedence.
-    private func removeDuplicates(_ suggestions: [ScoredSuggestion]) -> [(suggestion: ScoredSuggestion, kinds: Set<SuggestionType.Kind>)] {
-        // Group suggestions by normalized URL preserving original order for same-score suggestions
-        let groupedByURL = Dictionary(grouping: suggestions.enumerated().lazy.map { (item: $0.element, originalIndex: $0.offset) }) { $0.item.suggestion.url?.nakedString ?? UUID().uuidString }
+    private func removeDuplicates(_ suggestions: [ScoredSuggestion]) -> [(suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)] {
+        // Group suggestions by normalized URL preserving the keys order
+        var orderedKeys = [String]()
+        var seenKeys = Set<String>()
+        let groupedByURL = Dictionary(grouping: suggestions) {
+            let key = $0.url.nakedString ?? $0.url.absoluteString
+            if seenKeys.insert(key).inserted {
+                orderedKeys.append(key)
+            }
+            return key
+        }
 
-        var result = [(item: (ScoredSuggestion, Set<SuggestionType.Kind>), originalIndex: Int)]()
-
-        for group in groupedByURL.values {
+        var result = [(ScoredSuggestion, Set<ScoredSuggestion.Kind>)]()
+        for key in orderedKeys {
             // We can have multiple kinds of suggestion for a given url, for example:
             // 1. A search suggestion promoted to website due to being a valid URL
             // 2. A history item
             // 3. A bookmark
             // 4. An open tab
 
-            // We want to display the suggestion of the highest "quality"
-            guard var suggestion = group.max(by: { $0.item.suggestion.quality < $1.item.suggestion.quality })?.item,
-                  let minOriginalIndex = group.max(by: { $0.item.suggestion.quality < $1.item.suggestion.quality })?.originalIndex else { continue }
+            guard let group = groupedByURL[key],
+                  // We want to display the suggestion of the highest "quality"
+                  var suggestion = group.max(by: { $0.quality < $1.quality }) else {
+                assertionFailure("Grouped suggestions should not be empty")
+                continue
+            }
 
             // ... but we also need to provide all the kinds of suggestion for this URL so
             // downstream logic can do further filtering (i.e. TopHits shouldn't contain Bookmarks
             // unless they're also part of a History or Website suggestion).
-            let suggestionKinds = Set(group.map(\.item.suggestion.kind))
+            let suggestionKinds = Set(group.map(\.kind))
 
             // Should only ever have a single history entry instance per
             // group so can simply use Sum to get the VisitCount
-            // TODO: why the visitCount is here?
-//            let visitCount = group.reduce(0) { $0 + ($1.item.suggestion.kind == .historyEntry ? $1.item.suggestion.visitCount ?? 0 : 0) }
+            let visitCount = group.reduce(0) { $0 + ($1.kind == .historyEntry ? $1.visitCount : 0) }
 
             // Get the highest score for this group
-            let maxScore = group.max(by: { $0.item.score < $1.item.score })?.item.score ?? 0
+            let maxScore = group.max(by: { $0.score < $1.score })?.score ?? 0
 
             // If the chosen suggestion has a different visit count or score than the
             // prioritized suggestion (for example open tab is prioritized over history,
             // but it will have a lower score and visit count).
             suggestion.score = maxScore
+            suggestion.visitCount = visitCount
 
-            result.append(((suggestion, suggestionKinds), minOriginalIndex))
+            result.append((suggestion, suggestionKinds))
         }
         
-        return result.sorted {
-            $0.item.0.score > $1.item.0.score || ($0.item.0.score == $1.item.0.score && $0.originalIndex < $1.originalIndex)
-        }.map(\.item)
+        return result.sorted { $0.0.score > $1.0.score }
     }
 
     /// Determines if a suggestion should be included in top hits, following Windows algorithm rules
-    private func isTopHit(_ scoredSuggestion: ScoredSuggestion, _ suggestionKinds: Set<SuggestionType.Kind>) -> Bool {
-        let suggestion = scoredSuggestion.suggestion
-        
+    private func isTopHit(_ scoredSuggestion: ScoredSuggestion, _ suggestionKinds: Set<ScoredSuggestion.Kind>) -> Bool {
         // Check if the suggestion is for website, favorite or history
         // Otherwise the suggestion should not be part of top hits
-        guard [.website, .favorite, .historyEntry].contains(suggestion.kind) else { return false }
+        guard suggestionKinds.intersects([.website, .favorite, .historyEntry]) else { return false }
 
         // If the suggestion is based solely on history
         if suggestionKinds == [.historyEntry] {
             // Include in TopHits only if root domain or has more than 3 visits
-            if let url = scoredSuggestion.url {
-                return url.isRoot || scoredSuggestion.visitCount > 3
-            }
-            return false
+            return scoredSuggestion.url.isRoot || scoredSuggestion.visitCount > 3
         }
 
         // If the suggestion is based solely on an open tab
         if suggestionKinds == [.browserTab] {
             // Don't include open tabs in top hits by default
             return false
-        } else {
-            // Other kinds of suggestion can be included in top hits
-            return true
         }
+
+        // Other kinds of suggestion can be included in top hits
+        return true
     }
 
     // MARK: - Special Processing for Open Tabs in Top Hits
     
     /// Handles special case for open tab suggestions in top hits
-    private func handleTopHitsOpenTabCase(_ topHitsDeduped: [(suggestion: ScoredSuggestion, kinds: Set<SuggestionType.Kind>)]) -> [ScoredSuggestion] {
+    private func handleTopHitsOpenTabCase(_ topHitsDeduped: some Collection<(suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)>) -> [ScoredSuggestion] {
         var result = topHitsDeduped.map(\.suggestion)
-        
-        // If there are no top hits, return empty array
-        if result.isEmpty {
-            return result
-        }
-        
-        // Retrieve the top switch to tab result if there is one
-        let topSwitchToTabHit = topHitsDeduped.first { tuple in
-            tuple.kinds.contains(.browserTab)
-        }
-        
-        if let topSwitchToTabHit = topSwitchToTabHit, 
-           !topHitsDeduped.isEmpty {
-            
-            // If the top suggestion is open tab based and also a history entry,
-            // bookmark or favorite...
-            if topHitsDeduped[0].kinds.contains(.browserTab)
-                && topHitsDeduped[0].kinds.intersects([.historyEntry, .bookmark, .favorite]) {
 
-                // Choose new suggestion kind based on highest quality non-open tab suggestion type
-                let newSuggestionKind: SuggestionType.Kind
-                if topHitsDeduped[0].suggestion.suggestion.kind == .browserTab {
-                    // Find highest quality non-open tab type from available kinds
-                    let nonOpenTabKinds = topHitsDeduped[0].kinds.filter { $0 != .browserTab }
-                    if nonOpenTabKinds.contains(.favorite) {
-                        newSuggestionKind = .favorite
-                    } else if nonOpenTabKinds.contains(.bookmark) {
-                        newSuggestionKind = .bookmark
-                    } else {
-                        newSuggestionKind = .historyEntry
-                    }
-                } else {
-                    newSuggestionKind = .browserTab
-                }
-                
-                // ...we split the open tab/other suggestion into separate suggestions...
-                // Note: In real implementation, we would create a new suggestion here with the chosen kind
-                let newSuggestion = topHitsDeduped[0].suggestion
-                
-                // ...and prioritize the non-open tab suggestion so it can autocomplete.
-                if newSuggestionKind == .browserTab {
-                    // If new suggestion is open tab, put it second (original stays at top)
-                    result.insert(newSuggestion, at: 1)
-                } else {
-                    // If new suggestion is not open tab, put it first (prioritize for autocomplete)
-                    result.insert(newSuggestion, at: 0)
-                }
-                
-                // Ensure we don't exceed MAX_TOP_HITS
-                if result.count > Self.maximumNumberOfTopHits {
-                    result = Array(result.prefix(Self.maximumNumberOfTopHits))
-                }
-            }
+        // If the top suggestion is open tab based and also a history entry, bookmark or favorite...
+        guard let topHit = topHitsDeduped.first,
+              topHit.kinds.contains(.browserTab),
+              topHit.kinds.intersects([.historyEntry, .bookmark, .favorite]) else { return result }
+
+        // Choose new suggestion kind based on highest quality non-open tab suggestion type
+        let newSuggestionKind = if topHit.suggestion.kind == .browserTab {
+            topHit.kinds.filter { $0 != .browserTab }.max(by: { $0.quality < $1.quality }) ?? .browserTab
+        } else {
+            ScoredSuggestion.Kind.browserTab
         }
-        
+
+        // ...we split the open tab/other suggestion into separate suggestions...
+        // Note: In real implementation, we would create a new suggestion here with the chosen kind
+        var newSuggestion = topHit.suggestion
+        newSuggestion.kind = newSuggestionKind
+        // ...and prioritize the non-open tab suggestion so it can autocomplete.
+        // If new suggestion is open tab, put it second (original stays at top)
+        // If new suggestion is not open tab, put it first (prioritize for autocomplete)
+        let insertionIndex = (newSuggestionKind == .browserTab) ? 1 : 0
+        result.insert(newSuggestion, at: insertionIndex)
+
+        // Ensure we don't exceed MAX_TOP_HITS
+        if result.count > Self.maximumNumberOfTopHits {
+            result.removeSubrange(Self.maximumNumberOfTopHits...)
+        }
+
         return result
-    }
-
-    // MARK: - DuckDuckGo Suggestions
-
-    private func duckDuckGoSuggestions(from result: APIResult?) throws -> [Suggestion]? {
-        return result?.items
-            .compactMap {
-                guard let phrase = $0.phrase else {
-                    return nil
-                }
-                return Suggestion(phrase: phrase, isNav: $0.isNav ?? false)
-            }
-    }
-    
-    // MARK: - Helper Functions
-
-    /// Checks if a URL should be ignored in suggestions
-    private func isUrlIgnored(_ url: URL) -> Bool {
-        // Implement any URL filtering logic here
-        // For now we don't ignore any URLs
-        return false
     }
 
 }
 
-extension SuggestionType {
+extension ScoredSuggestion.Kind {
     // Suggestion quality ranking (higher numbers = higher quality)
     var quality: Int {
         switch self {
@@ -292,28 +248,32 @@ extension SuggestionType {
         case .website, .internalPage: 2
         case .historyEntry: 3
         case .browserTab: 4
-        case .bookmark(let bookmark) where bookmark.isFavorite: 6
         case .bookmark: 5
+        case .favorite: 6
         }
     }
 }
+extension ScoredSuggestion {
+    var quality: Int { kind.quality }
+}
 
 private extension Suggestion {
-    init?(_ scoredSuggestion: ScoredSuggestion) {
-        switch scoredSuggestion.suggestion {
-        case .phrase(let phrase):
-            self = .phrase(phrase: phrase)
-        case .website(let url):
-            self = .website(url: url)
-        case .bookmark(let bookmark):
-            guard let url = URL(string: bookmark.url) else { return nil }
-            self = .bookmark(title: bookmark.title, url: url, isFavorite: bookmark.isFavorite, score: scoredSuggestion.score)
-        case .historyEntry(let historySuggestion):
-            self = .historyEntry(title: historySuggestion.title, url: historySuggestion.url, score: scoredSuggestion.score)
-        case .internalPage(let internalPage):
-            self = .internalPage(title: internalPage.title, url: internalPage.url, score: scoredSuggestion.score)
-        case .browserTab(let browserTab):
-            self = .openTab(title: browserTab.title, url: browserTab.url, score: scoredSuggestion.score)
+    init?(_ suggestion: ScoredSuggestion) {
+        switch suggestion.kind {
+        case .phrase:
+            self = .phrase(phrase: suggestion.title)
+        case .website:
+            self = .website(url: suggestion.url)
+        case .bookmark:
+            self = .bookmark(title: suggestion.title, url: suggestion.url, isFavorite: false, score: suggestion.score)
+        case .favorite:
+            self = .bookmark(title: suggestion.title, url: suggestion.url, isFavorite: true, score: suggestion.score)
+        case .historyEntry:
+            self = .historyEntry(title: suggestion.title, url: suggestion.url, score: suggestion.score)
+        case .internalPage:
+            self = .internalPage(title: suggestion.title, url: suggestion.url, score: suggestion.score)
+        case .browserTab:
+            self = .openTab(title: suggestion.title, url: suggestion.url, score: suggestion.score)
         }
     }
 }

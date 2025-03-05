@@ -40,7 +40,8 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: LocalBookmarkManager.shared,
-                                                      burnerMode: .regular)
+                                                      burnerMode: .regular,
+                                                      isUrlIgnored: { _ in false })
 
         let e = expectation(description: "Suggestions updated")
         let cancellable = suggestionContainer.$result.sink {
@@ -67,7 +68,8 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: LocalBookmarkManager.shared,
-                                                      burnerMode: .regular)
+                                                      burnerMode: .regular,
+                                                      isUrlIgnored: { _ in false })
 
         suggestionContainer.getSuggestions(for: "test")
         suggestionContainer.stopGettingSuggestions()
@@ -84,7 +86,8 @@ final class SuggestionContainerTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
                                                       bookmarkProvider: LocalBookmarkManager.shared,
-                                                      burnerMode: .regular)
+                                                      burnerMode: .regular,
+                                                      isUrlIgnored: { _ in false })
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
         let e = expectation(description: "Suggestions updated")
@@ -112,6 +115,7 @@ final class SuggestionContainerTests: XCTestCase {
 
     @MainActor
     func testSuggestionsJsonScenarios() async throws {
+        let onlyRun = "" //"bookmarks-history-open-tabs-basic.json"
         guard let directoryURL = Bundle(for: SuggestionContainerTests.self).url(forResource: "privacy-reference-tests/suggestions", withExtension: nil) else {
             return XCTFail("Failed to locate the suggestions directory in the bundle")
         }
@@ -124,7 +128,7 @@ final class SuggestionContainerTests: XCTestCase {
             && !$0.deletingPathExtension().lastPathComponent.hasSuffix("schema")
         }
 
-        for fileURL in jsonFiles {
+        for fileURL in jsonFiles where onlyRun.isEmpty || onlyRun == fileURL.lastPathComponent {
             // Load and decode each JSON file
             let data = try Data(contentsOf: fileURL)
             let testScenario: TestScenario
@@ -182,6 +186,7 @@ final class SuggestionContainerTests: XCTestCase {
                                                       historyProvider: HistoryProviderMock(history: input.history),
                                                       bookmarkProvider: BookmarkProviderMock(bookmarks: input.bookmarks),
                                                       burnerMode: tabCollectionViewModels[selectedWindow].burnerMode,
+                                                      isUrlIgnored: testScenario.input.isURLIgnored,
                                                       windowControllersManager: windowControllersManagerMock)
 
         // Mock API Suggestions response
@@ -233,6 +238,7 @@ extension SuggestionContainerTests {
         let pinnedTabs: [TabMock]
         let windows: [Window]
         let apiSuggestions: ApiSuggestions
+        let ignoredUris: Set<String>?
 
         enum ApiSuggestions: Decodable {
             case suggestions([Suggestions.APIResult.SuggestionResult])
@@ -247,8 +253,13 @@ extension SuggestionContainerTests {
                 }
             }
         }
+
         struct HTTPError: Swift.Error, Decodable {
             let statusCode: Int
+        }
+
+        func isURLIgnored(_ url: URL) -> Bool {
+            ignoredUris?.contains(url.nakedString ?? "") ?? false
         }
     }
 
@@ -502,7 +513,7 @@ extension SuggestionContainerTests {
                     return urlString
                 }
                 let tabId = try container.decodeIfPresent(UUID.self, forKey: .tabId)
-                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : tabId
+                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : (type == .openTab ? tabId : nil)
                 self.score = try container.decode(Int.self, forKey: .score)
             }
 
@@ -511,7 +522,7 @@ extension SuggestionContainerTests {
                 self.title = title
                 self.subtitle = subtitle ?? ""
                 self.uri = uri
-                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : tabId
+                self.tabId = (tabId == UUID(uuidString: "00000000-0000-0000-0000-000000000000")) ? nil : (type == .openTab ? tabId : nil)
                 self.score = score
             }
         }

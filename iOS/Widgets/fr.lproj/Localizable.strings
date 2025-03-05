@@ -67,12 +67,6 @@
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Rechercher un mot de passe";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Effectuez des recherches, discutez sur Duck.ai ou consultez vos mots de passe.";
-
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Raccourcis";
-
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Recherchez ou visitez vos sites favoris en privé et d'un seul mouvement.";
 

@@ -67,12 +67,6 @@
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Caută parole";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Caută, fă chat pe Duck.ai sau vezi parolele tale.";
-
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Scurtături";
-
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Caută sau vizitează site-urile preferate în mod privat cu o singură atingere.";
 

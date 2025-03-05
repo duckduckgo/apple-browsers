@@ -48,6 +48,16 @@ public enum DataModel {
         case older
     }
 
+    public struct HistoryRangeWithCount: Codable, Equatable {
+        public let id: HistoryRange
+        public let count: Int
+
+        public init(id: HistoryRange, count: Int) {
+            self.id = id
+            self.count = count
+        }
+    }
+
     public enum HistoryQueryKind: Codable, Equatable {
         case searchTerm(String)
         case domainFilter(String)
@@ -149,7 +159,7 @@ extension DataModel {
     }
 
     struct GetRangesResponse: Codable, Equatable {
-        let ranges: [HistoryRange]
+        let ranges: [HistoryRangeWithCount]
     }
 
     struct DeleteDomainRequest: Codable, Equatable {

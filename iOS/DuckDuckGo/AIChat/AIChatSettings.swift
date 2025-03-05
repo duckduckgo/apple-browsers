@@ -42,13 +42,16 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
+    private let featureFlagger: FeatureFlagger
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          userDefaults: UserDefaults = .standard,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          notificationCenter: NotificationCenter = .default) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
@@ -69,15 +72,23 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAIChatFeatureEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
+        featureFlagger.isFeatureOn(.aiChat)
+    }
+
+    var isAIChatVoiceSearchFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatVoiceSearch)
+    }
+
+    var isAIChatVoiceSearchUserSettingsEnabled: Bool {
+        userDefaults.showAIChatVoiceSearch && isAIChatVoiceSearchFeatureEnabled
     }
 
     var isAIChatAddressBarShortcutFeatureEnabled: Bool {
-        return isFeatureEnabled(for: .addressBarShortcut)
+        featureFlagger.isFeatureOn(.aiChatAddressBarShortcut)
     }
 
     var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool {
-        return isFeatureEnabled(for: .browsingToolbarShortcut)
+        featureFlagger.isFeatureOn(.aiChatBrowsingToolbarShortcut)
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -90,16 +101,17 @@ struct AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
     }
 
+    func enableAIChatVoiceSearchUserSettings(enable: Bool) {
+        userDefaults.showAIChatVoiceSearch = enable
+        triggerSettingsChangedNotification()
+    }
+
     // MARK: - Private
 
     private func triggerSettingsChangedNotification() {
         notificationCenter.post(name: .aiChatSettingsChanged, object: nil)
     }
 
-    private func isFeatureEnabled(for subfeature: AIChatSubfeature) -> Bool {
-        return privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(subfeature)
-    }
-    
     private func getSettingsData(_ value: SettingsValue) -> String {
         if let value = remoteSettings[value.rawValue] as? String {
             return value
@@ -114,10 +126,13 @@ private extension UserDefaults {
     enum Keys {
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
+        static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
+
     }
 
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
+    static let showAIChatVoiceSearchDefaultValue = true
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {
@@ -127,6 +142,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatBrowsingMenu else { return }
             set(newValue, forKey: Keys.showAIChatBrowsingMenu)
+        }
+    }
+
+    @objc dynamic var showAIChatVoiceSearch: Bool {
+        get {
+            value(forKey: Keys.showAIChatVoiceSearch) as? Bool ?? Self.showAIChatVoiceSearchDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatVoiceSearch else { return }
+            set(newValue, forKey: Keys.showAIChatVoiceSearch)
         }
     }
 

@@ -784,7 +784,6 @@ extension TabBarViewItem: NSMenuDelegate {
         let menuItemTitle = audioState.isMuted ? UserText.unmuteTab : UserText.muteTab
         let muteUnmuteMenuItem = NSMenuItem(title: menuItemTitle, action: #selector(muteUnmuteSiteAction(_:)), keyEquivalent: "")
         muteUnmuteMenuItem.target = self
-        muteUnmuteMenuItem.isEnabled = tabViewModel?.tabContent.canBeMuted == true
         menu.addItem(muteUnmuteMenuItem)
     }
 

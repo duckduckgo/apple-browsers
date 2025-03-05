@@ -49,6 +49,8 @@ public enum FeatureFlag: String {
     case textZoom
     case adAttributionReporting
     case aiChat
+    case aiChatBrowsingToolbarShortcut
+    case aiChatAddressBarShortcut
     case aiChatDeepLink
     case tabManagerMultiSelection
     
@@ -66,6 +68,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1204167627774280/1209205869217377
     case aiChatNewTabPage
+
+    /// https://app.asana.com/0/1204167627774280/1209370532515589
+    case aiChatVoiceSearch
 
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
@@ -181,6 +186,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .aiChatNewTabPage:
             return .enabled
+        case .aiChatVoiceSearch:
+            return .enabled
+        case .aiChatBrowsingToolbarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
+        case .aiChatAddressBarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .networkProtectionRiskyDomainsProtection:

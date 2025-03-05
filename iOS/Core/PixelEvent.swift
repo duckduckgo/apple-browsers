@@ -204,7 +204,8 @@ extension Pixel {
         case emailUserCreatedAlias
         case emailTooltipDismissed
         
-        case voiceSearchDone
+        case voiceSearchSERPDone
+        case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
 
@@ -1222,7 +1223,8 @@ extension Pixel.Event {
         case .emailUserCreatedAlias: return "email_generated_button"
         case .emailTooltipDismissed: return "email_tooltip_dismissed"
             
-        case .voiceSearchDone: return "m_voice_search_done"
+        case .voiceSearchSERPDone: return "m_voice_search_serp_done"
+        case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
             

@@ -21,7 +21,7 @@ import HistoryView
 
 final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
 
-    var ranges: [DataModel.HistoryRange] {
+    var ranges: [DataModel.HistoryRangeWithCount] {
         rangesCallCount += 1
         return _ranges
     }
@@ -62,7 +62,7 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     }
 
     // swiftlint:disable:next identifier_name
-    var _ranges: [DataModel.HistoryRange] = []
+    var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var resetCacheCallCount: Int = 0
 

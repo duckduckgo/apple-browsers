@@ -167,4 +167,3 @@ private struct TabInteractionStateDataSizeBucket {
         }
     }
 }
-

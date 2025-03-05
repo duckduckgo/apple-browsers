@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -220,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sincronizarea și copierea de rezervă este întreruptă";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Marchezi toate filele?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Adaugă la site-uri neprotejate";
 
@@ -261,9 +255,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Deblochează DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Sigur dorești să ștergi toate marcajele? Această acțiune nu poate fi anulată.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Autentificare";
@@ -333,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Ascunde parola";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.via.sync.get-browser-button" = "Obține browserul pentru desktop";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.step1" = "Deschide DuckDuckGo pe Mac sau Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.via.sync.instructions.step2" = "Accesează %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Parole";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.settings" = "Setări";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.via.sync.instructions.step3" = "Selectează %@ și urmează pașii pentru a importa";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.via.sync.instructions.step3.import" = "Importă parolele...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.via.sync.instructions.step4" = "Odată importate pe computer, poți configura sincronizarea pe acest %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.title" = "Importă din browserul desktop:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.via.sync.subtitle" = "Importă parolele în versiunea desktop a browserului DuckDuckGo, apoi sincronizează-le între dispozitive.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.via.sync.sync-button" = "Sincronizare cu computerul desktop";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Cum să imporți parolele";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Dezactivează";
@@ -468,9 +423,6 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Importă parolele";
-
-/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
-"autofill.logins.empty-view.import-via-sync.button.title" = "Sincronizează parolele de pe desktop";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Poți importa parolele salvate dintr-un alt browser în DuckDuckGo.";
@@ -773,26 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Marcajele tale au fost distribuite.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.html.title" = "Exportă fișierul HTML";
-
-/* Title of option to export bookmarks as HTML */
-"bookmarks.exportAction.title" = "Exportă marcajele";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Ne pare rău, nu putem importa acest fișier.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Marcajele tale au fost importate.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.html.title" = "Importă fișierul HTML";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importă marcaje";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Importă marcaje din alte browsere populare.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Raportează o problemă cu acest site";
@@ -808,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Sesizarea ta ajută la îmbunătățirea DuckDuckGo pentru toată lumea!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Anularea nu este permisă mai mult de o singură dată";
 
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
@@ -923,108 +863,6 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Trimite automat rapoarte de cădere?";
 
-/* Button label to select zip or html file for importing */
-"data.import.bookmarks.file-button" = "Importă fișierul cu marcaje...";
-
-/* Header for section with instructions for how to export bookmarks from Safari */
-"data.import.bookmarks.instructions.header" = "Cum să exporți marcajele din Safari";
-
-/* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Selectează fișierul care conține marcaje. Acesta este de obicei un fișier ZIP sau HTML.";
-
-/* Title for screen to import bookmarks */
-"data.import.bookmarks.title" = "Importă marcaje în DuckDuckGo";
-
-/* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "Nu s-au găsit date acceptate în fișierul zip. Consultă instrucțiunile de export Safari și încearcă din nou.";
-
-/* Error message displayed when the user has selected an unsupported file */
-"data.import.failed.unsupported-file-error-message" = "Fișierul selectat nu este compatibil. Selectează un alt fișier și încearcă din nou.";
-
-/* Error message displayed when the (csv|html|zip) file can't be read. */
-"data.import.failed.zip-read-error-message" = "Fișierul %@ nu a putut fi citit. Este posibil să existe o problemă cu datele din fișier.";
-
-/* File type for CSV files */
-"data.import.file-type.csv" = "CSV";
-
-/* File type for HTML files */
-"data.import.file-type.html" = "HTML";
-
-/* File type for ZIP files */
-"data.import.file-type.zip" = "ZIP";
-
-/* Step 2 for instructions to export bookmarks from Safari */
-"data.import.instructions.safari.step2" = "Selectează **Export**, iar pe ecranul următor selectează **Marcaje** și **Salvează în descărcări**.";
-
-/* Step 2 for instructions to export passwords from Safari */
-"data.import.instructions.safari.step2.passwords" = "Selectează **Export**, iar pe ecranul următor selectează **Parole** și **Salvează în descărcări**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Importă fișierul cu parole...";
-
-/* Step 1 for instructions to import passwords from Chrome */
-"data.import.passwords.instructions.chrome.step1" = "În Chrome, mergi la **Manager de parole Google** și apoi la **Setări**.";
-
-/* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Selectează **Exportă parolele**, apoi **Salvează în fișiere** și salvează fișierul într-un folder pe care să-l poți ține minte.";
-
-/* Header for section with instructions for how to export passwords from Safari or Chrome */
-"data.import.passwords.instructions.header" = "Cum să exporți parolele";
-
-/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Deschide ⚙️ **Setări**, tastează „Exportă” în bara de căutare și alege rezultatul **Exportă** pentru Safari pentru a accesa direct opțiunea (sau accesează Aplicații > Safari, din Setări).";
-
-/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
-"data.import.passwords.instructions.selector" = "Exportă din";
-
-/* Export instructions selector for Chrome */
-"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
-
-/* Export instructions selector for Safari */
-"data.import.passwords.instructions.selector.safari" = "Safari";
-
-/* Title for section with instructions to export passwords from Safari */
-"data.import.passwords.instructions.title" = "Cum să exporți parolele din Safari:";
-
-/* Subtitle for screen to import passwords */
-"data.import.passwords.subtitle" = "Selectează fișierul care conține parolele exportate din Safari sau Chrome. Acesta est,e de obicei, un fișier ZIP sau CSV.";
-
-/* Title for screen to import passwords */
-"data.import.passwords.title" = "Importă parolele în DuckDuckGo";
-
-/* Data import summary of how many bookmarks were successfully imported. */
-"data.import.summary.bookmarks.success" = "Semne de carte";
-
-/* Title of button to dismiss the screen */
-"data.import.summary.button.title.done" = "Terminat";
-
-/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
-"data.import.summary.button.title.sync" = "Sincronizează și creează copii de rezervă pentru %@";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.bookmarks" = "Semne de carte";
-
-/* Parameter for data.import.summary.button.title.sync */
-"data.import.summary.button.title.sync.data" = "Date";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.passwords" = "Parole";
-
-/* Title for screen shown after attempting to import data (passwords / bookmarks) */
-"data.import.summary.complete.title" = "Import finalizat!";
-
-/* Data import summary of how many items were not imported as they were duplicates. */
-"data.import.summary.duplicates" = "Duplicatele au fost omise";
-
-/* Data import summary of how many items failed to import. */
-"data.import.summary.failed" = "Importul nu a reușit";
-
-/* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "Acum poți șterge fișierul de parole.";
-
-/* Data import summary of how many passwords were successfully imported. */
-"data.import.summary.passwords.success" = "Parole";
-
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Ultima lună";
 
@@ -1108,9 +946,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
-
-/* No comment provided by engineer. */
-"Delete All" = "Șterge toate";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "dispozitiv";
@@ -1204,6 +1039,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Afișează Duck.ai în meniul browserului";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Afișează Duck.ai în căutarea vocală";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1318,9 +1156,6 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Nu s-a adăugat niciun semn de carte";
-
-/* Empty list state placeholder subtitle */
-"empty.bookmarks.subtitle" = "Dacă marcajele tale sunt salvate într-un alt browser, \nle poți importa în DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Nu s-au găsit potriviri";
@@ -1789,6 +1624,9 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Meniul de navigare";
+
+/* No comment provided by engineer. */
+"Message" = "Mesaj";
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nume gazdă pentru politica de mesaje";
@@ -2297,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Acțiune primară/principală";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Măsuri de protecție a confidențialității";
 
 /* Privacy Icon accessibility title */
@@ -2327,6 +2168,9 @@
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Acțiune secundară/a doua acțiune";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Semne de carte";
 
 /* No comment provided by engineer. */
@@ -2349,10 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Despre";
-/* about tagline */
-"settings.about.tagline" = "Protecție. Confidențialitate. Liniște sufletească.";
-/* about page */
-"settings.about.text.new" = "DuckDuckGo este o companie independentă din domeniul protecției online care se adresează oricărei persoane care dorește să recâștige controlul asupra datelor cu caracter personal.\n\nCredem că cel mai bun mod de a-ți proteja datele cu caracter personal împotriva hackerilor, a escrocilor și a companiilor care încalcă viața privată este să împiedici colectarea lor. De aceea, milioane de oameni [aleg DuckDuckGo în locul Chrome și al altor browsere](ddgQuickLink://duckduckgo.com/compare-privacy) pentru a căuta și naviga online. Motorul nostru de căutare încorporat este asemănător cu Google, dar nu îți urmărește niciodată căutările. Iar mecanismele noastre de protecție pentru navigare, cum ar fi blocarea tehnologiilor de urmărire a reclamelor și blocarea modulelor cookie, contribuie la împiedicarea colectării datelor tale de alte companii. De asemenea, browserul nostru este gratuit ‑ obținem câștiguri din [anunțurile de căutare care respectă viața privată](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), nu din exploatarea datelor tale. \n\nÎn plus, oferim și [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), un serviciu de abonament trei-în-unu, integrat în browserul nostru. Abonații Privacy Pro beneficiază de și mai multă protecție a vieții private, cu un [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) rapid și simplu care ajută la securizarea activității tale online, un serviciu care găsește și elimină datele tale cu caracter personal de pe site-urile de căutare a persoanelor și care îți restabilește identitatea, în cazul în care aceasta este sustrasă.\n\nPreia din nou controlul asupra datelor tale cu caracter personal cu browserul conceput pentru protecția datelor, nu pentru colectarea lor.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilitate";
@@ -2888,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Perioada de încercare gratuită este activă";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Alertă SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Codul de recuperare a fost copiat în clipboard";
 
@@ -2987,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Această listă conține mesaje care au fost afișate plus cel mult 1 mesaj programat pentru afișare. Este posibil să existe mai multe mesaje în configurare care vor fi prezentate, dar acestea nu au fost încă prelucrate.";
 
+/* No comment provided by engineer. */
+"Title" = "Titlu";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Protecția confidențialității este dezactivată pentru %@";
 
@@ -2995,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Protecția confidențialității este activată pentru %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Caută";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Sugestie de completare automată";
@@ -3248,9 +3100,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mesaj de la %@:";
 
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Welcome to the Duck Side!";
-
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Cauți versiunea pentru Mac?";
 
@@ -3268,16 +3117,4 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Descarcă DuckDuckGo pentru Windows!";
-
-/* Option to select to import bookmarks */
-"zip.content.import.type.bookmarks" = "Semne de carte";
-
-/* Title of button to continue after selecting what data to import */
-"zip.content.import.type.button.title.continue" = "Continuați";
-
-/* Option to select to import passwords */
-"zip.content.import.type.passwords" = "Parole";
-
-/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
-"zip.content.import.types.title" = "Ce dorești să imporți?";
 

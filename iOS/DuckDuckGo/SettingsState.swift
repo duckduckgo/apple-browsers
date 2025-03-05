@@ -54,6 +54,7 @@ struct SettingsState {
         var enabled: Bool
         var isAIChatBrowsingMenuFeatureFlagEnabled: Bool
         var isAIChatAddressBarFeatureFlagEnabled: Bool
+        var isAIChatVoiceSearchFeatureFlagEnabled: Bool
     }
 
     struct SyncSettings {
@@ -163,8 +164,9 @@ struct SettingsState {
             duckPlayerNativeUI: false,
             duckPlayerAutoplay: true,
             aiChat: AIChat(enabled: false,
-                                  isAIChatBrowsingMenuFeatureFlagEnabled: false,
-                                  isAIChatAddressBarFeatureFlagEnabled: false)
+                           isAIChatBrowsingMenuFeatureFlagEnabled: false,
+                           isAIChatAddressBarFeatureFlagEnabled: false,
+                           isAIChatVoiceSearchFeatureFlagEnabled: false)
         )
     }
 }

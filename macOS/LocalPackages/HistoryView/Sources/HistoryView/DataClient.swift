@@ -24,7 +24,7 @@ import UserScriptActionsManager
 import WebKit
 
 public protocol DataProviding: AnyObject {
-    var ranges: [DataModel.HistoryRange] { get }
+    var ranges: [DataModel.HistoryRangeWithCount] { get }
     func refreshData() async
     func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async

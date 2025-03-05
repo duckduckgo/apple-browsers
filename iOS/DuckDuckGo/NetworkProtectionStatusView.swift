@@ -303,7 +303,7 @@ struct NetworkProtectionStatusView: View {
                 .foregroundColor(.init(designSystemColor: .textPrimary))
             }
 
-            if statusModel.usesUnifiedFeedbackForm {
+            if statusModel.enablesUnifiedFeedbackForm {
                 NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
                     HStack {
                         Image("Support-24")
@@ -312,18 +312,6 @@ struct NetworkProtectionStatusView: View {
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))
                 }
-            } else {
-                NavigationLink(destination: LazyView(VPNFeedbackFormCategoryView())) {
-                    HStack {
-                        Image("Support-24")
-                        Text(UserText.netPVPNSettingsShareFeedback)
-                    }
-                    .daxBodyRegular()
-                    .foregroundColor(.init(designSystemColor: .textPrimary))
-                }
-                NavigationLink(UserText.netPVPNSettingsShareFeedback, destination: LazyView(VPNFeedbackFormCategoryView()))
-                    .daxBodyRegular()
-                    .foregroundColor(.init(designSystemColor: .textPrimary))
             }
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))

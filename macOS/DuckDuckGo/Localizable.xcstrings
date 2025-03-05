@@ -27693,6 +27693,30 @@
         }
       }
     },
+    "history.item.delete.dialog.message" : {
+      "comment" : "Message in a dialog asking the user to confirm deleting a single history item.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "1 item will be deleted"
+          }
+        }
+      }
+    },
+    "history.item.delete.dialog.message.markdown" : {
+      "comment" : "Message in a dialog asking the user to confirm deleting a single history item. Please make sure to keep **%@** intact.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "**1** item will be deleted."
+          }
+        }
+      }
+    },
     "history.menu.clear.all.history.description" : {
       "comment" : "Description in the alert with the confirmation to clear all data",
       "extractionState" : "extracted_with_value",
@@ -43061,60 +43085,60 @@
       }
     },
     "open.all.in.new.tabs" : {
-      "comment" : "Menu item that opens all the bookmarks in a folder to new tabs",
+      "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Alle in neuen Tabs öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open All in New Tabs"
+            "value" : "Open All in Current Window"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir todo en pestañas nuevas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tout ouvrir dans de nouveaux onglets"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Apri tutto in nuove schede"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Alles openen in nieuwe tabbladen"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Otwórz wszystko w nowych kartach"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abrir tudo em novos separadores"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть все в новых вкладках"
           }
         }
@@ -60980,6 +61004,7 @@
     },
     "Reopen All Windows from Last Session" : {
       "comment" : "Main Menu History item",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -61030,6 +61055,9 @@
           }
         }
       }
+    },
+    "Reopen All Windows From Last Session" : {
+      "comment" : "Main Menu History item"
     },
     "reopen.last.closed.tab" : {
       "comment" : "This string represents an action to reopen the last closed tab in the browser",

@@ -67,12 +67,6 @@
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Sök lösenord";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Sök, chatta på Duck.ai eller visa dina lösenord.";
-
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Genvägar";
-
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Gör sökningar eller besök dina favoritwebbplatser privat med ett enda tryck.";
 

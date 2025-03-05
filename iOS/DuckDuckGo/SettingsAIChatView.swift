@@ -54,6 +54,10 @@ struct SettingsAIChatView: View {
                                      accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
                 }
 
+                if viewModel.state.aiChat.isAIChatVoiceSearchFeatureFlagEnabled {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                }
             }
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,

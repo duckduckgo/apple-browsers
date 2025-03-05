@@ -79,7 +79,7 @@ jobs:
     - name: Build and run tests
       run: |
         PROJECT_ROOT="$(pwd)"
-        . iOS/scripts/shared_web_tests.sh | tee test-output.log
+        . iOS/scripts/shared_web_tests.sh
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
@@ -87,7 +87,7 @@ jobs:
       with:
         name: BuildLogs
         path: |
-          shared-web-tests/test-output.log
+            tmp/test_out_*.log
         retention-days: 7
 
 

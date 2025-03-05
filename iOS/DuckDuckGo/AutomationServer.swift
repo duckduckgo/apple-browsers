@@ -70,13 +70,13 @@ final class AutomationServer {
             case .ready:
                 break // Connection is valid, continue
             case .cancelled, .failed:
-                Logger.automationServer.info("Connection is no longer valid \(String(describing: connection.state)) \(String(describing: error)) \(String(describing: content)).")
+                Logger.automationServer.info("Connection is no longer valid state: \(String(describing: connection.state)) error: \(String(describing: error)) content: \(String(describing: content)).")
                 return
             default:
-                Logger.automationServer.info("Connection is in state \(String(describing: connection.state)).")
+                Logger.automationServer.info("Connection is in state: \(String(describing: connection.state)).")
                 return
             }
-            Logger.automationServer.info("Received request! \(String(describing: content)) \(isComplete) \(String(describing: error))")
+            Logger.automationServer.info("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
 
             if let error {
                 Logger.automationServer.error("Error: \(error)")
@@ -116,7 +116,7 @@ final class AutomationServer {
     }
 
     func handleConnection(_ connection: NWConnection, _ content: Data) {
-        Logger.automationServer.info("Handling request!")
+        Logger.automationServer.info("Handling request:")
         let stringContent = String(bytes: content, encoding: .utf8) ?? ""
         // Log first line of string:
         if let firstLine = stringContent.components(separatedBy: CharacterSet.newlines).first {
@@ -239,7 +239,7 @@ final class AutomationServer {
             _ = self.main.tabManager.select(tabAt: tabIndex)
             self.respond(on: connection, response: "{\"success\":true}")
         } else {
-            self.respondError(on: connection, error: "Invalid window handle")
+            self.respondError(on: connection, error: "Tab not found")
         }
     }
 
@@ -261,6 +261,7 @@ final class AutomationServer {
     }
 
     func respondError(on connection: NWConnection, error: String) {
+        Logger.automationServer.error("Error: \(error)")
         self.respond(on: connection, response: "{\"error\": \"\(error)\"}")
     }
 
@@ -276,11 +277,11 @@ final class AutomationServer {
                 let jsonData = try JSONSerialization.data(withJSONObject: value, options: .prettyPrinted)
                 return String(data: jsonData, encoding: .utf8) ?? "{}"
             } else {
-                Logger.automationServer.info("Have value that can't be encoded: \(String(describing: value))")
+                Logger.automationServer.error("Have value that can't be encoded: \(String(describing: value))")
                 return "{\"error\": \"Value is not a valid JSON object\"}"
             }
         } catch {
-            Logger.automationServer.info("Failed to encode: \(String(describing: value))")
+            Logger.automationServer.error("Failed to encode: \(String(describing: value))")
             return "{\"error\": \"JSON encoding failed: \(error)\"}"
         }
     }

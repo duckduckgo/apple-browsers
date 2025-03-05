@@ -84,7 +84,7 @@ fi
 echo "Starting test run:"
 DERIVED_DATA_PATH="$(pwd)/../../DerivedData/"
 export DERIVED_DATA_PATH
-npm run test | tee ../../tmp/test-out.txt
+npm run test | tee "../../tmp/test_out_$(date +"%Y%m%d_%H%M%S").log"
 cd ../.. || exit
 # Deactivate the Python virtual environment
 if [ -n "$VIRTUAL_ENV" ]; then

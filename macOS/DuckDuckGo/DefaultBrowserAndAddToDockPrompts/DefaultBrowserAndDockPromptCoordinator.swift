@@ -79,7 +79,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
 
     init(dockCustomization: DockCustomization = DockCustomizer(),
          defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+         featureFlagger: FeatureFlagger,
          applicationBuildType: ApplicationBuildType = StandardApplicationBuildType()) {
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider

@@ -70,7 +70,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = DefaultBrowserAndDockPromptPresenter.shared
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig

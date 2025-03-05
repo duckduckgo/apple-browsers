@@ -49,8 +49,6 @@ enum DefaultBrowserAndDockPromptPresentationType {
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
-    static let shared = DefaultBrowserAndDockPromptPresenter()
-
     private let coordinator: DefaultBrowserAndDockPrompt
     private let repository: DefaultBrowserAndDockPromptStoring
     private let featureFlagger: FeatureFlagger
@@ -59,9 +57,9 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private var popover: NSPopover?
     private var cancellables: Set<AnyCancellable> = []
 
-    init(coordinator: DefaultBrowserAndDockPrompt = DefaultBrowserAndDockPromptCoordinator(),
+    init(coordinator: DefaultBrowserAndDockPrompt,
          repository: DefaultBrowserAndDockPromptStoring = DefaultBrowserAndDockPromptStore(),
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         featureFlagger: FeatureFlagger) {
         self.coordinator = coordinator
         self.repository = repository
         self.featureFlagger = featureFlagger

@@ -110,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let homePageSettingsModel = HomePage.Models.SettingsModel()
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
 
     public let subscriptionManager: SubscriptionManager
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -279,6 +280,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
         )
+
+        let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
         onboardingStateMachine = ContextualOnboardingStateMachine()
 

@@ -73,7 +73,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard !repository.wasPromptShown(), let type = coordinator.getPromptType() else { return }
+        guard !repository.didShowPrompt(), let type = coordinator.getPromptType() else { return }
 
         switch type {
         case .banner:

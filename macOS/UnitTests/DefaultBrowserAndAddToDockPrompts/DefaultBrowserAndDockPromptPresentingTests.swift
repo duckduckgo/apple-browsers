@@ -204,7 +204,7 @@ final class MockDefaultBrowserAndDockPromptRepository: DefaultBrowserAndDockProm
     var wasSetPromptShownCalled = false
     private var wasPromptShownInternal = false
 
-    func wasPromptShown() -> Bool {
+    func didShowPrompt() -> Bool {
         wasPromptShownCalled = true
         return wasPromptShownInternal
     }

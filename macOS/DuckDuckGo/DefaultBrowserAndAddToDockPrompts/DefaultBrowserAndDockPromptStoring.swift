@@ -18,7 +18,7 @@
 
 protocol DefaultBrowserAndDockPromptStoring {
     func setPromptShown(_ shown: Bool)
-    func wasPromptShown() -> Bool
+    func didShowPrompt() -> Bool
 }
 
 final class DefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStoring {
@@ -34,7 +34,7 @@ final class DefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStoring
         userDefaults.set(shown, forKey: Self.promptShownKey)
     }
 
-    func wasPromptShown() -> Bool {
+    func didShowPrompt() -> Bool {
         userDefaults.bool(forKey: Self.promptShownKey)
     }
 }

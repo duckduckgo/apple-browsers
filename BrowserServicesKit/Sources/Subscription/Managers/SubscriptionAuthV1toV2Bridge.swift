@@ -67,7 +67,7 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
     public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
-        switch feature { // TODO Check what happens if fails to fetch current features
+        switch feature { // todo Check what happens if fails to fetch current features
         case .networkProtection:
             return await isFeatureAvailableForUser(.networkProtection)
         case .dataBrokerProtection:

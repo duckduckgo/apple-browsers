@@ -56,6 +56,7 @@ public enum FeatureFlag: String, CaseIterable {
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
+    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
     case popoverVsBannerExperiment
 }
 

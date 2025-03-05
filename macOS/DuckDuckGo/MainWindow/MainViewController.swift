@@ -172,7 +172,7 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-        tryToShowSetAsDefaultAndAddtoDockIfNeeded()
+        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -509,7 +509,7 @@ final class MainViewController: NSViewController {
 
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
         NotificationCenter.default.addObserver(self,
-                                               selector: #selector(tryToShowSetAsDefaultAndAddtoDockIfNeeded),
+                                               selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
                                                name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
                                                object: nil)
 
@@ -519,7 +519,7 @@ final class MainViewController: NSViewController {
             }
     }
 
-    @objc private func tryToShowSetAsDefaultAndAddtoDockIfNeeded() {
+    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
         defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
             popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
             bannerViewHandler: showMessageBanner
@@ -527,15 +527,15 @@ final class MainViewController: NSViewController {
     }
 
     private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
-        if self.isViewLoaded && self.view.window?.isKeyWindow == true {
-            if bookmarksBarVisibilityManager.isBookmarksBarVisible {
-                return self.bookmarksBarViewController.view
-            } else {
-                return self.navigationBarViewController.addressBarViewController?.view
-            }
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
         }
 
-        return nil
+        if bookmarksBarVisibilityManager.isBookmarksBarVisible {
+            return bookmarksBarViewController.view
+        } else {
+            return navigationBarViewController.addressBarViewController?.view
+        }
     }
 
     private func showMessageBanner(banner: BannerMessageViewController) {

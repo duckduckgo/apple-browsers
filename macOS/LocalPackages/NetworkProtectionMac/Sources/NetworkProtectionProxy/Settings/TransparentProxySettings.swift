@@ -77,6 +77,10 @@ public final class TransparentProxySettings {
                 return nil
             }
 
+            guard bundleId != Bundle.main.dbpBackgroundAgentBundleId else {
+                return nil
+            }
+
             return bundleID
         }
     }

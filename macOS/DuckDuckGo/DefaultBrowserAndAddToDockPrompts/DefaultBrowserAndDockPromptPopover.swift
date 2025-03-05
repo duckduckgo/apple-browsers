@@ -17,17 +17,18 @@
 //
 
 import SwiftUI
+import Carbon.HIToolbox
 import Combine
 import SwiftUIExtensions
 
-public final class DefaultBrowserAndDockPromptPopoverViewModel: ObservableObject {
-    @Published var title: String?
-    @Published var message: String
-    @Published var image: NSImage
-    @Published var buttonText: String
-    @Published public var buttonAction: () -> Void
-    @Published var secondaryButtonText: String?
-    @Published public var secondaryButtonAction: () -> Void
+public final class DefaultBrowserAndDockPromptPopoverViewModel {
+    let title: String?
+    let message: String
+    let image: NSImage
+    let buttonText: String
+    let buttonAction: () -> Void
+    let secondaryButtonText: String?
+    let secondaryButtonAction: () -> Void
 
     public init(title: String?,
                 message: String,
@@ -47,7 +48,7 @@ public final class DefaultBrowserAndDockPromptPopoverViewModel: ObservableObject
 }
 
 struct DefaultBrowserAndDockPromptPopoverView: View {
-    @ObservedObject var viewModel: DefaultBrowserAndDockPromptPopoverViewModel
+    private let viewModel: DefaultBrowserAndDockPromptPopoverViewModel
 
     init(viewModel: DefaultBrowserAndDockPromptPopoverViewModel) {
         self.viewModel = viewModel
@@ -120,7 +121,7 @@ final class DefaultBrowserAndDockPromptPopover: NSPopover {
     }
 
     override func keyDown(with event: NSEvent) {
-        if event.keyCode == 53 { // ESC key
+        if Int(event.keyCode) == kVK_Escape {
             self.performClose(nil)
         } else {
             super.keyDown(with: event)

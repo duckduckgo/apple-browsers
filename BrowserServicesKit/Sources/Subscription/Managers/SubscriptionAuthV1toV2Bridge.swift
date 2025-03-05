@@ -31,7 +31,7 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
 
 extension SubscriptionAuthV1toV2Bridge {
     public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
-        try await isEnabled(feature: feature, cachePolicy: .reloadIgnoringLocalCacheData)
+        try await isEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
     }
 }
 

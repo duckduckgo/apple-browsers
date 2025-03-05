@@ -95,6 +95,7 @@ extension Pixel {
         case tabSwitcherLongPressSelectTabs
         case tabSwitcherLongPressCloseTab
         case tabSwitcherLongPressCloseOtherTabs
+        case tabSwitcherLongPressCloseOtherTabsDaily
 
         case settingsDoNotSellShown
         case settingsDoNotSellOn
@@ -2102,6 +2103,7 @@ extension Pixel.Event {
         case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
         case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
         case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
+        case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
         }
     }
 }

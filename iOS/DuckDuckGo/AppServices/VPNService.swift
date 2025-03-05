@@ -114,7 +114,8 @@ final class VPNService: NSObject {
     @MainActor
     private func refreshVPNShortcuts() async {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
-              await subscriptionManager.isEnabled(feature: .networkProtection)
+              let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+              hasEntitlement
         else {
             application.shortcutItems = nil
             return

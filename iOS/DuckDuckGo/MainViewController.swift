@@ -529,7 +529,7 @@ class MainViewController: UIViewController {
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            if await subscriptionManager.isEnabled(feature: .networkProtection) {
+            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection), hasEntitlement {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -1691,7 +1691,9 @@ class MainViewController: UIViewController {
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            guard await subscriptionManager.isEnabled(feature: .networkProtection) else { return }
+            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+                      hasEntitlement == false
+            else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()

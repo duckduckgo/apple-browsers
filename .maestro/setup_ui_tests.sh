@@ -9,7 +9,7 @@ source $(dirname $0)/common.sh
 check_maestro() {
 
     local command_name="maestro"
-    local known_version="1.39.9"
+    local known_version="1.39.13"
 
     if command -v $command_name > /dev/null 2>&1; then
       local version_output=$($command_name -v 2>&1 | tail -n 1)

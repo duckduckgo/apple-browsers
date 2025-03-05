@@ -444,8 +444,6 @@ extension Pixel {
         case networkProtectionLatencyError
         
         case networkProtectionEnabledOnSearch
-        
-        case networkProtectionBreakageReport
 
         case networkProtectionRekeyAttempt
         case networkProtectionRekeyFailure
@@ -1461,7 +1459,6 @@ extension Pixel.Event {
         case .networkProtectionRekeyCompleted: return "m_netp_rekey_completed"
         case .networkProtectionRekeyFailure: return "m_netp_rekey_failure"
         case .networkProtectionEnabledOnSearch: return "m_netp_ev_enabled_on_search"
-        case .networkProtectionBreakageReport: return "m_vpn_breakage_report"
         case .networkProtectionTunnelConfigurationNoServerRegistrationInfo: return "m_netp_tunnel_config_error_no_server_registration_info"
         case .networkProtectionTunnelConfigurationCouldNotSelectClosestServer: return "m_netp_tunnel_config_error_could_not_select_closest_server"
         case .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey: return "m_netp_tunnel_config_error_could_not_get_peer_public_key"

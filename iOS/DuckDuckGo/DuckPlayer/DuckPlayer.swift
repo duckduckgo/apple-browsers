@@ -137,7 +137,10 @@ protocol DuckPlayerControlling: AnyObject {
     var hostView: TabViewController? { get }
         
     // Navigation Request Publisher to notify when DuckPlayer needs direct Youtube Nav
-    var youtubeNavigationRequest: PassthroughSubject<URL, Never> { get }
+    var youtubeNavigationRequest: PassthroughSubject<URL, Never>? { get }
+    
+    /// Publisher that emits when Native DuckPlayer is dismissed
+    var playerDismissedPublisher: PassthroughSubject<Void, Never>? { get }
     
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -169,13 +172,18 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - webView: The web view to load the video in.
     func openVideoInDuckPlayer(url: URL, webView: WKWebView)
     
-    /// Opens Duck Player settings.
+    /// Opens DuckPlayer Settings
+    func openDuckPlayerSettings()
+
+    /// Opens Duck Player settings from a web view
+    /// This is an alias for openDuckPlayerSettings()
+    /// Parameters are ignored but added to match the signature of the generic Webview Handlers
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
     ///   - message: The script message containing the parameters.
     func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable?
-    
+
     /// Opens Duck Player information modal.
     ///
     /// - Parameters:
@@ -219,7 +227,33 @@ protocol DuckPlayerControlling: AnyObject {
     func setHostViewController(_ vc: TabViewController)
 
     /// Loads a native DuckPlayerView
-    func loadNativeDuckPlayerVideo(videoID: String)
+    ///
+    /// - Parameters:
+    ///   - videoID: The ID of the video to load
+    ///   - source: The source of the video navigation.
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource)
+    
+    /// Presents a bottom sheet asking the user how they want to open the video
+    ///
+    /// - Parameter videoID: The YouTube video ID to be played
+    func presentPill(for videoID: String)
+    
+    /// Dismisses the bottom sheet
+    func dismissPill()
+    
+    /// Hides the bottom sheet when browser chrome is hidden
+    func hideBottomSheetForHiddenChrome()
+    
+    /// Shows the bottom sheet when browser chrome is visible
+    func showBottomSheetForVisibleChrome()
+}
+
+extension DuckPlayerControlling {
+    
+    // Convenience method to load a native DuckPlayerView - Default to other
+    func loadNativeDuckPlayerVideo(videoID: String) {
+        loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other)
+    }
 }
 
 /// Implementation of the DuckPlayerControlling.
@@ -245,6 +279,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private var hideBrowserChromeTimer: Timer?
     private var tapGestureRecognizer: UITapGestureRecognizer?
     
+    // Native Player
+    private var nativePlayerCancellables = Set<AnyCancellable>()
+    
     private lazy var localeStrings: String? = {
         let languageCode = Locale.current.languageCode ?? Constants.defaultLocale
         if let localizedFile = ContentScopeScripts.Bundle.path(forResource: Constants.translationFile,
@@ -265,9 +302,21 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         case page = "duckPlayerPage"
         case overlay = "duckPlayer"
     }
+
+    enum VideoNavigationSource: String {
+        case youtube
+        case serp
+        case other
+    }
     
     // A published subject to notify when a Youtube navigation request is needed
-    var youtubeNavigationRequest: PassthroughSubject<URL, Never>
+    var youtubeNavigationRequest: PassthroughSubject<URL, Never>?
+    
+    /// Publisher to notify when DuckPlayer is dismissed
+    var playerDismissedPublisher: PassthroughSubject<Void, Never>?
+    
+    private let nativeUIPresenter = DuckPlayerNativeUIPresenter()
+    private var presentationCancellables = Set<AnyCancellable>()
     
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -279,8 +328,14 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
+        self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         super.init()
-        registerOrientationSubscriber()
+        setupSubscriptions()
+        
+        NotificationCenter.default.addObserver(self,
+                                             selector: #selector(handleChromeVisibilityChange(_:)),
+                                             name: .browserChromeVisibilityChanged,
+                                             object: nil)
     }
     
     deinit {
@@ -289,7 +344,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             hostView?.view.removeGestureRecognizer(tapGestureRecognizer)
         }
         hostView = nil
-        cancellables.removeAll()
+        nativePlayerCancellables.removeAll()
     }
     
     /// Sets the host view controller for presenting modals.
@@ -297,6 +352,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameter vc: The view controller to set as host.
     public func setHostViewController(_ vc: TabViewController) {
         hostView = vc
+        Task { @MainActor in
+            nativeUIPresenter.setHostViewController(vc)
+        }
     }
     
     private func addTapGestureRecognizer() {
@@ -326,7 +384,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             let orientation = UIDevice.current.orientation
             if orientation.isLandscape {
                 hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
-                setupHideBrowserChromeTimer()
+                showBottomSheetForVisibleChrome()
             }
         }
     }
@@ -347,39 +405,26 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
 
-    // Loads a native DuckPlayerView
-    private var cancellables = Set<AnyCancellable>()
+    
+    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other) {
+        guard let hostView = hostView else { return }
         
-    func loadNativeDuckPlayerVideo(videoID: String) {
-        Logger.duckplayer.debug("Starting loadNativeDuckPlayerVideo with ID: \(videoID)")
-        let viewModel = DuckPlayerViewModel(videoID: videoID)
-        guard let url = viewModel.getVideoURL() else {
-            Logger.duckplayer.debug("Failed to get video URL for ID: \(videoID)")
-            return
+        Task { @MainActor in
+            let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView)
+            
+            publishers.navigation
+                .sink { [weak self] url in
+                    self?.youtubeNavigationRequest?.send(url)
+                }
+                .store(in: &presentationCancellables)
+                
+            publishers.settings
+                .sink { [weak self] in
+                    self?.openDuckPlayerSettings()
+                }
+                .store(in: &presentationCancellables)
         }
-        
-        Logger.duckplayer.debug("Creating webView for videoID: \(videoID)")
-        // Create webView with viewModel
-        let webView = DuckPlayerWebView(viewModel: viewModel)
-        
-        let duckPlayerView = DuckPlayerView(viewModel: viewModel, webView: webView)
-        let hostingController = UIHostingController(rootView: duckPlayerView)
-        hostingController.modalPresentationStyle = .formSheet
-        hostingController.isModalInPresentation = false
-
-        // Subscribe to the viewModel's publisher
-        viewModel.youtubeNavigationRequestPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak hostingController] url in
-                Logger.duckplayer.debug("Received YouTube navigation request: \(url)")
-                self?.youtubeNavigationRequest.send(url)
-                hostingController?.dismiss(animated: true)
-            }
-            .store(in: &cancellables)
-
-        hostView?.present(hostingController, animated: true)
     }
-
 
     // MARK: - Common Message Handlers
 
@@ -524,20 +569,25 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         return await self.encodedPlayerSettings(with: webView)
     }
     
-    /// Opens Duck Player settings.
-    ///
-    /// - Parameters:
-    ///   - params: Parameters from the web content.
-    ///   - message: The script message containing the parameters.
-    public func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable? {
+    /// Opens Duck Player Settings Page
+    public func openDuckPlayerSettings() {
         NotificationCenter.default.post(
             name: .settingsDeepLinkNotification,
             object: SettingsViewModel.SettingsDeepLinkSection.duckPlayer,
             userInfo: nil
         )
-        return nil
     }
     
+    /// Opens Duck Player settings from a web view    
+    ///
+    /// - Parameters:
+    ///   - params: Parameters from the web content.
+    ///   - message: The script message containing the parameters.
+    public func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> Encodable? {
+        openDuckPlayerSettings()
+        return nil
+    }
+
     /// Sends a telemetry event from the FE.
     ///
     /// - Parameters:
@@ -555,7 +605,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - params: Parameters from the web content.
     ///   - message: The script message containing the parameters.
     @MainActor
-    public func handleYoutubeError(params: Any, message: WKScriptMessage) -> Encodable? {
+    public func handleYoutubeError(params: Any, message: WKScriptMessage) async -> Encodable? {
         let (volumePixel, dailyPixel) = getPixelsForYouTubeErrorParams(params)
         DailyPixel.fire(pixel: dailyPixel)
         Pixel.fire(pixel: volumePixel)
@@ -678,6 +728,58 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
        
     }
 
+    /// Hides the bottom sheet when browser chrome is hidden
+    func hideBottomSheetForHiddenChrome() {
+        Task { await nativeUIPresenter.hideBottomSheetForHiddenChrome() }
+    }
+    
+    /// Shows the bottom sheet when browser chrome is visible
+    func showBottomSheetForVisibleChrome() {
+        Task { await nativeUIPresenter.showBottomSheetForVisibleChrome() }
+    }
+    
+    /// Presents a bottom sheet asking the user how they want to open the video
+    ///
+    /// - Parameter videoID: The YouTube video ID to be played    
+    @MainActor
+    func presentPill(for videoID: String) {
+        guard let hostView = hostView else { return }
+        
+        Task { @MainActor in
+            nativeUIPresenter.presentPill(for: videoID, in: hostView)
+        }
+        
+        nativeUIPresenter.videoPlaybackRequest
+            .sink { [weak self] videoID in
+                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            }
+            .store(in: &presentationCancellables)
+    }
+
+    /// Add cleanup method to remove the sheet
+    @MainActor
+    func dismissPill() {
+        Task { await nativeUIPresenter.dismissPill(reset: true) }
+    }
+
+    @objc private func handleChromeVisibilityChange(_ notification: Notification) {
+        if let isHidden = notification.userInfo?["isHidden"] as? Bool {
+            if isHidden {
+                hideBottomSheetForHiddenChrome()
+            } else {
+                showBottomSheetForVisibleChrome()
+            }
+        }
+    }
+    
+    private func setupSubscriptions() {
+        // Set up the subscription once and keep it alive
+        nativeUIPresenter.videoPlaybackRequest
+            .sink { [weak self] videoID in
+                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            }
+            .store(in: &presentationCancellables)
+    }
     /// Returns tuple of Pixels for firing when a YouTube Error occurs
     private func getPixelsForYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
         if let paramsDict = params as? [String: Any],
@@ -701,5 +803,12 @@ extension DuckPlayer: UIGestureRecognizerDelegate {
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
+    }
+}
+
+// Add UIAdaptivePresentationControllerDelegate to handle sheet dismissal
+extension DuckPlayer: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        playerDismissedPublisher?.send()
     }
 }

@@ -305,7 +305,7 @@ public struct PreferencesSubscriptionView: View {
             VStack(alignment: .leading, spacing: 16) {
                 TextButton(UserText.viewFaqsButton, weight: .semibold) { model.openFAQ() }
 
-                if subscriptionFeatureAvailability.usesUnifiedFeedbackForm, state == .subscriptionActive {
+                if state == .subscriptionActive {
                     TextButton(UserText.preferencesSubscriptionFeedbackButton, weight: .semibold) { model.openUnifiedFeedbackForm() }
                 }
 

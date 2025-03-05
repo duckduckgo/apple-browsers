@@ -22,6 +22,7 @@ import WebKit
 import ContentScopeScripts
 import Combine
 import BrowserServicesKit
+import SwiftUI
 
 @testable import DuckDuckGo
 
@@ -192,14 +193,9 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
 
 final class MockDuckPlayer: DuckPlayerControlling {
     
-    func telemetryEvent(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    
     var hostView: TabViewController?
     
-    var youtubeNavigationRequest: PassthroughSubject<URL, Never>
+    var youtubeNavigationRequest: PassthroughSubject<URL, Never>?
     
     func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
         nil
@@ -225,6 +221,9 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
     
     var settings: any DuckPlayerSettings
+    var playerDismissedPublisher: PassthroughSubject<Void, Never>?
+    var bottomSheetViewModel: DuckDuckGo.DuckPlayerEntryPillViewModel?
+    var bottomSheetHostingController: UIHostingController<DuckDuckGo.DuckPlayerEntryPillView>?
     private var featureFlagger: FeatureFlagger
     
     init(settings: any DuckDuckGo.DuckPlayerSettings, featureFlagger: any BrowserServicesKit.FeatureFlagger) {
@@ -252,6 +251,23 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func handleYoutubeError(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
         nil
     }
+    
+    func openDuckPlayerSettings() {}
+    
+    func presentPill(for videoID: String) {}
+    
+    func dismissPill() {}
+    
+    func hideBottomSheetForHiddenChrome() {}
+    
+    func showBottomSheetForVisibleChrome() {}
+        
+    func telemetryEvent(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+    
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource) {}
+
 }
 
 enum MockFeatureFlag: Hashable {

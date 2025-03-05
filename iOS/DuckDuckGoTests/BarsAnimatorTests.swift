@@ -143,8 +143,7 @@ class BarsAnimatorTests: XCTestCase {
             XCTAssertTrue(delegate.receivedMessages.count >= 4, "Expected at least 4 messages, got \(delegate.receivedMessages.count)")
             
             // Find where the transition from 0.0 to 1.0 happens
-            let transitionIndex = delegate.receivedMessages.firstIndex { 
-                if case .setBarsVisibility(1.0) = $0 { return true } else { return false }
+            let transitionIndex = delegate.receivedMessages.firstIndex {                if case .setBarsVisibility(1.0) = $0 { return true } else { return false }
             }
             
             XCTAssertNotNil(transitionIndex, "Expected to find at least one .setBarsVisibility(1.0) message")
@@ -152,13 +151,11 @@ class BarsAnimatorTests: XCTestCase {
             if let transitionIndex = transitionIndex {
                 // Check that all messages before transition are 0.0
                 let beforeTransition = delegate.receivedMessages[0..<transitionIndex]
-                XCTAssertTrue(beforeTransition.allSatisfy { $0 == .setBarsVisibility(0.0) }, 
-                              "All messages before transition should be .setBarsVisibility(0.0), got \(beforeTransition)")
+                XCTAssertTrue(beforeTransition.allSatisfy { $0 == .setBarsVisibility(0.0) }, "All messages before transition should be .setBarsVisibility(0.0), got \(beforeTransition)")
                 
                 // Check that all messages after and including transition are 1.0
                 let afterTransition = delegate.receivedMessages[transitionIndex...]
-                XCTAssertTrue(afterTransition.allSatisfy { $0 == .setBarsVisibility(1.0) },
-                              "All messages after transition should be .setBarsVisibility(1.0), got \(afterTransition)")
+                XCTAssertTrue(afterTransition.allSatisfy { $0 == .setBarsVisibility(1.0) }, "All messages after transition should be .setBarsVisibility(1.0), got \(afterTransition)")
             }
             
             expectation2.fulfill()

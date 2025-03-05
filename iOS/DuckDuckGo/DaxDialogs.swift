@@ -81,7 +81,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         static let final = HomeScreenSpec(message: UserText.daxDialogHomeSubsequent, accessibilityLabel: nil)
         static let addFavorite = HomeScreenSpec(message: UserText.daxDialogHomeAddFavorite,
                                                 accessibilityLabel: UserText.daxDialogHomeAddFavoriteAccessible)
-        static let privacyProPromotion = HomeScreenSpec(message: "DuckDuckGo also has a VPN!\n\nActivate it with a paid Privacy Pro subscripion.", accessibilityLabel: nil)
+        static let privacyProPromotion = HomeScreenSpec(message: UserText.PrivacyProPromotionOnboarding.Promo.message().string, accessibilityLabel: nil)
 
         let message: String
         let accessibilityLabel: String?

@@ -165,9 +165,10 @@ private extension NewTabDaxDialogFactory {
                                     dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
                                     proceedAction: { [weak self] in
                 self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
+                let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
                 NotificationCenter.default.post(
                     name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: nil),
+                    object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
                     userInfo: nil
                 )
             },

@@ -22,8 +22,13 @@ import Core
 import PixelKit
 import Subscription
 
+/// Protocol defining the interface for the Privacy Pro onboarding promotion experiment.
 protocol OnboardingPrivacyProPromoExperimenting {
+    /// Returns the experiment cohort if the feature is enabled, nil otherwise.
     func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort?
+
+    /// Returns the URL components for the experiment.
+    func redirectURLComponents() -> URLComponents?
 
     /// Fires a pixel when the onboarding promotion is shown.
     func fireImpressionPixel()
@@ -41,6 +46,8 @@ protocol OnboardingPrivacyProPromoExperimenting {
     func fireSubscriptionStartedYearlyPixel()
 }
 
+/// Implementation of the Privacy Pro onboarding promotion experiment that manages feature flagging,
+/// analytics tracking, and checking subscription state for the PP Onboarding CTA experiment.
 struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting {
 
      /// Constants used in the experiment.
@@ -57,6 +64,8 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
 
         /// Conversion window in days for tracking user actions.
         static let conversionWindowDays = 0...7
+
+        static let origin = "funnel_pro_ios_onboarding_vpn"
     }
 
     /// A feature flagging service for managing feature flag experiments.
@@ -65,23 +74,30 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
     /// A type responsible for firing experiment-related analytics pixels.
     private let experimentPixelFirer: ExperimentPixelFiring.Type
 
+    /// A manager for handling subscriptions.
     private let subscriptionManager: SubscriptionManager?
+
+    /// A manager for handling variant assignments.
+    private let variantManager: VariantManager
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          experimentPixelFirer: ExperimentPixelFiring.Type = PixelKit.self,
-         subscriptionManager: SubscriptionManager? = AppDependencyProvider.shared.subscriptionManager) {
+         subscriptionManager: SubscriptionManager? = AppDependencyProvider.shared.subscriptionManager,
+         variantManager: VariantManager = DefaultVariantManager()) {
         self.featureFlagger = featureFlagger
         self.experimentPixelFirer = experimentPixelFirer
         self.subscriptionManager = subscriptionManager
+        self.variantManager = variantManager
     }
 
+    /// Returns the experiment cohort if the feature is enabled, nil otherwise.
     func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
 
         // Exclude returning users from experiment enrollment
-        guard DefaultVariantManager().currentVariant?.name != VariantIOS.returningUser.name else { return nil }
+//        guard variantManager.isNewUser else { return nil }
 
         // Exclude Privacy Pro ineligible users from experiment enrollment
-        guard subscriptionManager?.canPurchase ?? false else { return nil }
+//        guard subscriptionManager?.canPurchase ?? false else { return nil }
 
         return .treatment
 
@@ -89,6 +105,12 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                 as? PrivacyProOnboardingCTAMarch25Cohort
     }
 
+    func redirectURLComponents() -> URLComponents? {
+        let url = SubscriptionURL.purchase.subscriptionURL(environment: .production).appendingParameter(name: AttributionParameter.origin, value: Constants.origin)
+        return URLComponents(url: url, resolvingAgainstBaseURL: true)
+    }
+
+    /// Fires a pixel when the onboarding promotion is shown.
     func fireImpressionPixel() {
         experimentPixelFirer.fireExperimentPixel(for: Constants.subfeatureIdentifier,
                                      metric: Constants.metricImpressions,
@@ -96,6 +118,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                                      value: "true")
     }
 
+    /// Fires a pixel when the onboarding promotion is tapped.
     func fireTapPixel() {
         experimentPixelFirer.fireExperimentPixel(for: Constants.subfeatureIdentifier,
                                      metric: Constants.metricTap,
@@ -103,6 +126,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                                      value: "true")
     }
 
+    /// Fires a pixel when the onboarding promotion is dismissed.
     func fireDismissPixel() {
         experimentPixelFirer.fireExperimentPixel(for: Constants.subfeatureIdentifier,
                                      metric: Constants.metricDismiss,
@@ -110,6 +134,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                                      value: "true")
     }
 
+    /// Fires a pixel when a monthly subscription is started.
     func fireSubscriptionStartedMonthlyPixel() {
         experimentPixelFirer.fireExperimentPixel(for: Constants.subfeatureIdentifier,
                                      metric: Constants.metricSubscriptionStartedMonthly,
@@ -117,10 +142,19 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                                      value: "true")
     }
 
+    /// Fires a pixel when a yearly subscription is started.
     func fireSubscriptionStartedYearlyPixel() {
         experimentPixelFirer.fireExperimentPixel(for: Constants.subfeatureIdentifier,
                                      metric: Constants.metricSubscriptionStartedYearly,
                                      conversionWindowDays: Constants.conversionWindowDays,
                                      value: "true")
+    }
+}
+
+/// Extension providing user type determination functionality.
+extension VariantManager {
+    /// Indicates whether the current user is a new user based on their variant assignment.
+    var isNewUser: Bool {
+        currentVariant?.name != VariantIOS.returningUser.name
     }
 }

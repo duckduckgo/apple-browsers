@@ -20,7 +20,7 @@ import Foundation
 
 /// Temporary bridge between auth v1 and v2, this is implemented by SubscriptionManager V1 and V2
 public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
-    func isEnabled(feature: Entitlement.ProductName) async throws -> Bool
+    func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool) async
     var canPurchase: Bool { get }
@@ -29,11 +29,17 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     var email: String? { get }
 }
 
+extension SubscriptionAuthV1toV2Bridge {
+    public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
+        try await isEnabled(feature: feature, cachePolicy: .reloadIgnoringLocalCacheData)
+    }
+}
+
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
-    public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
 
-        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .reloadIgnoringLocalCacheData)
+        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements
@@ -66,7 +72,7 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
-    public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
         switch feature { // todo Check what happens if fails to fetch current features
         case .networkProtection:
             return await isFeatureAvailableForUser(.networkProtection)

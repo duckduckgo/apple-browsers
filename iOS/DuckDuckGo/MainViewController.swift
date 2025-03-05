@@ -1038,7 +1038,7 @@ class MainViewController: UIViewController {
             currentTab?.executeBookmarklet(url: url)
         }
     }
-    
+
     private func loadBackForwardItem(_ item: WKBackForwardListItem) {
         prepareTabForRequest {
             currentTab?.load(backForwardListItem: item)
@@ -3042,12 +3042,24 @@ extension MainViewController: UIDropInteractionDelegate {
 // MARK: - VoiceSearchViewControllerDelegate
 
 extension MainViewController: VoiceSearchViewControllerDelegate {
-    
-    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?) {
-        controller.dismiss(animated: true, completion: nil)
-        if let query = query {
-            Pixel.fire(pixel: .voiceSearchDone)
+
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
+
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            Pixel.fire(pixel: .voiceSearchSERPDone)
             loadQuery(query)
+
+        case .AIChat:
+            Pixel.fire(pixel: .voiceSearchAIChatDone)
+            performCancel()
+            openAIChat(query, autoSend: true)
         }
     }
 }

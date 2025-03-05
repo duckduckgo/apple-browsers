@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -220,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sync & Backup on keskeytetty";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Lisätäänkö kaikki välilehdet kirjanmerkkeihin?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Lisää suojaamattomille sivustoille";
 
@@ -261,9 +255,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Avaa DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Haluatko varmasti poistaa kaikki kirjanmerkit? Tätä toimintoa ei voi kumota.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Kirjaudu sisään";
@@ -333,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Piilota salasana";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.via.sync.get-browser-button" = "Hanki pöytäkoneselain";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.step1" = "Avaa DuckDuckGo Macissa tai Windowsissa";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.via.sync.instructions.step2" = "Siirry kohtaan %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Salasanat";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.settings" = "Asetukset";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.via.sync.instructions.step3" = "Valitse %@ ja noudata tuontia koskevia ohjeita";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.via.sync.instructions.step3.import" = "Tuo salasanat...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.via.sync.instructions.step4" = "Kun suorittanut tuonnin tietokoneellesi, voit määrittää synkronoinnin tälle %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.title" = "Tuo pöytäkoneselaimesta:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.via.sync.subtitle" = "Tuo DuckDuckGo-selaimen pöytäkoneversiossa olevat salasanat ja synkronoi eri laitteiden kanssa.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.via.sync.sync-button" = "Synkronointi pöytäkoneen kanssa";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Näin tuot salasanat";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Poista Käytöstä";
@@ -468,9 +423,6 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Tuo salasanat";
-
-/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
-"autofill.logins.empty-view.import-via-sync.button.title" = "Synkronoi työpöytäsalasanat";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Voit tuoda tallennetut salasanat toisesta selaimesta DuckDuckGohon.";
@@ -773,26 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Kirjanmerkkisi on jaettu.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.html.title" = "Vie HTML-tiedosto";
-
-/* Title of option to export bookmarks as HTML */
-"bookmarks.exportAction.title" = "Vie kirjanmerkit";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Valitettavasti emme voi tuoda tätä tiedostoa.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Kirjanmerkkisi on tuotu.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.html.title" = "Tuo HTML-tiedosto";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Kirjanmerkkien tuominen";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Tuo kirjanmerkit muista suosituista selaimista.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Ilmoita tällä sivustolla olevasta ongelmasta";
@@ -808,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Ilmoituksesi auttaa tekemään DuckDuckGosta paremman kaikille!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Peruutus on sallittu vain kerran";
 
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
@@ -923,108 +863,6 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Lähetetäänkö virheraportit automaattisesti?";
 
-/* Button label to select zip or html file for importing */
-"data.import.bookmarks.file-button" = "Tuo kirjanmerkkitiedosto...";
-
-/* Header for section with instructions for how to export bookmarks from Safari */
-"data.import.bookmarks.instructions.header" = "Näin voit viedä kirjanmerkit Safarista";
-
-/* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Valitse kirjanmerkit sisältävä tiedosto. Tämä on yleensä ZIP- tai HTML-tiedosto.";
-
-/* Title for screen to import bookmarks */
-"data.import.bookmarks.title" = "Tuo kirjanmerkit DuckDuckGohon";
-
-/* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "Zip-tiedostosta ei löytynyt tuettuja tietoja. Tarkista Safarin vientiohjeet ja yritä uudelleen.";
-
-/* Error message displayed when the user has selected an unsupported file */
-"data.import.failed.unsupported-file-error-message" = "Valittua tiedostoa ei tueta. Valitse toinen tiedosto ja yritä uudelleen.";
-
-/* Error message displayed when the (csv|html|zip) file can't be read. */
-"data.import.failed.zip-read-error-message" = "Tiedostoa %@ ei voitu lukea. Tiedostossa olevissa tiedoissa voi olla ongelma.";
-
-/* File type for CSV files */
-"data.import.file-type.csv" = "CSV";
-
-/* File type for HTML files */
-"data.import.file-type.html" = "HTML";
-
-/* File type for ZIP files */
-"data.import.file-type.zip" = "ZIP";
-
-/* Step 2 for instructions to export bookmarks from Safari */
-"data.import.instructions.safari.step2" = "Valitse **Vie** ja valitse seuraavassa näytössä **Kirjanmerkit** ja **Tallenna latauksiin**.";
-
-/* Step 2 for instructions to export passwords from Safari */
-"data.import.instructions.safari.step2.passwords" = "Valitse **Vie** ja valitse seuraavassa näytössä **Salasanat** ja **Tallenna latauksiin**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Tuo salasanatiedosto...";
-
-/* Step 1 for instructions to import passwords from Chrome */
-"data.import.passwords.instructions.chrome.step1" = "Siirry Chromessa kohtaan **Google Password Manager** ja sitten **Asetukset**.";
-
-/* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Valitse **Vie salasanat** ja sitten **Tallenna tiedostoihin**. Tallenna lopuksi tiedosto kansioon, jonka muistat.";
-
-/* Header for section with instructions for how to export passwords from Safari or Chrome */
-"data.import.passwords.instructions.header" = "Näin viet salasanat";
-
-/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Avaa ⚙️ **Asetukset**, kirjoita hakupalkkiin ”Vie” ja siirry suoraan vaihtoehtoon valitsemalla Safaria koskeva **Vie**-tulos. Voit myös avata Asetukset ja valita Sovellukset > Safari.";
-
-/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
-"data.import.passwords.instructions.selector" = "Vie kohteesta";
-
-/* Export instructions selector for Chrome */
-"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
-
-/* Export instructions selector for Safari */
-"data.import.passwords.instructions.selector.safari" = "Safari";
-
-/* Title for section with instructions to export passwords from Safari */
-"data.import.passwords.instructions.title" = "Näin voit viedä salasanat Safarista:";
-
-/* Subtitle for screen to import passwords */
-"data.import.passwords.subtitle" = "Valitse tiedosto, joka sisältää Safarista tai Chromesta tuodut salasanat. Tämä on yleensä ZIP- tai CSV-tiedosto.";
-
-/* Title for screen to import passwords */
-"data.import.passwords.title" = "Tuo salasanat DuckDuckGohon";
-
-/* Data import summary of how many bookmarks were successfully imported. */
-"data.import.summary.bookmarks.success" = "Kirjanmerkit";
-
-/* Title of button to dismiss the screen */
-"data.import.summary.button.title.done" = "Valmis";
-
-/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
-"data.import.summary.button.title.sync" = "Synkronoi ja varmuuskopioi %@";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.bookmarks" = "Kirjanmerkit";
-
-/* Parameter for data.import.summary.button.title.sync */
-"data.import.summary.button.title.sync.data" = "Tiedot";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.passwords" = "Salasanat";
-
-/* Title for screen shown after attempting to import data (passwords / bookmarks) */
-"data.import.summary.complete.title" = "Tuonti valmis!";
-
-/* Data import summary of how many items were not imported as they were duplicates. */
-"data.import.summary.duplicates" = "Kaksoiskappaleet ohitettu";
-
-/* Data import summary of how many items failed to import. */
-"data.import.summary.failed" = "Tuonti epäonnistui";
-
-/* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "Voit nyt poistaa salasanatiedoston.";
-
-/* Data import summary of how many passwords were successfully imported. */
-"data.import.summary.passwords.success" = "Salasanat";
-
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Viime kuukausi";
 
@@ -1108,9 +946,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Virheenkorjaus";
-
-/* No comment provided by engineer. */
-"Delete All" = "Poista kaikki";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "laitteelle";
@@ -1204,6 +1039,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Näytä Duck.ai selainvalikossa";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Näytä Duck.ai äänihaussa";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1318,9 +1156,6 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Kirjanmerkkejä ei ole vielä lisätty";
-
-/* Empty list state placeholder subtitle */
-"empty.bookmarks.subtitle" = "Jos kirjanmerkkisi on tallennettu toiseen selaimeen, voit\ntuoda ne takaisin DuckDuckGo-selaimeen.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Ei hakutuloksia";
@@ -1789,6 +1624,9 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Selausvalikko";
+
+/* No comment provided by engineer. */
+"Message" = "Viesti";
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Viestikäytännön isäntänimi";
@@ -2297,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Ensisijainen/ensimmäinen toiminto";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Yksityisyyden suoja";
 
 /* Privacy Icon accessibility title */
@@ -2327,6 +2168,9 @@
 "search.hint.duckduckgo" = "Hae tai anna osoite";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Toissijainen / toinen toiminto";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Kirjanmerkit";
 
 /* No comment provided by engineer. */
@@ -2349,10 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Tietoja";
-/* about tagline */
-"settings.about.tagline" = "Suojaus ja tietosuoja takaavat mielenrauhan.";
-/* about page */
-"settings.about.text.new" = "DuckDuckGo on riippumaton verkkosuojausta tarjoava yritys kaikille, jotka haluavat saada henkilökohtaiset tietonsa takaisin hallintaansa.\n\nUskomme, että paras tapa suojata henkilötietojasi hakkereilta, huijareilta ja tietosuojaa loukkaavilta yrityksiltä on estää niiden kerääminen kokonaan. Siksi miljoonat ihmiset [valitsevat Chromen ja muiden selainten sijaan DuckDuckGon hakeakseen ja selatakseen verkossa](ddgQuickLink://duckduckgo.com/compare-privacy). Selaimeemme sisältyvä hakukoneemme on kuin Google, mutta se ei koskaan seuraa hakujasi. Selaussuojauksemme, kuten mainosten seurannan esto ja evästeiden esto, auttavat estämään muita yrityksiä keräämästä tietojasi. Lisäksi selaimemme on ilmainen – ansaitsemme rahaa [tietosuojaa kunnioittavilla hakumainoksilla](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), emme hyödyntämällä tietojasi. \n\nLisäksi tarjoamme myös [Privacy Pron](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), selaimeemme integroidun 3-in-1-tilauspalvelun. Privacy Pron tilaajat saavat entistä paremman tietosuojan nopealla ja yksinkertaisella [VPN:llä](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), joka auttaa suojaamaan verkkotoimintaasi. Tämä palvelu etsii ja poistaa henkilötietosi käyttäjiä etsiviltä sivustoilta ja palauttaa henkilöllisyytesi, jos se varastetaan.\n\nOta henkilökohtaiset tietosi takaisin hallintaasi selaimella, joka on suunniteltu tietojen suojaamiseen, ei tietojen keräämiseen.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Käytettävyys";
@@ -2888,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ilmainen kokeilujakso on aktiivinen";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUI-ilmoitus";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Palautuskoodi kopioitu leikepöydälle";
 
@@ -2987,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Tämä luettelo sisältää viestit, jotka on näytetty, sekä enintään 1 viestin, joka on ajoitettu näytettäväksi. Konfiguraatiossa voi olla muitakin viestejä, jotka näytetään, mutta niitä ei ole vielä käsitelty.";
 
+/* No comment provided by engineer. */
+"Title" = "Otsikko";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Yksityisyydensuoja poistettu käytöstä osoitteessa %@";
 
@@ -2995,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Yksityisyydensuoja otettu käyttöön osoitteessa %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Etsi";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Automaattisen täydennyksen ehdotus";
@@ -3248,9 +3100,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Viesti käyttäjältä %@:";
 
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Tervetuloa Duckin puolelle!";
-
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Etsitkö Mac-versiota?";
 
@@ -3268,16 +3117,4 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Hanki DuckDuckGo Windowsille!";
-
-/* Option to select to import bookmarks */
-"zip.content.import.type.bookmarks" = "Kirjanmerkit";
-
-/* Title of button to continue after selecting what data to import */
-"zip.content.import.type.button.title.continue" = "Jatka";
-
-/* Option to select to import passwords */
-"zip.content.import.type.passwords" = "Salasanat";
-
-/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
-"zip.content.import.types.title" = "Mitä haluat tuoda?";
 

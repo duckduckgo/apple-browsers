@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -220,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sinhronizacija in varnostno kopiranje sta zaustavljena";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Želiš dodati vse zavihke med zaznamke?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Dodaj na nezaščitene strani";
 
@@ -261,9 +255,6 @@
 
 /* Shown on authentication screen */
 "app.authentication.unlock" = "Odkleni DuckDuckGo.";
-
-/* No comment provided by engineer. */
-"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Ali ste prepričani, da želite izbrisati vse zaznamke? Tega dejanja ni mogoče razveljaviti.";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
@@ -333,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Skrij geslo";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.via.sync.get-browser-button" = "Namesti namizni brskalnik";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.step1" = "Odprite DuckDuckGo v sistemu Mac ali Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.via.sync.instructions.step2" = "Odprite %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Gesla";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.via.sync.instructions.step2.settings" = "Nastavitve";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.via.sync.instructions.step3" = "Izberite %@ in upoštevajte navodila za uvoz";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.via.sync.instructions.step3.import" = "Uvoz gesel ...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.via.sync.instructions.step4" = "Ko jih uvozite v računalnik, lahko nastavite sinhronizacijo v tej napravi %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.via.sync.instructions.title" = "Uvoz iz namiznega brskalnika:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.via.sync.subtitle" = "V namizni različici brskalnika DuckDuckGo uvozite gesla in jih nato sinhronizirajte med napravami.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.via.sync.sync-button" = "Sinhronizacija z namizjem";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "Kako uvoziti gesla";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Onemogoči";
@@ -468,9 +423,6 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Uvozi gesla";
-
-/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
-"autofill.logins.empty-view.import-via-sync.button.title" = "Sinhroniziraj gesla za namizje";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Shranjena gesla lahko uvozite iz drugega brskalnika v DuckDuckGo.";
@@ -773,26 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Vaši zaznamki so v skupni rabi.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.html.title" = "Izvoz datoteke HTML";
-
-/* Title of option to export bookmarks as HTML */
-"bookmarks.exportAction.title" = "Izvozite zaznamke";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Te datoteke žal ne moremo uvoziti.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Vaši zaznamki so uspešno uvoženi.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.html.title" = "Uvoz datoteke HTML";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Uvoz zaznamkov";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Uvozite zaznamke iz drugih priljubljenih brskalnikov.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Prijavite težavo na tem spletnem mestu";
@@ -808,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Vaše poročilo pripomore k temu, da lahko DuckDuckGo postane boljši za vse!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Preklic ni dovoljen več kot enkrat.";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
@@ -923,108 +863,6 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Želite samodejno pošiljati poročila o zrušitvah?";
 
-/* Button label to select zip or html file for importing */
-"data.import.bookmarks.file-button" = "Uvozi datoteko zaznamkov ...";
-
-/* Header for section with instructions for how to export bookmarks from Safari */
-"data.import.bookmarks.instructions.header" = "Kako izvoziti zaznamke iz Safarija";
-
-/* Subtitle for screen to import bookmarks */
-"data.import.bookmarks.subtitle" = "Izberite datoteko, ki vsebuje zaznamke. To je običajno datoteka ZIP ali HTML.";
-
-/* Title for screen to import bookmarks */
-"data.import.bookmarks.title" = "Uvozite zaznamke v DuckDuckGo";
-
-/* Error message displayed when no supported data is found in the zip file */
-"data.import.failed.no-data-in-zip-error-message" = "V datoteki ZIP ni najdenih podprtih podatkov. Preglejte navodila za izvoz iz Safarija in poskusite znova.";
-
-/* Error message displayed when the user has selected an unsupported file */
-"data.import.failed.unsupported-file-error-message" = "Izbrana datoteka ni podprta. Izberite drugo datoteko in poskusite znova.";
-
-/* Error message displayed when the (csv|html|zip) file can't be read. */
-"data.import.failed.zip-read-error-message" = "Datoteke %@ ni bilo mogoče prebrati. Morda obstaja težava s podatki v datoteki.";
-
-/* File type for CSV files */
-"data.import.file-type.csv" = "CSV";
-
-/* File type for HTML files */
-"data.import.file-type.html" = "HTML";
-
-/* File type for ZIP files */
-"data.import.file-type.zip" = "ZIP";
-
-/* Step 2 for instructions to export bookmarks from Safari */
-"data.import.instructions.safari.step2" = "Izberite **Izvozi**, na naslednjem zaslonu pa izberite **Zaznamki** in **Shrani v prenose**.";
-
-/* Step 2 for instructions to export passwords from Safari */
-"data.import.instructions.safari.step2.passwords" = "Izberite **Izvoz**, na naslednjem zaslonu pa izberite **Gesla** in **Shrani v prenose**.";
-
-/* Button label to select zip or csv file for importing */
-"data.import.passwords.file-button" = "Uvozi datoteko z gesli ...";
-
-/* Step 1 for instructions to import passwords from Chrome */
-"data.import.passwords.instructions.chrome.step1" = "V Chromu pojdite v **Googlov upravitelj gesel** in nato **Nastavitve**.";
-
-/* Step 2 for instructions to import passwords. */
-"data.import.passwords.instructions.chrome.step2" = "Izberite **Izvozi gesla**, nato **Shrani v datoteke** in datoteko shranite v mapo, ki si jo lahko zapomnite.";
-
-/* Header for section with instructions for how to export passwords from Safari or Chrome */
-"data.import.passwords.instructions.header" = "Kako izvoziti gesla";
-
-/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
-"data.import.passwords.instructions.safari.step1" = "Odprite ⚙️ **Nastavitve**, v iskalno vrstico vnesite »Izvozi« in izberite rezultat **Izvozi** za Safari, da greste neposredno na možnost (ali pojdite v meni Aplikacije > Safari v nastavitvah).";
-
-/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
-"data.import.passwords.instructions.selector" = "Izvoz iz";
-
-/* Export instructions selector for Chrome */
-"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
-
-/* Export instructions selector for Safari */
-"data.import.passwords.instructions.selector.safari" = "Safari";
-
-/* Title for section with instructions to export passwords from Safari */
-"data.import.passwords.instructions.title" = "Kako izvoziti gesla iz Safarija:";
-
-/* Subtitle for screen to import passwords */
-"data.import.passwords.subtitle" = "Izberite datoteko z gesli, izvoženimi iz Safarija ali Chroma. To je običajno datoteka ZIP ali CSV.";
-
-/* Title for screen to import passwords */
-"data.import.passwords.title" = "Uvoz gesel v DuckDuckGo";
-
-/* Data import summary of how many bookmarks were successfully imported. */
-"data.import.summary.bookmarks.success" = "Zaznamki";
-
-/* Title of button to dismiss the screen */
-"data.import.summary.button.title.done" = "Končano";
-
-/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
-"data.import.summary.button.title.sync" = "Sinhronizacija in varnostno kopiranje: %@";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.bookmarks" = "Zaznamki";
-
-/* Parameter for data.import.summary.button.title.sync */
-"data.import.summary.button.title.sync.data" = "Podatki";
-
-/* Parameter for autofill.import.passwords.complete.button.title.sync */
-"data.import.summary.button.title.sync.passwords" = "Gesla";
-
-/* Title for screen shown after attempting to import data (passwords / bookmarks) */
-"data.import.summary.complete.title" = "Uvoz je dokončan!";
-
-/* Data import summary of how many items were not imported as they were duplicates. */
-"data.import.summary.duplicates" = "Preskočeni dvojniki";
-
-/* Data import summary of how many items failed to import. */
-"data.import.summary.failed" = "Uvoz ni uspel.";
-
-/* Subtitle for screen shown after after attempting to import passwords from file */
-"data.import.summary.passwords.subtitle" = "Zdaj lahko izbrišete datoteko z gesli.";
-
-/* Data import summary of how many passwords were successfully imported. */
-"data.import.summary.passwords.success" = "Gesla";
-
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Pretekli mesec";
 
@@ -1108,9 +946,6 @@
 
 /* No comment provided by engineer. */
 "Debug" = "Odpravljanje napak";
-
-/* No comment provided by engineer. */
-"Delete All" = "Izbriši vse";
 
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "naprava";
@@ -1204,6 +1039,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Prikaži Duck.ai v meniju brskalnika";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Prikaži Duck.ai v glasovnem iskanju";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1318,9 +1156,6 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Zaznamki še niso dodani";
-
-/* Empty list state placeholder subtitle */
-"empty.bookmarks.subtitle" = "Če so zaznamki shranjeni v drugem brskalniku, jih lahko\nuvozite v DuckDuckGo.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Ni zadetkov";
@@ -1789,6 +1624,9 @@
 
 /* No comment provided by engineer. */
 "menu.button.hint" = "Brskanje po meniju";
+
+/* No comment provided by engineer. */
+"Message" = "Sporočilo";
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ime gostitelja pravilnika za sporočila";
@@ -2297,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "V REDU";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Primarni/prvi ukrep";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Zaščita zasebnosti";
 
 /* Privacy Icon accessibility title */
@@ -2327,6 +2168,9 @@
 "search.hint.duckduckgo" = "Poišči ali vnesi naslov";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Sekundarni/drugi ukrep";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Zaznamki";
 
 /* No comment provided by engineer. */
@@ -2349,10 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Več o";
-/* about tagline */
-"settings.about.tagline" = "Zaščita. Zasebnost. Zaupanje.";
-/* about page */
-"settings.about.text.new" = "DuckDuckGo je neodvisno podjetje za spletno zaščito za vse, ki želijo znova prevzeti nadzor nad svojimi osebnimi podatki.\n\nVerjamemo, da je najboljši način za zaščito vaših osebnih podatkov pred hekerji, prevaranti in podjetji, ki posegajo v zasebnost, da preprečimo njihovo zbiranje. Zato na milijone ljudi za iskanje in brskanje po spletu [namesto brskalnika Chrome in drugih brskalnikov izbere DuckDuckGo](ddgQuickLink://duckduckgo.com/compare-privacy). Naš vgrajeni iskalnik je kot Google, vendar nikoli ne sledi vašim iskanjem. Naše zaščite pri brskanju, kot sta blokiranje sledilnikov oglasov in piškotkov, pomagajo drugim podjetjem preprečevati zbiranje vaših podatkov. In še to, naš brskalnik je brezplačen – zaslužimo z [oglasi v iskanju, ki spoštujejo zasebnost](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), ne z izkoriščanjem vaših podatkov. \n\nPoleg tega ponujamo tudi [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), naročniško storitev tri v enem, integrirano v naš brskalnik. Naročniki na Privacy Pro dobijo še večjo zaščito zasebnosti s hitrim in preprostim omrežjem [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), ki pomaga zaščititi vašo spletno dejavnost, storitev, ki najde in odstrani vaše osebne podatke s spletnih mest za iskanje ljudi, in storitev, ki obnovi vašo identiteto, če je ukradena.\n\nPrevzemite nadzor nad svojimi osebnimi podatki z brskalnikom, ki je zasnovan za varstvo podatkov, ne za zbiranje podatkov.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Dostopnost";
@@ -2888,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Brezplačni preizkus je aktiven";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Opozorilo SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Obnovitvena koda je bila kopirana v odložišče";
 
@@ -2987,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Ta seznam vsebuje sporočila, ki so bila prikazana, in največ 1 sporočilo, ki je načrtovano za prikaz. V konfiguraciji je morda več sporočil, ki bodo predstavljena, vendar še niso bila obdelana.";
 
+/* No comment provided by engineer. */
+"Title" = "Naslov";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Zaščita zasebnosti je onemogočena za %@";
 
@@ -2995,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Zaščita zasebnosti je omogočena za %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Iskanje";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Pokaži predlog za samodokončanje";
@@ -3248,9 +3100,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sporočilo od %@:";
 
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Dobrodošli na strani Duck!";
-
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Iščete različico za računalnike Mac?";
 
@@ -3268,16 +3117,4 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Pridobite DuckDuckGo za Windows!";
-
-/* Option to select to import bookmarks */
-"zip.content.import.type.bookmarks" = "Zaznamki";
-
-/* Title of button to continue after selecting what data to import */
-"zip.content.import.type.button.title.continue" = "Nadaljuj";
-
-/* Option to select to import passwords */
-"zip.content.import.type.passwords" = "Gesla";
-
-/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
-"zip.content.import.types.title" = "Kaj želite uvoziti?";
 

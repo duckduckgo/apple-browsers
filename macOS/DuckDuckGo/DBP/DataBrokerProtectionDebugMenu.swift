@@ -279,15 +279,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func toggleVPNExclusion() {
         Task {
-            DataBrokerProtectionSettings(defaults: .dbp).bypassVPN.toggle()
+            DataBrokerProtectionSettings(defaults: .dbp).vpnBypass.toggle()
             await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNExclusionSetting(
-                DataBrokerProtectionSettings(defaults: .dbp).bypassVPN
+                DataBrokerProtectionSettings(defaults: .dbp).vpnBypass
             )
         }
     }
 
     @objc private func resetVPNExclusionOnboarding() {
-        DataBrokerProtectionSettings(defaults: .dbp).bypassVPNUsed = false
+        DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown = false
     }
 
     @objc private func toggleShowStatusMenuItem() {

@@ -97,34 +97,30 @@ public final class DataBrokerProtectionSettings {
 
     // MARK: - VPN exclusion
 
-    public var bypassVPNPublisher: AnyPublisher<Bool, Never> {
-        defaults.dataBrokerProtectionBypassVPNPublisher
+    public var vpnBypassPublisher: AnyPublisher<Bool, Never> {
+        defaults.dataBrokerProtectionVPNBypassPublisher
     }
 
-    public var bypassVPN: Bool {
+    public var vpnBypass: Bool {
         get {
-            defaults.dataBrokerProtectionBypassVPN
+            defaults.dataBrokerProtectionVPNBypass
         }
         set {
-            defaults.dataBrokerProtectionBypassVPN = newValue
-
-            if newValue {
-                bypassVPNUsed = true
-            }
+            defaults.dataBrokerProtectionVPNBypass = newValue
         }
     }
 
-    public var bypassVPNUsedPublisher: AnyPublisher<Bool, Never> {
-        defaults.dataBrokerProtectionBypassVPNUsedPublisher
+    public var vpnBypassOnboardingShownPublisher: AnyPublisher<Bool, Never> {
+        defaults.dataBrokerProtectionVPNBypassOnboardingShownPublisher
     }
 
-    public var bypassVPNUsed: Bool {
+    public var vpnBypassOnboardingShown: Bool {
         get {
-            defaults.dataBrokerProtectionBypassVPNUsed
+            defaults.dataBrokerProtectionVPNBypassOnboardingShown
         }
 
         set {
-            defaults.dataBrokerProtectionBypassVPNUsed = newValue
+            defaults.dataBrokerProtectionVPNBypassOnboardingShown = newValue
         }
     }
 }
@@ -139,13 +135,13 @@ extension UserDefaults {
         "dataBrokerProtectionShowMenuBarIcon"
     }
 
-    static let bypassVPNDefaultValue = true
-    private var bypassVPNKey: String {
-        "dataBrokerProtectionBypassVPN"
+    static let vpnBypassDefaultValue = false
+    private var vpnBypassKey: String {
+        "dataBrokerProtectionVPNBypass"
     }
 
-    static let bypassVPNUsedDefaultValue = false
-    private var bypassVPNUsedKey: String {
+    static let bypassOnboardingShownDefaultValue = false
+    private var bypassOnboardingShownKey: String {
         "hasShownBypassOnboarding"
     }
 
@@ -196,40 +192,40 @@ extension UserDefaults {
     // MARK: - VPN exclusion
 
     @objc
-    dynamic var dataBrokerProtectionBypassVPN: Bool {
+    dynamic var dataBrokerProtectionVPNBypass: Bool {
         get {
-            value(forKey: bypassVPNKey) as? Bool ?? Self.bypassVPNDefaultValue
+            value(forKey: vpnBypassKey) as? Bool ?? Self.vpnBypassDefaultValue
         }
 
         set {
-            guard newValue != dataBrokerProtectionBypassVPN else {
+            guard newValue != dataBrokerProtectionVPNBypass else {
                 return
             }
 
-            set(newValue, forKey: bypassVPNKey)
+            set(newValue, forKey: vpnBypassKey)
         }
     }
 
-    var dataBrokerProtectionBypassVPNPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.dataBrokerProtectionBypassVPN).eraseToAnyPublisher()
+    var dataBrokerProtectionVPNBypassPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.dataBrokerProtectionVPNBypass).eraseToAnyPublisher()
     }
 
     @objc
-    dynamic var dataBrokerProtectionBypassVPNUsed: Bool {
+    dynamic var dataBrokerProtectionVPNBypassOnboardingShown: Bool {
         get {
-            value(forKey: bypassVPNUsedKey) as? Bool ?? Self.bypassVPNUsedDefaultValue
+            value(forKey: bypassOnboardingShownKey) as? Bool ?? Self.bypassOnboardingShownDefaultValue
         }
 
         set {
-            guard newValue != dataBrokerProtectionBypassVPNUsed else {
+            guard newValue != dataBrokerProtectionVPNBypassOnboardingShown else {
                 return
             }
 
-            set(newValue, forKey: bypassVPNUsedKey)
+            set(newValue, forKey: bypassOnboardingShownKey)
         }
     }
 
-    var dataBrokerProtectionBypassVPNUsedPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.dataBrokerProtectionBypassVPNUsed).eraseToAnyPublisher()
+    var dataBrokerProtectionVPNBypassOnboardingShownPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.dataBrokerProtectionVPNBypassOnboardingShown).eraseToAnyPublisher()
     }
 }

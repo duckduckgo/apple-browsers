@@ -337,7 +337,7 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getVPNExclusionSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNExclusionConfigSetting(excluded: dbpSettings.bypassVPN)
+        DBPUIVPNExclusionConfigSetting(enabled: dbpSettings.vpnBypass)
     }
 
     func setVPNExclusionSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -347,7 +347,8 @@ struct DBPUICommunicationLayer: Subfeature {
             throw DBPUIError.malformedRequest
         }
 
-        dbpSettings.bypassVPN = result.excluded
+        dbpSettings.vpnBypass = result.enabled
+        dbpSettings.vpnBypassOnboardingShown = true
         return DBPUIVPNExclusionSettingUpdateResult(success: true, version: Constants.version)
     }
 }

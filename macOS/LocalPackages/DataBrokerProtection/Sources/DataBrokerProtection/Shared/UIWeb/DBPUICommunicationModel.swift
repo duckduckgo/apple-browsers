@@ -417,11 +417,11 @@ extension DBPUIInitialScanState {
 }
 
 struct DBPUIVPNExclusionConfigSetting: DBPUISendableMessage {
-    let excluded: Bool
+    let enabled: Bool
 }
 
 struct DBPUIVPNExclusionSettingUpdateRequest: DBPUISendableMessage {
-    let excluded: Bool
+    let enabled: Bool
     let version: Int
 }
 

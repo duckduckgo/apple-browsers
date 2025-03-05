@@ -160,7 +160,7 @@ final class MainCoordinator {
 
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: true)
+            controller.loadQueryInNewTab(query, reuseExisting: .any)
 
         case .addFavorite:
             controller.startAddFavoriteFlow()
@@ -251,7 +251,7 @@ final class MainCoordinator {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
     }
 
     func shouldProcessDeepLink(_ url: URL) -> Bool {

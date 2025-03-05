@@ -20,6 +20,7 @@ import Foundation
 
 public protocol BrowserTab {
 
+    var tabId: String? { get }
     var url: URL { get }
     var title: String { get }
 

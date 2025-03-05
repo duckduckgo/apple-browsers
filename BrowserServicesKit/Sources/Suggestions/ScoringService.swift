@@ -36,6 +36,7 @@ struct ScoredSuggestion {
     var visitCount: Int = 0
     var failedToLoad: Bool = false
     var score: Int = 0
+    var tabId: String? = nil
 }
 
 struct ScoringService {
@@ -132,7 +133,7 @@ struct ScoringService {
             guard !isUrlIgnored(browserTab.url) else { return nil }
             let score = score(title: browserTab.title, url: browserTab.url, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(kind: .browserTab, url: browserTab.url, title: browserTab.title, score: score)
+            return ScoredSuggestion(kind: .browserTab, url: browserTab.url, title: browserTab.title, score: score, tabId: browserTab.tabId)
         }
     }
 

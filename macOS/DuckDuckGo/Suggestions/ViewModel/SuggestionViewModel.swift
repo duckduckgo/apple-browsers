@@ -97,7 +97,7 @@ struct SuggestionViewModel: Equatable {
             }
         case .bookmark(title: let title, url: _, isFavorite: _, _),
              .internalPage(title: let title, url: _, _),
-             .openTab(title: let title, url: _, _):
+             .openTab(title: let title, url: _, _, _):
             return title
         case .unknown(value: let value):
             return value
@@ -118,7 +118,7 @@ struct SuggestionViewModel: Equatable {
             }
         case .bookmark(title: let title, url: _, isFavorite: _, _),
              .internalPage(title: let title, url: _, _),
-             .openTab(title: let title, url: _, _):
+             .openTab(title: let title, url: _, _, _):
             return title
         }
     }
@@ -151,13 +151,13 @@ struct SuggestionViewModel: Equatable {
 
         case .phrase, .unknown, .website:
             return nil
-        case .openTab(title: _, url: let url, _) where url.isDuckURLScheme:
+        case .openTab(title: _, url: let url, _, _) where url.isDuckURLScheme:
             return UserText.duckDuckGo
-        case .openTab(title: _, url: let url, _) where url.isDuckDuckGoSearch:
+        case .openTab(title: _, url: let url, _, _) where url.isDuckDuckGoSearch:
             return UserText.duckDuckGoSearchSuffix
         case .historyEntry(title: _, url: let url, _),
              .bookmark(title: _, url: let url, isFavorite: _, _),
-             .openTab(title: _, url: let url, _):
+             .openTab(title: _, url: let url, _, _):
             // TODO: Should we show the Search suffix here?
 //            if url.isDuckDuckGoSearch {
 //                return UserText.searchDuckDuckGoSuffix
@@ -186,10 +186,10 @@ struct SuggestionViewModel: Equatable {
         case .unknown:
             return .web
         case .internalPage(title: _, url: let url, _) where url == .bookmarks,
-             .openTab(title: _, url: let url, _) where url == .bookmarks:
+             .openTab(title: _, url: let url, _, _) where url == .bookmarks:
             return .bookmarksFolder
         case .internalPage(title: _, url: let url, _) where url.isSettingsURL,
-             .openTab(title: _, url: let url, _) where url.isSettingsURL:
+             .openTab(title: _, url: let url, _, _) where url.isSettingsURL:
             return .settingsMulticolor16
         case .internalPage(title: _, url: let url, _):
             guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }

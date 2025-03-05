@@ -215,7 +215,7 @@ final class SuggestionContainerTests: XCTestCase {
         suggestionContainer.getSuggestions(for: input.query)
 
         let actualResults = try await resultPromise.get()
-        let testResults = TestExpectations(from: actualResults, query: testScenario.input.query, windows: testScenario.input.windows)
+        let testResults = TestExpectations(from: actualResults, query: testScenario.input.query)
 
         assert(testResults, named: name, match: testScenario.expectations)
     }
@@ -361,7 +361,7 @@ extension SuggestionContainerTests {
         func unregister(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
         }
 
-        func show(url: URL?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool) {
+        func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool) {
         }
 
         func showBookmarksTab() {
@@ -394,7 +394,7 @@ extension SuggestionContainerTests {
             return false
         }
         let tabs = openTabs.map {
-            Tab(content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
+            Tab(id: $0.tabId, content: TabContent.contentFromURL($0.url, source: .link), webViewConfiguration: WKWebViewConfiguration(), privacyFeatures: privacyFeaturesMock, title: $0.title, burnerMode: burnerMode)
         }
         return TabCollection(tabs: tabs)
     }
@@ -441,7 +441,7 @@ extension SuggestionContainerTests {
 }
 private extension OpenTab {
     init(_ tab: SuggestionContainerTests.TabMock) {
-        self.init(title: tab.title, url: tab.url)
+        self.init(tabId: tab.tabId.uuidString, title: tab.title, url: tab.url)
     }
 }
 class HistoryProviderMock: SuggestionContainer.HistoryProvider {
@@ -531,11 +531,11 @@ extension SuggestionContainerTests {
         let searchSuggestions: [ExpectedSuggestion]
         let localSuggestions: [ExpectedSuggestion]
 
-        init?(from result: SuggestionResult?, query: String, windows: [SuggestionContainerTests.Window]) {
+        init?(from result: SuggestionResult?, query: String) {
             guard let result else { return nil }
-            self.topHits = result.topHits.compactMap { $0.expectedSuggestion(query: query, windows: windows) }
-            self.searchSuggestions = result.duckduckgoSuggestions.compactMap { $0.expectedSuggestion(query: query, windows: windows) }
-            self.localSuggestions = result.localSuggestions.compactMap { $0.expectedSuggestion(query: query, windows: windows) }
+            self.topHits = result.topHits.compactMap { $0.expectedSuggestion(query: query) }
+            self.searchSuggestions = result.duckduckgoSuggestions.compactMap { $0.expectedSuggestion(query: query) }
+            self.localSuggestions = result.localSuggestions.compactMap { $0.expectedSuggestion(query: query) }
         }
     }
 }
@@ -548,7 +548,7 @@ private extension URLSession {
 }
 private extension Suggestion {
 
-    func expectedSuggestion(query: String, windows: [SuggestionContainerTests.Window]) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
+    func expectedSuggestion(query: String) -> SuggestionContainerTests.TestExpectations.ExpectedSuggestion? {
         let viewModel = SuggestionViewModel(isHomePage: false, suggestion: self, userStringValue: query)
         switch self {
         case .phrase(phrase: let phrase):
@@ -563,15 +563,8 @@ private extension Suggestion {
         case .historyEntry(title: let title, url: let url, score: let score):
             return .init(type: .historyEntry, title: title ?? "", subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)
 
-        case .openTab(title: let title, url: let url, score: let score):
-            var tabId: UUID?
-            for window in windows {
-                if let tabs = window.tabs.firstIndex(where: { $0.url == url && $0.title == title }) {
-                    tabId = window.tabs[tabs].tabId
-                    break
-                }
-            }
-            return .init(type: .openTab, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: tabId, score: score)
+        case .openTab(title: let title, url: let url, tabId: let tabId, score: let score):
+            return .init(type: .openTab, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: tabId.flatMap(UUID.init(uuidString:)), score: score)
         case .internalPage(title: let title, url: let url, score: let score):
             return .init(type: .internalPage, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)
         case .unknown:

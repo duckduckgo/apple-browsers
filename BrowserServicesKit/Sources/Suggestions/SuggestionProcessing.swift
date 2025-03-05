@@ -168,6 +168,10 @@ struct SuggestionProcessing {
             // group so can simply use Sum to get the VisitCount
             let visitCount = group.reduce(0) { $0 + ($1.kind == .historyEntry ? $1.visitCount : 0) }
 
+            // set tabId even to non-browserTab suggestions so if it‘s duplicated in `handleTopHitsOpenTabCase`
+            // as a browserTab suggestion the tabId is still present there (as the Title/URL may not match)
+            let tabId = group.first(where: { $0.kind == .browserTab })?.tabId
+
             // Get the highest score for this group
             let maxScore = group.max(by: { $0.score < $1.score })?.score ?? 0
 
@@ -176,6 +180,7 @@ struct SuggestionProcessing {
             // but it will have a lower score and visit count).
             suggestion.score = maxScore
             suggestion.visitCount = visitCount
+            suggestion.tabId = tabId
 
             result.append((suggestion, suggestionKinds))
         }
@@ -279,7 +284,7 @@ private extension Suggestion {
         case .internalPage:
             self = .internalPage(title: suggestion.title, url: suggestion.url, score: suggestion.score)
         case .browserTab:
-            self = .openTab(title: suggestion.title, url: suggestion.url, score: suggestion.score)
+            self = .openTab(title: suggestion.title, url: suggestion.url, tabId: suggestion.tabId, score: suggestion.score)
         }
     }
 }

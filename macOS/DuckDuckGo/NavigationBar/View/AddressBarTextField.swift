@@ -371,9 +371,9 @@ final class AddressBarTextField: NSTextField {
         if case .internalPage(title: let title, url: let url, _) = suggestion,
            url == .bookmarks || url.isSettingsURL {
             // when choosing an internal page suggestion prefer already open tab
-            switchTo(OpenTab(title: title, url: url))
-        } else if case .openTab(let title, url: let url, _) = suggestion {
-            switchTo(OpenTab(title: title, url: url))
+            switchTo(OpenTab(tabId: nil, title: title, url: url))
+        } else if case .openTab(let title, url: let url, tabId: let tabId, _) = suggestion {
+            switchTo(OpenTab(tabId: tabId, title: title, url: url))
         } else if NSApp.isCommandPressed {
             openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
         } else {
@@ -492,7 +492,7 @@ final class AddressBarTextField: NSTextField {
     private func switchTo(_ tab: OpenTab) {
         // reset value so it‘s not restored next time we come back to the tab
         value = .text("", userTyped: false)
-        WindowControllersManager.shared.show(url: tab.url, source: .switchToOpenTab, newTab: true /* in case not found */)
+        WindowControllersManager.shared.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
     }
 
     private func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -503,7 +503,7 @@ final class AddressBarTextField: NSTextField {
              .historyEntry(title: _, url: let url, _),
              .website(url: let url),
              .internalPage(title: _, url: let url, _),
-             .openTab(title: _, url: let url, _):
+             .openTab(title: _, url: let url, _, _):
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
@@ -909,7 +909,7 @@ extension AddressBarTextField {
                 } else {
                     self = .url(url)
                 }
-            case .openTab(title: _, url: let url, _):
+            case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
             case .unknown:
                 self = Suffix.search

@@ -65,6 +65,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
         /// Conversion window in days for tracking user actions.
         static let conversionWindowDays = 0...7
 
+        /// The origin parameter value for the experiment.
         static let origin = "funnel_pro_ios_onboarding_vpn"
     }
 
@@ -105,6 +106,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
                 as? PrivacyProOnboardingCTAMarch25Cohort
     }
 
+    /// Returns the URL components for the experiment.
     func redirectURLComponents() -> URLComponents? {
         let url = SubscriptionURL.purchase.subscriptionURL(environment: .production).appendingParameter(name: AttributionParameter.origin, value: Constants.origin)
         return URLComponents(url: url, resolvingAgainstBaseURL: true)

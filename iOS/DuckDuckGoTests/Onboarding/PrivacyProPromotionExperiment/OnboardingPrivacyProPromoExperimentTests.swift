@@ -142,6 +142,22 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
         XCTAssertEqual(firedPixel?.metric, "subscriptionStartedYearly")
         XCTAssertEqual(firedPixel?.value, "true")
     }
+
+    func testRedirectURLComponents_ReturnsCorrectlyFormattedURL() {
+        // When
+        let components = sut.redirectURLComponents()
+        
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.scheme, "https")
+        XCTAssertEqual(components?.host, "duckduckgo.com")
+        XCTAssertEqual(components?.path, "/subscriptions")
+        
+        // Verify origin parameter
+        let originItem = components?.queryItems?.first { $0.name == "origin" }
+        XCTAssertNotNil(originItem)
+        XCTAssertEqual(originItem?.value, OnboardingPrivacyProPromoExperiment.Constants.origin)
+    }
 }
 
 private final class MockExperimentPixelFirer: ExperimentPixelFiring {

@@ -228,7 +228,7 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating {
     var expectation: XCTestExpectation?
     private(set) var didCallSetFireEducationMessageSeen = false
     private(set) var didCallsetFinalOnboardingDialogSeen = false
@@ -274,6 +274,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
         didCallClearedBrowserData = true
     }
 
+    var privacyProPromotionDialogSeen: Bool = false
 }
 
 extension WKNavigation {

@@ -171,7 +171,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 /// We set the set prompt flag to false in case it was show in the past.
                 self.repository.setPromptShown(false)
 
-                NotificationCenter.default.post(name: .showPromptForSetAsDefaultBrowserAndAddToDock, object: nil)
+                NotificationCenter.default.post(name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange, object: nil)
             }
             .store(in: &cancellables)
     }

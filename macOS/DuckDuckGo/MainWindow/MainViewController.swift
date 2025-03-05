@@ -510,7 +510,7 @@ final class MainViewController: NSViewController {
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(tryToShowSetAsDefaultAndAddtoDockIfNeeded),
-                                               name: .showPromptForSetAsDefaultBrowserAndAddToDock,
+                                               name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
                                                object: nil)
 
         bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher

@@ -17,5 +17,5 @@
 //
 
 public extension Notification.Name {
-    static let showPromptForSetAsDefaultBrowserAndAddToDock = Notification.Name("com.duckduckgo.app.showPromptForSetAsDefaultBrowserAndAddToDock")
+    static let setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange = Notification.Name("com.duckduckgo.app.setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange")
 }

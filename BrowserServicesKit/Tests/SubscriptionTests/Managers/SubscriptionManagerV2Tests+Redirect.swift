@@ -51,7 +51,7 @@ extension SubscriptionManagerV2Tests {
         // GIVEN
         let redirectURLComponents = try XCTUnwrap(URLComponents(string: "https://www.duckduckgo.com/pro?origin=test"))
 
-        let _ = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
+        _=SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
         let stagingSubscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,

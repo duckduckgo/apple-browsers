@@ -109,7 +109,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
         let content = DefaultBrowserAndDockPromptContent.banner(type)
 
-        /// We mark the banner as shown when it gets actioned (eithe dismiss or confirmation)
+        /// We mark the banner as shown when it gets actioned (either dismiss or confirmation)
         /// Given that we want to show the banner in all windows.
         return BannerMessageViewController(
             message: content.message,

@@ -429,3 +429,7 @@ struct DBPUIVPNExclusionSettingUpdateResult: DBPUISendableMessage {
     let success: Bool
     let version: Int
 }
+
+struct DBPUIVPNExclusionOnboardingShown: DBPUISendableMessage {
+    let onboarded: Bool
+}

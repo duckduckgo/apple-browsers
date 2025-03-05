@@ -70,6 +70,7 @@ enum DBPUIReceivedMethodName: String {
     case openSendFeedbackModal
     case getVPNExclusionSetting = "getVpnExclusionSetting"
     case setVPNExclusionSetting = "setVpnExclusionSetting"
+    case getVPNExclusionOnboardingShown = "getVpnExclusionOnboardingShown"
 }
 
 enum DBPUISendableMethodName: String {
@@ -129,6 +130,7 @@ struct DBPUICommunicationLayer: Subfeature {
         case .openSendFeedbackModal: return openSendFeedbackModal
         case .getVPNExclusionSetting: return getVPNExclusionSetting
         case .setVPNExclusionSetting: return setVPNExclusionSetting
+        case .getVPNExclusionOnboardingShown: return getVPNExclusionOnboardingShown
         }
 
     }
@@ -350,5 +352,9 @@ struct DBPUICommunicationLayer: Subfeature {
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
         return DBPUIVPNExclusionSettingUpdateResult(success: true, version: Constants.version)
+    }
+
+    func getVPNExclusionOnboardingShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DBPUIVPNExclusionOnboardingShown(onboarded: dbpSettings.vpnBypassOnboardingShown)
     }
 }

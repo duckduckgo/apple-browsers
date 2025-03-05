@@ -640,7 +640,7 @@ extension SettingsViewModel {
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.apps)
+        UIApplication.shared.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {

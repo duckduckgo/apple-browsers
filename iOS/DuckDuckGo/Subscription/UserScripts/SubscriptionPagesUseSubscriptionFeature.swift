@@ -610,6 +610,23 @@ private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     }
 }
 
+private extension DefaultSubscriptionPagesUseSubscriptionFeature {
+    /// Fires a subscription purchase pixel for a Subscription if applicable.
+    ///
+    /// - Parameter id: The subscription identifier used to determine the type of subscription.
+    func firePrivacyProPromotionSubscriptionPurchasePixel(for id: String) {
+        /*
+         Logic based on strings is obviously not ideal, but acceptable for this temporary
+         experiment.
+         */
+        if id.contains("month") {
+            freeTrialsExperiment.fireSubscriptionStartedMonthlyPixel()
+        } else if id.contains("year") {
+            freeTrialsExperiment.fireSubscriptionStartedYearlyPixel()
+        }
+    }
+}
+
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?

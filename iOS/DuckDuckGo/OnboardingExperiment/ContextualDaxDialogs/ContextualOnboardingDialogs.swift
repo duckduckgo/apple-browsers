@@ -285,6 +285,7 @@ struct PrivacyProPromotionView: View {
     private var customActionView: some View {
         VStack {
             Image(.onboardingPrivacyProPromo)
+                .padding([.top, .bottom], 16)
             OnboardingCTAButton(
                 title: proceedText,
                 buttonStyle: .primary,

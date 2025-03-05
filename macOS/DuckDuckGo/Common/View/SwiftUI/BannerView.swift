@@ -93,7 +93,7 @@ struct BannerView: View {
             Divider()
                 .frame(height: 1)
                 .frame(maxWidth: .infinity)
-                .background(Color.black.opacity(0.09))
+                .background(Color.bannerViewDivider.opacity(0.09))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(Color.bannerBackground)

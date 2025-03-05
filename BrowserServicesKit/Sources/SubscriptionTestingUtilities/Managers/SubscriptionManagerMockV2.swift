@@ -184,7 +184,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         resultTokenContainer = nil
     }
 
-    public func isEnabled(feature: Entitlement.ProductName) async -> Bool {
+    public func isEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
         switch feature {
         case .networkProtection:
             return await isFeatureAvailableForUser(.networkProtection)

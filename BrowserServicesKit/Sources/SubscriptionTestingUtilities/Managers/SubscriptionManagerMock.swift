@@ -117,11 +117,14 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         accountManager.isUserAuthenticated
     }
 
-    public func isEnabled(feature: Entitlement.ProductName) async -> Bool {
-        if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection), hasEntitlements {
-            return true
-        } else {
-            return false
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+
+        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+        switch result {
+        case .success(let hasEntitlements):
+            return hasEntitlements
+        case .failure(let error):
+            throw error
         }
     }
 

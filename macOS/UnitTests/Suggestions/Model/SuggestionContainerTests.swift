@@ -115,7 +115,7 @@ final class SuggestionContainerTests: XCTestCase {
 
     @MainActor
     func testSuggestionsJsonScenarios() async throws {
-        let onlyRun = "" //"bookmarks-history-open-tabs-basic.json"
+        let onlyRun = "" // "bookmarks-history-open-tabs-basic.json"
         guard let directoryURL = Bundle(for: SuggestionContainerTests.self).url(forResource: "privacy-reference-tests/suggestions", withExtension: nil) else {
             return XCTFail("Failed to locate the suggestions directory in the bundle")
         }

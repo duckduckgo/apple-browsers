@@ -27,7 +27,7 @@ public enum Suggestion: Equatable {
     case internalPage(title: String, url: URL, score: Int)
     case openTab(title: String, url: URL, score: Int)
     case unknown(value: String)
-    
+
     /// The score of this suggestion, if available
     var score: Int {
         switch self {
@@ -40,7 +40,7 @@ public enum Suggestion: Equatable {
             return 0
         }
     }
-    
+
     /// Returns a new suggestion with the updated score
     func withScore(_ newScore: Int) -> Suggestion {
         switch self {

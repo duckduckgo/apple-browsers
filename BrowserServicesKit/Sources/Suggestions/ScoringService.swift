@@ -1,7 +1,7 @@
 //
 //  ScoringService.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ struct ScoredSuggestion {
 struct ScoringService {
 
     /// Scores a suggestion based on the query and the suggestion's title and url.
-    static func score(title: String?, url: URL, visitCount: Int = 0, lowerQuery: String, queryTokens: [String]? = nil) -> Int {
+    static func score(title: String?, url: URL, visitCount: Int = 0, lowerQuery: String, queryTokens: [String]? = nil) -> Int { // swiftlint:disable:this cyclomatic_complexity
         let queryTokens = queryTokens ?? lowerQuery.tokenized()
         assert(lowerQuery.lowercased() == lowerQuery)
         assert(queryTokens == lowerQuery.tokenized())
@@ -59,35 +59,33 @@ struct ScoringService {
             if url.isRoot { score += 2000 }
         } else if lowercasedTitle.leadingBoundaryStartsWith(lowerQuery) {
             score += 200
+            // Prioritize root URLs most
             if url.isRoot { score += 2000 }
         } else if queryCount > 2 && domain.contains(lowerQuery) {
             score += 150
-        } else if queryCount > 2 && lowercasedTitle.contains(" \(lowerQuery)") { // Exact match from the beginning of the word within string.
+        } else if queryCount > 2 && lowercasedTitle.contains(" \(lowerQuery)") {
+            // Exact match from the beginning of the word within string.
             score += 100
-        } else {
+        } else if queryTokens.count > 1 {
             // Tokenized matches
-            if queryTokens.count > 1 {
-                var matchesAllTokens = true
-                for token in queryTokens {
-                    // Match only from the beginning of the word to avoid unintuitive matches.
-                    if !lowercasedTitle.leadingBoundaryStartsWith(token) && !lowercasedTitle.contains(" \(token)") && !nakedUrl.starts(with: token) {
-                        matchesAllTokens = false
-                        break
-                    }
+            var matchesAllTokens = true
+            for token in queryTokens {
+                // Match only from the beginning of the word to avoid unintuitive matches.
+                guard lowercasedTitle.leadingBoundaryStartsWith(token) || lowercasedTitle.contains(" \(token)") || nakedUrl.starts(with: token) else {
+                    matchesAllTokens = false
+                    break
                 }
+            }
 
-                if matchesAllTokens {
-                    // Score tokenized matches
-                    score += 10
+            if matchesAllTokens {
+                // Score tokenized matches
+                score += 10
 
-                    // Boost score if first token matches:
-                    if let firstToken = queryTokens.first { // nakedUrlString - high score boost
-                        if nakedUrl.starts(with: firstToken) {
-                            score += 70
-                        } else if lowercasedTitle.leadingBoundaryStartsWith(firstToken) { // beginning of the title - moderate score boost
-                            score += 50
-                        }
-                    }
+                // Boost score if first token matches:
+                if nakedUrl.starts(with: queryTokens[0]) { // beginning of the domain - high score boost
+                    score += 70
+                } else if lowercasedTitle.leadingBoundaryStartsWith(queryTokens[0]) { // beginning of the title - moderate score boost
+                    score += 50
                 }
             }
         }
@@ -141,6 +139,7 @@ struct ScoringService {
 
 extension String {
 
+    /// Splits the search query into tokens (separate words).
     func tokenized() -> [String] {
         components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
     }

@@ -26,12 +26,12 @@ public enum Platform {
 }
 
 /// Class encapsulates the whole ordering and filtering algorithm
-/// It takes query, history, bookmarks, and apiResult as input parameters
+/// It takes query, history, bookmarks, open tabs, and apiResult as input parameters
 /// The output is instance of SuggestionResult
 struct SuggestionProcessing {
 
     // MARK: - Constants
-    
+
     static let maximumNumberOfSuggestions = 12
     static let maximumNumberOfTopHits = 2
     static let minimumNumberInSuggestionGroup = 5
@@ -50,17 +50,15 @@ struct SuggestionProcessing {
                 internalPages: [InternalPage],
                 openTabs: [BrowserTab],
                 apiResult: APIResult?) -> SuggestionResult? {
-        
-        guard !query.isEmpty else { return .empty }
+
         let lowerQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let queryTokens = lowerQuery.tokenized()
+        guard !lowerQuery.isEmpty else { return .empty }
 
         // STEP 1: Get DDG suggestions that point to a website
         let duckDuckGoDomainSuggestions = apiResult?.items.compactMap { suggestion -> ScoredSuggestion? in
-            guard suggestion.isNav == true,
-                  let phrase = suggestion.phrase,
-                  let url = URL(string: URL.NavigationalScheme.http.separated() + phrase),
-                  !isUrlIgnored(url) else { return nil }
+            guard suggestion.isNav == true, let phrase = suggestion.phrase,
+                  let url = URL(string: URL.NavigationalScheme.http.separated() + phrase), !isUrlIgnored(url) else { return nil }
             return ScoredSuggestion(kind: .website, url: url, title: phrase)
         } ?? []
 
@@ -77,28 +75,34 @@ struct SuggestionProcessing {
         // STEP 3: Combine all navigational suggestions
         // All bookmark/favorite, history and duckDuckGoDomainSuggestions point directly to a URL browser can navigate to
         let navigationalSuggestions = allHistoryAndBookmarkAndOpenTabSuggestions + duckDuckGoDomainSuggestions
-        
-        // STEP 4: Deduplicate results by URL
+
+        // STEP 4: Deduplicate the results by grouping on URL and get the "best" suggestion for each. We also receive
+        // a list of SuggestionKind values for each URL to support better categorization below.
         let dedupedSuggestionTuples = removeDuplicates(navigationalSuggestions)
             .sorted { $0.suggestion.score > $1.suggestion.score }
-        
-        // STEP 5: Find top hits based on specific criteria
+
+        // STEP 5: Find Top Hits: normally Website or History suggestions.
+        // Top Hits won't contain Bookmarks unless it is also a Website or History suggestion
+        // at which point the suggestion needs to display that it's a bookmark.
         let topHitsDeduped = dedupedSuggestionTuples
             .filter { isTopHit($0.suggestion, $0.kinds) }
             .prefix(Self.maximumNumberOfTopHits)
 
         // STEP 6: Handle special case for open tab suggestions
+        // If the top suggestion is open tab based and also a history entry, bookmark or favorite
+        // we split the open tab/other suggestion into separate suggestions and prioritize
+        // the non-open tab suggestion so it can be autocompleted.
         let finalTopHits = handleTopHitsOpenTabCase(topHitsDeduped)
 
-        // STEP 7: Extract final top hits
+        // STEP 7: Prepare final Top Hits suggestions
         let topHits = finalTopHits.compactMap { Suggestion($0) }
 
-        // STEP 8: Calculate count for history/bookmarks/open tabs section
+        // STEP 8: Calculate remaining count for history/bookmarks/open tabs section
         let countForHistoryAndBookmarksAndOpenTabs = min(
             Self.maximumNumberOfSuggestions - (topHits.count + Self.minimumNumberInSuggestionGroup),
             lowerQuery.count + 1 - topHits.count
         )
-        
+
         // STEP 9: Build history, bookmarks, and open tabs suggestions
         let historyAndBookmarksAndOpenTabs = dedupedSuggestionTuples
             .filter {
@@ -126,7 +130,7 @@ struct SuggestionProcessing {
             localSuggestions: historyAndBookmarksAndOpenTabs
         )
     }
-    
+
     /// Removes duplicate entries (based on the URL) from a list of suggestions.
     /// When duplicates are found, ones with more info (e.g. bookmarks) will take precedence.
     private func removeDuplicates(_ suggestions: [ScoredSuggestion]) -> [(suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)] {
@@ -148,7 +152,6 @@ struct SuggestionProcessing {
             // 2. A history item
             // 3. A bookmark
             // 4. An open tab
-
             guard let group = groupedByURL[key],
                   // We want to display the suggestion of the highest "quality"
                   var suggestion = group.max(by: { $0.quality < $1.quality }) else {
@@ -156,7 +159,7 @@ struct SuggestionProcessing {
                 continue
             }
 
-            // ... but we also need to provide all the kinds of suggestion for this URL so
+            // …but we also need to provide all the kinds of suggestion for this URL so
             // downstream logic can do further filtering (i.e. TopHits shouldn't contain Bookmarks
             // unless they're also part of a History or Website suggestion).
             let suggestionKinds = Set(group.map(\.kind))
@@ -176,11 +179,11 @@ struct SuggestionProcessing {
 
             result.append((suggestion, suggestionKinds))
         }
-        
-        return result.sorted { $0.0.score > $1.0.score }
+
+        return result
     }
 
-    /// Determines if a suggestion should be included in top hits, following Windows algorithm rules
+    /// Determines if a suggestion should be included in top hits
     private func isTopHit(_ scoredSuggestion: ScoredSuggestion, _ suggestionKinds: Set<ScoredSuggestion.Kind>) -> Bool {
         // Check if the suggestion is for website, favorite or history
         // Otherwise the suggestion should not be part of top hits
@@ -202,13 +205,11 @@ struct SuggestionProcessing {
         return true
     }
 
-    // MARK: - Special Processing for Open Tabs in Top Hits
-    
     /// Handles special case for open tab suggestions in top hits
     private func handleTopHitsOpenTabCase(_ topHitsDeduped: some Collection<(suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)>) -> [ScoredSuggestion] {
         var result = topHitsDeduped.map(\.suggestion)
 
-        // If the top suggestion is open tab based and also a history entry, bookmark or favorite...
+        // If the top suggestion is open tab based and also a history entry, bookmark or favorite…
         guard let topHit = topHitsDeduped.first,
               topHit.kinds.contains(.browserTab),
               topHit.kinds.intersects([.historyEntry, .bookmark, .favorite]) else { return result }
@@ -220,11 +221,11 @@ struct SuggestionProcessing {
             ScoredSuggestion.Kind.browserTab
         }
 
-        // ...we split the open tab/other suggestion into separate suggestions...
+        // …we split the open tab/other suggestion into separate suggestions…
         // Note: In real implementation, we would create a new suggestion here with the chosen kind
         var newSuggestion = topHit.suggestion
         newSuggestion.kind = newSuggestionKind
-        // ...and prioritize the non-open tab suggestion so it can autocomplete.
+        // …and prioritize the non-open tab suggestion so it can autocomplete.
         // If new suggestion is open tab, put it second (original stays at top)
         // If new suggestion is not open tab, put it first (prioritize for autocomplete)
         let insertionIndex = (newSuggestionKind == .browserTab) ? 1 : 0
@@ -253,6 +254,7 @@ extension ScoredSuggestion.Kind {
         }
     }
 }
+
 extension ScoredSuggestion {
     var quality: Int { kind.quality }
 }

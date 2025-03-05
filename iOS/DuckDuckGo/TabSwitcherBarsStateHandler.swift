@@ -168,5 +168,5 @@ class TabSwitcherBarsStateHandler {
             ]
 
         }
-    }    
+    }
 }

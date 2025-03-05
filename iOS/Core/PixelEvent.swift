@@ -91,7 +91,7 @@ extension Pixel {
         case tabSwitcherLongPress
         case tabSwitcherLongPressDaily
         case tabSwitcherLongPressShare
-        case tabSwitcherLongPressBookmarkThisTab
+        case tabSwitcherLongPressBookmarkTabs
         case tabSwitcherLongPressSelectTabs
         case tabSwitcherLongPressCloseTab
         case tabSwitcherLongPressCloseOtherTabs
@@ -2099,7 +2099,7 @@ extension Pixel.Event {
         case .tabSwitcherLongPress: return "m_tab_manager_long_press"
         case .tabSwitcherLongPressDaily: return "m_tab_manager_long_press_daily"
         case .tabSwitcherLongPressShare: return "m_tab_manager_long_press_share"
-        case .tabSwitcherLongPressBookmarkThisTab: return "m_tab_manager_long_press_bookmark_this_tab"
+        case .tabSwitcherLongPressBookmarkTabs: return "m_tab_manager_long_press_bookmark_tabs"
         case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
         case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
         case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"

@@ -549,18 +549,13 @@ extension TabSwitcherViewController {
         bookmarkTabs(withIndexPaths: indexPaths,
                      title: UserText.bookmarkSelectedTabs(withCount: selectedTabs.count),
                      message: UserText.alertBookmarkAllMessage,
-                     pixel: .tabSwitcherSelectModeMenuBookmarkTabs,
-                     dailyPixel: .tabSwitcherSelectModeMenuBookmarkTabsDaily)
+                     pixel: .tabSwitcherLongPressBookmarkTabs,
+                     dailyPixel: .tabSwitcherLongPressBookmarkTabsDaily)
     }
 
     func longPressMenuShareLinks(tabs: [Tab]) {
         Pixel.fire(pixel: .tabSwitcherLongPressShare)
         shareTabs(tabs)
-    }
-
-    func longPressMenuBookmarkThisPage(indexPath: IndexPath) {
-        Pixel.fire(pixel: .tabSwitcherLongPressBookmarkThisTab)
-        bookmarkTabAt(indexPath)
     }
 
     func longPressMenuSelectTabs(indexPaths: [IndexPath]) {

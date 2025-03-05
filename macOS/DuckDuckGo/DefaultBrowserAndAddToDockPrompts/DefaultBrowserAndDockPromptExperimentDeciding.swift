@@ -21,19 +21,19 @@ protocol DefaultBrowserAndDockPromptExperimentDeciding {
 }
 
 final class DefaultBrowserAndDockPromptExperimentDecider: DefaultBrowserAndDockPromptExperimentDeciding {
-    private let wasOnboardingCompleted: Bool
+    private let isOnboardingCompleted: Bool
     private let isNewUser: Bool
     private let isEligibleForPrompt: Bool
 
-    init(wasOnboardingCompleted: Bool = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted && OnboardingViewModel._isOnboardingFinished,
+    init(isOnboardingCompleted: Bool = Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted && OnboardingViewModel._isOnboardingFinished,
          isNewUser: Bool = AppDelegate.isNewUser,
          isEligibleForPrompt: Bool) {
-        self.wasOnboardingCompleted = wasOnboardingCompleted
+        self.isOnboardingCompleted = isOnboardingCompleted
         self.isNewUser = isNewUser
         self.isEligibleForPrompt = isEligibleForPrompt
     }
 
     var isUserEligibleForExperiment: Bool {
-        return !isNewUser && wasOnboardingCompleted && isEligibleForPrompt
+        return !isNewUser && isOnboardingCompleted && isEligibleForPrompt
     }
 }

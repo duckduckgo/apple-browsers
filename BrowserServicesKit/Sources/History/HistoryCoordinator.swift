@@ -60,6 +60,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 }
 
 extension HistoryCoordinating {
+    @discardableResult
     public func addVisit(of url: URL) -> Visit? {
         addVisit(of: url, at: Date())
     }

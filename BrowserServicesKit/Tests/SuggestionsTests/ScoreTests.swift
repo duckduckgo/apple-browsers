@@ -51,7 +51,7 @@ final class ScoreTests: XCTestCase {
 
     func testWhenQueryIsJustWhitespaces_ThenTokensAreEmpty() {
         let query = "  \t\n\t\t \t \t  \n\n\n "
-        let tokens = Score.tokens(from: query)
+        let tokens = query.tokenized()
 
         XCTAssertEqual(tokens.count, 0)
     }
@@ -60,9 +60,9 @@ final class ScoreTests: XCTestCase {
         let spaceQuery = "testing query tokens"
         let tabQuery = "testing\tquery\ttokens"
         let newlineQuery = "testing\nquery\ntokens"
-        let spaceTokens = Score.tokens(from: spaceQuery)
-        let tabTokens = Score.tokens(from: tabQuery)
-        let newlineTokens = Score.tokens(from: newlineQuery)
+        let spaceTokens = spaceQuery.tokenized()
+        let tabTokens = tabQuery.tokenized()
+        let newlineTokens = newlineQuery.tokenized()
 
         XCTAssertEqual(spaceTokens, ["testing", "query", "tokens"])
         XCTAssertEqual(spaceTokens, tabTokens)
@@ -124,4 +124,10 @@ final class ScoreTests: XCTestCase {
         XCTAssert(score1 < score2)
     }
 
+}
+private func Score(title: String, url: URL, visitCount: Int, query: String) -> Int {
+    return ScoringService.score(title: title,
+                                url: url,
+                                visitCount: visitCount,
+                                lowerQuery: query.lowercased())
 }

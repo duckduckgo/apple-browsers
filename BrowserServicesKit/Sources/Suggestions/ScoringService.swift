@@ -34,6 +34,7 @@ struct ScoredSuggestion {
     var url: URL
     var title: String
     var visitCount: Int = 0
+    var failedToLoad: Bool = false
     var score: Int = 0
 }
 
@@ -113,7 +114,7 @@ struct ScoringService {
             guard !isUrlIgnored(historyEntry.url) else { return nil }
             let score = score(title: historyEntry.title ?? "", url: historyEntry.url, visitCount: historyEntry.numberOfVisits, lowerQuery: lowerQuery, queryTokens: queryTokens)
             guard score > 0 else { return nil }
-            return ScoredSuggestion(kind: .historyEntry, url: historyEntry.url, title: historyEntry.title ?? "", visitCount: historyEntry.numberOfVisits, score: score)
+            return ScoredSuggestion(kind: .historyEntry, url: historyEntry.url, title: historyEntry.title ?? "", visitCount: historyEntry.numberOfVisits, failedToLoad: historyEntry.failedToLoad, score: score)
         }
     }
 

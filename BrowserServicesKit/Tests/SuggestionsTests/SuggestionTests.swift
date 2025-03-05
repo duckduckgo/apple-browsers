@@ -27,21 +27,9 @@ final class SuggestionTests: XCTestCase {
         let title = "DuckDuckGo"
         let isFavorite = true
         let bookmarkMock = BookmarkMock(url: url.absoluteString, title: title, isFavorite: isFavorite)
-        let suggestion = Suggestion(bookmark: bookmarkMock)
+        let suggestion = Suggestion(bookmark: bookmarkMock, score: 0)
 
-        XCTAssertEqual(suggestion, Suggestion.bookmark(title: title, url: url, isFavorite: isFavorite, allowedInTopHits: isFavorite))
-    }
-
-    func testWhenIsNav_ThenSuggestionIsURL() {
-        let suggestion = Suggestion(phrase: "example.com", isNav: true)
-        let expected = Suggestion.website(url: URL(string: "http://example.com")!)
-        XCTAssertEqual(suggestion, expected)
-    }
-
-    func testWhenIsNotNav_ThenSuggestionIsPhrase() {
-        let suggestion = Suggestion(phrase: "example.com", isNav: false)
-        let expected = Suggestion.phrase(phrase: "example.com")
-        XCTAssertEqual(suggestion, expected)
+        XCTAssertEqual(suggestion, Suggestion.bookmark(title: title, url: url, isFavorite: isFavorite, score: 0))
     }
 
     func testWhenUrlIsAccessed_ThenOnlySuggestionsThatContainUrlReturnsIt() {
@@ -49,10 +37,8 @@ final class SuggestionTests: XCTestCase {
 
         let phraseSuggestion = Suggestion.phrase(phrase: "phrase")
         let websiteSuggestion = Suggestion.website(url: url)
-        let bookmarkSuggestion = Suggestion.bookmark(title: "Title", url: url, isFavorite: true, allowedInTopHits: true)
-        let historyEntrySuggestion = Suggestion.historyEntry(title: "Title",
-                                                             url: url,
-                                                             allowedInTopHits: true)
+        let bookmarkSuggestion = Suggestion.bookmark(title: "Title", url: url, isFavorite: true, score: 0)
+        let historyEntrySuggestion = Suggestion.historyEntry(title: "Title", url: url, score: 0)
         _ = Suggestion.unknown(value: "phrase")
 
         XCTAssertNil(phraseSuggestion.url)
@@ -68,8 +54,8 @@ final class SuggestionTests: XCTestCase {
 
         let phraseSuggestion = Suggestion.phrase(phrase: "phrase")
         let websiteSuggestion = Suggestion.website(url: url)
-        let bookmarkSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, allowedInTopHits: true)
-        let historyEntrySuggestion = Suggestion.historyEntry(title: title, url: url, allowedInTopHits: true)
+        let bookmarkSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, score: 0)
+        let historyEntrySuggestion = Suggestion.historyEntry(title: title, url: url, score: 0)
         _ = Suggestion.unknown(value: "phrase")
 
         XCTAssertNil(phraseSuggestion.title)
@@ -84,7 +70,7 @@ final class SuggestionTests: XCTestCase {
         let title = "Title"
 
         let historyEntry = HistoryEntryMock(identifier: UUID(), url: url, title: title, numberOfVisits: 1, lastVisit: Date(), failedToLoad: false, isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
+        let suggestion = Suggestion(historyEntry: historyEntry, score: 0)
 
         guard case .historyEntry = suggestion else {
             XCTFail("Wrong type of suggestion")
@@ -100,7 +86,7 @@ final class SuggestionTests: XCTestCase {
         let title = "Title"
 
         let bookmark = BookmarkMock(url: url.absoluteString, title: title, isFavorite: true)
-        let suggestion = Suggestion(bookmark: bookmark)
+        let suggestion = Suggestion(bookmark: bookmark, score: 0)
 
         guard let suggestion = suggestion,
               case .bookmark = suggestion else {
@@ -123,55 +109,6 @@ final class SuggestionTests: XCTestCase {
 
         XCTAssertEqual(suggestion.url, url)
         XCTAssertEqual(websiteUrl, url)
-    }
-
-    func testWhenSuggestionIsWebsite_ThenCanBeInTopHits() {
-        let suggestion = Suggestion.website(url: .aURL)
-        XCTAssert(suggestion.allowedInTopHits)
-    }
-
-    func testWhenSuggestionIsLowVisitNonRootHistoryEntry_ThenCantBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aNonRootUrl,
-                                            title: "Title",
-                                            numberOfVisits: 1,
-                                            lastVisit: Date(),
-                                            failedToLoad: false,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-    }
-
-    func testWhenSuggestionIsLowVisitRootHistoryEntry_ThenCanBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aRootUrl,
-                                            title: "Title",
-                                            numberOfVisits: 1,
-                                            lastVisit: Date(),
-                                            failedToLoad: false,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssert(suggestion.allowedInTopHits)
-    }
-
-    func testWhenSuggestionIsFailingLink_ThenCantBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aURL,
-                                            title: "Title",
-                                            numberOfVisits: 100,
-                                            lastVisit: Date(),
-                                            failedToLoad: true,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-    }
-
-    func testWhenSuggestionIsBookmark_ThenCanOrCantBeInTopHits() {
-        let suggestion = Suggestion.bookmark(title: "Title", url: .aURL, isFavorite: false, allowedInTopHits: false)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-
-        let suggestion2 = Suggestion.bookmark(title: "Title", url: .aURL, isFavorite: false, allowedInTopHits: true)
-        XCTAssert(suggestion2.allowedInTopHits)
     }
 
 }

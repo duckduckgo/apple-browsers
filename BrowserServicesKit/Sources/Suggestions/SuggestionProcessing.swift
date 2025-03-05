@@ -185,14 +185,18 @@ struct SuggestionProcessing {
 
     /// Determines if a suggestion should be included in top hits
     private func isTopHit(_ scoredSuggestion: ScoredSuggestion, _ suggestionKinds: Set<ScoredSuggestion.Kind>) -> Bool {
-        // Check if the suggestion is for website, favorite or history
+        // Check if the suggestion is allowed in Top Hits: is it for website, favorite or history (+bookmarks for mobile)
+        var suggestionKindsAllowedInTopHits: [ScoredSuggestion.Kind] = [.website, .favorite, .historyEntry]
+        if platform == .mobile {
+            suggestionKindsAllowedInTopHits.append(.bookmark)
+        }
         // Otherwise the suggestion should not be part of top hits
-        guard suggestionKinds.intersects([.website, .favorite, .historyEntry]) else { return false }
+        guard suggestionKinds.intersects(suggestionKindsAllowedInTopHits) else { return false }
 
         // If the suggestion is based solely on history
         if suggestionKinds == [.historyEntry] {
-            // Include in TopHits only if root domain or has more than 3 visits
-            return scoredSuggestion.url.isRoot || scoredSuggestion.visitCount > 3
+            // Include in TopHits only if root domain or has more than 3 visits and didn‘t fail to load
+            return !scoredSuggestion.failedToLoad && (scoredSuggestion.visitCount > 3 || scoredSuggestion.url.isRoot)
         }
 
         // If the suggestion is based solely on an open tab

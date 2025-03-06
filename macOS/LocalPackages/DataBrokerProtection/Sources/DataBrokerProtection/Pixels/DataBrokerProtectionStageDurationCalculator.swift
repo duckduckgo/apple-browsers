@@ -154,7 +154,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           attemptId: attemptId,
                                           duration: durationSinceStartTime(),
                                           tries: tries,
-                                          emailPattern: emailPattern))
+                                          emailPattern: emailPattern,
+                                          vpnConnectionState: vpnConnectionState,
+                                          vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutFillForm() {
@@ -169,7 +171,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
-                                    actionID: actionID))
+                                    actionID: actionID,
+                                    vpnConnectionState: vpnConnectionState,
+                                    vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanSuccess(matchesFound: Int) {

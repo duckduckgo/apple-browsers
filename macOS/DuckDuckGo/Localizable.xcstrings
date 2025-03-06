@@ -61419,19 +61419,7 @@
         }
       }
     },
-    "sat.att.add-to-dock.banner.message" : {
-      "comment" : "Body of the banner view that invites users to add DuckDuckGo to their Dock",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Get quick access to protected browsing"
-          }
-        }
-      }
-    },
-    "sat.att.add-to-dock.popover.message" : {
+    "sad.att.add-to-dock.popover.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock\nBody of the popover that invites users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61443,7 +61431,7 @@
         }
       }
     },
-    "sat.att.add-to-dock.popover.primary" : {
+    "sad.att.add-to-dock.popover.primary" : {
       "comment" : "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61455,7 +61443,7 @@
         }
       }
     },
-    "sat.att.add-to-dock.popover.title" : {
+    "sad.att.add-to-dock.popover.title" : {
       "comment" : "Title of a popover that invites users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61467,7 +61455,7 @@
         }
       }
     },
-    "sat.att.both.popover.message" : {
+    "sad.att.both.popover.message" : {
       "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61479,7 +61467,7 @@
         }
       }
     },
-    "sat.att.both.popover.primary" : {
+    "sad.att.both.popover.primary" : {
       "comment" : "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61491,7 +61479,7 @@
         }
       }
     },
-    "sat.att.both.popover.title" : {
+    "sad.att.both.popover.title" : {
       "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61503,7 +61491,7 @@
         }
       }
     },
-    "sat.att.default.popover.title" : {
+    "sad.att.default.popover.title" : {
       "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61515,7 +61503,7 @@
         }
       }
     },
-    "sat.att.set-as-default.banner.message" : {
+    "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61527,7 +61515,7 @@
         }
       }
     },
-    "sat.att.set-as-default.popover.message" : {
+    "sad.att.set-as-default.popover.message" : {
       "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61539,7 +61527,7 @@
         }
       }
     },
-    "sat.att.set-as-default.prompt.primaary" : {
+    "sad.att.set-as-default.prompt.primaary" : {
       "comment" : "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -61547,6 +61535,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Set As Default"
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.banner.message" : {
+      "comment" : "Body of the banner view that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing"
           }
         }
       }

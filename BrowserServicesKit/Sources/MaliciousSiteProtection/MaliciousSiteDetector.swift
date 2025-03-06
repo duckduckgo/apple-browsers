@@ -127,8 +127,8 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
         // 3. If no locally cached filters matched, we will still make a request to the API
         // to check for potential matches on our backend.
         let match = await checkApiMatches(hostHash: hostHash, canonicalUrl: canonicalUrl)
-        if let match {
-            let threatKind = match.category.flatMap(ThreatKind.init) ?? hashPrefixMatchingThreatKinds[0]
+        let threatKind = match?.category.flatMap(ThreatKind.init)
+        if let threatKind {
             if !supportedThreats.contains(threatKind) {
                 return .none
             }

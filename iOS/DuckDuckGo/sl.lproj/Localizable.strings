@@ -1032,7 +1032,7 @@
 "duck-player.video-contingency-message" = "Nedavne spremembe v YouTubu so vplivale na delovanje predvajalnika Duck Player. Prizadevamo si za odpravljanje teh težav in cenimo vaše razumevanje.";
 
 /* Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and () */
-"duckai.preferences.text.markdown" = "Duck.ai je izbirna funkcija, ki vam omogoča anonimen klepet s priljubljenimi modeli za klepet z umetno inteligenco drugih ponudnikov. Vaši klepeti se ne uporabljajo za usposabljanje umetne inteligence.\n[Več o tem] (ddgquicklink: //duckduckgo.com/duckduckgo-help-pages/aichat/)";
+"duckai.preferences.text.markdown" = "Duck.ai je izbirna funkcija, ki vam omogoča anonimen klepet s priljubljenimi modeli za klepet z umetno inteligenco drugih ponudnikov. Vaši klepeti se ne uporabljajo za usposabljanje umetne inteligence.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Prikaži Duck.ai v naslovni vrstici";

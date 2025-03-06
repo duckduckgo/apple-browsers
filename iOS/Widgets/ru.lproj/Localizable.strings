@@ -61,11 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN включен";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Здесь вы можете выбрать ярлыки для избранных действий.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Пользовательские сочетания клавиш";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Выберите сочетания клавиш";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Ярлык слева";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Ярлык справа";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Настройка ярлыков";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Быстрый поиск среди паролей, сохраненных в DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Найти пароль";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Ярлыки для избранных действий.";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Ярлыки";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Поиск и посещение любимых сайтов без слежки всего в одно касание.";

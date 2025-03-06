@@ -61,11 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN on päällä";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Valitse suosikkitoimintojesi pikavalinnat.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Mukautetut pikavalinnat";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Valitse pikavalintasi";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Vasen pikavalinta";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Oikea pikavalinta";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Määritä pikavalinnat";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Hae nopeasti DuckDuckGohon tallennettuja salasanojasi.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Etsi salasanoja";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Nämä ovat suosikkitoimintojesi pikavalintoja.";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Pikavalinnat";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Tee hakuja ja käy lempisivustoillasi yhdellä napautuksella.";

@@ -143,7 +143,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             try database.add(event)
 
             // 4. Get extracted profiles from the runner:
-            let extractedProfiles = try await runner.scan(
+            let profilesFoundDuringCurrentScanJob = try await runner.scan(
                 brokerProfileQueryData,
                 stageCalculator: stageCalculator,
                 pixelHandler: pixelHandler,
@@ -151,21 +151,21 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 shouldRunNextStep: shouldRunNextStep
             )
 
-            Logger.dataBrokerProtection.log("OperationManager found extracted profiles: \(extractedProfiles)")
+            Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob)")
 
             // 5. Handle the extracted profiles reported by the runner:
-            if !extractedProfiles.isEmpty {
+            if !profilesFoundDuringCurrentScanJob.isEmpty {
                 // 5a. Iterate over found profiles and process them:
-                try processExtractedScanProfiles(extractedProfiles: extractedProfiles,
-                                                 brokerProfileQueryData: brokerProfileQueryData,
-                                                 brokerId: brokerId,
-                                                 profileQueryId: profileQueryId,
-                                                 database: database,
-                                                 eventPixels: eventPixels,
-                                                 stageCalculator: stageCalculator)
+                try scheduleExtractedProfilesForOptOut(extractedProfiles: profilesFoundDuringCurrentScanJob,
+                                                       brokerProfileQueryData: brokerProfileQueryData,
+                                                       brokerId: brokerId,
+                                                       profileQueryId: profileQueryId,
+                                                       database: database,
+                                                       eventPixels: eventPixels,
+                                                       stageCalculator: stageCalculator)
             } else {
                 // 5b. Report the status of the scan, which found no matches:
-                try storeFailedScanEvent(
+                try storeScanWithNoMatchesEvent(
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
                     database: database,
@@ -175,15 +175,15 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
             // 6. Check for removed profiles by comparing the set of saved profiles to those just found via scan:
             let removedProfiles = brokerProfileQueryData.extractedProfiles.filter { savedProfile in
-                !extractedProfiles.contains { recentlyFoundProfile in
+                !profilesFoundDuringCurrentScanJob.contains { recentlyFoundProfile in
                     recentlyFoundProfile.identifier == savedProfile.identifier
                 }
             }
 
             // 7. Handle removed profiles:
             if !removedProfiles.isEmpty {
-                // 7a. If there were removed profiles, process them:
-                try processRemovedProfilesForScan(
+                // 7a. If there were removed profiles, update their state and notify the user:
+                try markSavedProfilesAsRemovedAndNotifyUser(
                     removedProfiles: removedProfiles,
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
@@ -218,13 +218,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
     // swiftlint:enable cyclomatic_complexity
 
-    private func processExtractedScanProfiles(extractedProfiles: [ExtractedProfile],
-                                              brokerProfileQueryData: BrokerProfileQueryData,
-                                              brokerId: Int64,
-                                              profileQueryId: Int64,
-                                              database: DataBrokerProtectionRepository,
-                                              eventPixels: DataBrokerProtectionEventPixels,
-                                              stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+    private func scheduleExtractedProfilesForOptOut(extractedProfiles: [ExtractedProfile],
+                                                    brokerProfileQueryData: BrokerProfileQueryData,
+                                                    brokerId: Int64,
+                                                    profileQueryId: Int64,
+                                                    database: DataBrokerProtectionRepository,
+                                                    eventPixels: DataBrokerProtectionEventPixels,
+                                                    stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
         stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
 
         let event = HistoryEvent(
@@ -298,16 +298,16 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
     }
 
-    private func storeFailedScanEvent(brokerId: Int64,
-                                      profileQueryId: Int64,
-                                      database: DataBrokerProtectionRepository,
-                                      stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+    private func storeScanWithNoMatchesEvent(brokerId: Int64,
+                                             profileQueryId: Int64,
+                                             database: DataBrokerProtectionRepository,
+                                             stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
         stageCalculator.fireScanFailed()
         let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
         try database.add(event)
     }
 
-    private func processRemovedProfilesForScan(
+    private func markSavedProfilesAsRemovedAndNotifyUser(
         removedProfiles: [ExtractedProfile],
         brokerId: Int64,
         profileQueryId: Int64,

@@ -162,32 +162,14 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
                         Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
                     } else {
-                        // If it's a new found profile, we'd like to opt-out ASAP
-                        // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation within the parent.
-                        eventPixels.fireNewMatchEventPixel()
-                        let broker = brokerProfileQueryData.dataBroker
-                        let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
-
-                        // If profile does not exist we insert the new profile and we create the opt-out operation
-                        //
-                        // This is done inside a transaction on the database side. We insert the extracted profile and then
-                        // we insert the opt-out operation, we do not want to do things separately in case creating an opt-out fails
-                        // causing the extracted profile to be orphan.
-                        let optOutJobData = OptOutJobData(brokerId: brokerId,
-                                                          profileQueryId: profileQueryId,
-                                                          createdDate: Date(),
-                                                          preferredRunDate: preferredRunOperation,
-                                                          historyEvents: [HistoryEvent](),
-                                                          attemptCount: 0,
-                                                          submittedSuccessfullyDate: nil,
-                                                          extractedProfile: extractedProfile,
-                                                          sevenDaysConfirmationPixelFired: false,
-                                                          fourteenDaysConfirmationPixelFired: false,
-                                                          twentyOneDaysConfirmationPixelFired: false)
-
-                        try database.saveOptOutJob(optOut: optOutJobData, extractedProfile: extractedProfile)
-
-                        Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
+                        try handleNewScanProfile(
+                            extractedProfile,
+                            brokerProfileQueryData: brokerProfileQueryData,
+                            brokerId: brokerId,
+                            profileQueryId: profileQueryId,
+                            database: database,
+                            eventPixels: eventPixels
+                        )
                     }
                 }
             } else {
@@ -261,6 +243,41 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
     // swiftlint:enable cyclomatic_complexity
+
+    private func handleNewScanProfile(_ extractedProfile: ExtractedProfile,
+                                      brokerProfileQueryData: BrokerProfileQueryData,
+                                      brokerId: Int64,
+                                      profileQueryId: Int64,
+                                      database: DataBrokerProtectionRepository,
+                                      eventPixels: DataBrokerProtectionEventPixels) throws {
+        // If it's a new found profile, we'd like to opt-out ASAP
+        // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation within the parent.
+        eventPixels.fireNewMatchEventPixel()
+        let broker = brokerProfileQueryData.dataBroker
+        let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
+
+        // If profile does not exist we insert the new profile and we create the opt-out operation
+        //
+        // This is done inside a transaction on the database side. We insert the extracted profile and then
+        // we insert the opt-out operation, we do not want to do things separately in case creating an opt-out fails
+        // causing the extracted profile to be orphan.
+        let optOutJobData = OptOutJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            createdDate: Date(),
+            preferredRunDate: preferredRunOperation,
+            historyEvents: [],
+            attemptCount: 0,
+            submittedSuccessfullyDate: nil,
+            extractedProfile: extractedProfile,
+            sevenDaysConfirmationPixelFired: false,
+            fourteenDaysConfirmationPixelFired: false,
+            twentyOneDaysConfirmationPixelFired: false
+        )
+
+        try database.saveOptOutJob(optOut: optOutJobData, extractedProfile: extractedProfile)
+        Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
+    }
 
     private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService,
                                                            database: DataBrokerProtectionRepository) {

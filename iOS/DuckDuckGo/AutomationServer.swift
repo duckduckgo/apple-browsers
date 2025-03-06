@@ -80,7 +80,10 @@ final class AutomationServer {
 
             if let error {
                 Logger.automationServer.error("Error: \(error)")
-                return
+                // It appears ECANCELED is a common error when the connection is cancelled, yet ok.
+                if error.errorCode != ECANCELED {
+                    return
+                }
             }
 
             if let content {

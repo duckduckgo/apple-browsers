@@ -24,9 +24,14 @@ import DataBrokerProtection
 struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
     let vpnConnectionState: String
     let vpnBypassStatus: String
+
+    enum CodingKeys: String, CodingKey {
+        case vpnConnectionState = "vpn_connection_state"
+        case vpnBypassStatus = "vpn_bypass_status"
+    }
 }
 
-final class DBPMetadataCollector: UnifiedMetadataCollector {
+final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
     private let vpnIPCClient: VPNControllerXPCClient
     private let dbpSettings: DataBrokerProtectionSettings
 

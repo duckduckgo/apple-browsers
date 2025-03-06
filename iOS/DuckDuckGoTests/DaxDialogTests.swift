@@ -1004,6 +1004,32 @@ final class DaxDialog: XCTestCase {
         XCTAssertNotEqual(result, .privacyProPromotion)
     }
 
+    func testWhenPrivacyProPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        let sut = makeSUT(settings: settings)
+        XCTAssertFalse(settings.privacyProPromotionDialogShown)
+
+        // WHEN
+        sut.privacyProPromotionDialogSeen = true
+
+        // THEN
+        XCTAssertTrue(settings.privacyProPromotionDialogShown)
+    }
+
+    func testWhenPrivacyProPromotionDialogSeenIsGet_ThenSettingsValueIsReturned() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.privacyProPromotionDialogShown = true
+        let sut = makeSUT(settings: settings)
+
+        // WHEN
+        let result = sut.privacyProPromotionDialogSeen
+
+        // THEN
+        XCTAssertTrue(result)
+    }
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,

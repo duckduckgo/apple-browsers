@@ -173,7 +173,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     }
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation))
+        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanFailed() {
@@ -216,7 +216,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 duration: durationSinceStartTime(),
                 category: errorCategory.toString,
                 details: error.localizedDescription,
-                isImmediateOperation: isImmediateOperation
+                isImmediateOperation: isImmediateOperation,
+                vpnConnectionState: vpnConnectionState,
+                vpnBypassStatus: vpnBypassStatus
             )
         )
     }

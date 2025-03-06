@@ -1,5 +1,5 @@
 //
-//  YoutubeOembedTests.swift
+//  YoutubeOembedServiceTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,19 +21,19 @@ import XCTest
 @testable import DuckDuckGo
 
 final class YoutubeOembedServiceTests: XCTestCase {
-    
+
     let sut = DefaultYoutubeOembedService()
-    
+
     override func setUp() {
         super.setUp()
         URLProtocol.registerClass(MockURLProtocol.self)
     }
-    
+
     override func tearDown() {
         URLProtocol.unregisterClass(MockURLProtocol.self)
         super.tearDown()
     }
-    
+
     func testSuccessfulMetadataFetch() async throws {
         // Given
         MockURLProtocol.responseData = """
@@ -43,23 +43,23 @@ final class YoutubeOembedServiceTests: XCTestCase {
             "thumbnail_url": "https://test.com/thumb.jpg"
         }
         """.data(using: .utf8)!
-        
+
         // When
         let result = await sut.fetchMetadata(for: "test123")
-        
+
         // Then
         XCTAssertEqual(result?.title, "Test Video")
         XCTAssertEqual(result?.author_name, "Test Channel")
         XCTAssertEqual(result?.thumbnail_url, "https://test.com/thumb.jpg")
     }
-    
+
     func testFailedMetadataFetch() async {
         // Given
         MockURLProtocol.responseData = "invalid json".data(using: .utf8)!
-        
+
         // When
         let result = await sut.fetchMetadata(for: "test123")
-        
+
         // Then
         XCTAssertNil(result)
     }
@@ -67,21 +67,20 @@ final class YoutubeOembedServiceTests: XCTestCase {
 
 private class MockURLProtocol: URLProtocol {
     static var responseData = Data()
-    
+
     override class func canInit(with request: URLRequest) -> Bool {
         return true
     }
-    
+
     override class func canonicalRequest(for request: URLRequest) -> URLRequest {
         return request
     }
-    
+
     override func startLoading() {
         client?.urlProtocol(self, didReceive: HTTPURLResponse(), cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: MockURLProtocol.responseData)
         client?.urlProtocolDidFinishLoading(self)
     }
-    
+
     override func stopLoading() {}
 }
-

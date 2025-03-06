@@ -59,14 +59,14 @@ final class URLExtensionTests {
         ("http://[::]:8080", #line),
         ("https://www.duckduckgo.com/html?q =search", #line),
     ]
-    
+
     @Test("Navigational URLs are valid", arguments: navigational_urls_args)
     func navigational_urls_are_valid(rawValue: String, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
             return
         }
-        
+
         let url = rawValue.decodedURL
         #expect(url != nil, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
         #expect(url!.isValid, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
@@ -76,7 +76,7 @@ final class URLExtensionTests {
         "about:user:pass@blank",
         "data:user:pass@text/vnd-example+xyz;foo=bar;base64,R0lGODdh",
     ]
-    
+
     @Test("Non-valid URLs")
     func non_valid_urls() throws {
         if #available(macOS 14, *) {
@@ -141,14 +141,14 @@ final class URLExtensionTests {
         ("sheep%2B:P%40%24swrd@192.168.1.1/", "sheep+", "P@$swrd", #line),
         ("sheep%2B:P%40%24swrd@192.168.1.1:8900/", "sheep+", "P@$swrd", #line),
     ]
-    
+
     @Test("Basic auth credentials are correctly extracted from URLs", arguments: basicAuthCredential_args)
     func basicAuthCredential(url: String, user: String?, password: String?, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
             return
         }
-        
+
         let credential = url.decodedURL!.basicAuthCredential
         #expect(credential?.user == user, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
         #expect(credential?.password == password, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
@@ -171,14 +171,14 @@ final class URLExtensionTests {
         ("sheep%2B:P%40%24swrd@192.168.1.1:8900", "http://192.168.1.1:8900", #line),
         ("sheep%2B:P%40%24swrd@192.168.1.1:8900/", "http://192.168.1.1:8900/", #line),
     ]
-    
+
     @Test("Basic auth credentials are correctly removed from URLs", arguments: urlRemovingBasicAuthCredential_args)
     func urlRemovingBasicAuthCredential(url: String, removingCredential: String, line: UInt) throws {
         if #available(macOS 14, *) {
             // This test can't run on macOS 14 or higher
             return
         }
-        
+
         let filtered = url.decodedURL!.removingBasicAuthCredential()
         #expect(filtered.absoluteString == removingCredential, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
     }
@@ -222,7 +222,7 @@ final class URLExtensionTests {
         (";", ";", "https://duck.com/?%3B=%3B", #line),
         ("=", "=", "https://duck.com/?%3D=%3D", #line),
     ]
-    
+
     @Test("URL.appendingParameter correctly encodes RFC3986 reserved characters", arguments: rfc3986QueryReservedChars_args)
     func addParameterIsCalled_encodesRFC3986QueryReservedCharactersInTheParameter(name: String, value: String, expected: String, line: UInt) {
         let url = URL(string: "https://duck.com/")!
@@ -292,7 +292,7 @@ final class URLExtensionTests {
         ("file:///users/user/Documents/afile", nil, #line),
         ("https://www.duckduckgo.com/html?q =search", "https://www.duckduckgo.com/html?q%20=search", #line),
     ]
-    
+
     @Test("URL.trimmedAddressBarString correctly parses various address bar inputs", arguments: addressBarURLParsing_args)
     func addressBarURLParsing(address: String, expectation: String? = nil, line: UInt) {
         let url = URL(trimmedAddressBarString: address)
@@ -353,7 +353,7 @@ final class URLExtensionTests {
         ("https://💩.la/path/to/resource?query=true", "https://xn--ls8h.la/path/to/resource?query=true", #line),
         ("https://💩.la/💩", "https://xn--ls8h.la/%F0%9F%92%A9", #line),
     ]
-    
+
     @Test("URL.trimmedAddressBarString correctly handles punycode URLs", arguments: punycodeUrls_args)
     func punycodeUrlIsCalledWithEncodedUrlsReturnsCorrectURL(input: String, expected: String, line: UInt) {
         #expect(input.decodedURL?.absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
@@ -471,13 +471,13 @@ final class URLExtensionTests {
         ("https://youtube.com/#link#1", "https://youtube.com#link#1", true, #line),
         ("https://youtube.com/#link#1", "https://youtube.com/#link#1", true, #line),
         ("https://youtube.com#link#1", "https://youtube.com/#link#1", true, #line),
-        
+
         ("youtube.com", "https://youtube.com", false, #line),
         ("youtube.com/", "https://youtube.com", false, #line),
         ("youtube.com/#link#1", "https://youtube.com#link#2", false, #line),
         ("youtube.com/#link#1", "https://youtube.com#link", false, #line),
     ]
-    
+
     @Test("URL.matches correctly compares URLs", arguments: matches_comparator_args)
     func matchesComparator(url1: String, url2: String, expected: Bool, line: UInt) {
         if expected {
@@ -491,12 +491,12 @@ final class URLExtensionTests {
         ("youtube.com", "youtube.com", 80, "http", true, #line),
         ("http://youtube.com", "youtube.com", 80, "http", true, #line),
         ("https://youtube.com:123", "youtube.com", 123, "https", true, #line),
-        
+
         ("https://youtube.com:123", "youtube.com", 1234, "https", false, #line),
         ("https://youtube.com:123", "youtube.com", 123, "http", false, #line),
         ("https://www.youtube.com:123", "youtube.com", 123, "https", false, #line),
     ]
-    
+
     @Test("URL.matches correctly matches against protection spaces", arguments: matches_protection_space_args)
     func matchesProtectionSpace(url: String, host: String, port: Int, scheme: String, expected: Bool, line: UInt) {
         let protectionSpace = URLProtectionSpace(host: host, port: port, protocol: scheme, realm: "realm", authenticationMethod: "basic")
@@ -574,77 +574,77 @@ final class URLExtensionTests {
     @Test("URL.trimmedAddressBarString handles user and password information correctly")
     func userInfoDoesNotContaintPassword_NavigateToSearch() {
         #expect(URL(trimmedAddressBarString: "user@domain.com") == nil)
-        
+
         let url1 = URL(trimmedAddressBarString: "user: @domain.com")
         #expect(url1?.host == "domain.com")
         #expect(url1?.user(percentEncoded: false) == "user")
         #expect(url1?.password(percentEncoded: false) == " ")
-        
+
         let url2 = URL(trimmedAddressBarString: "user:,,@domain.com")
         #expect(url2?.host == "domain.com")
         #expect(url2?.user(percentEncoded: false) == "user")
         #expect(url2?.password(percentEncoded: false) == ",,")
-        
+
         let url3 = URL(trimmedAddressBarString: "user:pass@domain.com")
         #expect(url3?.host == "domain.com")
         #expect(url3?.user(percentEncoded: false) == "user")
         #expect(url3?.password(percentEncoded: false) == "pass")
     }
-    
+
     @Test("URL handles spaces in path, query, and fragment components")
     func normalizingURLsWithSpacesInDifferentComponents() throws {
         // Path with spaces
         let urlWithSpacesInPath = URL(string: "https://example.com/path with spaces/file.html")
         #expect(urlWithSpacesInPath?.absoluteString == "https://example.com/path%20with%20spaces/file.html")
-        
+
         // Query with spaces
         let urlWithSpacesInQuery = URL(string: "https://example.com/search?q=test query&page=1")
         #expect(urlWithSpacesInQuery?.absoluteString == "https://example.com/search?q=test%20query&page=1")
-        
+
         // Fragment with spaces
         let urlWithSpacesInFragment = URL(string: "https://example.com/page#section with spaces")
         #expect(urlWithSpacesInFragment?.absoluteString == "https://example.com/page#section%20with%20spaces")
     }
-    
+
     @Test("URL correctly handles international characters")
     func internationalCharactersInURLComponents() throws {
         // Test with international characters in path
         let urlWithInternationalPath = URL(string: "https://example.com/пример/测试")
         #expect(urlWithInternationalPath?.absoluteString == "https://example.com/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80/%E6%B5%8B%E8%AF%95")
-        
+
         // Test with international characters in query
         let urlWithInternationalQuery = URL(string: "https://example.com/search?q=こんにちは")
         #expect(urlWithInternationalQuery?.absoluteString == "https://example.com/search?q=%E3%81%93%E3%82%93%E3%81%AB%E3%81%A1%E3%81%AF")
     }
-    
+
     @Test("URL correctly handles spaces specifically in auth, path, and query parameters")
     func spacesInAuthPathAndQueryParameters() throws {
         // URL with spaces in auth
         let urlWithSpacesInAuth = URL(string: "https://user name:pass word@example.com")
         #expect(urlWithSpacesInAuth?.absoluteString == "https://user%20name:pass%20word@example.com")
-        
+
         // URL with spaces in path
         let urlWithSpacesInPath = URL(string: "https://example.com/path with/spaces here")
         #expect(urlWithSpacesInPath?.absoluteString == "https://example.com/path%20with/spaces%20here")
-        
-        // URL with spaces in query parameters 
+
+        // URL with spaces in query parameters
         let urlWithSpacesInQueryParams = URL(string: "https://example.com/search?query=hello world&category=books and magazines")
         #expect(urlWithSpacesInQueryParams?.absoluteString == "https://example.com/search?query=hello%20world&category=books%20and%20magazines")
     }
-    
+
     @Test("URL maintains plus signs in query parameters")
     func plusSignsInQueryParametersArePreserved() throws {
         let url = URL(string: "https://example.com/search?q=c++programming&lang=c++")?
             .appendingParameter(name: "rating", value: "4+")
-        
+
         #expect(url?.absoluteString == "https://example.com/search?q=c++programming&lang=c++&rating=4%2B")
     }
-    
+
     @Test("URL handles email addresses in mailto: URLs correctly")
     func emailAddressesInMailtoURLs() throws {
         let url = URL(string: "mailto:test@example.com,user@domain.com")
         #expect(url?.absoluteString == "mailto:test@example.com,user@domain.com")
-        
+
         let emailAddresses = url?.emailAddresses
         #expect(emailAddresses?.count == 2)
         #expect(emailAddresses?[0] == "test@example.com")
@@ -665,13 +665,13 @@ extension URL {
     func removeParameter(name: String) -> URL {
         return self.removingParameters(named: [name])
     }
-    
+
     var emailAddresses: [String]? {
         guard scheme == "mailto" else { return nil }
-        
+
         // Extract email part after mailto:
         let emailsString = absoluteString.replacingOccurrences(of: "mailto:", with: "")
-        
+
         // Split by comma and filter out empty strings
         return emailsString.components(separatedBy: ",")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }

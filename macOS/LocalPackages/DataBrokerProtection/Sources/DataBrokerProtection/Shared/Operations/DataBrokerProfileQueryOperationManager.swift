@@ -115,8 +115,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                    shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
-        // 1. Validate that the broker and profile query data each has an ID:
-        guard let brokerId = brokerProfileQueryData.dataBroker.id, let profileQueryId = brokerProfileQueryData.profileQuery.id else {
+        // 1. Validate that the broker and profile query data objects each have an ID:
+        guard let brokerId = brokerProfileQueryData.dataBroker.id,
+              let profileQueryId = brokerProfileQueryData.profileQuery.id else {
             // Maybe send pixel?
             throw OperationsError.idsMissingForBrokerOrProfileQuery
         }
@@ -129,10 +130,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
         // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
-        let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBroker: brokerProfileQueryData.dataBroker.name,
-                                                                          dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                                          handler: pixelHandler,
-                                                                          isImmediateOperation: isManual)
+        let stageCalculator = DataBrokerProtectionStageDurationCalculator(
+            dataBroker: brokerProfileQueryData.dataBroker.name,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            handler: pixelHandler,
+            isImmediateOperation: isManual
+        )
 
         do {
             // 3. Record the start of the scan job:
@@ -140,22 +143,26 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             try database.add(event)
 
             // 4. Get extracted profiles from the runner:
-            let extractedProfiles = try await runner.scan(brokerProfileQueryData, stageCalculator: stageCalculator, pixelHandler: pixelHandler, showWebView: showWebView, shouldRunNextStep: shouldRunNextStep)
-            Logger.dataBrokerProtection.log("Extracted profiles: \(extractedProfiles)")
+            let extractedProfiles = try await runner.scan(
+                brokerProfileQueryData,
+                stageCalculator: stageCalculator,
+                pixelHandler: pixelHandler,
+                showWebView: showWebView,
+                shouldRunNextStep: shouldRunNextStep
+            )
 
-            // 5. Handle the profiles reported by the runner:
+            Logger.dataBrokerProtection.log("OperationManager found extracted profiles: \(extractedProfiles)")
+
+            // 5. Handle the extracted profiles reported by the runner:
             if !extractedProfiles.isEmpty {
-
-                // 5a. Iterate over found profiles:
-                stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
-                let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .matchesFound(count: extractedProfiles.count))
-                try database.add(event)
+                // 5a. Iterate over found profiles and process them:
                 try processExtractedScanProfiles(extractedProfiles: extractedProfiles,
                                                  brokerProfileQueryData: brokerProfileQueryData,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,
                                                  database: database,
-                                                 eventPixels: eventPixels)
+                                                 eventPixels: eventPixels,
+                                                 stageCalculator: stageCalculator)
             } else {
                 // 5b. Report the status of the scan, which found no matches:
                 try processNoScanMatchesFound(
@@ -166,45 +173,27 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 )
             }
 
-            // Check for removed profiles
+            // 6. Check for removed profiles:
             let removedProfiles = brokerProfileQueryData.extractedProfiles.filter { savedProfile in
                 !extractedProfiles.contains { recentlyFoundProfile in
                     recentlyFoundProfile.identifier == savedProfile.identifier
                 }
             }
 
+            // 7. Handle removed profiles:
             if !removedProfiles.isEmpty {
-                var shouldSendProfileRemovedNotification = false
-                for removedProfile in removedProfiles {
-                    if let extractedProfileId = removedProfile.id {
-                        let event = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutConfirmed)
-                        try database.add(event)
-                        try database.updateRemovedDate(Date(), on: extractedProfileId)
-                        shouldSendProfileRemovedNotification = true
-                        try updateOperationDataDates(
-                            origin: .scan,
-                            brokerId: brokerId,
-                            profileQueryId: profileQueryId,
-                            extractedProfileId: extractedProfileId,
-                            schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                            database: database
-                        )
-
-                        Logger.dataBrokerProtection.log("Profile removed from optOutsData: \(String(describing: removedProfile))")
-
-                        if let attempt = try database.fetchAttemptInformation(for: extractedProfileId), let attemptUUID = UUID(uuidString: attempt.attemptId) {
-                            let now = Date()
-                            let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
-                            let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
-                            pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-                            pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart, brokerType: brokerProfileQueryData.dataBroker.type))
-                        }
-                    }
-                }
-                if shouldSendProfileRemovedNotification {
-                    sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService, database: database)
-                }
+                // 7a. If there were removed profiles, process them:
+                try processRemovedProfilesForScan(
+                    removedProfiles: removedProfiles,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    brokerProfileQueryData: brokerProfileQueryData,
+                    database: database,
+                    pixelHandler: pixelHandler,
+                    userNotificationService: userNotificationService
+                )
             } else {
+                // 7b. If there were no removed profiles, update the date entries:
                 try updateOperationDataDates(
                     origin: .scan,
                     brokerId: brokerId,
@@ -214,8 +203,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     database: database
                 )
             }
-
         } catch {
+            // 8. Process errors returned by the scan job:
             stageCalculator.fireScanError(error: error)
             handleOperationError(origin: .scan,
                                  brokerId: brokerId,
@@ -234,19 +223,30 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                               brokerId: Int64,
                                               profileQueryId: Int64,
                                               database: DataBrokerProtectionRepository,
-                                              eventPixels: DataBrokerProtectionEventPixels) throws {
+                                              eventPixels: DataBrokerProtectionEventPixels,
+                                              stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+        stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
+
+        let event = HistoryEvent(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            type: .matchesFound(count: extractedProfiles.count)
+        )
+        try database.add(event)
+
         // Fetch the profiles already stored for the broker.
         let existingProfiles = try database.fetchExtractedProfiles(for: brokerId)
+
         for extractedProfile in extractedProfiles {
-            if let alreadyProfile = existingProfiles.first(where: { $0.identifier == extractedProfile.identifier }),
-               let id = alreadyProfile.id {
+            if let existingProfile = existingProfiles.first(where: { $0.identifier == extractedProfile.identifier }),
+               let id = existingProfile.id {
                 // If the profile was previously removed but now reappeared, reset the removal date.
-                if alreadyProfile.removedDate != nil {
+                if existingProfile.removedDate != nil {
                     let reAppearanceEvent = HistoryEvent(extractedProfileId: extractedProfile.id,
                                                          brokerId: brokerId,
                                                          profileQueryId: profileQueryId,
                                                          type: .reAppearence)
-                    eventPixels.fireReAppereanceEventPixel()
+                    eventPixels.fireReappeareanceEventPixel()
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
@@ -269,7 +269,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                       database: DataBrokerProtectionRepository,
                                       eventPixels: DataBrokerProtectionEventPixels) throws {
         // If it's a new found profile, we'd like to opt-out ASAP
-        // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation within the parent.
+        // If this broker has a parent opt out, we set the preferred date to nil, as we will only perform the operation
+        // within the parent.
         eventPixels.fireNewMatchEventPixel()
         let broker = brokerProfileQueryData.dataBroker
         let preferredRunOperation: Date? = broker.performsOptOutWithinParent() ? nil : Date()
@@ -297,6 +298,64 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
     }
 
+    private func processNoScanMatchesFound(brokerId: Int64,
+                                           profileQueryId: Int64,
+                                           database: DataBrokerProtectionRepository,
+                                           stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+        stageCalculator.fireScanFailed()
+        let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
+        try database.add(event)
+    }
+
+    private func processRemovedProfilesForScan(
+        removedProfiles: [ExtractedProfile],
+        brokerId: Int64,
+        profileQueryId: Int64,
+        brokerProfileQueryData: BrokerProfileQueryData,
+        database: DataBrokerProtectionRepository,
+        pixelHandler: EventMapping<DataBrokerProtectionPixels>,
+        userNotificationService: DataBrokerProtectionUserNotificationService
+    ) throws {
+        var shouldSendProfileRemovedNotification = false
+        for removedProfile in removedProfiles {
+            if let extractedProfileId = removedProfile.id {
+                let event = HistoryEvent(
+                    extractedProfileId: extractedProfileId,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    type: .optOutConfirmed
+                )
+                try database.add(event)
+                try database.updateRemovedDate(Date(), on: extractedProfileId)
+                shouldSendProfileRemovedNotification = true
+
+                try updateOperationDataDates(
+                    origin: .scan,
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    extractedProfileId: extractedProfileId,
+                    schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                    database: database
+                )
+
+                Logger.dataBrokerProtection.log("Profile removed from optOutsData: \(String(describing: removedProfile))")
+
+                if let attempt = try database.fetchAttemptInformation(for: extractedProfileId),
+                   let attemptUUID = UUID(uuidString: attempt.attemptId) {
+                    let now = Date()
+                    let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
+                    let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
+                    pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
+                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart, brokerType: brokerProfileQueryData.dataBroker.type))
+                }
+            }
+        }
+
+        if shouldSendProfileRemovedNotification {
+            sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService, database: database)
+        }
+    }
+
     private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService,
                                                            database: DataBrokerProtectionRepository) {
 
@@ -314,15 +373,6 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 userNotificationService.sendFirstRemovedNotificationIfPossible()
             }
         }
-    }
-
-    private func processNoScanMatchesFound(brokerId: Int64,
-                                           profileQueryId: Int64,
-                                           database: DataBrokerProtectionRepository,
-                                           stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
-        stageCalculator.fireScanFailed()
-        let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
-        try database.add(event)
     }
 
     // MARK: - Opt-Out Jobs

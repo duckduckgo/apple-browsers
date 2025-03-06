@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.5.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
         .package(url: "https://github.com/duckduckgo/content-scope-scripts", .revision("8d358efc758541c5e673a060ed2c15240207997f")),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", branch: "pr-releases/pr-354"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", .revision("23231a1e8fa9c9476f0f3481a67b842c9d07d2ca")),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),

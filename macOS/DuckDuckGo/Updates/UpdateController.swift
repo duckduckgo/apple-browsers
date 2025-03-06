@@ -44,6 +44,7 @@ protocol UpdateControllerProtocol: AnyObject {
 
     func checkForUpdateRespectingRollout()
     func checkForUpdateSkippingRollout()
+    func runUpdateFromMenuItem()
     func runUpdate()
 
     var areAutomaticUpdatesEnabled: Bool { get set }
@@ -165,31 +166,57 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
 
+    // Check for updates while adhering to the rollout schedule
+    // This is the default behavior
     func checkForUpdateRespectingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
         Logger.updates.log("Checking for updates respecting rollout")
 
         updater.checkForUpdatesInBackground()
+        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidCheckForUpdateRespectingRollout))
     }
 
+    // Check for updates immediately, bypassing the rollout schedule
+    // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
         guard let updater, !updater.sessionInProgress else { return }
 
         Logger.updates.log("Checking for updates skipping rollout")
 
         updater.checkForUpdates()
+        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidCheckForUpdateSkippingRollout))
     }
 
     // MARK: - Private
 
-    private func configureUpdater() throws {
+    // Determines if a forced update check is necessary
+    //
+    // Due to frequent releases (weekly public, daily internal), the downloaded update
+    // may become obsolete if the user doesn't relaunch the app for an extended period.
+    private var shouldForceUpdateCheck: Bool {
+        let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
+        guard let userDriver, userDriver.daysSinceLastUpdateCheck > thresholdInDays else { return false }
+
+        // This workaround is for internal users for now
+        guard internalUserDecider.isInternalUser else { return false }
+
+        return true
+    }
+
+    // Resets the updater state, configures it with dependencies/settings
+    //
+    // - Parameters:
+    //   - needsUpdateCheck: A flag indicating whether to perform a new appcast check.
+    //     Set to `true` if the pending update might be obsolete.
+    //     Defaults to `false`
+    private func configureUpdater(needsUpdateCheck: Bool = false) throws {
         // Workaround to reset the updater state
         cachedUpdateResult = nil
         latestUpdate = nil
 
-        // The default configuration of Sparkle updates is in Info.plist
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
+                                      hasPendingObsoleteUpdate: needsUpdateCheck,
                                       areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
         guard let userDriver else { return }
 
@@ -204,7 +231,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater?.automaticallyChecksForUpdates = false
         updater?.automaticallyDownloadsUpdates = false
 #else
-        // We don't want SUAutomaticallyUpdate enabled because it interferes with our custom updater UI
+        // Some older version uses SUAutomaticallyUpdate to control app restart behavior
+        // We disable it to prevent interference with our custom updater UI
         if updater?.automaticallyDownloadsUpdates == true {
             updater?.automaticallyDownloadsUpdates = false
         }
@@ -243,10 +271,32 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         notificationPresenter.openUpdatesPage()
     }
 
+    @objc func runUpdateFromMenuItem() {
+        if shouldForceUpdateCheck {
+            openUpdatesPage()
+        }
+
+        runUpdate()
+    }
+
     @objc func runUpdate() {
-        if let userDriver {
-            PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+        guard let userDriver else { return }
+
+        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+
+        guard shouldForceUpdateCheck else {
             userDriver.resume()
+            return
+        }
+
+        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidForceUpdateRecheck))
+
+        userDriver.cancelAndDismissCurrentUpdate()
+        updater = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            try? self?.configureUpdater(needsUpdateCheck: true)
+            self?.checkForUpdateSkippingRollout()
         }
     }
 
@@ -339,7 +389,7 @@ extension UpdateController: SPUUpdaterDelegate {
             Logger.updates.log("cachedUpdateResult: \(cachedUpdateResult.item.displayVersionString, privacy: .public)(\(cachedUpdateResult.item.versionString, privacy: .public))")
         }
         if let state = userDriver?.sparkleUpdateState {
-            Logger.updates.log("Sparkle update state: (userInitiated:  \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
+            Logger.updates.log("Sparkle update state: (userInitiated: \(state.userInitiated, privacy: .public), stage: \(state.stage.rawValue, privacy: .public))")
         } else {
             Logger.updates.log("Sparkle update state: Unknown")
         }

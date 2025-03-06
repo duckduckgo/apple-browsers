@@ -41,12 +41,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209150117333883/f
     case networkProtectionAppExclusions
 
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
-
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -83,8 +77,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualOnboarding,
              .unknownUsernameCategorization,
              .credentialsImportPromotionForExistingUsers,
-             .networkProtectionUserTips,
-             .networkProtectionEnforceRoutes,
              .maliciousSiteProtection:
             return false
         }
@@ -110,10 +102,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .htmlNewTabPage:
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:

@@ -88,7 +88,7 @@ final class AutofillService {
             assertionFailure("SyncService must be injected before calling onForeground.")
             return
         }
-        let importPasswordsStatusHandler = ImportPasswordsStatusHandler(syncService: syncService.sync)
+        let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService.sync)
         importPasswordsStatusHandler.checkSyncSuccessStatus()
     }
 

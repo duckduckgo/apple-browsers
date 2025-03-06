@@ -29,13 +29,17 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatFeatureEnabled: Bool
     public var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool
     public var isAIChatAddressBarShortcutFeatureEnabled: Bool
+    public var isAIChatVoiceSearchFeatureEnabled: Bool
+    public var isAIChatVoiceSearchUserSettingsEnabled: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
                 isAIChatAddressBarUserSettingsEnabled: Bool = false,
                 isAIChatBrowsingMenuUserSettingsEnabled: Bool = false,
                 isAIChatFeatureEnabled: Bool = false,
                 isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool = false,
-                isAIChatAddressBarShortcutFeatureEnabled: Bool = false) {
+                isAIChatAddressBarShortcutFeatureEnabled: Bool = false,
+                isAIChatVoiceSearchFeatureEnabled: Bool = false,
+                isAIChatVoiceSearchUserSettingsEnabled: Bool = false) {
 
         self.aiChatURL = aiChatURL
         self.isAIChatAddressBarUserSettingsEnabled = isAIChatAddressBarUserSettingsEnabled
@@ -43,6 +47,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatFeatureEnabled = isAIChatFeatureEnabled
         self.isAIChatBrowsingMenubarShortcutFeatureEnabled = isAIChatBrowsingMenubarShortcutFeatureEnabled
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
+        self.isAIChatVoiceSearchFeatureEnabled = isAIChatVoiceSearchFeatureEnabled
+        self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
     }
     
     public func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -52,4 +58,9 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public func enableAIChatAddressBarUserSettings(enable: Bool) {
         isAIChatAddressBarUserSettingsEnabled = enable
     }
+
+    public func enableAIChatVoiceSearchUserSettings(enable: Bool) {
+        isAIChatVoiceSearchUserSettingsEnabled = enable
+    }
+
 }

@@ -61,11 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN Açık";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Favori işlemlerin için kısayollar seç.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Özel Kısayollar";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Kısayollarını seç";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Sol Kısayol";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Sağ Kısayol";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Kısayolları Yapılandır";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Kayıtlı DuckDuckGo şifrelerinizi hızlıca arayın.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Şifreleri ara";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Favori işlemleriniz için kısayollar.";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Kısayollar";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Tek bir dokunuşla favori sitelerinizi gizlice arayın veya ziyaret edin.";

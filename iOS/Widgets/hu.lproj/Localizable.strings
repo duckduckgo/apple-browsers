@@ -61,11 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN csatlakoztatva";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Válassz gyorsparancsokat kedvenc műveleteidhez.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Egyéni gyorsparancsok";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Válassz gyorsparancsokat";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Bal oldali gyorsparancs";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Jobb oldali gyorsparancs";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Gyorsparancsok konfigurálása";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Gyorsan kereshetsz a DuckDuckGo mentett jelszavai között.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Jelszavak keresése";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Gyorsparancsok a kedvenc műveleteidhez.";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Gyorsparancsok";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Látogasd meg a kedvenc weboldalaidat és keress rajtuk privát módon, mindössze egyetlen koppintással.";

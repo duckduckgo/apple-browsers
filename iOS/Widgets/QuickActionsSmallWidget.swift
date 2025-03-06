@@ -108,7 +108,7 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
 
 @available(iOS 17.0, *)
 struct QuickActionsSmallWidget: Widget {
-    let kind: String = "QuickActionsSmallWidget"
+    let kind: String = "QuickActionsWidget"
 
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ConfigurationIntent.self, provider: QuickActionsProvider()) { entry in

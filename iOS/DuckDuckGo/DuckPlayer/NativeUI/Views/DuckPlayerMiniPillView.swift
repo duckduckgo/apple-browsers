@@ -27,7 +27,7 @@ struct AnimatedAsyncImage: View {
     let height: CGFloat
 
     struct Constants {
-        static let backgroundColor: Color = .gray.opacity(0.3)        
+        static let backgroundColor: Color = .gray.opacity(0.3)
     }
 
     private var placeholderView: some View {

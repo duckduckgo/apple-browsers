@@ -349,4 +349,3 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     }
 
 }
-

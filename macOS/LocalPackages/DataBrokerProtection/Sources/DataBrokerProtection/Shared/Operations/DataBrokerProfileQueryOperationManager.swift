@@ -165,7 +165,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                                  stageCalculator: stageCalculator)
             } else {
                 // 5b. Report the status of the scan, which found no matches:
-                try processNoScanMatchesFound(
+                try storeFailedScanEvent(
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
                     database: database,
@@ -173,7 +173,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 )
             }
 
-            // 6. Check for removed profiles:
+            // 6. Check for removed profiles by comparing the set of saved profiles to those just found via scan:
             let removedProfiles = brokerProfileQueryData.extractedProfiles.filter { savedProfile in
                 !extractedProfiles.contains { recentlyFoundProfile in
                     recentlyFoundProfile.identifier == savedProfile.identifier
@@ -252,7 +252,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 }
                 Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
             } else {
-                try handleNewScanProfile(extractedProfile,
+                try scheduleNewOptOutJob(from: extractedProfile,
                                          brokerProfileQueryData: brokerProfileQueryData,
                                          brokerId: brokerId,
                                          profileQueryId: profileQueryId,
@@ -262,7 +262,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
-    private func handleNewScanProfile(_ extractedProfile: ExtractedProfile,
+    private func scheduleNewOptOutJob(from extractedProfile: ExtractedProfile,
                                       brokerProfileQueryData: BrokerProfileQueryData,
                                       brokerId: Int64,
                                       profileQueryId: Int64,
@@ -298,10 +298,10 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         Logger.dataBrokerProtection.log("Creating new opt-out operation data for: \(String(describing: extractedProfile.name))")
     }
 
-    private func processNoScanMatchesFound(brokerId: Int64,
-                                           profileQueryId: Int64,
-                                           database: DataBrokerProtectionRepository,
-                                           stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+    private func storeFailedScanEvent(brokerId: Int64,
+                                      profileQueryId: Int64,
+                                      database: DataBrokerProtectionRepository,
+                                      stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
         stageCalculator.fireScanFailed()
         let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
         try database.add(event)

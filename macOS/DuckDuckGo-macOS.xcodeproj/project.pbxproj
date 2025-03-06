@@ -3008,6 +3008,8 @@
 		BD7090D72C540D5D009EED82 /* EmptyMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD7090D52C540D5D009EED82 /* EmptyMetadataCollector.swift */; };
 		BD88A83E2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD88A83D2C4F3E4300460A26 /* FeedbackCategoryProviding.swift */; };
 		BD88A83F2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD88A83D2C4F3E4300460A26 /* FeedbackCategoryProviding.swift */; };
+		BD94DDF82D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD94DDF72D7A0CEC0090A599 /* DBPMetadataCollector.swift */; };
+		BD94DDF92D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD94DDF72D7A0CEC0090A599 /* DBPMetadataCollector.swift */; };
 		BDA7647C2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA7647B2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift */; };
 		BDA7647D2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA7647B2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift */; };
 		BDA7647F2BC4998900D0400C /* DefaultVPNLocationFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDA7647B2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift */; };
@@ -5062,6 +5064,7 @@
 		BD7090D12C52ECFE009EED82 /* UnifiedMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedMetadataCollector.swift; sourceTree = "<group>"; };
 		BD7090D52C540D5D009EED82 /* EmptyMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyMetadataCollector.swift; sourceTree = "<group>"; };
 		BD88A83D2C4F3E4300460A26 /* FeedbackCategoryProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackCategoryProviding.swift; sourceTree = "<group>"; };
+		BD94DDF72D7A0CEC0090A599 /* DBPMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DBPMetadataCollector.swift; sourceTree = "<group>"; };
 		BDA7647B2BC497BE00D0400C /* DefaultVPNLocationFormatter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultVPNLocationFormatter.swift; sourceTree = "<group>"; };
 		BDA7648C2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultVPNLocationFormatterTests.swift; sourceTree = "<group>"; };
 		BDA764902BC4E57200D0400C /* MockVPNLocationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVPNLocationFormatter.swift; sourceTree = "<group>"; };
@@ -9864,6 +9867,7 @@
 			children = (
 				BD7090D12C52ECFE009EED82 /* UnifiedMetadataCollector.swift */,
 				BD7090D52C540D5D009EED82 /* EmptyMetadataCollector.swift */,
+				BD94DDF72D7A0CEC0090A599 /* DBPMetadataCollector.swift */,
 			);
 			path = MetadataCollectors;
 			sourceTree = "<group>";
@@ -12179,6 +12183,7 @@
 				3706FBB6293F65D500E42796 /* ChromiumPreferences.swift in Sources */,
 				85B49AFB2CD1B7C5007FAA2A /* SystemInfo.swift in Sources */,
 				7B93A68B2D4A5AF200E9FFC1 /* ExcludedAppsModel.swift in Sources */,
+				BD94DDF92D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,
 				3706FBB7293F65D500E42796 /* FirePopoverViewController.swift in Sources */,
 				3706FBB8293F65D500E42796 /* SavePaymentMethodPopover.swift in Sources */,
 				B6CC266D2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */,
@@ -14201,6 +14206,7 @@
 				B687B7CA2947A029001DEA6F /* ContentBlockingTabExtension.swift in Sources */,
 				85B7184C27677C6500B4277F /* OnboardingViewController.swift in Sources */,
 				4B379C1E27BDB7FF008A968E /* DeviceAuthenticator.swift in Sources */,
+				BD94DDF82D7A0CEC0090A599 /* DBPMetadataCollector.swift in Sources */,
 				1456D6E124EFCBC300775049 /* TabBarCollectionView.swift in Sources */,
 				C181945F2C7CDD0E00381092 /* PromotionViewModel.swift in Sources */,
 				4B4D60BF2A0C848A00BCD287 /* NetworkProtection+ConvenienceInitializers.swift in Sources */,

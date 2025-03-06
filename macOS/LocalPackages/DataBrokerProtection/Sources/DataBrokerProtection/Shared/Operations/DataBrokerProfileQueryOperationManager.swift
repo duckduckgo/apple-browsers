@@ -18,6 +18,8 @@
 
 import Foundation
 import Common
+import NetworkProtection
+import NetworkProtectionIPC
 import os.log
 
 enum OperationsError: Error {
@@ -66,6 +68,16 @@ extension OperationsManager {
 }
 
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
+    private let vpnIPCClient: VPNControllerXPCClient
+    private let dbpSettings: DataBrokerProtectionSettings
+
+    init() {
+        let ipcClient = VPNControllerXPCClient(machServiceName: Bundle.main.vpnMenuAgentBundleId)
+        ipcClient.register { _ in }
+
+        self.vpnIPCClient = ipcClient
+        self.dbpSettings = DataBrokerProtectionSettings()
+    }
 
     internal func runOperation(operationData: BrokerJobData,
                                brokerProfileQueryData: BrokerProfileQueryData,
@@ -125,10 +137,14 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
-        let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBroker: brokerProfileQueryData.dataBroker.name,
-                                                                          dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                                          handler: pixelHandler,
-                                                                          isImmediateOperation: isManual)
+        let stageCalculator = DataBrokerProtectionStageDurationCalculator(
+            dataBroker: brokerProfileQueryData.dataBroker.name,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            handler: pixelHandler,
+            isImmediateOperation: isManual,
+            vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
+            vpnExclusionStatus: dbpSettings.vpnExclusionStatus.rawValue
+        )
 
         do {
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
@@ -301,9 +317,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         let retriesCalculatorUseCase = OperationRetriesCalculatorUseCase()
-        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(dataBroker: brokerProfileQueryData.dataBroker.url,
-                                                                                  dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                                                  handler: pixelHandler)
+        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
+            dataBroker: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            handler: pixelHandler,
+            vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
+            vpnExclusionStatus: dbpSettings.vpnExclusionStatus.rawValue
+        )
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
@@ -447,5 +467,18 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
+    }
+}
+
+extension Bundle {
+    struct Keys {
+        static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
+    }
+
+    var vpnMenuAgentBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Keys.vpnMenuAgentBundleId) as? String else {
+            fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
+        }
+        return bundleID
     }
 }

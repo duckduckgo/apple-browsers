@@ -320,17 +320,8 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-#if APPSTORE
-        #if NETP_SYSTEM_EXTENSION
-        let vpnExclusionSupport = true
-        #else
-        let vpnExclusionSupport = false
-        #endif
-#else
-        let vpnExclusionSupport = true
-#endif
         return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnExclusionSupport]
+                DBPDeviceCapability.excludeVpnTraffic: dbpSettings.vpnExclusionSupport]
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {

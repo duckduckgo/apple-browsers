@@ -110,6 +110,23 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
+    public var vpnExclusionSupport: Bool {
+#if APPSTORE
+#if NETP_SYSTEM_EXTENSION
+        return true
+#else
+        return false
+#endif
+#else
+        return true
+#endif
+    }
+
+    public var vpnExclusionStatus: VPNExclusionStatus {
+        guard vpnExclusionSupport else { return .unsupported }
+        return vpnBypass ? .on : .off
+    }
+
     public var vpnBypassOnboardingShownPublisher: AnyPublisher<Bool, Never> {
         defaults.dataBrokerProtectionVPNBypassOnboardingShownPublisher
     }

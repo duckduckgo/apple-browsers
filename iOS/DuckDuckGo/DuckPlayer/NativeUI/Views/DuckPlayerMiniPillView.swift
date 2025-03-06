@@ -27,41 +27,26 @@ struct AnimatedAsyncImage: View {
     let height: CGFloat
 
     struct Constants {
-        static let backgroundColor: Color = .gray.opacity(0.3)
+        static let backgroundColor: Color = .gray.opacity(0.3)        
+    }
+
+    private var placeholderView: some View {
+        Rectangle()
+            .foregroundColor(Constants.backgroundColor)
+            .frame(width: width, height: height)
     }
 
     var body: some View {
-        if let url = url {
-            ZStack {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .empty:
-                        Rectangle()
-                            .foregroundColor(Constants.backgroundColor)
-                            .frame(width: width, height: height)
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .transition(.opacity.combined(with: .scale))
-                    case .failure:
-                        Rectangle()
-                            .foregroundColor(Constants.backgroundColor)
-                            .frame(width: width, height: height)
-                    @unknown default:
-                        Rectangle()
-                            .foregroundColor(Constants.backgroundColor)
-                            .frame(width: width, height: height)
-                    }
-                }
-                .animation(.easeInOut(duration: 0.3), value: url)
-                .id(url.absoluteString)
-            }
-        } else {
-            Rectangle()
-                .foregroundColor(Color.gray.opacity(0.3))
-                .frame(width: width, height: height)
+        AsyncImage(url: url) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .transition(.opacity.combined(with: .scale))
+        } placeholder: {
+            placeholderView
         }
+        .animation(.easeInOut(duration: 0.3), value: url)
+        .id(url?.absoluteString ?? "")
     }
 }
 

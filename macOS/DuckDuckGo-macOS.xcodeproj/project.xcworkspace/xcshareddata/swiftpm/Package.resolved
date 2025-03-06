@@ -33,7 +33,7 @@
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
         "branch" : "pr-releases/pr-1518",
-        "revision" : "52990b2798fc903dd4432b161afd10b5152e786e"
+        "revision" : "932a1c7555ee537972a656a405536105b7bba597"
       }
     },
     {
@@ -105,7 +105,7 @@
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
         "branch" : "pr-releases/pr-354",
-        "revision" : "23231a1e8fa9c9476f0f3481a67b842c9d07d2ca"
+        "revision" : "e2406d21c597a43992375b67013591a0b8cdd853"
       }
     },
     {

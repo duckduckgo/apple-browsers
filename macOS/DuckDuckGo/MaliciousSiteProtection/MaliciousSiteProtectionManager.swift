@@ -49,13 +49,13 @@ extension MaliciousSiteProtectionManager {
     struct EmbeddedDataProvider: MaliciousSiteProtection.EmbeddedDataProviding {
 
         private enum Constants {
-            static let embeddedDataRevision = 1722335
-            static let phishingEmbeddedHashPrefixDataSHA = "fbfabb814ddd951a35ed23f46c33d08a5c3dcd4f834ec2e10afdd6a28893f598"
-            static let phishingEmbeddedFilterSetDataSHA = "601b7aef8d931a50491230514a6b6b4960d1351c77b5275c855a71e90ffcd5b8"
-            static let malwareEmbeddedHashPrefixDataSHA = "3dc0d2e93b0fcde825f718139aada908f344e7b326a216daa18784f4bca26bf9"
-            static let malwareEmbeddedFilterSetDataSHA = "696d2987eaba60ea441ea8e0aafd30ce846e29b649a3f925588365e9c9ed34dc"
-            static let scamEmbeddedHashPrefixDataSHA = "5eb71ef7383aa1d3aceff45c78e64eefd09659e3b2b36a5504a17202bbb2d032"
-            static let scamEmbeddedFilterSetDataSHA = "5c3a74f9fb3b639c358c2b75a60e151d75addbbedee0cab8e012fbf0f00d2a8f"
+            static let embeddedDataRevision = 1722371
+            static let phishingEmbeddedHashPrefixDataSHA = "96e02c6db46c3366d6cf01ddb73a6659706aa1880fd587d3f86ef002b338b7e9"
+            static let phishingEmbeddedFilterSetDataSHA = "ad9bc67df0d7d98bd8e90a9f3b98acf2b4984475834c40cb382b2b7b2d9f8986"
+            static let malwareEmbeddedHashPrefixDataSHA = "d892fe0cd99569e91e26d0d3fbfd2b7283d05c5ad0b7f68242699cfddea844c4"
+            static let malwareEmbeddedFilterSetDataSHA = "810c0a2825e75810a7a8ad52b3cf7b68168b44f09227c39ce12b4de6432d3e70"
+            static let scamEmbeddedHashPrefixDataSHA = "71816131c9eed5e2f63274c05fa4327bb74f380a0d9bf216f5e9dfb2b92730fe"
+            static let scamEmbeddedFilterSetDataSHA = "f623af43429ec10a1cbc2c7052f1887196e895f688e4238b5abd2264567e0873"
         }
 
         func revision(for dataType: MaliciousSiteProtection.DataManager.StoredDataType) -> Int {

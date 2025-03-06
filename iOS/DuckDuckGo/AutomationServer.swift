@@ -35,11 +35,30 @@ struct AnyEncodable: Encodable {
     }
 }
 
+actor MessageQueue {
+    private var isProcessing = false
+    private var queue: [(NWConnection, Data)] = []
+
+    func enqueue(connection: NWConnection, content: Data, processor: @escaping (NWConnection, Data) async -> Void) async {
+        queue.append((connection, content))
+
+        guard !isProcessing else { return } // Don't start another processing loop
+        isProcessing = true
+
+        while !queue.isEmpty {
+            let (conn, data) = queue.removeFirst()
+            await processor(conn, data)
+        }
+
+        isProcessing = false
+    }
+}
 
 @MainActor
 final class AutomationServer {
     let listener: NWListener
     let main: MainViewController
+    let messageQueue: MessageQueue
 
     init(main: MainViewController, port: Int?) {
         let port = port ?? 8788
@@ -51,11 +70,14 @@ final class AutomationServer {
             Logger.automationServer.error("Failed to start listener: \(error)")
             fatalError("Failed to start automation listener: \(error)")
         }
+        self.messageQueue = MessageQueue()
         listener.newConnectionHandler = { connection in
             Task { @MainActor in
-                self.handleConnection(connection)
+                connection.start(queue: .main)
+                self.receive(from: connection)
             }
         }
+
         listener.start(queue: .main)
         // Output server started
         Logger.automationServer.info("Automation server started on port \(port)")
@@ -66,38 +88,46 @@ final class AutomationServer {
             minimumIncompleteLength: 1,
             maximumLength: connection.maximumDatagramSize
         ) { (content: Data?, _: NWConnection.ContentContext?, isComplete: Bool, error: NWError?) in
-            switch connection.state {
-            case .ready:
-                break // Connection is valid, continue
-            case .cancelled, .failed:
-                Logger.automationServer.info("Connection is no longer valid state: \(String(describing: connection.state)) error: \(String(describing: error)) content: \(String(describing: content)).")
-                return
-            default:
-                Logger.automationServer.info("Connection is in state: \(String(describing: connection.state)).")
+            guard connection.state == .ready else {
+                Logger.automationServer.info("Receive aborted as connection is no longer ready.")
                 return
             }
             Logger.automationServer.info("Received request - Content: \(String(describing: content)) isComplete: \(isComplete) Error: \(String(describing: error))")
 
             if let error {
-                Logger.automationServer.error("Error: \(error)")
+                Logger.automationServer.error("Error in request: \(error)")
+                /*
                 // It appears ECANCELED is a common error when the connection is cancelled, yet ok.
                 if error.errorCode != ECANCELED {
                     return
                 }
+                */
+                return
             }
 
             if let content {
                 Logger.automationServer.info("Handling content")
+
                 Task { @MainActor in
-                    await self.processContentWhenReady(connection: connection, content: content)
+                    await self.messageQueue.enqueue(connection: connection, content: content) { conn, data in
+                        await self.processContentWhenReady(connection: conn, content: data)
+                    }
+                    //await self.processContentWhenReady(connection: connection, content: content)
                 }
             }
+            if isComplete {
+                Logger.automationServer.info("Connection marked complete. Cancelling connection.")
+                connection.cancel()
+                return
+            }
 
-            if !isComplete {
-                Logger.automationServer.info("Handling not complete")
+            if connection.state == .ready {
+                Logger.automationServer.info("Handling not complete, continuing receive.")
                 Task { @MainActor in
                     self.receive(from: connection)
                 }
+            } else {
+                Logger.automationServer.info("Connection is no longer ready, stopping receive.")
             }
         }
     }
@@ -110,7 +140,6 @@ final class AutomationServer {
         }
 
         // Proceed when loading is complete
-        Logger.automationServer.info("Handling content")
         self.handleConnection(connection, content)
     }
     
@@ -344,10 +373,5 @@ final class AutomationServer {
         } catch {
             Logger.automationServer.error("Got error encoding JSON: \(error)")
         }
-    }
-    
-    func handleConnection(_ connection: NWConnection) {
-        connection.start(queue: .main)
-        self.receive(from: connection)
     }
 }

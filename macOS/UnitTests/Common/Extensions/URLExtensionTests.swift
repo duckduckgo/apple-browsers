@@ -270,24 +270,24 @@ final class URLExtensionTests {
         let testedURL = URL(string: "https://duckduckgo.com/subscriptions")!
         #expect(testedURL.isChild(of: parentURL) == false)
     }
-    
+
     // Tests for URL normalization and canonicalization
-    
+
     @Test("Normalizing URLs with spaces in different components")
     func normalizingURLsWithSpacesInDifferentComponents() throws {
         // Path with spaces
         let urlWithSpacesInPath = URL(string: "https://example.com/path with spaces/file.html")
         #expect(urlWithSpacesInPath?.absoluteString == "https://example.com/path%20with%20spaces/file.html")
-        
+
         // Query with spaces
         let urlWithSpacesInQuery = URL(string: "https://example.com/search?q=test query&page=1")
         #expect(urlWithSpacesInQuery?.absoluteString == "https://example.com/search?q=test%20query&page=1")
-        
+
         // Fragment with spaces
         let urlWithSpacesInFragment = URL(string: "https://example.com/page#section with spaces")
         #expect(urlWithSpacesInFragment?.absoluteString == "https://example.com/page#section%20with%20spaces")
     }
-    
+
     @Test("Creating URLs with international characters")
     func creatingURLsWithInternationalCharacters() throws {
         // URL with international characters in domain
@@ -299,40 +299,40 @@ final class URLExtensionTests {
         let urlWithInternationalPath = URL.makeURL(from: "https://example.com/пример/测试")
         #expect(urlWithInternationalPath?.absoluteString == "https://example.com/%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80/%E6%B5%8B%E8%AF%95")
     }
-    
+
     // Tests for URL manipulation methods
-    
+
     @Test("Appending path components to a URL")
     func appendingPathToURL() throws {
         let baseURL = URL(string: "https://duckduckgo.com")!
-        
+
         let urlWithAppendedPath = baseURL.appending("search")
         #expect(urlWithAppendedPath.absoluteString == "https://duckduckgo.com/search")
-        
+
         let urlWithMultipleAppendedComponents = baseURL.appending("settings/privacy")
         #expect(urlWithMultipleAppendedComponents.absoluteString == "https://duckduckgo.com/settings/privacy")
     }
-    
+
     @Test("Manipulating URL parameters")
     func manipulatingURLParameters() throws {
         let baseURL = URL(string: "https://duckduckgo.com/search")!
-        
+
         // Append parameters
         let urlWithParameters = baseURL.appendingParameter(name: "q", value: "test query")
         #expect(urlWithParameters.absoluteString == "https://duckduckgo.com/search?q=test%20query")
-        
+
         // Append multiple parameters
         let urlWithMultipleParams = urlWithParameters.appendingParameter(name: "t", value: "h_")
         #expect(urlWithMultipleParams.absoluteString == "https://duckduckgo.com/search?q=test%20query&t=h_")
-        
+
         // Remove parameters
         if let urlWithRemovedParams = URL(string: "https://duckduckgo.com/search?q=test&t=h_&ia=web")?.removingParameters(named: ["t", "ia"]) {
             #expect(urlWithRemovedParams.absoluteString == "https://duckduckgo.com/search?q=test")
         }
     }
-    
+
     // Tests for basic auth handling
-    
+
     @Test("Extracting and removing basic auth credentials from URLs")
     func extractingAndRemovingBasicAuth() throws {
         let urlWithAuth = URL(string: "https://user name:pass%20word@example.com/secure")!
@@ -347,24 +347,24 @@ final class URLExtensionTests {
         #expect(urlWithoutAuth.absoluteString == "https://example.com/secure")
         #expect(urlWithoutAuth.basicAuthCredential == nil)
     }
-    
+
     @Test("Matching URLs against protection spaces")
     func matchingURLsAgainstProtectionSpaces() throws {
         let url = URL(string: "https://example.com:8443/secure")!
-        
+
         // Create protection space from URL
         let protectionSpace = try #require(url.basicAuthProtectionSpace)
         #expect(protectionSpace.host == "example.com")
         #expect(protectionSpace.port == 8443)
         #expect(protectionSpace.protocol == "https")
-        
+
         // Match URL against protection space
         #expect(url.matches(protectionSpace) == true)
-        
+
         // Different URL, same protection space
         let differentPathURL = URL(string: "https://example.com:8443/different")!
         #expect(differentPathURL.matches(protectionSpace) == true)
-        
+
         // Different port
         let differentPortURL = URL(string: "https://example.com:9000/secure")!
         #expect(differentPortURL.matches(protectionSpace) == false)

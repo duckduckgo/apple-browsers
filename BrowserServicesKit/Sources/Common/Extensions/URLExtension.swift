@@ -276,7 +276,7 @@ extension URL {
             // escape invalid characters with %20 in query values
             // keep already encoded characters and + sign in place
             query = "?" + urlAndQuery[1].split(separator: "&").map { component in
-                component.split(separator: "=", maxSplits: 1).enumerated().map { idx, component -> String in
+                component.split(separator: "=", maxSplits: 1).map { component -> String in
                     return component.percentEncoded(withAllowedCharacters: .urlQueryStringAllowed)
                 }.joined(separator: "=")
             }.joined(separator: "&")

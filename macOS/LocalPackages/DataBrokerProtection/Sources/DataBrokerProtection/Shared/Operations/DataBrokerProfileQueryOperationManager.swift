@@ -243,9 +243,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 // If the profile was previously removed but now reappeared, reset the removal date.
                 if alreadyProfile.removedDate != nil {
                     let reAppearanceEvent = HistoryEvent(extractedProfileId: extractedProfile.id,
-                                                           brokerId: brokerId,
-                                                           profileQueryId: profileQueryId,
-                                                           type: .reAppearence)
+                                                         brokerId: brokerId,
+                                                         profileQueryId: profileQueryId,
+                                                         type: .reAppearence)
                     eventPixels.fireReAppereanceEventPixel()
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
@@ -301,7 +301,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                                            database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
-            savedExtractedProfiles.count > 0 else {
+              savedExtractedProfiles.count > 0 else {
             return
         }
 
@@ -401,7 +401,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
             let updater = OperationPreferredDateUpdaterUseCase(database: database)
             try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
-                                                        profileQueryId: profileQueryId)
+                                                            profileQueryId: profileQueryId)
 
             try database.addAttempt(extractedProfileId: extractedProfileId,
                                     attemptUUID: stageDurationCalculator.attemptId,
@@ -409,7 +409,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     lastStageDate: stageDurationCalculator.lastStateTime,
                                     startTime: stageDurationCalculator.startTime)
             try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
-            try incrementAttemptCountIfNeeded(
+            try incrementOptOutAttemptCountIfNeeded(
                 database: database,
                 brokerId: brokerId,
                 profileQueryId: profileQueryId,
@@ -431,32 +431,32 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
-    internal func updateOperationDataDates(
-        origin: OperationPreferredDateUpdaterOrigin,
-        brokerId: Int64,
-        profileQueryId: Int64,
-        extractedProfileId: Int64?,
-        schedulingConfig: DataBrokerScheduleConfig,
-        database: DataBrokerProtectionRepository) throws {
-
-            let dateUpdater = OperationPreferredDateUpdaterUseCase(database: database)
-            try dateUpdater.updateOperationDataDates(origin: origin,
-                                                     brokerId: brokerId,
-                                                     profileQueryId: profileQueryId,
-                                                     extractedProfileId: extractedProfileId,
-                                                     schedulingConfig: schedulingConfig)
-        }
-
-    private func incrementAttemptCountIfNeeded(database: DataBrokerProtectionRepository,
-                                               brokerId: Int64,
-                                               profileQueryId: Int64,
-                                               extractedProfileId: Int64) throws {
+    private func incrementOptOutAttemptCountIfNeeded(database: DataBrokerProtectionRepository,
+                                                     brokerId: Int64,
+                                                     profileQueryId: Int64,
+                                                     extractedProfileId: Int64) throws {
         guard let events = try? database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
               events.max(by: { $0.date < $1.date })?.type == .optOutRequested else {
             return
         }
 
         try database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+    }
+
+    // MARK: - Generic Job Logic
+
+    internal func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
+                                           brokerId: Int64,
+                                           profileQueryId: Int64,
+                                           extractedProfileId: Int64?,
+                                           schedulingConfig: DataBrokerScheduleConfig,
+                                           database: DataBrokerProtectionRepository) throws {
+        let dateUpdater = OperationPreferredDateUpdaterUseCase(database: database)
+        try dateUpdater.updateOperationDataDates(origin: origin,
+                                                 brokerId: brokerId,
+                                                 profileQueryId: profileQueryId,
+                                                 extractedProfileId: extractedProfileId,
+                                                 schedulingConfig: schedulingConfig)
     }
 
     private func handleOperationError(origin: OperationPreferredDateUpdaterOrigin,
@@ -499,4 +499,5 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
     }
+
 }

@@ -110,9 +110,9 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
         userNotificationCenter.add(request) { error in
             if error == nil {
                 if days != nil {
-                    Logger.dataBrokerProtection.log("Notification scheduled")
+                    Logger.dataBrokerProtection.log("PIR user notification scheduled")
                 } else {
-                    Logger.dataBrokerProtection.log("Notification sent")
+                    Logger.dataBrokerProtection.log("PIR user notification sent")
                 }
             }
         }

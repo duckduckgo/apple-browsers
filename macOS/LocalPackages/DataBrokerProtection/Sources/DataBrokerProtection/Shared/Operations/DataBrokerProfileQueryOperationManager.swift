@@ -101,6 +101,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
+    // MARK: - Scan Jobs
+
     // swiftlint:disable cyclomatic_complexity
     internal func runScanOperation(on runner: WebJobRunner,
                                    brokerProfileQueryData: BrokerProfileQueryData,
@@ -120,8 +122,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
         defer {
             try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId)
-            Logger.dataBrokerProtection.log("Finished scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
             notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishScan, object: brokerProfileQueryData.dataBroker.name)
+            Logger.dataBrokerProtection.log("Finished scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
         }
 
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
@@ -189,9 +191,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     }
                 }
             } else {
-                stageCalculator.fireScanFailed()
-                let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
-                try database.add(event)
+                try processNoScanMatchesFound(
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    database: database,
+                    stageCalculator: stageCalculator
+                )
             }
 
             // Check for removed profiles
@@ -230,8 +235,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     }
                 }
                 if shouldSendProfileRemovedNotification {
-                    sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService,
-                                                              database: database)
+                    sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService, database: database)
                 }
             } else {
                 try updateOperationDataDates(
@@ -258,7 +262,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
     // swiftlint:enable cyclomatic_complexity
 
-    private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService, database: DataBrokerProtectionRepository) {
+    private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService,
+                                                           database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
             savedExtractedProfiles.count > 0 else {
@@ -275,6 +280,17 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             }
         }
     }
+
+    private func processNoScanMatchesFound(brokerId: Int64,
+                                           profileQueryId: Int64,
+                                           database: DataBrokerProtectionRepository,
+                                           stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+        stageCalculator.fireScanFailed()
+        let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .noMatchFound)
+        try database.add(event)
+    }
+
+    // MARK: - Opt-Out Jobs
 
     internal func runOptOutOperation(for extractedProfile: ExtractedProfile,
                                      on runner: WebJobRunner,

@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import Bookmarks
+import DesignResourcesKit
 
 class BookmarkFolderCell: UITableViewCell {
 
@@ -29,6 +30,11 @@ class BookmarkFolderCell: UITableViewCell {
     @IBOutlet weak var folderImageView: UIImageView!
     
     @IBOutlet weak var leadingPaddingConstraint: NSLayoutConstraint!
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
 
     var folder: BookmarkEntity? {
         didSet {

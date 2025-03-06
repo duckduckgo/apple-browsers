@@ -152,7 +152,7 @@
                                                             <subviews>
                                                                 <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Favorite-Solid-16" translatesAutoresizingMaskIntoConstraints="NO" id="1fK-xP-Cxw">
                                                                     <rect key="frame" x="4" y="4" width="16" height="16"/>
-                                                                    <color key="tintColor" name="icons"/>
+                                                                    <color key="tintColor" systemColor="systemPurpleColor"/>
                                                                     <constraints>
                                                                         <constraint firstAttribute="width" constant="16" id="Ryb-sj-pZe"/>
                                                                         <constraint firstAttribute="height" constant="16" id="x53-Oq-oQ3"/>
@@ -176,7 +176,7 @@
                                                 <constraint firstItem="PlS-RF-bTZ" firstAttribute="centerY" secondItem="2vh-lJ-WoO" secondAttribute="centerY" id="kCg-G1-s27"/>
                                             </constraints>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" name="surface"/>
+                                        <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                         <accessibility key="accessibilityConfiguration">
                                             <accessibilityTraits key="traits" button="YES"/>
                                         </accessibility>
@@ -213,7 +213,7 @@
                                                 <constraint firstItem="xfD-A4-SRJ" firstAttribute="leading" secondItem="e0A-ci-ZLj" secondAttribute="leadingMargin" id="fHt-IB-Glv"/>
                                             </constraints>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" name="surface"/>
+                                        <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                         <accessibility key="accessibilityConfiguration">
                                             <accessibilityTraits key="traits" button="YES"/>
                                         </accessibility>
@@ -261,7 +261,7 @@
                                                 <constraint firstItem="9wR-fm-8Rn" firstAttribute="centerY" secondItem="1hV-h5-0bK" secondAttribute="centerY" id="NVL-lH-uDP"/>
                                             </constraints>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" name="surface"/>
+                                        <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                         <accessibility key="accessibilityConfiguration">
                                             <accessibilityTraits key="traits" button="YES"/>
                                         </accessibility>
@@ -360,7 +360,7 @@
                                 </connections>
                             </containerView>
                         </subviews>
-                        <color key="backgroundColor" name="background"/>
+                        <color key="backgroundColor" systemColor="systemPurpleColor"/>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="63r-nO-tSp" secondAttribute="bottom" id="7uU-MI-iq3"/>
                             <constraint firstItem="63r-nO-tSp" firstAttribute="leading" secondItem="ZKl-y5-8OG" secondAttribute="leading" id="8qg-Gp-0cE"/>
@@ -396,7 +396,7 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="591"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="separatorColor" name="BookmarksCellSeperatorColor"/>
-                        <color key="sectionIndexBackgroundColor" name="background"/>
+                        <color key="sectionIndexBackgroundColor" systemColor="systemPurpleColor"/>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="BookmarkFolderCell" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarkFolderCell" id="OPL-sH-Akf" userLabel="BookmarkFolderCell" customClass="BookmarkFolderCell" customModule="DuckDuckGo" customModuleProvider="target">
                                 <rect key="frame" x="16" y="55.5" width="343" height="43.5"/>
@@ -432,7 +432,7 @@
                                         <constraint firstAttribute="trailingMargin" secondItem="8R7-gf-yWn" secondAttribute="trailing" id="gns-zm-1ez"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <connections>
                                     <outlet property="folderImageView" destination="8qY-sA-7P1" id="neJ-nR-FKK"/>
                                     <outlet property="leadingPaddingConstraint" destination="7fS-iW-BEh" id="uZ7-wF-WMV"/>
@@ -462,12 +462,12 @@
                                         <constraint firstItem="KiU-Wb-7jj" firstAttribute="leading" secondItem="MfZ-X5-f9l" secondAttribute="leading" constant="16" id="lbc-To-k5Z"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <connections>
                                     <outlet property="textField" destination="KiU-Wb-7jj" id="hO7-0f-faW"/>
                                 </connections>
                             </tableViewCell>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarksDeleteButtonCell" id="9HA-wp-hud">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarksDeleteButtonCell" id="9HA-wp-hud" customClass="BookmarksDeleteButtonCell" customModule="DuckDuckGo" customModuleProvider="target">
                                 <rect key="frame" x="16" y="143.5" width="343" height="43.5"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="9HA-wp-hud" id="c4D-ft-gHh">
@@ -487,7 +487,7 @@
                                         <constraint firstItem="hEJ-T8-Tdl" firstAttribute="centerX" secondItem="c4D-ft-gHh" secondAttribute="centerX" id="tDn-GD-Ldd"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <color key="tintColor" name="AlertButtonDestructiveTitleColor"/>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="BookmarkDetailsCell" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarkDetailsCell" id="bR7-2A-BiO" customClass="BookmarkDetailsCell" customModule="DuckDuckGo" customModuleProvider="target">
@@ -544,14 +544,14 @@
                                         <constraint firstItem="fVp-1a-TkJ" firstAttribute="centerY" secondItem="rT4-Yr-P8D" secondAttribute="bottom" id="xK7-H0-w8K"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <connections>
                                     <outlet property="faviconImageView" destination="gf7-Lt-ftk" id="kIT-Vf-ZxY"/>
                                     <outlet property="titleTextField" destination="rT4-Yr-P8D" id="4f9-bl-KM7"/>
                                     <outlet property="urlTextField" destination="YqY-sP-hhb" id="b8Y-vb-Msu"/>
                                 </connections>
                             </tableViewCell>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="AddFolderCell" selectionStyle="default" indentationWidth="10" reuseIdentifier="AddFolderCell" id="oXz-7u-Skm">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="AddFolderCell" selectionStyle="default" indentationWidth="10" reuseIdentifier="AddFolderCell" id="oXz-7u-Skm" customClass="AddFolderCell" customModule="DuckDuckGo" customModuleProvider="target">
                                 <rect key="frame" x="16" y="275.5" width="343" height="43.5"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="oXz-7u-Skm" id="xfk-px-QiT">
@@ -585,7 +585,7 @@
                                         <constraint firstItem="c3O-4F-9vA" firstAttribute="leading" secondItem="xfk-px-QiT" secondAttribute="leadingMargin" id="hdF-AL-e5p"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="FavoriteCell" selectionStyle="none" indentationWidth="10" reuseIdentifier="FavoriteCell" id="Uew-BN-bP6" userLabel="FavoriteFolderCell" customClass="FavoriteCell" customModule="DuckDuckGo" customModuleProvider="target">
                                 <rect key="frame" x="16" y="319" width="343" height="43.5"/>
@@ -623,7 +623,7 @@
                                         <constraint firstItem="mRK-XI-Rr8" firstAttribute="centerY" secondItem="Kwd-kN-eFx" secondAttribute="centerY" id="quc-na-xmf"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="surface"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <connections>
                                     <outlet property="favoriteToggle" destination="0pM-zQ-xZT" id="ZY7-CM-7Xu"/>
                                 </connections>
@@ -675,17 +675,11 @@
         <namedColor name="TableCellAccessoryTextColor">
             <color red="0.53299999237060547" green="0.53299999237060547" blue="0.53299999237060547" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
-        <namedColor name="background">
-            <color red="0.96078431372549022" green="0.96078431372549022" blue="0.96078431372549022" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="icons">
-            <color red="0.0" green="0.0" blue="0.0" alpha="0.8399999737739563" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="surface">
-            <color red="0.99607843137254903" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemPurpleColor">
+            <color red="0.68627450980392157" green="0.32156862745098042" blue="0.87058823529411766" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

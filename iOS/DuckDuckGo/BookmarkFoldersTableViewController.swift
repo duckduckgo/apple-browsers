@@ -42,7 +42,13 @@ class BookmarkFoldersViewController: UITableViewController {
         guard let viewModel = viewModel else { return 0 }
         return viewModel.locations.count
     }
-    
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .background)
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
@@ -275,4 +281,28 @@ class FavoriteCell: UITableViewCell {
 
     @IBOutlet var favoriteToggle: UISwitch!
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
+}
+
+class BookmarksDeleteButtonCell: UITableViewCell {
+ 
+    static let reuseIdentifier = "BookmarksDeleteButtonCell"
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
+}
+
+class AddFolderCell: UITableViewCell {
+    
+    static let reuseIdentifier = "AddFolderCell"
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
 }

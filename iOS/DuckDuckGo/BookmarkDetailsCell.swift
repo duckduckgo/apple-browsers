@@ -30,7 +30,12 @@ class BookmarkDetailsCell: UITableViewCell {
     static let reuseIdentifier = "BookmarkDetailsCell"
     
     weak var delegate: BookmarkDetailsCellDelegate?
-    
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
+
     var title: String? {
         get {
             titleTextField.text

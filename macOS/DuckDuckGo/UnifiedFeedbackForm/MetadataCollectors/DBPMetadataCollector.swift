@@ -27,7 +27,7 @@ struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
 
     enum CodingKeys: String, CodingKey {
         case vpnConnectionState = "vpn_connection_state"
-        case vpnBypassStatus = "vpn_bypass_status"
+        case vpnBypassStatus = "vpn_bypass"
     }
 }
 

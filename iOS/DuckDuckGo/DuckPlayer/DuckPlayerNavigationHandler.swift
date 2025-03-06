@@ -365,9 +365,9 @@ final class DuckPlayerNavigationHandler: NSObject {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
 
         if referrer == .youtube {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: nil)
         } else {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID)
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .other, timestamp: nil)
         }
     }
 

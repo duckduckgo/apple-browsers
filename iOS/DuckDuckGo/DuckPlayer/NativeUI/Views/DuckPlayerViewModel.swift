@@ -39,7 +39,7 @@ final class DuckPlayerViewModel: ObservableObject {
     let settingsRequestPublisher = PassthroughSubject<Void, Never>()
 
     /// A publisher to notify when the view is dismissed
-    let dismissPublisher = PassthroughSubject<Void, Never>()
+    let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
 
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
@@ -102,8 +102,8 @@ final class DuckPlayerViewModel: ObservableObject {
         self.webView = webView
         self.coordinator = coordinator
         
-        // Update timestamp every second
-        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        // Update timestamp 0.3 second
+        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             Task {
                 if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
@@ -191,7 +191,8 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Called when the view disappears
     /// Removes orientation monitoring
     func onDisappear() {
-        dismissPublisher.send()
+        dismissPublisher.send(currentTimestamp)
+        stopObservingTimestamp()
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)

@@ -24,18 +24,22 @@ import os.log
 import Combine
 
 struct DuckPlayerWebView: UIViewRepresentable {
-   let viewModel: DuckPlayerViewModel
-   let coordinator: Coordinator
+    let viewModel: DuckPlayerViewModel
+    let coordinator: Coordinator
+
+    /// Script to get current timestamp
+    private let getCurrentTimeScript: String = {
+        guard let url = Bundle.main.url(forResource: "getCurrentTimestamp", withExtension: "js"),
+                let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load get current timestamp script")
+            return ""
+        }
+        return script
+    }()
 
    struct Constants {
        static let referrerHeader: String = "Referer"
        static let referrerHeaderValue: String = "http://localhost"
-       static let getCurrentTimeScript = """
-           function getCurrentTime() {
-               const video = document.querySelector('video');
-               return video ? video.currentTime : 0;
-           }
-       """
    }
 
    init(viewModel: DuckPlayerViewModel) {
@@ -55,7 +59,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
        // Add script for getting timestamp
        let userContentController = WKUserContentController()
-       let script = WKUserScript(source: Constants.getCurrentTimeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+       let script = WKUserScript(source: getCurrentTimeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
        userContentController.addUserScript(script)
        configuration.userContentController = userContentController
 

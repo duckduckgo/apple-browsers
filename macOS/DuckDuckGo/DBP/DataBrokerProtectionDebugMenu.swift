@@ -281,8 +281,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         Task {
             DataBrokerProtectionSettings(defaults: .dbp).vpnBypass.toggle()
             await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(
-                DataBrokerProtectionSettings(defaults: .dbp).vpnBypass
-            )
+                    DataBrokerProtectionSettings(defaults: .dbp).vpnBypass
+                )
         }
     }
 

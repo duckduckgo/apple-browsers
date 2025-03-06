@@ -473,7 +473,7 @@
 "autofill.logins.list.settings.footer.fallback" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my.";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my. [Więcej informacji] (DDGQuickLink: //duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer.markdown" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my. [Więcej informacji](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Sugerowane";

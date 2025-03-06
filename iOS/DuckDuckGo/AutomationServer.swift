@@ -46,6 +46,7 @@ enum AutomationServerError: Error {
 }
 
 typealias ConnectionResult = Result<String, AutomationServerError>
+typealias ConnectionResultWithPath = (String, ConnectionResult)
 
 actor PerConnectionQueue {
     private var isProcessing = false
@@ -53,8 +54,8 @@ actor PerConnectionQueue {
 
     func enqueue(
         content: Data,
-        processor: @escaping (Data) async -> ConnectionResult?,
-        responder: @escaping (String) -> Void
+        processor: @escaping (Data) async -> ConnectionResultWithPath,
+        responder: @escaping (ConnectionResultWithPath) -> Void
     ) async {
         queue.append(content)
 
@@ -63,17 +64,8 @@ actor PerConnectionQueue {
 
         while !queue.isEmpty {
             let request = queue.removeFirst()
-            let response = await processor(request) // Process request
-            if let responseData = response {
-                switch responseData {
-                case .success(let result):
-                    responder(result)
-                case .failure(let error):
-                    Logger.automationServer.error("Error: \(error)")
-                    let errorResponse = encodeToJsonString(["error": error.localizedDescription])
-                    responder(errorResponse)
-                }
-            }
+            let connectionResultWithPath = await processor(request) // Process request
+            responder(connectionResultWithPath)
         }
 
         isProcessing = false
@@ -162,8 +154,8 @@ final class AutomationServer {
                     processor: { data in
                         return await self.processContentWhenReady(content: data)
                     },
-                    responder: { responseData in
-                        self.respond(on: connection, response: responseData)
+                    responder: { connectionResultWithPath in
+                        self.respond(on: connection, connectionResultWithPath: connectionResultWithPath)
                     })
                 }
             }
@@ -184,7 +176,7 @@ final class AutomationServer {
         }
     }
 
-    func processContentWhenReady(content: Data) async -> Result<String, AutomationServerError> {
+    func processContentWhenReady(content: Data) async -> ConnectionResultWithPath {
         // Check if loading
         while self.main.currentTab?.isLoading ?? false {
             Logger.automationServer.info("Still loading, waiting...")
@@ -199,7 +191,7 @@ final class AutomationServer {
         return url.queryItems?.first(where: { $0.name == param })?.value
     }
 
-    func handleConnection(_ content: Data) async -> ConnectionResult {
+    func handleConnection(_ content: Data) async -> (String, ConnectionResult) {
         Logger.automationServer.info("Handling request:")
         let stringContent = String(bytes: content, encoding: .utf8) ?? ""
         // Log first line of string:
@@ -209,41 +201,44 @@ final class AutomationServer {
 
         // Ensure support for regex
         guard #available(iOS 16.0, *) else {
-            return .failure(.unsupportedOSVersion)
+            return ("unknown", .failure(.unsupportedOSVersion))
         }
 
         // Get url parameter from path
         // GET / HTTP/1.1
         let path = /^(GET|POST) (\/[^ ]*) HTTP/
         guard let match = stringContent.firstMatch(of: path) else {
-            return .failure(.unknownMethod)
+            return ("unknown", .failure(.unknownMethod))
         }
         Logger.automationServer.info("Path: \(match.2)")
         // Convert the path into a URL object
         guard let url = URLComponents(string: String(match.2)) else {
             Logger.automationServer.error("Invalid URL: \(match.2)")
-            return .failure(.invalidURL)
+            return ("unknown", .failure(.invalidURL))
         }
-        switch url.path {
+        return (url.path, await handlePath(url))
+    }
+
+    func handlePath(_ url: URLComponents) async -> ConnectionResult {
+        return switch url.path {
         case "/navigate":
-            return self.navigate(url: url)
+            self.navigate(url: url)
         case "/execute":
-            return await self.execute(url: url)
+            await self.execute(url: url)
         case "/getUrl":
-            let currentUrl = self.main.currentTab?.webView.url?.absoluteString
-            return .success(currentUrl ?? "")
+            .success(self.main.currentTab?.webView.url?.absoluteString ?? "")
         case "/getWindowHandles":
-            return self.getWindowHandles(url: url)
+            self.getWindowHandles(url: url)
         case "/closeWindow":
-            return self.closeWindow(url: url)
+            self.closeWindow(url: url)
         case "/switchToWindow":
-            return self.switchToWindow(url: url)
+            self.switchToWindow(url: url)
         case "/newWindow":
-            return self.newWindow(url: url)
+            self.newWindow(url: url)
         case "/getWindowHandle":
-            return self.getWindowHandle(url: url)
+            self.getWindowHandle(url: url)
         default:
-            return .failure(.unknownMethod)
+            .failure(.unknownMethod)
         }
     }
 
@@ -357,38 +352,52 @@ final class AutomationServer {
             return .success(jsonString)
         }
     }
-    
-    func respond(on connection: NWConnection, response: String? = nil) {
+
+    func responseToString(_ connectionResultWithPath: ConnectionResultWithPath) -> String {
+        let (requestPath, responseData) = connectionResultWithPath
+        struct Response: Codable {
+            var message: String
+            var requestPath: String
+        }
+        var errorCode = 200
+        let responseStruct: Response
+        switch responseData {
+        case .success(let result):
+            responseStruct = Response(message: result, requestPath: requestPath)
+        case .failure(let error):
+            errorCode = 400
+            Logger.automationServer.error("Connection Handling Error: \(error) path: \(requestPath)")
+            responseStruct = Response(message: encodeToJsonString(["error": error.localizedDescription]), requestPath: requestPath)
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        var responseString = ""
         do {
-            if let response {
-                struct Response: Codable {
-                    var message: String
-                }
-                let responseHeader = """
-                HTTP/1.1 200 OK
-                Content-Type: application/json
-                Connection: close
-                
-                """
-                var valueString = response
-                let responseObject = Response(message: valueString)
-                let encoder = JSONEncoder()
-                encoder.outputFormatting = .prettyPrinted
-                let data = try encoder.encode(responseObject)
-                let responseString = String(data: data, encoding: .utf8) ?? ""
-                let response = responseHeader + "\r\n" + responseString
-                connection.send(
-                    content: response.data(using: .utf8),
-                    completion: .contentProcessed({ error in
-                        if let error = error {
-                            Logger.automationServer.error("Error sending response: \(error)")
-                        }
-                        connection.cancel()
-                    })
-                )
-            }
+            let data = try encoder.encode(responseStruct)
+            responseString = String(data: data, encoding: .utf8) ?? ""
         } catch {
             Logger.automationServer.error("Got error encoding JSON: \(error)")
         }
+        let responseHeader = """
+        HTTP/1.1 \(errorCode) OK
+        Content-Type: application/json
+        Connection: close
+        
+        """
+        return responseHeader + "\r\n" + responseString
+    }
+    
+    func respond(on connection: NWConnection, connectionResultWithPath: ConnectionResultWithPath) {
+        let (requestPath, responseData) = connectionResultWithPath
+        let responseString = responseToString(connectionResultWithPath)
+        connection.send(
+            content: responseString.data(using: .utf8),
+            completion: .contentProcessed({ error in
+                if let error = error {
+                    Logger.automationServer.error("Error sending response: \(error)")
+                }
+                connection.cancel()
+            })
+        )
     }
 }

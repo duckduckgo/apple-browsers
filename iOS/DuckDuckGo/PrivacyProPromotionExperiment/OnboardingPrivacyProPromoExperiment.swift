@@ -95,12 +95,10 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
     func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
 
         // Exclude returning users from experiment enrollment
-//        guard variantManager.isNewUser else { return nil }
+        guard variantManager.isNewUser else { return nil }
 
         // Exclude Privacy Pro ineligible users from experiment enrollment
-//        guard subscriptionManager?.canPurchase ?? false else { return nil }
-
-        return .treatment
+        guard subscriptionManager?.canPurchase ?? false else { return nil }
 
         return featureFlagger.resolveCohort(for: FeatureFlag.privacyProOnboardingCTAMarch25)
                 as? PrivacyProOnboardingCTAMarch25Cohort

@@ -1028,9 +1028,9 @@ final class DaxDialog: XCTestCase {
     }
 
     private func makeSUT(settings: DaxDialogsSettings, onboardingManager: OnboardingAddToDockManaging = OnboardingManagerMock(), onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
-        DaxDialogs(settings: settings, 
-                   entityProviding: entityProvider, 
-                   variantManager: MockVariantManager(), 
+        DaxDialogs(settings: settings,
+                   entityProviding: entityProvider,
+                   variantManager: MockVariantManager(),
                    onboardingManager: onboardingManager,
                    onboardingPrivacyProPromoExperiment: onboardingPrivacyProPromoExperiment)
     }

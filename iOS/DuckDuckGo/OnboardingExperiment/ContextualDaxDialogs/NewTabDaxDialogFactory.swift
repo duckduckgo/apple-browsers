@@ -180,7 +180,7 @@ private extension NewTabDaxDialogFactory {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
             self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
-//            self?.onboardingExperimentCoordinator.privacyProPromotionDialogSeen = true
+            self?.onboardingExperimentCoordinator.privacyProPromotionDialogSeen = true
         }
     }
 }

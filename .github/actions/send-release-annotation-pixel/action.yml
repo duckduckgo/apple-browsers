@@ -1,0 +1,36 @@
+name: "Send Release Annotation Pixel"
+description: "Sends a pixel to annotate a new iOS or macOS client release"
+
+inputs:
+  version:
+    description: "The version number of the release"
+    required: true
+  platform:
+    description: "The platform of the release (ios or macos)"
+    required: true
+    type: choice
+    options:
+      - ios
+      - macos
+    default: "ios"
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Send Release Annotation Pixel"
+      shell: bash
+      run: |
+        if [[ "${{ inputs.platform }}" != "ios" && "${{ inputs.platform }}" != "macos" ]]; then
+          echo "Invalid platform: ${{ inputs.platform }}"
+          exit 1
+        fi
+
+        pixel_name="m_new_release_${{ inputs.platform }}"
+        status=$(curl -s -o /dev/null -w "%{http_code}" -X GET "https://improving.duckduckgo.com/t/${pixel_name}?appVersion=${{ inputs.version }}")
+        
+        if [[ $status -ge 200 && $status -lt 300 ]]; then
+          echo "Release annotation sent successfully with status code $status"
+        else
+          echo "Release annotation failed with status code $status"
+          exit 1
+        fi

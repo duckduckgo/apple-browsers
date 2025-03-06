@@ -230,25 +230,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 _ = try? await self?.vpnUninstaller.uninstall(removeSystemExtension: true)
             })
 
-            let tipsFeatureFlagInitialValue = featureFlagger.isFeatureOn(.networkProtectionUserTips)
-            let tipsFeatureFlagPublisher: CurrentValuePublisher<Bool, Never>
-
-            if let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> {
-
-                let featureFlagPublisher = overridesHandler.flagDidChangePublisher
-                    .filter { $0.0 == .networkProtectionUserTips }
-
-                tipsFeatureFlagPublisher = CurrentValuePublisher(
-                    initialValue: tipsFeatureFlagInitialValue,
-                    publisher: Just(tipsFeatureFlagInitialValue).eraseToAnyPublisher())
-            } else {
-                tipsFeatureFlagPublisher = CurrentValuePublisher(
-                    initialValue: tipsFeatureFlagInitialValue,
-                    publisher: Just(tipsFeatureFlagInitialValue).eraseToAnyPublisher())
-            }
-
-            let tipsModel = VPNTipsModel(featureFlagPublisher: tipsFeatureFlagPublisher,
-                                         statusObserver: statusReporter.statusObserver,
+            let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,
                                          forMenuApp: false,
                                          vpnSettings: vpnSettings,

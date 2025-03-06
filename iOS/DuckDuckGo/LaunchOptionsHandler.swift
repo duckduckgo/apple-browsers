@@ -22,6 +22,7 @@ import Foundation
 public final class LaunchOptionsHandler {
     private static let isOnboardingCompleted = "isOnboardingCompleted"
     private static let appVariantName = "currentAppVariant"
+    private static let automationPort = "automationPort"
 
     private let environment: [String: String]
     private let userDefaults: UserDefaults
@@ -45,6 +46,16 @@ public final class LaunchOptionsHandler {
 
         return .notOverridden
     }
+
+    public var automationPort: Int? {
+        userDefaults.integer(forKey: Self.automationPort)
+    }
+
+#if DEBUG || ALPHA
+    public func overrideOnboardingCompleted() {
+        userDefaults.set("true", forKey: Self.isOnboardingCompleted)
+    }
+#endif
 
     public var appVariantName: String? {
         sanitisedEnvParameter(string: userDefaults.string(forKey: Self.appVariantName))

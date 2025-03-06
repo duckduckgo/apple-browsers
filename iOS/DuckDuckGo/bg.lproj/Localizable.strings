@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Функцията за синхронизиране и архивиране е на пауза";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Поставяне на всички раздели в отметки?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Добавяне към незащитени сайтове";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скриване на паролата";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Вземете браузъра за работен плот";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Отворете DuckDuckGo на Mac или Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Отидете на „%1$@ > %2$@“";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Пароли";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Настройки";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Изберете „%@“ и следвайте стъпките за импортиране";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Импортиране на пароли...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "След като бъдат импортирани на вашия компютър, можете да настроите синхронизирането на %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Импортиране от браузъра на работния плот:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Импортирайте пароли в десктоп версията на браузъра DuckDuckGo, след което ги синхронизирайте с различни устройства.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Синхронизиране с браузъра на работния плот";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Как се импортират пароли";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Забрани";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Вашите отметки са споделени.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Експортиране на HTML файл";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "За съжаление не успяхме да импортираме този файл.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Вашите отметки са импортирани.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Импортиране на HTML файл";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Импортиране на файл с отметки от друг браузър";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Импортирайте HTML файл с отметки от друг браузър или експортирайте съществуващите отметки.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Докладване на проблем с този сайт";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Вашето докладване ни помага да направим DuckDuckGo по-добър за всички!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Отменянето не е позволено повече от веднъж";
 
 /* No comment provided by engineer. */
 "Confirm" = "Потвърдете";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Показване на Duck.ai в менюто на браузъра";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Показване на Duck.ai в гласовото търсене";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Скрийте имейл адреса си и\nблокирайте тракерите";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Все още няма добавени отметки";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Меню за сърфиране";
 
 /* No comment provided by engineer. */
+"Message" = "Съобщение";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Име на хоста на политиката за съобщения";
 
 /* Title for back button in navigation bar */
@@ -1949,9 +1907,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "В който и да е сайт отворете менюто ••• и изберете **Добавяне към предпочитани**, за да го добавите към страницата с нов раздел.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Бисквитките са настроени";
 
@@ -2180,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "ОК";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Основно/първо действие";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Защита на поверителността";
 
 /* Privacy Icon accessibility title */
@@ -2210,6 +2168,9 @@
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Вторично/второ действие";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Отметки";
 
 /* No comment provided by engineer. */
@@ -2232,9 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "За нас";
-
-/* about page */
-"settings.about.text" = "DuckDuckGo е независима компания, основана през 2008 г., за защита на личните данни в интернет за всеки, на когото му е омръзнало да бъде проследяван онлайн и иска лесно решение на проблема. Ние сме доказателство, че можете да получите реална и безкомпромисна защита на личните данни онлайн.\n\nБраузърът DuckDuckGo притежава функциите, които очаквате от един основен браузър, като отметки, раздели, пароли и много други, както и [редица мощни защити на поверителността](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/), които не се предлагат в повечето популярни браузъри по подразбиране. Този уникален и комплексен набор от защити на поверителността предлага сигурност при онлайн дейностите – търсене, сърфиране, изпращане на имейли и др.\n\nЗа да работят, нашите защити на поверителността не изискват да имате технически познания или да се извършвате сложни настройки. Необходимо е да използвате браузъра DuckDuckGo на всички Ваши устройства и ще получите поверителност по подразбиране.\n\nНо ако *наистина* искате да надникнете зад кулисите, и да разберете как работят защитите на поверителността на DuckDuckGo, можете да намерите повече информация на нашите [страници за помощ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Достъпност";
@@ -2484,8 +2442,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Защита от проследяване в мрежата";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo автоматично блокира скритите тракери, докато сърфирате в мрежата.\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Блокиране на над 150 000 домейна, маркирани за хостинг на зловреден софтуер, фишинг атаки и онлайн измами чрез списък за блокиране на ниво DNS. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Блокиране и филтриране на съдържание";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Блокиране на рискови домейни";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Изберете опцията, която най-добре описва възникналия проблем.";
@@ -2763,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Безплатна пробна версия е активна";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Известие за SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Кодът за възстановяване и копиран в клипборда";
 
@@ -2862,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Този списък съдържа съобщения, които са били показани, плюс още най-много 1 съобщение, което е планирано за показване. Може да има още съобщения в конфигурацията, които ще бъдат представени, но те все още не са обработени.";
 
+/* No comment provided by engineer. */
+"Title" = "Заглавие";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Деактивирана защита на поверителността за %@";
 
@@ -2870,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Активирана защита на поверителността за %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Търсене";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Предложение за автоматично довършване";
@@ -3122,9 +3099,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Съобщение от %@:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Добре дошли на наша страна!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Търсите версията за Mac?";

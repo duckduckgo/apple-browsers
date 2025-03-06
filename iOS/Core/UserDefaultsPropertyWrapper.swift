@@ -95,7 +95,6 @@ public struct UserDefaultsWrapper<T> {
         case autofillOnboardedUser = "com.duckduckgo.app.autofill.OnboardedUser"
         case autofillSurveysCompleted = "com.duckduckgo.app.autofill.SurveysCompleted"
         case autofillExtensionEnabled = "com.duckduckgo.app.autofill.ExtensionEnabled"
-        case autofillVaultMigrated = "com.duckduckgo.app.autofill.VaultMigrated"
 
         case syncPromoBookmarksDismissed = "com.duckduckgo.app.sync.PromoBookmarksDismissed"
         case syncPromoPasswordsDismissed = "com.duckduckgo.app.sync.PromoPasswordsDismissed"
@@ -164,8 +163,6 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUI = "com.duckduckgo.ios.duckPlayerNativeUI"
         case duckPlayerAutoplay = "com.duckduckgo.ios.duckPlayerAutoplay"
 
-        case vpnRedditWorkaroundInstalled = "com.duckduckgo.ios.vpn.workaroundInstalled"
-
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"
         case newTabPageIntroMessageEnabled = "com.duckduckgo.ios.newTabPage.introMessageEnabled"
@@ -184,6 +181,10 @@ public struct UserDefaultsWrapper<T> {
 
         // Malicious Site Protection
         case maliciousSiteProtectionEnabled = "com.duckduckgo.ios.maliciousSiteProtection.enabled"
+        case voiceSearchTargetPreferences = "voiceSearchTargetPreferences"
+
+        // Debug screen
+        case debugPinnedScreens = "debugPinnedScreens"
     }
 
     private let key: Key

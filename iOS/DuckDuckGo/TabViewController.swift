@@ -433,7 +433,7 @@ class TabViewController: UIViewController {
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionManager.canPurchase
+            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
 
         super.init(coder: aDecoder)
@@ -2591,10 +2591,12 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer
-        userScripts.duckPlayer = duckPlayerNavigationHandler?.duckPlayer
-        userScripts.youtubeOverlayScript?.webView = webView
-        userScripts.youtubePlayerUserScript?.webView = webView
+        // Setup DuckPlayer Scripts if not using native UI
+        if (duckPlayer?.settings.nativeUI) != nil {
+            userScripts.duckPlayer = duckPlayerNavigationHandler?.duckPlayer
+            userScripts.youtubeOverlayScript?.webView = webView
+            userScripts.youtubePlayerUserScript?.webView = webView
+        }
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)

@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sincronizarea și copierea de rezervă este întreruptă";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Marchezi toate filele?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Adaugă la site-uri neprotejate";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Ascunde parola";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Obține browserul pentru desktop";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Deschide DuckDuckGo pe Mac sau Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Accesează %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Parole";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Setări";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Selectează %@ și urmează pașii pentru a importa";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importă parolele...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Odată importate pe computer, poți configura sincronizarea pe acest %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importă din browserul desktop:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importă parolele în versiunea desktop a browserului DuckDuckGo, apoi sincronizează-le între dispozitive.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sincronizare cu computerul desktop";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Cum să imporți parolele";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Dezactivează";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Marcajele tale au fost distribuite.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Exportă fișierul HTML";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Ne pare rău, nu putem importa acest fișier.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Marcajele tale au fost importate.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importă fișierul HTML";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importă fișierul de marcaje dintr-un alt browser";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Importă un fișier HTML sau marcaje dintr-un alt browser sau exportă marcajele tale existente.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Raportează o problemă cu acest site";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Sesizarea ta ajută la îmbunătățirea DuckDuckGo pentru toată lumea!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Anularea nu este permisă mai mult de o singură dată";
 
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Afișează Duck.ai în meniul browserului";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Afișează Duck.ai în căutarea vocală";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Ascunde-ți e-mailul și blochează tehnologiile de urmărire";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Nu s-a adăugat niciun semn de carte";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Meniul de navigare";
 
 /* No comment provided by engineer. */
+"Message" = "Mesaj";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Nume gazdă pentru politica de mesaje";
 
 /* Title for back button in navigation bar */
@@ -1949,9 +1907,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Pe orice site, deschide meniul ••• și selectează **Adaugă la favorite** pentru a adăuga la pagina Filă nouă.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Modulele cookie au fost gestionate";
 
@@ -2180,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Acțiune primară/principală";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Măsuri de protecție a confidențialității";
 
 /* Privacy Icon accessibility title */
@@ -2210,6 +2168,9 @@
 "search.hint.duckduckgo" = "Caută sau introdu adresa";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Acțiune secundară/a doua acțiune";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Semne de carte";
 
 /* No comment provided by engineer. */
@@ -2232,9 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Despre";
-
-/* about page */
-"settings.about.text" = "DuckDuckGo este o companie independentă înființată în 2008, care oferă confidențialitate pe internet tuturor celor care s-au săturat să fie urmăriți online și își doresc o soluție simplă. Suntem dovada că protecția confidențialității online fără compromisuri este reală.\n\nBrowserul DuckDuckGo oferă funcțiile pe care le aștepți de la browserul predilect, cum ar fi marcajele, filele, parolele și multe altele, plus peste [o duzină de instrumente puternice de protecție a confidențialității](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) care nu sunt oferite implicit de majoritatea browserelor populare. Acest set unic și cuprinzător de măsuri de protecție a confidențialității te ajută să îți protejezi activitățile online, de la căutări la navigare, e-mailuri și multe altele.\n\nMăsurile noastre robuste de protecție a confidențialității funcționează fără a necesita cunoștințe tehnice din partea ta și fără a fi nevoie să faci setări complicate. Tot ce trebuie să faci este să folosești browserul DuckDuckGo pe toate dispozitivele și vei beneficia implicit de confidențialitate.\n\nDar dacă *chiar dorești* să consulți detaliile mai tehnice, poți găsi mai multe informații despre modul în care funcționează instrumentele DuckDuckGo de protecție a confidențialității în [paginile noastre de asistență](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accesibilitate";
@@ -2484,8 +2442,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Protecție împotriva urmăririi pe web";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo blochează automat tehnologiile de urmărire ascunse în timp ce navighezi pe web.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Blochează peste 150.000 de domenii marcate pentru găzduirea de programe rău intenționate (malware), atacuri de phishing și escrocherii online cu o listă de blocare la nivel de DNS. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Blocarea și filtrarea conținutului";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Blochează domeniile riscante";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selectează opțiunea care descrie cel mai bine problema cu care te-ai confruntat.";
@@ -2763,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Perioada de încercare gratuită este activă";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Alertă SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Codul de recuperare a fost copiat în clipboard";
 
@@ -2862,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Această listă conține mesaje care au fost afișate plus cel mult 1 mesaj programat pentru afișare. Este posibil să existe mai multe mesaje în configurare care vor fi prezentate, dar acestea nu au fost încă prelucrate.";
 
+/* No comment provided by engineer. */
+"Title" = "Titlu";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Protecția confidențialității este dezactivată pentru %@";
 
@@ -2870,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Protecția confidențialității este activată pentru %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Caută";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Sugestie de completare automată";
@@ -3122,9 +3099,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mesaj de la %@:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Welcome to the Duck Side!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Cauți versiunea pentru Mac?";

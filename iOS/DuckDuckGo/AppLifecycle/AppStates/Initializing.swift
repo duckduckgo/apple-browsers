@@ -22,11 +22,12 @@ import UIKit
 /// The initial setup phase of the app, where basic services or components are initialized.
 /// This state can be invoked when the system prewarms the app but does not fully launch it.
 /// - Transitions:
-///   - `Launching` after initialization is complete.
+///   - `Launching` when `application(_:didFinishLaunchingWithOptions:)` is called.
 @MainActor
-struct Initializing: AppState {
+struct Initializing: InitializingHandling {
 
     init() {
+        Logger.lifecycle.info("Initializing: \(#function)")
         CrashHandlersConfiguration.setupCrashHandlers()
     }
 
@@ -34,6 +35,8 @@ struct Initializing: AppState {
 
 extension Initializing {
 
-    mutating func handle(action: AppAction) { }
+    func makeLaunchingState() throws -> any LaunchingHandling {
+        try Launching()
+    }
 
 }

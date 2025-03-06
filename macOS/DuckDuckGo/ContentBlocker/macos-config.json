@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1739554171092,
+    "version": 1740760942171,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -191,9 +191,6 @@
                     "domain": "bild.de"
                 },
                 {
-                    "domain": "breitbart.com"
-                },
-                {
                     "domain": "derstandard.de"
                 },
                 {
@@ -330,9 +327,6 @@
                 },
                 {
                     "domain": "publico.es"
-                },
-                {
-                    "domain": "leboncoin.fr"
                 },
                 {
                     "domain": "www.ffbb.com"
@@ -506,6 +500,21 @@
                     "domain": "russafasingluten.com"
                 },
                 {
+                    "domain": "capita.com"
+                },
+                {
+                    "domain": "capita.co.uk"
+                },
+                {
+                    "domain": "katieloxton.com"
+                },
+                {
+                    "domain": "servustv.com"
+                },
+                {
+                    "domain": "xxlmag.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -672,7 +681,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "89b0a362351805cb4e912584fcf3b4d5"
+            "hash": "0858f85888af3f66176588ab73219232"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1751,6 +1760,10 @@
                     {
                         "domain": "teams.microsoft.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2557"
+                    },
+                    {
+                        "domain": "maxcomply.app",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2759"
                     }
                 ],
                 "webViewDefault": [
@@ -1770,7 +1783,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "f1330bbd6a9a1c0c867c096d9a7a2f54"
+            "hash": "3839de5466f267468137f84d6534e376"
         },
         "dbp": {
             "state": "enabled",
@@ -1813,6 +1826,13 @@
                 "openInNewTab": {
                     "state": "enabled",
                     "minSupportedVersion": "1.101.0"
+                },
+                "customError": {
+                    "state": "enabled",
+                    "minSupportedVersion": "1.128.0",
+                    "settings": {
+                        "signInRequiredSelector": "[href*=\"//support.google.com/youtube/answer/3037019\"]"
+                    }
                 }
             },
             "settings": {
@@ -1901,7 +1921,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "6d2484ffb4609f98336632cdd1487f34"
+            "hash": "53f280df4390ebae40388bc234648cde"
         },
         "elementHiding": {
             "exceptions": [
@@ -2798,6 +2818,15 @@
                         ]
                     },
                     {
+                        "domain": "bloomberglaw.com",
+                        "rules": [
+                            {
+                                "selector": "[class^='HeaderAdSpot_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "bostonglobe.com",
                         "rules": [
                             {
@@ -3293,6 +3322,26 @@
                             {
                                 "selector": ".feed-b",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "margin-top",
+                                        "value": "0px"
+                                    }
+                                ]
+                            },
+                            {
+                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "top",
+                                        "value": "0px"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -4166,6 +4215,19 @@
                             },
                             {
                                 "selector": "#nbcsports-leaderboard",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "ndtvprofit.com",
+                        "rules": [
+                            {
+                                "selector": "[class*='ad-with-placeholder']",
+                                "type": "closest-empty"
+                            },
+                            {
+                                "selector": "[class*='ad-wrapper']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5468,7 +5530,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "d61755129c0454b9f6680147d3dccfd2"
+            "hash": "677529f00d4fe226ea5969a232c41d1d"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6968,6 +7030,16 @@
                             }
                         ]
                     },
+                    "amplitude.com": {
+                        "rules": [
+                            {
+                                "rule": "flag.lab.eu.amplitude.com/sdk/",
+                                "domains": [
+                                    "bluelightcard.co.uk"
+                                ]
+                            }
+                        ]
+                    },
                     "anyclip.com": {
                         "rules": [
                             {
@@ -7548,6 +7620,7 @@
                                     "ah.nl",
                                     "applesfera.com",
                                     "asuracomic.net",
+                                    "fincopilot.net",
                                     "goplay.be",
                                     "itsthevibe.com",
                                     "nytimes.com",
@@ -7595,6 +7668,7 @@
                                 "domains": [
                                     "crunchyroll.com",
                                     "nhl.com",
+                                    "pch.com",
                                     "rocketnews24.com",
                                     "viki.com"
                                 ]
@@ -8201,6 +8275,7 @@
                                     "thesimsresource.com",
                                     "tradersync.com",
                                     "vanguardplan.com",
+                                    "vizio.com",
                                     "xpn.org"
                                 ]
                             }
@@ -8795,6 +8870,12 @@
                             },
                             {
                                 "rule": "survey.medallia.com/",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            },
+                            {
+                                "rule": "resources.digital-cloud-gov.medallia.com/",
                                 "domains": [
                                     "<all>"
                                 ]
@@ -9742,6 +9823,16 @@
                             }
                         ]
                     },
+                    "theadex.com": {
+                        "rules": [
+                            {
+                                "rule": "dmp.theadex.com/",
+                                "domains": [
+                                    "servustv.com"
+                                ]
+                            }
+                        ]
+                    },
                     "theplatform.com": {
                         "rules": [
                             {
@@ -9974,6 +10065,7 @@
                             {
                                 "rule": "dev.visualwebsiteoptimizer.com/j.php",
                                 "domains": [
+                                    "arlo.com",
                                     "searchhudforeclosures.com"
                                 ]
                             }
@@ -10068,21 +10160,9 @@
                                 ]
                             },
                             {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ows8CdAyrC5lTw.js",
+                                "rule": "rapid-cdn.yottaa.com/rapid/lib/",
                                 "domains": [
-                                    "scheels.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/3ZzYwky2C-3YQw.js",
-                                "domains": [
-                                    "fashionnova.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ZfJxptseJcUQIA.js",
-                                "domains": [
-                                    "aviatornation.com"
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -10199,7 +10279,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "72dee0a9c86ad3fac0634408ecd6ff02"
+            "hash": "488745fd15d53beb1d89f5734ceb73af"
         },
         "trackingCookies1p": {
             "settings": {
@@ -10450,26 +10530,6 @@
             "exceptions": [],
             "state": "disabled",
             "hash": "728493ef7a1488e4781656d3f9db84aa"
-        },
-        "experimentTest": {
-            "state": "enabled",
-            "exceptions": [],
-            "features": {
-                "experimentTestAA": {
-                    "state": "enabled",
-                    "cohorts": [
-                        {
-                            "name": "control",
-                            "weight": 1
-                        },
-                        {
-                            "name": "treatment",
-                            "weight": 1
-                        }
-                    ]
-                }
-            },
-            "hash": "0fe5af5a94e036bf5d78076df6dd771b"
         }
     },
     "unprotectedTemporary": []

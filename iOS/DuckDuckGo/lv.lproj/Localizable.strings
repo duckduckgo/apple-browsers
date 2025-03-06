@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sinhronizācija un dublēšana ir pauzēta";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Vai pievienot grāmatzīmes visām cilnēm?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Pievienot neaizsargātām vietnēm";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Paslēpt paroli";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Iegūsti galddatora pārlūku";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Atver DuckDuckGo Mac vai Windows datorā";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Ej uz %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Paroles";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Iestatījumi";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Izvēlies %@ un veic importēšanas darbības";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importēt paroles...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Kad esi importējis datorā, vari iestatīt sinhronizāciju šajā %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importēšana no galddatora pārlūka:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importē paroles DuckDuckGo pārlūka galddatora versijā un pēc tam sinhronizē tās visās ierīcēs.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sinhronizēt ar galddatoru";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Kā importēt paroles";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Atslēgt";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Tavas grāmatzīmes ir kopīgotas.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Eksportēt HTML failu";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Diemžēl mēs nevaram importēt šo failu.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Tavas grāmatzīmes ir importētas.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importēt HTML failu";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importēt grāmatzīmju failu no citas pārlūkprogrammas";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Importē grāmatzīmju HTML failu no citas pārlūkprogrammas vai eksportē esošās grāmatzīmes.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Ziņot par problēmu šajā vietnē";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Tavs ziņojums palīdz padarīt DuckDuckGo labāku visiem lietotājiem!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Atcelt nav atļauts vairāk nekā vienu reizi";
 
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Rādīt Duck.ai pārlūka izvēlnē";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Rādīt Duck.ai balss meklēšanā";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Paslēp savu e-pastu un\nbloķē izsekotājus";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Vēl nav pievienota neviena grāmatzīme";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Pārlūkošanas izvēlne";
 
 /* No comment provided by engineer. */
+"Message" = "Ziņojums";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Ziņojumu politikas resursdatora nosaukums";
 
 /* Title for back button in navigation bar */
@@ -1949,9 +1907,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Jebkurā vietnē atver izvēlni ••• un izvēlies **Pievienot izlasei**, lai to pievienotu savai jaunas cilnes lapai.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Pārvaldītie sīkfaili";
 
@@ -2180,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "Labi";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Primārā/pirmā darbība";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Privātuma aizsardzība";
 
 /* Privacy Icon accessibility title */
@@ -2210,6 +2168,9 @@
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Sekundārā/otrā darbība";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Grāmatzīmes";
 
 /* No comment provided by engineer. */
@@ -2232,9 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Par";
-
-/* about page */
-"settings.about.text" = "DuckDuckGo ir neatkarīgs 2008. gadā dibināts interneta privātuma uzņēmums ikvienam, kam ir apnikusi izsekošana tiešsaistē un kas vēlas vienkāršu risinājumu. Mēs esam pierādījums tam, ka tiešsaistē var iegūt reālu privātuma aizsardzību bez kompromisiem.\n\nDuckDuckGo pārlūks sniedz visas iespējas, ko gaidi no pārlūkprogrammas, piemēram, grāmatzīmes, cilnes, paroles un citas, kā arī vairāk nekā [duci spēcīgu privātuma aizsardzības funkciju](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) pēc noklusējuma netiek piedāvāts lielākajā daļā populārāko pārlūkprogrammu. Šis unikāli visaptverošais privātuma aizsardzības komplekts palīdz aizsargāt tavas darbības tiešsaistē, sākot no meklēšanas līdz pārlūkošanai, e-pasta sūtīšanai u.c.\n\nMūsu privātuma aizsardzība darbojas vienmēr – tev nav jāpārzina sarežģīti tehniskie aspekti vai iestatījumi. Tev vienkārši jālieto DuckDuckGo pārlūks visās savās ierīcēs, un privātums būs tavs standarta risinājums.\n\nBet, ja vēlies paskatīties, kas lācītim vēderā, vairāk informācijas par to, kā darbojas DuckDuckGo privātuma aizsardzība, vari atrast mūsu [palīdzības lapās](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Pieejamība";
@@ -2484,8 +2442,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Tīmekļa izsekošanas aizsardzība";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo automātiski bloķē slēptos izsekotājus, kad tu pārlūko tīmekli.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Bloķē vairāk nekā 150 000 domēnu, kas atzīmēti kā ļaunprātīgas programmatūras, pikšķerēšanas uzbrukumu un tiešsaistes krāpšanas vietnes, izmantojot DNS līmeņa bloķēšanas sarakstu. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Satura bloķēšana un filtrēšana";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Bloķēt riskantos domēnus";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
@@ -2763,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezmaksas izmēģinājuma periods ir aktīvs";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUI brīdinājums";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Atgūšanas kods ir nokopēts starpliktuvē";
 
@@ -2862,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Šajā sarakstā ir iekļauti parādītie ziņojumi, kā arī ne vairāk kā 1 ziņojums, ko ir plānots rādīt. Konfigurācijā var būt vēl citi ziņojumi, kas tiks parādīti, taču tie vēl nav apstrādāti.";
 
+/* No comment provided by engineer. */
+"Title" = "Nosaukums";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "%@ privātuma aizsardzība ir atspējota";
 
@@ -2870,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "%@ ir iespējota privātuma aizsardzība";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Meklēt";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Automātiski pabeigt ieteikumu";
@@ -3122,9 +3099,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ziņojums no %@:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Sveicināti Duck pusē!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Vai meklē Mac versiju?";

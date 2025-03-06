@@ -61,17 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "Włączono VPN";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Wybierz skróty do ulubionych działań.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Niestandardowe skróty";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Wybierz swoje skróty";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Lewy skrót";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Prawy skrót";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Skonfiguruj skróty";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Szybko wyszukuj zapisane hasła DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Wyszukaj hasła";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Wyszukuj, rozmawiaj z Duck.ai lub przeglądaj hasła";
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Skróty do ulubionych działań.";
 
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Skróty";
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Skróty";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Prywatnie przeszukuj lub odwiedzaj swoje ulubione witryny za pomocą jednego dotknięcia.";

@@ -25,10 +25,10 @@ import Subscription
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let userScript: SubscriptionPagesUserScript
-    let subFeature: SubscriptionPagesUseSubscriptionFeature
-    
+    let subFeature: any SubscriptionPagesUseSubscriptionFeature
+
     private var canGoBackCancellable: AnyCancellable?
     private var urlCancellable: AnyCancellable?
     
@@ -59,9 +59,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
-    
-    private static let allowedDomains = [ "duckduckgo.com" ]
-    
+
     enum SubscriptionRestoreError: Error {
         case failedToRestoreFromEmail,
              subscriptionExpired,
@@ -69,7 +67,6 @@ final class SubscriptionEmailViewModel: ObservableObject {
     }
 
     private var cancellables = Set<AnyCancellable>()
-    var accountManager: AccountManager { subscriptionManager.accountManager }
 
     private var isWelcomePageOrSuccessPage: Bool {
         let subscriptionActivateSuccessURL = subscriptionManager.url(for: .activateSuccess)
@@ -83,16 +80,20 @@ final class SubscriptionEmailViewModel: ObservableObject {
         return webViewModel.url?.forComparison() == confirmSubscriptionURL.forComparison()
     }
 
-    init(userScript: SubscriptionPagesUserScript,
-         subFeature: SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: SubscriptionManager) {
+    init(isInternalUser: Bool = false,
+         userScript: SubscriptionPagesUserScript,
+         subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                                             isInternalUser: isInternalUser)
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                                                                 allowedDomains: Self.allowedDomains,
+                                                                                                 allowedDomains: allowedDomains,
                                                                                                  contentBlocking: false))
         self.emailURL = subscriptionManager.url(for: .activateViaEmail)
     }
@@ -131,12 +132,12 @@ final class SubscriptionEmailViewModel: ObservableObject {
     func onAppear() {
         state.shouldDismissView = false
         // If the user is Authenticated & not in the Welcome page
-        if accountManager.isUserAuthenticated && !isWelcomePageOrSuccessPage {
+        if subscriptionManager.isUserAuthenticated && !isWelcomePageOrSuccessPage {
             // If user is authenticated, we want to "Add or manage email" instead of activating
             let addEmailToSubscriptionURL = subscriptionManager.url(for: .addEmail)
             let manageSubscriptionEmailURL = subscriptionManager.url(for: .manageEmail)
-            emailURL = accountManager.email == nil ? addEmailToSubscriptionURL : manageSubscriptionEmailURL
-            state.viewTitle = accountManager.email == nil ?  UserText.subscriptionRestoreAddEmailTitle : UserText.subscriptionEditEmailTitle
+            emailURL = subscriptionManager.email == nil ? addEmailToSubscriptionURL : manageSubscriptionEmailURL
+            state.viewTitle = subscriptionManager.email == nil ?  UserText.subscriptionRestoreAddEmailTitle : UserText.subscriptionEditEmailTitle
             
             // Also we assume subscription requires managing, and not activation
             state.managingSubscriptionEmail = true
@@ -186,7 +187,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
             
         }
           
-        subFeature.$transactionError
+        subFeature.transactionErrorPublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] value in
@@ -242,7 +243,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     
     // MARK: -
     
-    private func handleTransactionError(error: SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError) {
+    private func handleTransactionError(error: UseSubscriptionError) {
         switch error {
         
         case .subscriptionExpired:

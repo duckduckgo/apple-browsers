@@ -52,6 +52,17 @@ public enum SubscriptionCachePolicy {
     case reloadIgnoringLocalCacheData
     case returnCacheDataElseLoad
     case returnCacheDataDontLoad
+
+    public var apiCachePolicy: APICachePolicy {
+        switch self {
+        case .reloadIgnoringLocalCacheData:
+            return .reloadIgnoringLocalCacheData
+        case .returnCacheDataElseLoad:
+            return .returnCacheDataElseLoad
+        case .returnCacheDataDontLoad:
+            return .returnCacheDataDontLoad
+        }
+    }
 }
 
 public protocol SubscriptionEndpointServiceV2 {

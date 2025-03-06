@@ -21,8 +21,8 @@ import Foundation
 public enum DataModel {
 
     public struct HistoryItemsBatch: Codable, Equatable {
-        let finished: Bool
-        let visits: [HistoryItem]
+        public let finished: Bool
+        public let visits: [HistoryItem]
 
         public init(finished: Bool, visits: [HistoryItem]) {
             self.finished = finished
@@ -30,19 +30,32 @@ public enum DataModel {
         }
     }
 
+    public enum DeleteDialogResponse: String, Codable {
+        case delete, domainSearch = "domain-search", noAction = "none"
+    }
+
     public enum HistoryRange: String, Codable {
         case all
         case today
         case yesterday
+        case sunday
         case monday
         case tuesday
         case wednesday
         case thursday
         case friday
         case saturday
-        case sunday
         case older
-        case recentlyOpened
+    }
+
+    public struct HistoryRangeWithCount: Codable, Equatable {
+        public let id: HistoryRange
+        public let count: Int
+
+        public init(id: HistoryRange, count: Int) {
+            self.id = id
+            self.count = count
+        }
     }
 
     public enum HistoryQueryKind: Codable, Equatable {
@@ -103,8 +116,9 @@ public enum DataModel {
         public let dateRelativeDay: String
         public let dateShort: String
         public let dateTimeOfDay: String
+        public let favicon: Favicon?
 
-        public init(id: String, url: String, title: String, domain: String, etldPlusOne: String?, dateRelativeDay: String, dateShort: String, dateTimeOfDay: String) {
+        public init(id: String, url: String, title: String, domain: String, etldPlusOne: String?, dateRelativeDay: String, dateShort: String, dateTimeOfDay: String, favicon: Favicon?) {
             self.id = id
             self.url = url
             self.title = title
@@ -113,6 +127,17 @@ public enum DataModel {
             self.dateRelativeDay = dateRelativeDay
             self.dateShort = dateShort
             self.dateTimeOfDay = dateTimeOfDay
+            self.favicon = favicon
+        }
+    }
+
+    public struct Favicon: Codable, Equatable {
+        public let maxAvailableSize: Int
+        public let src: String
+
+        public init(maxAvailableSize: Int, src: String) {
+            self.maxAvailableSize = maxAvailableSize
+            self.src = src
         }
     }
 }
@@ -134,7 +159,35 @@ extension DataModel {
     }
 
     struct GetRangesResponse: Codable, Equatable {
-        let ranges: [HistoryRange]
+        let ranges: [HistoryRangeWithCount]
+    }
+
+    struct DeleteDomainRequest: Codable, Equatable {
+        let domain: String
+    }
+
+    struct DeleteRangeRequest: Codable, Equatable {
+        let range: HistoryRange
+    }
+
+    struct DeleteTermRequest: Codable, Equatable {
+        let term: String
+    }
+
+    struct DeleteTermResponse: Codable, Equatable {
+        let action: DeleteDialogResponse
+    }
+
+    struct DeleteRangeResponse: Codable, Equatable {
+        let action: DeleteDialogResponse
+    }
+
+    struct EntriesMenuRequest: Codable, Equatable {
+        let ids: [String]
+    }
+
+    struct EntriesMenuResponse: Codable, Equatable {
+        let action: DeleteDialogResponse
     }
 
     struct HistoryQueryInfo: Codable, Equatable {

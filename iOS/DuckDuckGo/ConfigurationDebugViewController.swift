@@ -104,6 +104,25 @@ class ConfigurationDebugViewController: UITableViewController {
         }
     }
 
+    @IBAction
+    func refresh() {
+        self.lastConfigurationRefreshDate = Date.distantPast
+        AppConfigurationFetch().start(isDebug: true) { [weak tableView] result in
+            switch result {
+            case .assetsUpdated(let protectionsUpdated):
+                if protectionsUpdated {
+                    ContentBlocking.shared.contentBlockingManager.scheduleCompilation()
+                }
+                DispatchQueue.main.async {
+                    tableView?.reloadData()
+                }
+
+            case .noData:
+                break
+            }
+        }
+    }
+
     override func numberOfSections(in tableView: UITableView) -> Int {
         return Sections.allCases.count
     }

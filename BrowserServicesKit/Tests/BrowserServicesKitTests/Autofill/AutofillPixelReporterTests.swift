@@ -521,7 +521,7 @@ final class AutofillPixelReporterTests: XCTestCase {
         standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillFillDateKey)
         standardDefaults.set(true, forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey)
 
-        _=createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
+        _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
         XCTAssertEqual(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey) as? Date, testDate)
         XCTAssertEqual(appGroupDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillOnboardedUserKey), true)
@@ -530,7 +530,7 @@ final class AutofillPixelReporterTests: XCTestCase {
     }
 
     func testWhenMigrationRequiredAndNoDataExistsThenMigratedKeyIsTrue() {
-        _=createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
+        _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
         XCTAssertTrue(appGroupDefaults.bool(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey))
         XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
@@ -543,7 +543,7 @@ final class AutofillPixelReporterTests: XCTestCase {
         standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
         appGroupDefaults.set(true, forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey)
 
-        _=createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
+        _ = createAutofillPixelReporter(appGroupUserDefaults: appGroupDefaults)
 
         XCTAssertNotNil(standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
         XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
@@ -553,7 +553,7 @@ final class AutofillPixelReporterTests: XCTestCase {
         let testDate = Date()
         standardDefaults.set(testDate, forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey)
 
-        _=createAutofillPixelReporter(appGroupUserDefaults: nil)
+        _ = createAutofillPixelReporter(appGroupUserDefaults: nil)
 
         XCTAssertNotNil(standardDefaults.object(forKey: AutofillPixelReporter.Keys.autofillSearchDauDateKey))
         XCTAssertNil(appGroupDefaults.object(forKey: AutofillPixelReporter.Keys.autofillDauMigratedKey))

@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Sincronizzazione e Backup è in pausa";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Creare un segnalibro con tutte le schede?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Aggiungi ai siti non protetti";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Nascondi password";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Scarica il browser per desktop";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Apri DuckDuckGo su Mac o Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Vai su %1$@ > %2$@";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Password";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Impostazioni";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Seleziona %@ e segui i passaggi per l'importazione";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Importa password...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Una volta importate sul tuo computer, puoi impostare la sincronizzazione su questo %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Importa dal browser desktop:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Importa le password nella versione desktop del browser DuckDuckGo, quindi sincronizza su tutti i dispositivi.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Sincronizzazione con il desktop";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Come importare le password";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Disabilita";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "I tuoi segnalibri sono stati condivisi.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Esporta file HTML";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Siamo spiacenti, non riusciamo a importare questo file.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "I segnalibri sono stati importati.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Importa file HTML";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Importa file segnalibro da un altro browser";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Importa un file HTML di segnalibri da un altro browser o esporta i segnalibri esistenti.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Segnala un problema con questo sito";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Il tuo rapporto aiuta a rendere DuckDuckGo migliore per tutti.";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Non puoi annullare più di una volta";
 
 /* No comment provided by engineer. */
 "Confirm" = "Conferma";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Mostra Duck.ai nel menu del browser";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Mostra Duck.ai nella Ricerca vocale";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Nascondi il tuo indirizzo e-mail e \n blocca i sistemi di tracciamento";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Non è ancora stato aggiunto nessun segnalibro";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Menu di navigazione";
 
 /* No comment provided by engineer. */
+"Message" = "Messaggio";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Nome host della policy dei messaggi";
 
 /* Title for back button in navigation bar */
@@ -1949,9 +1907,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Su qualsiasi sito, apri il menu ••• e seleziona **Aggiungi preferito** per aggiungerlo alla nuova scheda.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookie gestiti";
 
@@ -2180,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "OK";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Azione principali/prima azione";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Protezioni della Privacy";
 
 /* Privacy Icon accessibility title */
@@ -2210,6 +2168,9 @@
 "search.hint.duckduckgo" = "Cerca o digita l'indirizzo";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Azione secondaria / Seconda azione";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Segnalibri";
 
 /* No comment provided by engineer. */
@@ -2232,9 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Informazioni";
-
-/* about page */
-"settings.about.text" = "Fondata nel 2008, DuckDuckGo è un'azienda indipendente che tutela la privacy online per tutti coloro che sono stanchi di essere tracciati online e vogliono una soluzione semplice. Siamo la dimostrazione che si può garantire una vera protezione della privacy online senza compromessi.\n\nIl browser DuckDuckGo è ricco di funzioni essenziali come i segnalibri, le schede, le password e molto altro ancora, [oltre a numerose e potenti protezioni della privacy](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) che normalmente non vengono offerte dai browser più comuni. Stiamo parlando di uno straordinario set completo per la protezione della privacy, che aiuta a proteggere le attività online, dalla ricerca alla navigazione, alle e-mail e molto altro ancora.\n\nCon le nostre protezioni della privacy non è necessario conoscere particolari tecnici o dover affrontare configurazioni complesse. È sufficiente scegliere il browser DuckDuckGo su tutti i dispositivi personali per avere automaticamente garantita la privacy.\n\nPer saperne di più su come funzionano le protezioni della privacy di DuckDuckGo, è possibile consultare le nostre [pagine di aiuto](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Accessibilità";
@@ -2484,8 +2442,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Protezione dal tracciamento web";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo blocca automaticamente i sistemi di tracciamento nascosti mentre navighi sul web.\n[Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Blocca oltre 150.000 domini segnalati in quanto potrebbero ospitare malware, attacchi di phishing e truffe online con una lista di blocco a livello DNS.\n [Scopri di più](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "Blocco e filtraggio dei contenuti";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Blocca i domini rischiosi";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Seleziona l'opzione che meglio descrive il problema riscontrato.";
@@ -2763,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Prova gratuita attiva";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Avviso SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Codice di recupero copiato negli appunti";
 
@@ -2862,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Questo elenco contiene i messaggi visualizzati, più al massimo 1 messaggio pianificato per la visualizzazione. La configurazione potrebbe contenere altri messaggi che saranno presentati, ma non sono ancora stati elaborati.";
 
+/* No comment provided by engineer. */
+"Title" = "Titolo";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Tutela della privacy disattivata per %@";
 
@@ -2870,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Tutela della privacy attivata per %@";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Ricerca";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Mostra suggerimenti di completamento automatico";
@@ -3122,9 +3099,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un messaggio da parte di %@:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Dax the Duck ti dà il benvenuto!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Cerchi la versione per Mac?";

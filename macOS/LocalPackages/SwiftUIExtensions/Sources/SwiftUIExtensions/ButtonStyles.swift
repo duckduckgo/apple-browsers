@@ -20,8 +20,13 @@ import Foundation
 import SwiftUI
 
 public struct StandardButtonStyle: ButtonStyle {
+    public let topPadding: CGFloat
+    public let bottomPadding: CGFloat
 
-    public init() {}
+    public init(topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+        self.topPadding = topPadding
+        self.bottomPadding = bottomPadding
+    }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
 
@@ -30,8 +35,8 @@ public struct StandardButtonStyle: ButtonStyle {
 
         configuration.label
             .font(.system(size: 13))
-            .padding(.top, 2.5)
-            .padding(.bottom, 3)
+            .padding(.top, topPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
             .background(backgroundColor)
             .foregroundColor(labelColor)
@@ -43,18 +48,24 @@ public struct StandardButtonStyle: ButtonStyle {
 public struct DefaultActionButtonStyle: ButtonStyle {
 
     public let enabled: Bool
+    public let topPadding: CGFloat
+    public let bottomPadding: CGFloat
 
-    public init(enabled: Bool) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
         self.enabled = enabled
+        self.topPadding = topPadding
+        self.bottomPadding = bottomPadding
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        ButtonContent(configuration: configuration, enabled: enabled)
+        ButtonContent(configuration: configuration, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding)
     }
 
     struct ButtonContent: View {
         let configuration: Configuration
         let enabled: Bool
+        let topPadding: CGFloat
+        let bottomPadding: CGFloat
         @State private var isHovered: Bool = false
 
         var body: some View {
@@ -73,8 +84,8 @@ public struct DefaultActionButtonStyle: ButtonStyle {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(minWidth: 44)
-                .padding(.top, 2.5)
-                .padding(.bottom, 3)
+                .padding(.top, topPadding)
+                .padding(.bottom, bottomPadding)
                 .padding(.horizontal, 7.5)
                 .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
                 .foregroundColor(enabled ? enabledLabelColor : disabledLabelColor)
@@ -89,9 +100,13 @@ public struct DefaultActionButtonStyle: ButtonStyle {
 public struct TransparentActionButtonStyle: ButtonStyle {
 
     public let enabled: Bool
+    public let topPadding: CGFloat
+    public let bottomPadding: CGFloat
 
-    public init(enabled: Bool) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
         self.enabled = enabled
+        self.topPadding = topPadding
+        self.bottomPadding = bottomPadding
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -104,8 +119,8 @@ public struct TransparentActionButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .frame(minWidth: 44) // OK buttons will match the width of "Cancel" at least in English
-            .padding(.top, 2.5)
-            .padding(.bottom, 3)
+            .padding(.top, topPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, 0)
             .background(Color.clear)
             .foregroundColor(enabled ? enabledForegroundColor : disabledForegroundColor)
@@ -118,9 +133,13 @@ public struct DismissActionButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) var colorScheme
 
     public let textColor: Color
+    public let topPadding: CGFloat
+    public let bottomPadding: CGFloat
 
-    public init(textColor: Color = .primary) {
+    public init(textColor: Color = .primary, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
         self.textColor = textColor
+        self.topPadding = topPadding
+        self.bottomPadding = bottomPadding
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
@@ -131,8 +150,8 @@ public struct DismissActionButtonStyle: ButtonStyle {
             .lineLimit(1)
             .font(.system(size: 13))
             .frame(minWidth: 44) // OK buttons will match the width of "Cancel" at least in English
-            .padding(.top, 2.5)
-            .padding(.bottom, 3)
+            .padding(.top, topPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
             .background(
                 RoundedRectangle(cornerRadius: 5, style: .continuous)
@@ -152,13 +171,17 @@ public struct DismissActionButtonStyle: ButtonStyle {
 public struct DestructiveActionButtonStyle: ButtonStyle {
 
     public let enabled: Bool
+    public let topPadding: CGFloat
+    public let bottomPadding: CGFloat
 
-    public init(enabled: Bool) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
         self.enabled = enabled
+        self.topPadding = topPadding
+        self.bottomPadding = bottomPadding
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.pwmButtonBackgroundPressed) : .red
+        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
         let disabledBackgroundColor = Color.gray.opacity(0.1)
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 
@@ -166,8 +189,8 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
             .lineLimit(1)
             .font(.system(size: 13))
             .frame(minWidth: 44) // OK buttons will match the width of "Cancel" at least in English
-            .padding(.top, 2.5)
-            .padding(.bottom, 3)
+            .padding(.top, topPadding)
+            .padding(.bottom, bottomPadding)
             .padding(.horizontal, 7.5)
             .background(enabled ? enabledBackgroundColor : disabledBackgroundColor)
             .foregroundColor(labelColor)

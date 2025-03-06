@@ -43,6 +43,7 @@ final class MainViewController: NSViewController {
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
+    private var selectedTabViewModelForHistoryViewOnboardingCancellable: AnyCancellable?
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
     private var eventMonitorCancellables = Set<AnyCancellable>()
@@ -317,6 +318,11 @@ final class MainViewController: NSViewController {
             subscribeToFindInPage(of: tabViewModel)
             subscribeToTitleChange(of: tabViewModel)
             subscribeToTabContent(of: tabViewModel)
+        }
+
+        selectedTabViewModelForHistoryViewOnboardingCancellable = tabCollectionViewModel.$selectedTabViewModel.dropFirst().sink { [weak self] _ in
+            guard let self else { return }
+            navigationBarViewController.presentHistoryViewOnboardingIfNeeded()
         }
     }
 

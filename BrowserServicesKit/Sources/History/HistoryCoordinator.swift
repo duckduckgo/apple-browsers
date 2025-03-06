@@ -41,6 +41,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 
     var history: BrowsingHistory? { get }
     var allHistoryVisits: [Visit]? { get }
+    var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
     @discardableResult func addVisit(of url: URL) -> Visit?

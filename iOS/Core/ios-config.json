@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1739554171092,
+    "version": 1740760942171,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -201,9 +201,6 @@
                     "domain": "bild.de"
                 },
                 {
-                    "domain": "breitbart.com"
-                },
-                {
                     "domain": "derstandard.de"
                 },
                 {
@@ -340,9 +337,6 @@
                 },
                 {
                     "domain": "publico.es"
-                },
-                {
-                    "domain": "leboncoin.fr"
                 },
                 {
                     "domain": "www.ffbb.com"
@@ -514,6 +508,21 @@
                 },
                 {
                     "domain": "russafasingluten.com"
+                },
+                {
+                    "domain": "capita.com"
+                },
+                {
+                    "domain": "capita.co.uk"
+                },
+                {
+                    "domain": "katieloxton.com"
+                },
+                {
+                    "domain": "servustv.com"
+                },
+                {
+                    "domain": "xxlmag.com"
                 },
                 {
                     "domain": "marvel.com"
@@ -696,7 +705,7 @@
                     }
                 }
             },
-            "hash": "92a7c1bf0f3cbdaa45ed3da845fc6c6e"
+            "hash": "66dfcb14e8a31eb1eede3b7e74556f59"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -1634,7 +1643,7 @@
             ],
             "features": {
                 "tdsNextExperimentBaseline": {
-                    "state": "enabled",
+                    "state": "disabled",
                     "rollout": {
                         "steps": [
                             {
@@ -1649,6 +1658,30 @@
                     "cohorts": [
                         {
                             "name": "control",
+                            "weight": 0
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 0
+                        }
+                    ]
+                },
+                "tdsNextExperimentFeb25": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 50
+                            }
+                        ]
+                    },
+                    "settings": {
+                        "controlUrl": "v5/current/ios-tds.json",
+                        "treatmentUrl": "v5/temp/ios-tds-ab-test.json"
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
                             "weight": 1
                         },
                         {
@@ -1658,7 +1691,7 @@
                     ]
                 }
             },
-            "hash": "606fecd9435da3f4928299a0d305f6bd"
+            "hash": "6017120e0ff4908c3de32274ac94a97d"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1756,6 +1789,10 @@
                     {
                         "domain": "ihg.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2383"
+                    },
+                    {
+                        "domain": "maxcomply.app",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2759"
                     }
                 ],
                 "ddgDefaultSites": [
@@ -1779,13 +1816,16 @@
                     },
                     {
                         "domain": "ihg.com"
+                    },
+                    {
+                        "domain": "maxcomply.app"
                     }
                 ],
                 "omitVersionSites": []
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "e577ccb473bdb7ada49c4d3c6e79cf01"
+            "hash": "a2c3260596659b37a3899e58df3b5d78"
         },
         "dbp": {
             "state": "disabled",
@@ -1819,6 +1859,13 @@
                 "enableDuckPlayer": {
                     "state": "enabled",
                     "minSupportedVersion": "7.139.0"
+                },
+                "customError": {
+                    "state": "enabled",
+                    "minSupportedVersion": "7.159.0",
+                    "settings": {
+                        "signInRequiredSelector": "[href*=\"//support.google.com/youtube/answer/3037019\"]"
+                    }
                 }
             },
             "settings": {
@@ -1907,7 +1954,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "0181fe3479adc4db0b7dd140eb1bcc2e"
+            "hash": "51ef6e4978292d995e2ab92a21b001b6"
         },
         "elementHiding": {
             "exceptions": [
@@ -2801,6 +2848,15 @@
                         ]
                     },
                     {
+                        "domain": "bloomberglaw.com",
+                        "rules": [
+                            {
+                                "selector": "[class^='HeaderAdSpot_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "bostonglobe.com",
                         "rules": [
                             {
@@ -3296,6 +3352,26 @@
                             {
                                 "selector": ".feed-b",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "margin-top",
+                                        "value": "0px"
+                                    }
+                                ]
+                            },
+                            {
+                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
+                                "type": "modify-style",
+                                "values": [
+                                    {
+                                        "property": "top",
+                                        "value": "0px"
+                                    }
+                                ]
                             }
                         ]
                     },
@@ -4169,6 +4245,19 @@
                             },
                             {
                                 "selector": "#nbcsports-leaderboard",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "ndtvprofit.com",
+                        "rules": [
+                            {
+                                "selector": "[class*='ad-with-placeholder']",
+                                "type": "closest-empty"
+                            },
+                            {
+                                "selector": "[class*='ad-wrapper']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5471,7 +5560,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "8872a956e5aad97cde08df18d7dd85a6"
+            "hash": "46caec99a4c60e350d22764028ceed89"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6112,6 +6201,12 @@
                         "steps": [
                             {
                                 "percent": 10
+                            },
+                            {
+                                "percent": 25
+                            },
+                            {
+                                "percent": 50
                             }
                         ]
                     }
@@ -6121,7 +6216,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "7a58f3489023701ac2ea8e22c83e3d68"
+            "hash": "f24e30928b557726db7f757e931b6bf3"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -6359,7 +6454,26 @@
                     "minSupportedVersion": "7.148.0"
                 },
                 "privacyProFreeTrialJan25": {
-                    "state": "disabled",
+                    "state": "enabled",
+                    "targets": [
+                        {
+                            "localeCountry": "US"
+                        }
+                    ],
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ],
+                    "minSupportedVersion": "7.157.0"
+                },
+                "privacyProOnboardingCTAMarch25": {
+                    "state": "internal",
                     "targets": [
                         {
                             "localeCountry": "US"
@@ -6377,7 +6491,7 @@
                     ]
                 }
             },
-            "hash": "7dabbf34a403f84e319734457444a7af"
+            "hash": "36991c04e3d5243c571034aa598e05e3"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",
@@ -6903,6 +7017,16 @@
                                 "rule": "elb.amazonaws.com/public/digital-experience/js/common.js",
                                 "domains": [
                                     "cigna.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "amplitude.com": {
+                        "rules": [
+                            {
+                                "rule": "flag.lab.eu.amplitude.com/sdk/",
+                                "domains": [
+                                    "bluelightcard.co.uk"
                                 ]
                             }
                         ]
@@ -7475,6 +7599,7 @@
                                     "ah.nl",
                                     "applesfera.com",
                                     "asuracomic.net",
+                                    "fincopilot.net",
                                     "goplay.be",
                                     "itsthevibe.com",
                                     "nytimes.com",
@@ -7522,6 +7647,7 @@
                                 "domains": [
                                     "crunchyroll.com",
                                     "nhl.com",
+                                    "pch.com",
                                     "rocketnews24.com",
                                     "viki.com"
                                 ]
@@ -8104,6 +8230,7 @@
                                     "thesimsresource.com",
                                     "tradersync.com",
                                     "vanguardplan.com",
+                                    "vizio.com",
                                     "xpn.org"
                                 ]
                             }
@@ -8691,6 +8818,12 @@
                             },
                             {
                                 "rule": "survey.medallia.com/",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            },
+                            {
+                                "rule": "resources.digital-cloud-gov.medallia.com/",
                                 "domains": [
                                     "<all>"
                                 ]
@@ -9638,6 +9771,16 @@
                             }
                         ]
                     },
+                    "theadex.com": {
+                        "rules": [
+                            {
+                                "rule": "dmp.theadex.com/",
+                                "domains": [
+                                    "servustv.com"
+                                ]
+                            }
+                        ]
+                    },
                     "theplatform.com": {
                         "rules": [
                             {
@@ -9870,6 +10013,7 @@
                             {
                                 "rule": "dev.visualwebsiteoptimizer.com/j.php",
                                 "domains": [
+                                    "arlo.com",
                                     "searchhudforeclosures.com"
                                 ]
                             }
@@ -9964,21 +10108,9 @@
                                 ]
                             },
                             {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ows8CdAyrC5lTw.js",
+                                "rule": "rapid-cdn.yottaa.com/rapid/lib/",
                                 "domains": [
-                                    "scheels.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/3ZzYwky2C-3YQw.js",
-                                "domains": [
-                                    "fashionnova.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ZfJxptseJcUQIA.js",
-                                "domains": [
-                                    "aviatornation.com"
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -10095,7 +10227,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "856b689c920d896b149774d16d0348f0"
+            "hash": "f06400d022580c68d18c4bd42091a95a"
         },
         "trackingCookies1p": {
             "settings": {
@@ -10366,26 +10498,6 @@
             "exceptions": [],
             "state": "disabled",
             "hash": "728493ef7a1488e4781656d3f9db84aa"
-        },
-        "experimentTest": {
-            "state": "enabled",
-            "exceptions": [],
-            "features": {
-                "experimentTestAA": {
-                    "state": "enabled",
-                    "cohorts": [
-                        {
-                            "name": "control",
-                            "weight": 1
-                        },
-                        {
-                            "name": "treatment",
-                            "weight": 1
-                        }
-                    ]
-                }
-            },
-            "hash": "0fe5af5a94e036bf5d78076df6dd771b"
         }
     },
     "unprotectedTemporary": []

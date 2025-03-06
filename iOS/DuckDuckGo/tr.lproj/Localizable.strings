@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Senkronizasyon ve Yedekleme Duraklatıldı";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Tüm Sekmelere Yer İmi Eklensin mi?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Korumasız Sitelere Ekle";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Parolayı gizle";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Masaüstü Tarayıcısını Edinin";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "DuckDuckGo'yu Mac veya Windows'ta açın";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "1$@ > %2$@ adresine gidin";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Şifreler";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Ayarlar";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "%@ seçeneğini seçin ve içe aktarma adımlarını izleyin";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Şifreleri İçe Aktar...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "Bilgisayarınıza aktarıldıktan sonra bu %@ üzerinde senkronizasyon ayarlayabilirsiniz.";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Masaüstü tarayıcısından içe aktarın:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "DuckDuckGo tarayıcısının masaüstü sürümünde şifreleri içe aktarın, ardından cihazlar arasında senkronize edin.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Masaüstü ile Senkronize Et";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Şifreler Nasıl Aktarılır";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Devre dışı bırak";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Yer işaretleriniz paylaşıldı.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "HTML Dosyasını Dışarı Aktar";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Ne yazık ki bu dosya içeri aktarılamıyor.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Yer işaretleriniz içeri aktarıldı.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "HTML Dosyasını İçeri Aktar";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Başka bir tarayıcıdan yer işaretleri dosyasını içeri aktarma";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Yer işaretleri HTML dosyasını başka bir tarayıcıdan içeri aktarın veya mevcut yer işaretlerinizi dışarı aktarın.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Bu Siteyle İlgili Sorun Bildir";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Raporunuz DuckDuckGo'yu herkes için daha iyi hale getirmeye yardımcı oluyor!";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
 
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı Menüsünde Duck.ai'yi Göster";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Sesli Aramada Duck.ai'yi Göster";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "E-postanızı Gizleyin ve \n İzleyicileri Engelleyin";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Henüz yer imi eklenmedi";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Göz Atma Menüsü";
 
 /* No comment provided by engineer. */
+"Message" = "Mesaj";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Mesaj politikası ana bilgisayar adı";
 
 /* Title for back button in navigation bar */
@@ -1949,9 +1907,6 @@
 /* Text shown on the favorites info tooltip */
 "new.tab.page.tooltip.body" = "Herhangi bir sitedeyken, ••• menüsünü açın ve siteyi yeni sekme sayfanıza eklemek için **Favori Ekle**'yi seçin.";
 
-/* Do not translate - stringsdict entry */
-"number.of.tabs" = "number.of.tabs";
-
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
 
@@ -2180,6 +2135,9 @@
 "preserveLogins.remove.all.ok" = "Tamam";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Birincil / İlk İşlem";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Gizlilik Korumaları";
 
 /* Privacy Icon accessibility title */
@@ -2210,6 +2168,9 @@
 "search.hint.duckduckgo" = "Adres ara veya gir";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "İkincil / İkinci İşlem";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Yer İmleri";
 
 /* No comment provided by engineer. */
@@ -2232,9 +2193,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Hakkında";
-
-/* about page */
-"settings.about.text" = "DuckDuckGo, çevrim içi takip edilmeyi hiç istemeyen ve pratik bir çözüm arayan herkese hizmet veren, 2008 yılında kurulmuş bağımsız bir İnternet gizlilik şirketidir. Biz, çevrim içi ortamda ödün vermeden gerçek gizlilik koruması elde edebileceğinizin kanıtıyız.\n\nDuckDuckGo tarayıcı; yer imleri, sekmeler, parolalar ve daha fazlası gibi en çok kullandığınız tarayıcıdan beklediğiniz ama çoğu popüler tarayıcıda varsayılan olarak bulunmayan özelliklerin yanı sıra [sayısı ondan fazla güçlü gizlilik koruması](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/) ile birlikte gelir. Son derece kapsamlı olan bu gizlilik koruma seti; aramadan gezinmeye, e-posta göndermeye ve daha fazlasına kadar çevrim içi etkinliklerinizde koruma sağlamaya yardımcı olur.\n\nGizlilik korumalarımız, teknik ayrıntılar hakkında hiçbir şey bilmenize veya karmaşık ayarlarla uğraşmanıza gerek kalmadan çalışır. Tüm cihazlarınızda tarayıcı olarak DuckDuckGo'yu kullanarak aradığınız gizliliği sağlayabilirsiniz.\n\nAncak ayrıntılara bir göz atmak *istiyorsanız*, DuckDuckGo gizlilik korumalarının nasıl çalıştığı hakkında daha fazla bilgiyi [yardım sayfalarımızda](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/) bulabilirsiniz.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Erişilebilirlik";
@@ -2484,8 +2442,15 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web İzleme Koruması";
 
-/* Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DuckDuckGo, web'de gezinirken gizli izleyicileri otomatik olarak engeller.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
+   Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.header" = "İçerik Engelleme ve Filtreleme";
+
+/* Title of the vpn blocks risky sites feature settings */
+"settings.web.tracking.protection.title" = "Riskli alan adlarını engelleyin";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
@@ -2763,6 +2728,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ücretsiz Deneme Süresi Aktif";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUI Uyarısı";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Kurtarma kodu panoya kopyalandı";
 
@@ -2862,6 +2830,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "Bu liste, gösterilmiş mesajların yanı sıra gösterilmesi planlanan en fazla 1 mesajı içerir. Yapılandırmada sunulacak daha fazla mesaj olabilir, ancak bunlar henüz işlenmemiştir.";
 
+/* No comment provided by engineer. */
+"Title" = "Title";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Gizlilik Koruması %@ için devre dışı";
 
@@ -2870,6 +2841,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Gizlilik Koruması %@ için etkinleştirildi";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Ara";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Otomatik tamamlama önerisi";
@@ -3122,9 +3099,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Duck Side'a hoş geldiniz!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac Sürümünü mü arıyorsunuz?";

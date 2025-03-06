@@ -49,8 +49,8 @@ final class YoutubeOembedServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result?.title, "Test Video")
-        XCTAssertEqual(result?.author_name, "Test Channel")
-        XCTAssertEqual(result?.thumbnail_url, "https://test.com/thumb.jpg")
+        XCTAssertEqual(result?.authorName, "Test Channel")
+        XCTAssertEqual(result?.thumbnailUrl, "https://test.com/thumb.jpg")
     }
 
     func testFailedMetadataFetch() async {

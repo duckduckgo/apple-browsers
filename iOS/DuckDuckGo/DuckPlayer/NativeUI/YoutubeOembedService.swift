@@ -21,8 +21,14 @@ import Foundation
 
 public struct OEmbedResponse: Decodable {
     public let title: String
-    public let author_name: String
-    public let thumbnail_url: String
+    public let authorName: String
+    public let thumbnailUrl: String
+    
+    private enum CodingKeys: String, CodingKey {
+        case title
+        case authorName = "author_name"
+        case thumbnailUrl = "thumbnail_url"
+    }
 }
 
 protocol YoutubeOembedService {
@@ -45,7 +51,6 @@ public final class DefaultYoutubeOembedService: YoutubeOembedService {
 }
 
 extension URL {
-
     // Returns Youtube's oembed URL for a specific video ID
     public static func youtubeOembed(_ videoID: String) -> URL {
         let url = URL(string: "https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=\(videoID)&format=json")!

@@ -64,8 +64,8 @@ final class DuckPlayerMiniPillViewModel: ObservableObject {
     private func updateMetadata() async throws {
         if let response = await oEmbedService.fetchMetadata(for: videoID) {
             self.title = response.title
-            self.authorName = response.author_name
-            self.thumbnailURL = URL(string: response.thumbnail_url)
+            self.authorName = response.authorName
+            self.thumbnailURL = URL(string: response.thumbnailUrl)
         }
 
     }

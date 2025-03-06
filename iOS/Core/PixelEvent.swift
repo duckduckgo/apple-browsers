@@ -204,7 +204,8 @@ extension Pixel {
         case emailUserCreatedAlias
         case emailTooltipDismissed
         
-        case voiceSearchDone
+        case voiceSearchSERPDone
+        case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
 
@@ -443,8 +444,6 @@ extension Pixel {
         case networkProtectionLatencyError
         
         case networkProtectionEnabledOnSearch
-        
-        case networkProtectionBreakageReport
 
         case networkProtectionRekeyAttempt
         case networkProtectionRekeyFailure
@@ -1222,7 +1221,8 @@ extension Pixel.Event {
         case .emailUserCreatedAlias: return "email_generated_button"
         case .emailTooltipDismissed: return "email_tooltip_dismissed"
             
-        case .voiceSearchDone: return "m_voice_search_done"
+        case .voiceSearchSERPDone: return "m_voice_search_serp_done"
+        case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
             
@@ -1459,7 +1459,6 @@ extension Pixel.Event {
         case .networkProtectionRekeyCompleted: return "m_netp_rekey_completed"
         case .networkProtectionRekeyFailure: return "m_netp_rekey_failure"
         case .networkProtectionEnabledOnSearch: return "m_netp_ev_enabled_on_search"
-        case .networkProtectionBreakageReport: return "m_vpn_breakage_report"
         case .networkProtectionTunnelConfigurationNoServerRegistrationInfo: return "m_netp_tunnel_config_error_no_server_registration_info"
         case .networkProtectionTunnelConfigurationCouldNotSelectClosestServer: return "m_netp_tunnel_config_error_could_not_select_closest_server"
         case .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey: return "m_netp_tunnel_config_error_could_not_get_peer_public_key"

@@ -87,7 +87,16 @@ class BarsAnimator {
     }
 
     private func transitioningAndScrolling(in scrollView: UIScrollView) {
-        
+        let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
+
+        if ratio == 1.0 {
+            barsState = .hidden
+            delegate?.setBarsVisibility(0, animated: false, animationDuration: nil)
+        } else if ratio == 0 {
+            barsState = .revealed
+            delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
+        }
+
         // On iOS 18 we end up in a loop after setBarsVisibility.
         // It seems to trigger a new didScrollEvent when rendering some PDF files
         // That causes an infinite loop.

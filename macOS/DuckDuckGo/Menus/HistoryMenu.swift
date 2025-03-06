@@ -307,7 +307,7 @@ extension HistoryMenu {
 
     /**
      * This class manages the shortcut assignment to either of the
-     * "Reopen Last Closed Tab" or "Reopen All Windows from Last Session"
+     * "Reopen Last Closed Tab" or "Reopen All Windows From Last Session"
      * menu items.
      */
     final class ReopenMenuItemKeyEquivalentManager {

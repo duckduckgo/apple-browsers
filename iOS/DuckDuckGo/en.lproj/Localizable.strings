@@ -1163,6 +1163,15 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player Unavailable";
 
+/* Text for the toggle to autoplay videos */
+"duck-player.native-autoplay-videos" = "Autoplay Videos";
+
+/* Text for the button to watch a video on YouTube */
+"duck-player.native-open-in-duckplayer" = "Open in Duck Player";
+
+/* Text for the button to watch a video on YouTube */
+"duck-player.native-watch-on-youtube" = "Watch in Youtube";
+
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Learn More";
 
@@ -1178,6 +1187,9 @@
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Show Duck.ai in Browser Menu";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Show Duck.ai in Voice Search";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2956,6 +2968,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacy Protection enabled for %@";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Search";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Autocomplete suggestion";

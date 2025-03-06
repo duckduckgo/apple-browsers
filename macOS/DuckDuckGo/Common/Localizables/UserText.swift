@@ -184,7 +184,7 @@ struct UserText {
     static let mainMenuHistoryDeleteAllHistory = NSLocalizedString("Delete All History…", comment: "Main Menu History item")
     static let mainMenuHistoryManageBookmarks = NSLocalizedString("Manage Bookmarks", comment: "Main Menu History item")
     static let mainMenuHistoryFavoriteThisPage = NSLocalizedString("Favorite This Page…", comment: "Main Menu History item")
-    static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows from Last Session", comment: "Main Menu History item")
+    static let mainMenuHistoryReopenAllWindowsFromLastSession = NSLocalizedString("Reopen All Windows From Last Session", comment: "Main Menu History item")
 
     // MARK: - Main Menu -> Bookmarks -> Bookmarks Bar
     static let mainMenuBookmarksShowBookmarksBarAlways = NSLocalizedString("Always Show", comment: "Preference for always showing the bookmarks bar")
@@ -225,6 +225,17 @@ struct UserText {
                                           value: "Delete all history from\n%@?",
                                           comment: "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date")
         return String(format: localized, date)
+    }
+    static var delete1HistoryItemMessage: String {
+        if #available(macOS 12.0, *) {
+            return NSLocalizedString("history.item.delete.dialog.message.markdown",
+                                     value: "**1** item will be deleted.",
+                                     comment: "Message in a dialog asking the user to confirm deleting a single history item. Please make sure to keep **%@** intact.")
+        } else {
+            return NSLocalizedString("history.item.delete.dialog.message",
+                                     value: "1 item will be deleted",
+                                     comment: "Message in a dialog asking the user to confirm deleting a single history item.")
+        }
     }
     static func deleteHistoryMessage(items: String) -> String {
         let localized = {
@@ -267,7 +278,7 @@ struct UserText {
     static let openInNewTab = NSLocalizedString("open.in.new.tab", value: "Open in New Tab", comment: "Menu item that opens the link in a new tab")
     static let openInNewWindow = NSLocalizedString("open.in.new.window", value: "Open in New Window", comment: "Menu item that opens the link in a new window")
     static let openInNewFireWindow = NSLocalizedString("open.in.new.fire.window", value: "Open in New Fire Window", comment: "Menu item that opens the link in a new Fire Window")
-    static let openAllInNewTabs = NSLocalizedString("open.all.in.new.tabs", value: "Open All in New Tabs", comment: "Menu item that opens all the bookmarks in a folder to new tabs")
+    static let openAllInNewTabs = NSLocalizedString("open.all.in.new.tabs", value: "Open All in Current Window", comment: "Menu item that opens all the bookmarks in a folder in new tabs in the current window")
     static let openAllTabsInNewWindow = NSLocalizedString("open.all.tabs.in.new.window", value: "Open All in New Window", comment: "Menu item that opens all the bookmarks in a folder in a new window")
     static let openAllInNewFireWindow = NSLocalizedString("open.all.in.new.fire.window", value: "Open All in New Fire Window", comment: "Menu item that opens all URLs in a new Fire Window")
     static let showFolderContents = NSLocalizedString("show.folder.contents", value: "Show Folder Contents", comment: "Menu item that shows the content of a folder ")

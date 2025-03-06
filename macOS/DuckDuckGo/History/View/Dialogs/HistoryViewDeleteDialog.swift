@@ -33,7 +33,7 @@ struct HistoryViewDeleteDialog: ModalView {
                     .fixMultilineScrollableText()
                     .font(.system(size: 15).weight(.semibold))
 
-                Text(.init(UserText.deleteHistoryMessage(items: model.entriesCountString)))
+                Text(.init(model.message))
                     .multilineTextAlignment(.center)
                     .fixMultilineScrollableText()
                     .font(.system(size: 13))

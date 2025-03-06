@@ -70,11 +70,11 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerVersion: String
     let startTime: Date
     var lastStateTime: Date
-    let vpnConnectionState: String
-    let vpnBypassStatus: String
     private(set) var actionID: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
+    let vpnConnectionState: String
+    let vpnBypassStatus: String
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),

@@ -68,9 +68,9 @@ enum DBPUIReceivedMethodName: String {
     case getBackgroundAgentMetadata
     case getFeatureConfig
     case openSendFeedbackModal
-    case getVPNBypassSetting = "getVPNBypassSetting"
-    case setVPNBypassSetting = "setVPNBypassSetting"
-    case getVPNBypassOnboardingShown = "getVPNBypassOnboardingShown"
+    case getVPNBypassSetting = "getVpnBypassSetting"
+    case setVPNBypassSetting = "setVpnBypassSetting"
+    case getVPNBypassOnboardingShown = "getVpnBypassOnboardingShown"
 }
 
 enum DBPUISendableMethodName: String {

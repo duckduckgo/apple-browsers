@@ -76,7 +76,15 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings()
+        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+    }
+
+    private var vpnConnectionState: String {
+        String(describing: vpnIPCClient.connectionStatusObserver.recentValue)
+    }
+
+    private var vpnBypassStatus: String {
+        dbpSettings.vpnBypassStatus.rawValue
     }
 
     internal func runOperation(operationData: BrokerJobData,
@@ -142,8 +150,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
             isImmediateOperation: isManual,
-            vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
-            vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue
+            vpnConnectionState: vpnConnectionState,
+            vpnBypassStatus: vpnBypassStatus
         )
 
         do {
@@ -241,7 +249,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                             let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                             let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
                             pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-                            pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart, brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue), vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue))
+                            pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart, brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
                         }
                     }
                 }
@@ -321,8 +329,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             dataBroker: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
-            vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
-            vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue
+            vpnConnectionState: vpnConnectionState,
+            vpnBypassStatus: vpnBypassStatus
         )
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")

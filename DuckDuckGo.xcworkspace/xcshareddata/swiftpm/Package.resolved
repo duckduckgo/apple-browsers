@@ -32,8 +32,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "branch" : "pr-releases/pr-1518",
-        "revision" : "7f20b86cd5a1f12df28dc259cf9f423ce9846cd1"
+        "revision" : "8d358efc758541c5e673a060ed2c15240207997f"
       }
     },
     {

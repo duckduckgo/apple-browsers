@@ -87,11 +87,11 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm, object: nil, userInfo: UnifiedFeedbackSource.userInfo(source: .pir))
     }
 
-    public func dataBrokerProtectionDataManagerWillApplyVPNExclusionSetting(_ excluded: Bool) async {
+    public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async {
         let proxySettings = TransparentProxySettings(defaults: .netP)
         let vpnXPCClient = VPNControllerXPCClient.shared
         let dbpBundleID = Bundle.main.dbpBackgroundAgentBundleId
-        if excluded {
+        if bypass {
             proxySettings.appRoutingRules[dbpBundleID] = .exclude
         } else if proxySettings.isExcluding(appIdentifier: dbpBundleID) {
             proxySettings.appRoutingRules.removeValue(forKey: dbpBundleID)

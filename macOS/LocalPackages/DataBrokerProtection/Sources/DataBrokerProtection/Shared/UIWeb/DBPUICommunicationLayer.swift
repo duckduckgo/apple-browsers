@@ -46,7 +46,7 @@ protocol DBPUICommunicationDelegate: AnyObject {
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
-    func applyVPNExclusionSetting(_ excluded: Bool) async
+    func applyVPNBypassSetting(_ excluded: Bool) async
 }
 
 enum DBPUIReceivedMethodName: String {
@@ -68,9 +68,9 @@ enum DBPUIReceivedMethodName: String {
     case getBackgroundAgentMetadata
     case getFeatureConfig
     case openSendFeedbackModal
-    case getVPNExclusionSetting = "getVpnExclusionSetting"
-    case setVPNExclusionSetting = "setVpnExclusionSetting"
-    case getVPNExclusionOnboardingShown = "getVpnExclusionOnboardingShown"
+    case getVPNBypassSetting = "getVPNBypassSetting"
+    case setVPNBypassSetting = "setVPNBypassSetting"
+    case getVPNBypassOnboardingShown = "getVPNBypassOnboardingShown"
 }
 
 enum DBPUISendableMethodName: String {
@@ -128,9 +128,9 @@ struct DBPUICommunicationLayer: Subfeature {
         case .getBackgroundAgentMetadata: return getBackgroundAgentMetadata
         case .getFeatureConfig: return getFeatureConfig
         case .openSendFeedbackModal: return openSendFeedbackModal
-        case .getVPNExclusionSetting: return getVPNExclusionSetting
-        case .setVPNExclusionSetting: return setVPNExclusionSetting
-        case .getVPNExclusionOnboardingShown: return getVPNExclusionOnboardingShown
+        case .getVPNBypassSetting: return getVPNBypassSetting
+        case .setVPNBypassSetting: return setVPNBypassSetting
+        case .getVPNBypassOnboardingShown: return getVPNBypassOnboardingShown
         }
 
     }
@@ -321,7 +321,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: dbpSettings.vpnExclusionSupport]
+                DBPDeviceCapability.excludeVpnTraffic: dbpSettings.vpnBypassSupport]
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -329,23 +329,23 @@ struct DBPUICommunicationLayer: Subfeature {
         return nil
     }
 
-    func getVPNExclusionSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNExclusionConfigSetting(enabled: dbpSettings.vpnBypass)
+    func getVPNBypassSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DBPUIVPNBypassConfigSetting(enabled: dbpSettings.vpnBypass)
     }
 
-    func setVPNExclusionSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    func setVPNBypassSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
-              let result = try? JSONDecoder().decode(DBPUIVPNExclusionSettingUpdateRequest.self, from: data) else {
-            Logger.dataBrokerProtection.log("Failed to parse setVpnExclusionSetting message")
+              let result = try? JSONDecoder().decode(DBPUIVPNBypassSettingUpdateRequest.self, from: data) else {
+            Logger.dataBrokerProtection.log("Failed to parse setVPNBypassSetting message")
             throw DBPUIError.malformedRequest
         }
 
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
-        return DBPUIVPNExclusionSettingUpdateResult(success: true, version: Constants.version)
+        return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
     }
 
-    func getVPNExclusionOnboardingShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNExclusionOnboardingShown(onboarded: dbpSettings.vpnBypassOnboardingShown)
+    func getVPNBypassOnboardingShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        DBPUIVPNBypassOnboardingShown(onboarded: dbpSettings.vpnBypassOnboardingShown)
     }
 }

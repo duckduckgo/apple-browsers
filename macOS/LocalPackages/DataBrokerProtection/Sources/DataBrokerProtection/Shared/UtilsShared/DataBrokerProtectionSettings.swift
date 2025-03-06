@@ -110,7 +110,7 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    public var vpnExclusionSupport: Bool {
+    public var vpnBypassSupport: Bool {
 #if APPSTORE
 #if NETP_SYSTEM_EXTENSION
         return true
@@ -122,8 +122,8 @@ public final class DataBrokerProtectionSettings {
 #endif
     }
 
-    public var vpnExclusionStatus: VPNExclusionStatus {
-        guard vpnExclusionSupport else { return .unsupported }
+    public var vpnBypassStatus: VPNBypassStatus {
+        guard vpnBypassSupport else { return .unsupported }
         return vpnBypass ? .on : .off
     }
 

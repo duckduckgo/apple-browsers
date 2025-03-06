@@ -119,9 +119,9 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
-            NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNExclusion))
+            NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNBypass))
                 .targetting(self)
-            NSMenuItem(title: "Reset VPN Bypass Onboarding", action: #selector(DataBrokerProtectionDebugMenu.resetVPNExclusionOnboarding))
+            NSMenuItem(title: "Reset VPN Bypass Onboarding", action: #selector(DataBrokerProtectionDebugMenu.resetVPNBypassOnboarding))
                 .targetting(self)
 
             NSMenuItem.separator()
@@ -277,16 +277,16 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
-    @objc private func toggleVPNExclusion() {
+    @objc private func toggleVPNBypass() {
         Task {
             DataBrokerProtectionSettings(defaults: .dbp).vpnBypass.toggle()
-            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNExclusionSetting(
+            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(
                 DataBrokerProtectionSettings(defaults: .dbp).vpnBypass
             )
         }
     }
 
-    @objc private func resetVPNExclusionOnboarding() {
+    @objc private func resetVPNBypassOnboarding() {
         DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown = false
     }
 

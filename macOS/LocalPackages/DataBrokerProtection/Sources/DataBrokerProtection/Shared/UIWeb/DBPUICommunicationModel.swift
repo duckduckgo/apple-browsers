@@ -416,20 +416,20 @@ extension DBPUIInitialScanState {
     }
 }
 
-struct DBPUIVPNExclusionConfigSetting: DBPUISendableMessage {
+struct DBPUIVPNBypassConfigSetting: DBPUISendableMessage {
     let enabled: Bool
 }
 
-struct DBPUIVPNExclusionSettingUpdateRequest: DBPUISendableMessage {
+struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
     let enabled: Bool
     let version: Int
 }
 
-struct DBPUIVPNExclusionSettingUpdateResult: DBPUISendableMessage {
+struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
     let success: Bool
     let version: Int
 }
 
-struct DBPUIVPNExclusionOnboardingShown: DBPUISendableMessage {
+struct DBPUIVPNBypassOnboardingShown: DBPUISendableMessage {
     let onboarded: Bool
 }

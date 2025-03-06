@@ -143,7 +143,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             handler: pixelHandler,
             isImmediateOperation: isManual,
             vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
-            vpnExclusionStatus: dbpSettings.vpnExclusionStatus.rawValue
+            vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue
         )
 
         do {
@@ -322,7 +322,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
             vpnConnectionState: String(describing: vpnIPCClient.connectionStatusObserver.recentValue),
-            vpnExclusionStatus: dbpSettings.vpnExclusionStatus.rawValue
+            vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue
         )
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")

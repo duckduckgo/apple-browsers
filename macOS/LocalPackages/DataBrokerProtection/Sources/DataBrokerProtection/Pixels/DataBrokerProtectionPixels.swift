@@ -42,7 +42,7 @@ enum ErrorCategory: Equatable {
     }
 }
 
-public enum VPNExclusionStatus: String {
+public enum VPNBypassStatus: String {
     case on
     case off
     case unsupported
@@ -57,7 +57,7 @@ public enum DataBrokerProtectionPixels {
         static let durationParamKey = "duration"
         static let bundleIDParamKey = "bundle_id"
         static let vpnConnectionStateParamKey = "vpn_connection_state"
-        static let vpnExclusionStatusParamKey = "vpn_bypass"
+        static let vpnBypassStatusParamKey = "vpn_bypass"
         static let stageKey = "stage"
         static let matchesFoundKey = "num_found"
         static let triesKey = "tries"
@@ -155,7 +155,7 @@ public enum DataBrokerProtectionPixels {
 
     // Scan/Search pixels
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool)
-    case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnExclusionStatus: String)
+    case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool, vpnConnectionState: String, vpnBypassStatus: String)
     case scanError(dataBroker: String, dataBrokerVersion: String, duration: Double, category: String, details: String, isImmediateOperation: Bool)
 
     // KPIs - engagement
@@ -488,8 +488,8 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
             return [Consts.bundleIDParamKey: Bundle.main.bundleIdentifier ?? "nil"]
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description]
-        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnExclusionStatus):
-            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnExclusionStatusParamKey: vpnExclusionStatus]
+        case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
+            return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
         case .scanError(let dataBroker, let dataBrokerVersion, let duration, let category, let details, let isImmediateOperation):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.dataBrokerVersionKey: dataBrokerVersion, Consts.durationParamKey: String(duration), Consts.errorCategoryKey: category, Consts.errorDetailsKey: details, Consts.isImmediateOperation: isImmediateOperation.description]
         case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):

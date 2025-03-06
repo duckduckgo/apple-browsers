@@ -161,6 +161,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func markFailedToLoadUrl(_ url: URL) {
+        // historyEntry.failedToLoad = true
         mark(url: url, keyPath: \HistoryEntry.failedToLoad, value: true)
     }
 

@@ -110,6 +110,7 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
+    /// This requires VPN system extension, so App Store version is not currently supported
     public var vpnBypassSupport: Bool {
 #if APPSTORE
 #if NETP_SYSTEM_EXTENSION

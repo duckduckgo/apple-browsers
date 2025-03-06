@@ -80,7 +80,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
 
     private var vpnConnectionState: String {
-        String(describing: vpnIPCClient.connectionStatusObserver.recentValue)
+        vpnIPCClient.connectionStatusObserver.recentValue.description
     }
 
     private var vpnBypassStatus: String {

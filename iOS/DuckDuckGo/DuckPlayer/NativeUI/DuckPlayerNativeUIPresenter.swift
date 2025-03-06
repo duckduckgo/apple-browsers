@@ -27,7 +27,7 @@ protocol DuckPlayerNativeUIPresenting {
     var videoPlaybackRequest: PassthroughSubject<String, Never> { get }
 
     @MainActor func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: String?)
-    @MainActor func dismissPill(reset: Bool)
+    @MainActor func dismissPill(reset: Bool, animated: Bool)
     @MainActor func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: String?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>)
     @MainActor func showBottomSheetForVisibleChrome()
     @MainActor func hideBottomSheetForHiddenChrome()
@@ -267,16 +267,17 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     /// Dismisses the currently presented entry pill
     @MainActor
-    func dismissPill(reset: Bool = false) {
+    func dismissPill(reset: Bool = false, animated: Bool = true) {
         containerViewModel?.dismiss()
         resetWebViewConstraint()
 
-        // Remove the view after the animation completes
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.containerViewController?.view.removeFromSuperview()
-            self?.containerViewController = nil
-            self?.containerViewModel = nil
-            self?.containerCancellables.removeAll()
+        if animated {
+            // Remove the view after the animation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+                self?.removePillContainer()
+            }
+        } else {
+            removePillContainer()
         }
 
         if reset {

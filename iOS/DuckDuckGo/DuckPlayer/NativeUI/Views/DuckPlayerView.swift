@@ -51,6 +51,7 @@ struct DuckPlayerView: View {
                 // Header
                 header
                     .frame(height: Constants.headerHeight)
+                    .background(Color.black)
 
                 // Video Container
                 Spacer()
@@ -74,6 +75,13 @@ struct DuckPlayerView: View {
                         y: geometry.size.height / 2
                     )
                 }
+
+                // Timestamp display
+                Text(formatTimestamp(viewModel.currentTimestamp))
+                    .foregroundColor(.white)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.vertical, 8)
+                    .background(Color.black)
 
                 if viewModel.shouldShowYouTubeButton {
                     HStack(spacing: 8) {
@@ -151,5 +159,19 @@ struct DuckPlayerView: View {
             })
         }
         .padding(.horizontal, Constants.horizontalPadding)
+    }
+
+    /// Formats a timestamp in seconds to "MM:SS" or "HH:MM:SS" format
+    private func formatTimestamp(_ seconds: TimeInterval) -> String {
+        let totalSeconds = Int(seconds)
+        let hours = totalSeconds / 3600
+        let minutes = (totalSeconds % 3600) / 60
+        let seconds = totalSeconds % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
+        }
     }
 }

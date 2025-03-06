@@ -827,12 +827,12 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill()
+            duckPlayer.dismissPill(animated: true)
             return .notHandled(.invalidURL)
         }
 
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill()
+            duckPlayer.dismissPill(animated: true)
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -855,7 +855,7 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             // the pill.  Youtube adds #fragments to Watch main pages
             // When presenting settings and preferences
             if !url.isYoutubeWatch {
-                duckPlayer.dismissPill()
+                duckPlayer.dismissPill(animated: true)
             }
 
             // Present the Pill if needed
@@ -1139,9 +1139,33 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
         duckPlayer.setHostViewController(hostViewController)
+    }
 
+    /// Handles DuckPlayer Updates when WebView appears
+    @MainActor
+    func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
+        
+        // Ensure the pill is dismissed
+        duckPlayer.dismissPill(animated: false)
+        
         // Ensure the tab is not muted
         toggleAudioForTab(hostViewController.webView, mute: false)
+
+        // If native player is enabled, refresh the pill
+        if duckPlayer.settings.nativeUI && duckPlayer.settings.mode != .disabled {
+            let currentURL = hostViewController.webView.url
+            _ = handleURLChange(webView: hostViewController.webView, previousURL: nil, newURL: currentURL)
+        }
+    }
+
+    /// Handles DuckPlayer Updates when WebView disappears
+    @MainActor
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
+        // Ensure the tab is muted
+        toggleAudioForTab(hostViewController.webView, mute: true)
+
+        // Ensure the pill is dismissed
+        duckPlayer.dismissPill(animated: false)
     }
 
 }

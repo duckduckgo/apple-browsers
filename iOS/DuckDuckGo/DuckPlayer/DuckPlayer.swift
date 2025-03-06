@@ -242,7 +242,7 @@ protocol DuckPlayerControlling: AnyObject {
     func presentPill(for videoID: String, timestamp: String?)
 
     /// Dismisses the bottom sheet
-    func dismissPill()
+    func dismissPill(animated: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
     func hidePillForHiddenChrome()
@@ -758,9 +758,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     /// Add cleanup method to remove the sheet    
-    func dismissPill() {
+    func dismissPill(animated: Bool) {
         Task {
-            await nativeUIPresenter.dismissPill(reset: true)
+            await nativeUIPresenter.dismissPill(reset: true, animated: animated)
         }
     }
 

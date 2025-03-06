@@ -146,7 +146,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Updates the webView constraint based on the current pill height
     @MainActor
     private func updateWebViewConstraintForPillHeight() {
-        
+
         if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
             if self.appSettings.currentAddressBarPosition == .bottom {
                 let targetHeight = hostView.chromeDelegate?.barsMaxHeight ?? 0.0
@@ -154,7 +154,7 @@ final class DuckPlayerNativeUIPresenter {
             } else {
                 webViewBottomConstraint.constant = -self.pillHeight
             }
-            hostView.view.layoutIfNeeded()            
+            hostView.view.layoutIfNeeded()
         }
     }
 
@@ -182,7 +182,7 @@ final class DuckPlayerNativeUIPresenter {
             hostView.view.layoutIfNeeded()
         }
     }
-    
+
     deinit {
         playerCancellables.removeAll()
         containerCancellables.removeAll()
@@ -345,8 +345,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
-        containerViewModel?.show()        
+        containerViewModel?.show()
     }
 
 }
-    
+

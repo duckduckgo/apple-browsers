@@ -326,7 +326,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger, 
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          nativeUIPresenter: DuckPlayerNativeUIPresenting = DuckPlayerNativeUIPresenter()) {
         self.settings = settings
         self.featureFlagger = featureFlagger

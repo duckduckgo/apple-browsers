@@ -64,7 +64,7 @@ public enum DuckPlayerContainer {
       sheetAnimationCompleted = false
       sheetVisible = false
     }
-   
+
   }
 
   public struct Container<Content: View>: View {
@@ -130,12 +130,12 @@ private struct SheetView<Content: View>: View {
 
   // Animate the sheet offset with a spring animation
   private func animateOffset(to visible: Bool) {
-    
+
     if #available(iOS 17.0, *) {
       withAnimation(.spring(duration: DuckPlayerContainer.Constants.Animation.springDuration, bounce: DuckPlayerContainer.Constants.Animation.springBounce)) {
         sheetOffset = calculateSheetOffset(for: visible, containerHeight: containerHeight)
       } completion: {
-        viewModel.sheetAnimationCompleted = true        
+        viewModel.sheetAnimationCompleted = true
       }
     } else {
       withAnimation(.spring(duration: DuckPlayerContainer.Constants.Animation.springDuration, bounce: DuckPlayerContainer.Constants.Animation.springBounce)) {
@@ -162,7 +162,7 @@ private struct SheetView<Content: View>: View {
     .animation(.easeInOut(duration: DuckPlayerContainer.Constants.Animation.easeInOutDuration), value: opacity)
 
     .onAppear {
-      
+
       // Always start with the initial large offset value
       sheetOffset = DuckPlayerContainer.Constants.Offset.initialValue
       opacity = viewModel.sheetVisible ? 1 : 0
@@ -177,15 +177,15 @@ private struct SheetView<Content: View>: View {
 
     .onChange(of: viewModel.sheetVisible) { sheetVisible in
       animateOffset(to: sheetVisible)
-      
+
       withAnimation(viewModel.springAnimation) {
         opacity = sheetVisible ? 1 : 0
       }
     }
 
-    .onChange(of: containerHeight) { containerHeight in
+    .onChange(of: containerHeight) { _ in
       animateOffset(to: viewModel.sheetVisible)
-      
+
       withAnimation(viewModel.springAnimation) {
         opacity = viewModel.sheetVisible ? 1 : 0
       }

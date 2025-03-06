@@ -71,7 +71,10 @@ fi
 cd shared-web-tests || exit
 
 # Build the test suite
-npm run build
+if ! npm run build; then
+    echo "‼️ Error: npm build failed."
+    return 1
+fi
 
 # Install the hosts file for the web driver server
 if ! grep -q "Start web-platform-tests hosts" /etc/hosts; then

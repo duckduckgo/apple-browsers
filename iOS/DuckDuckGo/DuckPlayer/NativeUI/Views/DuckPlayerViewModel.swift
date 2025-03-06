@@ -29,6 +29,7 @@ import WebKit
 /// - Device orientation changes to adapt the player UI
 /// - Navigation to YouTube when requested
 /// - Autoplay settings management
+@MainActor
 final class DuckPlayerViewModel: ObservableObject {
 
     /// A publisher to notify when Youtube navigation is required.
@@ -60,10 +61,11 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
-
         // Used to enable features in URL parameters        
         static let enabled = "1"
         static let disabled = "0"
+        // Used to set the start time of the video
+        static let startParameter = "start"
     }
 
     /// The YouTube video ID to be played
@@ -82,7 +84,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?     
-    @Published private(set) var currentTimestamp: TimeInterval = 0
+    @Published private(set) var timestamp: TimeInterval = 0
     
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
@@ -95,69 +97,27 @@ final class DuckPlayerViewModel: ObservableObject {
         Constants.playsInlineParameter: Constants.enabled,        
     ]
 
-    /// Starts observing the video timestamp
-    /// - Parameter webView: The WKWebView instance playing the video
-    /// - Parameter coordinator: The coordinator instance managing the webview
-    func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
-        self.webView = webView
-        self.coordinator = coordinator
-        
-        // Update timestamp 0.3 second
-        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task {
-                if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
-                    await MainActor.run {
-                        self.currentTimestamp = timestamp
-                    }
-                }
-            }
-        }
-    }
-    
-    /// Stops observing the video timestamp
-    func stopObservingTimestamp() {
-        timestampUpdateTimer?.invalidate()
-        timestampUpdateTimer = nil
-        webView = nil
-        coordinator = nil
-    }
-    
-    /// Gets the current video URL with the current timestamp
-    /// - Returns: URL with the current timestamp parameter
-    func getVideoURLWithCurrentTimestamp() -> URL? {
-        guard let videoURL = getVideoURL() else { return nil }
-        var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)
-        
-        // Convert timestamp to appropriate format (e.g., 1m30s)
-        let minutes = Int(currentTimestamp) / 60
-        let seconds = Int(currentTimestamp) % 60
-        let timestampString = minutes > 0 ? "\(minutes)m\(seconds)s" : "\(seconds)s"
-        
-        var queryItems = components?.queryItems ?? []
-        queryItems.append(URLQueryItem(name: "t", value: timestampString))
-        components?.queryItems = queryItems
-        
-        return components?.url
-    }
-
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
         self.videoID = videoID
         self.appSettings = appSettings
+        self.timestamp = timestamp ?? 0
         self.url = getVideoURL()
-    }
+    }    
 
-    /// Generates the URL for the YouTube video with appropriate parameters
-    /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
+    /// Gets the current video URL with the current timestamp
+    /// - Returns: URL with the current timestamp parameter
     func getVideoURL() -> URL? {
-        var parameters = defaultParameters
-        parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
-        let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
-        return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
+        guard let videoURL = getVideoURLWithParameters() else { return nil }
+        var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)                
+        let seconds = Int(timestamp)
+        var queryItems = components?.queryItems ?? []
+        queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
+        components?.queryItems = queryItems
+        return components?.url
     }
 
     /// Handles navigation requests to YouTube
@@ -191,17 +151,12 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Called when the view disappears
     /// Removes orientation monitoring
     func onDisappear() {
-        dismissPublisher.send(currentTimestamp)
+        dismissPublisher.send(timestamp)
         stopObservingTimestamp()
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
-    }
-
-    /// Handles device orientation change notifications
-    @objc private func handleOrientationChange() {
-        updateOrientation()
-    }
+    }    
 
     /// Updates the current interface orientation state
     func updateOrientation() {
@@ -213,6 +168,49 @@ final class DuckPlayerViewModel: ObservableObject {
     // Opens the settings view
     func openSettings() {
         settingsRequestPublisher.send()
+    }
+
+    /// Starts observing the video timestamp
+    /// - Parameter webView: The WKWebView instance playing the video
+    /// - Parameter coordinator: The coordinator instance managing the webview
+    func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
+        self.webView = webView
+        self.coordinator = coordinator
+        
+        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            Task {
+                if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
+                    await MainActor.run {
+                        self.timestamp = timestamp
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Stops observing the video timestamp
+    func stopObservingTimestamp() {
+        timestampUpdateTimer?.invalidate()
+        timestampUpdateTimer = nil
+        webView = nil
+        coordinator = nil
+    }
+
+    // MARK: - Private Methods
+    
+    /// Handles device orientation change notifications
+    @objc private func handleOrientationChange() {
+        updateOrientation()
+    }
+
+    /// Generates the URL for the YouTube video with appropriate parameters
+    /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
+    private func getVideoURLWithParameters() -> URL? {
+        var parameters = defaultParameters
+        parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
+        let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+        return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }
 
    

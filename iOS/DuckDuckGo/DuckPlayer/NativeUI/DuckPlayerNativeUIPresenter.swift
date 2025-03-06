@@ -67,8 +67,11 @@ final class DuckPlayerNativeUIPresenter {
     private var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
+    @MainActor
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
+    @MainActor
     private var playerCancellables = Set<AnyCancellable>()
+    @MainActor
     private var containerCancellables = Set<AnyCancellable>()
 
     /// Application Settings
@@ -300,7 +303,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
 
-        let viewModel = DuckPlayerViewModel(videoID: videoID)
+        let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp)
         self.playerViewModel = viewModel // Keep strong reference
 
         let webView = DuckPlayerWebView(viewModel: viewModel)
@@ -318,7 +321,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             .sink { [weak hostingController] videoID in
                 if source != .youtube {
                     let url: URL = .youtube(videoID)
-                    navigationRequest.send(url)
+                     navigationRequest.send(url)
                 }
                 hostingController?.dismiss(animated: true)
             }

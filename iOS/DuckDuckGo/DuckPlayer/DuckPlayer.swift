@@ -261,10 +261,6 @@ extension DuckPlayerControlling {
 
 /// Implementation of the DuckPlayerControlling.
 final class DuckPlayer: NSObject, DuckPlayerControlling {
-    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource) {
-        
-    }
-
 
     struct Constants {
         static let duckPlayerHost: String = "player"

@@ -110,12 +110,11 @@ struct DuckPlayerWebView: UIViewRepresentable {
        /// Gets the current timestamp of the playing video
        /// - Parameter webView: The WKWebView instance
        /// - Returns: The current timestamp in seconds
+       @MainActor
        func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
            do {
-               Logger.duckplayer.debug("Attempting to get current timestamp")
                let result = try await (webView.evaluateJavaScript("getCurrentTime()") as Any)
                if let timestamp = result as? TimeInterval {
-                   Logger.duckplayer.debug("Got timestamp: \(timestamp)")
                    return timestamp
                } else {
                    Logger.duckplayer.error("Invalid timestamp type: \(String(describing: result))")
@@ -169,18 +168,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
            return nil
        }
 
-       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-           Logger.duckplayer.debug("WebView finished loading")
-           // Start observing timestamp only after page is loaded
+       @MainActor
+       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {           
            viewModel.startObservingTimestamp(webView: webView, coordinator: self)
-       }
-
-       func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-           Logger.duckplayer.error("WebView navigation failed: \(error.localizedDescription)")
-       }
-
-       func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-           Logger.duckplayer.error("WebView provisional navigation failed: \(error.localizedDescription)")
        }
    }
 }

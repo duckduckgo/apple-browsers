@@ -77,13 +77,13 @@ final class DuckPlayerNavigationHandler: NSObject {
     weak var tabNavigationHandler: DuckPlayerTabNavigationHandling?
 
     /// Cancellable for observing DuckPlayer Mode changes
-    private var duckPlayerModeCancellable: AnyCancellable?
+    @MainActor private var duckPlayerModeCancellable: AnyCancellable?
 
     /// Cancellable for observing DuckPlayer Navigation Request
-    private var duckPlayerNavigationRequestCancellable: AnyCancellable?
+    @MainActor private var duckPlayerNavigationRequestCancellable: AnyCancellable?
 
     /// Cancellable for observing DuckPlayer dismissal
-    private var duckPlayerDismissalCancellable: AnyCancellable?
+    @MainActor private var duckPlayerDismissalCancellable: AnyCancellable?
 
     /// JavaScript for media playback control        
     private let mediaControlScript: String = {
@@ -160,10 +160,11 @@ final class DuckPlayerNavigationHandler: NSObject {
     }
 
     deinit {
-        // Clean up Combine subscriptions
-        duckPlayerModeCancellable?.cancel()
-        duckPlayerNavigationRequestCancellable?.cancel()
-        duckPlayerDismissalCancellable?.cancel()
+        Task { @MainActor in
+            duckPlayerModeCancellable?.cancel()
+            duckPlayerNavigationRequestCancellable?.cancel()
+            duckPlayerDismissalCancellable?.cancel()
+        }
     }
 
     /// Returns the file path for the Duck Player HTML template.
@@ -228,9 +229,9 @@ final class DuckPlayerNavigationHandler: NSObject {
             self.redirectToDuckPlayerVideo(url: request.url, webView: webView)
             return
         }
-        // Otherwise, just load the simulated request
-        // New tabs require a short interval so the Omnibars dismissal propagates
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             webView.loadSimulatedRequest(request, responseHTML: responseHTML)
         }
     }
@@ -635,8 +636,10 @@ final class DuckPlayerNavigationHandler: NSObject {
     }
 
     /// Register a DuckPlayer mode Observe to handle events when the mode changes
+    @MainActor
     private func setupPlayerModeObserver() {
-        duckPlayerModeCancellable =  duckPlayer.settings.duckPlayerSettingsPublisher
+        duckPlayerModeCancellable = duckPlayer.settings.duckPlayerSettingsPublisher
+            .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.duckPlayerOverlayUsagePixels?.duckPlayerMode = self?.duckPlayer.settings.mode ?? .disabled
             }
@@ -901,16 +904,15 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     // even if the DOM is changing during early initialization
     // Once the page has loaded, the JS mutation observer takes care
     // Of pausing newly added elements. 
+    @MainActor
     private func pauseVideoStart(webView: WKWebView) async {
         // First phase: try every 0.05s for 1 second
         Task { @MainActor in
             let startTime = Date()
-
             while Date().timeIntervalSince(startTime) < 1.0 {
                 self.toggleMediaPlayback(webView, pause: true)
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
-
         }
     }
     // swiftlint: enable cyclomatic_complexity

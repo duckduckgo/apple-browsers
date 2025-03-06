@@ -115,6 +115,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                    shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
+        // 1. Validate that the broker and profile query data each has an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id, let profileQueryId = brokerProfileQueryData.profileQuery.id else {
             // Maybe send pixel?
             throw OperationsError.idsMissingForBrokerOrProfileQuery
@@ -126,6 +127,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             Logger.dataBrokerProtection.log("Finished scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
         }
 
+        // 2. Set up dependencies used to report the status of the scan job:
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
         let stageCalculator = DataBrokerProtectionStageDurationCalculator(dataBroker: brokerProfileQueryData.dataBroker.name,
                                                                           dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
@@ -133,46 +135,29 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                                                           isImmediateOperation: isManual)
 
         do {
+            // 3. Record the start of the scan job:
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
             try database.add(event)
 
+            // 4. Get extracted profiles from the runner:
             let extractedProfiles = try await runner.scan(brokerProfileQueryData, stageCalculator: stageCalculator, pixelHandler: pixelHandler, showWebView: showWebView, shouldRunNextStep: shouldRunNextStep)
             Logger.dataBrokerProtection.log("Extracted profiles: \(extractedProfiles)")
 
+            // 5. Handle the profiles reported by the runner:
             if !extractedProfiles.isEmpty {
+
+                // 5a. Iterate over found profiles:
                 stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
                 let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .matchesFound(count: extractedProfiles.count))
                 try database.add(event)
-                let extractedProfilesForBroker = try database.fetchExtractedProfiles(for: brokerId)
-
-                for extractedProfile in extractedProfiles {
-
-                    // We check if the profile exists in the database.
-                    let doesProfileExistsInDatabase = extractedProfilesForBroker.contains { $0.identifier == extractedProfile.identifier }
-
-                    // If the profile exists we do not create a new opt-out operation
-                    if doesProfileExistsInDatabase, let alreadyInDatabaseProfile = extractedProfilesForBroker.first(where: { $0.identifier == extractedProfile.identifier }), let id = alreadyInDatabaseProfile.id {
-                        // If it was removed in the past but was found again when scanning, it means it appearead again, so we reset the remove date.
-                        if alreadyInDatabaseProfile.removedDate != nil {
-                            let reAppereanceEvent = HistoryEvent(extractedProfileId: extractedProfile.id, brokerId: brokerId, profileQueryId: profileQueryId, type: .reAppearence)
-                            eventPixels.fireReAppereanceEventPixel()
-                            try database.add(reAppereanceEvent)
-                            try database.updateRemovedDate(nil, on: id)
-                        }
-
-                        Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
-                    } else {
-                        try handleNewScanProfile(
-                            extractedProfile,
-                            brokerProfileQueryData: brokerProfileQueryData,
-                            brokerId: brokerId,
-                            profileQueryId: profileQueryId,
-                            database: database,
-                            eventPixels: eventPixels
-                        )
-                    }
-                }
+                try processExtractedScanProfiles(extractedProfiles: extractedProfiles,
+                                                 brokerProfileQueryData: brokerProfileQueryData,
+                                                 brokerId: brokerId,
+                                                 profileQueryId: profileQueryId,
+                                                 database: database,
+                                                 eventPixels: eventPixels)
             } else {
+                // 5b. Report the status of the scan, which found no matches:
                 try processNoScanMatchesFound(
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
@@ -243,6 +228,39 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
     // swiftlint:enable cyclomatic_complexity
+
+    private func processExtractedScanProfiles(extractedProfiles: [ExtractedProfile],
+                                              brokerProfileQueryData: BrokerProfileQueryData,
+                                              brokerId: Int64,
+                                              profileQueryId: Int64,
+                                              database: DataBrokerProtectionRepository,
+                                              eventPixels: DataBrokerProtectionEventPixels) throws {
+        // Fetch the profiles already stored for the broker.
+        let existingProfiles = try database.fetchExtractedProfiles(for: brokerId)
+        for extractedProfile in extractedProfiles {
+            if let alreadyProfile = existingProfiles.first(where: { $0.identifier == extractedProfile.identifier }),
+               let id = alreadyProfile.id {
+                // If the profile was previously removed but now reappeared, reset the removal date.
+                if alreadyProfile.removedDate != nil {
+                    let reAppearanceEvent = HistoryEvent(extractedProfileId: extractedProfile.id,
+                                                           brokerId: brokerId,
+                                                           profileQueryId: profileQueryId,
+                                                           type: .reAppearence)
+                    eventPixels.fireReAppereanceEventPixel()
+                    try database.add(reAppearanceEvent)
+                    try database.updateRemovedDate(nil, on: id)
+                }
+                Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
+            } else {
+                try handleNewScanProfile(extractedProfile,
+                                         brokerProfileQueryData: brokerProfileQueryData,
+                                         brokerId: brokerId,
+                                         profileQueryId: profileQueryId,
+                                         database: database,
+                                         eventPixels: eventPixels)
+            }
+        }
+    }
 
     private func handleNewScanProfile(_ extractedProfile: ExtractedProfile,
                                       brokerProfileQueryData: BrokerProfileQueryData,

@@ -20,19 +20,49 @@
 import SwiftUI
 import DesignResourcesKit
 
+/// A view that loads an image asynchronously with animation
+struct AnimatedAsyncImage: View {
+    let url: URL?
+    let width: CGFloat
+    let height: CGFloat
+
+    struct Constants {
+        static let backgroundColor: Color = .gray.opacity(0.3)
+    }
+
+    private var placeholderView: some View {
+        Rectangle()
+            .foregroundColor(Constants.backgroundColor)
+            .frame(width: width, height: height)
+    }
+
+    var body: some View {
+        AsyncImage(url: url) { image in
+            image
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .transition(.opacity.combined(with: .scale))
+        } placeholder: {
+            placeholderView
+        }
+        .animation(.easeInOut(duration: 0.3), value: url)
+        .id(url?.absoluteString ?? "")
+    }
+}
+
 struct DuckPlayerMiniPillView: View {
     @ObservedObject var viewModel: DuckPlayerMiniPillViewModel
-    
+
     // Add state to track the height
     @State private var viewHeight: CGFloat = 100
     @State private var iconSize: CGFloat = 40
 
     struct Constants {
-        static let daxLogo = "Home"
         static let playImage = "play.fill"
 
         enum Layout {
-            static let iconSize: CGFloat = 40
+            static let thumbnailSize: (w: CGFloat, h: CGFloat) = (60, 40)
+            static let thumbnailCornerRadius: CGFloat = 8
             static let stackSpacing: CGFloat = 12
             static let fontSize: CGFloat = 16
             static let playButtonFont: CGFloat = 20
@@ -46,28 +76,43 @@ struct DuckPlayerMiniPillView: View {
         }
     }
 
-
     private var sheetContent: some View {
         Button(action: { viewModel.openInDuckPlayer() }) {
             VStack(spacing: Constants.Layout.stackSpacing) {
                 HStack(spacing: Constants.Layout.stackSpacing) {
-                    Image(Constants.daxLogo)
-                        .resizable()
-                        .frame(width: Constants.Layout.iconSize, height: Constants.Layout.iconSize)
-                    
-                    Text("Watch In Duck Player")
-                        .font(.system(size: Constants.Layout.fontSize, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textPrimary))
-                    
-                    Spacer()
-                    
+                    // YouTube thumbnail image
+                    Group {
+                        AnimatedAsyncImage(
+                            url: viewModel.thumbnailURL,
+                            width: Constants.Layout.thumbnailSize.w,
+                            height: Constants.Layout.thumbnailSize.h
+                        )
+                    }
+                    .frame(width: Constants.Layout.thumbnailSize.w, height: Constants.Layout.thumbnailSize.h)
+                    .clipShape(RoundedRectangle(cornerRadius: Constants.Layout.thumbnailCornerRadius))
+
+                    VStack(alignment: .leading) {
+                        Text(UserText.duckPlayerNativeOpenInDuckPlayer)
+                            .daxHeadline()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Text(viewModel.title)
+                            .daxFootnoteRegular()
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .layoutPriority(1)
+
+                    // Play button
                     Image(systemName: Constants.playImage)
                         .font(.system(size: Constants.Layout.playButtonFont))
                         .foregroundColor(.white)
                         .frame(width: iconSize, height: iconSize)
-                        .background(Color.blue)
+                        .background(Color(designSystemColor: .accent))
                         .clipShape(Circle())
-            
                 }
                 .padding(Constants.Layout.regularPadding)
             }
@@ -76,10 +121,10 @@ struct DuckPlayerMiniPillView: View {
             .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
             .padding(.horizontal, Constants.Layout.regularPadding)
             .padding(.vertical, Constants.Layout.regularPadding)
-            .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover boder during animation                      
+            .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
         }
     }
-    
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Color(designSystemColor: .panel)

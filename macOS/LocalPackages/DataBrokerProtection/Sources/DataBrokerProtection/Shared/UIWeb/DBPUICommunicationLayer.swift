@@ -46,7 +46,7 @@ protocol DBPUICommunicationDelegate: AnyObject {
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
-    func applyVPNBypassSetting(_ excluded: Bool) async
+    func applyVPNBypassSetting(_ bypass: Bool) async
 }
 
 enum DBPUIReceivedMethodName: String {

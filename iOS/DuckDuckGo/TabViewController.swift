@@ -1099,10 +1099,12 @@ class TabViewController: UIViewController {
                                       protectionStatus: makeProtectionStatus(for: host),
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
                                       shouldCheckServerTrust: shouldCheckServerTrust)
-        let isValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: webView.serverTrust)
-        if let isValid {
-            privacyInfo.serverTrust = isValid ? webView.serverTrust : nil
+        var isValid = true
+        if let securityTrust = webView.serverTrust {
+            isValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: securityTrust)
         }
+        let serverTrust = ServerTrust(securityTrust: webView.serverTrust, isValid: isValid)
+        privacyInfo.serverTrust = serverTrust
         privacyInfo.isSpecialErrorPageVisible = specialErrorPageNavigationHandler.isSpecialErrorPageVisible
 
         previousPrivacyInfosByURL[url] = privacyInfo

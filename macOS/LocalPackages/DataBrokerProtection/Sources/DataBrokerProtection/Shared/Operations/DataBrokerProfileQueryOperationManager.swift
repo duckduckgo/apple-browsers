@@ -150,7 +150,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 shouldRunNextStep: shouldRunNextStep
             )
 
-            Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob)")
+            Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob, privacy: .public)")
 
             // 5. Handle the extracted profiles reported by the runner:
             if !profilesFoundDuringCurrentScanJob.isEmpty {

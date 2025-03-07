@@ -123,6 +123,9 @@ class SettingsLegacyViewProvider: ObservableObject {
     var autoclearData: UIViewController { instantiateAutoClearController() }
     var debug: UIViewController { instantiateDebugController() }
 
+    func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
+        instantiateAppIconController(onChange: onChange)
+    }
 
     @MainActor
     func syncSettings(source: String? = nil) -> SyncSettingsViewController {
@@ -132,10 +135,6 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source)
-    }
-
-    func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
-        instantiateAppIconController(onChange: onChange)
     }
 
     func loginSettings(delegate: AutofillLoginSettingsListViewControllerDelegate,

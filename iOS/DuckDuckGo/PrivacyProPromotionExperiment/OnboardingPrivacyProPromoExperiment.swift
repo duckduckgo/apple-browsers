@@ -66,7 +66,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
         static let conversionWindowDays = 0...7
 
         /// The origin parameter value for the experiment.
-        static let origin = "funnel_pro_ios_onboarding_vpn"
+        static let origin = "funnel_onboarding_ios"
     }
 
     /// A feature flagging service for managing feature flag experiments.

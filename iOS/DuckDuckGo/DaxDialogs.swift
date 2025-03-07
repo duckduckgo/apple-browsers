@@ -541,8 +541,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             return .initial
         }
 
-        // Return Visit site suggestion if:
-        // 1. Anonymous search skipped by opening a new tab
         if !settings.tryVisitASiteShown {
             return .subsequent
         }

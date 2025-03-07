@@ -81,7 +81,7 @@ public final class TransparentProxySettings {
         }
     }
 
-    public subscript(bundleID bundleID: String) -> VPNRoutingRule? {
+    public subscript(bundleId bundleID: String) -> VPNRoutingRule? {
         get {
             appRoutingRules[bundleID]
         }

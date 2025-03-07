@@ -106,10 +106,10 @@ public final class DataBrokerProtectionSettings {
 
     public var vpnBypass: Bool {
         get {
-            proxySettings[bundleID: Bundle.main.dbpBackgroundAgentBundleId] == .exclude
+            proxySettings[bundleId: Bundle.main.dbpBackgroundAgentBundleId] == .exclude
         }
         set {
-            proxySettings[bundleID: Bundle.main.dbpBackgroundAgentBundleId] = newValue ? .exclude : nil
+            proxySettings[bundleId: Bundle.main.dbpBackgroundAgentBundleId] = newValue ? .exclude : nil
         }
     }
 

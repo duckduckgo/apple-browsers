@@ -162,7 +162,7 @@ final class DuckPlayerNavigationHandler: NSObject {
     deinit {
         duckPlayerModeCancellable?.cancel()
         duckPlayerNavigationRequestCancellable?.cancel()
-        duckPlayerDismissalCancellable?.cancel()        
+        duckPlayerDismissalCancellable?.cancel()
     }
 
     /// Returns the file path for the Duck Player HTML template.
@@ -227,7 +227,7 @@ final class DuckPlayerNavigationHandler: NSObject {
             self.redirectToDuckPlayerVideo(url: request.url, webView: webView)
             return
         }
-        
+
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             webView.loadSimulatedRequest(request, responseHTML: responseHTML)

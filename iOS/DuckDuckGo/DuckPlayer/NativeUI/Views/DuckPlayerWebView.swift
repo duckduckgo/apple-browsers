@@ -169,7 +169,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
        }
 
        @MainActor
-       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {           
+       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
            viewModel.startObservingTimestamp(webView: webView, coordinator: self)
        }
    }

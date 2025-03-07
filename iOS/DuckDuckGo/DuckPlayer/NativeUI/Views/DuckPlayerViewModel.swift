@@ -84,9 +84,9 @@ final class DuckPlayerViewModel: ObservableObject {
     var cancellables = Set<AnyCancellable>()
 
     /// The generated URL for the embedded YouTube player
-    @Published private(set) var url: URL?     
+    @Published private(set) var url: URL?
     @Published private(set) var timestamp: TimeInterval = 0
-    
+
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
@@ -95,7 +95,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled,        
+        Constants.playsInlineParameter: Constants.enabled
     ]
 
     /// Creates a new DuckPlayerViewModel instance
@@ -107,13 +107,13 @@ final class DuckPlayerViewModel: ObservableObject {
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
         self.url = getVideoURL()
-    }    
+    }
 
     /// Gets the current video URL with the current timestamp
     /// - Returns: URL with the current timestamp parameter
     func getVideoURL() -> URL? {
         guard let videoURL = getVideoURLWithParameters() else { return nil }
-        var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)                
+        var components = URLComponents(url: videoURL, resolvingAgainstBaseURL: true)
         let seconds = Int(timestamp)
         var queryItems = components?.queryItems ?? []
         queryItems.append(URLQueryItem(name: Constants.startParameter, value: String(seconds)))
@@ -157,7 +157,7 @@ final class DuckPlayerViewModel: ObservableObject {
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
-    }    
+    }
 
     /// Updates the current interface orientation state
     func updateOrientation() {

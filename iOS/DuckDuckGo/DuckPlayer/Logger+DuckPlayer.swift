@@ -23,20 +23,20 @@ import Foundation
 extension Logger {
     static var duckplayer = {
         let logger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "DuckPlayer")
-        
+
         // Define log methods with public privacy level
         func debug(_ message: String) {
             logger.log(level: .debug, "\(message, privacy: .public)")
         }
-        
+
         func error(_ message: String) {
             logger.log(level: .error, "\(message, privacy: .public)")
         }
-        
+
         func log(_ message: String) {
             logger.log(level: .info, "\(message, privacy: .public)")
         }
-        
+
         return logger
     }()
 }

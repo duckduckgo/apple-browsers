@@ -185,7 +185,7 @@ final class DuckPlayerNativeUIPresenter {
             hostView.view.layoutIfNeeded()
         }
     }
-    
+
     /// Removes the pill controller
     @MainActor
     private func removePillContainer() {
@@ -299,7 +299,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
-        
+
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
 
@@ -335,7 +335,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // General Dismiss Publisher
         viewModel.dismissPublisher
             .sink { [weak self] timestamp in
-                guard let self = self else { return }                
+                guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
             }

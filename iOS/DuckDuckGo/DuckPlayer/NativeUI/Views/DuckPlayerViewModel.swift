@@ -61,6 +61,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
+
         // Used to enable features in URL parameters        
         static let enabled = "1"
         static let disabled = "0"
@@ -169,50 +170,5 @@ final class DuckPlayerViewModel: ObservableObject {
     func openSettings() {
         settingsRequestPublisher.send()
     }
-
-    /// Starts observing the video timestamp
-    /// - Parameter webView: The WKWebView instance playing the video
-    /// - Parameter coordinator: The coordinator instance managing the webview
-    func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
-        self.webView = webView
-        self.coordinator = coordinator
-        
-        timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task {
-                if let timestamp = await self.coordinator?.getCurrentTimestamp(webView) {
-                    await MainActor.run {
-                        self.timestamp = timestamp
-                    }
-                }
-            }
-        }
-    }
-    
-    /// Stops observing the video timestamp
-    func stopObservingTimestamp() {
-        timestampUpdateTimer?.invalidate()
-        timestampUpdateTimer = nil
-        webView = nil
-        coordinator = nil
-    }
-
-    // MARK: - Private Methods
-    
-    /// Handles device orientation change notifications
-    @objc private func handleOrientationChange() {
-        updateOrientation()
-    }
-
-    /// Generates the URL for the YouTube video with appropriate parameters
-    /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
-    private func getVideoURLWithParameters() -> URL? {
-        var parameters = defaultParameters
-        parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
-        let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
-        return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
-    }
-
-   
 
 }

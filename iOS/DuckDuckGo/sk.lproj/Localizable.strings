@@ -2275,7 +2275,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na iných platformách";
 
 /* Explanation in Settings how the email protection feature works */
-"settings.email.protection.explanation" = "Zablokujte sledovače e-mailov a skryte svoju adresu bez zmeny poskytovateľa e-mailových služieb.\n[Viac informácií] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
+"settings.email.protection.explanation" = "Zablokujte sledovače e-mailov a skryte svoju adresu bez zmeny poskytovateľa e-mailových služieb.\n[Viac informácií](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
 
 /* Alert presented to user after clicking on 'Sign out' in Email Protection Settings */
 "settings.email.protection.signing.out.alert" = "Odhlásením sa z účtu Email Protection sa v tomto prehliadači vypne automatické vypĺňanie Duck Address. Tieto adresy môžete naďalej používať a dostávať na ne preposielané e-maily ako zvyčajne.";

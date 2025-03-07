@@ -199,8 +199,7 @@ final class MainViewController: NSViewController {
             mainView.navigationBarContainerView.wantsLayer = true
             mainView.navigationBarContainerView.layer?.masksToBounds = false
 
-            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab,
-               browserTabViewController.homePageViewController?.addressBarModel.shouldShowAddressBar == false {
+            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
                 resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
             } else {
                 resizeNavigationBar(isHomePage: false, animated: false)

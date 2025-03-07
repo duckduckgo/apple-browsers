@@ -25,7 +25,7 @@ final class UpdateMenuItemFactory {
     static func menuItem(for update: Update) -> NSMenuItem {
         let item = NSMenuItem(title: UserText.updateAvailableMenuItem)
         item.target = Application.appDelegate.updateController
-        item.action = #selector(UpdateController.runUpdate)
+        item.action = #selector(UpdateController.runUpdateFromMenuItem)
         item.image = NSImage.updateMenuItemIcon
         return item
     }

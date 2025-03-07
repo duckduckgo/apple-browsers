@@ -51,7 +51,9 @@ final class SettingsViewModel: ObservableObject {
     let experimentalThemingManager: ExperimentalThemingManager
 
     // Subscription Dependencies
-    let subscriptionManager: SubscriptionManager
+    let subscriptionManagerV1: (any SubscriptionManager)?
+    let subscriptionManagerV2: (any SubscriptionManagerV2)?
+    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
@@ -286,24 +288,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled },
-            set: { newValue in
-                self.aiChatSettings.enableAIChatBrowsingMenuUserSettings(enable: newValue)
-            }
-        )
-    }
-
-    var aiChatAddressBarEnabledBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
-            set: { newValue in
-                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
-            }
-        )
-    }
-
     var textZoomLevelBinding: Binding<TextZoomLevel> {
         Binding<TextZoomLevel>(
             get: { self.state.textZoom.level },
@@ -440,14 +424,16 @@ final class SettingsViewModel: ObservableObject {
         legacyViewProvider.syncService.authState != .inactive ? .on : .off
     }
 
-    var usesUnifiedFeedbackForm: Bool {
-        subscriptionManager.accountManager.isUserAuthenticated && subscriptionFeatureAvailability.usesUnifiedFeedbackForm
+    var enablesUnifiedFeedbackForm: Bool {
+        subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
-         subscriptionManager: SubscriptionManager,
+         subscriptionManagerV1: (any SubscriptionManager)?,
+         subscriptionManagerV2: (any SubscriptionManagerV2)?,
+         subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
          variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
@@ -463,7 +449,9 @@ final class SettingsViewModel: ObservableObject {
 
         self.state = SettingsState.defaults
         self.legacyViewProvider = legacyViewProvider
-        self.subscriptionManager = subscriptionManager
+        self.subscriptionManagerV1 = subscriptionManagerV1
+        self.subscriptionManagerV2 = subscriptionManagerV2
+        self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.voiceSearchHelper = voiceSearchHelper
         self.deepLinkTarget = deepLink
@@ -529,9 +517,10 @@ extension SettingsViewModel {
             duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
             aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
                                          isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
-                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled)
+                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
+                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
         )
-        
+
         updateRecentlyVisitedSitesVisibility()
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
@@ -651,7 +640,7 @@ extension SettingsViewModel {
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.apps)
+        UIApplication.shared.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
@@ -806,13 +795,13 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        state.subscription.canPurchase = subscriptionManager.canPurchase
+        state.subscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
 
         // Update if user is signed in based on the presence of token
-        state.subscription.isSignedIn = subscriptionManager.accountManager.isUserAuthenticated
+        state.subscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
 
         // Active subscription check
-        guard let token = subscriptionManager.accountManager.accessToken else {
+        guard let token = try? await subscriptionAuthV1toV2Bridge.getAccessToken() else {
             // Reset state in case cache was outdated
             state.subscription.hasSubscription = false
             state.subscription.hasActiveSubscription = false
@@ -824,10 +813,8 @@ extension SettingsViewModel {
             return
         }
         
-        let subscriptionResult = await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token)
-        switch subscriptionResult {
-            
-        case .success(let subscription):
+        do {
+            let subscription = try await subscriptionAuthV1toV2Bridge.getSubscription(cachePolicy: .returnCacheDataElseLoad)
             state.subscription.platform = subscription.platform
             state.subscription.hasSubscription = true
             state.subscription.hasActiveSubscription = subscription.isActive
@@ -838,29 +825,27 @@ extension SettingsViewModel {
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
 
             for entitlement in entitlementsToCheck {
-                if case .success(true) = await subscriptionManager.accountManager.hasEntitlement(forProductName: entitlement) {
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                    hasEntitlement {
                     currentEntitlements.append(entitlement)
                 }
             }
 
             self.state.subscription.entitlements = currentEntitlements
-            self.state.subscription.subscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
+            self.state.subscription.subscriptionFeatures = await subscriptionAuthV1toV2Bridge.currentSubscriptionFeatures()
+        } catch SubscriptionEndpointServiceError.noData {
+            Logger.subscription.debug("No subscription data available")
+            state.subscription.hasSubscription = false
+            state.subscription.hasActiveSubscription = false
+            state.subscription.entitlements = []
+            state.subscription.platform = .unknown
+            state.subscription.isActiveTrialOffer = false
 
-        case .failure(let subscriptionServiceError):
-            if case let .apiError(apiError) = subscriptionServiceError,
-               case let .serverError(statusCode, error) = apiError {
-                if statusCode == 400 && error == "No subscription found" {
-                    state.subscription.hasSubscription = false
-                    state.subscription.hasActiveSubscription = false
-                    state.subscription.entitlements = []
-                    state.subscription.platform = .unknown
-                    state.subscription.isActiveTrialOffer = false
-
-                    DailyPixel.fireDailyAndCount(pixel: .settingsPrivacyProAccountWithNoSubscriptionFound)
-                }
-            }
+            DailyPixel.fireDailyAndCount(pixel: .settingsPrivacyProAccountWithNoSubscriptionFound)
+        } catch {
+            Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
         }
-        
+
         // Sync Cache
         subscriptionStateCache.set(state.subscription)
     }
@@ -891,13 +876,26 @@ extension SettingsViewModel {
             self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
         })
     }
-    
+
     func restoreAccountPurchase() async {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            await restoreAccountPurchaseV1()
+        } else {
+            await restoreAccountPurchaseV2()
+        }
+    }
+
+    func restoreAccountPurchaseV1() async {
+        guard let subscriptionManagerV1 else {
+            assertionFailure("Missing dependency: subscriptionManagerV1")
+            return
+        }
+
         DispatchQueue.main.async { self.state.subscription.isRestoring = true }
-        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                             subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                             authEndpointService: subscriptionManager.authEndpointService)
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManagerV1.accountManager,
+                                                             storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
+                                                             subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
+                                                             authEndpointService: subscriptionManagerV1.authEndpointService)
         let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
         switch result {
         case .success:
@@ -932,10 +930,71 @@ extension SettingsViewModel {
             }
         }
     }
-    
+
+    func restoreAccountPurchaseV2() async {
+
+        guard let subscriptionManagerV2 else {
+            assertionFailure("Missing dependency: subscriptionManagerV2")
+            return
+        }
+
+        DispatchQueue.main.async { self.state.subscription.isRestoring = true }
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
+                                                             storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+        let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+        switch result {
+        case .success:
+            DispatchQueue.main.async {
+                self.state.subscription.isRestoring = false
+            }
+            await self.setupSubscriptionEnvironment()
+
+        case .failure:
+            DispatchQueue.main.async {
+                self.state.subscription.isRestoring = false
+                self.state.subscription.shouldDisplayRestoreSubscriptionError = true
+                self.state.subscription.shouldDisplayRestoreSubscriptionError = false
+
+            }
+        }
+    }
+
 }
 
 // Deeplink notification handling
 extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
+}
+
+// MARK: - AI Chat
+extension SettingsViewModel {
+
+    var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatBrowsingMenuUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatAddressBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
+            }
+        )
+    }
+
 }

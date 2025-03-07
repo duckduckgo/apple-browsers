@@ -65,6 +65,7 @@ public enum PrivacyFeature: String {
     case adAttributionReporting
     case forceOldAppDelegate
     case htmlNewTabPage
+    case htmlHistoryPage
     case tabManager
     case webViewStateRestoration
     case experimentalBrowserTheming
@@ -211,6 +212,11 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
 
 public enum HTMLNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlNewTabPage }
+    case isLaunched
+}
+
+public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
 }
 

@@ -181,7 +181,7 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.pwmButtonBackgroundPressed) : .red
+        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
         let disabledBackgroundColor = Color.gray.opacity(0.1)
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 

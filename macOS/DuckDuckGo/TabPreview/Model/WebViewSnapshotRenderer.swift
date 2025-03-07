@@ -38,6 +38,8 @@ final class WebViewSnapshotRenderer: WebViewSnapshotRendering {
         let configuration = WKSnapshotConfiguration.makePreviewSnapshotConfiguration()
 
         do {
+            // Wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
+            try? await Task.sleep(nanoseconds: 100000000)
             let image = try await webView.takeSnapshot(configuration: configuration)
             Logger.tabSnapshots.debug("Preview rendered for \(String(describing: webView.url))")
 

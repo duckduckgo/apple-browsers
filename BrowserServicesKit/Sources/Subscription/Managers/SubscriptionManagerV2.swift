@@ -61,7 +61,7 @@ public enum SubscriptionPixelType {
     case subscriptionIsActive
 }
 
-public protocol SubscriptionManagerV2: SubscriptionTokenProvider {
+public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
 
     // Environment
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?
@@ -95,7 +95,6 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider {
     func getCustomerPortalURL() async throws -> URL
 
     // User
-    var isUserAuthenticated: Bool { get }
     var userEmail: String? { get }
 
     /// Sign out the user and clear all the tokens and subscription cache
@@ -268,7 +267,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             throw SubscriptionEndpointServiceError.noData
         } catch {
             Logger.networking.error("Error getting subscription: \(error, privacy: .public)")
-            throw SubscriptionEndpointServiceError.noData
+            throw error // check if the original error is ok instead than SubscriptionEndpointServiceError.noData
         }
     }
 

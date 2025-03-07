@@ -23,7 +23,7 @@ import Core
 class AppIconSettingsViewController: UICollectionViewController {
     
     let dataSource = AppIconDataSource()
-    let worker = AppIconWorker()
+    private let worker = AppIconWorker()
 
     let onChange: ((AppIcon) -> Void)?
 
@@ -88,10 +88,10 @@ class AppIconDataSource: NSObject, UICollectionViewDataSource {
     }
 }
 
-class AppIconWorker {
-        
-    public func changeAppIcon(_ appIcon: AppIcon,
-                              completion: @escaping (_ success: Bool) -> Void) {
+private class AppIconWorker {
+    
+    func changeAppIcon(_ appIcon: AppIcon,
+                       completion: @escaping (_ success: Bool) -> Void) {
         AppIconManager.shared.changeAppIcon(appIcon) { error in
             DispatchQueue.main.async {
                 completion(error == nil)

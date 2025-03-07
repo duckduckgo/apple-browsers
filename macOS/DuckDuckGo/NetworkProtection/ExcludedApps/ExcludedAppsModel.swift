@@ -46,7 +46,7 @@ final class DefaultExcludedAppsModel {
 extension DefaultExcludedAppsModel: ExcludedAppsModel {
 
     var excludedApps: [String] {
-        proxySettings.excludedApps
+        proxySettings.excludedAppsFiltered
     }
 
     func add(appURL: URL) -> AppInfo? {

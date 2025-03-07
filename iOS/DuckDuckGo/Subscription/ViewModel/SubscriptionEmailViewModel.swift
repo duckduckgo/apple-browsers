@@ -59,9 +59,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     
     // Read only View State - Should only be modified from the VM
     @Published private(set) var state = State()
-    
-    private static let allowedDomains = [ "duckduckgo.com" ]
-    
+
     enum SubscriptionRestoreError: Error {
         case failedToRestoreFromEmail,
              subscriptionExpired,
@@ -82,16 +80,20 @@ final class SubscriptionEmailViewModel: ObservableObject {
         return webViewModel.url?.forComparison() == confirmSubscriptionURL.forComparison()
     }
 
-    init(userScript: SubscriptionPagesUserScript,
+    init(isInternalUser: Bool = false,
+         userScript: SubscriptionPagesUserScript,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                                             isInternalUser: isInternalUser)
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                                                                 allowedDomains: Self.allowedDomains,
+                                                                                                 allowedDomains: allowedDomains,
                                                                                                  contentBlocking: false))
         self.emailURL = subscriptionManager.url(for: .activateViaEmail)
     }

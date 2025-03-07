@@ -233,7 +233,6 @@
                                                     <subviews>
                                                         <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Folder-24" translatesAutoresizingMaskIntoConstraints="NO" id="Ggc-7C-ugZ">
                                                             <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
-                                                            <color key="tintColor" name="BookmarksFolderColor"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="height" constant="24" id="5Gp-Uw-8sC"/>
                                                                 <constraint firstAttribute="width" constant="24" id="GaK-wT-bvt"/>
@@ -267,6 +266,7 @@
                                         </accessibility>
                                         <connections>
                                             <outlet property="childrenCountLabel" destination="061-pX-T9z" id="P3E-08-j14"/>
+                                            <outlet property="iconImageView" destination="Ggc-7C-ugZ" id="3vY-kw-8zw"/>
                                             <outlet property="titleLabel" destination="7VM-DV-W3e" id="vVj-hO-Dxl"/>
                                         </connections>
                                     </tableViewCell>

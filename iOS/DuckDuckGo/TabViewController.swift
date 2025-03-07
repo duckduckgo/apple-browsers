@@ -608,6 +608,11 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            webViewContainer.backgroundColor = UIColor(designSystemColor: .background)
+            webView.layer.cornerRadius = 12.0
+            webView.clipsToBounds = true
+        }
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([

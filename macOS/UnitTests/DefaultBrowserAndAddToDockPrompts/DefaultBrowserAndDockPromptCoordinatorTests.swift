@@ -29,12 +29,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -48,12 +50,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -67,12 +71,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -86,12 +92,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -105,12 +113,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = false
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -124,12 +134,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = false
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -208,12 +220,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -230,12 +244,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -252,12 +268,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 
@@ -274,12 +292,14 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let defaultBrowserProviderMock = DefaultBrowserProviderMock()
         let dockCustomizerMock = DockCustomizerMock()
         let applicationBuildTypeMock = ApplicationBuildTypeMock()
+        let featureFlagger = MockFeatureFlagger()
 
         applicationBuildTypeMock.isSparkleBuild = true
 
         let sut = DefaultBrowserAndDockPromptCoordinator(
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
+            featureFlagger: featureFlagger,
             applicationBuildType: applicationBuildTypeMock
         )
 

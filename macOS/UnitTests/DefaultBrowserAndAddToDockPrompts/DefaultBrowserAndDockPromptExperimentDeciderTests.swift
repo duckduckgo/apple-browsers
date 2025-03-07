@@ -23,7 +23,7 @@ class DefaultBrowserAndDockPromptExperimentDeciderTests: XCTestCase {
 
     func testIsUserEligibleForExperiment() {
         let decider = DefaultBrowserAndDockPromptExperimentDecider(
-            wasOnboardingCompleted: true,
+            isOnboardingCompleted: true,
             isNewUser: false,
             isEligibleForPrompt: true
         )
@@ -35,7 +35,7 @@ class DefaultBrowserAndDockPromptExperimentDeciderTests: XCTestCase {
 
     func testIsUserNotEligibleForExperimentWhenNewUser() {
         let decider = DefaultBrowserAndDockPromptExperimentDecider(
-            wasOnboardingCompleted: true,
+            isOnboardingCompleted: true,
             isNewUser: true,
             isEligibleForPrompt: true
         )
@@ -47,7 +47,7 @@ class DefaultBrowserAndDockPromptExperimentDeciderTests: XCTestCase {
 
     func testUserNotEligibleForExperimentWhenOnboardingNotCompleted() {
         let decider = DefaultBrowserAndDockPromptExperimentDecider(
-            wasOnboardingCompleted: false,
+            isOnboardingCompleted: false,
             isNewUser: false,
             isEligibleForPrompt: true
         )
@@ -59,7 +59,7 @@ class DefaultBrowserAndDockPromptExperimentDeciderTests: XCTestCase {
 
     func testUserNotEligibleForExperimentWhenNotEligibleForPrompt() {
         let decider = DefaultBrowserAndDockPromptExperimentDecider(
-            wasOnboardingCompleted: true,
+            isOnboardingCompleted: true,
             isNewUser: false,
             isEligibleForPrompt: false
         )

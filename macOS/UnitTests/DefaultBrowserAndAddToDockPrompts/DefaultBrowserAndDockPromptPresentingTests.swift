@@ -29,7 +29,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         var bannerViewHandlerCalled = false
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
 
         repository.setPromptShown(true)
         coordinator.getPromptTypeResult = .banner
@@ -54,7 +55,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         var bannerViewHandlerCalled = false
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
 
         repository.setPromptShown(false)
         coordinator.getPromptTypeResult = nil
@@ -77,7 +79,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     func testTryToShowPromptShowsBannerWhenPromptTypeIsBanner() {
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
@@ -98,7 +101,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         var popoverShown = false
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
 
         coordinator.getPromptTypeResult = .popover
         repository.setPromptShown(false)
@@ -117,7 +121,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     func testBannerConfirmationCallsCoordinatorPromptConfirmation() {
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
@@ -135,7 +140,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     func testBannerDismissedPublisherEmitsWhenBannerIsDismissed() {
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
         let expectation = expectation(description: "Banner dismissed")
 
         coordinator.getPromptTypeResult = .banner
@@ -161,7 +167,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     func testBannerDismissedPublisherEmitsWhenBannerIsActioned() {
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
         let repository = MockDefaultBrowserAndDockPromptRepository()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository)
+        let featureFlagger = MockFeatureFlagger()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
         let expectation = expectation(description: "Banner dismissed")
 
         coordinator.getPromptTypeResult = .banner

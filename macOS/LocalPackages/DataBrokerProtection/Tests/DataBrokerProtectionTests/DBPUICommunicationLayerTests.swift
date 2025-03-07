@@ -138,7 +138,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
 
     func openSendFeedbackModal() async {}
 
-    func applyVPNBypassSetting(_ bypass: Bool) async {}
+    func applyVPNBypassSetting() async {}
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

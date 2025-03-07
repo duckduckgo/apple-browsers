@@ -206,7 +206,7 @@ private enum Const {
 private extension Color {
     static let barButton = Color("DownloadsListBarButtonColor")
     static let emptyState = Color("DownloadsListEmptyStateColor")
-    static let deleteAll = Color("DownloadsListDestructiveColor")
+    static let deleteAll = Color(designSystemColor: .buttonsDeleteGhostText)
     static let background = Color(designSystemColor: .background)
     static let rowBackground = Color(designSystemColor: .surface)
 }

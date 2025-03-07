@@ -121,7 +121,6 @@
                             </containerView>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="onDrag" dataMode="prototypes" style="insetGrouped" allowsSelectionDuringEditing="YES" rowHeight="44" estimatedRowHeight="-1" sectionHeaderHeight="1" sectionFooterHeight="18" translatesAutoresizingMaskIntoConstraints="NO" id="vYN-5M-awE">
                                 <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
-                                <color key="separatorColor" name="BookmarksCellSeperatorColor"/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarkCell" rowHeight="44" id="14A-Y0-GYO" customClass="BookmarkCell" customModule="DuckDuckGo" customModuleProvider="target">
                                         <rect key="frame" x="16" y="55.5" width="343" height="44"/>
@@ -477,7 +476,7 @@
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Delete" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hEJ-T8-Tdl">
                                             <rect key="frame" x="148" y="12" width="47" height="19.5"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                            <color key="textColor" name="DownloadsListDestructiveColor"/>
+                                            <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                     </subviews>
@@ -488,7 +487,9 @@
                                     </constraints>
                                 </tableViewCellContentView>
                                 <color key="backgroundColor" systemColor="systemPurpleColor"/>
-                                <color key="tintColor" name="AlertButtonDestructiveTitleColor"/>
+                                <connections>
+                                    <outlet property="deleteButton" destination="hEJ-T8-Tdl" id="t5y-Mk-faK"/>
+                                </connections>
                             </tableViewCell>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="BookmarkDetailsCell" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="BookmarkDetailsCell" id="bR7-2A-BiO" customClass="BookmarkDetailsCell" customModule="DuckDuckGo" customModuleProvider="target">
                                 <rect key="frame" x="16" y="187" width="343" height="88.5"/>
@@ -651,9 +652,6 @@
         <image name="Folder-24" width="24" height="24"/>
         <image name="Folder-Add-24" width="24" height="24"/>
         <image name="GlobeSmall" width="24" height="24"/>
-        <namedColor name="AlertButtonDestructiveTitleColor">
-            <color red="0.92500001192092896" green="0.21600000560283661" blue="0.14100000262260437" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
-        </namedColor>
         <namedColor name="BookmarksCellLabelColor">
             <color red="0.28600001335144043" green="0.28600001335144043" blue="0.28600001335144043" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
@@ -668,9 +666,6 @@
         </namedColor>
         <namedColor name="BookmarksNavBarTitleColor">
             <color red="0.20000000298023224" green="0.20000000298023224" blue="0.20000000298023224" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
-        <namedColor name="DownloadsListDestructiveColor">
-            <color red="0.92500001192092896" green="0.21600000560283661" blue="0.14100000262260437" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

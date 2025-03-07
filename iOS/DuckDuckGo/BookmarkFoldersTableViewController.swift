@@ -289,11 +289,13 @@ class FavoriteCell: UITableViewCell {
 
 class BookmarksDeleteButtonCell: UITableViewCell {
  
+    @IBOutlet weak var deleteButton: UILabel!
     static let reuseIdentifier = "BookmarksDeleteButtonCell"
 
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
+        deleteButton.textColor = UIColor(designSystemColor: .buttonsDeleteGhostText)
     }
 }
 

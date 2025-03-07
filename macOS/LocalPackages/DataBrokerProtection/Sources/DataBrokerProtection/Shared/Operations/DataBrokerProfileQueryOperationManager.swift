@@ -72,7 +72,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     private let dbpSettings: DataBrokerProtectionSettings
 
     init() {
-        let ipcClient = VPNControllerXPCClient(machServiceName: Bundle.main.vpnMenuAgentBundleId)
+        let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
@@ -496,5 +496,13 @@ extension Bundle {
             fatalError("Info.plist is missing \(Keys.dbpBackgroundAgentBundleId)")
         }
         return bundleID
+    }
+}
+
+extension VPNControllerXPCClient {
+    static let shared = VPNControllerXPCClient()
+
+    convenience init() {
+        self.init(machServiceName: Bundle.main.vpnMenuAgentBundleId)
     }
 }

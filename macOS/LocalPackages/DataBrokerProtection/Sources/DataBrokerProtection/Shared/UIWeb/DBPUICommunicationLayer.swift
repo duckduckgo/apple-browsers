@@ -46,7 +46,7 @@ protocol DBPUICommunicationDelegate: AnyObject {
     func getDataBrokers() async -> [DBPUIDataBroker]
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
-    func applyVPNBypassSetting(_ bypass: Bool) async
+    func applyVPNBypassSetting() async
 }
 
 enum DBPUIReceivedMethodName: String {
@@ -341,7 +341,7 @@ struct DBPUICommunicationLayer: Subfeature {
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
         
-        await delegate?.applyVPNBypassSetting(result.enabled)
+        await delegate?.applyVPNBypassSetting()
 
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
     }

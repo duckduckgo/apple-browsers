@@ -86,7 +86,7 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm, object: nil, userInfo: UnifiedFeedbackSource.userInfo(source: .pir))
     }
 
-    public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async {
+    public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting() async {
         try? await Task.sleep(interval: 0.1)
         try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }

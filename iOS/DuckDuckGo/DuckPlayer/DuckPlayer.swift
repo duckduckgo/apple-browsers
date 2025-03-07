@@ -171,7 +171,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - url: The URL of the video.
     ///   - webView: The web view to load the video in.
-    func openVideoInDuckPlayer(url: URL, webView: WKWebView)
+    @MainActor func openVideoInDuckPlayer(url: URL, webView: WKWebView)
 
     /// Opens DuckPlayer Settings
     func openDuckPlayerSettings()

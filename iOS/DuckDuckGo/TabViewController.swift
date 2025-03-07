@@ -481,9 +481,6 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        // Update DuckPlayer when WebView disappears
-        duckPlayerNavigationHandler?.updateDuckPlayerForWebViewDisappearance(self)
-
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
     }

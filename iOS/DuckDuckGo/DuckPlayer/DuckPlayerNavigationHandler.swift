@@ -160,11 +160,9 @@ final class DuckPlayerNavigationHandler: NSObject {
     }
 
     deinit {
-        Task { @MainActor in
-            duckPlayerModeCancellable?.cancel()
-            duckPlayerNavigationRequestCancellable?.cancel()
-            duckPlayerDismissalCancellable?.cancel()
-        }
+        duckPlayerModeCancellable?.cancel()
+        duckPlayerNavigationRequestCancellable?.cancel()
+        duckPlayerDismissalCancellable?.cancel()        
     }
 
     /// Returns the file path for the Duck Player HTML template.
@@ -1144,30 +1142,10 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     }
 
     /// Handles DuckPlayer Updates when WebView appears
+    /// To be implemented based on requested changes
     @MainActor
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
-        
-        // Ensure the pill is dismissed
-        duckPlayer.dismissPill(animated: false)
-        
-        // Ensure the tab is not muted
-        toggleAudioForTab(hostViewController.webView, mute: false)
-
-        // If native player is enabled, refresh the pill
-        if duckPlayer.settings.nativeUI && duckPlayer.settings.mode != .disabled {
-            let currentURL = hostViewController.webView.url
-            _ = handleURLChange(webView: hostViewController.webView, previousURL: nil, newURL: currentURL)
-        }
-    }
-
-    /// Handles DuckPlayer Updates when WebView disappears
-    @MainActor
-    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
-        // Ensure the tab is muted
-        toggleAudioForTab(hostViewController.webView, mute: true)
-
-        // Ensure the pill is dismissed
-        duckPlayer.dismissPill(animated: false)
+        // NOOP
     }
 
 }

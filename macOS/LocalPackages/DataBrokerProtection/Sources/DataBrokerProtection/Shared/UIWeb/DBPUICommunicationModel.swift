@@ -416,8 +416,11 @@ extension DBPUIInitialScanState {
     }
 }
 
+/// VPN exclusion setting
+///
+/// - Returns: `nil` if the user hasn't made a choice, `true/false` for the setting otherwise
 struct DBPUIVPNBypassConfigSetting: DBPUISendableMessage {
-    let enabled: Bool
+    let enabled: Bool?
 }
 
 struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
@@ -428,8 +431,4 @@ struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
 struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
     let success: Bool
     let version: Int
-}
-
-struct DBPUIVPNBypassOnboardingShown: DBPUISendableMessage {
-    let onboarded: Bool
 }

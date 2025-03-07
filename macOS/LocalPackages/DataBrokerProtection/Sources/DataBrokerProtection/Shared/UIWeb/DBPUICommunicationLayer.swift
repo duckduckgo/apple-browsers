@@ -70,7 +70,6 @@ enum DBPUIReceivedMethodName: String {
     case openSendFeedbackModal
     case getVPNBypassSetting = "getVpnBypassSetting"
     case setVPNBypassSetting = "setVpnBypassSetting"
-    case getVPNBypassOnboardingShown = "getVpnBypassOnboardingShown"
 }
 
 enum DBPUISendableMethodName: String {
@@ -130,7 +129,6 @@ struct DBPUICommunicationLayer: Subfeature {
         case .openSendFeedbackModal: return openSendFeedbackModal
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
-        case .getVPNBypassOnboardingShown: return getVPNBypassOnboardingShown
         }
 
     }
@@ -330,7 +328,7 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getVPNBypassSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNBypassConfigSetting(enabled: dbpSettings.vpnBypass)
+        DBPUIVPNBypassConfigSetting(enabled: dbpSettings.vpnBypassOnboardingShown ? dbpSettings.vpnBypass : nil)
     }
 
     func setVPNBypassSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -343,9 +341,5 @@ struct DBPUICommunicationLayer: Subfeature {
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
-    }
-
-    func getVPNBypassOnboardingShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNBypassOnboardingShown(onboarded: dbpSettings.vpnBypassOnboardingShown)
     }
 }

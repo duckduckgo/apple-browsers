@@ -280,11 +280,15 @@ class FavoriteCell: UITableViewCell {
 
     static let reuseIdentifier = "FavoriteCell"
 
+    @IBOutlet weak var iconImageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
     @IBOutlet var favoriteToggle: UISwitch!
 
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        label.textColor = UIColor(designSystemColor: .textPrimary)
     }
 }
 
@@ -302,10 +306,14 @@ class BookmarksDeleteButtonCell: UITableViewCell {
 
 class AddFolderCell: UITableViewCell {
     
+    @IBOutlet weak var iconImageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
     static let reuseIdentifier = "AddFolderCell"
 
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        label.textColor = UIColor(designSystemColor: .textPrimary)
     }
 }

@@ -30,7 +30,6 @@ class BookmarkCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var favoriteImageViewContainer: UIView!
     @IBOutlet weak var favoriteImageView: UIImageView!
-    
 }
 
 class FolderCell: UITableViewCell {
@@ -78,6 +77,7 @@ class BookmarksViewControllerCellFactory {
         cell.backgroundColor = theme.tableCellBackgroundColor
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.favoriteImageView.tintColor = UIColor(designSystemColor: .icons)
+        cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
         cell.editingAccessoryType = .disclosureIndicator
         return cell
     }

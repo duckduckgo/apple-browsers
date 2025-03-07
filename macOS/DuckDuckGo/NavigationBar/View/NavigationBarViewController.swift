@@ -273,12 +273,21 @@ final class NavigationBarViewController: NSViewController {
      */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
         Task { @MainActor in
-            guard force || HistoryViewOnboardingDecider().shouldPresentOnboarding,
+            let onboardingDecider = HistoryViewOnboardingDecider()
+            guard force || onboardingDecider.shouldPresentOnboarding,
                   !tabCollectionViewModel.isBurner,
                   view.window?.isKeyWindow == true
             else {
                 return
             }
+
+            // If we're on history tab, we don't show the onboarding and mark it as shown,
+            // assuming that the user is onboarded
+            guard tabCollectionViewModel.selectedTabViewModel?.tab.content != .history else {
+                onboardingDecider.skipPresentingOnboarding()
+                return
+            }
+
             popovers.showHistoryViewOnboardingPopover(from: optionsButton, withDelegate: self) { [weak self] showHistory in
                 guard let self else { return }
 

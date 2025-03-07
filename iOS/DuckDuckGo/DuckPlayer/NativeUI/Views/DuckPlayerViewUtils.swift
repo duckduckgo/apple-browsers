@@ -22,7 +22,7 @@ import SwiftUI
 struct CustomRoundedCorners: Shape {
     var radius: CGFloat
     var corners: UIRectCorner
-    
+
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(
             roundedRect: rect,

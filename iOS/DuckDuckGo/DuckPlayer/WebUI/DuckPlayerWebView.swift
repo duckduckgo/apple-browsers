@@ -26,41 +26,41 @@ import Combine
 struct DuckPlayerWebView: UIViewRepresentable {
    let viewModel: DuckPlayerViewModel
    let coordinator: Coordinator
-       
+
    struct Constants {
        static let referrerHeader: String = "Referer"
        static let referrerHeaderValue: String = "http://localhost"
    }
-   
+
    init(viewModel: DuckPlayerViewModel) {
        self.viewModel = viewModel
        Logger.duckplayer.debug("Creating new coordinator")
        self.coordinator = Coordinator(viewModel: viewModel)
    }
-   
+
    func makeCoordinator() -> Coordinator {
        coordinator
    }
-   
+
    func makeUIView(context: Context) -> WKWebView {
        let configuration = WKWebViewConfiguration()
        configuration.allowsInlineMediaPlayback = true
        configuration.mediaTypesRequiringUserActionForPlayback = []
-       
+
        // Use non-persistent data store to prevent cookie storage
        configuration.websiteDataStore = .nonPersistent()
-       
+
        // Set up preferences with privacy-focused settings
        let preferences = WKWebpagePreferences()
        preferences.allowsContentJavaScript = true  // Needed for YouTube player
        configuration.defaultWebpagePreferences = preferences
-       
+
        // Prevent automatic window opening
        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
-       
+
        // Create a custom process pool to ensure isolation
        configuration.processPool = WKProcessPool()
-       
+
        let webView = WKWebView(frame: .zero, configuration: configuration)
        webView.backgroundColor = .black
        webView.isOpaque = false
@@ -68,13 +68,13 @@ struct DuckPlayerWebView: UIViewRepresentable {
        webView.scrollView.bounces = false
        webView.navigationDelegate = context.coordinator
        webView.uiDelegate = context.coordinator
-       
+
        // Set DDG's agent
        webView.customUserAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: false, url: viewModel.getVideoURL())
-       
+
        return webView
    }
-   
+
    func updateUIView(_ webView: WKWebView, context: Context) {
        guard let url = viewModel.getVideoURL() else { return }
        Logger.duckplayer.debug("Updating WebView with URL: \(url)")
@@ -82,47 +82,46 @@ struct DuckPlayerWebView: UIViewRepresentable {
        request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
        webView.load(request)
    }
-   
+
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
        let viewModel: DuckPlayerViewModel
-       
+
        init(viewModel: DuckPlayerViewModel) {
            self.viewModel = viewModel
            super.init()
        }
-       
+
        private func handleYouTubeWatchURL(_ url: URL) {
            Logger.duckplayer.debug("Detected YouTube watch URL: \(url.absoluteString)")
            viewModel.handleYouTubeNavigation(url)
        }
-       
+
        @MainActor
       func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
           guard let url = navigationAction.request.url else {
               decisionHandler(.cancel)
               return
           }
-          
+
           Logger.duckplayer.log("[DuckPlayer] Navigation request to: \(url.absoluteString), type: \(navigationAction.navigationType.rawValue)")
-          
+
           // Always allow youtube-nocookie.com iframe content
           if url.isDuckPlayer {
               decisionHandler(.allow)
               return
           }
-          
+
           // Handle YouTube navigation attempts (from logo, links, etc)
           if url.isYoutubeWatch {
               handleYouTubeWatchURL(url)
           } else if url.isYoutubeWatch == true {
               Logger.duckplayer.log("[DuckPlayer] Blocked navigation to YouTube domain: \(url.absoluteString)")
           }
-          
+
           // Cancel all navigation outside of youtube-nocookie.com
           decisionHandler(.cancel)
         }
-        
-       
+
        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
            // Prevent automatic opening of URLs in browser
            if let url = navigationAction.request.url {
@@ -134,7 +133,6 @@ struct DuckPlayerWebView: UIViewRepresentable {
            }
            return nil
        }
-       
-    
+
    }
 }

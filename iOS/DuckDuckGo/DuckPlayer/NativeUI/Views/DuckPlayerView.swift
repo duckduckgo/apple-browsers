@@ -25,7 +25,7 @@ struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
-    
+
     enum Constants {
         static let headerHeight: CGFloat = 56
         static let iconSize: CGFloat = 32
@@ -39,18 +39,19 @@ struct DuckPlayerView: View {
         static let duckPlayerYoutubeImage: String = "OpenInYoutube"
         static let bottomButtonHeight: CGFloat = 44
     }
-    
-    
+
     var body: some View {
         ZStack {
-            // Background
-            Color.black.edgesIgnoringSafeArea(.all)
-            
+            // Background with blur effect
+            Color(.black)
+            .opacity(0.97)
+            .edgesIgnoringSafeArea(.all)
+
             VStack(spacing: 0) {
                 // Header
                 header
                     .frame(height: Constants.headerHeight)
-                
+
                 // Video Container
                 Spacer()
                 GeometryReader { geometry in
@@ -62,7 +63,7 @@ struct DuckPlayerView: View {
                                     .stroke(Color(designSystemColor: .background).opacity(0.1), lineWidth: 1)
                             )
                         webView.clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-                        
+
                     }
                     .frame(
                         width: geometry.size.width - (Constants.horizontalPadding * 2),
@@ -73,7 +74,7 @@ struct DuckPlayerView: View {
                         y: geometry.size.height / 2
                     )
                 }
-        
+
                 if viewModel.shouldShowYouTubeButton {
                     HStack(spacing: 8) {
                         Button {
@@ -94,7 +95,6 @@ struct DuckPlayerView: View {
                                 }
                             }
                         }
-                        
                         Button {
                             viewModel.openSettings()
                             dismiss()
@@ -112,7 +112,7 @@ struct DuckPlayerView: View {
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
                 }
-                
+
             }
         }
         .onFirstAppear {
@@ -125,23 +125,23 @@ struct DuckPlayerView: View {
             viewModel.onDisappear()
         }
     }
-    
+
     private var header: some View {
         HStack(spacing: Constants.horizontalPadding) {
-            
+
             HStack {
                 Image(Constants.daxLogo)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: Constants.daxLogoSize, height: Constants.daxLogoSize)
-                
+
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
                     .font(.headline)
-                
+
                 Spacer()
             }
-            
+
             // Close Button
             Button(action: { dismiss() }, label: {
                 Image(systemName: "xmark")
@@ -151,6 +151,5 @@ struct DuckPlayerView: View {
             })
         }
         .padding(.horizontal, Constants.horizontalPadding)
-        .background(Color.black)
     }
 }

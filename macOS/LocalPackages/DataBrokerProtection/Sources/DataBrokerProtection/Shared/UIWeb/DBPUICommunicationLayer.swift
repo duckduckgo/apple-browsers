@@ -340,7 +340,7 @@ struct DBPUICommunicationLayer: Subfeature {
 
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
-        
+
         await delegate?.applyVPNBypassSetting()
 
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)

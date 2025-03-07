@@ -61,6 +61,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var downloadsPopover: DownloadsPopover?
     private(set) var aiChatOnboardingPopover: AIChatOnboardingPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
+    private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
 
     private var privacyDashboardPopover: PrivacyDashboardPopover?
     private var privacyInfoCancellable: AnyCancellable?
@@ -251,6 +252,17 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         show(popover, positionedBelow: button)
     }
 
+    func showHistoryViewOnboardingPopover(from button: MouseOverButton,
+                                          withDelegate delegate: NSPopoverDelegate,
+                                          ctaCallback: @escaping (Bool) -> Void) {
+        guard closeTransientPopovers() else { return }
+        let popover = historyViewOnboardingPopover ?? HistoryViewOnboardingPopover(ctaCallback: ctaCallback)
+
+        popover.delegate = delegate
+        historyViewOnboardingPopover = popover
+        show(popover, positionedBelow: button, simulatingMouseDown: false)
+    }
+
     func showAutofillOnboardingPopover(from button: MouseOverButton,
                                        withDelegate delegate: NSPopoverDelegate,
                                        ctaCallback: @escaping (Bool) -> Void) {
@@ -310,6 +322,10 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func closeAIChatOnboardingPopover() {
         aiChatOnboardingPopover?.close()
+    }
+
+    func closeHistoryViewOnboardingViewPopover() {
+        historyViewOnboardingPopover?.close()
     }
 
     func closeAutofillOnboardingPopover() {
@@ -462,11 +478,13 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         show(popover, positionedBelow: view)
     }
 
-    func show(_ popover: NSPopover, positionedBelow button: MouseOverButton) {
+    func show(_ popover: NSPopover, positionedBelow button: MouseOverButton, simulatingMouseDown shouldSimulateMouseDown: Bool = true) {
         button.isHidden = false
 
         popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
-        bindIsMouseDownState(of: button, to: popover)
+        if shouldSimulateMouseDown {
+            bindIsMouseDownState(of: button, to: popover)
+        }
     }
 
     // keep button.isMouseDown ON while the popover is shown

@@ -43,12 +43,13 @@ extension HistoryCoordinator: HistoryGroupingDataSource {}
  * When `historyView` feature flag is enabled, visits are deduplicated
  * to only have the latest visit per URL per day.
  */
+@MainActor
 final class HistoryGroupingProvider {
     private let featureFlagger: FeatureFlagger
     private(set) weak var dataSource: HistoryGroupingDataSource?
 
-    init(dataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.featureFlagger = featureFlagger
+    init(dataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger? = nil) {
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.dataSource = dataSource
     }
 

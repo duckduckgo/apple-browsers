@@ -28,12 +28,14 @@ class AIChatSettingsTests: XCTestCase {
     private var mockPrivacyConfigurationManager: PrivacyConfigurationManagerMock!
     private var mockUserDefaults: UserDefaults!
     private var mockNotificationCenter: NotificationCenter!
+    private var mockFeatureFlagger: FeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockPrivacyConfigurationManager = PrivacyConfigurationManagerMock()
         mockUserDefaults = UserDefaults(suiteName: "TestDefaults")
         mockNotificationCenter = NotificationCenter()
+        mockFeatureFlagger = MockFeatureFlagger()
     }
 
     override func tearDown() {
@@ -41,6 +43,7 @@ class AIChatSettingsTests: XCTestCase {
         mockPrivacyConfigurationManager = nil
         mockUserDefaults = nil
         mockNotificationCenter = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
@@ -138,6 +141,7 @@ class AIChatSettingsTests: XCTestCase {
     func testAIChatBrowsingMenuUserSettingsDisabledWhenToolbarShortcutFeatureDisabled() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       userDefaults: mockUserDefaults,
+                                      featureFlagger: mockFeatureFlagger,
                                       notificationCenter: mockNotificationCenter)
 
         (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.enabledSubfeaturesForVersions = [
@@ -152,6 +156,7 @@ class AIChatSettingsTests: XCTestCase {
     func testAIChatAddressBarUserSettingsDisabledWhenAddressBarShortcutFeatureDisabled() {
         let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                       userDefaults: mockUserDefaults,
+                                      featureFlagger: mockFeatureFlagger,
                                       notificationCenter: mockNotificationCenter)
 
         (mockPrivacyConfigurationManager.privacyConfig as? PrivacyConfigurationMock)?.enabledSubfeaturesForVersions = [

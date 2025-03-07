@@ -812,8 +812,9 @@ class TabViewController: UIViewController {
         // A short delay is required here, because the URL takes some time
         // to propagate to the webView.url property accessor and might not
         // be immediately available in the observer
+        let previousURL = self.url
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged()
+            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
         }
             
         case #keyPath(WKWebView.canGoBack):
@@ -830,12 +831,12 @@ class TabViewController: UIViewController {
         }
     }
     
-    func webViewUrlHasChanged() {
+    func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
         
         // Handle DuckPlayer Navigation URL changes
         if let handler = duckPlayerNavigationHandler,
-           let currentURL = webView.url {
-            _ = handler.handleURLChange(webView: webView)
+           let currentURL = newURL ?? webView.url {
+            _ = handler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
         }
             
         if url == nil {
@@ -2591,10 +2592,12 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer
-        userScripts.duckPlayer = duckPlayerNavigationHandler?.duckPlayer
-        userScripts.youtubeOverlayScript?.webView = webView
-        userScripts.youtubePlayerUserScript?.webView = webView
+        // Setup DuckPlayer Scripts if not using native UI
+        if (duckPlayer?.settings.nativeUI) != nil {
+            userScripts.duckPlayer = duckPlayerNavigationHandler?.duckPlayer
+            userScripts.youtubeOverlayScript?.webView = webView
+            userScripts.youtubePlayerUserScript?.webView = webView
+        }
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)

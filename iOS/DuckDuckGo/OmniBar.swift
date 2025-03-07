@@ -352,8 +352,6 @@ class OmniBar: UIView {
         privacyIconAndTrackersAnimator.cancelAnimations(in: self)
         notificationAnimator.cancelAnimations(in: self)
         privacyIconContextualOnboardingAnimator.dismissPrivacyIconAnimation(privacyInfoContainer.privacyIcon)
-
-        dismissButtonAnimator?.stopAnimation(true)
     }
 
     public func completeAnimationForDaxDialog() {

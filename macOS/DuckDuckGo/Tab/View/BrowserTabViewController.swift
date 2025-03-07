@@ -51,11 +51,6 @@ final class BrowserTabViewController: NSViewController {
         actionsManager: newTabPageActionsManager,
         activeRemoteMessageModel: activeRemoteMessageModel
     )
-    private let historyViewActionsManager: HistoryViewActionsManager
-    private(set) lazy var historyWebViewModel: HistoryWebViewModel = HistoryWebViewModel(
-        featureFlagger: featureFlagger,
-        actionsManager: historyViewActionsManager
-    )
     private(set) weak var webView: WebView?
     private weak var webViewContainer: NSView?
     private weak var webViewSnapshot: NSView?
@@ -102,7 +97,6 @@ final class BrowserTabViewController: NSViewController {
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
-         historyViewActionsManager: HistoryViewActionsManager = NSApp.delegateTyped.historyViewCoordinator.actionsManager,
          activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -111,7 +105,6 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
         self.newTabPageActionsManager = newTabPageActionsManager
-        self.historyViewActionsManager = historyViewActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
         containerStackView = NSStackView()
 
@@ -329,7 +322,6 @@ final class BrowserTabViewController: NSViewController {
 
                 self.tabViewModelCancellables.removeAll(keepingCapacity: true)
                 self.subscribeToTabContent(of: selectedTabViewModel)
-                self.subscribeToTabReloading(of: selectedTabViewModel)
                 self.subscribeToHoveredLink(of: selectedTabViewModel)
                 self.subscribeToUserDialogs(of: selectedTabViewModel)
 
@@ -589,8 +581,6 @@ final class BrowserTabViewController: NSViewController {
         switch tabViewModel.tab.content {
         case .newtab:
             return newTabPageWebViewModel.webView
-        case .history:
-            return historyWebViewModel.webView
         default:
             return tabViewModel.tab.webView
         }
@@ -638,22 +628,6 @@ final class BrowserTabViewController: NSViewController {
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
             self?.updateStateAndPresentContextualOnboarding()
         }.store(in: &tabViewModelCancellables)
-    }
-
-    private func subscribeToTabReloading(of tabViewModel: TabViewModel?) {
-        guard featureFlagger.isFeatureOn(.historyView), let tab = tabViewModel?.tab, tab.content.usesExternalWebView else { return }
-
-        tab.reloadPublisher
-            .sink { [weak self, weak tabViewModel] in
-                guard let self, let tabViewModel else {
-                    return
-                }
-                let webView = webView(for: tabViewModel)
-                if webView != tabViewModel.tab.webView {
-                    webView.reload()
-                }
-            }
-            .store(in: &tabViewModelCancellables)
     }
 
     private func subscribeToUserDialogs(of tabViewModel: TabViewModel?) {
@@ -933,7 +907,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     func generateNativePreviewIfNeeded() {
-        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.isUrl, !tabViewModel.isShowingErrorPage else {
+        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.isUrl, tabViewModel.tab.content != .history, !tabViewModel.isShowingErrorPage else {
             return
         }
 

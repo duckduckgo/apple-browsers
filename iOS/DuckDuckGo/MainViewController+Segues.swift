@@ -173,7 +173,8 @@ extension MainViewController {
             TabSwitcherViewController(coder: coder,
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger)
+                                      featureFlagger: self.featureFlagger,
+                                      tabManager: self.tabManager)
         }) else {
             assertionFailure()
             return
@@ -181,7 +182,6 @@ extension MainViewController {
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
-        controller.tabsModel = tabManager.model
         controller.previewsSource = previewsSource
         controller.modalPresentationStyle = .overCurrentContext
 

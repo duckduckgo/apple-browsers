@@ -26,14 +26,14 @@ struct DuckPlayerModalPresenter {
     enum PresentationContext {
         case SERP, youtube
     }
-    
+
     var context: PresentationContext = .SERP
-    
+
     func presentDuckPlayerFeatureModal(on viewController: UIViewController) {
         let hostingController = createHostingController()
         configurePresentationStyle(for: hostingController, on: viewController)
         viewController.present(hostingController, animated: true, completion: nil)
-        
+
         hostingController.rootView.dismisPresentation = {
             viewController.dismiss(animated: true)
         }

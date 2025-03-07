@@ -27,7 +27,7 @@ import BrowserServicesKit
 import DuckPlayer
 
 final class YoutubeOverlayUserScript: NSObject, Subfeature {
-        
+
     var duckPlayer: DuckPlayerControlling
     private var cancellables = Set<AnyCancellable>()
     var statisticsStore: StatisticsStore
@@ -35,7 +35,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
     struct Constants {
         static let featureName = "duckPlayer"
     }
-    
+
     init(duckPlayer: DuckPlayerControlling,
          statisticsStore: StatisticsStore = StatisticsUserDefaults(),
          duckPlayerStorage: DuckPlayerStorage = DefaultDuckPlayerStorage()) {
@@ -45,7 +45,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
         super.init()
         subscribeToDuckPlayerMode()
     }
-    
+
     // Listen to DuckPlayer Settings changed
     private func subscribeToDuckPlayerMode() {
         duckPlayer.settings.duckPlayerSettingsPublisher
@@ -54,7 +54,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
             }
             .store(in: &cancellables)
     }
-    
+
     struct Handlers {
         static let setUserValues = "setUserValues"
         static let getUserValues = "getUserValues"
@@ -66,7 +66,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
-    
+
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: "sosbourne.duckduckgo.com"),
         .exact(hostname: "use-devtesting18.duckduckgo.com"),
@@ -113,7 +113,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
     }
 
     // MARK: - Private Methods
-    
+
     @MainActor
     private func openDuckPlayer(params: Any, original: WKScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
@@ -132,7 +132,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
         let values = UserValues(duckPlayerMode: duckPlayer.settings.mode, askModeOverlayHidden: duckPlayer.settings.askModeOverlayHidden)
         userValuesUpdated(userValues: values)
     }
-    
+
     deinit {
         cancellables.removeAll()
     }
@@ -145,19 +145,19 @@ extension YoutubeOverlayUserScript {
             return nil
          }
          let pixelName = parameters["pixelName"] as? String
-        
+
         switch pixelName {
         case "play.use":
             Pixel.fire(pixel: Pixel.Event.duckPlayerViewFromYoutubeViaMainOverlay, debounce: 2)
             duckPlayerStorage.userInteractedWithDuckPlayer = true
-                        
+
         case "play.do_not_use":
             Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeWatchHere, debounce: 2)
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
         case "overlay":
             Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeImpressions, debounce: 2)
-            
+
         default:
             break
         }

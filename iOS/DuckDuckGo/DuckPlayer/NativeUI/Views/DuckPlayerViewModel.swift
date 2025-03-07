@@ -29,17 +29,17 @@ import UIKit
 /// - Navigation to YouTube when requested
 /// - Autoplay settings management
 final class DuckPlayerViewModel: ObservableObject {
-    
+
     /// A publisher to notify when Youtube navigation is required.
     /// Emits the videoID that should be opened in YouTube.
     let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
-    
+
     /// A publisher to notify when the settings button is pressed.    
     let settingsRequestPublisher = PassthroughSubject<Void, Never>()
 
     /// A publisher to notify when the view is dismissed
     let dismissPublisher = PassthroughSubject<Void, Never>()
-    
+
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
@@ -51,7 +51,7 @@ final class DuckPlayerViewModel: ObservableObject {
     enum Constants {
         /// Base URL for privacy-preserving YouTube embeds
         static let baseURL = "https://www.youtube-nocookie.com/embed/"
-        
+
         // URL Parameters
         /// Controls whether related videos are shown
         static let relParameter = "rel"
@@ -59,15 +59,15 @@ final class DuckPlayerViewModel: ObservableObject {
         static let playsInlineParameter = "playsinline"
         /// Controls whether video autoplays when loaded
         static let autoplayParameter = "autoplay"
-        
+
         // Used to enable features in URL parameters        
         static let enabled = "1"
         static let disabled = "0"
     }
-    
+
     /// The YouTube video ID to be played
     let videoID: String
-    
+
     /// App settings instance for accessing user preferences
     var appSettings: AppSettings
 
@@ -78,16 +78,16 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     var cancellables = Set<AnyCancellable>()
-    
+
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
-    
+
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
         Constants.playsInlineParameter: Constants.enabled
     ]
-    
+
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
@@ -97,7 +97,7 @@ final class DuckPlayerViewModel: ObservableObject {
         self.appSettings = appSettings
         self.url = getVideoURL()
     }
-    
+
     /// Generates the URL for the YouTube video with appropriate parameters
     /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
     func getVideoURL() -> URL? {
@@ -106,7 +106,7 @@ final class DuckPlayerViewModel: ObservableObject {
         let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }
-    
+
     /// Handles navigation requests to YouTube
     /// - Parameter url: The YouTube video URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
@@ -114,12 +114,12 @@ final class DuckPlayerViewModel: ObservableObject {
             youtubeNavigationRequestPublisher.send(videoID)
         }
     }
-    
+
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
         youtubeNavigationRequestPublisher.send(videoID)
     }
-    
+
     /// Called when the view first appears
     /// Sets up orientation monitoring
     func onFirstAppear() {
@@ -129,12 +129,12 @@ final class DuckPlayerViewModel: ObservableObject {
                                              name: UIDevice.orientationDidChangeNotification,
                                              object: nil)
     }
-    
+
     /// Called each time the view appears
     func onAppear() {
         // Reserved for future use
     }
-    
+
     /// Called when the view disappears
     /// Removes orientation monitoring
     func onDisappear() {
@@ -143,12 +143,12 @@ final class DuckPlayerViewModel: ObservableObject {
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
     }
-    
+
     /// Handles device orientation change notifications
     @objc private func handleOrientationChange() {
         updateOrientation()
     }
-    
+
     /// Updates the current interface orientation state
     func updateOrientation() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
@@ -160,6 +160,5 @@ final class DuckPlayerViewModel: ObservableObject {
     func openSettings() {
         settingsRequestPublisher.send()
     }
-       
-    
+
 }

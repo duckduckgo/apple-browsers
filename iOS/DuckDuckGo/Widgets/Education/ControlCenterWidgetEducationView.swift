@@ -96,7 +96,7 @@ struct ControlCenterWidgetEducationView: View {
 private extension Color {
     static let background = Color(designSystemColor: .background)
     static let controlWidgetBackground = Color(singleUseColor: .controlWidgetBackground)
-    static let font = Color("WidgetEducationFontColor")
+    static let font = Color(designSystemColor: .textPrimary)
 }
 
 private extension Image {

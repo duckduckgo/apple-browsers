@@ -14,7 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "3.3.1")
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", branch: "mariusz/design-system-colors-refactor")
     ],
     targets: [
         .target(

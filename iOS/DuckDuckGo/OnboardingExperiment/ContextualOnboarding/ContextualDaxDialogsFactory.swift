@@ -124,6 +124,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             { [weak delegate, weak self] in
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
+                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
         } else {
@@ -142,6 +143,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate, pixelReporter: contextualOnboardingPixelReporter)
         return OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: viewModel)
             .onFirstAppear { [weak self] in
+                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
     }

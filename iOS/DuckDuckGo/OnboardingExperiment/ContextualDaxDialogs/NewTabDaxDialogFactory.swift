@@ -171,6 +171,7 @@ private extension NewTabDaxDialogFactory {
                     object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
                     userInfo: nil
                 )
+                onDismiss()
             },
                                     dismissAction: { [weak self] in
                 self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()

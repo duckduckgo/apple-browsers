@@ -47,6 +47,7 @@ class BookmarkFoldersViewController: UITableViewController {
         super.viewDidLoad()
 
         self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .background)
+        self.tableView.separatorColor = ThemeManager.shared.currentTheme.tableCellSeparatorColor
     }
 
     override func viewWillAppear(_ animated: Bool) {

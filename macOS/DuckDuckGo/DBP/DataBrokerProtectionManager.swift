@@ -22,7 +22,6 @@ import DataBrokerProtection
 import LoginItems
 import Common
 import Freemium
-import NetworkProtectionProxy
 import NetworkProtectionIPC
 
 public final class DataBrokerProtectionManager {
@@ -88,16 +87,8 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     }
 
     public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async {
-        let proxySettings = TransparentProxySettings(defaults: .netP)
-        let vpnXPCClient = VPNControllerXPCClient.shared
-        let dbpBundleID = Bundle.main.dbpBackgroundAgentBundleId
-        if bypass {
-            proxySettings.appRoutingRules[dbpBundleID] = .exclude
-        } else if proxySettings.isExcluding(appIdentifier: dbpBundleID) {
-            proxySettings.appRoutingRules.removeValue(forKey: dbpBundleID)
-        }
         try? await Task.sleep(interval: 0.1)
-        try? await vpnXPCClient.command(.restartAdapter)
+        try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }
 
     public func isAuthenticatedUser() -> Bool {

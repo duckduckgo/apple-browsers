@@ -76,7 +76,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        self.dbpSettings = DataBrokerProtectionSettings()
     }
 
     private var vpnConnectionState: String {
@@ -481,11 +481,19 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 extension Bundle {
     struct Keys {
         static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
+        static let dbpBackgroundAgentBundleId = "DBP_BACKGROUND_AGENT_BUNDLE_ID"
     }
 
     var vpnMenuAgentBundleId: String {
         guard let bundleID = object(forInfoDictionaryKey: Keys.vpnMenuAgentBundleId) as? String else {
             fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
+        }
+        return bundleID
+    }
+
+    var dbpBackgroundAgentBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Keys.dbpBackgroundAgentBundleId) as? String else {
+            fatalError("Info.plist is missing \(Keys.dbpBackgroundAgentBundleId)")
         }
         return bundleID
     }

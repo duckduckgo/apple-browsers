@@ -19,9 +19,11 @@
 import Foundation
 import Combine
 import AppKitExtensions
+import NetworkProtectionProxy
 
 public final class DataBrokerProtectionSettings {
     private let defaults: UserDefaults
+    private let proxySettings: TransparentProxySettings
 
     private enum Keys {
         static let runType = "dbp.environment.run-type"
@@ -43,12 +45,13 @@ public final class DataBrokerProtectionSettings {
         }
     }
 
-    public init(defaults: UserDefaults) {
+    init(defaults: UserDefaults, proxySettings: TransparentProxySettings) {
         self.defaults = defaults
+        self.proxySettings = proxySettings
     }
 
     public convenience init() {
-        self.init(defaults: .dbp)
+        self.init(defaults: .dbp, proxySettings: .init(defaults: .netP))
     }
 
     // MARK: - Environment
@@ -103,10 +106,10 @@ public final class DataBrokerProtectionSettings {
 
     public var vpnBypass: Bool {
         get {
-            defaults.dataBrokerProtectionVPNBypass
+            proxySettings[bundleID: Bundle.main.dbpBackgroundAgentBundleId] == .exclude
         }
         set {
-            defaults.dataBrokerProtectionVPNBypass = newValue
+            proxySettings[bundleID: Bundle.main.dbpBackgroundAgentBundleId] = newValue ? .exclude : nil
         }
     }
 

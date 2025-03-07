@@ -40,7 +40,7 @@ final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        self.dbpSettings = DataBrokerProtectionSettings()
     }
 
     func collectMetadata() async -> DBPFeedbackMetadata {

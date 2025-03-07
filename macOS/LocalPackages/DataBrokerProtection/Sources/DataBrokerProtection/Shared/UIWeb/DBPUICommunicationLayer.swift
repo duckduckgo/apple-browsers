@@ -92,7 +92,7 @@ struct DBPUICommunicationLayer: Subfeature {
     }
 
     internal init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                  dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .dbp),
+                  dbpSettings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(),
                   privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
         self.dbpSettings = dbpSettings
@@ -340,6 +340,9 @@ struct DBPUICommunicationLayer: Subfeature {
 
         dbpSettings.vpnBypass = result.enabled
         dbpSettings.vpnBypassOnboardingShown = true
+        
+        await delegate?.applyVPNBypassSetting(result.enabled)
+
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
     }
 }

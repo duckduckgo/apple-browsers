@@ -77,11 +77,25 @@ public final class TransparentProxySettings {
                 return nil
             }
 
-            guard bundleID != Bundle.main.dbpBackgroundAgentBundleId else {
-                return nil
-            }
+//            guard bundleID != Bundle.main.dbpBackgroundAgentBundleId else {
+//                return nil
+//            }
 
             return bundleID
+        }
+    }
+
+    public subscript(bundleID bundleID: String) -> VPNRoutingRule? {
+        get {
+            appRoutingRules[bundleID]
+        }
+
+        set {
+            if let newValue {
+                appRoutingRules[bundleID] = newValue
+            } else {
+                appRoutingRules.removeValue(forKey: bundleID)
+            }
         }
     }
 
@@ -202,15 +216,15 @@ public struct TransparentProxySettingsSnapshot: Codable {
     public let excludedDomains: [String]
 }
 
-extension Bundle {
-    struct Keys {
-        static let dbpBackgroundAgentBundleId = "DBP_BACKGROUND_AGENT_BUNDLE_ID"
-    }
-
-    var dbpBackgroundAgentBundleId: String {
-        guard let bundleID = object(forInfoDictionaryKey: Keys.dbpBackgroundAgentBundleId) as? String else {
-            fatalError("Info.plist is missing \(Keys.dbpBackgroundAgentBundleId)")
-        }
-        return bundleID
-    }
-}
+//extension Bundle {
+//    struct Keys {
+//        static let dbpBackgroundAgentBundleId = "DBP_BACKGROUND_AGENT_BUNDLE_ID"
+//    }
+//
+//    var dbpBackgroundAgentBundleId: String {
+//        guard let bundleID = object(forInfoDictionaryKey: Keys.dbpBackgroundAgentBundleId) as? String else {
+//            fatalError("Info.plist is missing \(Keys.dbpBackgroundAgentBundleId)")
+//        }
+//        return bundleID
+//    }
+//}

@@ -52,6 +52,7 @@ let package = Package(
                 .product(name: "Freemium", package: "Freemium"),
                 .product(name: "NetworkProtection", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
+                .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
             ],
             resources: [.copy("Resources")],
             swiftSettings: [

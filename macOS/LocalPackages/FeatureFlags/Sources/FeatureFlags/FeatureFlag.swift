@@ -111,11 +111,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
-            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .htmlNewTabPage:
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
-            return .disabled
+            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
             return .disabled
         case .autofillPartialFormSaves:

@@ -434,13 +434,7 @@ private extension FindInPageTests {
     /// A shared URL to reference the local HTML file
     class var loremIpsumFileURL: URL {
         let loremIpsumFileName = "lorem_ipsum.html"
-        XCTAssertNotNil(
-            FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
-            "It wasn't possible to obtain a local file URL for the sandbox Documents directory."
-        )
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let loremIpsumHTMLFileURL = documentsDirectory.appendingPathComponent(loremIpsumFileName)
-        return loremIpsumHTMLFileURL
+        return FileManager.default.temporaryDirectory.appendingPathComponent(loremIpsumFileName)
     }
 
     /// Save a local HTML file for testing find behavor against

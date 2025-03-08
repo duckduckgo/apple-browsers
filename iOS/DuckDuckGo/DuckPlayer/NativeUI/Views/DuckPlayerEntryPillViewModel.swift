@@ -1,5 +1,5 @@
 //
-//  DuckPlayerMiniPillViewModel.swift
+//  DuckPlayerEntryPillViewModel.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -22,28 +22,29 @@ import Combine
 import SwiftUI
 
 @MainActor
-final class DuckPlayerMiniPillViewModel: ObservableObject {
+final class DuckPlayerEntryPillViewModel: ObservableObject {
     var onOpen: () -> Void
-    
+
     @Published var isVisible: Bool = false
     private(set) var shouldAnimate: Bool = true
-    
+
     init(onOpen: @escaping () -> Void) {
         self.onOpen = onOpen
     }
-    
+
     func updateOnOpen(_ onOpen: @escaping () -> Void) {
         self.onOpen = onOpen
         shouldAnimate = false
     }
-    
+
     func openInDuckPlayer() {
         onOpen()
     }
-    
-    func show() {        self.isVisible = true
+
+    func show() {
+        self.isVisible = true
     }
-    
+
     func hide() {
         isVisible = false
     }

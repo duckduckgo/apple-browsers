@@ -682,7 +682,9 @@ extension SettingsViewModel {
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync:
             pushViewController(legacyViewProvider.syncSettings(source: state.syncSource))
-        case .appIcon: pushViewController(legacyViewProvider.appIcon)
+        case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
+            self?.state.appIcon = appIcon
+        }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
         case .autoclearData:

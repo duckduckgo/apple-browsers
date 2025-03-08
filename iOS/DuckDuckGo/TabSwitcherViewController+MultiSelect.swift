@@ -153,8 +153,7 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: tabsModel.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
-            Pixel.fire(pixel: .tabSwitcherConfirmCloseTabs)
-            DailyPixel.fire(pixel: .tabSwitcherConfirmCloseTabsDaily)
+            self.fireConfirmCloseTabsPixel()
             self.delegate?.tabSwitcherDidRequestCloseAll(tabSwitcher: self)
         })
 
@@ -183,10 +182,16 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
+            self.fireConfirmCloseTabsPixel()
             self.deleteTabsAtIndexPaths(indexPaths)
         })
 
         present(alert, animated: true)
+    }
+
+    func fireConfirmCloseTabsPixel() {
+        Pixel.fire(pixel: .tabSwitcherConfirmCloseTabs)
+        DailyPixel.fire(pixel: .tabSwitcherConfirmCloseTabsDaily)
     }
 
     func deselectAllTabs() {

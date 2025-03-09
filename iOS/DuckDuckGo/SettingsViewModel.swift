@@ -424,8 +424,8 @@ final class SettingsViewModel: ObservableObject {
         legacyViewProvider.syncService.authState != .inactive ? .on : .off
     }
 
-    var usesUnifiedFeedbackForm: Bool {
-        subscriptionAuthV1toV2Bridge.isUserAuthenticated && subscriptionFeatureAvailability.usesUnifiedFeedbackForm
+    var enablesUnifiedFeedbackForm: Bool {
+        subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
     // MARK: Default Init
@@ -640,7 +640,7 @@ extension SettingsViewModel {
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.apps)
+        UIApplication.shared.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
@@ -682,7 +682,9 @@ extension SettingsViewModel {
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync:
             pushViewController(legacyViewProvider.syncSettings(source: state.syncSource))
-        case .appIcon: pushViewController(legacyViewProvider.appIcon)
+        case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
+            self?.state.appIcon = appIcon
+        }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
         case .autoclearData:
@@ -824,8 +826,11 @@ extension SettingsViewModel {
             var currentEntitlements: [Entitlement.ProductName] = []
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
 
-            for entitlement in entitlementsToCheck where await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement) {
-                currentEntitlements.append(entitlement)
+            for entitlement in entitlementsToCheck {
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                    hasEntitlement {
+                    currentEntitlements.append(entitlement)
+                }
             }
 
             self.state.subscription.entitlements = currentEntitlements

@@ -61,11 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN je uključen";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Odaberi prečace do svojih omiljenih radnji.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Prilagođeni prečaci";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Odaberi svoje prečace";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Lijevi prečac";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Desni prečac";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Postavi prečace";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Brzo pretraži svoje spremljene DuckDuckGo lozinke.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Pretraživanje lozinki";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Prečaci za tvoje omiljene poteze.";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Prečaci";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Pretraži ili posjeti svoja omiljena web-mjesta privatno jednim dodirom.";

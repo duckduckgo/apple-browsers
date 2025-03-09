@@ -26,7 +26,7 @@ import WebKit
 public protocol DataProviding: AnyObject {
     var ranges: [DataModel.HistoryRangeWithCount] { get }
     func refreshData() async
-    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
     func deleteVisits(matching query: DataModel.HistoryQueryKind) async
     func burnVisits(matching query: DataModel.HistoryQueryKind) async
 }
@@ -133,7 +133,7 @@ public final class DataClient: HistoryViewUserScriptClient {
     private func query(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let query: DataModel.HistoryQuery = DecodableHelper.decode(from: params) else { return nil }
 
-        let batch = await dataProvider.visitsBatch(for: query.query, limit: query.limit, offset: query.offset)
+        let batch = await dataProvider.visitsBatch(for: query.query, source: query.source, limit: query.limit, offset: query.offset)
         return DataModel.HistoryQueryResponse(info: .init(finished: batch.finished, query: query.query), value: batch.visits)
     }
 

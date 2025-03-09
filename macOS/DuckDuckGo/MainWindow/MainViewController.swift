@@ -37,6 +37,7 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
+    private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -48,6 +49,8 @@ final class MainViewController: NSViewController {
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private var bannerPromptObserver: Any?
+    private var bannerDismissedCancellable: AnyCancellable?
 
     private var bookmarksBarIsVisible: Bool {
         return bookmarksBarViewController.parent != nil
@@ -67,7 +70,8 @@ final class MainViewController: NSViewController {
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -75,6 +79,7 @@ final class MainViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
+        self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
 
         tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
@@ -156,6 +161,7 @@ final class MainViewController: NSViewController {
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
         subscribeToFirstResponder()
+        subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
@@ -165,7 +171,9 @@ final class MainViewController: NSViewController {
         super.viewDidAppear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
+
         adjustFirstResponder(force: true)
+        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -199,8 +207,7 @@ final class MainViewController: NSViewController {
             mainView.navigationBarContainerView.wantsLayer = true
             mainView.navigationBarContainerView.layer?.masksToBounds = false
 
-            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab,
-               browserTabViewController.homePageViewController?.addressBarModel.shouldShowAddressBar == false {
+            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
                 resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
             } else {
                 resizeNavigationBar(isHomePage: false, animated: false)
@@ -208,6 +215,7 @@ final class MainViewController: NSViewController {
         }
 
         updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+
     }
 
     override func viewDidLayout() {
@@ -296,7 +304,14 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            let backgroundColor: NSColor = (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+            let backgroundColor: NSColor = {
+                if isBannerViewVisible {
+                    return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                } else {
+                    return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                }
+            }()
+
             mainView.divider.backgroundColor = backgroundColor
         }
     }
@@ -487,6 +502,63 @@ final class MainViewController: NSViewController {
             return
         }
         NSApp.mainMenuTyped.stopMenuItem.isEnabled = selectedTabViewModel.isLoading
+    }
+
+    // MARK: - Set As Default and Add To Dock Prompts configuration
+
+    var isBannerViewVisible: Bool {
+        mainView.bannerHeightConstraint.constant != 0
+    }
+
+    private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
+                                               name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
+                                               object: nil)
+
+        bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher
+            .sink { [weak self] in
+                self?.hideBanner()
+            }
+    }
+
+    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
+        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
+            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
+            bannerViewHandler: showMessageBanner
+        )
+    }
+
+    private func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {
+        guard isViewLoaded && view.window?.isKeyWindow == true else {
+            return nil
+        }
+
+        if bookmarksBarVisibilityManager.isBookmarksBarVisible {
+            return bookmarksBarViewController.view
+        } else {
+            return navigationBarViewController.addressBarViewController?.view
+        }
+    }
+
+    private func showMessageBanner(banner: BannerMessageViewController) {
+        if isBannerViewVisible { return } // If view is being shown already we do not want to show it.
+
+        addAndLayoutChild(banner, into: mainView.bannerContainerView)
+        mainView.bannerHeightConstraint.animator().constant = 48
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        }
+    }
+
+    private func hideBanner() {
+        mainView.bannerContainerView.subviews.forEach { $0.removeFromSuperview() }
+        mainView.bannerHeightConstraint.animator().constant = 0
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+            self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+        }
     }
 
     // MARK: - First responder

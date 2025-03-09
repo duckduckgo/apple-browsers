@@ -528,7 +528,7 @@ class MainViewController: UIViewController {
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            if await subscriptionManager.isEnabled(feature: .networkProtection) {
+            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection), hasEntitlement {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -1690,7 +1690,9 @@ class MainViewController: UIViewController {
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
             let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-            guard await subscriptionManager.isEnabled(feature: .networkProtection) else { return }
+            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+                      hasEntitlement == false
+            else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -1801,7 +1803,7 @@ extension MainViewController: BrowserChromeDelegate {
         setBarsVisibility(hidden ? 0 : 1.0, animated: animated, animationDuration: customAnimationDuration)
     }
     
-    func setBarsVisibility(_ percent: CGFloat, animated: Bool = false, animationDuration: CGFloat?) {
+    func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
             hideKeyboard()
             hideMenuHighlighter()
@@ -1816,6 +1818,15 @@ extension MainViewController: BrowserChromeDelegate {
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent
             self.viewCoordinator.toolbar.alpha = percent
+            
+            // Post notification only when bars are fully shown or hidden
+            if percent == 0 || percent == 1 {
+                NotificationCenter.default.post(
+                    name: .browserChromeVisibilityChanged,
+                    object: nil,
+                    userInfo: ["isHidden": percent == 0]
+                )
+            }
         }
            
         if animated {

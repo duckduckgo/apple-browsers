@@ -160,7 +160,8 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if await subscriptionManager.isEnabled(feature: .networkProtection) {
+            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+               hasEntitlement {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()

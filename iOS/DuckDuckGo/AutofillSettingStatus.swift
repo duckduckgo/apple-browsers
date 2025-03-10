@@ -19,15 +19,41 @@
 
 import Foundation
 import LocalAuthentication
+import UIKit
 
 struct AutofillSettingStatus {
 
-    static let appSettings = AppDependencyProvider.shared.appSettings
-
     static var isAutofillEnabledInSettings: Bool {
-        let context = LAContext()
-        var error: NSError?
-        let canAuthenticate = context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
-        return appSettings.autofillCredentialsEnabled && canAuthenticate
+        setupNotificationObserversIfNeeded()
+        
+        canAuthenticate = canAuthenticate ?? refreshCanAuthenticate()
+
+        return appSettings.autofillCredentialsEnabled && (canAuthenticate ?? false)
     }
+
+    private static let appSettings = AppDependencyProvider.shared.appSettings
+
+    private static var observersSetUp = false
+
+    private static var canAuthenticate: Bool? = {
+        return refreshCanAuthenticate()
+    }()
+
+    private static func refreshCanAuthenticate() -> Bool {
+        var error: NSError?
+        return LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
+    }
+
+    /// Clears the cached device authentication status when the app goes to the background
+    /// to ensure that the next time the app is brought to the foreground, the authentication
+    /// status is re-evaluated.
+    private static func setupNotificationObserversIfNeeded() {
+        guard !observersSetUp else { return }
+        observersSetUp = true
+
+        NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { _ in
+            canAuthenticate = nil
+        }
+    }
+
 }

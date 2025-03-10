@@ -141,4 +141,11 @@ extension XCTestCase {
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
+
+    func assertElement(_ element: XCUIElement, hasValue value: CVarArg, file: StaticString = #file, line: UInt = #line) {
+        let predicate = NSPredicate(format: "%K == %@", #keyPath(XCUIElement.value), value)
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
+        let result = XCTWaiter().wait(for: [expectation], timeout: UITests.Timeouts.elementExistence)
+        XCTAssertEqual(result, .completed, "Unexpected status field text content after a \"Find Next\" operation.")
+    }
 }

@@ -79,7 +79,7 @@ final class DefaultBrowserManager: DefaultBrowserManaging {
     private let dateProvider: () -> Date
 
     init(
-        defaultBrowserChecker: CheckDefaultBrowserService = CheckDefaultBrowserServiceFactory.makeCheckDefaultBrowserService(),
+        defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(),
         defaultBrowserInfoStore: DefaultBrowserInfoStorage = DefaultBrowserInfoStore(),
         dateProvider: @escaping () -> Date = Date.init
     ) {

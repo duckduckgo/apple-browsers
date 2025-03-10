@@ -36,29 +36,18 @@ protocol CheckDefaultBrowserService: AnyObject {
 // Usually we would make an interface with the same method and have UIApplication conform to it.
 // The issue with the above approach is that it requires marking the protocol `@available(iOS 18.2, *)`.
 // That will cause issues with injecting the parameter as it is available only for iOS 18.2.
-enum CheckDefaultBrowserServiceFactory {
-
-    static func makeCheckDefaultBrowserService() -> CheckDefaultBrowserService {
-        if #available(iOS 18.2, *) {
-            IOS18CheckDefaultBrowserService()
-        } else {
-            LegacyCheckDefaultBrowserService()
-        }
-    }
-
-}
+//enum CheckDefaultBrowserServiceFactory {
 
 // MARK: - iOS 18.2
 
-@available(iOS 18.2, *)
 protocol ApplicationDefaultCategoryChecking: AnyObject {
+    @available(iOS 18.2, *)
     func isDefault(_ category: UIApplication.Category) throws -> Bool
 }
 
 extension UIApplication: ApplicationDefaultCategoryChecking {}
 
-@available(iOS 18.2, *)
-final class IOS18CheckDefaultBrowserService: CheckDefaultBrowserService {
+final class SystemCheckDefaultBrowserService: CheckDefaultBrowserService {
     private let application: ApplicationDefaultCategoryChecking
 
     init(application: ApplicationDefaultCategoryChecking = UIApplication.shared) {
@@ -66,22 +55,18 @@ final class IOS18CheckDefaultBrowserService: CheckDefaultBrowserService {
     }
 
     func isDefaultWebBrowser() -> Result<Bool, CheckDefaultBrowserServiceError> {
+        guard #available(iOS 18.2, *) else { return .failure(.notSupportedOnThisOSVersion) }
+
         do {
             let isDefaultBrowser = try application.isDefault(.webBrowser)
             return .success(isDefaultBrowser)
         } catch let error as NSError where error.domain == UIApplication.CategoryDefaultError.errorDomain && error.code == UIApplication.CategoryDefaultError.Code.rateLimited.rawValue {
+            // Max attempts of getting a result in a year reached.
+            // See: https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:) 
             let nextRetryDate = error.userInfo[UIApplication.CategoryDefaultError.retryAvailableDateErrorKey] as? Date
             return .failure(CheckDefaultBrowserServiceError.maxNumberOfAttemptsExceeded(nextRetryDate: nextRetryDate))
         } catch {
             return .failure(CheckDefaultBrowserServiceError.unknownError(error as NSError))
         }
-    }
-}
-
-// MARK: - Legacy
-
-final class LegacyCheckDefaultBrowserService: CheckDefaultBrowserService {
-    func isDefaultWebBrowser() -> Result<Bool, CheckDefaultBrowserServiceError> {
-        return .failure(CheckDefaultBrowserServiceError.notSupportedOnThisOSVersion)
     }
 }

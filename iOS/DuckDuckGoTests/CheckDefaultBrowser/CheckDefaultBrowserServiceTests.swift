@@ -23,106 +23,103 @@ import class UIKit.UIApplication
 import Foundation
 
 struct CheckDefaultBrowserServiceTests {
-
-    @Suite("Check Default Browser iOS > 18.2+ Tests")
-    struct IOS18CheckDefaultServiceTests {
-
-        @MainActor
-        @Test(
-            "Check Is Default Browser returns success when there are no errors",
-            arguments: [
-                true,
-                false
-            ]
-        )
-        @available(iOS 18.2, *)
-        func checkDefaultBrowserReturnsSuccess(_ expectedDefaultBrowserValue: Bool) throws {
-            // GIVEN
-            let application = MockApplication()
-            application.resultToReturn = .success(expectedDefaultBrowserValue)
-            let sut = IOS18CheckDefaultBrowserService(application: application)
-
-            // WHEN
-            let result = sut.isDefaultWebBrowser()
-
-            // THEN
-            #expect(try result.get() == expectedDefaultBrowserValue)
+    private static let isLowerThanIOS18PointTwo: Bool = {
+        if #available(iOS 18.2, *) {
+            true
+        } else {
+            false
         }
+    }()
 
-        @MainActor
-        @Test("Check is Default Browser returns maxNumberOfAttemptsExceeded when rateLimited error")
-        @available(iOS 18.2, *)
-        func checkDefaultBrowserReturnsMaxNumberOfAttemptsExceededFailure() throws {
-            // GIVEN
-            let timestamp: TimeInterval = 1773122108000 // 10th of March 2026
-            let expectedRetryDate = Date(timeIntervalSince1970: timestamp)
-            let systemError = NSError(
-                domain: UIApplication.CategoryDefaultError.errorDomain,
-                code: UIApplication.CategoryDefaultError.rateLimited.rawValue,
-                userInfo: [
-                    UIApplication.CategoryDefaultError.retryAvailableDateErrorKey: expectedRetryDate,
-                ]
-            )
-            let application = MockApplication()
-            application.resultToReturn = .failure(systemError)
-            let sut = IOS18CheckDefaultBrowserService(application: application)
+    @MainActor
+    @Test(
+        "Check Is Default Browser returns success when there are no errors",
+        arguments: [
+            true,
+            false
+        ]
+    )
+    @available(iOS 18.2, *)
+    func checkDefaultBrowserReturnsSuccess(_ expectedDefaultBrowserValue: Bool) throws {
+        // GIVEN
+        let application = MockApplication()
+        application.resultToReturn = .success(expectedDefaultBrowserValue)
+        let sut = SystemCheckDefaultBrowserService(application: application)
 
-            // WHEN
-            let result = sut.isDefaultWebBrowser()
+        // WHEN
+        let result = sut.isDefaultWebBrowser()
 
-            // THEN
-            let error = try #require(try result.getError())
-            guard case let CheckDefaultBrowserServiceError.maxNumberOfAttemptsExceeded(nextRetryDate) = error else {
-                Issue.record("Should be maxNumberOfAttemptsExceeded error")
-                return
-            }
-            #expect(nextRetryDate == expectedRetryDate)
-        }
-
-        @MainActor
-        @Test("Check is Default Browser returns unknown failure when generic error")
-        @available(iOS 18.2, *)
-        func checkDefaultBrowserReturnsUnknownFailure() throws {
-            // GIVEN
-            let systemError = NSError(
-                domain: UIApplication.CategoryDefaultError.errorDomain,
-                code: 123456,
-                userInfo: nil
-            )
-            let application = MockApplication()
-            application.resultToReturn = .failure(systemError)
-            let sut = IOS18CheckDefaultBrowserService(application: application)
-
-            // WHEN
-            let result = sut.isDefaultWebBrowser()
-
-            // THEN
-            let error = try #require(try result.getError())
-            guard case let CheckDefaultBrowserServiceError.unknownError(error) = error else {
-                Issue.record("Should be maxNumberOfAttemptsExceeded error")
-                return
-            }
-            #expect(error == systemError)
-        }
-
+        // THEN
+        #expect(try result.get() == expectedDefaultBrowserValue)
     }
 
-    @Suite("Check Default Browser iOS < 18.2 Tests")
-    struct LegacyCheckDefaultServiceTests {
+    @MainActor
+    @Test("Check is Default Browser returns maxNumberOfAttemptsExceeded when rateLimited error")
+    @available(iOS 18.2, *)
+    func checkDefaultBrowserReturnsMaxNumberOfAttemptsExceededFailure() throws {
+        // GIVEN
+        let timestamp: TimeInterval = 1773122108000 // 10th of March 2026
+        let expectedRetryDate = Date(timeIntervalSince1970: timestamp)
+        let systemError = NSError(
+            domain: UIApplication.CategoryDefaultError.errorDomain,
+            code: UIApplication.CategoryDefaultError.rateLimited.rawValue,
+            userInfo: [
+                UIApplication.CategoryDefaultError.retryAvailableDateErrorKey: expectedRetryDate,
+            ]
+        )
+        let application = MockApplication()
+        application.resultToReturn = .failure(systemError)
+        let sut = SystemCheckDefaultBrowserService(application: application)
 
-        @Test
-        func legacyCheckDefaultBrowserReturnsNotSupportedFailure() throws {
-            // GIVEN
-            let sut = LegacyCheckDefaultBrowserService()
+        // WHEN
+        let result = sut.isDefaultWebBrowser()
 
-            // WHEN
-            let result = sut.isDefaultWebBrowser()
-
-            // THEN
-            let error = try #require(try result.getError())
-            #expect(error == .notSupportedOnThisOSVersion)
+        // THEN
+        let error = try #require(try result.getError())
+        guard case let CheckDefaultBrowserServiceError.maxNumberOfAttemptsExceeded(nextRetryDate) = error else {
+            Issue.record("Should be maxNumberOfAttemptsExceeded error")
+            return
         }
+        #expect(nextRetryDate == expectedRetryDate)
+    }
 
+    @MainActor
+    @Test("Check is Default Browser returns unknown failure when generic error")
+    @available(iOS 18.2, *)
+    func checkDefaultBrowserReturnsUnknownFailure() throws {
+        // GIVEN
+        let systemError = NSError(
+            domain: UIApplication.CategoryDefaultError.errorDomain,
+            code: 123456,
+            userInfo: nil
+        )
+        let application = MockApplication()
+        application.resultToReturn = .failure(systemError)
+        let sut = SystemCheckDefaultBrowserService(application: application)
+
+        // WHEN
+        let result = sut.isDefaultWebBrowser()
+
+        // THEN
+        let error = try #require(try result.getError())
+        guard case let CheckDefaultBrowserServiceError.unknownError(error) = error else {
+            Issue.record("Should be maxNumberOfAttemptsExceeded error")
+            return
+        }
+        #expect(error == systemError)
+    }
+
+    @Test(.disabled(if: CheckDefaultBrowserServiceTests.isLowerThanIOS18PointTwo))
+    func legacyCheckDefaultBrowserReturnsNotSupportedFailure() throws {
+        // GIVEN
+        let sut = SystemCheckDefaultBrowserService()
+
+        // WHEN
+        let result = sut.isDefaultWebBrowser()
+
+        // THEN
+        let error = try #require(try result.getError())
+        #expect(error == .notSupportedOnThisOSVersion)
     }
 
 }

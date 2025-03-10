@@ -39,10 +39,13 @@ extension Preferences {
         var dockCustomizer: DockCustomizer
         let featureFlagger = NSApp.delegateTyped.featureFlagger
 
+        @State private var showWarningAlert = false
+        @State private var pendingSelection: Bool? = nil
+
         var body: some View {
             PreferencePane(UserText.general) {
 
-                // SECTION 1: Shortcuts
+                // SECTION: Shortcuts
 #if !APPSTORE
                 PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                     PreferencePaneSubSection {
@@ -77,7 +80,7 @@ extension Preferences {
                     }
                 }
 #endif
-                // SECTION 2: On Startup
+                // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
 
                     PreferencePaneSubSection {
@@ -103,7 +106,7 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Tabs
+                // SECTION: Tabs
                 PreferencePaneSection(UserText.tabs) {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.preferNewTabsToWindows, isOn: $tabsModel.preferNewTabsToWindows)
@@ -130,7 +133,20 @@ extension Preferences {
 
                         TextMenuItemCaption(UserText.pinnedTabsDescription)
 
-                        Picker(selection: $tabsModel.sharedPinnedTabs, label: EmptyView()) {
+                        Picker(selection: Binding(
+                            get: { tabsModel.sharedPinnedTabs },
+                            set: { newValue in
+                                if newValue {
+                                    // Attempting to switch to shared, show warning
+                                    pendingSelection = newValue
+                                    showWarningAlert = true
+                                } else {
+                                    // Directly allow switching to per-window
+                                    tabsModel.sharedPinnedTabs = newValue
+                                }
+                            }),
+                            label: EmptyView()
+                        ) {
                             Text(UserText.perWindowPinnedTabs).tag(false)
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: 15) {
@@ -140,11 +156,24 @@ extension Preferences {
                         }
                         .pickerStyle(.radioGroup)
                         .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
+                        .alert(isPresented: $showWarningAlert) {
+                            Alert(
+                                title: Text(UserText.pinnedTabsWarning),
+                                primaryButton: .default(Text(UserText.ok)) {
+                                    // Apply the change only if confirmed
+                                    if let selection = pendingSelection {
+                                        tabsModel.sharedPinnedTabs = selection
+                                    }
+                                },
+                                secondaryButton: .cancel {
+                                    pendingSelection = nil
+                                }
+                            )
+                        }
                     }
-
                 }
 
-                // SECTION 4: Home Page
+                // SECTION: Home Page
                 PreferencePaneSection(UserText.homePage) {
 
                     PreferencePaneSubSection {
@@ -188,12 +217,12 @@ extension Preferences {
                     CustomHomePageSheet(startupModel: startupModel, isSheetPresented: $showingCustomHomePageSheet)
                 }
 
-                // SECTION 5: Search Settings
+                // SECTION: Search Settings
                 PreferencePaneSection(UserText.privateSearch) {
                     ToggleMenuItem(UserText.showAutocompleteSuggestions, isOn: $searchModel.showAutocompleteSuggestions).accessibilityIdentifier("PreferencesGeneralView.showAutocompleteSuggestions")
                 }
 
-                // SECTION 6: Downloads
+                // SECTION: Downloads
                 PreferencePaneSection(UserText.downloads) {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion,
@@ -217,7 +246,7 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 7: Phishing Detection
+                // SECTION: Phishing Detection
                 if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
                     PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
                         PreferencePaneSubSection {

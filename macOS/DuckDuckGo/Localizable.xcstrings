@@ -56041,6 +56041,18 @@
         }
       }
     },
+    "preferences-pinned-tabs-warning" : {
+      "comment" : "Warning before switching from per window pinned tabs to shared pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Would you like to merge pinned tabs from all existing windows?"
+          }
+        }
+      }
+    },
     "preferences-pinned-tabs.description" : {
       "comment" : "Pinned tabs Settings section description",
       "extractionState" : "extracted_with_value",
@@ -73124,6 +73136,9 @@
           }
         }
       }
+    },
+    "Warning" : {
+
     },
     "We couldn‘t find any bookmarks." : {
       "comment" : "Data import error message: Bookmarks weren‘t found.",

@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "b5976277a68e18f93edb0d853889e461e06557fa",
-        "version" : "16.2.2"
+        "revision" : "2bc93bec9cbe6d916e84b42346b925c6c057bfa5",
+        "version" : "17.0.0"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "c05d7ce7debe45593bfd9759d6bcae0cd740c52f",
-        "version" : "8.4.0"
+        "revision" : "7ad6bcc5c73ca234c6aacaee47d200d0462a94ee",
+        "version" : "8.5.0"
       }
     },
     {

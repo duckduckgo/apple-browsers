@@ -16,8 +16,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
 import UIKit
 import Core
+import DesignResourcesKit
 
 class ThemeManager {
     enum ImageSet {
@@ -48,9 +50,9 @@ class ThemeManager {
 
     public func updateCurrentTheme() {
         if ExperimentalThemingManager().isAlternativeColorSchemeEnabled {
-            currentTheme = ExperimentalTheme()
+            DesignSystemPalette.current = .warm
         } else {
-            currentTheme = DefaultTheme()
+            DesignSystemPalette.current = .default
         }
 
         updateUserInterfaceStyle()

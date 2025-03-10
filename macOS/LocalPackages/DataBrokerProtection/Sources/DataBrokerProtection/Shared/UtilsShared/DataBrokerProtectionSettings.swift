@@ -21,7 +21,13 @@ import Combine
 import AppKitExtensions
 import NetworkProtectionProxy
 
-public final class DataBrokerProtectionSettings {
+public protocol VPNBypassSettingsProviding: AnyObject {
+    var vpnBypassSupport: Bool { get }
+    var vpnBypass: Bool { get set }
+    var vpnBypassOnboardingShown: Bool { get set }
+}
+
+public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
     private let defaults: UserDefaults
     private let proxySettings: TransparentProxySettings
 

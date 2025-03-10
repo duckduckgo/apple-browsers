@@ -68,23 +68,25 @@ extension OperationsManager {
 }
 
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
-    private let vpnIPCClient: VPNControllerXPCClient
-    private let dbpSettings: DataBrokerProtectionSettings
+    private let vpnIPCClient: VPNControllerXPCClient?
+    private let dbpSettings: DataBrokerProtectionSettings?
+
+    init(vpnIPCClient: VPNControllerXPCClient?, dbpSettings: DataBrokerProtectionSettings?) {
+        vpnIPCClient?.register { _ in }
+        self.vpnIPCClient = vpnIPCClient
+        self.dbpSettings = dbpSettings
+    }
 
     init() {
-        let ipcClient = VPNControllerXPCClient.shared
-        ipcClient.register { _ in }
-
-        self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings()
+        self.init(vpnIPCClient: VPNControllerXPCClient.shared, dbpSettings: DataBrokerProtectionSettings())
     }
 
     private var vpnConnectionState: String {
-        vpnIPCClient.connectionStatusObserver.recentValue.description
+        vpnIPCClient?.connectionStatusObserver.recentValue.description ?? "unknown"
     }
 
     private var vpnBypassStatus: String {
-        dbpSettings.vpnBypassStatus.rawValue
+        dbpSettings?.vpnBypassStatus.rawValue ?? "unknown"
     }
 
     internal func runOperation(operationData: BrokerJobData,

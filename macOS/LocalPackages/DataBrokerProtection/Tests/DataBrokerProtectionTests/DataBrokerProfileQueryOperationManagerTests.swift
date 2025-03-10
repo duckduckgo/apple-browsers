@@ -23,7 +23,7 @@ import PixelKit
 @testable import DataBrokerProtection
 
 final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
-    let sut = DataBrokerProfileQueryOperationManager()
+    let sut = DataBrokerProfileQueryOperationManager(vpnIPCClient: nil, dbpSettings: nil)
     let mockWebOperationRunner = MockWebJobRunner()
     let mockDatabase = MockDatabase()
     let mockUserNotificationService = MockUserNotificationService()

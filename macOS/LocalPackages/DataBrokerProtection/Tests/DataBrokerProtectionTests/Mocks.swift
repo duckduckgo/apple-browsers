@@ -163,6 +163,18 @@ final class InternalUserDeciderStoreMock: InternalUserStoring {
     var isInternalUser: Bool = false
 }
 
+final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
+    var vpnBypassSupport: Bool
+    var vpnBypass: Bool
+    var vpnBypassOnboardingShown: Bool
+
+    init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
+        self.vpnBypassSupport = vpnBypassSupport
+        self.vpnBypass = vpnBypass
+        self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
+    }
+}
+
 final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
     var currentConfig: Data = Data()
 

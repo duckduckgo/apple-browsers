@@ -438,10 +438,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
+
+        // 5. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
-        // 4. Set up a defer block to report opt-out job completion:
+        // 6. Set up a defer block to report opt-out job completion regardless of its success:
         defer {
             reportOptOutJobCompletion(
                 brokerProfileQueryData: brokerProfileQueryData,
@@ -453,12 +455,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
         }
 
-        // 4. Perform the opt-out:
+        // 7. Perform the opt-out:
         do {
-            // 4a. Mark the profile as having its opt-out job started:
+            // 7a. Mark the profile as having its opt-out job started:
             try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
 
-            // 4b. Perform the opt-out itself:
+            // 7b. Perform the opt-out itself:
             try await runner.optOut(profileQuery: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
                                     stageCalculator: stageDurationCalculator,
@@ -466,7 +468,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            // 4c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
+            // 7c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
             let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
@@ -487,7 +489,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 extractedProfileId: extractedProfileId
             )
         } catch {
-            // 5. Catch errors from the opt-out job and report them:
+            // 8. Catch errors from the opt-out job and report them:
             let tries = try? retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
             handleOperationError(

@@ -154,7 +154,16 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
             // 5. Handle the extracted profiles reported by the runner:
             if !profilesFoundDuringCurrentScanJob.isEmpty {
-                // 5a. Iterate over found profiles and process them:
+                // 5a. Send observability signals to indicate that the scan found matches:
+                stageCalculator.fireScanSuccess(matchesFound: profilesFoundDuringCurrentScanJob.count)
+                let event = HistoryEvent(
+                    brokerId: brokerId,
+                    profileQueryId: profileQueryId,
+                    type: .matchesFound(count: profilesFoundDuringCurrentScanJob.count)
+                )
+                try database.add(event)
+
+                // 5b. Iterate over found profiles and process them:
                 try scheduleOptOutsForExtractedProfiles(extractedProfiles: profilesFoundDuringCurrentScanJob,
                                                         brokerProfileQueryData: brokerProfileQueryData,
                                                         brokerId: brokerId,
@@ -163,7 +172,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                                         eventPixels: eventPixels,
                                                         stageCalculator: stageCalculator)
             } else {
-                // 5b. Report the status of the scan, which found no matches:
+                // 5c. Report the status of the scan, which found no matches:
                 try storeScanWithNoMatchesEvent(
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
@@ -223,15 +232,6 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                                      database: DataBrokerProtectionRepository,
                                                      eventPixels: DataBrokerProtectionEventPixels,
                                                      stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
-        stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
-
-        let event = HistoryEvent(
-            brokerId: brokerId,
-            profileQueryId: profileQueryId,
-            type: .matchesFound(count: extractedProfiles.count)
-        )
-        try database.add(event)
-
         // Fetch the profiles already stored for the broker.
         let existingProfiles = try database.fetchExtractedProfiles(for: brokerId)
 

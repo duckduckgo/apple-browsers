@@ -30,7 +30,7 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
     private var sut: OnboardingPrivacyProPromoExperiment!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockSubscriptionManager: SubscriptionManagerMock!
-    private var mockVariantManager: MockVariantManagerClass!
+    private var mockVariantManager: MockVariantManager!
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
@@ -41,12 +41,11 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
                                                       currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
                                                       canPurchase: true,
                                                       subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
-        mockVariantManager = MockVariantManagerClass()
+        mockVariantManager = MockVariantManager()
         sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
                                                   experimentPixelFirer: MockExperimentPixelFirer.self,
                                                   subscriptionManager: mockSubscriptionManager,
                                                   variantManager: mockVariantManager)
-
         MockExperimentPixelFirer.reset()
     }
 
@@ -55,6 +54,11 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
         mockVariantManager.currentVariant = nil
         mockSubscriptionManager.canPurchase = true
         mockFeatureFlagger.cohortToReturn = PrivacyProOnboardingCTAMarch25Cohort.treatment
+        sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
+                                                  experimentPixelFirer: MockExperimentPixelFirer.self,
+                                                  subscriptionManager: mockSubscriptionManager,
+                                                  variantManager: mockVariantManager)
+
 
         // When
         let cohort = sut.getCohortIfEnabled()
@@ -68,6 +72,10 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
         mockVariantManager.currentVariant = VariantIOS.returningUser
         mockSubscriptionManager.canPurchase = true
         mockFeatureFlagger.cohortToReturn = PrivacyProOnboardingCTAMarch25Cohort.treatment
+        sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
+                                                  experimentPixelFirer: MockExperimentPixelFirer.self,
+                                                  subscriptionManager: mockSubscriptionManager,
+                                                  variantManager: mockVariantManager)
 
         // When
         let cohort = sut.getCohortIfEnabled()
@@ -80,6 +88,10 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
         // Given
         mockVariantManager.currentVariant = nil
         mockSubscriptionManager.canPurchase = false
+        sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
+                                                  experimentPixelFirer: MockExperimentPixelFirer.self,
+                                                  subscriptionManager: mockSubscriptionManager,
+                                                  variantManager: mockVariantManager)
 
         // When
         let cohort = sut.getCohortIfEnabled()
@@ -186,10 +198,4 @@ private final class MockExperimentPixelFirer: ExperimentPixelFiring {
     static func reset() {
         firedMetrics.removeAll()
     }
-}
-
-private final class MockVariantManagerClass: VariantManager {
-    var currentVariant: Variant?
-    func assignVariantIfNeeded(_ newInstallCompletion: (any VariantManager) -> Void) {}
-    func isSupported(feature: FeatureName) -> Bool { true }
 }

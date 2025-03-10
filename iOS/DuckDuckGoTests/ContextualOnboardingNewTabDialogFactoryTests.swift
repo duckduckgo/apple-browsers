@@ -43,7 +43,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         factory = NewTabDaxDialogFactory(
             delegate: mockDelegate,
-            onboardingExperimentCoordinator: contextualOnboardingLogicMock,
+            daxDialogsFlowCoordinator: contextualOnboardingLogicMock,
             onboardingPixelReporter: pixelReporterMock,
             onboardingManager: onboardingManagerMock
         )

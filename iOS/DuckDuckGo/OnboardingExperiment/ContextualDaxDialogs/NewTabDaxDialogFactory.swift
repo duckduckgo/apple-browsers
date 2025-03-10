@@ -23,7 +23,7 @@ import Onboarding
 import Subscription
 import Common
 
-typealias OnboardingExperimentCoordinator = ContextualOnboardingLogic & PrivacyProPromotionCoordinating
+typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & PrivacyProPromotionCoordinating
 
 protocol NewTabDaxDialogProvider {
     associatedtype DaxDialog: View
@@ -32,20 +32,20 @@ protocol NewTabDaxDialogProvider {
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
-    private var onboardingExperimentCoordinator: OnboardingExperimentCoordinator
+    private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingManager: OnboardingAddToDockManaging
     private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(
         delegate: OnboardingNavigationDelegate?,
-        onboardingExperimentCoordinator: OnboardingExperimentCoordinator,
+        daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
         onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
     ) {
         self.delegate = delegate
-        self.onboardingExperimentCoordinator = onboardingExperimentCoordinator
+        self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingManager = onboardingManager
         self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
@@ -146,7 +146,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.onboardingExperimentCoordinator.setFinalOnboardingDialogSeen()
+            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.trackScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             if shouldShowAddToDock {
                 self?.onboardingPixelReporter.trackAddToDockPromoImpression()
@@ -181,7 +181,7 @@ private extension NewTabDaxDialogFactory {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
             self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
-            self?.onboardingExperimentCoordinator.privacyProPromotionDialogSeen = true
+            self?.daxDialogsFlowCoordinator.privacyProPromotionDialogSeen = true
         }
     }
 }

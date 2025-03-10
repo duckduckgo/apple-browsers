@@ -868,7 +868,7 @@ class MainViewController: UIViewController {
             fatalError("No tab model")
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, onboardingExperimentCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
                                                   interactionModel: favoritesViewModel,

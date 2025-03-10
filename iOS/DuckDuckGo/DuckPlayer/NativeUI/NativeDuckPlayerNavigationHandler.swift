@@ -45,9 +45,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Delegate for handling tab navigation events.
     weak var tabNavigationHandler: DuckPlayerTabNavigationHandling?
 
-    /// Cancellable for observing DuckPlayer Mode changes
-    @MainActor private var duckPlayerModeCancellable: AnyCancellable?
-
     /// Cancellable for observing DuckPlayer Navigation Request
     @MainActor private var duckPlayerNavigationRequestCancellable: AnyCancellable?
 
@@ -87,7 +84,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         static let youtubeScheme = "youtube://"
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let duckPlayerReferrerParameter = "dp_referrer"
-        static let newTabParameter = "dp_isNewTab"
     }
 
     /// Initializes a new instance of `DuckPlayerNavigationHandler` with the provided dependencies.
@@ -102,8 +98,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
          tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
@@ -112,13 +106,11 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         super.init()
     }
 
-    deinit {
-        duckPlayerModeCancellable?.cancel()
+    deinit {        
         duckPlayerNavigationRequestCancellable?.cancel()
         duckPlayerDismissalCancellable?.cancel()
     }
 
-   
     /// Checks if the Duck Player feature is enabled via feature flags.
     private var isDuckPlayerFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.duckPlayer)
@@ -142,8 +134,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         }
         return false
     }
-
-   
 
     /// Redirects the web view to play the video in Duck Player, optionally forcing a new tab.
     ///
@@ -322,8 +312,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.
     ///
     /// - Parameter webView: The `WKWebView` whose URL has changed.
-    /// - Returns: A result indicating whether the URL change was handled.
-    // swiftlint:disable cyclomatic_complexity
+    /// - Returns: A result indicating whether the URL change was handled.    
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 

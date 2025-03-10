@@ -80,6 +80,8 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerMode = "com.duckduckgo.ios.duckPlayerMode"
         static let duckPlayerAskModeOverlayHidden = "com.duckduckgo.ios.duckPlayerAskModeOverlayHidden"
         static let duckPlayerOpenInNewTab = "com.duckduckgo.ios.duckPlayerOpenInNewTab"
+
+        static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
     }
 
     private struct DebugKeys {
@@ -452,6 +454,26 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerNativeUISERPEnabled, defaultValue: false)
+    var duckPlayerNativeUISERPEnabled: Bool
+
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
+        get {
+            if let value = userDefaults?.string(forKey: Keys.duckPlayerNativeYoutubeMode),
+               let mode = NativeDuckPlayerYoutubeMode(stringValue: value) {
+                return mode
+            }
+            return .ask
+        }
+        set {
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerMode)
+            // Reset Hidden overlay setting when changing Mode
+            userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: duckPlayerMode)
+        }
+    }
 
     @UserDefaultsWrapper(key: .debugOnboardingHighlightsEnabledKey, defaultValue: false)
     var onboardingHighlightsEnabled: Bool

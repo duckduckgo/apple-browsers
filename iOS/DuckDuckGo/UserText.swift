@@ -1538,6 +1538,9 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
     static let duckPlayerNativeOpenInDuckPlayer = NSLocalizedString("duck-player.native-open-in-duckplayer", value: "Duck Player", comment: "Text for the button to watch a video on DuckPlayer")
     public static let duckPlayerTapToWatchWithoutAds = NSLocalizedString("duckplayer.pill.watch.without.ads", value: "Tap to watch without targeted ads", comment: "Caption for Duck Player entry point")
+    public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
+    public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Ask every time", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
+    public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Never", comment: "Text displayed when DuckPlayer is in off for youtube.")
 
     // MARK: - AI Chat
 

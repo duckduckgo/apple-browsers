@@ -358,7 +358,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
         hostView = nil
         nativePlayerCancellables.removeAll()
-        NotificationCenter.default.removeObserver(self)
     }
 
     /// Sets the host view controller for presenting modals.

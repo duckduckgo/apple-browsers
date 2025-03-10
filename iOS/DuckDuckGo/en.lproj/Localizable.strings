@@ -1236,6 +1236,15 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Ask every time";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Automatically";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Never";
+
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Email Protection";
 

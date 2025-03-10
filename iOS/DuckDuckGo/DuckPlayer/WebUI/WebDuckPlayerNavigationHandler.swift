@@ -1,5 +1,5 @@
 //
-//  DuckPlayerNavigationHandler.swift
+//  WebDuckPlayerNavigationHandler.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -28,7 +28,7 @@ import os.log
 import Combine
 
 /// Handles navigation and interactions related to Duck Player within the app.
-final class DuckPlayerNavigationHandler: NSObject {
+final class WebDuckPlayerNavigationHandler: NSObject {
 
     /// The DuckPlayer instance used for handling video playback.
     var duckPlayer: DuckPlayerControlling
@@ -650,7 +650,7 @@ final class DuckPlayerNavigationHandler: NSObject {
 
 }
 
-extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
+extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Manages navigation actions to Duck Player URLs, handling redirects and loading as needed.
     ///

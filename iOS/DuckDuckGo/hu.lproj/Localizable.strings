@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Melyik szín áll nekem a legjobban?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Sütikérelmek és felugró ablakok blokkolása";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Felugró sütiablakok blokkolása";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Célzott hirdetések blokkolása";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Nyomon követő hirdetések blokkolása";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok gyors törlése";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Harmadik féltől származó nyomkövetők blokkolása";

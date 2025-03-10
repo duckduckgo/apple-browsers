@@ -455,7 +455,7 @@ public class AppUserDefaults: AppSettings {
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
 
-    @UserDefaultsWrapper(key: .duckPlayerNativeUISERPEnabled, defaultValue: false)
+    @UserDefaultsWrapper(key: .duckPlayerNativeUISERPEnabled, defaultValue: true)
     var duckPlayerNativeUISERPEnabled: Bool
 
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode {

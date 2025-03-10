@@ -356,7 +356,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.disconnectOnSleep = false
 
             // kill switch
-            protocolConfiguration.enforceRoutes = enforceRoutes
+            protocolConfiguration.enforceRoutes = true
 
             // this setting breaks Connection Tester
             protocolConfiguration.includeAllNetworks = settings.includeAllNetworks
@@ -751,12 +751,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         tunnelManager.isOnDemandEnabled = false
 
         try await tunnelManager.saveToPreferences()
-    }
-
-    // MARK: - Routing
-
-    private var enforceRoutes: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionEnforceRoutes)
     }
 
     struct TunnelFailureError: LocalizedError {

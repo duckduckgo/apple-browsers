@@ -94,15 +94,12 @@ struct Foreground: ForegroundHandling {
 
         configureAppearance()
 
-        let vpnService = services.vpnService
-        vpnService.resume()
-
         interactionManager.start(
             launchAction: launchAction,
             /// Handle **WebView related logic** here that could be affected by `AutoClear` feature.
             /// This is called when the **app is ready to handle web navigations** after all browser data has been cleared.
             onWebViewReadyForInteractions: {
-                vpnService.installRedditSessionWorkaround()
+                /* ... */
             },
             /// Handle **UI related logic** here that could be affected by Authentication screen or `AutoClear` feature
             /// This is called when the **app is ready to handle user interactions** after data clear and authentication are complete.
@@ -111,6 +108,7 @@ struct Foreground: ForegroundHandling {
             }
         )
 
+        services.vpnService.resume()
         services.configurationService.resume()
         services.reportingService.resume()
         services.subscriptionService.resume()
@@ -175,10 +173,6 @@ extension Foreground {
     struct StateContext {
 
         let appDependencies: AppDependencies
-
-        init(appDependencies: AppDependencies) {
-            self.appDependencies = appDependencies
-        }
 
     }
 

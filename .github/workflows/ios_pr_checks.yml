@@ -12,6 +12,7 @@ on:
       - 'iOS/**'
   pull_request:
     paths:
+      - '.github/**'
       - 'BrowserServicesKit/**'
       - 'iOS/**'
   workflow_call:
@@ -116,7 +117,7 @@ jobs:
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.1" \
+          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \

@@ -51,8 +51,6 @@ final class SubscriptionITPViewModel: ObservableObject {
     }
     
     private var currentURL: URL?
-    private static let allowedDomains = [ "duckduckgo.com" ]
-    
     private var externalLinksViewModel: SubscriptionExternalLinkViewModel?
     // Limit navigation to these external domains
     private var externalAllowedDomains = ["irisidentityprotection.com"]
@@ -60,16 +58,21 @@ final class SubscriptionITPViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var canGoBackCancellable: AnyCancellable?
 
-    init(subscriptionManager: SubscriptionManager) {
+    private let webViewSettings: AsyncHeadlessWebViewSettings
+
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, isInternalUser: Bool = false) {
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
-        self.subFeature = IdentityTheftRestorationPagesFeature(accountManager: subscriptionManager.accountManager)
+        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager)
 
-        let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                           allowedDomains: Self.allowedDomains,
-                                                           contentBlocking: false)
-        
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
+                                                                             isInternalUser: isInternalUser)
+
+        self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
+                                                            allowedDomains: allowedDomains,
+                                                            contentBlocking: false)
+
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
@@ -107,10 +110,10 @@ final class SubscriptionITPViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] url in
                 guard let self = self, let url = url else { return }
-                
+
                 // Check if allowedDomains is empty or if the URL is valid or part of the allowed domains
-                if Self.allowedDomains.isEmpty ||
-                    Self.allowedDomains.contains(where: { url.isPart(ofDomain: $0) }),
+                if let allowedDomains = self.webViewSettings.allowedDomains,
+                    allowedDomains.isEmpty || allowedDomains.contains(where: { url.isPart(ofDomain: $0) }),
                     self.shouldNavigateToExternalURL == nil {
                     self.isDownloadableContent = false
                     self.currentURL = url

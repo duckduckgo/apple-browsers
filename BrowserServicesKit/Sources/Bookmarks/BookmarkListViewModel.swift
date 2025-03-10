@@ -213,6 +213,10 @@ public class BookmarkListViewModel: BookmarkListInteracting, ObservableObject {
         refresh()
     }
 
+    public func bookmark(for url: URL) -> BookmarkEntity? {
+        BookmarkUtils.fetchBookmark(for: url, context: context)
+    }
+
     public func reloadData() {
         context.performAndWait {
             self.refresh()

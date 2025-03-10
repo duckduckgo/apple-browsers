@@ -155,13 +155,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             // 5. Handle the extracted profiles reported by the runner:
             if !profilesFoundDuringCurrentScanJob.isEmpty {
                 // 5a. Iterate over found profiles and process them:
-                try scheduleExtractedProfilesForOptOut(extractedProfiles: profilesFoundDuringCurrentScanJob,
-                                                       brokerProfileQueryData: brokerProfileQueryData,
-                                                       brokerId: brokerId,
-                                                       profileQueryId: profileQueryId,
-                                                       database: database,
-                                                       eventPixels: eventPixels,
-                                                       stageCalculator: stageCalculator)
+                try scheduleOptOutsForExtractedProfiles(extractedProfiles: profilesFoundDuringCurrentScanJob,
+                                                        brokerProfileQueryData: brokerProfileQueryData,
+                                                        brokerId: brokerId,
+                                                        profileQueryId: profileQueryId,
+                                                        database: database,
+                                                        eventPixels: eventPixels,
+                                                        stageCalculator: stageCalculator)
             } else {
                 // 5b. Report the status of the scan, which found no matches:
                 try storeScanWithNoMatchesEvent(
@@ -216,13 +216,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
-    private func scheduleExtractedProfilesForOptOut(extractedProfiles: [ExtractedProfile],
-                                                    brokerProfileQueryData: BrokerProfileQueryData,
-                                                    brokerId: Int64,
-                                                    profileQueryId: Int64,
-                                                    database: DataBrokerProtectionRepository,
-                                                    eventPixels: DataBrokerProtectionEventPixels,
-                                                    stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
+    private func scheduleOptOutsForExtractedProfiles(extractedProfiles: [ExtractedProfile],
+                                                     brokerProfileQueryData: BrokerProfileQueryData,
+                                                     brokerId: Int64,
+                                                     profileQueryId: Int64,
+                                                     database: DataBrokerProtectionRepository,
+                                                     eventPixels: DataBrokerProtectionEventPixels,
+                                                     stageCalculator: DataBrokerProtectionStageDurationCalculator) throws {
         stageCalculator.fireScanSuccess(matchesFound: extractedProfiles.count)
 
         let event = HistoryEvent(

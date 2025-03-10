@@ -71,6 +71,25 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         return script
     }()
 
+    /// Script to notify SERP about DuckPlayer State
+    private let serpNotifyScript: String = {
+        guard let url = Bundle.main.url(forResource: "serpNotify", withExtension: "js"),
+              let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load mute audio script")
+            return ""
+        }        
+        return script
+    }()
+
+    /// Returns the SERP notification script with the provided mode string
+    /// - Parameter mode: The mode string to inject into the script
+    private func getSerpNotifyScript(enabled: Bool) -> String {
+        if !enabled {
+            return serpNotifyScript.replacingOccurrences(of: Constants.serpNotifyEnabled, with: Constants.serpNotifyDisabled)
+        }        
+        return serpNotifyScript
+    }
+
     private struct Constants {
         static let SERPURL =  "duckduckgo.com/"
         static let refererHeader = "Referer"
@@ -84,6 +103,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         static let youtubeScheme = "youtube://"
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let duckPlayerReferrerParameter = "dp_referrer"
+        static let serpNotifyEnabled = "enabled"
+        static let serpNotifyDisabled = "disabled"
     }
 
     /// Initializes a new instance of `DuckPlayerNavigationHandler` with the provided dependencies.
@@ -116,23 +137,30 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         featureFlagger.isFeatureOn(.duckPlayer)
     }
 
-    /// Determines if "Open in New Tab" for Duck Player is enabled in the settings.
-    private var isOpenInNewTabEnabled: Bool {
-        featureFlagger.isFeatureOn(.duckPlayer) && featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab) && duckPlayer.settings.openInNewTab && duckPlayerMode != .disabled
-    }
+    /// Sets the referrer based on the current web view URL to aid in analytics.
+    /// Sets the referrer based on the current web view URL to aid in analytics.
+    ///
+    /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
+    private func setReferrer(webView: WKWebView) {
 
-    /// Retrieves the current mode of Duck Player based on feature flags and user settings.
-    private var duckPlayerMode: DuckPlayerMode {
-        let isEnabled = isDuckPlayerFeatureEnabled
-        return isEnabled ? duckPlayer.settings.mode : .disabled
-    }
+        guard let url = webView.url else { return }
 
-    /// Checks if the YouTube app is installed on the device.
-    private var isYouTubeAppInstalled: Bool {
-        if let youtubeURL = URL(string: Constants.youtubeScheme) {
-            return UIApplication.shared.canOpenURL(youtubeURL)
+        // SERP as a referrer
+        if url.isDuckDuckGoSearch {
+            referrer = .serp
+             print("referrer: \(referrer)")
+            return
+        }        
+        
+        // Any Other Youtube URL or other referrer
+        if url.isYoutube {
+             print("referrer: \(referrer)")
+            referrer = .youtube
+            return
+        } else {
+            print("referrer: \(referrer)")
+            referrer = .other
         }
-        return false
     }
 
     /// Redirects the web view to play the video in Duck Player, optionally forcing a new tab.
@@ -191,56 +219,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
             webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
         }
-    }
-
-    /// Sets the referrer based on the current web view URL to aid in analytics.
-    ///
-    /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
-    private func setReferrer(webView: WKWebView) {
-
-        // Make sure we are NOT DuckPlayer
-        guard let url = webView.url, !url.isDuckPlayer else { return }
-
-        // First, try to use the back Item
-        var backItems = webView.backForwardList.backList.reversed()
-
-        // Ignore any previous URL that's duckPlayer or youtube-no-cookie
-        if backItems.first?.url != nil, url.isDuckPlayer {
-            backItems = webView.backForwardList.backList.dropLast().reversed()
-        }
-
-        // If the current URL is DuckPlayer, use the previous history item
-        guard let referrerURL = url.isDuckPlayer ? backItems.first?.url : url else {
-            return
-        }
-
-        // SERP as a referrer
-        if referrerURL.isDuckDuckGoSearch {
-            referrer = .serp
-            return
-        }
-
-        // Set to Youtube for "Watch in Youtube videos"
-        if referrerURL.isYoutubeWatch && duckPlayerMode == .enabled && duckPlayer.settings.allowFirstVideo {
-            referrer = .youtube
-            return
-        }
-
-        // Set to Overlay for Always ask
-        if referrerURL.isYoutubeWatch && duckPlayerMode == .alwaysAsk {
-            referrer = .youtubeOverlay
-            return
-        }
-
-        // Any Other Youtube URL or other referrer
-        if referrerURL.isYoutube {
-            referrer = .youtube
-            return
-        } else {
-            referrer = .other
-        }
-
-    }
+    }    
 
     /// Determines if the current tab is a new tab based on the targetFrame request and other params
     ///
@@ -251,9 +230,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
               let url = request.url else {
             return false
         }
-
-        // Always return false if open in new tab is disabled
-        guard isOpenInNewTabEnabled else { return false }
 
         // If the target frame is duckPlayer itself or there's no URL
         // we're at a new tab
@@ -303,10 +279,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///   - webView: The `WKWebView` where navigation is occurring.
     @MainActor
     func handleDuckNavigation(_ navigationAction: WKNavigationAction, webView: WKWebView) {
-
-        // Update referrer if needed
-        //updateReferrerIfNeeded(url: url)
-        
+        // NOOP
     }
 
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.
@@ -324,6 +297,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.featureOff)
         }
 
+        // Set the referrer
+        setReferrer(webView: webView)
+
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
             duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.invalidURL)
@@ -332,6 +308,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard url.isYoutubeWatch else {
             duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.isNotYoutubeWatch)
+        }
+
+        // If we are on SERP and DuckPlayer is enabled        
+        if referrer == .serp && duckPlayer.settings.nativeUISERPEnabled {
+            Task { @MainActor in
+                duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .serp, timestamp: nil)
+            }
+            return .handled(.duckPlayerEnabled)
         }
 
         // Present Duck Player Pill (Native entry point)
@@ -359,9 +343,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // If this is an internal Youtube Link (i.e Clicking in youtube logo in the player)
         // Do not handle it
 
-        guard duckPlayerMode == .enabled else {
-            return .notHandled(.duckPlayerDisabled)
-        }
+        //guard duckPlayerMode == .enabled else {
+        //    return .notHandled(.duckPlayerDisabled)
+        //}
 
         // Resume media playback by
         toggleMediaPlayback(webView, pause: false)
@@ -390,31 +374,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///
     /// - Parameter webView: The `WKWebView` to navigate back in.
     @MainActor
-    func handleGoBack(webView: WKWebView) {
-
-        guard let url = webView.url, url.isDuckPlayer, isDuckPlayerFeatureEnabled else {
-            webView.goBack()
-            return
-        }
-
-        // Check if the back list has items, and if not try to close the tab
-        guard !webView.backForwardList.backList.isEmpty else {
-            tabNavigationHandler?.closeTab()
-            return
-        }
-
-        // Find the last non-YouTube video URL in the back list
-        let backList = webView.backForwardList.backList
-        var nonYoutubeItem: WKBackForwardListItem?
-
-        for item in backList.reversed() where !item.url.isYoutubeVideo && !item.url.isDuckPlayer {
-            nonYoutubeItem = item
-            break
-        }
-        
-        webView.stopLoading()
+    func handleGoBack(webView: WKWebView) {        
         webView.goBack()
-      
     }
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
@@ -423,29 +384,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {
 
-        // Reset DuckPlayer status
-        duckPlayer.settings.allowFirstVideo = false
-
         guard let url = webView.url else {
             return
-        }
-
-        guard isDuckPlayerFeatureEnabled else {
-            webView.reload()
-            return
-        }
-
-        if url.isDuckPlayer, duckPlayerMode != .disabled {
-            redirectToDuckPlayerVideo(url: url, webView: webView, disableNewTab: true)
-            return
-        }
-
-        if url.isYoutubeWatch, duckPlayerMode == .alwaysAsk {
-            //redirectToYouTubeVideo(url: url, webView: webView, allowFirstVideo: false, disableNewTab: true)
-            return
-        }
-
+        }        
         webView.reload()
+        
 
     }
 
@@ -455,42 +398,40 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleAttach(webView: WKWebView) {
 
+        setReferrer(webView: webView)
+
         // Stop playback if needed
-        if duckPlayerMode == .enabled && duckPlayer.settings.nativeUI {
+        if duckPlayer.settings.nativeUIYoutubeMode != .never {
             toggleMediaPlayback(webView, pause: true)
         }
 
-        // Reset referrer and initial settings
-        referrer = .other
-
-        // Attach WebView to OverlayPixels
-        //setupPlayerModeObserver()
+        // Attach Navigation Request Observer
         setupYoutubeNavigationRequestObserver(webView: webView)
-
-        // Ensure feature and mode are enabled
-        guard isDuckPlayerFeatureEnabled,
-              let url = webView.url,
-              duckPlayerMode == .enabled || duckPlayerMode == .alwaysAsk else {
-            return
-        }
-
+        
     }
 
     /// Updates the referrer after the web view finishes loading a page.
     ///
     /// - Parameter webView: The `WKWebView` that finished loading.
     @MainActor
-    func handleDidFinishLoading(webView: WKWebView) {
+    func handleDidFinishLoading(webView: WKWebView) {        
+        
+        setReferrer(webView: webView)
+
+        // Notify SERP about Duckplayer State
+        if webView.url?.isDuckDuckGoSearch ?? false {
+            let isEnabled = duckPlayer.settings.nativeUISERPEnabled || 
+                            duckPlayer.settings.nativeUIYoutubeMode != .never
+            webView.evaluateJavaScript(getSerpNotifyScript(enabled: isEnabled))
+        }
     }
 
     /// Resets settings when the web view starts loading a new page.
     ///
     /// - Parameter webView: The `WKWebView` that started loading.
     @MainActor
-    func handleDidStartLoading(webView: WKWebView) {
-
-        setReferrer(webView: webView)
-
+    func handleDidStartLoading(webView: WKWebView) {                
+        // NOOP
     }
 
     /// Converts a standard YouTube URL to its Duck Player equivalent if applicable.
@@ -500,8 +441,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func getDuckURLFor(_ url: URL) -> URL {
         guard let (youtubeVideoID, timestamp) = url.youtubeVideoParams,
                 url.isDuckPlayer,
-                !url.isDuckURLScheme,
-                duckPlayerMode != .disabled
+                !url.isDuckURLScheme
         else {
             return url
         }
@@ -517,6 +457,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleDelegateNavigation(navigationAction: WKNavigationAction, webView: WKWebView) -> Bool {
 
+        setReferrer(webView: webView)
+
         guard let url = navigationAction.request.url else {
             return false
         }
@@ -531,35 +473,10 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return false
         }
 
-        // Only account for in 'Always' mode
-        if duckPlayerMode == .disabled {
-            return false
-        }
-
-        // Only account for in 'Duck Player' URL
-        if url.isDuckPlayer {
-            return false
-        }
-
-        // Do not intercept any back/forward navigation
-        if navigationAction.navigationType == .backForward {
-            return false
-        }
-
-        // Ignore YouTube Watch URLs if allowFirst video is set
-        if url.isYoutubeWatch && duckPlayer.settings.allowFirstVideo {
-            return false
-        }
-
-        // Redirect to Duck Player if enabled
-        if url.isYoutubeWatch && duckPlayerMode == .enabled {
-            redirectToDuckPlayerVideo(url: url, webView: webView)
-            return true
-        }
-
-        // Redirect to Youtube + DuckPlayer Overlay if Ask Mode
-        if url.isYoutubeWatch && duckPlayerMode == .alwaysAsk {
-            //redirectToYouTubeVideo(url: url, webView: webView, allowFirstVideo: false, disableNewTab: true)
+        // Stop navigation if we are on SERP and DuckPlayer is enabled for it
+        if referrer == .serp && 
+            duckPlayer.settings.nativeUISERPEnabled && 
+            url.isYoutubeWatch {
             return true
         }
 

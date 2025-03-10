@@ -57,6 +57,8 @@ public struct BrokenSiteReport {
 
     }
 
+    let cookieConsentInfo: CookieConsentInfo?
+
 #if os(iOS)
     public enum SiteType: String {
 
@@ -127,7 +129,8 @@ public struct BrokenSiteReport {
         vpnOn: Bool,
         jsPerformance: [Double]?,
         userRefreshCount: Int,
-        locale: Locale = Locale.current
+        locale: Locale = Locale.current,
+        cookieConsentInfo: CookieConsentInfo?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -151,6 +154,7 @@ public struct BrokenSiteReport {
         self.jsPerformance = jsPerformance
         self.userRefreshCount = userRefreshCount
         self.locale = locale
+        self.cookieConsentInfo = cookieConsentInfo
     }
 #endif
 
@@ -181,7 +185,8 @@ public struct BrokenSiteReport {
         jsPerformance: [Double]?,
         userRefreshCount: Int,
         variant: String,
-        locale: Locale = Locale.current
+        locale: Locale = Locale.current,
+        cookieConsentInfo: CookieConsentInfo
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -209,6 +214,8 @@ public struct BrokenSiteReport {
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
+        self.cookiePopUpManagement = cookiePopUpManagement
+        self.cookieConsentInfo = cookieConsentInfo
     }
 #endif
 
@@ -232,7 +239,10 @@ public struct BrokenSiteReport {
             "openerContext": openerContext?.rawValue ?? "",
             "vpnOn": vpnOn.description,
             "userRefreshCount": String(userRefreshCount),
-            "locale": locale.localeIdentifierAsJsonFormat
+            "locale": locale.localeIdentifierAsJsonFormat,
+            "consentManaged": cookieConsentInfo?.consentManaged.description ?? "",
+            "consentOptoutFailed": cookieConsentInfo?.optoutFailed?.description ?? "",
+            "consentSelftestFailed": cookieConsentInfo?.selftestFailed?.description ?? ""
         ]
 
         if mode == .regular {

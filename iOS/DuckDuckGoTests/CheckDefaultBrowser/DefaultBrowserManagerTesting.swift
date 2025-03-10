@@ -1,5 +1,5 @@
 //
-//  CheckDefaultBrowserManagerTesting.swift
+//  DefaultBrowserManagerTesting.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -161,7 +161,7 @@ final class DefaultBrowserManagerTesting {
 
         // THEN
         result
-            .onNewValue { info in
+            .onNewValue { _ in
                 Issue.record("Failure expected")
             }
             .onFailure { failure in
@@ -183,7 +183,7 @@ final class DefaultBrowserManagerTesting {
 
         // THEN
         result
-            .onNewValue { info in
+            .onNewValue { _ in
                 Issue.record("Failure expected")
             }
             .onFailure { failure in
@@ -204,7 +204,7 @@ final class DefaultBrowserManagerTesting {
 
         // THEN
         result
-            .onNewValue { info in
+            .onNewValue { _ in
                 Issue.record("Failure expected")
             }
             .onFailure { failure in
@@ -224,7 +224,7 @@ final class DefaultBrowserManagerTesting {
 
         // THEN
         result
-            .onNewValue { info in
+            .onNewValue { _ in
                 Issue.record("Failure expected")
             }
             .onFailure { failure in
@@ -248,7 +248,7 @@ final class MockCheckDefaultBrowserService: CheckDefaultBrowserService {
 final class MockDefaultBrowserInfoStore: DefaultBrowserInfoStorage {
     private(set) var didSetDefaultBrowserInfo = false
 
-    var defaultBrowserInfo: DuckDuckGo.DefaultBrowserInfo? = nil {
+    var defaultBrowserInfo: DuckDuckGo.DefaultBrowserInfo? {
         didSet {
             didSetDefaultBrowserInfo = true
         }

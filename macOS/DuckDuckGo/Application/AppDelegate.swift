@@ -261,12 +261,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
 #endif
+
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+
+
         if NSApplication.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
                 database: RemoteMessagingDatabase().db,
                 bookmarksDatabase: BookmarkDatabase.shared.db,
                 appearancePreferences: .shared,
-                pinnedTabsManager: pinnedTabsManager,
+                pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
@@ -302,8 +306,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         onboardingStateMachine = ContextualOnboardingStateMachine()
-
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
 
         // Configure Subscription
         subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)

@@ -426,10 +426,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
         }
 
+        // 4. Perform the opt-out:
         do {
-            // 4. Perform the opt-out:
+            // 4a. Mark the profile as having its opt-out job started:
             try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
 
+            // 4b. Perform the opt-out itself:
             try await runner.optOut(profileQuery: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
                                     stageCalculator: stageDurationCalculator,
@@ -437,6 +439,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
+            // 4c. Update state to indicate that the opt-out has succeeded:
             let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)

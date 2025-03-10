@@ -18,11 +18,13 @@
 
 import Combine
 import Foundation
+import Persistence
 
 @MainActor
 final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private let bookmarkManager: BookmarkManager
+    private let settingsPersistor: AddBookmarkSettingsPersisting
 
     @Published private(set) var bookmark: Bookmark
 
@@ -59,8 +61,10 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
     private var bookmarkListCancellable: AnyCancellable?
 
     init(bookmark: Bookmark,
+         settingsPersistor: AddBookmarkSettingsPersisting = UserDefaultsAddBookmarkSettingsPersistor(),
          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
         self.bookmarkManager = bookmarkManager
+        self.settingsPersistor = settingsPersistor
         self.bookmark = bookmark
         self.bookmarkTitle = bookmark.title
         self.isBookmarkFavorite = bookmark.isFavorite
@@ -98,7 +102,11 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
                                      toIndex: 1,
                                      withinParentFolder: .parent(uuid: newFolder.id),
                                      completion: { [weak self] _ in
-                    self?.reloadBookmark()
+                    guard let self else {
+                        return
+                    }
+                    reloadBookmark()
+                    settingsPersistor.lastUsedFolderID = newFolder.id
                 })
             }
             self?.resetAddFolderState()

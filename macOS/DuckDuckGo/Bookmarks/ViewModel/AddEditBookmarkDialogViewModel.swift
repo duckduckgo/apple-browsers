@@ -26,6 +26,8 @@ protocol BookmarkDialogEditing: BookmarksDialogViewModel {
     var isBookmarkFavorite: Bool { get set }
 
     var isURLFieldHidden: Bool { get }
+
+    var settingsPersistor: AddBookmarkSettingsPersisting { get }
 }
 
 @MainActor
@@ -50,6 +52,7 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
     @Published private(set) var folders: [FolderViewModel]
     @Published var selectedFolder: BookmarkFolder?
 
+    private(set) var settingsPersistor: AddBookmarkSettingsPersisting
     private var folderCancellable: AnyCancellable?
 
     var title: String {
@@ -78,9 +81,14 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
     private let mode: Mode
     private let bookmarkManager: BookmarkManager
 
-    init(mode: Mode, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(
+        mode: Mode,
+        settingsPersistor: AddBookmarkSettingsPersisting = UserDefaultsAddBookmarkSettingsPersistor(),
+        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
+    ) {
         let isFavorite = mode.bookmarkURL.flatMap(bookmarkManager.isUrlFavorited) ?? false
         self.mode = mode
+        self.settingsPersistor = settingsPersistor
         self.bookmarkManager = bookmarkManager
         folders = .init(bookmarkManager.list)
         switch mode {
@@ -94,7 +102,7 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
             bookmarkName = websiteName
             bookmarkURLPath = websiteURLPath
             isBookmarkFavorite = shouldPresetFavorite ? true : isFavorite
-            selectedFolder = parentFolder
+            selectedFolder = parentFolder ?? lastUsedFolder()
         case let .edit(bookmark):
             bookmarkName = bookmark.title
             bookmarkURLPath = bookmark.urlObject?.absoluteString ?? ""
@@ -103,6 +111,10 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
         }
 
         bind()
+    }
+
+    private func lastUsedFolder() -> BookmarkFolder? {
+        folders.first(where: { $0.id == settingsPersistor.lastUsedFolderID })?.entity
     }
 
     func cancel(dismiss: () -> Void) {
@@ -120,6 +132,7 @@ final class AddEditBookmarkDialogViewModel: BookmarkDialogEditing {
         switch mode {
         case .add:
             addBookmark(withURL: url, name: trimmedBookmarkName, isFavorite: isBookmarkFavorite, to: selectedFolder)
+            settingsPersistor.lastUsedFolderID = selectedFolder?.id
         case let .edit(bookmark):
             updateBookmark(bookmark, url: url, name: trimmedBookmarkName, isFavorite: isBookmarkFavorite, location: selectedFolder)
         }

@@ -40,7 +40,7 @@ struct ExperimentalThemingManager {
     }
 
     var isWarmColorPaletteEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.warmColorTheme, allowOverride: true)
+        isExperimentalThemingEnabled && featureFlagger.isFeatureOn(for: FeatureFlag.warmColorTheme, allowOverride: true)
     }
 
     func toggleWarmColorPalette() {

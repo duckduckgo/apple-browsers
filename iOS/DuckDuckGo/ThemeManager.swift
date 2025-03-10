@@ -49,10 +49,12 @@ class ThemeManager {
     }
 
     public func updateColorScheme() {
-        if ExperimentalThemingManager().isWarmColorPaletteEnabled {
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            DesignSystemPalette.current = .default
+        } else if ExperimentalThemingManager().isWarmColorPaletteEnabled {
             DesignSystemPalette.current = .warm
         } else {
-            DesignSystemPalette.current = .default
+            DesignSystemPalette.current = .cool
         }
 
         updateUserInterfaceStyle()

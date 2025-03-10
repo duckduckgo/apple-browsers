@@ -209,9 +209,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
 
-        print("State Video ID: \(state.videoID)")
-        print("Controller Video ID: \(videoID)")
-
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false

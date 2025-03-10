@@ -148,9 +148,9 @@ extension VoiceSearchFeedbackView {
     }
     
     private struct Colors {
-        static let innerCircle = Color(UIColor(hex: "3969EF"))
-        static let footerText = Color(UIColor(hex: "888888"))
-        static let outerCircle = Color(UIColor(hex: "7295F6")).opacity(0.2)
+        static let innerCircle = Color(baseColor: .blue50)
+        static let footerText = Color(baseColor: .gray60)
+        static let outerCircle = Color(baseColor: .blue30).opacity(0.2)
         static let cancelButton = Color("VoiceSearchCancelColor")
         static let speechFeedback = Color("VoiceSearchSpeechFeedbackColor")
     }

@@ -114,7 +114,7 @@ final class TabViewCell: UICollectionViewCell {
         layer.shouldRasterize = true
         layer.rasterizationScale = UIScreen.main.scale
 
-        unread.tintColor = .cornflowerBlue
+        unread.tintColor = UIColor(designSystemColor: .accent)
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
@@ -154,7 +154,7 @@ final class TabViewCell: UICollectionViewCell {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: .cornflowerBlue,
+                                                 foregroundColor: UIColor(baseColor: .blue30),
                                                  borderColor: color)
             return image
         }
@@ -383,7 +383,7 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        border.layer.borderColor = theme.tabSwitcherCellBorderColor.cgColor
+        border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
 
         background.backgroundColor = theme.tabSwitcherCellBackgroundColor

@@ -41,7 +41,7 @@ struct SettingsMaliciousProtectionSectionView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Button(action: model.learnMoreAction) {
                             Text(UserText.MaliciousSiteProtectionSettings.footerLearnMore)
-                                .foregroundColor(.blueBase)
+                                .foregroundColor(Color(baseColor: .blue50))
                         }
 
                         Text(UserText.MaliciousSiteProtectionSettings.footerDisabledMessage)

@@ -33,13 +33,12 @@ public struct PrimaryButtonStyle: ButtonStyle {
     }
     
     public func makeBody(configuration: Configuration) -> some View {
-        let isDark = colorScheme == .dark
-        let standardBackgroundColor = isDark ? Color.blue30 : Color.blueBase
-        let pressedBackgroundColor = isDark ? Color.blueBase : Color.blue70
-        let disabledBackgroundColor = isDark ? Color.white.opacity(0.18) : Color.black.opacity(0.06)
-        let standardForegroundColor = isDark ? Color.black.opacity(0.84) : Color.white
-        let pressedForegroundColor = isDark ? Color.black.opacity(0.84) : Color.white
-        let disabledForegroundColor = isDark ? Color.white.opacity(0.36) : Color.black.opacity(0.36)
+        let standardBackgroundColor = Color(designSystemColor: .buttonsPrimaryDefault)
+        let pressedBackgroundColor = Color(designSystemColor: .buttonsPrimaryPressed)
+        let disabledBackgroundColor = Color(designSystemColor: .buttonsPrimaryDisabled)
+        let standardForegroundColor = Color(designSystemColor: .buttonsPrimaryText)
+        let pressedForegroundColor = Color(designSystemColor: .buttonsPrimaryPressed)
+        let disabledForegroundColor = Color(designSystemColor: .buttonsPrimaryTextDisabled)
         let backgroundColor = disabled ? disabledBackgroundColor : standardBackgroundColor
         let foregroundColor = disabled ? disabledForegroundColor : standardForegroundColor
 
@@ -57,6 +56,8 @@ public struct PrimaryButtonStyle: ButtonStyle {
     }
 }
 
+// This style seems to be deprecated - you probably want to use SecondaryWireButtonStyle.
+// Reach out to designers.
 public struct SecondaryButtonStyle: ButtonStyle {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -67,11 +68,11 @@ public struct SecondaryButtonStyle: ButtonStyle {
     }
     
     private var backgoundColor: Color {
-        colorScheme == .light ? Color.white : .gray70
+        colorScheme == .light ? Color.white : Color(baseColor: .gray70)
     }
 
     private var foregroundColor: Color {
-        colorScheme == .light ? .blueBase : .white
+        colorScheme == .light ? Color(baseColor: .blue50) : .white
     }
 
     @ViewBuilder
@@ -109,12 +110,11 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Configuration) -> some View {
-        let isDark = colorScheme == .dark
-        let standardBackgroundColor = isDark ? Color.white.opacity(0.18) : Color.black.opacity(0.06)
-        let pressedBackgroundColor = isDark ? Color.white.opacity(0.3) : Color.black.opacity(0.18)
-        let disabledBackgroundColor = isDark ? Color.white.opacity(0.06) : Color.black.opacity(0.06)
-        let defaultForegroundColor = isDark ? Color.white : Color.black.opacity(0.84)
-        let disabledForegroundColor = isDark ? Color.white.opacity(0.36) : Color.black.opacity(0.36)
+        let standardBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillDefault)
+        let pressedBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillPressed)
+        let disabledBackgroundColor = Color(designSystemColor: .buttonsSecondaryFillDisabled)
+        let defaultForegroundColor = Color(designSystemColor: .buttonsSecondaryFillText)
+        let disabledForegroundColor = Color(designSystemColor: .buttonsSecondaryFillTextDisabled)
         let backgroundColor = disabled ? disabledBackgroundColor : standardBackgroundColor
         let foregroundColor = disabled ? disabledForegroundColor : defaultForegroundColor
 
@@ -136,7 +136,6 @@ public struct SecondaryFillButtonStyle: ButtonStyle {
 }
 
 public struct GhostButtonStyle: ButtonStyle {
-    @Environment(\.colorScheme) private var colorScheme
 
     public init() {}
 
@@ -152,27 +151,11 @@ public struct GhostButtonStyle: ButtonStyle {
     }
     
     private func foregroundColor(_ isPressed: Bool) -> Color {
-        switch (colorScheme, isPressed) {
-        case (.dark, false):
-            return .blue30
-        case (.dark, true):
-            return .blue20
-        case (_, false):
-            return .blueBase
-        case (_, true):
-            return .blue70
-        }
+        isPressed ? Color(designSystemColor: .buttonsGhostTextPressed) : Color(designSystemColor: .buttonsGhostText)
     }
     
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        switch (colorScheme, isPressed) {
-        case (.light, true):
-            return .blueBase.opacity(0.2)
-        case (.dark, true):
-            return .blue30.opacity(0.2)
-        default:
-            return .clear
-        }
+        isPressed ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
     }
 }
 

@@ -38,7 +38,7 @@ class OnboardingWidgetsDetailsViewController: UIViewController {
             secondInstructionsLabel.attributedText = string
         }
 
-        navigationController?.navigationBar.tintColor = .cornflowerBlue
+        navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .accent)
     }
     
     override func viewWillAppear(_ animated: Bool) {

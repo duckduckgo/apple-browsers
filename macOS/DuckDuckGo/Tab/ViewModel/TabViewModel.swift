@@ -414,7 +414,7 @@ final class TabViewModel {
         case _ where isShowingErrorPage && (tab.error?.isWebContentProcessTerminated != true || tab.title == nil):
             switch tab.error as NSError? {
             case is URLError where tab.error?.isServerCertificateUntrusted == true:
-                return
+                title = UserText.sslErrorPageTabTitle
             case .some( _ as MaliciousSiteError):
                 title = UserText.maliciousSiteErrorPageTabTitle
             default:

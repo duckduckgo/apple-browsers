@@ -154,8 +154,7 @@ public struct UpdateManager: InternalUpdateManaging {
             // run update jobs in background for every data type
             await withTaskGroup(of: Bool.self) { group in
                 let supportedThreats = supportedThreatsProvider()
-                let filteredDataTypes = DataManager.StoredDataType.allCases.filter { supportedThreats.contains($0.threatKind) }
-                for dataType in filteredDataTypes {
+                for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreatKind: supportedThreats) {
                     group.addTask {
                         do {
                             try await self.updateData(for: dataType.dataKey)

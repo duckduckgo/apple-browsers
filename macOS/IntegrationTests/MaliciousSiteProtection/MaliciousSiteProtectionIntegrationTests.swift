@@ -365,7 +365,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         }
         defer { task.cancel() }
 
-        let result = await waiter.fulfillment(of: [loadingExpectation], timeout: 5)
+        let result = await waiter.fulfillment(of: [loadingExpectation], timeout: 2)
 
         switch result {
         case .completed: break

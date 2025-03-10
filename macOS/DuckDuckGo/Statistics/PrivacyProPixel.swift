@@ -68,6 +68,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProOfferYearlyPriceClick
     case privacyProAddEmailSuccess
     case privacyProWelcomeFAQClick
+    // Auth v2
+    case privacyProDeadTokenDetected
+    case authV1MigrationFailed
+    case authV1MigrationSucceeded
+    case setSubscriptionInvalidSubscriptionValues
 
     var name: String {
         switch self {
@@ -109,6 +114,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .privacyProAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .privacyProWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
+            // Auth v2 // todo align with android
+        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
+        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
+        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
+        case .setSubscriptionInvalidSubscriptionValues: return "m_privacy-pro_invalid_subscriptionvalues"
         }
     }
 

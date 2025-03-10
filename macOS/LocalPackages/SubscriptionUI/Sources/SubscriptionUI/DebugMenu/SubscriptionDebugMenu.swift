@@ -32,32 +32,42 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private var regionOverrideItem: NSMenuItem?
 
     var currentViewController: () -> NSViewController?
-    let subscriptionManager: SubscriptionManager
-    let subscriptionUserDefaults: UserDefaults
+
+    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManagerV1: (any SubscriptionManager)!
+    let subscriptionManagerV2: (any SubscriptionManagerV2)!
     var accountManager: AccountManager {
-        subscriptionManager.accountManager
+        return subscriptionManagerV1.accountManager
     }
+
+    let subscriptionUserDefaults: UserDefaults
+    let isAuthV2Enabled: Bool
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
     public init(currentEnvironment: SubscriptionEnvironment,
                 updateServiceEnvironment: @escaping (SubscriptionEnvironment.ServiceEnvironment) -> Void,
                 updatePurchasingPlatform: @escaping (SubscriptionEnvironment.PurchasePlatform) -> Void,
                 updateCustomBaseSubscriptionURL: @escaping (URL?) -> Void,
                 currentViewController: @escaping () -> NSViewController?,
                 openSubscriptionTab: @escaping (URL) -> Void,
-                subscriptionManager: SubscriptionManager,
-                subscriptionUserDefaults: UserDefaults) {
+                subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
+                subscriptionManagerV1: (any SubscriptionManager)?,
+                subscriptionManagerV2: (any SubscriptionManagerV2)?,
+                subscriptionUserDefaults: UserDefaults,
+                isAuthV2Enabled: Bool) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
         self.updateCustomBaseSubscriptionURL = updateCustomBaseSubscriptionURL
         self.currentViewController = currentViewController
         self.openSubscriptionTab = openSubscriptionTab
-        self.subscriptionManager = subscriptionManager
+        self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
+        self.subscriptionManagerV1 = subscriptionManagerV1
+        self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionUserDefaults = subscriptionUserDefaults
+        self.isAuthV2Enabled = isAuthV2Enabled
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -169,7 +179,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     private func makeCustomBaseSubscriptionURLSubmenu() -> NSMenu {
         let menu = NSMenu(title: "Set custom base subscription URL:")
 
-        let customURLString = subscriptionManager.currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? " -"
+        let customURLString = currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? " -"
         menu.addItem(withTitle: "Custom URL: \(customURLString)", action: nil, keyEquivalent: "")
 
         menu.addItem(.separator())
@@ -220,29 +230,61 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @objc
     func activateSubscription() {
-        let url = subscriptionManager.url(for: .activateViaEmail)
+        let url = subscriptionAuthV1toV2Bridge.url(for: .activateViaEmail)
         openSubscriptionTab(url)
     }
 
     @objc
     func signOut() {
-        accountManager.signOut()
+        Task {
+            await subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+        }
     }
 
     @objc
     func showAccountDetails() {
+        if !isAuthV2Enabled {
+            showAccountDetailsV1()
+        } else {
+            showAccountDetailsV2()
+        }
+    }
+
+    @objc
+    func showAccountDetailsV1() {
         let title = accountManager.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
         let message = accountManager.isUserAuthenticated ? ["AuthToken: \(accountManager.authToken ?? "")",
-                                                                                "AccessToken: \(accountManager.accessToken ?? "")",
-                                                                                "Email: \(accountManager.email ?? "")"].joined(separator: "\n") : nil
+                                                                                  "AccessToken: \(accountManager.accessToken ?? "")",
+                                                                                  "Email: \(accountManager.email ?? "")"].joined(separator: "\n") : nil
         showAlert(title: title, message: message)
     }
 
     @objc
+    func showAccountDetailsV2() {
+        Task {
+            let title = subscriptionManagerV2.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
+            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
+            let message = subscriptionManagerV2.isUserAuthenticated ? ["External ID: \(tokenContainer?.decodedAccessToken.externalID ?? "")",
+                                                                     "\(tokenContainer!.debugDescription)",
+                                                                     "Email: \(subscriptionManagerV2.userEmail ?? "")"].joined(separator: "\n") : nil
+            showAlert(title: title, message: message)
+        }
+    }
+
+    @objc
     func validateToken() {
+        if !isAuthV2Enabled {
+            validateTokenV1()
+        } else {
+            validateTokenV2()
+        }
+    }
+
+    @objc
+    func validateTokenV1() {
         Task {
             guard let token = accountManager.accessToken else { return }
-            switch await subscriptionManager.authEndpointService.validateToken(accessToken: token) {
+            switch await subscriptionManagerV1.authEndpointService.validateToken(accessToken: token) {
             case .success(let response):
                 showAlert(title: "Validate token", message: "\(response)")
             case .failure(let error):
@@ -252,7 +294,28 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     }
 
     @objc
+    func validateTokenV2() {
+        Task {
+            do {
+                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .local)
+                showAlert(title: "Valid token", message: tokenContainer.debugDescription)
+            } catch {
+                showAlert(title: "Validate token", message: "\(error)")
+            }
+        }
+    }
+
+    @objc
     func checkEntitlements() {
+        if !isAuthV2Enabled {
+            checkEntitlementsV1()
+        } else {
+            checkEntitlementsV2()
+        }
+    }
+
+    @objc
+    func checkEntitlementsV1() {
         Task {
             var results: [String] = []
 
@@ -270,10 +333,30 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     }
 
     @objc
+    func checkEntitlementsV2() {
+        Task {
+            let features = await subscriptionManagerV2.currentSubscriptionFeatures(forceRefresh: true)
+            let descriptions = features.map({ feature in
+                "\(feature.entitlement.rawValue): Available: \(feature.isAvailableForUser)"
+            })
+            showAlert(title: "Check Entitlements", message: descriptions.joined(separator: "\n"))
+        }
+    }
+
+    @objc
     func getSubscriptionDetails() {
+        if !isAuthV2Enabled {
+            getSubscriptionDetailsV1()
+        } else {
+            getSubscriptionDetailsV2()
+        }
+    }
+
+    @objc
+    func getSubscriptionDetailsV1() {
         Task {
             guard let token = accountManager.accessToken else { return }
-            switch await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: .reloadIgnoringLocalCacheData) {
+            switch await subscriptionManagerV1.subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: .reloadIgnoringLocalCacheData) {
             case .success(let response):
                 showAlert(title: "Subscription info", message: "\(response)")
             case .failure(let error):
@@ -282,27 +365,79 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         }
     }
 
+    @objc
+    func getSubscriptionDetailsV2() {
+        Task {
+            do {
+                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+                showAlert(title: "Subscription info", message: subscription.debugDescription)
+            } catch {
+                showAlert(title: "Subscription info", message: "\(error)")
+            }
+        }
+    }
+
     @available(macOS 12.0, *)
     @objc
     func syncAppleIDAccount() {
+        if !isAuthV2Enabled {
+            syncAppleIDAccountV1()
+        } else {
+            syncAppleIDAccountV2()
+        }
+    }
+
+    @available(macOS 12.0, *)
+    @objc
+    func syncAppleIDAccountV1() {
         Task { @MainActor in
-            try? await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
+            try? await subscriptionManagerV1.storePurchaseManager().syncAppleIDAccount()
+        }
+    }
+
+    @available(macOS 12.0, *)
+    @objc
+    func syncAppleIDAccountV2() {
+        Task { @MainActor in
+            try? await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
         }
     }
 
     @IBAction func showPurchaseView(_ sender: Any?) {
+        if !isAuthV2Enabled {
+            showPurchaseViewV1(sender)
+        } else {
+            showPurchaseViewV2(sender)
+        }
+    }
+
+    @IBAction func showPurchaseViewV1(_ sender: Any?) {
         if #available(macOS 12.0, *) {
-            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                                 authEndpointService: subscriptionManager.authEndpointService)
-            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                   accountManager: subscriptionManager.accountManager,
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: accountManager,
+                                                                 storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
+                                                                 subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
+                                                                 authEndpointService: subscriptionManagerV1.authEndpointService)
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
+                                                                   storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
+                                                                   accountManager: subscriptionManagerV1.accountManager,
                                                                    appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                   authEndpointService: subscriptionManager.authEndpointService)
+                                                                   authEndpointService: subscriptionManagerV1.authEndpointService)
             // swiftlint:disable:next force_cast
-            let vc = DebugPurchaseViewController(storePurchaseManager: subscriptionManager.storePurchaseManager() as! DefaultStorePurchaseManager, appStorePurchaseFlow: appStorePurchaseFlow)
+            let vc = DebugPurchaseViewController(storePurchaseManager: subscriptionManagerV1.storePurchaseManager() as! DefaultStorePurchaseManager, appStorePurchaseFlow: appStorePurchaseFlow)
+            currentViewController()?.presentAsSheet(vc)
+        }
+    }
+
+    @IBAction func showPurchaseViewV2(_ sender: Any?) {
+        if #available(macOS 12.0, *) {
+            let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
+                                                                 storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+            let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManagerV2,
+                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
+                                                                   appStoreRestoreFlow: appStoreRestoreFlow)
+            // swiftlint:disable:next force_cast
+            let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManagerV2.storePurchaseManager() as! DefaultStorePurchaseManagerV2,
+                                                   appStorePurchaseFlow: appStorePurchaseFlow)
             currentViewController()?.presentAsSheet(vc)
         }
     }
@@ -354,7 +489,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     // MARK: - Custom base subscription URL
 
     @IBAction func setCustomBaseSubscriptionURL(_ sender: Any?) {
-        let currentCustomBaseSubscriptionURL = subscriptionManager.currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? ""
+        let currentCustomBaseSubscriptionURL = currentEnvironment.customBaseSubscriptionURL?.absoluteString ?? ""
         let defaultBaseSubscriptionURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production).absoluteString
 
         let alert = makeAlert(title: "Are you sure you want to change the base subscription URL?",
@@ -377,7 +512,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,
                   let newURL = URL(string: textField.stringValue),
-                  newURL != self.subscriptionManager.currentEnvironment.customBaseSubscriptionURL
+                  newURL != self.currentEnvironment.customBaseSubscriptionURL
             else {
                 return
             }
@@ -430,7 +565,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
         if #available(macOS 12.0, *) {
             Task {
-                await subscriptionManager.storePurchaseManager().updateAvailableProducts()
+                if !isAuthV2Enabled {
+                    await subscriptionManagerV1.storePurchaseManager().updateAvailableProducts()
+                } else {
+                    await subscriptionManagerV2.storePurchaseManager().updateAvailableProducts()
+                }
             }
         }
     }
@@ -439,12 +578,32 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @objc
     func restorePurchases(_ sender: Any?) {
+        if !isAuthV2Enabled {
+            restorePurchasesV1(sender)
+        } else {
+            restorePurchasesV2(sender)
+        }
+    }
+
+    @objc
+    func restorePurchasesV1(_ sender: Any?) {
         if #available(macOS 12.0, *) {
             Task {
-                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                                     storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                     subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                                     authEndpointService: subscriptionManager.authEndpointService)
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManagerV1.accountManager,
+                                                                     storePurchaseManager: subscriptionManagerV1.storePurchaseManager(),
+                                                                     subscriptionEndpointService: subscriptionManagerV1.subscriptionEndpointService,
+                                                                     authEndpointService: subscriptionManagerV1.authEndpointService)
+                await appStoreRestoreFlow.restoreAccountFromPastPurchase()
+            }
+        }
+    }
+
+    @objc
+    func restorePurchasesV2(_ sender: Any?) {
+        if #available(macOS 12.0, *) {
+            Task {
+                let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
+                                                                       storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
                 await appStoreRestoreFlow.restoreAccountFromPastPurchase()
             }
         }

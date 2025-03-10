@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift
+//  NetworkProtectionKeychainStore+TokenStoring.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,25 +19,25 @@
 import Foundation
 import Subscription
 import NetworkProtection
+import Networking
 import Common
-import os.log
 
-extension NetworkProtectionKeychainTokenStore: SubscriptionTokenStoring {
+extension NetworkProtectionKeychainStore: @retroactive AuthTokenStoring {
+    static var name = "com.duckduckgo.networkprotection.tokenContainer"
 
-    public func store(accessToken: String) throws {
-        try store(accessToken)
-    }
-
-    public func getAccessToken() throws -> String? {
-        guard var token = try fetchToken() else { return nil }
-        if token.hasPrefix("ddg:") {
-            token = token.replacingOccurrences(of: "ddg:", with: "")
+    public var tokenContainer: Networking.TokenContainer? {
+        get {
+            if let data = try? readData(named: Self.name) as? NSData {
+                return try? TokenContainer(with: data)
+            }
+            return nil
         }
-        Logger.networkProtection.log("🟢 Wrapper successfully fetched the token")
-        return token
-    }
-
-    public func removeAccessToken() throws {
-        try deleteToken()
+        set(newValue) {
+            if newValue == nil {
+                try? deleteAll()
+            } else if let data = newValue?.data as? Data {
+                try? writeData(data, named: Self.name)
+            }
+        }
     }
 }

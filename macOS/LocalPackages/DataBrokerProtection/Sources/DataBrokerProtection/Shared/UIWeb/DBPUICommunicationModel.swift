@@ -415,3 +415,20 @@ extension DBPUIInitialScanState {
               scanProgress: DBPUIScanProgress(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 }
+
+/// VPN exclusion setting
+///
+/// - Returns: `nil` if the user hasn't made a choice, `true/false` for the setting otherwise
+struct DBPUIVPNBypassConfigSetting: DBPUISendableMessage {
+    let enabled: Bool?
+}
+
+struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
+    let enabled: Bool
+    let version: Int
+}
+
+struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
+    let success: Bool
+    let version: Int
+}

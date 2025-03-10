@@ -143,7 +143,7 @@ extension TabContent {
                 return .webExtensionUrl(url)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionManager
+            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)

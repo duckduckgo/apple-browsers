@@ -18,10 +18,12 @@
 
 import Foundation
 import Common
+import os.log
 
 extension NetworkProtectionKeychainTokenStore: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
+        Logger.networkProtection.debug("[NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling] Getting token")
         guard let token = try fetchToken() else {
             throw NetworkProtectionError.noAuthTokenFound
         }
@@ -29,14 +31,17 @@ extension NetworkProtectionKeychainTokenStore: SubscriptionTokenHandling {
     }
 
     public func removeToken() async throws {
+        Logger.networkProtection.debug("[NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling] Removing token")
         try deleteToken()
     }
 
     public func refreshToken() async throws {
         // Unused in Auth V1
+        assertionFailure("refreshToken() should not be called")
     }
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
+        Logger.networkProtection.debug("[NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling] Adopting token")
         guard let token = someKindOfToken as? String else {
             throw NetworkProtectionError.invalidAuthToken
         }

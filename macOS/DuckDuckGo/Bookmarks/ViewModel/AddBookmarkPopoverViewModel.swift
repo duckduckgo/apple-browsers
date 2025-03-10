@@ -25,6 +25,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private let bookmarkManager: BookmarkManager
     private let settingsPersistor: AddBookmarkSettingsPersisting
+    var buttonClicked: (() -> Void)? = nil
 
     @Published private(set) var bookmark: Bookmark
 
@@ -36,6 +37,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
                 bookmarkManager.add(bookmark: bookmark, to: selectedFolder) { _ in
                     // this is an invalid callback fired before bookmarks finish reloading
                 }
+                settingsPersistor.lastUsedFolderID = selectedFolder?.id
             }
         }
     }
@@ -88,11 +90,11 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     func removeButtonAction(dismiss: () -> Void) {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
-        dismiss()
+        buttonClicked?()
     }
 
     func doneButtonAction(dismiss: () -> Void) {
-        dismiss()
+        buttonClicked?()
     }
 
     func addFolderButtonAction() {

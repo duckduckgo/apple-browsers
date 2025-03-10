@@ -1953,16 +1953,16 @@
 "onboarding.highlights.appIconSelection.title" = "Která barva mi sluší nejvíc?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování požadavků na soubory cookie a vyskakovacích oken";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuj reklamy, které tě sledují";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Rychle vymazání údajů o prohlížení";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokovat trackery třetích stran";
+"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuj trackery třetích stran";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Ochrana je aktivní!";

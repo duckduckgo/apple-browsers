@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Ktorá farba na mne vyzerá najlepšie?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokovanie požiadaviek na súbory cookie & vyskakovacie okná";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokovanie vyskakovacích okien o súboroch cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokovanie cielených reklám";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokovať reklamy, ktoré sledujú";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Rýchlo vymažte údaje prehliadania";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Odstráni údaje prehliadania jedným tlačidlom";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokovať sledovanie tretími stranami";

@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Vilken färg passar bäst på mig?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blockera förfrågningar och popup-fönster för cookies";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Blockera popup-fönster för cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blockera riktade annonser";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blockera spårningsannonser";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Radera webbläsardata snabbt";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Radera surfdata med en knapp";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blockera spårare från tredje part";

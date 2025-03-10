@@ -151,8 +151,8 @@ extension VoiceSearchFeedbackView {
         static let innerCircle = Color(baseColor: .blue50)
         static let footerText = Color(baseColor: .gray60)
         static let outerCircle = Color(baseColor: .blue30).opacity(0.2)
-        static let cancelButton = Color("VoiceSearchCancelColor")
-        static let speechFeedback = Color("VoiceSearchSpeechFeedbackColor")
+        static let cancelButton = Color(designSystemColor: .textSecondary)
+        static let speechFeedback = Color(designSystemColor: .textPrimary)
     }
     
     private struct AnimationDuration {

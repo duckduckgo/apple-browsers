@@ -344,9 +344,9 @@ extension TabContent {
 
     var canBeBookmarked: Bool {
         switch self {
-        case .newtab, .onboardingDeprecated, .onboarding, .none:
+        case .newtab, .onboardingDeprecated, .onboarding, .bookmarks, .settings, .none:
             return false
-        case .url, .settings, .bookmarks, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
+        case .url, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
             return true
         }
     }

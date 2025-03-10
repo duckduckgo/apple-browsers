@@ -63,6 +63,41 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
+        // MARK: Tabswitcher improvements
+        case tabSwitcherEditMenuClicked
+        case tabSwitcherEditMenuSelectTabs
+        case tabSwitcherEditMenuSelectTabsDaily
+        case tabSwitcherEditMenuCloseAllTabs
+        case tabSwitcherEditMenuCloseAllTabsDaily
+        case tabSwitcherTabSelected
+        case tabSwitcherTabDeselected
+        case tabSwitcherSelectAll
+        case tabSwitcherSelectAllDaily
+        case tabSwitcherDeselectAll
+        case tabSwitcherDeselectAllDaily
+        case tabSwitcherCloseAll
+        case tabSwitcherCloseAllDaily
+        case tabSwitcherConfirmCloseTabs
+        case tabSwitcherConfirmCloseTabsDaily
+        case tabSwitcherSelectModeMenuClicked
+        case tabSwitcherSelectModeMenuShareLinks
+        case tabSwitcherSelectModeMenuShareLinksDaily
+        case tabSwitcherSelectModeMenuBookmarkTabs
+        case tabSwitcherSelectModeMenuBookmarkTabsDaily
+        case tabSwitcherSelectModeMenuBookmarkAllTabs
+        case tabSwitcherSelectModeMenuBookmarkAllTabsDaily
+        case tabSwitcherSelectModeMenuCloseOtherTabs
+        case tabSwitcherSelectModeMenuCloseOtherTabsDaily
+        case tabSwitcherLongPress
+        case tabSwitcherLongPressDaily
+        case tabSwitcherLongPressShare
+        case tabSwitcherLongPressBookmarkTabs
+        case tabSwitcherLongPressBookmarkTabsDaily
+        case tabSwitcherLongPressSelectTabs
+        case tabSwitcherLongPressCloseTab
+        case tabSwitcherLongPressCloseOtherTabs
+        case tabSwitcherLongPressCloseOtherTabsDaily
+
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
@@ -2033,6 +2068,41 @@ extension Pixel.Event {
 
         // MARK: Malicious Site Protection
         case .maliciousSiteProtection(let event): return "m_\(event.name)"
+
+        // MARK: Tab switcher improvements
+        case .tabSwitcherEditMenuClicked: return "m_tab_manager_edit_menu_clicked"
+        case .tabSwitcherEditMenuSelectTabs: return "m_tab_manager_edit_menu_select_tabs"
+        case .tabSwitcherEditMenuSelectTabsDaily: return "m_tab_manager_edit_menu_select_tabs_daily"
+        case .tabSwitcherEditMenuCloseAllTabs: return "m_tab_manager_edit_menu_close_all_tabs"
+        case .tabSwitcherEditMenuCloseAllTabsDaily: return "m_tab_manager_edit_menu_close_all_tabs_daily"
+        case .tabSwitcherTabSelected: return "m_tab_manager_tab_selected"
+        case .tabSwitcherTabDeselected: return "m_tab_manager_tab_deselected"
+        case .tabSwitcherSelectAll: return "m_tab_manager_select_all"
+        case .tabSwitcherSelectAllDaily: return "m_tab_manager_select_all_daily"
+        case .tabSwitcherDeselectAll: return "m_tab_manager_deselect_all"
+        case .tabSwitcherDeselectAllDaily: return "m_tab_manager_deselect_all_daily"
+        case .tabSwitcherCloseAll: return "m_tab_manager_close_all"
+        case .tabSwitcherCloseAllDaily: return "m_tab_manager_close_all_daily"
+        case .tabSwitcherConfirmCloseTabs: return "m_tab_manager_confirm_close_tabs"
+        case .tabSwitcherConfirmCloseTabsDaily: return "m_tab_manager_confirm_close_tabs_daily"
+        case .tabSwitcherSelectModeMenuClicked: return "m_tab_manager_select_mode_menu_clicked"
+        case .tabSwitcherSelectModeMenuShareLinks: return "m_tab_manager_select_mode_menu_share_links"
+        case .tabSwitcherSelectModeMenuShareLinksDaily: return "m_tab_manager_select_mode_menu_share_links_daily"
+        case .tabSwitcherSelectModeMenuBookmarkTabs: return "m_tab_manager_select_mode_menu_bookmark_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_tabs_daily"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabs: return "m_tab_manager_select_mode_menu_bookmark_all_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_all_tabs_daily"
+        case .tabSwitcherSelectModeMenuCloseOtherTabs: return "m_tab_manager_select_mode_menu_close_other_tabs"
+        case .tabSwitcherSelectModeMenuCloseOtherTabsDaily: return "m_tab_manager_select_mode_menu_close_other_tabs_daily"
+        case .tabSwitcherLongPress: return "m_tab_manager_long_press"
+        case .tabSwitcherLongPressDaily: return "m_tab_manager_long_press_daily"
+        case .tabSwitcherLongPressShare: return "m_tab_manager_long_press_share"
+        case .tabSwitcherLongPressBookmarkTabs: return "m_tab_manager_long_press_bookmark_tabs"
+        case .tabSwitcherLongPressBookmarkTabsDaily: return "m_tab_manager_long_press_bookmark_tabs_daily"
+        case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
+        case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
+        case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
+        case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
         }
     }
 }

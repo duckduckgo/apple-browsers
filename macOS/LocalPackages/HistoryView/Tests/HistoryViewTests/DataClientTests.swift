@@ -74,8 +74,8 @@ final class DataClientTests: XCTestCase {
             dateTimeOfDay: "10:08",
             favicon: nil
         )
-        dataProvider.visitsBatch = { _, _, _ in return .init(finished: true, visits: [historyItem]) }
-        let query = DataModel.HistoryQuery(query: .searchTerm(""), limit: 150, offset: 0)
+        dataProvider.visitsBatch = { _, _, _, _ in return .init(finished: true, visits: [historyItem]) }
+        let query = DataModel.HistoryQuery(query: .searchTerm(""), source: .auto, limit: 150, offset: 0)
 
         let queryResponse: DataModel.HistoryQueryResponse = try await messageHelper.handleMessage(named: .query, parameters: query)
         XCTAssertEqual(dataProvider.visitsBatchCalls.count, 1)

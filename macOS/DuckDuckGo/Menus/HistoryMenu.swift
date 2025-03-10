@@ -37,7 +37,12 @@ final class HistoryMenu: NSMenu {
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
     private let reopenAllWindowsFromLastSessionMenuItem = NSMenuItem(title: UserText.mainMenuHistoryReopenAllWindowsFromLastSession,
                                                                      action: #selector(AppDelegate.reopenAllWindowsFromLastSession))
-    private let showHistoryMenuItem = NSMenuItem(title: "Show All History…", action: #selector(MainViewController.showHistory), keyEquivalent: "y")
+    private lazy var showHistoryMenuItem = NSMenuItem(
+        title: UserText.mainMenuHistoryShowAllHistory,
+        action: #selector(MainViewController.showHistory),
+        keyEquivalent: "y",
+        representedObject: location
+    )
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
                                                      action: #selector(MainViewController.clearAllHistory),

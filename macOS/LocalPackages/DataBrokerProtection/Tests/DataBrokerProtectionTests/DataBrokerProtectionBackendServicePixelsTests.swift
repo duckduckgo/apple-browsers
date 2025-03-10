@@ -26,7 +26,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
     override func setUpWithError() throws {
         let suiteName = "com.dbp.tests.\(UUID().uuidString)"
         let defaults =  UserDefaults(suiteName: suiteName) ?? UserDefaults.standard
-        settings = DataBrokerProtectionSettings(defaults: defaults)
+        settings = DataBrokerProtectionSettings(defaults: defaults, proxySettings: .init(defaults: .standard))
     }
 
     override func tearDownWithError() throws {

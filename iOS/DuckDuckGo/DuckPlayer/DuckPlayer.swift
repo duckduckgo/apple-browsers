@@ -358,6 +358,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
         hostView = nil
         nativePlayerCancellables.removeAll()
+        NotificationCenter.default.removeObserver(self)
     }
 
     /// Sets the host view controller for presenting modals.
@@ -795,6 +796,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
+        
+        registerOrientationSubscriber()
     }
     /// Returns tuple of Pixels for firing when a YouTube Error occurs
     private func getPixelsForYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {

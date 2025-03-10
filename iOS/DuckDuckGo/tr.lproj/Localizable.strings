@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Bana hangi renk daha çok yakışıyor?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez isteklerini ve açılır pencereleri engelleyin";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez açılır pencerelerini engelle";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Hedefli reklamları engelleyin";
+"onboarding.highlights.browsers.features.creepyAds.title" = "İzleme reklamlarını engelleyin";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini hızlıca silin";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Üçüncü taraf izleyicileri engelleyin";

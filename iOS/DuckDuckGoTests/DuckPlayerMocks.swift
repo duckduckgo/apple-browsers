@@ -269,7 +269,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         // Mock implementation
     }
 
-    func dismissPill() {
+    func dismissPill(reset: Bool, animated: Bool) {
         // Mock implementation
     }
 

@@ -67,11 +67,8 @@ final class DuckPlayerNativeUIPresenter {
     private var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
-    @MainActor
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
-    @MainActor
     private var playerCancellables = Set<AnyCancellable>()
-    @MainActor
     private var containerCancellables = Set<AnyCancellable>()
 
     /// Application Settings
@@ -185,7 +182,7 @@ final class DuckPlayerNativeUIPresenter {
             hostView.view.layoutIfNeeded()
         }
     }
-
+    
     /// Removes the pill controller
     @MainActor
     private func removePillContainer() {
@@ -198,7 +195,7 @@ final class DuckPlayerNativeUIPresenter {
     deinit {
         playerCancellables.removeAll()
         containerCancellables.removeAll()
-        NotificationCenter.default.removeObserver(self)
+        NotificationCenter.default.removeObserver(self)        
     }
 }
 
@@ -212,6 +209,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
 
+        print("State Video ID: \(state.videoID)")
+        print("Controller Video ID: \(videoID)")
+
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -220,6 +220,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Determine the pill type
         let pillType: PillType = state.hasBeenShown ? .reEntry : .entry
+
+        // If no specific timestamp is provided, use the current stave value
+        let timestamp = timestamp ?? state.timestamp ?? 0
 
         // If we already have a container view model, just update the content and show it again
         if let existingViewModel = containerViewModel, let hostingController = containerViewController {
@@ -299,7 +302,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
-
+        
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
 
@@ -313,7 +316,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         hostingController.modalPresentationStyle = .overFullScreen
         hostingController.isModalInPresentation = false
 
-        // Update State        
+        // Update State
         self.state.hasBeenShown = true
 
         // Subscribe to Navigation Request Publisher
@@ -335,8 +338,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // General Dismiss Publisher
         viewModel.dismissPublisher
             .sink { [weak self] timestamp in
-                guard let self = self else { return }
+                guard let self = self else { return }                
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
+                self.state.timestamp = timestamp
                 self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
             }
             .store(in: &playerCancellables)

@@ -367,6 +367,7 @@
 		65BA72D12D79F2E600E442E0 /* DuckPlayerEntryPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BA72D02D79F2E600E442E0 /* DuckPlayerEntryPillView.swift */; };
 		65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */; };
 		65D091262D47DF2A00226164 /* DuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091252D47DF2500226164 /* DuckPlayerView.swift */; };
+		65EBA0B42D7F489700E34997 /* NativeDuckPlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */; };
 		65F4CB422D7A082400E89416 /* getCurrentTimestamp.js in Resources */ = {isa = PBXBuildFile; fileRef = 65F4CB412D7A082400E89416 /* getCurrentTimestamp.js */; };
 		65F4CB462D7A0EFF00E89416 /* DuckPlayerWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F4CB452D7A0EFF00E89416 /* DuckPlayerWebView.swift */; };
 		6AC6DAB328804F97002723C0 /* BarsAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AC6DAB228804F97002723C0 /* BarsAnimator.swift */; };
@@ -1865,6 +1866,7 @@
 		65BA72D02D79F2E600E442E0 /* DuckPlayerEntryPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerEntryPillView.swift; sourceTree = "<group>"; };
 		65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerViewModel.swift; sourceTree = "<group>"; };
 		65D091252D47DF2500226164 /* DuckPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerView.swift; sourceTree = "<group>"; };
+		65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDuckPlayerNavigationHandler.swift; sourceTree = "<group>"; };
 		65F4CB412D7A082400E89416 /* getCurrentTimestamp.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = getCurrentTimestamp.js; sourceTree = "<group>"; };
 		65F4CB452D7A0EFF00E89416 /* DuckPlayerWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerWebView.swift; sourceTree = "<group>"; };
 		6AC6DAB228804F97002723C0 /* BarsAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarsAnimator.swift; sourceTree = "<group>"; };
@@ -4449,6 +4451,7 @@
 		65B4D5C32D68EE5F00FC677A /* NativeUI */ = {
 			isa = PBXGroup;
 			children = (
+				65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */,
 				659AD5AF2D7615E800420D1D /* Views */,
 				6526CA6E2D70CE260048819E /* DuckPlayerState.swift */,
 				65B4D5C12D68EE4200FC677A /* DuckPlayerNativeUIPresenter.swift */,
@@ -6384,7 +6387,6 @@
 		D62EC3B72C24695800FC9D04 /* DuckPlayer */ = {
 			isa = PBXGroup;
 			children = (
-				65F4CB472D7A18F200E89416 /* YoutubeOembedServiceTests.swift */,
 				6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */,
 				D6B67A112C332B6E002122EB /* DuckPlayerMocks.swift */,
 				D62EC3BB2C2470E000FC9D04 /* DuckPlayerTests.swift */,
@@ -8686,6 +8688,7 @@
 				31B524572715BB23002225AB /* WebJSAlert.swift in Sources */,
 				C1641EB32BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift in Sources */,
 				9FDEC7BF2C91264C00C7A692 /* OnboardingAddressBarPositionPicker.swift in Sources */,
+				65EBA0B42D7F489700E34997 /* NativeDuckPlayerNavigationHandler.swift in Sources */,
 				8536A1FD2ACF114B003AC5BA /* Theme+DesignSystem.swift in Sources */,
 				F114C55B1E66EB020018F95F /* NibLoading.swift in Sources */,
 				D6BFCB612B7525160051FF81 /* SubscriptionPIRViewModel.swift in Sources */,
@@ -9394,7 +9397,6 @@
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
 				9F6933212C5B9A5B00CD6A5D /* OnboardingHostingControllerMock.swift in Sources */,
 				9F6933192C59BB0300CD6A5D /* OnboardingPixelReporterMock.swift in Sources */,
-				65F4CB482D7A18F900E89416 /* YoutubeOembedServiceTests.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */,
 				56D0602D2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */,

@@ -471,7 +471,7 @@ class TabViewController: UIViewController {
         observeNetPConnectionStatusChanges()
         
         // Link DuckPlayer to current Tab
-        duckPlayerNavigationHandler?.setHostViewController(self)
+        duckPlayerNavigationHandler.setHostViewController(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {

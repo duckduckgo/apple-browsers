@@ -17,6 +17,7 @@
 //
 
 import HistoryView
+import PixelKit
 import SwiftUIExtensions
 
 protocol HistoryViewBookmarksHandling: AnyObject {
@@ -73,18 +74,21 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
      * This ensures that the dialog response is returned form the `showContextMenu` function.
      */
     private var deleteDialogTask: Task<DataModel.DeleteDialogResponse, Never>?
+    private var firePixel: (HistoryViewPixel, PixelKit.Frequency) -> Void
 
     init(
         dataProvider: HistoryViewDataProviding,
         dialogPresenter: HistoryViewDialogPresenting = DefaultHistoryViewDialogPresenter(),
         tabOpener: HistoryViewTabOpening = DefaultHistoryViewTabOpener(),
-        bookmarksHandler: HistoryViewBookmarksHandling = LocalBookmarkManager.shared
+        bookmarksHandler: HistoryViewBookmarksHandling = LocalBookmarkManager.shared,
+        firePixel: @escaping (HistoryViewPixel, PixelKit.Frequency) -> Void = { PixelKit.fire($0, frequency: $1) }
     ) {
         self.dataProvider = dataProvider
         self.dialogPresenter = dialogPresenter
         self.tabOpener = tabOpener
         self.tabOpener.dialogPresenter = dialogPresenter
         self.bookmarksHandler = bookmarksHandler
+        self.firePixel = firePixel
     }
 
     func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse {
@@ -110,9 +114,13 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: adjustedQuery.deleteMode) {
         case .burn:
             await dataProvider.burnVisits(matching: adjustedQuery)
+            firePixel(.delete, .daily)
+            firePixel(.multipleItemsDeleted(.init(adjustedQuery), burn: true), .dailyAndStandard)
             return .delete
         case .delete:
             await dataProvider.deleteVisits(matching: adjustedQuery)
+            firePixel(.delete, .daily)
+            firePixel(.multipleItemsDeleted(.init(adjustedQuery), burn: false), .dailyAndStandard)
             return .delete
         default:
             return .noAction
@@ -199,6 +207,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     func open(_ url: URL) async {
+        firePixel(.itemOpened, .dailyAndStandard)
         await tabOpener.open(url)
     }
 
@@ -207,6 +216,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return
         }
         Task {
+            fireItemOpenedPixel(urls)
             await tabOpener.openInNewTab(urls)
         }
     }
@@ -216,6 +226,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return
         }
         Task {
+            fireItemOpenedPixel(urls)
             await tabOpener.openInNewWindow(urls)
         }
     }
@@ -225,7 +236,14 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             return
         }
         Task {
+            fireItemOpenedPixel(urls)
             await tabOpener.openInNewFireWindow(urls)
+        }
+    }
+
+    private func fireItemOpenedPixel(_ urls: [URL]) {
+        if urls.count == 1 {
+            firePixel(.itemOpened, .dailyAndStandard)
         }
     }
 
@@ -285,6 +303,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
         guard identifiers.count > 1 else {
             await dataProvider.deleteVisits(for: identifiers)
+            firePixel(.delete, .daily)
+            firePixel(.singleItemDeleted, .dailyAndStandard)
             return .delete
         }
 
@@ -293,9 +313,13 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: .unspecified) {
         case .burn:
             await dataProvider.burnVisits(for: identifiers)
+            firePixel(.delete, .daily)
+            firePixel(.multipleItemsDeleted(.multiSelect, burn: true), .dailyAndStandard)
             return .delete
         case .delete:
             await dataProvider.deleteVisits(for: identifiers)
+            firePixel(.delete, .daily)
+            firePixel(.multipleItemsDeleted(.multiSelect, burn: false), .dailyAndStandard)
             return .delete
         default:
             return .noAction

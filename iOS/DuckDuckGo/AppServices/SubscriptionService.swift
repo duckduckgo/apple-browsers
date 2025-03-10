@@ -27,14 +27,14 @@ final class SubscriptionService {
 
     let subscriptionCookieManager: SubscriptionCookieManaging
     let subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability
-    private let subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager
+    private let subscriptionManager = AppDependencyProvider.shared.subscriptionManager
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
         subscriptionCookieManager = Self.makeSubscriptionCookieManager(application: application,
-                                                                       subscriptionManager: subscriptionManager,
+                                                                       tokenProvider: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                        privacyConfigurationManager: privacyConfigurationManager)
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                  purchasePlatform: .appStore)
@@ -46,13 +46,13 @@ final class SubscriptionService {
             }
             .store(in: &cancellables)
 
-        subscriptionManager.loadInitialData()
+        subscriptionManager?.loadInitialData() // only for v1
     }
 
     private static func makeSubscriptionCookieManager(application: UIApplication,
-                                                      subscriptionManager: SubscriptionManager,
+                                                      tokenProvider: any SubscriptionTokenProvider,
                                                       privacyConfigurationManager: PrivacyConfigurationManaging) -> SubscriptionCookieManaging {
-        let subscriptionCookieManager = SubscriptionCookieManager(subscriptionManager: subscriptionManager,
+        let subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: tokenProvider,
                                                                   currentCookieStore: {
             guard let mainViewController = application.window?.rootViewController as? MainViewController,
                 mainViewController.tabManager.model.hasActiveTabs else {
@@ -90,7 +90,7 @@ final class SubscriptionService {
     // MARK: - Resume
 
     func resume() {
-        subscriptionManager.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
+        subscriptionManager?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in // only for v1
             if isSubscriptionActive {
                 DailyPixel.fire(pixel: .privacyProSubscriptionActive)
             }

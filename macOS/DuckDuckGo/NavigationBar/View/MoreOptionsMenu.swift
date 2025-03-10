@@ -68,6 +68,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let appearancePreferences: AppearancePreferences
     private var dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let featureFlagger: FeatureFlagger
 
     private let notificationCenter: NotificationCenter
 
@@ -98,6 +99,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          dockCustomizer: DockCustomization? = nil,
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
          notificationCenter: NotificationCenter = .default,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration()) {
 
@@ -117,6 +119,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.notificationCenter = notificationCenter
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.featureFlagger = featureFlagger
 
         super.init(title: "")
 
@@ -441,6 +444,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .targetting(self)
             .withImage(.downloads)
 
+        if featureFlagger.isFeatureOn(.historyView) {
+            addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
+                .withImage(.history)
+                .withSubmenu(HistoryMenu(location: .moreOptionsMenu))
+        }
+
         let loginsSubMenu = LoginsSubMenu(targetting: self,
                                           passwordManagerCoordinator: passwordManagerCoordinator)
 
@@ -690,7 +699,7 @@ final class FeedbackSubMenu: NSMenu {
             .withImage(.siteBreakage)
         addItem(reportBrokenSiteItem)
 
-        if subscriptionFeatureAvailability.usesUnifiedFeedbackForm, accountManager.isUserAuthenticated {
+        if accountManager.isUserAuthenticated {
             addItem(.separator())
 
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,

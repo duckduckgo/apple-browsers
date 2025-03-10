@@ -44,12 +44,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
-
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -59,23 +53,35 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
+    case autoUpdateInDEBUG
+
     case autofillPartialFormSaves
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
+    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
+    case popoverVsBannerExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .popoverVsBannerExperiment:
+            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
 
+    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case popover
+        case banner
+     }
+
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions:
+        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -84,8 +90,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .contextualOnboarding,
              .unknownUsernameCategorization,
              .credentialsImportPromotionForExistingUsers,
-             .networkProtectionUserTips,
-             .networkProtectionEnforceRoutes,
              .maliciousSiteProtection:
             return false
         }
@@ -110,16 +114,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
-            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appExclusions))
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .htmlNewTabPage:
             return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
+            return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
+        case .autoUpdateInDEBUG:
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
@@ -131,6 +133,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .popoverVsBannerExperiment:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         }
     }
 }

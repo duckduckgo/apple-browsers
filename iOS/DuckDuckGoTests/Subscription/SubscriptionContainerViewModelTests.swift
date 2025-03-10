@@ -66,12 +66,12 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
         sut = .init(subscriptionManager: subscriptionManager,
                     redirectPurchaseURL: redirectPurchaseURL,
                     userScript: .init(),
-                    subFeature: .init(subscriptionManager: subscriptionManager,
-                                      subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                      subscriptionAttributionOrigin: nil,
-                                      appStorePurchaseFlow: appStorePurchaseFlow,
-                                      appStoreRestoreFlow: appStoreRestoreFlow,
-                                      appStoreAccountManagementFlow: appStoreAccountManagementFlow))
+                    subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                               subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                               subscriptionAttributionOrigin: nil,
+                                                                               appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow))
 
         // THEN
         XCTAssertEqual(sut.flow.purchaseURL, redirectPurchaseURL)
@@ -95,12 +95,12 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
         sut = .init(subscriptionManager: subscriptionManager,
                     redirectPurchaseURL: nil,
                     userScript: .init(),
-                    subFeature: .init(subscriptionManager: subscriptionManager,
-                                      subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                      subscriptionAttributionOrigin: nil,
-                                      appStorePurchaseFlow: appStorePurchaseFlow,
-                                      appStoreRestoreFlow: appStoreRestoreFlow,
-                                      appStoreAccountManagementFlow: appStoreAccountManagementFlow))
+                    subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                               subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                               subscriptionAttributionOrigin: nil,
+                                                                               appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                               appStoreAccountManagementFlow: appStoreAccountManagementFlow))
 
         // THEN
         XCTAssertEqual(sut.flow.purchaseURL, SubscriptionURL.purchase.subscriptionURL(environment: .production))

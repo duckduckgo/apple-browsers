@@ -190,6 +190,7 @@ public struct UserDefaultsWrapper<T> {
         // Updates
         case automaticUpdates = "updates.automatic"
         case pendingUpdateShown = "pending.update.shown"
+        case pendingUpdateSince = "pending.update.since"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"
@@ -255,6 +256,7 @@ public struct UserDefaultsWrapper<T> {
         case networkProtectionShouldExcludeLocalNetworks = "netp.exclude-local-routes"
         case networkProtectionRegistrationKeyValidity = "com.duckduckgo.network-protection.NetworkProtectionTunnelController.registrationKeyValidityKey"
         case shouldShowNetworkProtectionSystemExtensionUpgradePrompt = "network-protection.show-system-extension-upgrade-prompt"
+        case vpnRedditWorkaroundInstalled = "com.duckduckgo.ios.vpn.workaroundInstalled"
     }
 
     private let key: DefaultsKey

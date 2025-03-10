@@ -97,7 +97,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
-    private(set) lazy var historyViewCoordinator: HistoryViewCoordinator = HistoryViewCoordinator(historyCoordinator: HistoryCoordinator.shared)
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
         settingsModel: homePageSettingsModel,
@@ -111,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let homePageSettingsModel = HomePage.Models.SettingsModel()
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
 
     public let subscriptionManager: SubscriptionManager
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -144,30 +144,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                             pixelHandler: DataBrokerProtectionPixelsHandler())
     }()
 
-    private lazy var vpnRedditSessionWorkaround: VPNRedditSessionWorkaround = {
-        let ipcClient = VPNControllerXPCClient.shared
-        let statusReporter = DefaultNetworkProtectionStatusReporter(
-            statusObserver: ipcClient.connectionStatusObserver,
-            serverInfoObserver: ipcClient.serverInfoObserver,
-            connectionErrorObserver: ipcClient.connectionErrorObserver,
-            connectivityIssuesObserver: ConnectivityIssueObserverThroughDistributedNotifications(),
-            controllerErrorMessageObserver: ControllerErrorMesssageObserverThroughDistributedNotifications(),
-            dataVolumeObserver: ipcClient.dataVolumeObserver,
-            knownFailureObserver: KnownFailureObserverThroughDistributedNotifications()
-        )
-
-        return VPNRedditSessionWorkaround(
-            accountManager: subscriptionManager.accountManager,
-            ipcClient: ipcClient,
-            statusReporter: statusReporter
-        )
-    }()
-
     private var didFinishLaunching = false
 
 #if SPARKLE
     var updateController: UpdateController!
-    var dockCustomization: DockCustomization!
+    var dockCustomization: DockCustomization?
 #endif
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -300,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for: FeatureFlag.self
         )
 
+        let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
+
         onboardingStateMachine = ContextualOnboardingStateMachine()
 
         // Configure Subscription
@@ -308,7 +292,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return WindowControllersManager.shared
         })
 
-        subscriptionCookieManager = SubscriptionCookieManager(subscriptionManager: subscriptionManager, currentCookieStore: {
+        subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
             WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
         }, eventMapping: SubscriptionCookieManageEventPixelMapping())
 
@@ -357,7 +341,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if SPARKLE
         if NSApp.runType != .uiTests {
             updateController = UpdateController(internalUserDecider: internalUserDecider)
-            dockCustomization = DockCustomizer()
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -413,6 +396,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+
+        #if SPARKLE
+        dockCustomization = DockCustomizer()
+        #endif
 
         let statisticsLoader = NSApp.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
@@ -570,10 +557,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         Task { @MainActor in
-            await vpnRedditSessionWorkaround.installRedditSessionWorkaround()
-        }
-
-        Task { @MainActor in
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
     }
@@ -583,12 +566,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         syncService.initializeIfNeeded()
         syncService.scheduler.notifyAppLifecycleEvent()
         SyncDiagnosisHelper(syncService: syncService).diagnoseAccountStatus()
-    }
-
-    func applicationDidResignActive(_ notification: Notification) {
-        Task { @MainActor in
-            await vpnRedditSessionWorkaround.removeRedditSessionWorkaround()
-        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {

@@ -1,13 +1,15 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
+#Open Debug Menu
+- runFlow:
+    file: ./open_debug_menu.yaml
+
 - scrollUntilVisible:
-    element: All debug options
-- assertVisible: All debug options
-- tapOn: All debug options
-- scrollUntilVisible:
-    element: Internal User State
-- tapOn: Internal User State
+    element:
+      id: "Settings.Debug.InternalUser.identifier"
+- tapOn:
+    id: "Settings.Debug.InternalUser.identifier"
 - tapOn: Settings
 - tapOn: Done
 - tapOn: Browsing menu

@@ -173,7 +173,8 @@ extension MainViewController {
             TabSwitcherViewController(coder: coder,
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger)
+                                      featureFlagger: self.featureFlagger,
+                                      tabManager: self.tabManager)
         }) else {
             assertionFailure()
             return
@@ -181,7 +182,6 @@ extension MainViewController {
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
-        controller.tabsModel = tabManager.model
         controller.previewsSource = previewsSource
         controller.modalPresentationStyle = .overCurrentContext
 
@@ -268,7 +268,9 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                  subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
+                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
+                                                  subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,
                                                   deepLink: deepLinkTarget,

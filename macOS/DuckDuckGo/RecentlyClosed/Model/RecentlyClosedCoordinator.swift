@@ -55,7 +55,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     private var cancellables = Set<AnyCancellable>()
 
     private func subscribeToWindowControllersManager() {
-        subscribeToPinnedTabCollection(of: windowControllerManager.pinnedTabsManager)
+        subscribeToPinnedTabCollection(of: Application.appDelegate.pinnedTabsManager)
 
         mainVCDidRegisterCancellable = windowControllerManager.didRegisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
@@ -187,7 +187,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         }
 
         let tab = Tab(content: recentlyClosedTab.tabContent.loadedFromCache(), interactionStateData: recentlyClosedTab.interactionData, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
-        let tabIndex = min(recentlyClosedTab.index.item, windowControllerManager.pinnedTabsManager.tabCollection.tabs.count)
+        let tabIndex = min(recentlyClosedTab.index.item, Application.appDelegate.pinnedTabsManager.tabCollection.tabs.count)
 
         tabCollectionViewModel.insert(tab, at: .pinned(tabIndex), selected: true)
     }

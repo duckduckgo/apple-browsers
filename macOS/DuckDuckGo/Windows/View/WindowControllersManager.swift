@@ -30,7 +30,7 @@ protocol WindowControllersManagerProtocol {
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
     var lastKeyMainWindowController: MainWindowController? { get }
-    var pinnedTabsManager: PinnedTabsManager { get }
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
     var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
@@ -70,7 +70,7 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static let shared = WindowControllersManager(pinnedTabsManager: Application.appDelegate.pinnedTabsManager,
+    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                                                  subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
     )
 
@@ -78,9 +78,9 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         lastKeyMainWindowController?.mainViewController
     }
 
-    init(pinnedTabsManager: PinnedTabsManager,
+    init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability) {
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
     }
 
@@ -89,7 +89,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
-    private(set) var pinnedTabsManager: PinnedTabsManager
+    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
 
     weak var lastKeyMainWindowController: MainWindowController? {
@@ -131,7 +131,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
                 mainWindowControllers.count == 1 &&
                 mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.count == 1 &&
                 mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.first?.content == .newtab &&
-                pinnedTabsManager.tabCollection.tabs.isEmpty
+                pinnedTabsManagerProvider.arePinnedTabsEmpty
             )
         }
     }
@@ -404,7 +404,9 @@ extension WindowControllersManagerProtocol {
                 $0.tabViewModels.values
             }
         if includingPinnedTabs {
-            result += pinnedTabsManager.tabViewModels.values
+            result += pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
+                $0.tabViewModels.values
+            })
         }
         return result
     }

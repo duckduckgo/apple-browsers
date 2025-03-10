@@ -21,8 +21,12 @@ import Combine
 protocol PinnedTabsManagerProviding {
 
     var arePerWindowPinnedTabsEnabled: Bool { get }
+    var arePinnedTabsEmpty: Bool { get }
     func getNewPinnedTabsManager(shouldMigrate: Bool,
                                  tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager
+
+    var currentPinnedTabManagers: [PinnedTabsManager] { get }
+
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager?
 
     var settingChangedPublisher: AnyPublisher<Void, Never> { get }
@@ -58,6 +62,24 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
     var arePerWindowPinnedTabsEnabled: Bool {
         return !tabsPreferences.sharedPinnedTabs
+    }
+
+    @MainActor
+    var arePinnedTabsEmpty: Bool {
+        if arePerWindowPinnedTabsEnabled {
+            return allPerWindowPinnedTabsManagers.contains(where: \.tabCollection.tabs.isEmpty)
+        } else {
+            return Application.appDelegate.pinnedTabsManager.tabCollection.tabs.isEmpty
+        }
+    }
+
+    @MainActor
+    var currentPinnedTabManagers: [PinnedTabsManager] {
+        if arePerWindowPinnedTabsEnabled {
+            return allPerWindowPinnedTabsManagers
+        } else {
+            return [Application.appDelegate.pinnedTabsManager]
+        }
     }
 
     @MainActor

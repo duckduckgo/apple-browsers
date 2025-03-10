@@ -130,7 +130,7 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
             windowControllersManager.mainWindowControllers.firstIndex(of: $0)
         }
 
-        self.applicationPinnedTabs = windowControllersManager.pinnedTabsManager.tabCollection
+        self.applicationPinnedTabs = Application.appDelegate.pinnedTabsManager.tabCollection
     }
 
     func encode(with coder: NSCoder) {

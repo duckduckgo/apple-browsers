@@ -117,7 +117,7 @@ final class Fire {
         self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
         self.faviconManagement = faviconManagement
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
-        self.pinnedTabsManager = pinnedTabsManager ?? WindowControllersManager.shared.pinnedTabsManager
+        self.pinnedTabsManager = pinnedTabsManager ?? Application.appDelegate.pinnedTabsManager
         self.bookmarkManager = bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
         self.syncDataProviders = syncDataProviders ?? NSApp.delegateTyped.syncDataProviders

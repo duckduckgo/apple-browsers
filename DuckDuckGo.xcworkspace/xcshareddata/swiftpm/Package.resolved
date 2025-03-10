@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "a35414a0b07da7fb79255370edfe845b7a22558c",
-        "version" : "3.3.1"
+        "branch" : "mariusz/design-system-colors-refactor",
+        "revision" : "fc08d2cd8cda37703beffda6c5ae7a217fbaf2dd"
       }
     },
     {

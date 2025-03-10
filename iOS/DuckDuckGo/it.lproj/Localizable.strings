@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Quale colore mi sta meglio?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blocca le richieste di cookie e i popup";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Blocca i popup dei cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blocca gli annunci mirati";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blocca gli annunci di tracciamento";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Cancella rapidamente i dati di navigazione";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Cancella i dati di navigazione con un solo pulsante";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blocca i sistemi di tracciamento di terze parti";

@@ -439,7 +439,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
-            // 4c. Update state to indicate that the opt-out has succeeded:
+            // 4c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
             let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)

@@ -21,6 +21,7 @@ import Foundation
 import Testing
 @testable import DuckDuckGo
 
+@MainActor
 final class DefaultBrowserManagerTesting {
     let defaultBrowserService: MockCheckDefaultBrowserService!
     let timeTraveller: TimeTraveller!

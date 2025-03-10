@@ -106,7 +106,7 @@ final class DuckPlayerViewModel: ObservableObject {
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
         self.url = getVideoURL()
-    }    
+    }
 
     /// Gets the current video URL with the current timestamp
     /// - Returns: URL with the current timestamp parameter
@@ -156,7 +156,7 @@ final class DuckPlayerViewModel: ObservableObject {
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
-    }    
+    }
 
     /// Updates the current interface orientation state
     func updateOrientation() {
@@ -212,7 +212,5 @@ final class DuckPlayerViewModel: ObservableObject {
         let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }
-
-   
 
 }

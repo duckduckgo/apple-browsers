@@ -353,7 +353,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
 
     init() {
-        videoPlaybackRequest = PassthroughSubject<(String, TimeInterval?), Never>()
+        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
     }
 
     @MainActor

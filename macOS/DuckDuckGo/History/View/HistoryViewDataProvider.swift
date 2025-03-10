@@ -74,19 +74,19 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         historyBurner: HistoryBurning = FireHistoryBurner(),
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger? = nil,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
+        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        self.fireDailyPixel = fireDailyPixel
+        self.pixelHandler = pixelHandler
         historyGroupingProvider = { @MainActor in
             HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
         }
     }
 
     var ranges: [DataModel.HistoryRangeWithCount] {
-        var ranges = DataModel.HistoryRange.displayedRanges(for: dateFormatter.currentDate())
+        let ranges = DataModel.HistoryRange.displayedRanges(for: dateFormatter.currentDate())
         let rangesWithCounts = ranges.map { DataModel.HistoryRangeWithCount(id: $0, count: groupingsByRange[$0]?.items.count ?? 0) }
 
         // Remove all empty ranges from the end of the array
@@ -98,10 +98,12 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     func refreshData() async {
         lastQuery = nil
         await populateVisits()
-        fireDailyPixel(HistoryViewPixel.historyPageShown)
     }
 
-    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> HistoryView.DataModel.HistoryItemsBatch {
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
+        if source == .user && offset == 0 {
+            pixelHandler.fireFilterUpdatedPixel(query)
+        }
         let items = await perform(query)
         let visits = items.chunk(with: limit, offset: offset)
         let finished = offset + limit >= items.count
@@ -327,7 +329,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     /// The last query from the FE, i.e. filtered items list.
     private var lastQuery: QueryInfo?
-    private var fireDailyPixel: (PixelKitEvent) -> Void
+    private let pixelHandler: HistoryViewDataProviderPixelFiring
 }
 
 protocol SearchableHistoryEntry {

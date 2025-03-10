@@ -880,10 +880,58 @@
       "comment" : "Context menu item for adding all selected URLs to bookmarks",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle als Lesezeichen hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Add All to Bookmarks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir todo a los marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ajouter aux favoris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi tutto ai segnalibri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles toevoegen aan bladwijzers"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj wszystko do zakładek"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tudo aos marcadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить все в закладки"
           }
         }
       }
@@ -1072,10 +1120,58 @@
       "comment" : "Context menu item for adding a URL to bookmarks",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu Lesezeichen hinzufügen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Add to Bookmarks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux signets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi ai Segnalibri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan bladwijzers"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do zakładek"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar aos marcadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить в закладки"
           }
         }
       }
@@ -17992,7 +18088,57 @@
       }
     },
     "Delete All History…" : {
-      "comment" : "Main Menu History item"
+      "comment" : "Main Menu History item",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesamten Verlauf löschen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar todo el historial..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer tout l'historique…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina tutta la cronologia…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis verwijderen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń całą historię..."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo o histórico…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю…"
+          }
+        }
+      }
     },
     "delete-bookmark" : {
       "comment" : "Delete Bookmark button",
@@ -27577,10 +27723,58 @@
       "comment" : "Title of a dialog asking the user to confirm deleting all history",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den gesamten Verlauf löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete all history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar todo el historial?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer tout l'historique ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare tutta la cronologia?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć całą historię?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo o histórico?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю?"
           }
         }
       }
@@ -27589,27 +27783,183 @@
       "comment" : "Title of a dialog asking the user to confirm deleting history for a given date. %@ represents the date",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den gesamten Verlauf von\n%@ löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete all history from\n%@?"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar todo el historial de\n%@?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique de\n%@ ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare tutta la cronologia da\n%@?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis wissen vanaf\n%@?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć całą historię z\n%@?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo o histórico de\n%@?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стереть всю историю за\n%@?"
+          }
         }
       }
     },
-    "history.delete.dialog.burn.checkbox" : {
+    "history.delete.dialog.burn.checkbox.caption" : {
       "comment" : "Caption for a checkbox to optionally delete cookies and website data alongside removing browser history entries",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auch Cookies und Website-Daten löschen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Also delete cookies and site data"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina también las cookies y los datos del sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer également les cookies et les données des sites"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare anche i cookie e i dati dei siti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ook cookies en sitegegevens verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń również pliki cookie i dane witryny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Também elimina cookies e dados de sites"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Также удалить куки-файлы и данные сайтов"
+          }
         }
       }
     },
     "history.delete.dialog.burn.checkbox.explanation" : {
+      "comment" : "Explanation of what deleting site data means.",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        }
+      }
+    },
+    "history.delete.dialog.burn.checkbox.explanation.message" : {
       "comment" : "Explanation of what deleting site data means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -27625,10 +27975,58 @@
       "comment" : "Explanation of what deleting site data means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden alle Tabs geschlossen, du wirst von diesen Websites abgemeldet, die Seiteneinstellungen werden zurückgesetzt und gespeicherte Sitzungen werden entfernt. Cookies und Daten von „Fireproof“-Websites werden nicht gelöscht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "This will close all tabs, log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto cerrará todas las pestañas, tu sesión en estos sitios, restablecerá las preferencias del sitio y eliminará las sesiones guardadas. Las cookies y los datos del sitio Fireproof no se eliminarán."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette action fermera tous les onglets, vous déconnectera de ces sites, réinitialisera les préférences des sites et supprimera les sessions enregistrées. Les cookies et les données Fireproof des sites ne seront pas supprimés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In questo modo chiuderai tutte le schede, sarai disconnesso da questi siti, le preferenze del sito saranno ripristinate e le sessioni salvate saranno rimosse. I cookie e i dati del sito Fireproof non saranno eliminati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hierdoor worden alle tabbladen gesloten, word je afgemeld bij deze sites, je sitevoorkeuren worden opnieuw ingesteld en opgeslagen sessies worden verwijderd. Fireproof site-cookies en -gegevens worden niet verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to zamknięcie wszystkich kart, wylogowanie ze wszystkich stron, zresetowanie preferencji stron i usunięcie zapisanych sesji. Pliki cookie i dane witryny oznaczone jako Fireproof nie zostaną usunięte."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta ação fecha todos os separadores, termina a tua sessão nesses sites, repõe as preferências do site e remove as sessões guardadas. Os cookies e dados dos sites Fireproof não serão eliminados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы выйдете из учетных записей на всех сайтах, настройки сайтов будут сброшены, сохраненные сеансы — удалены, а все вкладки — закрыты. Куки-файлы и данные «огнеупорных» сайтов не удаляются."
           }
         }
       }
@@ -27637,10 +28035,58 @@
       "comment" : "Message in a dialog asking the user to confirm deleting history. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (%@) will be deleted.'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Elemente werden gelöscht"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%@ items will be deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se eliminarán elementos del historial (%@)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ éléments seront supprimés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ elementi verranno eliminati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ items worden verwijderd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zostaną usunięte elementy (%@)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ itens de histórico serão eliminados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из журнала будут удалены записи (%@)"
           }
         }
       }
@@ -27649,15 +28095,123 @@
       "comment" : "Message in a dialog asking the user to confirm deleting history items. Please make sure to keep **%@** intact. NOTE: This term is only for English. For other languages, please translate the following term: 'History items (**%@**) will be deleted.'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**%@** Elemente werden gelöscht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**%@** items will be deleted."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se eliminarán elementos del historial (**%@**)."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**%@** objets seront supprimés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**%@** elementi verranno eliminati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**%@** items worden verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zostaną usunięte elementy (**%@**)."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**%@** itens de histórico serão eliminados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из журнала будут удалены записи (**%@**)."
+          }
         }
       }
     },
     "history.delete.dialog.title" : {
+      "comment" : "Title of a dialog asking the user to confirm deleting history",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Delete history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        }
+      }
+    },
+    "history.delete.dialog.title1" : {
       "comment" : "Title of a dialog asking the user to confirm deleting history",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -27673,10 +28227,58 @@
       "comment" : "Title of a dialog asking the user to confirm deleting history from today",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den gesamten Verlauf von heute löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete all history from today?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar todo el historial de hoy?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer tout l'historique d'aujourd'hui ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare tutta la cronologia di oggi?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis vanaf vandaag wissen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć całą historię z dzisiaj?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo o histórico de hoje?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю за сегодня?"
           }
         }
       }
@@ -27685,10 +28287,58 @@
       "comment" : "Title of a dialog asking the user to confirm deleting history from yesterday",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestrigen Verlauf löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete all history from yesterday?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar todo el historial de ayer?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer tout l'historique d'hier ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare tutta la cronologia di ieri?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis van gisteren verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć całą historię z wczoraj?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar todo o histórico de ontem?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить всю историю за вчерашний день?"
           }
         }
       }
@@ -27697,10 +28347,58 @@
       "comment" : "Message in a dialog asking the user to confirm deleting a single history item.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 Element wird gelöscht"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "1 item will be deleted"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se eliminará 1 elemento"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 élément sera supprimé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 elemento verrà eliminato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 item wordt verwijderd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zostanie usunięty 1 element"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 item de histórico será eliminado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из журнала будет удалена 1 запись"
           }
         }
       }
@@ -27709,10 +28407,58 @@
       "comment" : "Message in a dialog asking the user to confirm deleting a single history item. Please make sure to keep **%@** intact.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**1** Element wird gelöscht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "**1** item will be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se eliminará el elemento **1**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**1** élément sera supprimé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**1** elemento verrà eliminato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**1** item wordt verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zostanie usunięty **1** element."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**1** item de histórico será eliminado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Из журнала будет удалена **1** запись."
           }
         }
       }
@@ -28141,10 +28887,58 @@
       "comment" : "Menu item to delete parts of history and website data",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesen Verlauf löschen …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete This History…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Borrar este historial..."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer cet historique…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elimina questa cronologia…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze geschiedenis verwijderen…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń tę historię..."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar este histórico…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить эту историю…"
           }
         }
       }
@@ -28273,10 +29067,58 @@
       "comment" : "Accept button label on the history view onboarding popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlaufsseite anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "View History Page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver tu página de historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voir la page d'historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza la pagina Cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekijk de geschiedenispagina"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyświetl stronę historii"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver página de histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просмотреть страницу истории"
           }
         }
       }
@@ -28285,10 +29127,58 @@
       "comment" : "Message for the history view onboarding popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir haben eine spezielle Verlaufsseite hinzugefügt, die es dir erleichtert, die von dir besuchten Seiten anzuzeigen, erneut zu besuchen und zu löschen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemos añadido una página de historial exclusiva, para que puedas ver, volver a abrir y borrar los sitios que has visitado anteriormente de forma más sencilla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous avons ajouté une page d’historique dédiée, ce qui vous permet de voir, de revisiter et d’effacer plus facilement les sites que vous avez déjà consultés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbiamo aggiunto una pagina dedicata alla cronologia che ti consente di visualizzare, rivisitare e cancellare i siti che hai visitato in precedenza."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We hebben een speciale geschiedenispagina toegevoegd. Zo kun je makkelijker de sites die je eerder hebt bezocht bekijken, opnieuw bezoeken en wissen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaliśmy specjalną stronę historii, dzięki której możesz łatwiej przeglądać wcześniej odwiedzone strony, przeglądać je i usuwać."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionámos uma página de histórico dedicada para ser mais fácil ver, revisitar e limpar os sites que visitaste anteriormente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы добавили отдельную страницу «История», где можно легко просмотреть, заново открыть и удалить ранее посещенные сайты."
           }
         }
       }
@@ -28297,10 +29187,58 @@
       "comment" : "Title for the history view onboarding popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwalte deinen Verlauf"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Manage Your History"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestiona tu historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gérer votre historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestisci la cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beheer je geschiedenis"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzanie historią"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gere o teu histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Управление историей"
           }
         }
       }
@@ -43072,7 +44010,19 @@
         }
       }
     },
-    "open.all.in.new.fire.window" : {
+    "open.all.in.current.window" : {
+      "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open All in Current Window"
+          }
+        }
+      }
+    },
+    "open.all.in.fire.window" : {
       "comment" : "Menu item that opens all URLs in a new Fire Window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -43084,14 +44034,74 @@
         }
       }
     },
-    "open.all.in.new.tabs" : {
-      "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
-      "extractionState" : "extracted_with_value",
+    "open.all.in.new.fire.window" : {
+      "comment" : "Menu item that opens all URLs in a new Fire Window",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Alle in neuen Tabs öffnen"
+            "state" : "translated",
+            "value" : "Alle in neuem Fire Window öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open All in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir todo en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ouvrir dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutto in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz wszystko w nowym oknie Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir tudo numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть все в новом окне Fire Window"
+          }
+        }
+      }
+    },
+    "open.all.in.new.tabs" : {
+      "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle im aktuellen Fenster öffnen"
           }
         },
         "en" : {
@@ -43102,44 +44112,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir todo en pestañas nuevas"
+            "state" : "translated",
+            "value" : "Abrir todo en la ventana actual"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Tout ouvrir dans de nouveaux onglets"
+            "state" : "translated",
+            "value" : "Tout ouvrir dans la fenêtre actuelle"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Apri tutto in nuove schede"
+            "state" : "translated",
+            "value" : "Apri tutto nella finestra corrente"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Alles openen in nieuwe tabbladen"
+            "state" : "translated",
+            "value" : "Alles openen in het huidige venster"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Otwórz wszystko w nowych kartach"
+            "state" : "translated",
+            "value" : "Otwórz wszystko w bieżącym oknie"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abrir tudo em novos separadores"
+            "state" : "translated",
+            "value" : "Abrir tudo na janela atual"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Открыть все в новых вкладках"
+            "state" : "translated",
+            "value" : "Открыть все в текущем окне"
           }
         }
       }
@@ -43568,10 +44578,58 @@
       "comment" : "Menu item that opens the link in a new Fire Window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In neuem Fire Window öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz w nowym oknie Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть в новом окне Fire Window"
           }
         }
       }
@@ -43820,10 +44878,58 @@
       "comment" : "Message of a dialog warning the user before opening multiple tabs with history items",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das gleichzeitige Öffnen vieler Tabs kann den Browser verlangsamen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Opening a lot of tabs at once may cause the browser to slow down."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir muchas pestañas a la vez puede hacer que el navegador se ralentice."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le fait d'ouvrir de nombreux onglets à la fois peut ralentir le navigateur."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprire molte schede contemporaneamente può rallentare il browser."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je veel tabbladen tegelijk opent, kan de browser trager worden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwarcie wielu kart jednocześnie może spowodować spowolnienie przeglądarki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir muitos separadores em simultâneo pode resultar em lentidão do navegador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одновременное открытие большого числа вкладок может замедлить работу браузера."
           }
         }
       }
@@ -43832,10 +44938,58 @@
       "comment" : "Title of a dialog warning the user before opening multiple tabs with history items. NOTE: This term is only for English. For other languages, please translate the following term: 'Open multiple items (%d) in new tabs?'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d Elemente in neuen Tabs öffnen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open %d items in new tabs?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Abrir %d elementos en pestañas nuevas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir %d éléments dans de nouveaux onglets ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprire %d elementi in nuove schede?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d items openen in nieuwe tabbladen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otworzyć elementy (%d) w nowych kartach?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir %d itens em novos separadores?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть сайты (%d) в новых вкладках?"
           }
         }
       }
@@ -61057,7 +62211,57 @@
       }
     },
     "Reopen All Windows From Last Session" : {
-      "comment" : "Main Menu History item"
+      "comment" : "Main Menu History item",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a abrir todas las ventanas de la última sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rouvrir toutes les fenêtres de la dernière session"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riapri tutte le finestre dell'ultima sessione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle vensters van de laatste sessie opnieuw openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reabrir todas as janelas da última sessão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заново открыть все окна из последнего сеанса"
+          }
+        }
+      }
     },
     "reopen.last.closed.tab" : {
       "comment" : "This string represents an action to reopen the last closed tab in the browser",
@@ -61415,6 +62619,666 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Приложение Bitwarden не отвечает. Перезапустите его, чтобы возобновить связь."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.message" : {
+      "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock\nBody of the popover that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du DuckDuckGo zu deinem Dock hinzufügst, hast du schnellen Zugang zum geschützten Browsen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing when you add DuckDuckGo to your Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accede rápidamente a una navegación protegida añadiendo DuckDuckGo a tu Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtenez un accès rapide à la navigation protégée quand vous ajoutez DuckDuckGo à votre Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ottieni accesso rapido alla navigazione protetta aggiungendo DuckDuckGo al tuo dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg snel toegang tot beschermd browsen wanneer je DuckDuckGo toevoegt aan je dock."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj szybki dostęp do chronionego przeglądania stron internetowych dzięki dodaniu przeglądarki DuckDuckGo do Docka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso rápido à navegação protegida ao adicionares o DuckDuckGo à tua Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте браузер DuckDuckGo на док-панель, чтобы открывать его еще быстрее."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.primary" : {
+      "comment" : "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Dock"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi al dock"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan Dock"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do Docka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить на док-панель"
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.title" : {
+      "comment" : "Title of a popover that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo zum Dock hinzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to Your Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir DuckDuckGo a tu Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al tuo dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo toevoegen aan je dock."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo на вашей док-панели"
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.message" : {
+      "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu und wähle es als Standardbrowser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock y configúralo como tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock et définissez-le comme navigateur par défaut pour protéger davantage ce que vous faites en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al dock e impostalo come browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock en stel het in als je standaardbrowser om je online activiteiten beter te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka i ustaw jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock e define-o como navegador predefinido para protegeres a tua navegação online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для обеспечения дополнительной защиты онлайн добавьте DuckDuckGo на панель Dock и назначьте его браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.primary" : {
+      "comment" : "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als primären Browser festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Primary Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como navegador principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir comme navigateur principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come browser principale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellen als primaire browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako główną przeglądarkę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como navegador principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать основным браузером"
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.title" : {
+      "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mache DuckDuckGo zu deinem Hauptbrowser"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo Your Primary Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacer de DuckDuckGo tu navegador principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta DuckDuckGo come browser principale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo instellen als je primaire browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako główną przeglądarkę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faz do DuckDuckGo o teu navegador principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo как основной браузер"
+          }
+        }
+      }
+    },
+    "sad.att.default.popover.title" : {
+      "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelle DuckDuckGo als Standard-Browser ein"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo Your Default Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establece DuckDuckGo como tu navegador predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta DuckDuckGo come browser predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo instellen als standaardbrowser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faz do DuckDuckGo o teu navegador predefinido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите DuckGo браузером по умолчанию"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.banner.message" : {
+      "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ist nicht dein Standard-Browser. Hol dir mehr Schutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo isn't your default browser. Get more protection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo no es tu navegador predeterminado. Obtén más protección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo n'est pas votre navigateur par défaut. Obtenez plus de protection"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo non è il tuo browser predefinito. Ottieni più protezione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo is niet je standaardbrowser. Krijg meer bescherming"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo nie jest Twoją domyślną przeglądarką. Zapewnij sobie lepszą ochronę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo não é o teu navegador predefinido. Obtém mais proteção"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo не назначен вашим браузером по умолчанию. Почему бы не поднять уровень защиты?"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.popover.message" : {
+      "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne alle Website-Links in DuckDuckGo, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open all site links in DuckDuckGo to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre todos los enlaces a sitios web en DuckDuckGo para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez tous les liens du site dans DuckDuckGo pour protéger davantage ce que vous faites en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutti i link del sito in DuckDuckGo per proteggere meglio ciò che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open alle sitelinks in DuckDuckGo om je online activiteiten te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwieraj wszystkie linki do witryn w DuckDuckGo, aby w większym stopniu chronić swoją aktywność online."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre todos os links de sites no DuckDuckGo para protegeres melhor a tua navegação online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для дополнительной защиты в Сети рекомендуем открывать все ссылки на сайты в браузере DuckDuckGo."
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.prompt.primaary" : {
+      "comment" : "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako domyślne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать браузером по умолчанию"
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.banner.message" : {
+      "comment" : "Body of the banner view that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte schnellen Zugang zum geschützten Browsen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén acceso rápido a la navegación protegida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bénéficiez d’un accès rapide à la navigation protégée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi rapidamente alla navigazione protetta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg snel toegang tot beschermd browsen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj szybki dostęp do chronionego przeglądania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso rápido à navegação protegida"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защищенный браузер всегда под рукой"
           }
         }
       }
@@ -63557,6 +65421,59 @@
         }
       }
     },
+    "Show All History…" : {
+      "comment" : "Main Menu History item",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesamten Verlauf anzeigen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra todo el historial…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher tout l'historique…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra tutta la cronologia…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis tonen..."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż całą historię..."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar todo o histórico…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать всю историю..."
+          }
+        }
+      }
+    },
     "Show Autofill Shortcut" : {
       "comment" : "Main Menu View item",
       "localizations" : {
@@ -64038,10 +65955,58 @@
       "comment" : "Context menu item for showing history for a single URL domain",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den gesamten Verlauf dieser Website anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show All History From This Site"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra todo el historial de este sitio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher tout l'historique de ce site"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra tutta la cronologia di questo sito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle geschiedenis van deze site tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż całą historię z tej strony"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar todo o histórico deste site"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать всю историю с этого сайта"
           }
         }
       }
@@ -66303,7 +68268,57 @@
       }
     },
     "today" : {
-      "comment" : "Date section in history view indicating current day"
+      "comment" : "Date section in history view indicating current day",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "today"
+          }
+        }
+      }
     },
     "tooltip.addToFavorites" : {
       "comment" : "Tooltip for add to favorites button",
@@ -74102,7 +76117,57 @@
       }
     },
     "yesterday" : {
-      "comment" : "Date section in history view indicating previous day"
+      "comment" : "Date section in history view indicating previous day",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "yesterday"
+          }
+        }
+      }
     },
     "You'll be asked to enter your Primary Password for %@.\n\nImported passwords are encrypted and only stored on this computer." : {
       "comment" : "Warning that Firefox-based browser name (%@) data import would require entering a Primary Password for the browser.",

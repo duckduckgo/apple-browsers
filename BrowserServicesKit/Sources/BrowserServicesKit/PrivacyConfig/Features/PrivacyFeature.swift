@@ -69,6 +69,7 @@ public enum PrivacyFeature: String {
     case tabManager
     case webViewStateRestoration
     case experimentalBrowserTheming
+    case setAsDefaultAndAddToDock
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -240,3 +241,8 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
 }
+
+public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
+     case popoverVsBannerExperiment
+ }

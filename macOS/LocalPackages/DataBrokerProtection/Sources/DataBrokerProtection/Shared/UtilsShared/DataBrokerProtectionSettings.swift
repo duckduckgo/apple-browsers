@@ -100,10 +100,6 @@ public final class DataBrokerProtectionSettings {
 
     // MARK: - VPN exclusion
 
-    public var vpnBypassPublisher: AnyPublisher<Bool, Never> {
-        defaults.dataBrokerProtectionVPNBypassPublisher
-    }
-
     public var vpnBypass: Bool {
         get {
             proxySettings[bundleId: Bundle.main.dbpBackgroundAgentBundleId] == .exclude
@@ -156,11 +152,6 @@ extension UserDefaults {
         "dataBrokerProtectionShowMenuBarIcon"
     }
 
-    static let vpnBypassDefaultValue = false
-    private var vpnBypassKey: String {
-        "dataBrokerProtectionVPNBypass"
-    }
-
     static let bypassOnboardingShownDefaultValue = false
     private var bypassOnboardingShownKey: String {
         "hasShownBypassOnboarding"
@@ -211,25 +202,6 @@ extension UserDefaults {
     }
 
     // MARK: - VPN exclusion
-
-    @objc
-    dynamic var dataBrokerProtectionVPNBypass: Bool {
-        get {
-            value(forKey: vpnBypassKey) as? Bool ?? Self.vpnBypassDefaultValue
-        }
-
-        set {
-            guard newValue != dataBrokerProtectionVPNBypass else {
-                return
-            }
-
-            set(newValue, forKey: vpnBypassKey)
-        }
-    }
-
-    var dataBrokerProtectionVPNBypassPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.dataBrokerProtectionVPNBypass).eraseToAnyPublisher()
-    }
 
     @objc
     dynamic var dataBrokerProtectionVPNBypassOnboardingShown: Bool {

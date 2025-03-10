@@ -325,7 +325,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
         let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
         let proxySettings = TransparentProxySettings(defaults: .netP)
-        let excludedAppsFiltered = proxySettings.excludedApps.filter { $0 != Bundle.main.dbpBackgroundAgentBundleId }
+        let excludedAppsMinusDBPAgent = proxySettings.excludedApps.filter { $0 != Bundle.main.dbpBackgroundAgentBundleId }
 
         var menuItems = [StatusBarMenu.MenuItem]()
 
@@ -340,7 +340,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             .textWithDetail(
                 icon: Image(.window16),
                 title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
-                detail: "(\(excludedAppsFiltered.count))",
+                detail: "(\(excludedAppsMinusDBPAgent.count))",
                 action: { [weak self] in
 
                     try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.manageExcludedApps)

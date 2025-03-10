@@ -160,7 +160,7 @@ final class VPNPreferencesModel: ObservableObject {
         self.featureFlagger = featureFlagger
 
         connectOnLogin = settings.connectOnLogin
-        excludedAppsCount = proxySettings.excludedAppsFiltered.count
+        excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
         notifyStatusChanges = settings.notifyStatusChanges
@@ -368,7 +368,7 @@ extension NetworkProtectionDNSSettings {
 }
 
 extension TransparentProxySettings {
-    var excludedAppsFiltered: [String] {
+    var excludedAppsMinusDBPAgent: [String] {
         excludedApps.filter { !$0.isDBPBackgroundAgentBundleId }
     }
 }

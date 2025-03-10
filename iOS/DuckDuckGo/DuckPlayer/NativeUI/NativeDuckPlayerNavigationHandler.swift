@@ -132,13 +132,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         duckPlayerDismissalCancellable?.cancel()
     }
 
-    /// Checks if the Duck Player feature is enabled via feature flags.
-    private var isDuckPlayerFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.duckPlayer)
-    }
-
-    /// Sets the referrer based on the current web view URL to aid in analytics.
-    /// Sets the referrer based on the current web view URL to aid in analytics.
+    /// Sets the referrer based on the current web view 
     ///
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
     private func setReferrer(webView: WKWebView) {
@@ -147,53 +141,17 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
 
         // SERP as a referrer
         if url.isDuckDuckGoSearch {
-            referrer = .serp
-             print("referrer: \(referrer)")
+            referrer = .serp             
             return
         }        
         
         // Any Other Youtube URL or other referrer
-        if url.isYoutube {
-             print("referrer: \(referrer)")
+        if url.isYoutube {             
             referrer = .youtube
             return
-        } else {
-            print("referrer: \(referrer)")
+        } else {            
             referrer = .other
         }
-    }
-
-    /// Redirects the web view to play the video in Duck Player, optionally forcing a new tab.
-    ///
-    /// - Parameters:
-    ///   - url: The URL of the video.
-    ///   - webView: The `WKWebView` to load the content into.
-    ///   - forceNewTab: Whether to force opening in a new tab.
-    ///   - disableNewTab: Ignore openInNewTab settings
-    @MainActor
-    private func redirectToDuckPlayerVideo(url: URL?, webView: WKWebView, forceNewTab: Bool = false, disableNewTab: Bool = false) {
-
-        guard let url,
-              let (videoID, _) = url.youtubeVideoParams else { return }
-
-        // Mute audio for the opening tab if required
-        // This prevents opening tab from hijacking Audio Session
-        // and playing audio in the background
-        toggleAudioForTab(webView, mute: true)
-
-        // Pause all media elements in the webView
-        toggleMediaPlayback(webView, pause: true)
-
-        // Load the native DuckPlayer video
-        loadNativeDuckPlayerVideo(videoID: videoID)
-
-        // Subscribe to player dismissal
-        duckPlayerDismissalCancellable = duckPlayer.playerDismissedPublisher
-            .sink { [weak self] in
-                self?.allowYoutubeVideoPlayback(webView: webView)
-            }
-
-        return
     }
    
 
@@ -221,24 +179,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         }
     }    
 
-    /// Determines if the current tab is a new tab based on the targetFrame request and other params
-    ///
-    /// - Parameter navigationAction: The `WKNavigationAction` used to determine the tab type.
-    private func isNewTab(_ navigationAction: WKNavigationAction) -> Bool {
-
-        guard let request = navigationAction.targetFrame?.safeRequest,
-              let url = request.url else {
-            return false
-        }
-
-        // If the target frame is duckPlayer itself or there's no URL
-        // we're at a new tab
-        if url.isDuckPlayer || url.isEmpty {
-            return true
-        }
-
-        return false
-    }
+    
 
     /// Register a DuckPlayer Youtube Navigation Request observer
     /// Used when DuckPlayer requires direct Youtube Navigation
@@ -246,7 +187,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private func setupYoutubeNavigationRequestObserver(webView: WKWebView) {
         duckPlayerNavigationRequestCancellable = duckPlayer.youtubeNavigationRequest
             .sink { [weak self] url in
-                //self?.redirectToYouTubeVideo(url: url, webView: webView)
+                
             }
     }
 
@@ -267,6 +208,23 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func allowYoutubeVideoPlayback(webView: WKWebView) {
         toggleMediaPlayback(webView, pause: false)
+    }    
+
+    // Temporarily pause media playback during page transition
+    // The pause is applied repeatedly for 1 second to ensure it takes effect
+    // even if the DOM is changing during early initialization
+    // Once the page has loaded, the JS mutation observer takes care
+    // Of pausing newly added elements.
+    @MainActor
+    private func pauseVideoStart(webView: WKWebView) async {
+        // First phase: try every 0.05s for 1 second
+        Task { @MainActor in
+            let startTime = Date()
+            while Date().timeIntervalSince(startTime) < 1.0 {
+                self.toggleMediaPlayback(webView, pause: true)
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+        }
     }
 }
 
@@ -293,7 +251,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         self.toggleMediaPlayback(webView, pause: false)
 
         // Check if DuckPlayer feature is enabled
-        guard isDuckPlayerFeatureEnabled else {
+        guard featureFlagger.isFeatureOn(.duckPlayer) else {
             return .notHandled(.featureOff)
         }
 
@@ -310,65 +268,29 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.isNotYoutubeWatch)
         }
 
-        // If we are on SERP and DuckPlayer is enabled        
-        if referrer == .serp && duckPlayer.settings.nativeUISERPEnabled {
-            Task { @MainActor in
-                duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .serp, timestamp: nil)
-            }
+        // Pause Video if needed
+        if duckPlayer.settings.nativeUIYoutubeMode != .never {        
+            Task { await pauseVideoStart(webView: webView) }
+        }
+
+        // Present Duck Player Pill (Native entry point)
+        if duckPlayer.settings.nativeUIYoutubeMode == .ask {
+            duckPlayer.presentPill(for: videoID, timestamp: nil)            
             return .handled(.duckPlayerEnabled)
         }
 
         // Present Duck Player Pill (Native entry point)
-        if duckPlayer.settings.mode == .alwaysAsk {
-
-            // Pause video
-            Task { await pauseVideoStart(webView: webView) }
-
-            // If we're not in a Watch main page, hide
-            // the pill.  Youtube adds #fragments to Watch main pages
-            // When presenting settings and preferences
-            if !url.isYoutubeWatch {
-                duckPlayer.dismissPill(reset: false, animated: true)
-            }
-
-            // Present the Pill if needed
-            Task { @MainActor in
-                // Skip URLs for settings and #fragments
-                if url.isYoutubeWatch {
-                    duckPlayer.presentPill(for: videoID, timestamp: nil)
-                }
-            }
+        if duckPlayer.settings.nativeUIYoutubeMode == .auto {
+            loadNativeDuckPlayerVideo(videoID: videoID)
+            return .handled(.duckPlayerEnabled)
         }
-
-        // If this is an internal Youtube Link (i.e Clicking in youtube logo in the player)
-        // Do not handle it
-
-        //guard duckPlayerMode == .enabled else {
-        //    return .notHandled(.duckPlayerDisabled)
-        //}
 
         // Resume media playback by
         toggleMediaPlayback(webView, pause: false)
         return .notHandled(.isNotYoutubeWatch)
     }
 
-    // Temporarily pause media playback during page transition
-    // The pause is applied repeatedly for 1 second to ensure it takes effect
-    // even if the DOM is changing during early initialization
-    // Once the page has loaded, the JS mutation observer takes care
-    // Of pausing newly added elements.
-    @MainActor
-    private func pauseVideoStart(webView: WKWebView) async {
-        // First phase: try every 0.05s for 1 second
-        Task { @MainActor in
-            let startTime = Date()
-            while Date().timeIntervalSince(startTime) < 1.0 {
-                self.toggleMediaPlayback(webView, pause: true)
-                try? await Task.sleep(nanoseconds: 50_000_000)
-            }
-        }
-    }
-    // swiftlint: enable cyclomatic_complexity
+
 
     /// Custom back navigation logic to handle Duck Player in the web view's history stack.
     ///
@@ -382,14 +304,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///
     /// - Parameter webView: The `WKWebView` to reload.
     @MainActor
-    func handleReload(webView: WKWebView) {
-
-        guard let url = webView.url else {
-            return
-        }        
+    func handleReload(webView: WKWebView) {   
         webView.reload()
-        
-
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.
@@ -469,7 +385,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Only if DuckPlayer is enabled
-        guard isDuckPlayerFeatureEnabled else {
+        guard featureFlagger.isFeatureOn(.duckPlayer) else {
             return false
         }
 
@@ -477,7 +393,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         if referrer == .serp && 
             duckPlayer.settings.nativeUISERPEnabled && 
             url.isYoutubeWatch {
-            return true
+                let (videoID, _) = url.youtubeVideoParams ?? ("", nil)
+                loadNativeDuckPlayerVideo(videoID: videoID)                
+                return true
         }
 
         // Allow everything else

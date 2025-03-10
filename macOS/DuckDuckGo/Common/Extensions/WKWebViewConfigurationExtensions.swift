@@ -60,7 +60,7 @@ extension WKWebViewConfiguration {
         if SupportedOSChecker.isCurrentOSReceivingUpdates {
             if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
                 setURLSchemeHandler(
-                    DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger),
+                    DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger, isHistorySpecialPageSupported: true),
                     forURLScheme: URL.NavigationalScheme.duck.rawValue
                 )
             }

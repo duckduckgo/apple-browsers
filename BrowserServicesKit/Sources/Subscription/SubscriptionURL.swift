@@ -34,13 +34,13 @@ public enum SubscriptionURL {
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
 
-    private enum StaticURLs {
+    public enum StaticURLs {
+        public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
         static let manageSubscriptionsInMacAppStoreURL = URL(string: "macappstores://apps.apple.com/account/subscriptions")!
         static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
-        static let identityTheftRestorationURL = URL(string: "https://duckduckgo.com/identity-theft-restoration")!
     }
 
-    public func subscriptionURL(withCustomBaseURL baseURL: URL = URL(string: "https://duckduckgo.com/subscriptions")!, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
+    public func subscriptionURL(withCustomBaseURL baseURL: URL = StaticURLs.defaultBaseSubscriptionURL, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
         let url: URL = {
             switch self {
             case .baseURL:
@@ -64,7 +64,7 @@ public enum SubscriptionURL {
             case .manageSubscriptionsInAppStore:
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
-                StaticURLs.identityTheftRestorationURL
+                baseURL.replacing(path: "identity-theft-restoration")
             }
         }()
 

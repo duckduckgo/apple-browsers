@@ -35,19 +35,25 @@ protocol AIChatViewModeling {
     /// Forward function from AIChatRequestAuthorizationHandling
     @MainActor
     func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool
+
+    /// Sets inspectable property in the webView
+    var inspectableWebView: Bool { get }
 }
 
 final class AIChatViewModel: AIChatViewModeling {
     private let settings: AIChatSettingsProvider
     let webViewConfiguration: WKWebViewConfiguration
     let requestAuthHandler: AIChatRequestAuthorizationHandling
+    let inspectableWebView: Bool
 
     init(webViewConfiguration: WKWebViewConfiguration,
          settings: AIChatSettingsProvider,
-         requestAuthHandler: AIChatRequestAuthorizationHandling) {
+         requestAuthHandler: AIChatRequestAuthorizationHandling,
+         inspectableWebView: Bool) {
         self.webViewConfiguration = webViewConfiguration
         self.settings = settings
         self.requestAuthHandler = requestAuthHandler
+        self.inspectableWebView = inspectableWebView
     }
 
     var aiChatURL: URL {

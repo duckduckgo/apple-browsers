@@ -40,10 +40,13 @@ class TabSwitcherBarsStateHandler {
     var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
     var selectedTabsCount: Int = 0
     var totalTabsCount: Int = 0
+    var containsWebPages = false
+    var canShowSelectionMenu = false
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
-                totalTabsCount: Int) {
+                totalTabsCount: Int,
+                containsWebPages: Bool) {
 
         guard interfaceMode != self.interfaceMode
                 || selectedTabsCount != self.selectedTabsCount
@@ -55,13 +58,16 @@ class TabSwitcherBarsStateHandler {
         self.interfaceMode = interfaceMode
         self.selectedTabsCount = selectedTabsCount
         self.totalTabsCount = totalTabsCount
+        self.containsWebPages = containsWebPages
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
 
+        let canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+        
         updateBottomBar()
-        updateTopLeftButtons()
-        updateTopRightButtons()
+        updateTopLeftButtons(canShowEditButton: canShowEditButton)
+        updateTopRightButtons(canShowEditButton: canShowEditButton)
     }
 
     func updateBottomBar() {
@@ -93,7 +99,7 @@ class TabSwitcherBarsStateHandler {
         }
     }
 
-    func updateTopLeftButtons() {
+    func updateTopLeftButtons(canShowEditButton: Bool) {
 
         switch interfaceMode {
         case .singleSelectNormal:
@@ -114,9 +120,9 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableLarge:
             topBarLeftButtonItems = [
-                editButton,
+                canShowEditButton ? editButton : nil,
                 tabSwitcherStyleButton,
-            ]
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarLeftButtonItems = [
@@ -131,7 +137,7 @@ class TabSwitcherBarsStateHandler {
         }
     }
 
-    func updateTopRightButtons() {
+    func updateTopRightButtons(canShowEditButton: Bool) {
 
         switch interfaceMode {
         case .singleSelectNormal:
@@ -148,8 +154,8 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
-                editButton,
-            ]
+                canShowEditButton ? editButton : nil,
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarRightButtonItems = [
@@ -163,5 +169,4 @@ class TabSwitcherBarsStateHandler {
 
         }
     }
-
 }

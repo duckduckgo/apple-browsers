@@ -24,6 +24,11 @@ struct WebsiteInfo: Equatable {
     /// If both title and and domain are nil, it returns the absolute string representation of the URL.
     let title: String
 
+    init(url: URL, title: String?) {
+        self.url = url
+        self.title = title ?? url.host ?? url.absoluteString
+    }
+
     init?(_ tab: Tab) {
         guard case let .url(url, _, _) = tab.content else {
             return nil

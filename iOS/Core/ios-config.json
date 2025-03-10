@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1740392927241,
+    "version": 1740760942171,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -201,9 +201,6 @@
                     "domain": "bild.de"
                 },
                 {
-                    "domain": "breitbart.com"
-                },
-                {
                     "domain": "derstandard.de"
                 },
                 {
@@ -340,9 +337,6 @@
                 },
                 {
                     "domain": "publico.es"
-                },
-                {
-                    "domain": "leboncoin.fr"
                 },
                 {
                     "domain": "www.ffbb.com"
@@ -528,6 +522,9 @@
                     "domain": "servustv.com"
                 },
                 {
+                    "domain": "xxlmag.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -708,7 +705,7 @@
                     }
                 }
             },
-            "hash": "96ff7ac29c795aade0586399b7387c4f"
+            "hash": "66dfcb14e8a31eb1eede3b7e74556f59"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -1862,6 +1859,13 @@
                 "enableDuckPlayer": {
                     "state": "enabled",
                     "minSupportedVersion": "7.139.0"
+                },
+                "customError": {
+                    "state": "enabled",
+                    "minSupportedVersion": "7.159.0",
+                    "settings": {
+                        "signInRequiredSelector": "[href*=\"//support.google.com/youtube/answer/3037019\"]"
+                    }
                 }
             },
             "settings": {
@@ -1950,7 +1954,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "0181fe3479adc4db0b7dd140eb1bcc2e"
+            "hash": "51ef6e4978292d995e2ab92a21b001b6"
         },
         "elementHiding": {
             "exceptions": [
@@ -6197,6 +6201,12 @@
                         "steps": [
                             {
                                 "percent": 10
+                            },
+                            {
+                                "percent": 25
+                            },
+                            {
+                                "percent": 50
                             }
                         ]
                     }
@@ -6206,7 +6216,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "7a58f3489023701ac2ea8e22c83e3d68"
+            "hash": "f24e30928b557726db7f757e931b6bf3"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -7011,6 +7021,16 @@
                             }
                         ]
                     },
+                    "amplitude.com": {
+                        "rules": [
+                            {
+                                "rule": "flag.lab.eu.amplitude.com/sdk/",
+                                "domains": [
+                                    "bluelightcard.co.uk"
+                                ]
+                            }
+                        ]
+                    },
                     "anyclip.com": {
                         "rules": [
                             {
@@ -7579,6 +7599,7 @@
                                     "ah.nl",
                                     "applesfera.com",
                                     "asuracomic.net",
+                                    "fincopilot.net",
                                     "goplay.be",
                                     "itsthevibe.com",
                                     "nytimes.com",
@@ -7626,6 +7647,7 @@
                                 "domains": [
                                     "crunchyroll.com",
                                     "nhl.com",
+                                    "pch.com",
                                     "rocketnews24.com",
                                     "viki.com"
                                 ]
@@ -8796,6 +8818,12 @@
                             },
                             {
                                 "rule": "survey.medallia.com/",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            },
+                            {
+                                "rule": "resources.digital-cloud-gov.medallia.com/",
                                 "domains": [
                                     "<all>"
                                 ]
@@ -10080,21 +10108,9 @@
                                 ]
                             },
                             {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ows8CdAyrC5lTw.js",
+                                "rule": "rapid-cdn.yottaa.com/rapid/lib/",
                                 "domains": [
-                                    "scheels.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/3ZzYwky2C-3YQw.js",
-                                "domains": [
-                                    "fashionnova.com"
-                                ]
-                            },
-                            {
-                                "rule": "rapid-cdn.yottaa.com/rapid/lib/ZfJxptseJcUQIA.js",
-                                "domains": [
-                                    "aviatornation.com"
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -10211,7 +10227,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "68586b2e6d375213cf617209a1f018f7"
+            "hash": "f06400d022580c68d18c4bd42091a95a"
         },
         "trackingCookies1p": {
             "settings": {
@@ -10482,26 +10498,6 @@
             "exceptions": [],
             "state": "disabled",
             "hash": "728493ef7a1488e4781656d3f9db84aa"
-        },
-        "experimentTest": {
-            "state": "enabled",
-            "exceptions": [],
-            "features": {
-                "experimentTestAA": {
-                    "state": "enabled",
-                    "cohorts": [
-                        {
-                            "name": "control",
-                            "weight": 1
-                        },
-                        {
-                            "name": "treatment",
-                            "weight": 1
-                        }
-                    ]
-                }
-            },
-            "hash": "0fe5af5a94e036bf5d78076df6dd771b"
         }
     },
     "unprotectedTemporary": []

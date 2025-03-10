@@ -21,6 +21,8 @@ import Combine
 import Common
 import BrowserServicesKit
 import Configuration
+import History
+import HistoryView
 import TrackerRadarKit
 
 protocol ScriptSourceProviding {
@@ -32,6 +34,7 @@ protocol ScriptSourceProviding {
     var sessionKey: String? { get }
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
+    var historyViewActionsManager: HistoryViewActionsManager? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -46,6 +49,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
+    private(set) var historyViewActionsManager: HistoryViewActionsManager?
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
@@ -78,6 +82,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager()
+        self.historyViewActionsManager = buildHistoryViewActionsManager()
     }
 
     private func generateSessionKey() -> String {
@@ -140,6 +145,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: AppearancePreferences.shared,
             startupPreferences: StartupPreferences.shared)
+    }
+
+    private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {
+        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared)
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {

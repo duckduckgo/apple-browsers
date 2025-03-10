@@ -50,6 +50,6 @@ struct ExperimentalThemingManager {
     }
 
     private func updateNeededDependencies() {
-        ThemeManager.shared.updateCurrentTheme()
+        ThemeManager.shared.updateColorScheme()
     }
 }

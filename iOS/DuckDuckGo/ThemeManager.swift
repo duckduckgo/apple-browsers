@@ -45,11 +45,11 @@ class ThemeManager {
     init(settings: AppSettings = AppUserDefaults()) {
         appSettings = settings
 
-        updateCurrentTheme()
+        updateColorScheme()
     }
 
-    public func updateCurrentTheme() {
-        if ExperimentalThemingManager().isAlternativeColorSchemeEnabled {
+    public func updateColorScheme() {
+        if ExperimentalThemingManager().isWarmColorPaletteEnabled {
             DesignSystemPalette.current = .warm
         } else {
             DesignSystemPalette.current = .default

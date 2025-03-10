@@ -48,47 +48,63 @@ public struct SyncSettingsView: View {
                 if model.isSyncEnabled {
 
                     syncUnavailableViewWhileLoggedIn()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     turnOffSync()
-                    
+                        .listRowBackground(Color(designSystemColor: .surface))
+
                     // Sync Paused Errors
                     if $model.isSyncPaused.wrappedValue {
                         syncPaused()
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
                     if $model.isSyncBookmarksPaused.wrappedValue {
                         syncPaused(for: .bookmarks)
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
                     if $model.isSyncCredentialsPaused.wrappedValue {
                         syncPaused(for: .credentials)
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
 
                     if !model.invalidBookmarksTitles.isEmpty {
                         syncHasInvalidItems(for: .bookmarks)
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
 
                     if !model.invalidCredentialsTitles.isEmpty {
                         syncHasInvalidItems(for: .credentials)
+                            .listRowBackground(Color(designSystemColor: .surface))
                     }
 
                     devices()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     otherPlatformsLinks(source: .activated)
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     options()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     saveRecoveryPDF()
-                    
+                        .listRowBackground(Color(designSystemColor: .surface))
+
                     deleteAllData()
-                    
+                        .listRowBackground(Color(designSystemColor: .surface))
+
                 } else {
 
                     syncUnavailableViewWhileLoggedOut()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     syncWithAnotherDeviceView()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     otherOptions()
+                        .listRowBackground(Color(designSystemColor: .surface))
 
                     otherPlatformsLinks(source: .notActivated)
+                        .listRowBackground(Color(designSystemColor: .surface))
                 }
             }
             .navigationTitle(UserText.syncTitle)

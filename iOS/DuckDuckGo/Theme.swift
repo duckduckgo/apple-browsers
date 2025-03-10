@@ -119,8 +119,6 @@ protocol Theme {
     var autofillEmptySearchViewTextColor: UIColor { get }
     var autofillLockedViewTextColor: UIColor { get }
 
-    var privacyDashboardWebviewBackgroundColor: UIColor { get }
-
     var onboardingBackgroundColor: UIColor { get }
     var onboardingHeaderColor: UIColor { get }
     var onboardingSubheaderColor: UIColor { get }

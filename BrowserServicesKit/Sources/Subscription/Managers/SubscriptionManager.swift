@@ -19,7 +19,7 @@
 import Foundation
 import Common
 
-public protocol SubscriptionManager {
+public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
     // Dependencies
     var accountManager: AccountManager { get }
     var subscriptionEndpointService: SubscriptionEndpointService { get }
@@ -199,5 +199,25 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         case .failure:
             return []
         }
+    }
+}
+
+extension DefaultSubscriptionManager: SubscriptionTokenProvider {
+    public func getAccessToken() async throws -> String {
+        guard let token = accountManager.accessToken else {
+            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+        }
+        return token
+    }
+
+    public func removeAccessToken() {
+        try? accountManager.removeAccessToken()
+    }
+}
+
+extension DefaultSubscriptionManager: SubscriptionAuthenticationStateProvider {
+
+    public var isUserAuthenticated: Bool {
+        accountManager.isUserAuthenticated
     }
 }

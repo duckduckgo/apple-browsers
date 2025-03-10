@@ -144,6 +144,7 @@ struct Launching: LaunchingHandling {
                                mainViewController: mainCoordinator.controller)
         setupWindow()
         logAppLaunchTime()
+        startAutomationServerIfNeeded()
     }
 
     private func setupWindow() {
@@ -168,7 +169,17 @@ struct Launching: LaunchingHandling {
             services: services
         )
     }
-    
+
+    private func startAutomationServerIfNeeded() {
+        let launchOptionsHandler = LaunchOptionsHandler()
+        guard launchOptionsHandler.automationPort != nil else {
+            return
+        }
+        guard let rootViewController = window.rootViewController as? MainViewController else {
+            return
+        }
+        _ = AutomationServer(main: rootViewController, port: launchOptionsHandler.automationPort)
+    }
 }
 
 extension Launching {

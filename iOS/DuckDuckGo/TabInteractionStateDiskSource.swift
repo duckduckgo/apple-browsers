@@ -87,7 +87,7 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
             pixelFiring.fire(pixel: .tabInteractionStateSourceFailedToWrite,
                              error: error,
                              includedParameters: [.appVersion],
-                             withAdditionalParameters: [:],
+                             withAdditionalParameters: ["dataSizeBytes": TabInteractionStateDataSizeBucket(dataSize: stateData.count).value],
                              onComplete: { _ in })
         }
     }
@@ -143,4 +143,27 @@ final class TabInteractionStateDiskSource: TabInteractionStateSource, TabInterac
 
 private extension Logger {
     static var tabInteractionStateSource: Logger = { Logger(subsystem: "TabInteractionStateSource", category: "") }()
+}
+
+private struct TabInteractionStateDataSizeBucket {
+
+    let value: String
+
+    init(dataSize: Int) {
+
+        switch dataSize {
+        case 0:
+            value = "0"
+        case ...256:
+            value = "<256"
+        case ...16000:
+            value = "<16000"
+        case ...1000000:
+            value = "<1000000"
+        case ...100000000:
+            value = "<100000000"
+        default:
+            value = "more"
+        }
+    }
 }

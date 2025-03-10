@@ -107,35 +107,66 @@ struct SettingsRootView: View {
 
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
-        switch target {
-        case .dbp:
-            SubscriptionPIRView()
-        case .itr:
-            SubscriptionITPView()
-        case let .subscriptionFlow(redirectURLComponents):
-            SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
-                                                               navigationCoordinator: subscriptionNavigationCoordinator,
-                                                               subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                               subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                               privacyProDataReporter: viewModel.privacyProDataReporter,
-                                                               tld: AppDependencyProvider.shared.storageCache.tld,
-                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
-            .environmentObject(subscriptionNavigationCoordinator)
 
-        case .restoreFlow:
-            SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
-                                                           subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
-                                                           subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
-                                                           onDisappear: {})
-        case .duckPlayer:
-            SettingsDuckPlayerView().environmentObject(viewModel)
-        case .netP:
-            NetworkProtectionRootView()
-        case .aiChat:
-            SettingsAIChatView().environmentObject(viewModel)
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            switch target {
+            case .dbp:
+                SubscriptionPIRView()
+            case .itr:
+                SubscriptionITPView()
+            case let .subscriptionFlow(redirectURLComponents):
+                SubscriptionContainerViewFactory.makeSubscribeFlow(redirectURLComponents: redirectURLComponents,
+                                                                   navigationCoordinator: subscriptionNavigationCoordinator,
+                                                                   subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
+                                                                   subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                                   privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                                   tld: AppDependencyProvider.shared.storageCache.tld,
+                                                                   internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                .environmentObject(subscriptionNavigationCoordinator)
+            case .restoreFlow:
+                SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
+                                                               subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
+                                                               subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                               internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                               onDisappear: {})
+            case .duckPlayer:
+                SettingsDuckPlayerView().environmentObject(viewModel)
+            case .netP:
+                NetworkProtectionRootView()
+            case .aiChat:
+                SettingsAIChatView().environmentObject(viewModel)
+            }
+        } else {
+            switch target {
+            case .dbp:
+                SubscriptionPIRView()
+            case .itr:
+                SubscriptionITPView()
+            case let .subscriptionFlow(redirectURLComponents):
+                SubscriptionContainerViewFactory.makeSubscribeFlowV2(redirectURLComponents: redirectURLComponents,
+                                                                     navigationCoordinator: subscriptionNavigationCoordinator,
+                                                                     subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                                     subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                                     privacyProDataReporter: viewModel.privacyProDataReporter,
+                                                                     tld: AppDependencyProvider.shared.storageCache.tld,
+                                                                     internalUserDecider: AppDependencyProvider.shared.internalUserDecider)
+                .environmentObject(subscriptionNavigationCoordinator)
+
+            case .restoreFlow:
+                SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
+                                                                 subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                                                                 subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 onDisappear: {})
+            case .duckPlayer:
+                SettingsDuckPlayerView().environmentObject(viewModel)
+            case .netP:
+                NetworkProtectionRootView()
+            case .aiChat:
+                SettingsAIChatView().environmentObject(viewModel)
+            }
         }
     }
-
 }
 
 struct InsetGroupedListStyleModifier: ViewModifier {

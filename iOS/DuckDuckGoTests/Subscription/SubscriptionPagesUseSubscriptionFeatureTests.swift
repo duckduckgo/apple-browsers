@@ -91,7 +91,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var subscriptionManager: SubscriptionManager!
     var subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock.enabled
 
-    var feature: SubscriptionPagesUseSubscriptionFeature!
+    var feature: (any SubscriptionPagesUseSubscriptionFeature)!
 
     var pixelsFired: [String] = []
 
@@ -164,12 +164,12 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                          subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                          subscriptionEnvironment: subscriptionEnvironment)
 
-        feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                          subscriptionAttributionOrigin: nil,
-                                                          appStorePurchaseFlow: appStorePurchaseFlow,
-                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                          appStoreAccountManagementFlow: appStoreAccountManagementFlow)
+        feature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                 subscriptionAttributionOrigin: nil,
+                                                                 appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 appStoreAccountManagementFlow: appStoreAccountManagementFlow)
     }
 
     override func tearDownWithError() throws {
@@ -223,7 +223,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         let resultDictionary = try XCTUnwrap(result as? [String: String])
 
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeature.Constants.token], newAuthToken)
+        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], newAuthToken)
         XCTAssertEqual(accountManager.authToken, newAuthToken)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
@@ -244,7 +244,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         let resultDictionary = try XCTUnwrap(result as? [String: String])
 
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeature.Constants.token], Constants.authToken)
+        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], Constants.authToken)
         XCTAssertEqual(accountManager.authToken, Constants.authToken)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
@@ -266,7 +266,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         let resultDictionary = try XCTUnwrap(result as? [String: String])
 
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeature.Constants.token], SubscriptionPagesUseSubscriptionFeature.Constants.empty)
+        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], SubscriptionPagesUseSubscriptionFeatureConstants.empty)
         XCTAssertFalse(accountManager.isUserAuthenticated)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
@@ -315,16 +315,15 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testGetSubscriptionOptionsReturnsEmptyOptionsWhenPurchaseNotAllowed() async throws {
         // Given
         let subscriptionFeatureAvailabilityWithoutPurchaseAllowed = SubscriptionFeatureAvailabilityMock(
-            isSubscriptionPurchaseAllowed: false,
-            usesUnifiedFeedbackForm: true
+            isSubscriptionPurchaseAllowed: false
         )
-
-        feature = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
-                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailabilityWithoutPurchaseAllowed,
-                                                          subscriptionAttributionOrigin: nil,
-                                                          appStorePurchaseFlow: appStorePurchaseFlow,
-                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                          appStoreAccountManagementFlow: appStoreAccountManagementFlow)
+        
+        feature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                 subscriptionFeatureAvailability: subscriptionFeatureAvailabilityWithoutPurchaseAllowed,
+                                                                 subscriptionAttributionOrigin: nil,
+                                                                 appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 appStoreAccountManagementFlow: appStoreAccountManagementFlow)
 
         storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
 
@@ -894,7 +893,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         let resultDictionary = try XCTUnwrap(result as? [String: String])
-        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeature.Constants.token], Constants.accessToken)
+        XCTAssertEqual(resultDictionary[SubscriptionPagesUseSubscriptionFeatureConstants.token], Constants.accessToken)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
         XCTAssertEqual(feature.transactionError, nil)
@@ -964,7 +963,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             XCTFail("Unexpected success")
         } catch let error {
             // Then
-            guard let error = error as? SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError else {
+            guard let error = error as? UseSubscriptionError else {
                 XCTFail("Unexpected error type")
                 return
             }
@@ -991,7 +990,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             XCTFail("Unexpected success")
         } catch let error {
             // Then
-            guard let error = error as? SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError else {
+            guard let error = error as? UseSubscriptionError else {
                 XCTFail("Unexpected error type")
                 return
             }
@@ -1019,7 +1018,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             XCTFail("Unexpected success")
         } catch let error {
             // Then
-            guard let error = error as? SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError else {
+            guard let error = error as? UseSubscriptionError else {
                 XCTFail("Unexpected error type")
                 return
             }

@@ -26,6 +26,10 @@ import os.log
 
 final class HistoryMenu: NSMenu {
 
+    enum Location: Equatable {
+        case mainMenu, moreOptionsMenu
+    }
+
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
 
@@ -33,7 +37,12 @@ final class HistoryMenu: NSMenu {
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
     private let reopenAllWindowsFromLastSessionMenuItem = NSMenuItem(title: UserText.mainMenuHistoryReopenAllWindowsFromLastSession,
                                                                      action: #selector(AppDelegate.reopenAllWindowsFromLastSession))
-    private let showHistoryMenuItem = NSMenuItem(title: "Show All History…", action: #selector(MainViewController.showHistory), keyEquivalent: "y")
+    private lazy var showHistoryMenuItem = NSMenuItem(
+        title: UserText.mainMenuHistoryShowAllHistory,
+        action: #selector(MainViewController.showHistory),
+        keyEquivalent: "y",
+        representedObject: location
+    )
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
                                                      action: #selector(MainViewController.clearAllHistory),
@@ -45,25 +54,36 @@ final class HistoryMenu: NSMenu {
     private let featureFlagger: FeatureFlagger
     @MainActor
     private let reopenMenuItemKeyEquivalentManager = ReopenMenuItemKeyEquivalentManager()
+    private let location: Location
 
     @MainActor
-    init(historyGroupingProvider: HistoryGroupingProvider = .init(dataSource: HistoryCoordinator.shared), featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
-        self.historyGroupingProvider = historyGroupingProvider
-        self.featureFlagger = featureFlagger
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider? = nil, featureFlagger: FeatureFlagger? = nil) {
+        self.location = location
+        self.historyGroupingProvider = historyGroupingProvider ?? HistoryGroupingProvider(dataSource: HistoryCoordinator.shared)
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
 
         self.buildItems {
-            backMenuItem
-            forwardMenuItem
+            switch location {
+            case .mainMenu:
+                backMenuItem
+                forwardMenuItem
+            case .moreOptionsMenu:
+                showHistoryMenuItem
+            }
+
             NSMenuItem.separator()
 
             reopenLastClosedMenuItem
             recentlyClosedMenuItem
             reopenAllWindowsFromLastSessionMenuItem
+            NSMenuItem.separator()
 
-            showHistorySeparator
-            showHistoryMenuItem
+            if location == .mainMenu {
+                showHistorySeparator
+                showHistoryMenuItem
+            }
             clearAllHistorySeparator
             clearAllHistoryMenuItem
         }
@@ -90,6 +110,7 @@ final class HistoryMenu: NSMenu {
         addRecentlyVisited()
         addHistoryGroupings()
         addClearAllAndShowHistoryOnTheBottom()
+        clearAllHistoryMenuItem.title = featureFlagger.isFeatureOn(.historyView) ? UserText.mainMenuHistoryDeleteAllHistory : UserText.mainMenuHistoryClearAllHistory
     }
 
     private func clearOldVariableMenuItems() {
@@ -97,7 +118,7 @@ final class HistoryMenu: NSMenu {
             recentlyVisitedMenuItems.contains(menuItem) ||
             historyGroupingsMenuItems.contains(menuItem) ||
             menuItem == clearAllHistoryMenuItem ||
-            menuItem == showHistoryMenuItem
+            (menuItem == showHistoryMenuItem && location == .mainMenu)
         }
     }
 
@@ -134,9 +155,10 @@ final class HistoryMenu: NSMenu {
 
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
+    @MainActor
     private func addRecentlyVisited() {
         recentlyVisitedMenuItems = [recentlyVisitedHeaderMenuItem]
-        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 14)
+        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 12)
         for (index, visit) in zip(
             recentVisits.indices, recentVisits
         ) {
@@ -153,6 +175,7 @@ final class HistoryMenu: NSMenu {
 
     private var historyGroupingsMenuItems = [NSMenuItem]()
 
+    @MainActor
     private func addHistoryGroupings() {
         let groupings = historyGroupingProvider.getVisitGroupings()
         var firstWeek = [HistoryGrouping](), older = [HistoryGrouping]()
@@ -256,7 +279,7 @@ final class HistoryMenu: NSMenu {
     }()
 
     private func makeClearThisHistoryMenuItems(with dateString: String?) -> [NSMenuItem] {
-        let headerItem = ClearThisHistoryMenuItem(title: UserText.clearThisHistoryMenuItem,
+        let headerItem = ClearThisHistoryMenuItem(title: featureFlagger.isFeatureOn(.historyView) ? UserText.deleteThisHistoryMenuItem : UserText.clearThisHistoryMenuItem,
                                                   action: #selector(AppDelegate.clearThisHistory(_:)),
                                                   keyEquivalent: "")
         let historyTimeWindow = ClearThisHistoryMenuItem.HistoryTimeWindow(dateString: dateString)
@@ -270,7 +293,7 @@ final class HistoryMenu: NSMenu {
     // MARK: - Clear All History
 
     private func addClearAllAndShowHistoryOnTheBottom() {
-        if featureFlagger.isFeatureOn(.historyView) {
+        if featureFlagger.isFeatureOn(.historyView) && location == .mainMenu {
             if showHistorySeparator.menu != nil {
                 removeItem(showHistorySeparator)
             }
@@ -289,7 +312,7 @@ extension HistoryMenu {
 
     /**
      * This class manages the shortcut assignment to either of the
-     * "Reopen Last Closed Tab" or "Reopen All Windows from Last Session"
+     * "Reopen Last Closed Tab" or "Reopen All Windows From Last Session"
      * menu items.
      */
     final class ReopenMenuItemKeyEquivalentManager {

@@ -24,6 +24,7 @@ import Foundation
 import Navigation
 import PrivacyDashboard
 import MaliciousSiteProtection
+import SpecialErrorPages
 
 final class PrivacyDashboardTabExtension {
 
@@ -32,8 +33,6 @@ final class PrivacyDashboardTabExtension {
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
-
-    private(set) var isCertificateValid: Bool?
 
     private var previousPrivacyInfosByURL: [String: PrivacyInfo] = [:]
 
@@ -87,12 +86,9 @@ final class PrivacyDashboardTabExtension {
 
     @MainActor
     private func updatePrivacyInfo(with trust: SecTrust?) async {
-        let isValid = await Task<Bool?, Never>.detached {
-            await self.certificateTrustEvaluator.evaluateCertificateTrust(trust: trust)
-        }.value
-
-        self.isCertificateValid = isValid
-        self.privacyInfo?.serverTrust = (isValid == true) ? trust : nil
+        let isValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: trust)
+        let serverTrustEvaluation = ServerTrustEvaluation(securityTrust: trust, isValid: isValid)
+        self.privacyInfo?.serverTrustEvaluation = serverTrustEvaluation
     }
 
     @MainActor
@@ -197,7 +193,6 @@ extension PrivacyDashboardTabExtension: AutoconsentUserScriptDelegate {
 protocol PrivacyDashboardProtocol: AnyObject, NavigationResponder {
     var privacyInfo: PrivacyInfo? { get }
     var privacyInfoPublisher: AnyPublisher<PrivacyInfo?, Never> { get }
-    var isCertificateValid: Bool? { get }
 
     func setMainFrameConnectionUpgradedTo(_ upgradedUrl: URL?)
 }
@@ -225,8 +220,8 @@ extension Tab {
         self.privacyDashboard?.setMainFrameConnectionUpgradedTo(upgradedUrl)
     }
 
-    var isCertificateValid: Bool? {
-        self.privacyDashboard?.isCertificateValid
+    var isCertificateValid: Bool {
+        self.privacyInfo?.serverTrustEvaluation?.isValid ?? true
     }
 
 }

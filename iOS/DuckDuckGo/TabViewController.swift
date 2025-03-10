@@ -1103,8 +1103,8 @@ class TabViewController: UIViewController {
         if let securityTrust = webView.serverTrust {
             isValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: securityTrust)
         }
-        let serverTrust = ServerTrust(securityTrust: webView.serverTrust, isValid: isValid)
-        privacyInfo.serverTrust = serverTrust
+        let serverTrustEvaluation = ServerTrustEvaluation(securityTrust: webView.serverTrust, isValid: isValid)
+        privacyInfo.serverTrustEvaluation = serverTrustEvaluation
         privacyInfo.isSpecialErrorPageVisible = specialErrorPageNavigationHandler.isSpecialErrorPageVisible
 
         previousPrivacyInfosByURL[url] = privacyInfo

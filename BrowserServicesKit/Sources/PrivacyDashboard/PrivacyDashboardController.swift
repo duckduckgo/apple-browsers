@@ -260,12 +260,12 @@ extension PrivacyDashboardController: WKNavigationDelegate {
     }
 
     private func subscribeToServerTrust() {
-        privacyInfo?.$serverTrust
+        privacyInfo?.$serverTrustEvaluation
             .receive(on: DispatchQueue.global(qos: .userInitiated))
-            .map { serverTrust in
-                if let serverTrust, let securityTrust = serverTrust.securityTrust {
+            .map { serverTrustEvaluation in
+                if let serverTrustEvaluation, let securityTrust = serverTrustEvaluation.securityTrust {
                     // swiftlint:disable:next force_cast
-                    return ServerTrustViewModel(serverTrust: (securityTrust as! SecTrust), isInvalidCert: !serverTrust.isValid)
+                    return ServerTrustViewModel(serverTrust: (securityTrust as! SecTrust), isInvalidCert: !serverTrustEvaluation.isValid)
                 }
                 return ServerTrustViewModel(serverTrust: nil, isInvalidCert: false)
             }

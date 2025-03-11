@@ -46,7 +46,7 @@ final class UserDefaultsBookmarkFoldersStore: BookmarkFoldersStore {
     }
 
     var lastBookmarkSingleTabFolderIdUsed: String? {
-        get { return keyValueStore.object(forKey: Keys.bookmarkSingleTabFolderUsedKey) as? String }
+        get { keyValueStore.object(forKey: Keys.bookmarkSingleTabFolderUsedKey) as? String }
         set { keyValueStore.set(newValue, forKey: Keys.bookmarkSingleTabFolderUsedKey) }
     }
 }

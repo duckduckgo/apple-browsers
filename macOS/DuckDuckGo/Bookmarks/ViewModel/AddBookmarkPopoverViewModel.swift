@@ -25,7 +25,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private let bookmarkManager: BookmarkManager
     private let foldersStore: BookmarkFoldersStore
-    var buttonClicked: (() -> Void)? = nil
+    var buttonClicked: (() -> Void)?
 
     @Published private(set) var bookmark: Bookmark
 

@@ -181,8 +181,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         }
     }    
 
-    
-
     /// Register a DuckPlayer Youtube Navigation Request observer
     /// Used when DuckPlayer requires direct Youtube Navigation
     @MainActor

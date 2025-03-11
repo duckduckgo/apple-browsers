@@ -39,7 +39,7 @@ final class OnboardingManagerMock: OnboardingAddToDockManaging, OnboardingSetAsD
 
     var addToDockEnabledState: OnboardingAddToDockState = .disabled
 
-    func resolveSetAsDefaultBrowserExperimentCohort() -> SetAsDefaultBrowserCohort? {
+    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
         nil
     }
 }

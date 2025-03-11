@@ -92,7 +92,7 @@ public enum FeatureFlag: String {
     case privacyProOnboardingCTAMarch25
 
     /// https://app.asana.com/0/1206329551987282/1209130794450271
-    case setAsDefaultBrowserOnboarding
+    case onboardingSetAsDefaultBrowser
 
 }
 
@@ -103,8 +103,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             PrivacyProFreeTrialExperimentCohort.self
         case .privacyProOnboardingCTAMarch25:
             PrivacyProOnboardingCTAMarch25Cohort.self
-        case .setAsDefaultBrowserOnboarding:
-            SetAsDefaultBrowserCohort.self
+        case .onboardingSetAsDefaultBrowser:
+            OnboardingSetAsDefaultBrowserCohort.self
         default:
             nil
         }
@@ -118,7 +118,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
-        case .setAsDefaultBrowserOnboarding:
+        case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
                 return true
             } else {
@@ -219,7 +219,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
-        case .setAsDefaultBrowserOnboarding:
+        case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowser))
         }
     }
@@ -246,7 +246,7 @@ public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescr
     case treatment
 }
 
-public enum SetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
+public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
     // Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

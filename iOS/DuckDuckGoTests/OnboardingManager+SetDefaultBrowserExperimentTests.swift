@@ -56,13 +56,13 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
         "Check isSetAsDefaultBrowserEnabled returns correct value based on cohort",
         arguments: zip(
             [
-                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), SetAsDefaultBrowserCohort.control),
-                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), SetAsDefaultBrowserCohort.treatment),
+                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserCohort.control),
+                (VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: []), OnboardingSetAsDefaultBrowserCohort.treatment),
                 (VariantIOS.returningUser, .control),
                 (VariantIOS.returningUser, .treatment)
             ],
             [
-                SetAsDefaultBrowserCohort.control,
+                OnboardingSetAsDefaultBrowserCohort.control,
                 .treatment,
                 nil,
                 nil
@@ -70,7 +70,7 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
         )
     )
     @available(iOS 18.3, *)
-    func checkIsSetAsDefaultBrowserEnabledReturnsCorrectValue(_ variantContext: (variant: VariantIOS, cohortToAssign: SetAsDefaultBrowserCohort?), expectedCohort: SetAsDefaultBrowserCohort?) {
+    func checkIsSetAsDefaultBrowserEnabledReturnsCorrectValue(_ variantContext: (variant: VariantIOS, cohortToAssign: OnboardingSetAsDefaultBrowserCohort?), expectedCohort: OnboardingSetAsDefaultBrowserCohort?) {
         variantManagerMock.currentVariant = variantContext.variant
         featureFlaggerMock.cohortToReturn = variantContext.cohortToAssign
         makeSUT()
@@ -129,13 +129,13 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
     @Test(
         "Check Right Settings URL is returned",
         arguments: [
-            (SetAsDefaultBrowserCohort.control, UIApplication.openSettingsURLString),
+            (OnboardingSetAsDefaultBrowserCohort.control, UIApplication.openSettingsURLString),
             (.treatment, UIApplication.openDefaultApplicationsSettingsURLString),
             (nil, UIApplication.openSettingsURLString)
         ]
     )
     @available(iOS 18.3, *)
-    func checkCorrectSettingsURLIsReturned(_ context: (cohort: SetAsDefaultBrowserCohort?, expectedURLPath: String)) {
+    func checkCorrectSettingsURLIsReturned(_ context: (cohort: OnboardingSetAsDefaultBrowserCohort?, expectedURLPath: String)) {
         // GIVEN
         featureFlaggerMock.cohortToReturn = context.cohort
 

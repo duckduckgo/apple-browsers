@@ -93,7 +93,7 @@ extension OnboardingManager: OnboardingSettingsURLProvider {}
 
 protocol OnboardingSetAsDefaultExperimentManaging: AnyObject {
     var isSetAsDefaultBrowserEnabled: Bool { get }
-    func resolveSetAsDefaultBrowserExperimentCohort() -> SetAsDefaultBrowserCohort?
+    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort?
 }
 
 extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
@@ -102,11 +102,11 @@ extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
         resolveSetAsDefaultBrowserExperimentCohort() != nil
     }
 
-    func resolveSetAsDefaultBrowserExperimentCohort() -> SetAsDefaultBrowserCohort? {
+    func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
         // The experiment runs only for users on iOS 18.3+ and for non returning users
         guard #available(iOS 18.3, *), isNewUser else { return nil }
 
-        return featureFlagger.resolveCohort(for: FeatureFlag.setAsDefaultBrowserOnboarding) as? SetAsDefaultBrowserCohort
+        return featureFlagger.resolveCohort(for: FeatureFlag.onboardingSetAsDefaultBrowser) as? OnboardingSetAsDefaultBrowserCohort
     }
 
 }

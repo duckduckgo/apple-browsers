@@ -108,7 +108,6 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
                         return
                     }
                     reloadBookmark()
-                    settingsPersistor.lastUsedFolderID = newFolder.id
                 })
             }
             self?.resetAddFolderState()

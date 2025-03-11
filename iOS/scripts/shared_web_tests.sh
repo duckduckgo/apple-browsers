@@ -47,7 +47,9 @@ if [ -f "$IOS_HASH_FILE" ] && cmp -s "$IOS_HASH_FILE" "$IOS_HASH_FILE.old"; then
     echo "iOS source files have not changed, skipping build."
 else
     echo "iOS source files have changed, building app."
-    PROJECT_ROOT="$(realpath "$(dirname "$0")"/../..)"
+    if [ -z "$PROJECT_ROOT" ]; then
+        PROJECT_ROOT="$(realpath "$(dirname "$0")"/../..)"
+    fi
     export PROJECT_ROOT
     # shellcheck source=/dev/null
     . .maestro/common.sh
@@ -69,7 +71,10 @@ fi
 cd shared-web-tests || exit
 
 # Build the test suite
-npm run build
+if ! npm run build; then
+    echo "‼️ Error: npm build failed."
+    return 1
+fi
 
 # Install the hosts file for the web driver server
 if ! grep -q "Start web-platform-tests hosts" /etc/hosts; then
@@ -82,7 +87,7 @@ fi
 echo "Starting test run:"
 DERIVED_DATA_PATH="$(pwd)/../../DerivedData/"
 export DERIVED_DATA_PATH
-npm run test | tee ../../tmp/test-out.txt
+npm run test | tee "../../tmp/test_out_$(date +"%Y%m%d_%H%M%S").log"
 cd ../.. || exit
 # Deactivate the Python virtual environment
 if [ -n "$VIRTUAL_ENV" ]; then

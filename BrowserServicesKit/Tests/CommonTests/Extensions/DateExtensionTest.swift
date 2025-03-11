@@ -206,12 +206,12 @@ final class DateExtensionTests: XCTestCase {
 
     func testIsInThePast() {
         let pastDate = Date(timeIntervalSinceNow: -100) // 100 seconds ago
-        XCTAssertTrue(pastDate.isInThePast())
+        XCTAssertTrue(pastDate.isInThePast(), "Past date should be in the past")
 
         let futureDate = Date(timeIntervalSinceNow: 100) // 100 seconds in the future
-        XCTAssertFalse(futureDate.isInThePast())
+        XCTAssertFalse(futureDate.isInThePast(), "Future date should not be in the past")
 
-        XCTAssertFalse(Date().isInThePast()) // Edge case: exact current time
+        XCTAssertFalse(Date().isInThePast(), "Should not be in the past") // Edge case: exact current time
     }
 
     func testIsInTheFuture() {

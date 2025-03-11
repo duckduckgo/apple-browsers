@@ -179,9 +179,11 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Used when DuckPlayer requires direct Youtube Navigation
     @MainActor
     private func setupYoutubeNavigationRequestObserver(webView: WKWebView) {
+        weak var weakWebView = webView
         duckPlayerNavigationRequestCancellable = duckPlayer.youtubeNavigationRequest
             .sink { [weak self] url in
-                self?.disableDuckPlayerForNextVideo = true
+                guard let self = self, let webView = weakWebView else { return }
+                self.disableDuckPlayerForNextVideo = true
                 let request = URLRequest(url: url)
                 webView.load(request)
             }
@@ -212,10 +214,11 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     // Of pausing newly added elements.
     @MainActor
     private func pauseVideoStart(webView: WKWebView) async {
-        // First phase: try every 0.05s for 1 second
-        Task { @MainActor in
+        weak var weakWebView = webView
+        Task { @MainActor [weak self] in
             let startTime = Date()
             while Date().timeIntervalSince(startTime) < 1.0 {
+                guard let self = self, let webView = weakWebView else { break }
                 self.toggleMediaPlayback(webView, pause: true)
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }

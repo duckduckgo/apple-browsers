@@ -356,12 +356,23 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     deinit {
-        // Only remove our specific tap gesture recognizer
+        // Remove tap gesture recognizer
         if let tapGestureRecognizer = tapGestureRecognizer {
             hostView?.view.removeGestureRecognizer(tapGestureRecognizer)
         }
-        hostView = nil
+        
+        // Remove notification observers
+        NotificationCenter.default.removeObserver(self)
+        
+        // Cancel timer
+        hideBrowserChromeTimer?.invalidate()
+        hideBrowserChromeTimer = nil
+        
+        // Clear cancellables
         nativePlayerCancellables.removeAll()
+        nativeUIPresenterCancellables.removeAll()
+        
+        hostView = nil
     }
 
     /// Sets the host view controller for presenting modals.
@@ -405,15 +416,14 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Sets up a hide timer for the navigation and toolbars when the user is in landscape mode
     private func setupHideBrowserChromeTimer() {
-        // Invalidate existing timer if any
         hideBrowserChromeTimer?.invalidate()
-
-        // Create new timer
+        
+        weak var weakHostView = hostView
         hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    self?.hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                    weakHostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
                 }
             }
         }

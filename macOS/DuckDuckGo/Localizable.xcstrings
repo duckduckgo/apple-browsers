@@ -29123,61 +29123,73 @@
         }
       }
     },
+    "history.view.onboarding.local.storage.explanation" : {
+      "comment" : "Message for the history view onboarding popover explaining that history is kept locally.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "History is stored locally and not on any DuckDuckGo or other remote server, and can also be cleared using the Fire Button."
+          }
+        }
+      }
+    },
     "history.view.onboarding.message" : {
-      "comment" : "Message for the history view onboarding popover",
+      "comment" : "Message for the history view onboarding popover. Please make sure to keep ••• and ⌘Y intact.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wir haben eine spezielle Verlaufsseite hinzugefügt, die es dir erleichtert, die von dir besuchten Seiten anzuzeigen, erneut zu besuchen und zu löschen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+            "value" : "We've added a dedicated History page in this ••• menu for easier history management, also accessible via the History menu and ⌘Y keyboard shortcut."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Hemos añadido una página de historial exclusiva, para que puedas ver, volver a abrir y borrar los sitios que has visitado anteriormente de forma más sencilla."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Nous avons ajouté une page d’historique dédiée, ce qui vous permet de voir, de revisiter et d’effacer plus facilement les sites que vous avez déjà consultés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abbiamo aggiunto una pagina dedicata alla cronologia che ti consente di visualizzare, rivisitare e cancellare i siti che hai visitato in precedenza."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "We hebben een speciale geschiedenispagina toegevoegd. Zo kun je makkelijker de sites die je eerder hebt bezocht bekijken, opnieuw bezoeken en wissen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dodaliśmy specjalną stronę historii, dzięki której możesz łatwiej przeglądać wcześniej odwiedzone strony, przeglądać je i usuwać."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adicionámos uma página de histórico dedicada para ser mais fácil ver, revisitar e limpar os sites que visitaste anteriormente."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Мы добавили отдельную страницу «История», где можно легко просмотреть, заново открыть и удалить ранее посещенные сайты."
           }
         }
@@ -29189,55 +29201,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Verwalte deinen Verlauf"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Your History"
+            "value" : "Manage Your History Easier"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gestiona tu historial"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gérer votre historique"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gestisci la cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Beheer je geschiedenis"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zarządzanie historią"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gere o teu histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Управление историей"
           }
         }

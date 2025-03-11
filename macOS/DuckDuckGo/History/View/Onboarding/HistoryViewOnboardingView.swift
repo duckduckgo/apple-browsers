@@ -35,6 +35,10 @@ struct HistoryViewOnboardingView: View {
             Text(.init(UserText.historyViewOnboardingMessage))
                 .fixMultilineScrollableText()
                 .font(.system(size: 13))
+                .padding(.bottom, 8)
+            Text(.init(UserText.historyViewOnboardingLocalStorageExplanation))
+                .fixMultilineScrollableText()
+                .font(.system(size: 12))
                 .padding(.bottom, 20)
 
             HStack {

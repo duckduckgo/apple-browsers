@@ -210,8 +210,9 @@ struct UserText {
     static let mainMenuHelpDuckDuckGoHelp = NSLocalizedString("DuckDuckGo Help", comment: "Main Menu Help item")
 
     // MARK: - History
-    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Manage Your History", comment: "Title for the history view onboarding popover")
-    static let historyViewOnboardingMessage = NSLocalizedString("history.view.onboarding.message", value: "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited.", comment: "Message for the history view onboarding popover")
+    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Manage Your History Easier", comment: "Title for the history view onboarding popover")
+    static let historyViewOnboardingMessage = NSLocalizedString("history.view.onboarding.message", value: "We've added a dedicated History page in this ••• menu for easier history management, also accessible via the History menu and ⌘Y keyboard shortcut.", comment: "Message for the history view onboarding popover. Please make sure to keep ••• and ⌘Y intact.")
+    static let historyViewOnboardingLocalStorageExplanation = NSLocalizedString("history.view.onboarding.local.storage.explanation", value: "History is stored locally and not on any DuckDuckGo or other remote server, and can also be cleared using the Fire Button.", comment: "Message for the history view onboarding popover explaining that history is kept locally.")
     static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History Page", comment: "Accept button label on the history view onboarding popover")
 
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")

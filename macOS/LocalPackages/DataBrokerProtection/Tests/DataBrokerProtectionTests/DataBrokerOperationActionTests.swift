@@ -226,7 +226,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenSolveCaptchaActionIsRun_thenCaptchaIsResolved() async {
-        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil)
+        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),
@@ -250,7 +250,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenSolveCapchaActionFailsToSubmitDataToTheBackend_thenOperationFails() async {
-        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil)
+        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),

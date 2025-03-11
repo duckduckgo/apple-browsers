@@ -242,6 +242,9 @@ protocol DuckPlayerControlling: AnyObject {
     @MainActor func presentPill(for videoID: String, timestamp: TimeInterval?)
 
     /// Dismisses the bottom sheet
+    /// - Parameters:
+    ///   - reset: Whether to reset the pill state
+    ///   - animated: Whether to animate the dismissal
     @MainActor func dismissPill(reset: Bool, animated: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
@@ -737,13 +740,15 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     /// Hides the bottom sheet when browser chrome is hidden
+    @MainActor
     func hidePillForHiddenChrome() {
-        Task { await nativeUIPresenter.hideBottomSheetForHiddenChrome() }
+        nativeUIPresenter.hideBottomSheetForHiddenChrome()
     }
 
     /// Shows the bottom sheet when browser chrome is visible
+    @MainActor
     func showPillForVisibleChrome() {
-        Task { await nativeUIPresenter.showBottomSheetForVisibleChrome() }
+        nativeUIPresenter.showBottomSheetForVisibleChrome()
     }
 
     /// Presents a bottom sheet asking the user how they want to open the video
@@ -766,11 +771,13 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             .store(in: &nativeUIPresenterCancellables)
     }
 
-    /// Add cleanup method to remove the sheet    
+    /// Dismisses the bottom sheet
+    /// - Parameters:
+    ///   - reset: Whether to reset the pill state
+    ///   - animated: Whether to animate the dismissal
+    @MainActor
     func dismissPill(reset: Bool, animated: Bool) {
-        Task {
-            await nativeUIPresenter.dismissPill(reset: reset, animated: animated)
-        }
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated)        
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {

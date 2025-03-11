@@ -238,7 +238,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.
     ///
     /// - Parameter webView: The `WKWebView` whose URL has changed.
-    /// - Returns: A result indicating whether the URL change was handled.    
+    /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 
@@ -293,7 +293,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .handled(.duckPlayerEnabled)
         }
 
-        // Resume media playback by
+        // Resume media playback
         toggleMediaPlayback(webView, pause: false)
         return .notHandled(.isNotYoutubeWatch)
     }

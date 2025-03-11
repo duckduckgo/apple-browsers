@@ -30,6 +30,7 @@ final class AppStateRestorationManager: NSObject {
     private let tabSnapshotCleanupService: TabSnapshotCleanupService
     private var appWillRelaunchCancellable: AnyCancellable?
     private var stateChangedCancellable: AnyCancellable?
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
@@ -100,7 +101,10 @@ final class AppStateRestorationManager: NSObject {
         // don‘t automatically restore windows if relaunched 2nd time with no recently updated app session state
         readLastSessionState(restoreWindows: !service.isAppStateFileStale || isRelaunchingAutomatically, restoreRegularTabs: shouldRestoreRegularTabs)
 
-        stateChangedCancellable = WindowControllersManager.shared.stateChanged
+        stateChangedCancellable = Publishers.Merge(
+                WindowControllersManager.shared.stateChanged,
+                pinnedTabsManagerProvider.settingChangedPublisher
+            )
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
             // There is a favicon assignment after a restored tab loads that triggered unnecessary
             // saving of the state

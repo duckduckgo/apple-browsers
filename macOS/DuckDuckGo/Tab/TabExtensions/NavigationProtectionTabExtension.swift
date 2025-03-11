@@ -105,18 +105,18 @@ extension NavigationProtectionTabExtension: NavigationResponder {
             }
         }
         guard !Task.isCancelled else { return .cancel }
-
+        
         if let newRequest = await linkProtection.requestTrackingLinkRewrite(initiatingURL: navigationAction.sourceFrame.url, destinationRequest: request) {
             request = newRequest
         }
         guard !Task.isCancelled else { return .cancel }
-
+        
         if let newRequest = referrerTrimming.trimReferrer(for: request, originUrl: navigationAction.sourceFrame.url) {
             request = newRequest
         }
-
+        
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
-
+        
         // If custom headers are supported, update the preferences rather than the request.
         if NavigationPreferences.customHeadersSupported {
             let headers = GPCRequestFactory().headersForGPC(basedOn: request, config: contentBlocking.privacyConfigurationManager.privacyConfig, gpcEnabled: isGPCEnabled)
@@ -129,12 +129,14 @@ extension NavigationProtectionTabExtension: NavigationResponder {
                                                                   config: contentBlocking.privacyConfigurationManager.privacyConfig,
                                                                   gpcEnabled: isGPCEnabled) {
                 request = newRequest
-                return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
-                    navigator.load(request)
-                }
             }
         }
-
+        
+        if request != navigationAction.request {
+            return .redirectInvalidatingBackItemIfNeeded(navigationAction) {
+                $0.load(request)
+            }
+        }
         return .next
     }
 

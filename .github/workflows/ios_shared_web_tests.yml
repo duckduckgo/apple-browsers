@@ -1,20 +1,10 @@
 name: iOS - Shared Web Tests
 
 on:
-  push:
-    branches: [ main, "release/**", "jkt/shared-web-tests-automation" ]
-  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # Run at 2 AM UTC
   workflow_call:
-    inputs:
-      branch:
-        description: "Branch name"
-        required: false
-        type: string
-      skip-release:
-        description: "Skip release build"
-        required: false
-        default: false
-        type: boolean
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -53,29 +43,6 @@ jobs:
         path: tmp/shared-web-tests
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    #- name: Build and Test
-    #  run: |
-    #      cd shared-web-tests
-    #      npm run build
-    #- name: Build iOS
-    #  run: |
-    #    xcodebuild -downloadPlatform iOS -buildVersion 18.2
-    #    source .maestro/common.sh
-    #    project_root=$(pwd)
-    #    build_app
-    #- name: Run tests
-    #  run: |
-    #    cd shared-web-tests
-    #    brew install python@3.9 && /opt/homebrew/bin/python3.9 -m venv venv39 && source venv39/bin/activate
-    #    sudo npm run install-hosts
-    #    source ../.maestro/common.sh
-    #    export DERIVED_DATA_PATH="$derived_data_path"
-    #    export TARGET_DEVICE="iPhone-16"
-    #    export TARGET_OS="iOS-18-2"
-    #    killall Simulator || true
-    #    xcrun simctl erase all || true
-    #    set -o pipefail
-    #    npm run test | tee test-output.log
     - name: Build and run tests
       run: |
         PROJECT_ROOT="$(pwd)"
@@ -90,12 +57,11 @@ jobs:
             tmp/test_out_*.log
         retention-days: 7
 
-
   create-asana-task:
     name: Create Asana Task
     needs: [shared-web-tests]
 
-    if: failure() && github.ref_name == 'jkt/shared-web-tests-automation' && github.run_attempt == 1
+    if: failure()
 
     runs-on: ubuntu-latest
 
@@ -109,19 +75,3 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: 1209511873385229
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
-
-  close-asana-task:
-    name: Close Asana Task
-    needs: [shared-web-tests]
-
-    if: success() && github.ref_name == 'jkt/shared-web-tests-automation' && github.run_attempt > 1
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Close Asana Task
-        uses: ./.github/actions/asana-failed-pr-checks
-        with:
-          action: close-task
-          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}

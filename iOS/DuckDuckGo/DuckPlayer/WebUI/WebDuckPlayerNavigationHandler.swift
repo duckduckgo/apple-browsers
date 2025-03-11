@@ -1026,7 +1026,10 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         duckPlayer.setHostViewController(hostViewController)
         
         // Ensure the tab is not muted
-        toggleAudioForTab(hostViewController.webView, mute: false)
+        if let webview = hostViewController.webView {
+            toggleAudioForTab(webview, mute: false)
+        }
+        
     }
 
     /// Update DuckPlayer for WebView Appearance

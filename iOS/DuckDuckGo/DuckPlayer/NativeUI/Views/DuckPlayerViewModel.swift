@@ -60,14 +60,14 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// A publisher to notify when the view is dismissed
     let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
-    
+
     /// The YouTube video ID to be played
     let videoID: String
 
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled,
+        Constants.playsInlineParameter: Constants.enabled
     ]
 
     /// The referrer for the DuckPlayer
@@ -95,7 +95,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
     @Published private var isLandscape: Bool = false
-    
+
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
@@ -105,7 +105,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source:  DuckPlayer.VideoNavigationSource = .other) {
+    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source: DuckPlayer.VideoNavigationSource = .other) {
         self.videoID = videoID
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
@@ -181,7 +181,7 @@ final class DuckPlayerViewModel: ObservableObject {
     func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
         self.webView = webView
         self.coordinator = coordinator
-        
+
         timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             Task {
@@ -193,7 +193,7 @@ final class DuckPlayerViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Stops observing the video timestamp
     func stopObservingTimestamp() {
         timestampUpdateTimer?.invalidate()
@@ -203,7 +203,7 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
-    
+
     /// Handles device orientation change notifications
     @objc private func handleOrientationChange() {
         updateOrientation()

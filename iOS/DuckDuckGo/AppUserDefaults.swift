@@ -82,6 +82,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerOpenInNewTab = "com.duckduckgo.ios.duckPlayerOpenInNewTab"
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
+        static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
     }
 
     private struct DebugKeys {
@@ -448,15 +449,28 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerOpenInNewTab, defaultValue: true)
     var duckPlayerOpenInNewTab: Bool
-    
+
+    // Duck player native UI    
     @UserDefaultsWrapper(key: .duckPlayerNativeUI, defaultValue: false)
     var duckPlayerNativeUI: Bool
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
 
-    @UserDefaultsWrapper(key: .duckPlayerNativeUISERPEnabled, defaultValue: true)
-    var duckPlayerNativeUISERPEnabled: Bool
+    var duckPlayerNativeUISERPEnabled: Bool {
+        get {
+            if let value = userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) {
+                return value
+            }
+            return false
+        }
+        set {
+            userDefaults?.set(newValue, forKey: Keys.duckPlayerNativeUISERPEnabled)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: nil)
+        }
+    }
+
 
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
         get {

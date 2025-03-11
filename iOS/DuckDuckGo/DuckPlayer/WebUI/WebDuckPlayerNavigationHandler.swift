@@ -1048,7 +1048,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         if let webView = hostViewController.webView {
             toggleAudioForTab(webView, mute: false)
         }
-        
+
     }
 
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {

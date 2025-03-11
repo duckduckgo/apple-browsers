@@ -258,10 +258,12 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         return appSettings.duckPlayerNativeUI && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
     }
 
+    // Determines if DuckPlayer Native is enabled for SERP
     var nativeUISERPEnabled: Bool {
         return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
     }
 
+    // Determines the Youtube mode for DuckPlayer Native
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode {
         if isFeatureEnabled {
             return appSettings.duckPlayerNativeYoutubeMode

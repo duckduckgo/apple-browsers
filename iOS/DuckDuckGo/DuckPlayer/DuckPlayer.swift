@@ -317,6 +317,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Publisher to notify when DuckPlayer is dismissed
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
 
+    /// Native UI Presenter
     private let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
@@ -414,7 +415,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             }
         }
     }
-
+    // Loads a native DuckPlayerView
     func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
         guard let hostView = hostView else { return }
 
@@ -793,9 +794,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 Task { await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
             }
             .store(in: &nativeUIPresenterCancellables)
-        
+
         registerOrientationSubscriber()
     }
+
     /// Returns tuple of Pixels for firing when a YouTube Error occurs
     private func getPixelsForYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
         if let paramsDict = params as? [String: Any],

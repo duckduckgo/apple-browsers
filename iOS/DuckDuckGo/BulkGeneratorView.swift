@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  BulkGeneratorView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -127,7 +127,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
         // no-op
     }
     
-    func generate(optionValues: [String: String]) async -> Void {
+    func generate(optionValues: [String: String]) async {
         let count = Int(optionValues["Tab Count"] ?? "0") ?? 0
         for index in 0 ..< count {
             let url = await urlFactory.generate(optionValues: ["index": "\(index)"])
@@ -155,7 +155,7 @@ struct BulkURLFactory: BulkGeneratorView.Factory {
     
     let description: String = "Bulk URL Generation"
     let footer: String? = nil
-    let options: [String : [String]] = [
+    let options: [String: [String]] = [
         "index": ["any valid int"]
     ]
     let defaultOption = ""

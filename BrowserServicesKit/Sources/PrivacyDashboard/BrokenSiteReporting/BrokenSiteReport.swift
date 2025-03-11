@@ -186,7 +186,7 @@ public struct BrokenSiteReport {
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,
-        cookieConsentInfo: CookieConsentInfo
+        cookieConsentInfo: CookieConsentInfo?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -214,7 +214,6 @@ public struct BrokenSiteReport {
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
-        self.cookiePopUpManagement = cookiePopUpManagement
         self.cookieConsentInfo = cookieConsentInfo
     }
 #endif

@@ -378,7 +378,11 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
             return resultTokenContainer
         } catch OAuthClientError.refreshTokenExpired {
-            do { return try await attemptTokenRecovery() } catch { throw error }
+            do {
+                return try await attemptTokenRecovery()
+            } catch {
+                throw error
+            }
         } catch {
             throw SubscriptionManagerError.tokenUnavailable(error: error)
         }

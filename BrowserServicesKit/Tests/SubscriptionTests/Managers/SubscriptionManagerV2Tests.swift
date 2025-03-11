@@ -35,6 +35,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     var mockStorePurchaseManager: StorePurchaseManagerMockV2!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMockV2!
     var overrideTokenResponse: Result<Networking.TokenContainer, Error>?
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
 
     override func setUp() {
         super.setUp()
@@ -43,6 +44,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
 
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
@@ -53,9 +55,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             tokenRecoveryHandler: {
                 if let overrideTokenResponse = self.overrideTokenResponse {
                     self.mockOAuthClient.getTokensResponse = overrideTokenResponse
-                } else {
-                    assertionFailure("Unexpected call to real token recovery handler")
                 }
+                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: self.mockSubscriptionManager, restoreFlow: self.mockAppStoreRestoreFlowV2)
             }
         )
     }
@@ -237,7 +238,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        overrideTokenResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        overrideTokenResponse = .failure(SubscriptionManagerError.tokenUnRefreshable)
         mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
 
@@ -260,6 +261,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         } catch {
             XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
         }
+
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")

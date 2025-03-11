@@ -1159,9 +1159,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func presentPinnedTabsDiscoveryPopoverIfNecessary() {
-        //todo uncomment
-//        guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
-//        PinnedTabsDiscoveryPopover.popoverPresented = true
+        guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
+        PinnedTabsDiscoveryPopover.popoverPresented = true
 
         //Wait until pinned tab change is applied to pinned tabs view
         DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) { [weak self] in

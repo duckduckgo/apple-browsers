@@ -45,7 +45,7 @@ struct DuckPlayerView: View {
     var body: some View {
         ZStack {
             // Background with blur effect
-            Color(.black)            
+            Color(.black)
             .edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
@@ -158,7 +158,7 @@ struct DuckPlayerView: View {
 
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
-                    .font(.headline)                
+                    .font(.headline)
             }
 
             Spacer()

@@ -360,18 +360,18 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if let tapGestureRecognizer = tapGestureRecognizer {
             hostView?.view.removeGestureRecognizer(tapGestureRecognizer)
         }
-        
+
         // Remove notification observers
         NotificationCenter.default.removeObserver(self)
-        
+
         // Cancel timer
         hideBrowserChromeTimer?.invalidate()
         hideBrowserChromeTimer = nil
-        
+
         // Clear cancellables
         nativePlayerCancellables.removeAll()
         nativeUIPresenterCancellables.removeAll()
-        
+
         hostView = nil
     }
 
@@ -417,7 +417,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Sets up a hide timer for the navigation and toolbars when the user is in landscape mode
     private func setupHideBrowserChromeTimer() {
         hideBrowserChromeTimer?.invalidate()
-        
+
         weak var weakHostView = hostView
         hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
@@ -787,7 +787,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - animated: Whether to animate the dismissal
     @MainActor
     func dismissPill(reset: Bool, animated: Bool) {
-        nativeUIPresenter.dismissPill(reset: reset, animated: animated)        
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated)
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {

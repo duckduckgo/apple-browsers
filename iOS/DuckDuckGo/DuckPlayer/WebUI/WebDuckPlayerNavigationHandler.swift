@@ -291,7 +291,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         // This prevents opening tab from hijacking Audio Session
         // and playing audio in the background
         toggleAudioForTab(webView, mute: true)
-        
+
         let duckPlayerURL = URL.duckPlayer(videoID)
         self.loadWithDuckPlayerParameters(URLRequest(url: duckPlayerURL), referrer: self.referrer, webView: webView, forceNewTab: forceNewTab, disableNewTab: disableNewTab)
     }
@@ -369,7 +369,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         }
 
     }
-    
+
     /// Toggles audio playback for a specific webView.
     ///
     /// - Parameters:
@@ -630,7 +630,6 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         }
     }
 
-
     /// Checks if a URL contains a hash
     ///
     /// - Parameter url: The `URL` used to determine the tab type.
@@ -735,7 +734,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
-    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {    
+    func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 
         // We want to prevent multiple simultaneous redirects
         // This can be caused by Duplicate Nav events, and quick URL changes
@@ -839,7 +838,6 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
     }
 
-
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
     ///
     /// - Parameter webView: The `WKWebView` to reload.
@@ -913,7 +911,6 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Reset allowFirstVideo
         duckPlayer.settings.allowFirstVideo = false
-
 
     }
 
@@ -1024,12 +1021,12 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
         duckPlayer.setHostViewController(hostViewController)
-        
+
         // Ensure the tab is not muted
         if let webview = hostViewController.webView {
             toggleAudioForTab(webview, mute: false)
         }
-        
+
     }
 
     /// Update DuckPlayer for WebView Appearance
@@ -1045,7 +1042,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
         // NOOP
     }
-    
+
 }
 
 extension WKWebView {

@@ -89,7 +89,7 @@ struct DuckPlayerMiniPillView: View {
     private var sheetContent: some View {
         VStack(spacing: 0) {
             grabHandle
-            
+
             Button(action: { viewModel.openInDuckPlayer() }) {
                 VStack(spacing: Constants.Layout.stackSpacing) {
                     HStack(spacing: Constants.Layout.stackSpacing) {

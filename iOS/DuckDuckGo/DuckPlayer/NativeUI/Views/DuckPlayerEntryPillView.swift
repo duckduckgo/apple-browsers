@@ -60,7 +60,7 @@ struct DuckPlayerEntryPillView: View {
     private var sheetContent: some View {
         VStack(spacing: 0) {
             grabHandle
-            
+
             Button(action: { viewModel.openInDuckPlayer() }) {
                 VStack(spacing: Constants.Layout.vStackSpacing) {
                     HStack(spacing: Constants.Layout.hStackSpacing) {

@@ -49,6 +49,7 @@ final class NavigationProtectionTabExtension {
 
     init(contentBlocking: AnyContentBlocking) {
         self.contentBlocking = contentBlocking
+
     }
 
     private func resetNavigation() {
@@ -105,38 +106,29 @@ extension NavigationProtectionTabExtension: NavigationResponder {
             }
         }
         guard !Task.isCancelled else { return .cancel }
-        
+
         if let newRequest = await linkProtection.requestTrackingLinkRewrite(initiatingURL: navigationAction.sourceFrame.url, destinationRequest: request) {
             request = newRequest
         }
         guard !Task.isCancelled else { return .cancel }
-        
+
         if let newRequest = referrerTrimming.trimReferrer(for: request, originUrl: navigationAction.sourceFrame.url) {
             request = newRequest
         }
-        
+
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
-        
-        // If custom headers are supported, update the preferences rather than the request.
-        if NavigationPreferences.customHeadersSupported {
-            let headers = GPCRequestFactory().headersForGPC(basedOn: request, config: contentBlocking.privacyConfigurationManager.privacyConfig, gpcEnabled: isGPCEnabled)
-            if !headers.isEmpty, let customHeaders = CustomHeaderFields(fields: headers) {
-                preferences.customHeaders = [customHeaders]
-            }
-        } else {
-            // If custom headers aren't supported, modify the request directly.
-            if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
-                                                                  config: contentBlocking.privacyConfigurationManager.privacyConfig,
-                                                                  gpcEnabled: isGPCEnabled) {
-                request = newRequest
-            }
+        if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
+                                                              config: contentBlocking.privacyConfigurationManager.privacyConfig,
+                                                              gpcEnabled: isGPCEnabled) {
+            request = newRequest
         }
-        
+
         if request != navigationAction.request {
             return .redirectInvalidatingBackItemIfNeeded(navigationAction) {
                 $0.load(request)
             }
         }
+
         return .next
     }
 

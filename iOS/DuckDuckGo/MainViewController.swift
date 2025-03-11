@@ -695,17 +695,6 @@ class MainViewController: UIViewController {
 
         findInPageBottomLayoutConstraint.constant = keyboardHeight
 
-        if let suggestionsTray = suggestionTrayController {
-            let suggestionsFrameInView = suggestionsTray.view.convert(suggestionsTray.contentFrame, to: view)
-
-            let overflow = suggestionsFrameInView.intersection(keyboardFrameInView).height
-            if overflow > 0 && !appSettings.currentAddressBarPosition.isBottom {
-                suggestionsTray.applyContentInset(UIEdgeInsets(top: 0, left: 0, bottom: overflow, right: 0))
-            } else {
-                suggestionsTray.applyContentInset(.zero)
-            }
-        }
-
         let y = self.view.frame.height - keyboardHeight
         let frame = self.findInPageView.frame
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {

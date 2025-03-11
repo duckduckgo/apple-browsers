@@ -86,10 +86,6 @@ protocol OnboardingSetAsDefaultExperimentManaging: AnyObject {
     func resolveSetAsDefaultBrowserExperimentCohort() -> SetAsDefaultBrowserCohort?
 }
 
-protocol OnboardingSetAsDefaultExperimentDebugging: AnyObject {
-    var cohort: SetAsDefaultBrowserCohort { get set }
-}
-
 extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
 
     var isSetAsDefaultBrowserEnabled: Bool {

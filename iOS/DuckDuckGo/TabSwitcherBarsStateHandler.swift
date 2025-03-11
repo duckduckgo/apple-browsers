@@ -31,6 +31,7 @@ class TabSwitcherBarsStateHandler {
     let editButton = UIBarButtonItem()
     let selectAllButton = UIBarButtonItem()
     let deselectAllButton = UIBarButtonItem()
+    let duckChatButton = UIBarButtonItem()
 
     var bottomBarItems = [UIBarButtonItem]()
     var isBottomBarHidden = false
@@ -142,6 +143,7 @@ class TabSwitcherBarsStateHandler {
         switch interfaceMode {
         case .singleSelectNormal:
             topBarRightButtonItems = [
+                duckChatButton,
                 tabSwitcherStyleButton,
             ]
 
@@ -154,6 +156,7 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
+                duckChatButton,
                 canShowEditButton ? editButton : nil,
             ].compactMap { $0 }
 

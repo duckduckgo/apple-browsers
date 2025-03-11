@@ -469,6 +469,11 @@ extension TabSwitcherViewController {
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
             self?.closeSelectedTabs()
         }
+
+        barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
+        barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
+            print("*** duckchat")
+        })
     }
 
 }

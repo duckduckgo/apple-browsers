@@ -23,6 +23,7 @@ import Foundation
 import Navigation
 import WebKit
 import PixelKit
+import SpecialErrorPages
 
 final class NavigationProtectionTabExtension {
 
@@ -49,7 +50,6 @@ final class NavigationProtectionTabExtension {
 
     init(contentBlocking: AnyContentBlocking) {
         self.contentBlocking = contentBlocking
-
     }
 
     private func resetNavigation() {
@@ -117,15 +117,22 @@ extension NavigationProtectionTabExtension: NavigationResponder {
         }
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
-        if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
-                                                              config: contentBlocking.privacyConfigurationManager.privacyConfig,
-                                                              gpcEnabled: isGPCEnabled) {
-            request = newRequest
-        }
 
-        if request != navigationAction.request {
-            return .redirectInvalidatingBackItemIfNeeded(navigationAction) {
-                $0.load(request)
+        // If custom headers are supported, update the preferences rather than the request.
+        if NavigationPreferences.customHeadersSupported {
+            let headers = GPCRequestFactory().headersForGPC(basedOn: request, config: contentBlocking.privacyConfigurationManager.privacyConfig, gpcEnabled: isGPCEnabled)
+            if !headers.isEmpty, let customHeaders = CustomHeaderFields(fields: headers) {
+                preferences.customHeaders = [customHeaders]
+            }
+        } else {
+            // If custom headers aren't supported, modify the request directly.
+            if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
+                                                                  config: contentBlocking.privacyConfigurationManager.privacyConfig,
+                                                                  gpcEnabled: isGPCEnabled) {
+                request = newRequest
+                return .redirectInvalidatingBackItemIfNeeded(navigationAction) { navigator in
+                    navigator.load(request)
+                }
             }
         }
 

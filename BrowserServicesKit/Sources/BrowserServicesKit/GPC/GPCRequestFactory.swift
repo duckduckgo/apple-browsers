@@ -50,43 +50,56 @@ public struct GPCRequestFactory {
         return false
     }
 
+    /// Returns the header fields to be applied for GPC.
+    /// If no header should be applied, returns an empty dictionary.
+    public func headersForGPC(basedOn incomingRequest: URLRequest,
+                              config: PrivacyConfiguration,
+                              gpcEnabled: Bool) -> [String: String] {
+        return computedGPCHeaders(for: incomingRequest, config: config, gpcEnabled: gpcEnabled)
+    }
+
+    /// Returns a modified URLRequest with the GPC header added or removed if needed.
+    /// Returns nil if no modifications are necessary.
     public func requestForGPC(basedOn incomingRequest: URLRequest,
                               config: PrivacyConfiguration,
                               gpcEnabled: Bool) -> URLRequest? {
+        let computedHeaders = computedGPCHeaders(for: incomingRequest, config: config, gpcEnabled: gpcEnabled)
+        let currentHeader = incomingRequest.value(forHTTPHeaderField: Constants.secGPCHeader)
 
-        func removingHeader(fromRequest incomingRequest: URLRequest) -> URLRequest? {
-            var request = incomingRequest
-            if let headers = request.allHTTPHeaderFields, headers.firstIndex(where: { $0.key == Constants.secGPCHeader }) != nil {
+        // If computed headers are empty and the header is currently present, remove it.
+        if computedHeaders.isEmpty {
+            if currentHeader != nil {
+                var request = incomingRequest
                 request.setValue(nil, forHTTPHeaderField: Constants.secGPCHeader)
                 return request
             }
-
             return nil
+        } else {
+            // Otherwise, if the header isn't already present, add it.
+            if currentHeader == nil {
+                var request = incomingRequest
+                request.addValue("1", forHTTPHeaderField: Constants.secGPCHeader)
+                return request
+            }
         }
+        return nil
+    }
 
+    private func computedGPCHeaders(for incomingRequest: URLRequest,
+                                    config: PrivacyConfiguration,
+                                    gpcEnabled: Bool) -> [String: String] {
         /*
          For now, the GPC header is only applied to sites known to be honoring GPC (nytimes.com, washingtonpost.com),
          while the DOM signal is available to all websites.
          This is done to avoid an issue with back navigation when adding the header (e.g. with 't.co').
          */
         guard let url = incomingRequest.url, isGPCEnabled(url: url, config: config) else {
-            // Remove GPC header if its still there (or nil)
-            return removingHeader(fromRequest: incomingRequest)
+            return [:]
         }
-
-        // Add GPC header if needed
         if config.isEnabled(featureKey: .gpc) && gpcEnabled {
-            var request = incomingRequest
-            if let headers = request.allHTTPHeaderFields,
-               headers.firstIndex(where: { $0.key == Constants.secGPCHeader }) == nil {
-                request.addValue("1", forHTTPHeaderField: Constants.secGPCHeader)
-                return request
-            }
-        } else {
-            // Check if GPC header is still there and remove it
-            return removingHeader(fromRequest: incomingRequest)
+            return [Constants.secGPCHeader: "1"]
         }
-
-        return nil
+        return [:]
     }
+
 }

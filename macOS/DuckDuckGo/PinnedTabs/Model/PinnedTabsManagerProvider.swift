@@ -133,7 +133,7 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
         if arePerWindowPinnedTabsEnabled {
             let tabCollectionViewModel = windowControllerManager.allTabCollectionViewModels.first { tabCollectionViewModel in
-                tabCollectionViewModel.tabCollection.tabs.contains(tab)
+                tabCollectionViewModel.tabs.contains(tab) || tabCollectionViewModel.pinnedTabs.contains(tab)
             }
             return tabCollectionViewModel?.pinnedTabsManager
         } else {

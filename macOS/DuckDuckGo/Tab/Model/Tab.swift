@@ -624,6 +624,12 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     func getActualInteractionStateData() -> Data? {
+        if let pinnedTabsManager = pinnedTabsManagerProvider.pinnedTabsManager(for: self),
+           pinnedTabsManager.isTabPinned(self) {
+            // To optimize the performance, don't save interaction state data for pinned tabs
+            return nil
+        }
+
         if let interactionStateData = interactionState.data {
             return interactionStateData
         }

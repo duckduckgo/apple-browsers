@@ -43,15 +43,13 @@ struct DuckPlayerView: View {
     var body: some View {
         ZStack {
             // Background with blur effect
-            Color(.black)
-            .opacity(0.97)
+            Color(.black)            
             .edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
                 // Header
                 header
-                    .frame(height: Constants.headerHeight)
-                    .background(Color.black)
+                    .frame(height: Constants.headerHeight)                    
 
                 // Video Container
                 Spacer()
@@ -96,18 +94,6 @@ struct DuckPlayerView: View {
                                 }
                             }
                         }
-                        Button {
-                            viewModel.openSettings()
-                            dismiss()
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.2))
-                                    .frame(width: 44, height: 44)
-                                Image(Constants.duckPlayerSettingsImage)
-                                    .foregroundColor(.white)
-                            }
-                        }
                     }
                     .frame(height: Constants.bottomButtonHeight)
                     .padding(.horizontal, Constants.horizontalPadding)
@@ -130,6 +116,19 @@ struct DuckPlayerView: View {
     private var header: some View {
         HStack(spacing: Constants.horizontalPadding) {
 
+            // Settings Button
+            Button {
+                viewModel.openSettings()
+                dismiss()
+            } label: {
+                ZStack {
+                    Image(Constants.duckPlayerSettingsImage)
+                    .foregroundColor(.white)
+                }
+            }
+
+            Spacer()
+
             HStack {
                 Image(Constants.daxLogo)
                     .resizable()
@@ -138,10 +137,10 @@ struct DuckPlayerView: View {
 
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
-                    .font(.headline)
-
-                Spacer()
+                    .font(.headline)                
             }
+
+            Spacer()
 
             // Close Button
             Button(action: { dismiss() }, label: {

@@ -122,10 +122,10 @@ struct SettingsDuckPlayerView: View {
         .applySettingsListModifiers(title: UserText.duckPlayerFeatureName,
                                     displayMode: .inline,
                                     viewModel: viewModel)
-        .alert("Note", isPresented: $showNewTabAlert) {
+        .alert("Close Tabs to Continue", isPresented: $showNewTabAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("This setting applies to new tabs.")
+            Text("Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect.")
         }
     }
 }

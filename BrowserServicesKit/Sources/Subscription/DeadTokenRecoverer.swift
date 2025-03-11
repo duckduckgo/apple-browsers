@@ -28,6 +28,7 @@ public actor DeadTokenRecoverer {
     public static func attemptRecoveryFromPastPurchase(subscriptionManager: any SubscriptionManagerV2,
                                                        restoreFlow: any AppStoreRestoreFlowV2) async throws {
         if recoveryAttemptCount != 0 {
+            Logger.subscription.debug("Recovery attempt already in progress, skipping...")
             try reportFailure()
         }
         recoveryAttemptCount += 1
@@ -43,8 +44,6 @@ public actor DeadTokenRecoverer {
         case .stripe:
             Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")
             NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
-        default:
-            try reportFailure()
         }
     }
 

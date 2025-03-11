@@ -136,7 +136,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 #endif
     }
 
-    private let workQueue = DispatchQueue(label: "com.duckduckgo.oauthclient", qos: .background)
     private let authService: any OAuthService
     private var tokenStorage: any AuthTokenStoring
     private var legacyTokenStorage: (any LegacyAuthTokenStoring)?

@@ -462,7 +462,7 @@ public class AppUserDefaults: AppSettings {
             if let value = userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) {
                 return value
             }
-            return false
+            return true
         }
         set {
             userDefaults?.set(newValue, forKey: Keys.duckPlayerNativeUISERPEnabled)

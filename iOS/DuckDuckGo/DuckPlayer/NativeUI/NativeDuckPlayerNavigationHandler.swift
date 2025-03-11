@@ -246,7 +246,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Returns: A result indicating whether the URL change was handled.    
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
-
+        
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
 
@@ -271,6 +271,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         if disableDuckPlayerForNextVideo {
+            disableDuckPlayerForNextVideo = false
             return .notHandled(.disabledForVideo)
         }
 
@@ -292,8 +293,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Resume media playback by
-        toggleMediaPlayback(webView, pause: false)
-        disableDuckPlayerForNextVideo = false
+        toggleMediaPlayback(webView, pause: false)        
         return .notHandled(.isNotYoutubeWatch)
     }
 
@@ -346,7 +346,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         setReferrer(webView: webView)
 
         // Notify SERP about Duckplayer State
-        // This disables SERP Overlays
+        // This disables SERP Overlays when DuckPlayer is enabled
         if webView.url?.isDuckDuckGoSearch ?? false {
             let isEnabled = duckPlayer.settings.nativeUISERPEnabled || 
                             duckPlayer.settings.nativeUIYoutubeMode != .never

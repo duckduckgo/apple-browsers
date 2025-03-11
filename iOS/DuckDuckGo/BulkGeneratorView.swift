@@ -29,7 +29,6 @@ struct BulkGeneratorView: View {
         var description: String { get }
         var footer: String? { get }
         var options: [String: [String]] { get }
-        var defaultOption: String { get }
 
         func starting() async
         
@@ -40,7 +39,7 @@ struct BulkGeneratorView: View {
         
     }
     
-    @State var values: [String: String] = [:]
+    @State var values: [String: String]
     @State var isBusy = false
     
     let factory: any Factory
@@ -59,9 +58,7 @@ struct BulkGeneratorView: View {
     
     init(factory: any Factory) {
         self.factory = factory
-        factory.options.keys.forEach {
-            values[$0] = factory.options[$0]?.first
-        }
+        values = self.factory.options.mapValues { $0.first ?? "" }
     }
     
     var body: some View {
@@ -69,7 +66,7 @@ struct BulkGeneratorView: View {
             Section {
                 ForEach(factory.options.keys.sorted(), id: \.self) { optionName in
                     Picker(selection: Binding(get: {
-                        values[optionName, default: factory.defaultOption]
+                        values[optionName]
                     }, set: {
                         values[optionName] = $0
                     })) {
@@ -82,7 +79,7 @@ struct BulkGeneratorView: View {
                     .disabled(isBusy)
                 }
             } header: {
-                Text("Options")
+                Text(verbatim: "Options")
             } footer: {
                 VStack {
                     Text(factory.footer ?? "")
@@ -96,8 +93,10 @@ struct BulkGeneratorView: View {
         .navigationTitle(factory.description)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Generate") {
+                Button {
                     generate()
+                } label: {
+                    Text(verbatim: "Generate")
                 }
                 .disabled(isBusy)
             }
@@ -112,7 +111,6 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
         "%d tabs. Restart app after generation".format(arguments: tabManager.count)
     }
     let options = ["Tab Count": [ "100", "500", "1000", "5000", "10000"]]
-    let defaultOption = "100"
 
     let urlFactory: any BulkGeneratorView.Factory<URL>
     
@@ -158,7 +156,6 @@ struct BulkURLFactory: BulkGeneratorView.Factory {
     let options: [String: [String]] = [
         "index": ["any valid int"]
     ]
-    let defaultOption = ""
 
     func starting() {
         // no-op

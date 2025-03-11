@@ -373,7 +373,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
 
     func testWhenGetCaptchaActionRuns_thenStageIsSetToCaptchaParse() async {
         let mockStageCalculator = MockStageDurationCalculator()
-        let captchaAction = GetCaptchaInfoAction(id: "1", actionType: .getCaptchaInfo, selector: "captcha", dataSource: nil)
+        let captchaAction = GetCaptchaInfoAction(id: "1", actionType: .getCaptchaInfo, selector: "captcha", dataSource: nil, captchaType: nil)
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,

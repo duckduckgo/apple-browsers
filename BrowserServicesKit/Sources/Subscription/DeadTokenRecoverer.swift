@@ -33,6 +33,10 @@ public struct DeadTokenRecoverer {
         }
         recoveryAttemptCount += 1
 
+        guard subscriptionManager.isUserAuthenticated else {
+            return
+        }
+
         let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataDontLoad)
 
         switch subscription.platform {

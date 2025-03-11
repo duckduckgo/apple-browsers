@@ -122,7 +122,7 @@ public protocol OAuthClient {
 
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
-    fileprivate struct Constants {
+    private struct Constants {
         /// https://app.asana.com/0/1205784033024509/1207979495854201/f
         static let clientID = "f4311287-0121-40e6-8bbd-85c36daf1837"
         static let redirectURI = "com.duckduckgo:/authcb"

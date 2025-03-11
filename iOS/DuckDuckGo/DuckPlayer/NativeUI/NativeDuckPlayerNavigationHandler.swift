@@ -144,19 +144,18 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
 
         // SERP as a referrer
         if url.isDuckDuckGoSearch {
-            referrer = .serp             
+            referrer = .serp
             return
-        }        
-        
+        }
+
         // Any Other Youtube URL or other referrer
         if url.isYoutube {             
             referrer = .youtube
             return
-        } else {            
+        } else {
             referrer = .other
         }
     }
-   
 
     @MainActor
     private func loadNativeDuckPlayerVideo(videoID: String) {
@@ -259,14 +258,20 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Set the referrer
         setReferrer(webView: webView)
 
+        // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
             duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.invalidURL)
         }
 
+        // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
             duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.isNotYoutubeWatch)
+        }
+
+        if disableDuckPlayerForNextVideo {
+            return .notHandled(.disabledForVideo)
         }
 
         // Pause Video if needed
@@ -275,13 +280,13 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Present Duck Player Pill (Native entry point)
-        if duckPlayer.settings.nativeUIYoutubeMode == .ask && !disableDuckPlayerForNextVideo {
+        if duckPlayer.settings.nativeUIYoutubeMode == .ask {
             duckPlayer.presentPill(for: videoID, timestamp: nil)            
             return .handled(.duckPlayerEnabled)
         }
 
         // Present Duck Player
-        if duckPlayer.settings.nativeUIYoutubeMode == .auto && !disableDuckPlayerForNextVideo{
+        if duckPlayer.settings.nativeUIYoutubeMode == .auto {
             loadNativeDuckPlayerVideo(videoID: videoID)            
             return .handled(.duckPlayerEnabled)
         }
@@ -291,8 +296,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         disableDuckPlayerForNextVideo = false
         return .notHandled(.isNotYoutubeWatch)
     }
-
-
 
     /// Custom back navigation logic to handle Duck Player in the web view's history stack.
     ///
@@ -308,6 +311,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {   
         webView.reload()
+
+        // Pause Videos if needed
+        if duckPlayer.settings.nativeUIYoutubeMode != .never {
+            toggleMediaPlayback(webView, pause: true)
+        }
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.
@@ -318,7 +326,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         setReferrer(webView: webView)
 
-        // Stop playback if needed
+        // Pause Videos if needed
         if duckPlayer.settings.nativeUIYoutubeMode != .never {
             toggleMediaPlayback(webView, pause: true)
         }
@@ -334,9 +342,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleDidFinishLoading(webView: WKWebView) {        
         
+        // Update referrer
         setReferrer(webView: webView)
 
         // Notify SERP about Duckplayer State
+        // This disables SERP Overlays
         if webView.url?.isDuckDuckGoSearch ?? false {
             let isEnabled = duckPlayer.settings.nativeUISERPEnabled || 
                             duckPlayer.settings.nativeUIYoutubeMode != .never

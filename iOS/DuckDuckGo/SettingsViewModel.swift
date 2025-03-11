@@ -373,7 +373,7 @@ final class SettingsViewModel: ObservableObject {
       var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
         Binding<NativeDuckPlayerYoutubeMode>(
             get: {
-                return self.state.duckPlayerNativeYoutubeMode ?? .ask
+                return self.state.duckPlayerNativeYoutubeMode
             },
             set: {
                 self.appSettings.duckPlayerNativeYoutubeMode = $0

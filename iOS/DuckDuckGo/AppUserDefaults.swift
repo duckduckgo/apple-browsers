@@ -467,11 +467,11 @@ public class AppUserDefaults: AppSettings {
             return .ask
         }
         set {
-            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerMode)
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
             // Reset Hidden overlay setting when changing Mode
             userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                            object: duckPlayerMode)
+                                            object: duckPlayerNativeYoutubeMode)
         }
     }
 

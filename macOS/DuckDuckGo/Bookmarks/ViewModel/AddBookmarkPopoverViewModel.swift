@@ -104,10 +104,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
                                      toIndex: 1,
                                      withinParentFolder: .parent(uuid: newFolder.id),
                                      completion: { [weak self] _ in
-                    guard let self else {
-                        return
-                    }
-                    reloadBookmark()
+                    self?.reloadBookmark()
                 })
             }
             self?.resetAddFolderState()

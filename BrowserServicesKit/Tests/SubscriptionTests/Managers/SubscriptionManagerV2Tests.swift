@@ -50,11 +50,12 @@ class SubscriptionManagerV2Tests: XCTestCase {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
             pixelHandler: { _ in },
-            autoRecoveryHandler: {
+            tokenRecoveryHandler: {
                 if let overrideTokenResponse = self.overrideTokenResponse {
                     self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+                } else {
+                    assertionFailure("Unexpected call to real token recovery handler")
                 }
-                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(endpointService: self.mockSubscriptionEndpointService, restoreFlow: self.mockAppStoreRestoreFlowV2)
             }
         )
     }
@@ -137,8 +138,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
-            pixelHandler: { _ in },
-            autoRecoveryHandler: {}
+            pixelHandler: { _ in }
         )
 
         let helpURL = subscriptionManager.url(for: .purchase)
@@ -195,8 +195,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
-            pixelHandler: { _ in },
-            autoRecoveryHandler: {}
+            pixelHandler: { _ in }
         )
 
         // When
@@ -215,8 +214,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
-            pixelHandler: { _ in },
-            autoRecoveryHandler: {}
+            pixelHandler: { _ in }
         )
 
         // When

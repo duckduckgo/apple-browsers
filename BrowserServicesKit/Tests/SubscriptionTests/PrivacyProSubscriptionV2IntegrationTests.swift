@@ -63,8 +63,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
                                                            oAuthClient: authClient,
                                                            subscriptionEndpointService: subscriptionEndpointService,
                                                            subscriptionEnvironment: subscriptionEnvironment,
-                                                           pixelHandler: pixelHandler,
-                                                           autoRecoveryHandler: {})
+                                                           pixelHandler: pixelHandler)
 
         appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                            storePurchaseManager: storePurchaseManager)
@@ -98,7 +97,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         SubscriptionAPIMockResponseFactory.mockGetProducts(destinationMockAPIService: apiService, success: true)
         SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: true, subscriptionID: "ios.subscription.1month")
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         // configure mock store purchase manager responses
         storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
@@ -202,7 +201,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
         storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
 
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: false)
@@ -230,13 +229,13 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetJWKS(destinationMockAPIService: apiService, success: true)
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
         storePurchaseManager.purchaseSubscriptionResult = .success("purchaseTransactionJWS")
 
         SubscriptionAPIMockResponseFactory.mockConfirmPurchase(destinationMockAPIService: apiService, success: true)
         SubscriptionAPIMockResponseFactory.mockGetFeatures(destinationMockAPIService: apiService, success: false, subscriptionID: "ios.subscription.1month")
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         var purchaseTransactionJWS: String?
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelectionID) {
@@ -263,7 +262,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: true)
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         // Buy subscription
         let email = "test@duck.com"
@@ -280,7 +279,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
     func testStripePurchaseFailure_authorise() async throws {
         // configure mock API responses
         APIMockResponseFactory.mockAuthoriseResponse(destinationMockAPIService: apiService, success: false)
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         // Buy subscription
         let email = "test@duck.com"
@@ -298,7 +297,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         APIMockResponseFactory.mockAuthoriseResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: false)
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         // Buy subscription
         let email = "test@duck.com"
@@ -317,7 +316,7 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         APIMockResponseFactory.mockCreateAccountResponse(destinationMockAPIService: apiService, success: true)
         APIMockResponseFactory.mockGetAccessTokenResponse(destinationMockAPIService: apiService, success: false)
 
-        (subscriptionManager.oAuthClient as! DefaultOAuthClient).testingDecodedTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        await (subscriptionManager.oAuthClient as! DefaultOAuthClient).setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainerWithEntitlements())
 
         // Buy subscription
         let email = "test@duck.com"

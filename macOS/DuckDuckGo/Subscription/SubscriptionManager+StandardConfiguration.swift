@@ -188,18 +188,12 @@ extension DefaultSubscriptionManagerV2 {
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      autoRecoveryHandler: {
-                // todo Implement
-            },
                       isInternalUserEnabled: isInternalUserEnabled)
         } else {
             self.init(oAuthClient: authClient,
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      autoRecoveryHandler: {
-                // todo Implement
-            },
                       isInternalUserEnabled: isInternalUserEnabled)
         }
     }

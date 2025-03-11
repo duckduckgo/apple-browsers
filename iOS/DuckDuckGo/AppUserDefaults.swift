@@ -459,15 +459,16 @@ public class AppUserDefaults: AppSettings {
 
     var duckPlayerNativeUISERPEnabled: Bool {
         get {
-            if let value = userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) {
-                return value
+            // Use object(forKey:) which returns nil if key doesn't exist
+            if userDefaults?.object(forKey: Keys.duckPlayerNativeUISERPEnabled) == nil {
+                return true  // Default value when not set
             }
-            return true
+            return userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) ?? true
         }
         set {
             userDefaults?.set(newValue, forKey: Keys.duckPlayerNativeUISERPEnabled)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                            object: nil)
+                                          object: nil)
         }
     }
 

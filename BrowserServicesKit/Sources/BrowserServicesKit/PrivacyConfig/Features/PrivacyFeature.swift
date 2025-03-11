@@ -249,7 +249,6 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
      case popoverVsBannerExperiment
  }
 
-
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .onboarding }
 

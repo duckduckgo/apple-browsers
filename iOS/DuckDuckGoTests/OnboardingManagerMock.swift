@@ -26,14 +26,14 @@ final class OnboardingManagerMock: OnboardingAddToDockManaging, OnboardingSetAsD
 
     var isSetAsDefaultBrowserEnabled: Bool = false
 
-    var _settingsURLPath: String = "www.example.com"
+    var settingsURLPathToReturn: String = "www.example.com"
     var settingsURLPath: String {
         get {
             didCallSettingsURLPath = true
-            return _settingsURLPath
+            return settingsURLPathToReturn
         }
         set {
-            _settingsURLPath = newValue
+            settingsURLPathToReturn = newValue
         }
     }
 

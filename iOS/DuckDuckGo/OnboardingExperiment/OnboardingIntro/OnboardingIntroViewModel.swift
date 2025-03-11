@@ -180,7 +180,7 @@ private extension OnboardingIntroViewModel {
                 // Send experimental pixel
                 Logger.onboarding.debug("Succesfully received default browser result: \(newInfo.isDefaultBrowser)")
             }
-            .onFailure { failure in
+            .onFailure { _ in
                 // Send Debug pixel
             }
     }

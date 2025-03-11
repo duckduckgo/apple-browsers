@@ -1147,7 +1147,7 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
         setHostViewController(hostViewController)
         print("hostViewController.tabModel.link?.url: \(hostViewController.tabModel.link?.url)")
-        if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {            
+        if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
             self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
         }
     }

@@ -161,6 +161,7 @@ public struct UserDefaultsWrapper<T> {
 
         case pinnedViews = "pinning.pinned-views"
         case manuallyToggledPinnedViews = "pinning.manually-toggled-pinned-views"
+        case pinnedTabsDiscoveryPopoverPresented = "pinned.tabs.discovery.popover.presented"
 
         case lastDatabaseFactoryFailurePixelDate = "last.database.factory.failure.pixel.date"
 

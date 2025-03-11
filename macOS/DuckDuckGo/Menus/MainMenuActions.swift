@@ -732,6 +732,8 @@ extension MainViewController {
             tabCollectionViewModel.unpinTab(at: index)
         case .unpinned(let index):
             tabCollectionViewModel.pinTab(at: index)
+
+            tabBarViewController.presentPinnedTabsDiscoveryPopoverIfNecessary()
         }
     }
 

@@ -72,6 +72,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+    private var pinnedTabsDiscoveryPopover: NSPopover?
 
     var shouldDisplayTabPreviews: Bool = true
     private var selectionIndexCancellable: AnyCancellable?
@@ -1153,6 +1154,33 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         collectionView.clearSelection()
         tabCollectionViewModel.pinTab(at: indexPath.item)
+
+        presentPinnedTabsDiscoveryPopoverIfNecessary()
+    }
+
+    func presentPinnedTabsDiscoveryPopoverIfNecessary() {
+        //todo uncomment
+//        guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
+//        PinnedTabsDiscoveryPopover.popoverPresented = true
+
+        //Wait until pinned tab change is applied to pinned tabs view
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) { [weak self] in
+            guard let self = self else { return }
+
+            let popover = self.pinnedTabsDiscoveryPopover ?? PinnedTabsDiscoveryPopover(callback: { [weak self ] _ in
+                self?.pinnedTabsDiscoveryPopover?.close()
+            })
+
+            self.pinnedTabsDiscoveryPopover = popover
+
+            guard let view = self.pinnedTabsHostingView else { return }
+            popover.show(relativeTo: NSRect(x: view.bounds.maxX - PinnedTabView.Const.dimension,
+                                            y: view.bounds.minY,
+                                            width: PinnedTabView.Const.dimension,
+                                            height: view.bounds.height),
+                         of: view,
+                         preferredEdge: .maxY)
+        }
     }
 
     func tabBarViewItemCanBeBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {

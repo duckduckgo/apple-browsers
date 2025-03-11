@@ -124,8 +124,6 @@ extension TabContent {
             return .anySettingsPane
         case URL.bookmarks, URL.Invalid.aboutBookmarks:
             return .bookmarks
-        case URL.history:
-            return .history
         case URL.dataBrokerProtection:
             return .dataBrokerProtection
         case URL.releaseNotes:
@@ -135,6 +133,8 @@ extension TabContent {
                 return .newtab
             }
             return .url(customURL, source: source)
+        case let historyURL where historyURL?.isHistory == true:
+            return .history
         default: break
         }
 
@@ -283,7 +283,7 @@ extension TabContent {
 
     var isUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes:
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history:
             return true
         default:
             return false
@@ -335,7 +335,7 @@ extension TabContent {
 
     var canBePinned: Bool {
         switch self {
-        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .history:
             return false
         default:
             return isUrl
@@ -350,5 +350,4 @@ extension TabContent {
             return true
         }
     }
-
 }

@@ -54,10 +54,10 @@ final class DataClientTests: XCTestCase {
     // MARK: - getRanges
 
     func testThatGetRangesReturnsRangesFromDataProvider() async throws {
-        dataProvider._ranges = [.all, .friday]
+        dataProvider._ranges = [.init(id: .all, count: 1), .init(id: .friday, count: 1)]
         let rangesResponse: DataModel.GetRangesResponse = try await messageHelper.handleMessage(named: .getRanges)
         XCTAssertEqual(dataProvider.rangesCallCount, 1)
-        XCTAssertEqual(rangesResponse.ranges, [.all, .friday])
+        XCTAssertEqual(rangesResponse.ranges, [.init(id: .all, count: 1), .init(id: .friday, count: 1)])
     }
 
     // MARK: - query
@@ -74,8 +74,8 @@ final class DataClientTests: XCTestCase {
             dateTimeOfDay: "10:08",
             favicon: nil
         )
-        dataProvider.visitsBatch = { _, _, _ in return .init(finished: true, visits: [historyItem]) }
-        let query = DataModel.HistoryQuery(query: .searchTerm(""), limit: 150, offset: 0)
+        dataProvider.visitsBatch = { _, _, _, _ in return .init(finished: true, visits: [historyItem]) }
+        let query = DataModel.HistoryQuery(query: .searchTerm(""), source: .auto, limit: 150, offset: 0)
 
         let queryResponse: DataModel.HistoryQueryResponse = try await messageHelper.handleMessage(named: .query, parameters: query)
         XCTAssertEqual(dataProvider.visitsBatchCalls.count, 1)

@@ -59,14 +59,7 @@ class HomeScreenTransition: TabSwitcherTransition {
     }
     
     fileprivate func previewFrame(for cellBounds: CGSize) -> CGRect {
-        guard tabSwitcherSettings.isGridViewEnabled else {
-            return CGRect(origin: .zero, size: cellBounds)
-        }
-        
-        var targetFrame = CGRect(origin: .zero, size: cellBounds)
-        targetFrame.origin.y -= TabViewCell.Constants.cellHeaderHeight
-        targetFrame.size.height += TabViewCell.Constants.cellHeaderHeight
-        return targetFrame
+        return CGRect(origin: .zero, size: cellBounds)
     }
     
 }

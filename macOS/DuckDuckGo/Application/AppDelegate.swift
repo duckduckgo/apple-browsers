@@ -97,7 +97,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
-    private(set) lazy var historyViewCoordinator: HistoryViewCoordinator = HistoryViewCoordinator(historyCoordinator: HistoryCoordinator.shared)
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
         settingsModel: homePageSettingsModel,
@@ -111,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let homePageSettingsModel = HomePage.Models.SettingsModel()
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
 
     public let subscriptionManager: SubscriptionManager
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -148,7 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if SPARKLE
     var updateController: UpdateController!
-    var dockCustomization: DockCustomization!
+    var dockCustomization: DockCustomization?
 #endif
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
@@ -281,6 +281,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             for: FeatureFlag.self
         )
 
+        let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
+
         onboardingStateMachine = ContextualOnboardingStateMachine()
 
         // Configure Subscription
@@ -338,7 +341,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if SPARKLE
         if NSApp.runType != .uiTests {
             updateController = UpdateController(internalUserDecider: internalUserDecider)
-            dockCustomization = DockCustomizer()
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
 #endif
@@ -394,6 +396,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DefaultVariantManager().assignVariantIfNeeded { _ in
             // MARK: perform first time launch logic here
         }
+
+        #if SPARKLE
+        dockCustomization = DockCustomizer()
+        #endif
 
         let statisticsLoader = NSApp.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()

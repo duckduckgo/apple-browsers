@@ -76,39 +76,7 @@ struct FavoriteView: View {
     }
 }
 
-struct LargeSearchFieldView: View {
-
-    var body: some View {
-        Link(destination: DeepLinks.newSearch) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 23)
-                    .fill(Color(designSystemColor: .container))
-                    .frame(minHeight: 46, maxHeight: 46)
-                    .padding(.vertical, 16)
-
-                HStack {
-                    Image(.duckDuckGoColor28)
-                        .resizable()
-                        .useFullColorRendering()
-                        .frame(width: 28, height: 28, alignment: .leading)
-                        .padding(.leading, 12)
-
-                    Text(UserText.searchDuckDuckGo)
-                        .daxBodyRegular()
-                        .makeAccentable()
-
-                    Spacer()
-
-                }
-
-            }.unredacted()
-        }
-    }
-
-}
-
 struct FavoritesRowView: View {
-
     var entry: Provider.Entry
     var start: Int
     var end: Int
@@ -124,9 +92,7 @@ struct FavoritesRowView: View {
 
             }
         }
-
     }
-
 }
 
 struct FavoritesGridView: View {
@@ -217,23 +183,6 @@ struct FavoritesWidgetView: View {
         } else {
             return false
         }
-    }
-}
-
-private struct CircleIconView: View {
-    let image: Image
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 23)
-                .fill(Color(designSystemColor: .container))
-            image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24, height: 24)
-                .makeAccentable()
-        }
-        .frame(width: 46, height: 46)
     }
 }
 

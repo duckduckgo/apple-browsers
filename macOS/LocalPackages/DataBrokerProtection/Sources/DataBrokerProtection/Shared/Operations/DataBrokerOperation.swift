@@ -64,7 +64,7 @@ class DataBrokerOperation: Operation, @unchecked Sendable {
     private var _isFinished = false
 
     deinit {
-        Logger.dataBrokerProtection.log("Deinit operation: \(String(describing: self.id.uuidString), privacy: .public)")
+        Logger.dataBrokerProtection.log("Deinit DataBrokerOperation: \(String(describing: self.id.uuidString), privacy: .public)")
     }
 
     init(dataBrokerID: Int64,

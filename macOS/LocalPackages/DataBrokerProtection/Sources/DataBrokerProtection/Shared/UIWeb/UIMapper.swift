@@ -154,7 +154,7 @@ struct MapperToUI {
         if scansInTheLastEightDays.isEmpty {
             return DBPUIScanDate(date: currentDate.timeIntervalSince1970, dataBrokers: [DBPUIDataBroker]())
         } else {
-            return DBPUIScanDate(date: scansInTheLastEightDays.first!.date!, dataBrokers: scansInTheLastEightDays)
+            return DBPUIScanDate(date: scansInTheLastEightDays.last!.date!, dataBrokers: scansInTheLastEightDays)
         }
     }
 
@@ -238,6 +238,7 @@ struct MapperToUI {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
+            encoder.outputFormatting = .sortedKeys
             let jsonData = try encoder.encode(metadataUI)
             if let jsonString = String(data: jsonData, encoding: .utf8) {
                 Logger.dataBrokerProtection.log("Metadata: \(jsonString, privacy: .public)")

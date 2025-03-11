@@ -35,7 +35,7 @@ final class TabViewCell: UICollectionViewCell {
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
         static let cellCornerRadius: CGFloat = 8.0
-        static let cellHeaderHeight: CGFloat = 38.0
+        static let cellHeaderHeight: CGFloat = 36.0
         static let cellLogoSize: CGFloat = 68.0
 
         static let selectedBorderWidth: CGFloat = 4.0
@@ -103,7 +103,7 @@ final class TabViewCell: UICollectionViewCell {
         backgroundColor = .clear
         backgroundView?.backgroundColor = .clear
 
-        border.layer.cornerRadius = 12
+        border.layer.cornerRadius = 16
 
         layer.cornerRadius = 12
         layer.shadowColor = UIColor.black.cgColor
@@ -115,6 +115,7 @@ final class TabViewCell: UICollectionViewCell {
         layer.rasterizationScale = UIScreen.main.scale
 
         unread.tintColor = UIColor(designSystemColor: .accent)
+
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
@@ -385,6 +386,7 @@ final class TabViewCell: UICollectionViewCell {
         let theme = ThemeManager.shared.currentTheme
         border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
+        removeButton.tintColor = UIColor(designSystemColor: .icons)
 
         background.backgroundColor = theme.tabSwitcherCellBackgroundColor
         title.textColor = theme.tabSwitcherCellTextColor

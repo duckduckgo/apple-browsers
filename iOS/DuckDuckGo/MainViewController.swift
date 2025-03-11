@@ -358,7 +358,6 @@ class MainViewController: UIViewController {
 
         decorate()
 
-        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -389,7 +388,7 @@ class MainViewController: UIViewController {
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
 
         startOnboardingFlowIfNotSeenBefore()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
 
         _ = AppWidthObserver.shared.willResize(toWidth: view.frame.width)
@@ -528,8 +527,8 @@ class MainViewController: UIViewController {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection), hasEntitlements {
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection), hasEntitlement {
                 segueToVPN()
             } else {
                 segueToPrivacyPro()
@@ -869,7 +868,7 @@ class MainViewController: UIViewController {
             fatalError("No tab model")
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, contextualOnboardingLogic: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
                                                   interactionModel: favoritesViewModel,
@@ -1039,7 +1038,7 @@ class MainViewController: UIViewController {
             currentTab?.executeBookmarklet(url: url)
         }
     }
-    
+
     private func loadBackForwardItem(_ item: WKBackForwardListItem) {
         prepareTabForRequest {
             currentTab?.load(backForwardListItem: item)
@@ -1343,7 +1342,9 @@ class MainViewController: UIViewController {
             syncDataProviders: syncDataProviders,
             selectedAccount: nil,
             openSearch: openSearch,
-            source: source
+            source: source,
+            bookmarksDatabase: self.bookmarksDatabase,
+            favoritesDisplayMode: self.appSettings.favoritesDisplayMode
         )
         autofillSettingsViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillSettingsViewController)
@@ -1577,6 +1578,8 @@ class MainViewController: UIViewController {
                     let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                         deepLinkTarget = .duckPlayer
                     self?.launchSettings(deepLinkTarget: deepLinkTarget)
+                case .subscriptionFlow(let components):
+                    self?.launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
                 default:
                     return
                 }
@@ -1688,8 +1691,10 @@ class MainViewController: UIViewController {
     @objc
     private func onEntitlementsChange(_ notification: Notification) {
         Task {
-            let accountManager = AppDependencyProvider.shared.subscriptionManager.accountManager
-            guard case .success(false) = await accountManager.hasEntitlement(forProductName: .networkProtection) else { return }
+            let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+            guard let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
+                      hasEntitlement == false
+            else { return }
 
             if await networkProtectionTunnelController.isInstalled {
                 tunnelDefaults.enableEntitlementMessaging()
@@ -1800,7 +1805,7 @@ extension MainViewController: BrowserChromeDelegate {
         setBarsVisibility(hidden ? 0 : 1.0, animated: animated, animationDuration: customAnimationDuration)
     }
     
-    func setBarsVisibility(_ percent: CGFloat, animated: Bool = false, animationDuration: CGFloat?) {
+    func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
         if percent < 1 {
             hideKeyboard()
             hideMenuHighlighter()
@@ -1815,6 +1820,15 @@ extension MainViewController: BrowserChromeDelegate {
             self.viewCoordinator.navigationBarContainer.alpha = percent
             self.viewCoordinator.tabBarContainer.alpha = percent
             self.viewCoordinator.toolbar.alpha = percent
+            
+            // Post notification only when bars are fully shown or hidden
+            if percent == 0 || percent == 1 {
+                NotificationCenter.default.post(
+                    name: .browserChromeVisibilityChanged,
+                    object: nil,
+                    userInfo: ["isHidden": percent == 0]
+                )
+            }
         }
            
         if animated {
@@ -2642,6 +2656,18 @@ extension MainViewController: TabSwitcherDelegate {
             showFireButtonPulse()
         }
     }
+    
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
+        guard let bookmark = self.menuBookmarksViewModel.bookmark(for: url) else { return }
+        tabSwitcher.dismiss(animated: true) {
+            self.segueToEditBookmark(bookmark)
+        }
+    }
+    
+    func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController) {
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+        updateCurrentTab()
+    }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRemoveTab tab: Tab) {
         if tabManager.count == 1 {
@@ -3029,12 +3055,24 @@ extension MainViewController: UIDropInteractionDelegate {
 // MARK: - VoiceSearchViewControllerDelegate
 
 extension MainViewController: VoiceSearchViewControllerDelegate {
-    
-    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?) {
-        controller.dismiss(animated: true, completion: nil)
-        if let query = query {
-            Pixel.fire(pixel: .voiceSearchDone)
+
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        controller.dismiss(animated: true) { [weak self] in
+            guard let self = self, let query = query else { return }
+            self.handleVoiceSearchCompletion(with: query, for: target)
+        }
+    }
+
+    private func handleVoiceSearchCompletion(with query: String, for target: VoiceSearchTarget) {
+        switch target {
+        case .SERP:
+            Pixel.fire(pixel: .voiceSearchSERPDone)
             loadQuery(query)
+
+        case .AIChat:
+            Pixel.fire(pixel: .voiceSearchAIChatDone)
+            performCancel()
+            openAIChat(query, autoSend: true)
         }
     }
 }

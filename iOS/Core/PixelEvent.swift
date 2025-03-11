@@ -63,6 +63,41 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
+        // MARK: Tabswitcher improvements
+        case tabSwitcherEditMenuClicked
+        case tabSwitcherEditMenuSelectTabs
+        case tabSwitcherEditMenuSelectTabsDaily
+        case tabSwitcherEditMenuCloseAllTabs
+        case tabSwitcherEditMenuCloseAllTabsDaily
+        case tabSwitcherTabSelected
+        case tabSwitcherTabDeselected
+        case tabSwitcherSelectAll
+        case tabSwitcherSelectAllDaily
+        case tabSwitcherDeselectAll
+        case tabSwitcherDeselectAllDaily
+        case tabSwitcherCloseAll
+        case tabSwitcherCloseAllDaily
+        case tabSwitcherConfirmCloseTabs
+        case tabSwitcherConfirmCloseTabsDaily
+        case tabSwitcherSelectModeMenuClicked
+        case tabSwitcherSelectModeMenuShareLinks
+        case tabSwitcherSelectModeMenuShareLinksDaily
+        case tabSwitcherSelectModeMenuBookmarkTabs
+        case tabSwitcherSelectModeMenuBookmarkTabsDaily
+        case tabSwitcherSelectModeMenuBookmarkAllTabs
+        case tabSwitcherSelectModeMenuBookmarkAllTabsDaily
+        case tabSwitcherSelectModeMenuCloseOtherTabs
+        case tabSwitcherSelectModeMenuCloseOtherTabsDaily
+        case tabSwitcherLongPress
+        case tabSwitcherLongPressDaily
+        case tabSwitcherLongPressShare
+        case tabSwitcherLongPressBookmarkTabs
+        case tabSwitcherLongPressBookmarkTabsDaily
+        case tabSwitcherLongPressSelectTabs
+        case tabSwitcherLongPressCloseTab
+        case tabSwitcherLongPressCloseOtherTabs
+        case tabSwitcherLongPressCloseOtherTabsDaily
+
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
@@ -204,7 +239,8 @@ extension Pixel {
         case emailUserCreatedAlias
         case emailTooltipDismissed
         
-        case voiceSearchDone
+        case voiceSearchSERPDone
+        case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
 
@@ -245,7 +281,9 @@ extension Pixel {
         case jsAlertShown
         
         case featureFlaggingInternalUserAuthenticated
-        
+
+        // MARK: Autofill pixels
+
         case autofillLoginsSaveLoginModalDisplayed
         case autofillLoginsSaveLoginModalConfirmed
         case autofillLoginsSaveLoginModalDismissed
@@ -359,6 +397,33 @@ extension Pixel {
         case secureVaultV4Migration
         case secureVaultV4MigrationSkipped
 
+        // MARK: Data Import pixels
+
+        case autofillImportPasswordsImportButtonTapped
+        case autofillImportPasswordsImportButtonShown
+        case autofillImportPasswordsOverflowMenuTapped
+        case bookmarksImportButtonTapped
+        case bookmarksImportButtonShown
+        case bookmarksImportOverflowMenuTapped
+        case importInstructionsDisplayed
+        case importInstructionsFileButtonTapped
+        case importInstructionsToggled
+        case importInstructionsFileSelectedZip
+        case importInstructionsFileSelectedHtml
+        case importInstructionsFileSelectedCsv
+        case importInstructionsCancelled
+        case importPreviewPromptDisplayed
+        case importPreviewPromptConfirmed
+        case importPreviewPromptDismissed
+        case importResultDisplayed
+        case importResultPasswordsSuccess
+        case importResultBookmarksSuccess
+        case importResultSyncButtonShown
+        case importResultSyncButtonTapped
+        case importResultPasswordsParsing
+        case importResultBookmarksParsing
+        case importResultUnzipping
+
         // MARK: Ad Click Attribution pixels
         
         case adClickAttributionDetected
@@ -392,8 +457,6 @@ extension Pixel {
         case networkProtectionTunnelUpdateSuccess
         case networkProtectionTunnelUpdateFailure
 
-        case networkProtectionTunnelWakeAttempt
-        case networkProtectionTunnelWakeSuccess
         case networkProtectionTunnelWakeFailure
 
         case networkProtectionEnableAttemptConnecting
@@ -416,8 +479,6 @@ extension Pixel {
         case networkProtectionLatencyError
         
         case networkProtectionEnabledOnSearch
-        
-        case networkProtectionBreakageReport
 
         case networkProtectionRekeyAttempt
         case networkProtectionRekeyFailure
@@ -806,6 +867,9 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
+        case privacyProDeadTokenDetected
+        case authV1MigrationFailed
+        case authV1MigrationSucceeded
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -973,6 +1037,7 @@ extension Pixel {
         case openAIChatFromWidgetQuickAction
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
+        case openAIChatFromIconShortcut
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1191,7 +1256,8 @@ extension Pixel.Event {
         case .emailUserCreatedAlias: return "email_generated_button"
         case .emailTooltipDismissed: return "email_tooltip_dismissed"
             
-        case .voiceSearchDone: return "m_voice_search_done"
+        case .voiceSearchSERPDone: return "m_voice_search_serp_done"
+        case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
             
@@ -1226,7 +1292,9 @@ extension Pixel.Event {
         case .jsAlertShown: return "m_js_alert_shown"
             
         case .featureFlaggingInternalUserAuthenticated: return "m_internal-user_authenticated"
-            
+
+            // MARK: Autofill pixels
+
         case .autofillLoginsSaveLoginModalDisplayed: return "m_autofill_logins_save_login_inline_displayed"
         case .autofillLoginsSaveLoginModalConfirmed: return "m_autofill_logins_save_login_inline_confirmed"
         case .autofillLoginsSaveLoginModalDismissed: return "m_autofill_logins_save_login_inline_dismissed"
@@ -1355,6 +1423,33 @@ extension Pixel.Event {
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
+            // MARK: Data Import pixels
+
+        case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
+        case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
+        case .autofillImportPasswordsOverflowMenuTapped: return "autofill_import_passwords_overflow_menu_tapped"
+        case .bookmarksImportButtonTapped: return "bookmarks_import_button_tapped"
+        case .bookmarksImportButtonShown: return "bookmarks_import_button_shown"
+        case .bookmarksImportOverflowMenuTapped: return "bookmarks_import_overflow_menu_tapped"
+        case .importInstructionsDisplayed: return "import_instructions_displayed"
+        case .importInstructionsFileButtonTapped: return "import_instructions_file_button_tapped"
+        case .importInstructionsToggled: return "import_instructions_toggled"
+        case .importInstructionsFileSelectedZip: return "import_instructions_file_selected-zip"
+        case .importInstructionsFileSelectedHtml: return "import_instructions_file_selected-html"
+        case .importInstructionsFileSelectedCsv: return "import_instructions_file_selected-csv"
+        case .importInstructionsCancelled: return "import_instructions_cancelled"
+        case .importPreviewPromptDisplayed: return "import_preview_prompt_displayed"
+        case .importPreviewPromptConfirmed: return "import_preview_prompt_confirmed"
+        case .importPreviewPromptDismissed: return "import_preview_prompt_dismissed"
+        case .importResultDisplayed: return "import_result_displayed"
+        case .importResultPasswordsSuccess: return "import_result_passwords_success"
+        case .importResultBookmarksSuccess: return "import_result_bookmarks_success"
+        case .importResultSyncButtonShown: return "import_result_sync_button_shown"
+        case .importResultSyncButtonTapped: return "import_result_sync_button_tapped"
+        case .importResultPasswordsParsing: return "import_result_passwords_parsing"
+        case .importResultBookmarksParsing: return "import_result_bookmarks_parsing"
+        case .importResultUnzipping: return "import_result_unzipping"
+
             // MARK: Ad Click Attribution pixels
             
         case .adClickAttributionDetected: return "m_ad_click_detected"
@@ -1383,8 +1478,6 @@ extension Pixel.Event {
         case .networkProtectionTunnelUpdateAttempt: return "m_netp_tunnel_update_attempt"
         case .networkProtectionTunnelUpdateSuccess: return "m_netp_tunnel_update_success"
         case .networkProtectionTunnelUpdateFailure: return "m_netp_tunnel_update_failure"
-        case .networkProtectionTunnelWakeAttempt: return "m_netp_tunnel_wake_attempt"
-        case .networkProtectionTunnelWakeSuccess: return "m_netp_tunnel_wake_success"
         case .networkProtectionTunnelWakeFailure: return "m_netp_tunnel_wake_failure"
         case .networkProtectionEnableAttemptConnecting: return "m_netp_ev_enable_attempt"
         case .networkProtectionEnableAttemptSuccess: return "m_netp_ev_enable_attempt_success"
@@ -1401,7 +1494,6 @@ extension Pixel.Event {
         case .networkProtectionRekeyCompleted: return "m_netp_rekey_completed"
         case .networkProtectionRekeyFailure: return "m_netp_rekey_failure"
         case .networkProtectionEnabledOnSearch: return "m_netp_ev_enabled_on_search"
-        case .networkProtectionBreakageReport: return "m_vpn_breakage_report"
         case .networkProtectionTunnelConfigurationNoServerRegistrationInfo: return "m_netp_tunnel_config_error_no_server_registration_info"
         case .networkProtectionTunnelConfigurationCouldNotSelectClosestServer: return "m_netp_tunnel_config_error_could_not_select_closest_server"
         case .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey: return "m_netp_tunnel_config_error_could_not_get_peer_public_key"
@@ -1734,14 +1826,14 @@ extension Pixel.Event {
         case .historyInsertVisitFailed: return "m_debug_history-insert-visit-failed"
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
 
-        // MARK: Privacy pro
+        // MARK: Privacy Pro
         case .privacyProSubscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
         case .privacyProPurchaseFailure: return "m_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
-        case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_backend"
-        case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
         case .privacyProPurchaseSuccess: return "m_privacy-pro_app_subscription-purchase_success"
         case .privacyProRestorePurchaseOfferPageEntry: return "m_privacy-pro_offer_restore-purchase_click"
         case .privacyProRestorePurchaseClick: return "m_privacy-pro_app-settings_restore-purchase_click"
@@ -1773,6 +1865,9 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
+        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
+        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
+        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -1963,6 +2058,8 @@ extension Pixel.Event {
         case .openAIChatFromWidgetLockScreenComplication: return "m_aichat-widget-lock-screen-complication"
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
+        case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
+
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -1971,6 +2068,41 @@ extension Pixel.Event {
 
         // MARK: Malicious Site Protection
         case .maliciousSiteProtection(let event): return "m_\(event.name)"
+
+        // MARK: Tab switcher improvements
+        case .tabSwitcherEditMenuClicked: return "m_tab_manager_edit_menu_clicked"
+        case .tabSwitcherEditMenuSelectTabs: return "m_tab_manager_edit_menu_select_tabs"
+        case .tabSwitcherEditMenuSelectTabsDaily: return "m_tab_manager_edit_menu_select_tabs_daily"
+        case .tabSwitcherEditMenuCloseAllTabs: return "m_tab_manager_edit_menu_close_all_tabs"
+        case .tabSwitcherEditMenuCloseAllTabsDaily: return "m_tab_manager_edit_menu_close_all_tabs_daily"
+        case .tabSwitcherTabSelected: return "m_tab_manager_tab_selected"
+        case .tabSwitcherTabDeselected: return "m_tab_manager_tab_deselected"
+        case .tabSwitcherSelectAll: return "m_tab_manager_select_all"
+        case .tabSwitcherSelectAllDaily: return "m_tab_manager_select_all_daily"
+        case .tabSwitcherDeselectAll: return "m_tab_manager_deselect_all"
+        case .tabSwitcherDeselectAllDaily: return "m_tab_manager_deselect_all_daily"
+        case .tabSwitcherCloseAll: return "m_tab_manager_close_all"
+        case .tabSwitcherCloseAllDaily: return "m_tab_manager_close_all_daily"
+        case .tabSwitcherConfirmCloseTabs: return "m_tab_manager_confirm_close_tabs"
+        case .tabSwitcherConfirmCloseTabsDaily: return "m_tab_manager_confirm_close_tabs_daily"
+        case .tabSwitcherSelectModeMenuClicked: return "m_tab_manager_select_mode_menu_clicked"
+        case .tabSwitcherSelectModeMenuShareLinks: return "m_tab_manager_select_mode_menu_share_links"
+        case .tabSwitcherSelectModeMenuShareLinksDaily: return "m_tab_manager_select_mode_menu_share_links_daily"
+        case .tabSwitcherSelectModeMenuBookmarkTabs: return "m_tab_manager_select_mode_menu_bookmark_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_tabs_daily"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabs: return "m_tab_manager_select_mode_menu_bookmark_all_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_all_tabs_daily"
+        case .tabSwitcherSelectModeMenuCloseOtherTabs: return "m_tab_manager_select_mode_menu_close_other_tabs"
+        case .tabSwitcherSelectModeMenuCloseOtherTabsDaily: return "m_tab_manager_select_mode_menu_close_other_tabs_daily"
+        case .tabSwitcherLongPress: return "m_tab_manager_long_press"
+        case .tabSwitcherLongPressDaily: return "m_tab_manager_long_press_daily"
+        case .tabSwitcherLongPressShare: return "m_tab_manager_long_press_share"
+        case .tabSwitcherLongPressBookmarkTabs: return "m_tab_manager_long_press_bookmark_tabs"
+        case .tabSwitcherLongPressBookmarkTabsDaily: return "m_tab_manager_long_press_bookmark_tabs_daily"
+        case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
+        case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
+        case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
+        case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
         }
     }
 }

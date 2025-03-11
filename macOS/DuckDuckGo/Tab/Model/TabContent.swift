@@ -124,8 +124,6 @@ extension TabContent {
             return .anySettingsPane
         case URL.bookmarks, URL.Invalid.aboutBookmarks:
             return .bookmarks
-        case URL.history:
-            return .history
         case URL.dataBrokerProtection:
             return .dataBrokerProtection
         case URL.releaseNotes:
@@ -135,6 +133,8 @@ extension TabContent {
                 return .newtab
             }
             return .url(customURL, source: source)
+        case let historyURL where historyURL?.isHistory == true:
+            return .history
         default: break
         }
 
@@ -143,7 +143,7 @@ extension TabContent {
                 return .webExtensionUrl(url)
             }
 
-            let subscriptionManager = Application.appDelegate.subscriptionManager
+            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
             let environment = subscriptionManager.currentEnvironment.serviceEnvironment
             let subscriptionBaseURL = subscriptionManager.url(for: .baseURL)
             let identityTheftRestorationURL = subscriptionManager.url(for: .identityTheftRestoration)
@@ -283,7 +283,7 @@ extension TabContent {
 
     var isUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes:
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history:
             return true
         default:
             return false
@@ -335,7 +335,7 @@ extension TabContent {
 
     var canBePinned: Bool {
         switch self {
-        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes:
+        case .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .history:
             return false
         default:
             return isUrl
@@ -344,11 +344,10 @@ extension TabContent {
 
     var canBeBookmarked: Bool {
         switch self {
-        case .newtab, .onboardingDeprecated, .onboarding, .none:
+        case .newtab, .onboardingDeprecated, .onboarding, .bookmarks, .settings, .none:
             return false
-        case .url, .settings, .bookmarks, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
+        case .url, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
             return true
         }
     }
-
 }

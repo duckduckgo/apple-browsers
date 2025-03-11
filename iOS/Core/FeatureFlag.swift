@@ -49,14 +49,10 @@ public enum FeatureFlag: String {
     case textZoom
     case adAttributionReporting
     case aiChat
+    case aiChatBrowsingToolbarShortcut
+    case aiChatAddressBarShortcut
     case aiChatDeepLink
     case tabManagerMultiSelection
-
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
     
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
@@ -72,6 +68,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1204167627774280/1209205869217377
     case aiChatNewTabPage
+
+    /// https://app.asana.com/0/1204167627774280/1209370532515589
+    case aiChatVoiceSearch
 
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
@@ -167,12 +166,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autcompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .crashReportOptInStatusResetting:
@@ -191,6 +186,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .aiChatNewTabPage:
             return .enabled
+        case .aiChatVoiceSearch:
+            return .enabled
+        case .aiChatBrowsingToolbarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
+        case .aiChatAddressBarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .networkProtectionRiskyDomainsProtection:

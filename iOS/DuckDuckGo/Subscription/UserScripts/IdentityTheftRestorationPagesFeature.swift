@@ -40,10 +40,10 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
     struct Handlers {
         static let getAccessToken = "getAccessToken"
     }
+        
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
-    private let subscriptionManager: SubscriptionManager
-
-    init(subscriptionManager: SubscriptionManager) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.subscriptionManager = subscriptionManager
     }
 
@@ -51,7 +51,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
 
     let featureName: String = Constants.featureName
     lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
+        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .identityTheftRestoration)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
     var originalMessage: WKScriptMessage?
@@ -69,7 +69,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
     }
     
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        if let accessToken = subscriptionManager.accountManager.accessToken {
+        if let accessToken = try? await subscriptionManager.getAccessToken() {
             return [Constants.token: accessToken]
         } else {
             return [String: String]()

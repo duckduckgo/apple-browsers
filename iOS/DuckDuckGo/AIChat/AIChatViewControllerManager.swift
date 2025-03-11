@@ -43,6 +43,13 @@ final class AIChatViewControllerManager {
     func openAIChat(_ query: String? = nil, payload: Any? = nil, autoSend: Bool = false, on viewController: UIViewController) {
         let settings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
 
+        let inspectableWebView: Bool
+#if DEBUG
+        inspectableWebView = true
+#else
+        inspectableWebView = AppUserDefaults().inspectableWebViewEnabled
+#endif
+
         // Check if the viewController is already presenting a RoundedPageSheetContainerViewController with AIChatViewController inside
         if let presentedVC = viewController.presentedViewController as? RoundedPageSheetContainerViewController,
            presentedVC.contentViewController is AIChatViewController {
@@ -59,7 +66,8 @@ final class AIChatViewControllerManager {
         self.userContentController = userContentController
         let aiChatViewController = AIChatViewController(settings: settings,
                                                         webViewConfiguration: webviewConfiguration,
-                                                        requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()))
+                                                        requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
+                                                        inspectableWebView: inspectableWebView)
         aiChatViewController.delegate = self
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(

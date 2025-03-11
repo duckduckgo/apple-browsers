@@ -217,9 +217,6 @@
 /* Title of the warning message */
 "alert.sync.warning.sync-paused" = "Синхронизация и резервное копирование на паузе";
 
-/* Question from confirmation dialog */
-"alert.title.bookmarkAll" = "Добавить все вкладки в закладки?";
-
 /* Disable protection alert */
 "alert.title.disable.protection" = "Добавить в незащищенные сайты";
 
@@ -327,42 +324,6 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скрыть пароль";
-
-/* Button label to get link to download the desktop browser */
-"autofill.import.passwords.get-browser-button" = "Скачать настольный браузер";
-
-/* Step 1 for instructions to import passwords */
-"autofill.import.passwords.instructions.step1" = "Запустите DuckDuckGo на Mac или Windows";
-
-/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
-"autofill.import.passwords.instructions.step2" = "Откройте раздел «%1$@ > %2$@»";
-
-/* second parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.passwords" = "Пароли";
-
-/* first parameter for autofill.import.passwords.instructions.step2 */
-"autofill.import.passwords.instructions.step2.settings" = "Настройки";
-
-/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
-"autofill.import.passwords.instructions.step3" = "Выберите вариант «%@» и следуйте дальнейшим инструкциям";
-
-/* Parameter for autofill.import.passwords.instructions.step3 */
-"autofill.import.passwords.instructions.step3.import" = "Импортировать пароли...";
-
-/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
-"autofill.import.passwords.instructions.step4" = "По окончании импортирования на компьютер вы сможете настроить синхронизацию на данном %@";
-
-/* Title for section with instructions to import passwords */
-"autofill.import.passwords.instructions.title" = "Импорт из настольного браузера:";
-
-/* Subtitle for screen to import passwords */
-"autofill.import.passwords.subtitle" = "Импортируйте пароли в настольную версию браузера DuckDuckGo, а затем синхронизируйте их между устройствами.";
-
-/* Button label to sync passwords with desktop browser */
-"autofill.import.passwords.sync-button" = "Синхронизировать с компьютером";
-
-/* Title for screen to import passwords */
-"autofill.import.passwords.title" = "Как импортировать пароли";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Выключить";
@@ -764,23 +725,11 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Закладки переданы.";
 
-/* Title of option to export HTML */
-"bookmarks.exportAction.title" = "Экспорт в файл HTML";
-
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "К сожалению, мы не можем импортировать данный файл.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Закладки импортированы.";
-
-/* Title of option to import HTML */
-"bookmarks.importAction.title" = "Импорт из файла HTML";
-
-/* Import bookmark file button text */
-"bookmarks.importExport.footer.button.title" = "Импортировать закладки из другого браузера";
-
-/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
-"bookmarks.importExport.title" = "Импортировать файл HTML с закладками из другого браузера или экспортировать свои закладки.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Сообщить о проблеме на сайте";
@@ -796,6 +745,9 @@
 
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Ваш отчет поможет улучшить DuckDuckGo для всех.";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "Отмена допускается только один раз";
 
 /* No comment provided by engineer. */
 "Confirm" = "Подтвердить";
@@ -1088,6 +1040,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Показывать Duck.ai в меню браузера";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Показывать Duck.ai в голосовом поиске";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1199,7 +1154,7 @@
 /* Title for prompt to sign up for email protection */
 "email.signup-prompt.title" = "Скрытие адреса почты\nи блокировка трекеров";
 
-/* Empty list state placholder */
+/* Empty list state placeholder title */
 "empty.bookmarks" = "Закладок пока нет";
 
 /* Empty search placeholder on bookmarks search */
@@ -1671,6 +1626,9 @@
 "menu.button.hint" = "Меню браузера";
 
 /* No comment provided by engineer. */
+"Message" = "Сообщение";
+
+/* No comment provided by engineer. */
 "Message policy hostname" = "Имя хоста политики сообщений";
 
 /* Title for back button in navigation bar */
@@ -1995,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Какой цвет мне идет?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Блокировка запросов и всплывающих окон куки";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Блокировка всплывающих окон куки";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Блокировка целевой рекламы";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Блокирует рекламу с отслеживанием";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Быстрое удаление данных из браузера";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Стирает данные браузера одним нажатием";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Блокировка сторонних трекеров";
@@ -2017,6 +1975,24 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";
+
+/* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
+"onboarding.privacypro.promo.buttons.learnMore" = "Узнать больше";
+
+/* Button to continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.skip" = "Пропустить";
+
+/* The title of the onboarding dialog that promotes Privacy Pro */
+"onboarding.privacypro.promo.title" = "Кстати, пока не забыл...";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
+"onboarding.privacypro.promo.vpn.message" = "В DuckDuckGo также есть встроенный %1$@!\n\nДля его активации требуется %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "платная подписка Privacy Pro";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добавить виджет";
@@ -2177,6 +2153,9 @@
 "preserveLogins.remove.all.ok" = "Хорошо";
 
 /* No comment provided by engineer. */
+"Primary / First Action" = "Основное/первое действие";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Защита конфиденциальности";
 
 /* Privacy Icon accessibility title */
@@ -2207,6 +2186,9 @@
 "search.hint.duckduckgo" = "Введите поисковый запрос или адрес сайта";
 
 /* No comment provided by engineer. */
+"Secondary / Second Action" = "Вторичное / Второе действие";
+
+/* No comment provided by engineer. */
 "section.title.bookmarks" = "Закладки";
 
 /* No comment provided by engineer. */
@@ -2229,9 +2211,6 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "О нас";
-
-/* about page */
-"settings.about.text" = "DuckDuckGo — независимая компания, которая c 2008 года предоставляет услуги защиты личных данных в интернете. Мы предлагаем простое решение для тех, кому надоело отслеживание онлайн. Своим примером DuckDuckGo показывает, что защита конфиденциальности в Сети не требует компромиссов.\n\nВ универсальном браузере DuckDuckGo вы найдете все те же привычные функции — вкладки, закладки, пароли, — а также более [десятка мощных средств защиты личной информации](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/), которых нет в стандартных пакетах других популярных веб-обозревателей. Наш всесторонний набор инструментов скроет от посторонних глаз всю вашу онлайн-активность, включая поиск, просмотр сайтов и чтение почты.\n\nСервисы DuckDuckGo не требуют особых технических познаний или работы со сложными настройками. Достаточно сменить свой браузер на DuckDuckGo на всех устройствах, и конфиденциальность онлайн станет вашим спутником по умолчанию.\n\nЕсли же вас интересует наша «кухня», вы можете почитать о том, как устроены инструменты защиты DuckDuckGo, на [страницах нашего справочного центра](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/).";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Универсальный доступ";
@@ -2767,6 +2746,9 @@
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Бесплатный пробный доступ активирован";
 
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "Оповещение SwiftUI";
+
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Код восстановления скопирован в буфер обмена";
 
@@ -2866,6 +2848,9 @@
 /* No comment provided by engineer. */
 "This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "В этом списке содержатся уже показанные сообщения, а также максимум одно сообщение, показ которого запланирован. В конфигурации могут находиться и другие сообщения, которые будут показаны после обработки.";
 
+/* No comment provided by engineer. */
+"Title" = "Название";
+
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.disabled" = "Защита конфиденциальности на %@ отключена";
 
@@ -2874,6 +2859,12 @@
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Защита конфиденциальности на %@ включена";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Поиск";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Предложение для автозаполнения";
@@ -3126,9 +3117,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Сообщение от %@:";
-
-/* No comment provided by engineer. */
-"Welcome to the Duck Side!" = "Добро пожаловать на Утиную сторону!";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Ищете версию для Mac?";

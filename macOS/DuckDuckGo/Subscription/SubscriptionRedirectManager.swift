@@ -27,19 +27,16 @@ protocol SubscriptionRedirectManager: AnyObject {
 
 final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let baseURL: URL
-    private let canPurchase: () -> Bool
     private let tld: TLD
     private let featureFlagger: FeatureFlagger
 
-    init(subscriptionManager: SubscriptionManager,
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          baseURL: URL,
-         canPurchase: @escaping () -> Bool,
          tld: TLD = ContentBlocking.shared.tld,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
-        self.canPurchase = canPurchase
         self.baseURL = baseURL
         self.tld = tld
         self.featureFlagger = featureFlagger
@@ -51,7 +48,7 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
         else { return nil }
 
         if url.pathComponents == URL.privacyPro.pathComponents {
-            let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && canPurchase() == false
+            let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
             let isPurchasePageRedirectActive = !shouldHidePrivacyProDueToNoProducts
 
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.

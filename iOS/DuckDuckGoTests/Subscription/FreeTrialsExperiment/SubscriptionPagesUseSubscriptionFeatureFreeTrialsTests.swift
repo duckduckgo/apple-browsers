@@ -27,7 +27,7 @@ import Core
 
 final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
 
-    private var sut: SubscriptionPagesUseSubscriptionFeature!
+    private var sut: (any SubscriptionPagesUseSubscriptionFeature)!
 
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockAccountManager: AccountManagerMock!
@@ -48,14 +48,14 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
         mockFreeTrialsFeatureFlagExperiment = MockFreeTrialsFeatureFlagExperiment()
-
-        sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: mockSubscriptionManager,
-                                                      subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
-                                                      subscriptionAttributionOrigin: nil,
-                                                      appStorePurchaseFlow: mockAppStorePurchaseFlow,
-                                                      appStoreRestoreFlow: AppStoreRestoreFlowMock(),
-                                                      appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-                                                      freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
+        
+        sut = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: mockSubscriptionManager,
+                                                             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
+                                                             subscriptionAttributionOrigin: nil,
+                                                             appStorePurchaseFlow: mockAppStorePurchaseFlow,
+                                                             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+                                                             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
+                                                             freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
     }
 
     func testWhenFreeTrialsCohortIsControl_thenStandardSubscriptionOptionsAreReturned() async throws {

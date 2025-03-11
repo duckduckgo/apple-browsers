@@ -44,10 +44,10 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         )
     }
 
-    func testWhenFireReAppereanceEventPixelIsCalled_thenCorrectPixelIsFired() {
+    func testWhenFireReappeareanceEventPixelIsCalled_thenCorrectPixelIsFired() {
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
 
-        sut.fireReAppereanceEventPixel()
+        sut.fireReappeareanceEventPixel()
 
         XCTAssertEqual(
             MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!.name,

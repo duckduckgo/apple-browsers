@@ -26,9 +26,9 @@ import Subscription
 final class SubscriptionFlowViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
-    let subFeature: SubscriptionPagesUseSubscriptionFeature
+    let subFeature: any SubscriptionPagesUseSubscriptionFeature
     var webViewModel: AsyncHeadlessWebViewViewModel
-    let subscriptionManager: SubscriptionManager
+    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let purchaseURL: URL
 
     private var cancellables = Set<AnyCancellable>()
@@ -65,17 +65,18 @@ final class SubscriptionFlowViewModel: ObservableObject {
     init(purchaseURL: URL,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
-         subFeature: SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: SubscriptionManager,
+         subFeature: any SubscriptionPagesUseSubscriptionFeature,
+         subscriptionManager: SubscriptionAuthV1toV2Bridge,
          selectedFeature: SettingsViewModel.SettingsDeepLinkSection? = nil) {
         self.purchaseURL = purchaseURL
         self.userScript = userScript
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
+        let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
+                                                                             isInternalUser: isInternalUser)
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
-                                                            allowedDomains: Self.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
-                                                                                                isInternalUser: isInternalUser),
+                                                            allowedDomains: allowedDomains,
                                                             contentBlocking: false)
 
 
@@ -84,26 +85,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                                           settings: webViewSettings)
     }
 
-    // Allowed domains
-    internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
-        var allowedDomains = Set<String>()
-
-        // Allow navigation to baseURLs domain
-        allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
-
-        // For internal user allow these domains as required for DUO based authentication flow
-        if isInternalUser {
-            allowedDomains.formUnion(["use-login.duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"])
-        }
-
-        assert(!allowedDomains.isEmpty, "Allowed domains should not be empty.")
-        return Array(allowedDomains)
-    }
-
     // Observe transaction status
     private func setupTransactionObserver() async {
         
-        subFeature.$transactionStatus
+        subFeature.transactionStatusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 guard let strongSelf = self else { return }
@@ -145,7 +130,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
              }
          }
         
-        subFeature.$transactionError
+        subFeature.transactionErrorPublisher
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] value in
@@ -160,7 +145,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     }
 
     @MainActor
-    private func handleTransactionError(error: SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError) {
+    private func handleTransactionError(error: UseSubscriptionError) {
 
         var isStoreError = false
         var isBackendError = false
@@ -348,7 +333,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 await webViewModel.navigationCoordinator.reload()
                 backButtonEnabled(true)
             } catch let error {
-                if let specificError = error as? SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError {
+                if let specificError = error as? UseSubscriptionError {
                     handleTransactionError(error: specificError)
                 }
             }

@@ -163,6 +163,18 @@ final class InternalUserDeciderStoreMock: InternalUserStoring {
     var isInternalUser: Bool = false
 }
 
+final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
+    var vpnBypassSupport: Bool
+    var vpnBypass: Bool
+    var vpnBypassOnboardingShown: Bool
+
+    init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
+        self.vpnBypassSupport = vpnBypassSupport
+        self.vpnBypass = vpnBypass
+        self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
+    }
+}
+
 final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
     var currentConfig: Data = Data()
 
@@ -1567,6 +1579,7 @@ final class MockDataBrokerProtectionBrokerUpdater: DataBrokerProtectionBrokerUpd
 }
 
 final class MockAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
+
     var isUserAuthenticatedValue = false
     var accessTokenValue: String? = "fake token"
     var shouldAskForInviteCodeValue = false
@@ -1577,7 +1590,7 @@ final class MockAuthenticationManager: DataBrokerProtectionAuthenticationManagin
 
     var isUserAuthenticated: Bool { isUserAuthenticatedValue }
 
-    var accessToken: String? { accessTokenValue }
+    func accessToken() async -> String? { accessTokenValue }
 
     func hasValidEntitlement() async throws -> Bool {
         if shouldThrowEntitlementError {

@@ -62,7 +62,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
     @MainActor
     func openFeedbackForm() {
-        FeedbackPresenter.presentFeedbackForm()
+        NSApp.delegateTyped.openFeedback(nil)
     }
 
     func copy(_ value: String) {

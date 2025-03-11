@@ -202,4 +202,6 @@ class MockDaxDialogsSettings: DaxDialogsSettings {
     var fireButtonPulseDateShown: Date?
 
     var browsingFinalDialogShown: Bool = false
+
+    var privacyProPromotionDialogShown: Bool = false
 }

@@ -20,6 +20,10 @@
 import Foundation
 import SwiftUI
 import Onboarding
+import Subscription
+import Common
+
+typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & PrivacyProPromotionCoordinating
 
 protocol NewTabDaxDialogProvider {
     associatedtype DaxDialog: View
@@ -28,20 +32,23 @@ protocol NewTabDaxDialogProvider {
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
-    private let contextualOnboardingLogic: ContextualOnboardingLogic
+    private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingManager: OnboardingAddToDockManaging
+    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(
         delegate: OnboardingNavigationDelegate?,
-        contextualOnboardingLogic: ContextualOnboardingLogic,
+        daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager()
+        onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
+        onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
     ) {
         self.delegate = delegate
-        self.contextualOnboardingLogic = contextualOnboardingLogic
+        self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingManager = onboardingManager
+        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     @ViewBuilder
@@ -55,6 +62,8 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createSubsequentDialog()
         case .final:
             createFinalDialog(onDismiss: onDismiss)
+        case .privacyProPromotion:
+            createPrivacyProPromoDialog(onDismiss: onDismiss)
         default:
             EmptyView()
         }
@@ -137,11 +146,42 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
+            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.trackScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             if shouldShowAddToDock {
                 self?.onboardingPixelReporter.trackAddToDockPromoImpression()
             }
+        }
+    }
+}
+
+private extension NewTabDaxDialogFactory {
+    private func createPrivacyProPromoDialog(onDismiss: @escaping () -> Void) -> some View {
+
+        return FadeInView {
+            PrivacyProPromotionView(title: UserText.PrivacyProPromotionOnboarding.Promo.title,
+                                    message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
+                                    proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
+                                    dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
+                                    proceedAction: { [weak self] in
+                self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
+                let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
+                NotificationCenter.default.post(
+                    name: .settingsDeepLinkNotification,
+                    object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                    userInfo: nil
+                )
+                onDismiss()
+            },
+                                    dismissAction: { [weak self] in
+                self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
+                onDismiss()
+            })
+        }
+        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
+        .onFirstAppear { [weak self] in
+            self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
+            self?.daxDialogsFlowCoordinator.privacyProPromotionDialogSeen = true
         }
     }
 }

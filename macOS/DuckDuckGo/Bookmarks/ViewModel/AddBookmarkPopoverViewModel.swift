@@ -88,12 +88,12 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
         selectedFolder = folders.first(where: { $0.id == bookmark.parentFolderUUID })?.entity
     }
 
-    func removeButtonAction(dismiss: () -> Void) {
+    func removeButtonAction() {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
         buttonClicked?()
     }
 
-    func doneButtonAction(dismiss: () -> Void) {
+    func doneButtonAction() {
         buttonClicked?()
     }
 

@@ -234,117 +234,117 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackOnboardingIntroImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureOnboardingIntroImpression)
 
         // WHEN
         sut.onAppear()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackOnboardingIntroImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureOnboardingIntroImpression)
     }
 
     func testWhenStartOnboardingActionIsCalledThenPixelReporterTrackBrowserComparisonImpression() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackBrowserComparisonImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
 
         // WHEN
         sut.startOnboardingAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackBrowserComparisonImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
     }
 
     func testWhenChooseBrowserIsCalledThenPixelReporterTrackChooseBrowserCTAAction() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseBrowserCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
 
         // WHEN
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackChooseBrowserCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBrowserCTAAction)
     }
 
     func testWhenStateChangesToChooseAppIconThenPixelReporterTrackAppIconImpression() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackBrowserComparisonImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureBrowserComparisonImpression)
 
         // WHEN
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackChooseAppIconImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseAppIconImpression)
     }
 
     func testWhenAppIconPickerContinueActionIsCalledAndIconIsCustomColorThenPixelReporterTrackCustomAppIconColor() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener(), appIconProvider: { .purple })
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackChooseCustomAppIconColor)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
     }
 
     func testWhenAppIconPickerContinueActionIsCalledAndIconIsDefaultColorThenPixelReporterDoNotTrackCustomAppIconColor() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener(), appIconProvider: { .defaultAppIcon })
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseCustomAppIconColor)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseCustomAppIconColor)
     }
 
     func testWhenStateChangesToChooseAddressBarPositionThenPixelReporterTrackAddressBarSelectionImpression() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, isIpad: false, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackAddressBarPositionSelectionImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAddressBarPositionSelectionImpression)
 
         // WHEN
         sut.appIconPickerContinueAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackAddressBarPositionSelectionImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAddressBarPositionSelectionImpression)
     }
 
     func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsBottomThenPixelReporterTrackChooseBottomAddressBarPosition() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener(), addressBarPositionProvider: { .bottom })
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackChooseBottomAddressBarPosition)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
     }
 
     func testWhenSelectAddressBarPositionActionIsCalledAndAddressBarPositionIsTopThenPixelReporterDoNotTrackChooseBottomAddressBarPosition() {
         // GIVEN
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener(), addressBarPositionProvider: { .top })
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
 
         // WHEN
         sut.selectAddressBarPositionAction()
 
         // THEN
-        XCTAssertFalse(pixelReporterMock.didCallTrackChooseBottomAddressBarPosition)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
     }
 
     // MARK: - Copy
@@ -406,13 +406,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManager.addToDockEnabledState = .intro
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoImpression)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoImpression)
 
         // WHEN
         sut.setDefaultBrowserAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoImpression)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoImpression)
     }
 
     func testWhenAddToDockShowTutorialActionIsCalledThenPixelReporterTrackAddToDockPromoShowTutorialCTA() {
@@ -420,13 +420,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManager.addToDockEnabledState = .intro
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
 
         // WHEN
         sut.addtoDockShowTutorialAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
     }
 
     func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsTrueThenPixelReporterTrackAddToDockTutorialDismissCTA() {
@@ -434,13 +434,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManager.addToDockEnabledState = .intro
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
 
         // WHEN
         sut.addToDockContinueAction(isShowingAddToDockTutorial: true)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
     }
 
     func testWhenAddToDockContinueActionIsCalledAndIsShowingFromAddToDockTutorialIsFalseThenPixelReporterTrackAddToDockTutorialDismissCTA() {
@@ -448,13 +448,13 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         onboardingManager.addToDockEnabledState = .intro
         let pixelReporterMock = OnboardingPixelReporterMock()
         let sut = OnboardingIntroViewModel(pixelReporter: pixelReporterMock, onboardingManager: onboardingManager, urlOpener: MockURLOpener())
-        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
 
         // WHEN
         sut.addToDockContinueAction(isShowingAddToDockTutorial: false)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
     }
 
 }

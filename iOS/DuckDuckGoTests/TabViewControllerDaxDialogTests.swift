@@ -200,13 +200,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
         let url = URL.ddg
         let webView = MockWebView()
         webView.setCurrentURL(url)
-        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
 
         // WHEN
         sut.webView(webView, didFinish: WKNavigation())
 
         // THEN
-        XCTAssertTrue(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
+        XCTAssertTrue(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
         WKNavigation.restoreDealloc()
     }
 
@@ -216,13 +216,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
         let url = try XCTUnwrap(URL.makeSearchURL(text: "test"))
         let webView = MockWebView()
         webView.setCurrentURL(url)
-        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
 
         // WHEN
         sut.webView(webView, didFinish: WKNavigation())
 
         // THEN
-        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
         WKNavigation.restoreDealloc()
     }
 

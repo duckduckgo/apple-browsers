@@ -23,7 +23,6 @@ import Foundation
 import Navigation
 import WebKit
 import PixelKit
-import SpecialErrorPages
 
 final class NavigationProtectionTabExtension {
 

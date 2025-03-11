@@ -29,7 +29,8 @@ struct BulkGeneratorView: View {
         var description: String { get }
         var footer: String? { get }
         var options: [String: [String]] { get }
-        
+        var defaultOption: String { get }
+
         func starting() async
         
         @discardableResult
@@ -51,7 +52,7 @@ struct BulkGeneratorView: View {
             await factory.starting()
             await factory.generate(optionValues: values)
             await factory.finished()
-            
+
             isBusy = false
         }
     }
@@ -68,7 +69,7 @@ struct BulkGeneratorView: View {
             Section {
                 ForEach(factory.options.keys.sorted(), id: \.self) { optionName in
                     Picker(selection: Binding(get: {
-                        values[optionName]
+                        values[optionName, default: factory.defaultOption]
                     }, set: {
                         values[optionName] = $0
                     })) {
@@ -105,10 +106,13 @@ struct BulkGeneratorView: View {
 }
 
 struct BulkTabFactory: BulkGeneratorView.Factory {
-     
-    let description: String = "Bulk Tab Generation"
-    let footer: String? = "Restart app after generation"
+
+   let description: String = "Bulk Tab Generation"
+    var footer: String? {
+        "%d tabs. Restart app after generation".format(arguments: tabManager.count)
+    }
     let options = ["Tab Count": [ "100", "500", "1000", "5000", "10000"]]
+    let defaultOption = "100"
 
     let urlFactory: any BulkGeneratorView.Factory<URL>
     
@@ -154,7 +158,8 @@ struct BulkURLFactory: BulkGeneratorView.Factory {
     let options: [String : [String]] = [
         "index": ["any valid int"]
     ]
-    
+    let defaultOption = ""
+
     func starting() {
         // no-op
     }

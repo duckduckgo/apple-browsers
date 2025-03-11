@@ -198,6 +198,12 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] index in
                 guard let self = self else { return }
+
+                if tabCollectionViewModel.allTabsCount == 0 {
+                    view.window?.performClose(self)
+                    return
+                }
+
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
@@ -209,6 +215,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
+        if tabCollectionViewModel.selectedTab?.isPinned ?? false {
+            pinnedTabsViewModel?.selectedItem = tabCollectionViewModel.selectedTab
+        }
     }
 
     private func setupFireButton() {

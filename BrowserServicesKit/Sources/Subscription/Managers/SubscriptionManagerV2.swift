@@ -377,7 +377,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             return resultTokenContainer
-        } catch OAuthClientError.refreshTokenExpired {
+        } catch OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest {
             do {
                 return try await attemptTokenRecovery()
             } catch {
@@ -390,6 +390,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     func attemptTokenRecovery() async throws -> TokenContainer {
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
+        pixelHandler(.deadToken)
         await signOut(notifyUI: false)
         do {
             try await tokenRecoveryHandler?()

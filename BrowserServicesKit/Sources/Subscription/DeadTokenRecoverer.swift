@@ -20,7 +20,7 @@ import Foundation
 import Networking
 import os.log
 
-public struct DeadTokenRecoverer {
+public actor DeadTokenRecoverer {
 
     private static var recoveryAttemptCount: Int = 0
 
@@ -28,19 +28,12 @@ public struct DeadTokenRecoverer {
     public static func attemptRecoveryFromPastPurchase(subscriptionManager: any SubscriptionManagerV2,
                                                        restoreFlow: any AppStoreRestoreFlowV2) async throws {
         if recoveryAttemptCount != 0 {
-            recoveryAttemptCount -= 1
             try reportFailure()
         }
         recoveryAttemptCount += 1
 
-        guard subscriptionManager.isUserAuthenticated else {
-            return
-        }
-
-        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataDontLoad)
-
-        switch subscription.platform {
-        case .apple:
+        switch subscriptionManager.currentEnvironment.purchasePlatform {
+        case .appStore:
             switch await restoreFlow.restoreAccountFromPastPurchase() {
             case .success:
                 break

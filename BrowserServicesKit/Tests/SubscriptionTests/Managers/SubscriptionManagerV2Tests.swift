@@ -34,8 +34,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     var mockSubscriptionEndpointService: SubscriptionEndpointServiceMockV2!
     var mockStorePurchaseManager: StorePurchaseManagerMockV2!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMockV2!
-    var overrideTokenResponse: Result<Networking.TokenContainer, Error>?
-    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
 
     override func setUp() {
         super.setUp()
@@ -44,21 +43,21 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockSubscriptionEndpointService = SubscriptionEndpointServiceMockV2()
         mockStorePurchaseManager = StorePurchaseManagerMockV2()
         mockAppStoreRestoreFlowV2 = AppStoreRestoreFlowMockV2()
-        mockSubscriptionManager = SubscriptionManagerMockV2()
 
         subscriptionManager = DefaultSubscriptionManagerV2(
             storePurchaseManager: mockStorePurchaseManager,
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: { _ in },
-            tokenRecoveryHandler: {
-                if let overrideTokenResponse = self.overrideTokenResponse {
-                    self.mockOAuthClient.getTokensResponse = overrideTokenResponse
-                }
-                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: self.mockSubscriptionManager, restoreFlow: self.mockAppStoreRestoreFlowV2)
-            }
+            pixelHandler: { _ in }
         )
+
+        subscriptionManager.tokenRecoveryHandler = {
+            if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
+                self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+            }
+            try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: self.subscriptionManager, restoreFlow: self.mockAppStoreRestoreFlowV2)
+        }
     }
 
     override func tearDown() {
@@ -229,7 +228,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoverySuccess() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        overrideTokenResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        overrideTokenResponseInRecoveryHandler = .success(OAuthTokensFactory.makeValidTokenContainer())
         mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -238,7 +237,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        overrideTokenResponse = .failure(SubscriptionManagerError.tokenUnRefreshable)
+        overrideTokenResponseInRecoveryHandler = .failure(SubscriptionManagerError.tokenUnRefreshable)
         mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
 

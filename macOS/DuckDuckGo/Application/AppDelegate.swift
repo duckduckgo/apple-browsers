@@ -112,9 +112,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
 
-    public let subscriptionManager: SubscriptionManager
+    let isAuthV2Enabled = false
+    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
+    let subscriptionManagerV1: (any SubscriptionManager)?
+    let subscriptionManagerV2: (any SubscriptionManagerV2)?
+
     public let subscriptionUIHandler: SubscriptionUIHandling
-    private let subscriptionCookieManager: SubscriptionCookieManaging
+    private let subscriptionCookieManager: any SubscriptionCookieManaging
     private var subscriptionCookieManagerFeatureFlagCancellable: AnyCancellable?
 
     // MARK: - Freemium DBP
@@ -138,7 +142,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - DBP
 
     private lazy var dataBrokerProtectionSubscriptionEventHandler: DataBrokerProtectionSubscriptionEventHandler = {
-        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
+        let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
                                                             pixelHandler: DataBrokerProtectionPixelsHandler())
@@ -241,32 +245,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
 #endif
-        if NSApplication.runType.requiresEnvironment {
-            remoteMessagingClient = RemoteMessagingClient(
-                database: RemoteMessagingDatabase().db,
-                bookmarksDatabase: BookmarkDatabase.shared.db,
-                appearancePreferences: .shared,
-                pinnedTabsManager: pinnedTabsManager,
-                internalUserDecider: internalUserDecider,
-                configurationStore: configurationStore,
-                remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
-                    privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
-                )
-            )
-            activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
-                WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
-            })
-        } else {
-            // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
-            // is used only by HomePage RootView as environment object,
-            // it's safe to not initialize the client for unit tests to avoid side effects.
-            remoteMessagingClient = nil
-            activeRemoteMessageModel = ActiveRemoteMessageModel(
-                remoteMessagingStore: nil,
-                remoteMessagingAvailabilityProvider: nil,
-                openURLHandler: { _ in }
-            )
-        }
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
@@ -286,22 +264,78 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         onboardingStateMachine = ContextualOnboardingStateMachine()
 
-        // Configure Subscription
-        subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+        // MARK: - Subscription configuration
+
         subscriptionUIHandler = SubscriptionUIHandler(windowControllersManagerProvider: {
             return WindowControllersManager.shared
         })
 
-        subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
-            WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
-        }, eventMapping: SubscriptionCookieManageEventPixelMapping())
+        if !isAuthV2Enabled {
+            // MARK: V1
+            let subscriptionManager = DefaultSubscriptionManager(featureFlagger: featureFlagger)
+            subscriptionCookieManager = SubscriptionCookieManager(tokenProvider: subscriptionManager, currentCookieStore: {
+                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
+            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
+            subscriptionManagerV1 = subscriptionManager
+            subscriptionManagerV2 = nil
+            subscriptionAuthV1toV2Bridge = subscriptionManager
+        } else {
+            // MARK: V2
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+            let subscriptionManager = DefaultSubscriptionManagerV2(keychainType: KeychainType.dataProtection(.named(subscriptionAppGroup)),
+                                                                   environment: subscriptionEnvironment,
+                                                                   featureFlagger: featureFlagger,
+                                                                   userDefaults: subscriptionUserDefaults,
+                                                                   canPerformAuthMigration: true,
+                                                                   canHandlePixels: true)
+
+            subscriptionCookieManager = SubscriptionCookieManagerV2(subscriptionManager: subscriptionManager, currentCookieStore: {
+                WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
+            }, eventMapping: SubscriptionCookieManageEventPixelMapping())
+            subscriptionManagerV2 = subscriptionManager
+            subscriptionManagerV1 = nil
+            subscriptionAuthV1toV2Bridge = subscriptionManager
+        }
+        // --------
+
+        // MARK:
+
+        if NSApplication.runType.requiresEnvironment {
+            remoteMessagingClient = RemoteMessagingClient(
+                database: RemoteMessagingDatabase().db,
+                bookmarksDatabase: BookmarkDatabase.shared.db,
+                appearancePreferences: .shared,
+                pinnedTabsManager: pinnedTabsManager,
+                internalUserDecider: internalUserDecider,
+                configurationStore: configurationStore,
+                remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
+                    privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
+                ),
+                subscriptionManager: subscriptionAuthV1toV2Bridge
+            )
+            activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
+                WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+            })
+        } else {
+            // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
+            // is used only by HomePage RootView as environment object,
+            // it's safe to not initialize the client for unit tests to avoid side effects.
+            remoteMessagingClient = nil
+            activeRemoteMessageModel = ActiveRemoteMessageModel(
+                remoteMessagingStore: nil,
+                remoteMessagingAvailabilityProvider: nil,
+                openURLHandler: { _ in }
+            )
+        }
 
         // Update VPN environment and match the Subscription environment
-        vpnSettings.alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
+        vpnSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
         let dbpSettings = DataBrokerProtectionSettings()
-        DataBrokerProtectionSettings().alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
+        DataBrokerProtectionSettings().alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -309,13 +343,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
-        let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionManager)
+        let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
         experimentManager.assignUserToCohort()
 
         freemiumDBPFeature = DefaultFreemiumDBPFeature(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                                        experimentManager: experimentManager,
-                                                       subscriptionManager: subscriptionManager,
-                                                       accountManager: subscriptionManager.accountManager,
+                                                       subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                        freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature)
@@ -351,7 +384,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tunnelController = NetworkProtectionIPCTunnelController(ipcClient: vpnXPCClient)
         let vpnUninstaller = VPNUninstaller(ipcClient: vpnXPCClient)
 
-        networkProtectionSubscriptionEventHandler = NetworkProtectionSubscriptionEventHandler(subscriptionManager: subscriptionManager,
+        networkProtectionSubscriptionEventHandler = NetworkProtectionSubscriptionEventHandler(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                                               tunnelController: tunnelController,
                                                                                               vpnUninstaller: vpnUninstaller)
 
@@ -406,7 +439,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         startupSync()
 
-        subscriptionManager.loadInitialData()
+        subscriptionManagerV1?.loadInitialData()
 
         let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
@@ -476,14 +509,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
 
-        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager)).applicationDidFinishLaunching()
+        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge)).applicationDidFinishLaunching()
         UNUserNotificationCenter.current().delegate = self
 
         dataBrokerProtectionSubscriptionEventHandler.registerForSubscriptionAccountManagerEvents()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(accountManager:
-                                                                            subscriptionManager.accountManager,
+        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidFinishLaunching()
@@ -541,16 +573,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelExperiment.fireOnboardingTestPixels()
         initializeSync()
 
-        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager)).applicationDidBecomeActive()
+        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge)).applicationDidBecomeActive()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(accountManager:
-                                                                            subscriptionManager.accountManager,
+        let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
 
-        subscriptionManager.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
+        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
                 PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
             }

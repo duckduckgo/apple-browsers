@@ -35,6 +35,7 @@ let package = Package(
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),
         .package(path: "../Freemium"),
+        .package(path: "../NetworkProtectionMac"),
     ],
     targets: [
         .target(
@@ -49,6 +50,9 @@ let package = Package(
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Freemium", package: "Freemium"),
+                .product(name: "NetworkProtection", package: "NetworkProtectionMac"),
+                .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
+                .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
             ],
             resources: [.copy("Resources")],
             swiftSettings: [

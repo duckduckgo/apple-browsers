@@ -475,8 +475,8 @@ class TabViewController: UIViewController {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)        
-
+        super.viewWillAppear(animated)
+        
         registerForResignActive()
     }
 

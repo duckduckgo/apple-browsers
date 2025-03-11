@@ -94,7 +94,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled
+        Constants.playsInlineParameter: Constants.enabled,
     ]
 
     /// Creates a new DuckPlayerViewModel instance

@@ -134,6 +134,7 @@ public final class NetworkProtectionKeychainKeyStore: NetworkProtectionKeyStore 
     }
 
     public func resetCurrentKeyPair() {
+        Logger.networkProtection.log("Resetting the current key pair")
         do {
             /// Besides resetting the current keyPair we'll remove all keychain entries associated with our service, since only one keychain entry
             /// should exist at once.

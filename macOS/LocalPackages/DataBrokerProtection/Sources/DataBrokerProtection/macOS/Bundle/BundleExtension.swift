@@ -26,6 +26,7 @@ extension Bundle: GroupNameProviding {
 
     static let dbpAppGroupName = "DBP_APP_GROUP"
     static let configAppGroupName = "APP_CONFIGURATION_APP_GROUP"
+    static let netPAppGroupName = "NETP_APP_GROUP"
 
     var appGroupName: String {
         guard let appGroup = object(forInfoDictionaryKey: Bundle.dbpAppGroupName) as? String else {
@@ -37,6 +38,13 @@ extension Bundle: GroupNameProviding {
     var configAppGroupName: String {
         guard let appGroup = object(forInfoDictionaryKey: Bundle.configAppGroupName) as? String else {
             fatalError("Info.plist is missing \(Bundle.configAppGroupName)")
+        }
+        return appGroup
+    }
+
+    var netPAppGroupName: String {
+        guard let appGroup = object(forInfoDictionaryKey: Bundle.netPAppGroupName) as? String else {
+            fatalError("Info.plist is missing \(Bundle.netPAppGroupName)")
         }
         return appGroup
     }

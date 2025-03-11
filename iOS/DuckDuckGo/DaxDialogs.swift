@@ -52,6 +52,10 @@ protocol ContextualOnboardingLogic {
     func enableAddFavoriteFlow()
 }
 
+protocol PrivacyProPromotionCoordinating {
+    var privacyProPromotionDialogSeen: Bool { get set }
+}
+
 extension ContentBlockerRulesManager: EntityProviding {
     
     func entity(forHost host: String) -> Entity? {
@@ -77,6 +81,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         static let final = HomeScreenSpec(message: UserText.daxDialogHomeSubsequent, accessibilityLabel: nil)
         static let addFavorite = HomeScreenSpec(message: UserText.daxDialogHomeAddFavorite,
                                                 accessibilityLabel: UserText.daxDialogHomeAddFavoriteAccessible)
+        static let privacyProPromotion = HomeScreenSpec(message: UserText.PrivacyProPromotionOnboarding.Promo.message().string, accessibilityLabel: nil)
 
         let message: String
         let accessibilityLabel: String?
@@ -220,18 +225,22 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     private var currentHomeSpec: HomeScreenSpec?
 
+    private let onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting
+
     /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
-         launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler()
+         launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
+         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.addToDockManager = onboardingManager
         self.launchOptionsHandler = launchOptionsHandler
+        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -518,7 +527,17 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         guard isEnabled else { return nil }
 
         // If the user has already seen the end of journey dialog we don't want to show any other NTP Dax dialog.
-        guard !finalDaxDialogSeen else { return nil }
+        guard !finalDaxDialogSeen else {
+
+            // Privacy Pro Onboarding Promotion Experiment
+            // https://app.asana.com/0/1206488453854252/1208543866522488/f
+            let cohort = onboardingPrivacyProPromoExperiment.getCohortIfEnabled()
+            if .treatment == cohort && !privacyProPromotionDialogSeen {
+                return .privacyProPromotion
+            }
+
+            return nil
+        }
 
         // Check final first as if we skip anonymous searches we don't want to show this.
         if settings.fireMessageExperimentShown {
@@ -631,6 +650,17 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         removeLastShownDaxDialog()
         removeLastVisitedOnboardingWebsite()
         currentHomeSpec = nil
+    }
+}
+
+extension DaxDialogs: PrivacyProPromotionCoordinating {
+    var privacyProPromotionDialogSeen: Bool {
+        get {
+            settings.privacyProPromotionDialogShown
+        }
+        set {
+            settings.privacyProPromotionDialogShown = newValue
+        }
     }
 }
 

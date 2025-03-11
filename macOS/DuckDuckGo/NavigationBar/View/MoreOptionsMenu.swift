@@ -60,8 +60,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let internalUserDecider: InternalUserDecider
     @MainActor
     private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem)
-    private var accountManager: AccountManager { subscriptionManager.accountManager }
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPFeature: FreemiumDBPFeature
     private let freemiumDBPPresenter: FreemiumDBPPresenter
@@ -91,7 +90,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          sharingMenu: NSMenu? = nil,
          internalUserDecider: InternalUserDecider,
-         subscriptionManager: SubscriptionManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
@@ -152,7 +151,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    tabCollectionViewModel: tabCollectionViewModel,
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                   accountManager: accountManager)
+                                                   authenticationStateProvider: subscriptionManager)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -479,7 +478,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem).withImage(.subscriptionIcon)
 
-        if !accountManager.isUserAuthenticated {
+        if !subscriptionManager.isUserAuthenticated {
             privacyProItem.target = self
             privacyProItem.action = #selector(openSubscriptionPurchasePage(_:))
 
@@ -668,14 +667,14 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 
 final class FeedbackSubMenu: NSMenu {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let accountManager: AccountManager
+    private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
 
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         accountManager: AccountManager) {
+         authenticationStateProvider: any SubscriptionAuthenticationStateProvider) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.accountManager = accountManager
+        self.authenticationStateProvider = authenticationStateProvider
         super.init(title: UserText.sendFeedback)
         updateMenuItems(with: tabCollectionViewModel, targetting: target)
     }
@@ -699,7 +698,7 @@ final class FeedbackSubMenu: NSMenu {
             .withImage(.siteBreakage)
         addItem(reportBrokenSiteItem)
 
-        if accountManager.isUserAuthenticated {
+        if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
 
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
@@ -947,7 +946,7 @@ final class HelpSubMenu: NSMenu {
 final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     var subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    var subscriptionManager: SubscriptionManager
+    var subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
     var networkProtectionItem: NSMenuItem!
     var dataBrokerProtectionItem: NSMenuItem!
@@ -956,7 +955,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         subscriptionManager: SubscriptionManager) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
@@ -1027,15 +1026,10 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     }
 
     private func refreshAvailabilityBasedOnEntitlements() {
-        guard subscriptionManager.accountManager.isUserAuthenticated else { return }
+        guard subscriptionManager.isUserAuthenticated else { return }
 
         @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            switch await self.subscriptionManager.accountManager.hasEntitlement(forProductName: productName) {
-            case let .success(result):
-                return result
-            case .failure:
-                return false
-            }
+            (try? await subscriptionManager.isEnabled(feature: productName)) ?? false
         }
 
         Task.detached(priority: .background) { [weak self] in

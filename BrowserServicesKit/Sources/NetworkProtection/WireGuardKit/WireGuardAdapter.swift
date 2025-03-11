@@ -83,7 +83,7 @@ public enum WireGuardAdapterError: CustomNSError {
 }
 
 /// Enum representing internal state of the `WireGuardAdapter`
-private enum State {
+private enum State: CustomDebugStringConvertible {
     /// The tunnel is stopped
     case stopped
 
@@ -99,6 +99,19 @@ private enum State {
         switch self {
         case .stopped, .snoozing: return true
         case .started, .temporaryShutdown: return false
+        }
+    }
+
+    var debugDescription: String {
+        switch self {
+        case .stopped:
+            return "State: stopped"
+        case .started(let handle, let settingsGenerator):
+            return "State: started(handle: \(handle), settingsGenerator: \(settingsGenerator))"
+        case .temporaryShutdown(let settingsGenerator):
+            return "State: temporaryShutdown(settingsGenerator: \(settingsGenerator))"
+        case .snoozing:
+            return "State: snoozing"
         }
     }
 }
@@ -365,6 +378,7 @@ public class WireGuardAdapter {
     /// - Parameter completionHandler: completion handler.
     public func stop(completionHandler: @escaping (WireGuardAdapterError?) -> Void) {
         workQueue.async {
+            Logger.networkProtection.debug("Stopping: \(self.state.debugDescription)")
             switch self.state {
             case .started(let handle, _):
                 self.wireGuardInterface.turnOff(handle: handle)

@@ -47932,7 +47932,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Go to Settings…"
+            "value" : "Go To Settings…"
           }
         }
       }
@@ -47944,7 +47944,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can adjust the behavior of pinned tabs to per window pinned tabs or shared across all windows."
+            "value" : "You can adjust the behaviour of pinned tabs to be either shared or different across browser windows."
           }
         }
       }
@@ -47968,7 +47968,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Switch between pinned tab approaches"
+            "value" : "Pinned Tabs Behaviour"
           }
         }
       }
@@ -56072,7 +56072,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Specific to each window"
+            "value" : "Different in each window"
           }
         }
       }
@@ -56108,7 +56108,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Choose how pinned tabs behave across browser windows."
+            "value" : "Pinned tabs behaviour in browser windows."
           }
         }
       }

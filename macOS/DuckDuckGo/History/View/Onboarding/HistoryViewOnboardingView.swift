@@ -32,20 +32,21 @@ struct HistoryViewOnboardingView: View {
                 .font(.system(size: 15).weight(.semibold))
                 .padding(.bottom, 12)
 
-            Text(.init(UserText.historyViewOnboardingMessage))
+            Text(.init(UserText.historyViewOnboardingMessage(shortcut: "⌘Y")))
                 .fixMultilineScrollableText()
                 .font(.system(size: 13))
                 .padding(.bottom, 8)
+
             Text(.init(UserText.historyViewOnboardingLocalStorageExplanation))
                 .fixMultilineScrollableText()
-                .font(.system(size: 12))
+                .font(.system(size: 13))
                 .padding(.bottom, 20)
 
             HStack {
                 Button {
                     model.notNow()
                 } label: {
-                    Text(UserText.notNow)
+                    Text(UserText.close)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }

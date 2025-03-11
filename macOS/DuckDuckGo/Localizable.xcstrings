@@ -29069,55 +29069,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Verlaufsseite anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "View History Page"
+            "value" : "View History"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ver tu página de historial"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Voir la page d'historique"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Visualizza la pagina Cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Bekijk de geschiedenispagina"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wyświetl stronę historii"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ver página de histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Просмотреть страницу истории"
           }
         }
@@ -29130,13 +29130,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "History is stored locally and not on any DuckDuckGo or other remote server, and can also be cleared using the Fire Button."
+            "value" : "History is only stored on your device and can be deleted at any time using the Fire Button."
           }
         }
       }
     },
     "history.view.onboarding.message" : {
-      "comment" : "Message for the history view onboarding popover. Please make sure to keep ••• and ⌘Y intact.",
+      "comment" : "Message for the history view onboarding popover. Please make sure to keep ••• intact. %@ will be replaced with a keyboard shortcut for accessing history (e.g. '⌘Y').",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -29148,7 +29148,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We've added a dedicated History page in this ••• menu for easier history management, also accessible via the History menu and ⌘Y keyboard shortcut."
+            "value" : "We added a new History page for easier history searching and management. Access it at any time from the ••• or History menu, or by pressing %@."
           }
         },
         "es" : {
@@ -29208,7 +29208,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Your History Easier"
+            "value" : "Easier History Management"
           }
         },
         "es" : {

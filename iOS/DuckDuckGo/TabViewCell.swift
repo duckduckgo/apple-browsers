@@ -155,7 +155,7 @@ final class TabViewCell: UICollectionViewCell {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: UIColor(baseColor: .blue30),
+                                                 foregroundColor: UIColor(designSystemColor: .accent),
                                                  borderColor: color)
             return image
         }

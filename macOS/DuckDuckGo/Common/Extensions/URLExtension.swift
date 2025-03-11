@@ -379,6 +379,10 @@ extension URL {
         return URL(string: "https://duckduckgo.com/updates")!
     }
 
+    static var internalFeedbackForm: URL {
+        return URL(string: "https://go.duckduckgo.com/feedback")!
+    }
+
     static var webTrackingProtection: URL {
         return URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/")!
     }

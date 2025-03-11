@@ -173,6 +173,7 @@ public struct StartupOptions {
         StoredOption(resetIfNil: resetIfNil) {
             guard let authToken = options[NetworkProtectionOptionKey.authToken] as? String,
                   !authToken.isEmpty else {
+                Logger.networkProtection.warning("`authToken` is missing or invalid")
                 return nil
             }
 
@@ -184,7 +185,7 @@ public struct StartupOptions {
         StoredOption(resetIfNil: resetIfNil) {
             guard let data = options[NetworkProtectionOptionKey.tokenContainer] as? NSData,
                   let tokenContainer = try? TokenContainer(with: data) else {
-                Logger.networkProtection.error("`tokenContainer` is missing or invalid")
+                Logger.networkProtection.warning("`tokenContainer` is missing or invalid")
                 return nil
             }
             return tokenContainer

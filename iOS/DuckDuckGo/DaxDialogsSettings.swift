@@ -48,6 +48,7 @@ protocol DaxDialogsSettings: AnyObject {
 
     var lastShownContextualOnboardingDialogType: String? { get set }
 
+    var privacyProPromotionDialogShown: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -91,4 +92,6 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     @UserDefaultsWrapper(key: .daxLastShownContextualOnboardingDialogType, defaultValue: nil)
     var lastShownContextualOnboardingDialogType: String?
 
+    @UserDefaultsWrapper(key: .daxPrivacyProPromotionDialogShown, defaultValue: false)
+    var privacyProPromotionDialogShown: Bool
 }

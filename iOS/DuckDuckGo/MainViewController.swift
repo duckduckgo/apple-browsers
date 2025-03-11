@@ -868,7 +868,7 @@ class MainViewController: UIViewController {
             fatalError("No tab model")
         }
 
-        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, contextualOnboardingLogic: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
+        let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
                                                   interactionModel: favoritesViewModel,
@@ -1578,6 +1578,8 @@ class MainViewController: UIViewController {
                     let deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection
                         deepLinkTarget = .duckPlayer
                     self?.launchSettings(deepLinkTarget: deepLinkTarget)
+                case .subscriptionFlow(let components):
+                    self?.launchSettings(deepLinkTarget: .subscriptionFlow(redirectURLComponents: components))
                 default:
                     return
                 }

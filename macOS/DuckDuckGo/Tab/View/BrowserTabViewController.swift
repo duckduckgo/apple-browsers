@@ -56,6 +56,9 @@ final class BrowserTabViewController: NSViewController {
         featureFlagger: featureFlagger,
         actionsManager: historyViewActionsManager
     )
+
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+
     private(set) weak var webView: WebView?
     private weak var webViewContainer: NSView?
     private weak var webViewSnapshot: NSView?
@@ -824,8 +827,12 @@ final class BrowserTabViewController: NSViewController {
         (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: true)
     }
 
+    var shouldCloseWindow: Bool {
+        return pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled && tabCollectionViewModel.allTabsCount == 0 || !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled && tabCollectionViewModel.tabs.count == 0
+    }
+
     private func showTabContent(of tabViewModel: TabViewModel?) {
-        guard tabCollectionViewModel.allTabsCount > 0 else {
+        if shouldCloseWindow {
             view.window?.performClose(self)
             return
         }

@@ -94,7 +94,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
-    @Published private var isLandscape: Bool = false
+    @Published var isLandscape: Bool = false
 
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?

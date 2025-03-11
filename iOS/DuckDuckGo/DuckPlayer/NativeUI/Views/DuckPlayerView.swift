@@ -38,6 +38,8 @@ struct DuckPlayerView: View {
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
         static let duckPlayerYoutubeImage: String = "OpenInYoutube"
         static let bottomButtonHeight: CGFloat = 44
+        static let grabHandleHeight: CGFloat = 4
+        static let grabHandleWidth: CGFloat = 36
     }
 
     var body: some View {
@@ -47,9 +49,19 @@ struct DuckPlayerView: View {
             .edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
+                // Grab Handle
+                if !viewModel.isLandscape {
+                    Capsule()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: Constants.grabHandleWidth, height: Constants.grabHandleHeight)
+                        .padding(.top, 8)
+                }
+
                 // Header
-                header
-                    .frame(height: Constants.headerHeight)                    
+                if !viewModel.isLandscape {
+                    header
+                        .frame(height: Constants.headerHeight)
+                }
 
                 // Video Container
                 Spacer()
@@ -102,6 +114,15 @@ struct DuckPlayerView: View {
 
             }
         }
+        .gesture(
+            DragGesture()
+                .onEnded { gesture in
+                    // Check if the drag was predominantly downward and had enough velocity
+                    if gesture.translation.height > 100 && gesture.predictedEndTranslation.height > 0 {
+                        dismiss()
+                    }
+                }
+        )
         .onFirstAppear {
             viewModel.onFirstAppear()
         }

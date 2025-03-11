@@ -197,23 +197,17 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .receive(on: DispatchQueue.main)
             .sink { [weak self] index in
                 guard let self = self else { return }
-                updatePinnedTabsViews()
+                updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
 
 
-    private func updatePinnedTabsViews() {
+    private func updatePinnedTabsViewModel() {
         guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else {
             return
         }
-        let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
-        let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
-        self.pinnedTabsViewModel = pinnedTabsViewModel
-        self.pinnedTabsView = pinnedTabsView
-        self.pinnedTabsHostingView?.removeFromSuperview()
-        self.pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
 
-        setupPinnedTabsView()
+        pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
     }
 
     private func setupFireButton() {

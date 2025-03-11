@@ -93,20 +93,19 @@ final class PinnedTabsViewModel: ObservableObject {
         contextMenuActionPublisher = contextMenuActionSubject.eraseToAnyPublisher()
         self.fireproofDomains = fireproofDomains
         self.bookmarkManager = bookmarkManager
-        tabsCancellable = collection.$tabs.assign(to: \.items, onWeaklyHeld: self)
+        self.collection = collection
 
-        dragMovesWindowCancellable = $items
-            .map { $0.count == 1 }
-            .removeDuplicates()
-            .assign(to: \.dragMovesWindow, onWeaklyHeld: self)
+        bindToCollection()
     }
+
 
     private let tabsDidReorderSubject = PassthroughSubject<[Tab], Never>()
     private let contextMenuActionSubject = PassthroughSubject<ContextMenuAction, Never>()
-    private var tabsCancellable: AnyCancellable?
+    private(set) var tabsCancellable: AnyCancellable?
     private var dragMovesWindowCancellable: AnyCancellable?
     private var fireproofDomains: FireproofDomains
     private var bookmarkManager: BookmarkManager
+    private var collection: TabCollection
 
     private func updateItemsWithoutSeparator() {
         var items = Set<Tab>()
@@ -130,6 +129,21 @@ final class PinnedTabsViewModel: ObservableObject {
         case .unmuted:
             audioStateView = .unmuted
         }
+    }
+
+    func replaceCollection(with newCollection: TabCollection) {
+        tabsCancellable?.cancel()
+        self.collection = newCollection
+        bindToCollection()
+    }
+
+    private func bindToCollection() {
+        tabsCancellable = collection.$tabs.assign(to: \.items, onWeaklyHeld: self)
+
+        dragMovesWindowCancellable = $items
+            .map { $0.count == 1 }
+            .removeDuplicates()
+            .assign(to: \.dragMovesWindow, onWeaklyHeld: self)
     }
 }
 

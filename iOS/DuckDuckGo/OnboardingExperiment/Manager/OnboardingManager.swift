@@ -47,7 +47,17 @@ final class OnboardingManager {
     private let isIphone: Bool
 
     private var isNewUser: Bool {
+#if DEBUG || ALPHA
+        // If debug or alpha build enable testing the experiment with cohort override.
+        // If running unit tests do not override behaviour.
+        if ProcessInfo().arguments.contains("testing") {
+            variantManager.currentVariant?.name != VariantIOS.returningUser.name
+        } else {
+            true
+        }
+#else
         variantManager.currentVariant?.name != VariantIOS.returningUser.name
+#endif
     }
 
     init(

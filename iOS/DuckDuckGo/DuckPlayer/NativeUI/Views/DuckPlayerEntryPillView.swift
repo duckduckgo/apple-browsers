@@ -22,6 +22,7 @@ import DesignResourcesKit
 
 struct DuckPlayerEntryPillView: View {
     @ObservedObject var viewModel: DuckPlayerEntryPillViewModel
+    let onClose: () -> Void
 
     // Add state to track the height
     @State private var viewHeight: CGFloat = 100
@@ -55,6 +56,10 @@ struct DuckPlayerEntryPillView: View {
             .fill(Color(designSystemColor: .textPrimary).opacity(0.3))
             .frame(width: Constants.Layout.grabHandleWidth, height: Constants.Layout.grabHandleHeight)
             .padding(.top, Constants.Layout.grabHandleTopPadding)
+            .onTapGesture {
+                viewModel.openInDuckPlayer()
+            }
+            .contentShape(Rectangle()) // Makes the entire area tappable, including padding
     }
 
     private var sheetContent: some View {
@@ -100,9 +105,20 @@ struct DuckPlayerEntryPillView: View {
                 .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
                 .padding(.horizontal, Constants.Layout.regularPadding)
                 .padding(.vertical, Constants.Layout.regularPadding)
-                .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
+                .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation
             }
         }
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { _ in
+                    // Add drag state handling if needed
+                }
+                .onEnded { gesture in
+                    if gesture.translation.height > 50 && gesture.predictedEndTranslation.height > 0 {
+                        viewModel.hide()
+                    }
+                }
+        )
     }
 
     var body: some View {
@@ -113,5 +129,17 @@ struct DuckPlayerEntryPillView: View {
         .clipShape(CustomRoundedCorners(radius: Constants.Layout.cornerRadius, corners: [.topLeft, .topRight]))
         .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
         .offset(y: Constants.Layout.viewOffset)
+        .contentShape(Rectangle())
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 10)
+                .onEnded { gesture in
+                    if gesture.translation.height > 50 {
+                        withAnimation {
+                            viewModel.hide()
+                            onClose()
+                        }
+                    }
+                }
+        )
     }
 }

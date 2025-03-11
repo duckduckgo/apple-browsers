@@ -52,6 +52,7 @@ struct AnimatedAsyncImage: View {
 
 struct DuckPlayerMiniPillView: View {
     @ObservedObject var viewModel: DuckPlayerMiniPillViewModel
+    let onClose: () -> Void
 
     // Add state to track the height
     @State private var viewHeight: CGFloat = 100
@@ -84,6 +85,10 @@ struct DuckPlayerMiniPillView: View {
             .fill(Color(designSystemColor: .textPrimary).opacity(0.3))
             .frame(width: Constants.Layout.grabHandleWidth, height: Constants.Layout.grabHandleHeight)
             .padding(.top, Constants.Layout.grabHandleTopPadding)
+            .onTapGesture {
+                viewModel.openInDuckPlayer()
+            }
+            .contentShape(Rectangle()) // Makes the entire area tappable, including padding
     }
 
     private var sheetContent: some View {
@@ -137,6 +142,20 @@ struct DuckPlayerMiniPillView: View {
                 .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
             }
         }
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 10)
+                .onChanged { _ in
+                    // Optional: Add visual feedback during drag
+                }
+                .onEnded { gesture in
+                    if gesture.translation.height > 50 {
+                        withAnimation {
+                            viewModel.hide()
+                            onClose()
+                        }
+                    }
+                }
+        )
     }
 
     var body: some View {
@@ -147,5 +166,6 @@ struct DuckPlayerMiniPillView: View {
         .clipShape(CustomRoundedCorners(radius: Constants.Layout.cornerRadius, corners: [.topLeft, .topRight]))
         .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
         .offset(y: Constants.Layout.viewOffset)
+        .contentShape(Rectangle()) // Make entire area interactive
     }
 }

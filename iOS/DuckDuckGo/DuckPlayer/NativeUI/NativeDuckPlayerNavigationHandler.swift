@@ -42,6 +42,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Application settings.
     var appSettings: AppSettings
 
+    /// Disable DuckPlayer for next video
+    var disableDuckPlayerForNextVideo = false
+
     /// Delegate for handling tab navigation events.
     weak var tabNavigationHandler: DuckPlayerTabNavigationHandling?
 
@@ -157,14 +160,13 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
 
     @MainActor
     private func loadNativeDuckPlayerVideo(videoID: String) {
-        // Only allow native UI on iPhone
-        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
-
-        if referrer == .youtube {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: nil)
-        } else {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .other, timestamp: nil)
-        }
+        let source: DuckPlayer.VideoNavigationSource = switch referrer {
+        case .youtube: .youtube
+        case .serp: .serp
+        case .other: .other
+        default: .other
+        }        
+        duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: source, timestamp: nil)
     }
 
     /// Toggles audio playback for a specific webView.
@@ -187,10 +189,11 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private func setupYoutubeNavigationRequestObserver(webView: WKWebView) {
         duckPlayerNavigationRequestCancellable = duckPlayer.youtubeNavigationRequest
             .sink { [weak self] url in
-                
+                self?.disableDuckPlayerForNextVideo = true
+                let request = URLRequest(url: url)                
+                webView.load(request)
             }
     }
-
 
     /// Toggles pause and audio for all media elements in a webView.
     ///
@@ -269,24 +272,25 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Pause Video if needed
-        if duckPlayer.settings.nativeUIYoutubeMode != .never {        
+        if duckPlayer.settings.nativeUIYoutubeMode != .never {
             Task { await pauseVideoStart(webView: webView) }
         }
 
         // Present Duck Player Pill (Native entry point)
-        if duckPlayer.settings.nativeUIYoutubeMode == .ask {
+        if duckPlayer.settings.nativeUIYoutubeMode == .ask && !disableDuckPlayerForNextVideo {
             duckPlayer.presentPill(for: videoID, timestamp: nil)            
             return .handled(.duckPlayerEnabled)
         }
 
-        // Present Duck Player Pill (Native entry point)
-        if duckPlayer.settings.nativeUIYoutubeMode == .auto {
-            loadNativeDuckPlayerVideo(videoID: videoID)
+        // Present Duck Player
+        if duckPlayer.settings.nativeUIYoutubeMode == .auto && !disableDuckPlayerForNextVideo{
+            loadNativeDuckPlayerVideo(videoID: videoID)            
             return .handled(.duckPlayerEnabled)
         }
 
         // Resume media playback by
         toggleMediaPlayback(webView, pause: false)
+        disableDuckPlayerForNextVideo = false
         return .notHandled(.isNotYoutubeWatch)
     }
 
@@ -387,7 +391,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Only if DuckPlayer is enabled
         guard featureFlagger.isFeatureOn(.duckPlayer) else {
             return false
-        }
+        }        
 
         // Stop navigation if we are on SERP and DuckPlayer is enabled for it
         if referrer == .serp && 
@@ -418,7 +422,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
         setHostViewController(hostViewController)
         if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
-            self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
+            if !disableDuckPlayerForNextVideo {
+                self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)                
+            }
         }
     }
 

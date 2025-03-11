@@ -1246,13 +1246,13 @@
 "duckPlayerNative.never.label" = "Don't Show";
 
 /* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Tapping on YouTube videos on DuckDuckGo search results will open in Duck Player.";
+"duckPlayerNative.use.on.serp.footer" = "YouTube videos on DuckDuckGo search results will open in Duck Player.";
 
 /* Label for the use DuckPlayer on SERP toggle */
 "duckPlayerNative.use.on.serp.label" = "Use on Search Results";
 
 /* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Duck Player is available when you visit a YouTube video page.";
+"duckPlayerNative.use.on.youtube.footer" = "Makes Duck Player available on Youtube video pages.";
 
 /* Label for the use DuckPlayer on Youtube toggle */
 "duckPlayerNative.use.on.youtube.label" = "Use on Youtube.com";

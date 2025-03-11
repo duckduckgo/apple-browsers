@@ -35,7 +35,6 @@ struct DefaultBrowserInfo: Codable, Equatable {
     let nextRetryAvailableDate: TimeInterval?
 }
 
-@MainActor
 protocol DefaultBrowserManaging: AnyObject {
     func defaultBrowserInfo() -> DefaultBrowserInfoResult
 }
@@ -72,7 +71,6 @@ extension DefaultBrowserInfoResult {
 
 // MARK: - DefaultBrowserManager
 
-@MainActor
 final class DefaultBrowserManager: DefaultBrowserManaging {
     private let defaultBrowserChecker: CheckDefaultBrowserService
     private let defaultBrowserInfoStore: DefaultBrowserInfoStorage

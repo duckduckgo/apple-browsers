@@ -992,7 +992,7 @@ final class AddressBarButtonsViewController: NSViewController {
             return (bookmark, false)
         }
 
-        let lastUsedFolder = UserDefaultsAddBookmarkSettingsPersistor().lastUsedFolderID.flatMap { bookmarkManager.getBookmarkFolder(withId: $0) }
+        let lastUsedFolder = UserDefaultsBookmarkFoldersStore().lastBookmarkSingleTabFolderIdUsed.flatMap(bookmarkManager.getBookmarkFolder)
         let bookmark = bookmarkManager.makeBookmark(for: url,
                                                     title: tabViewModel.title,
                                                     isFavorite: setFavorite,

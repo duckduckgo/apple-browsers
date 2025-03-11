@@ -1301,10 +1301,6 @@
 		37D2771527E870D4003365FD /* PreferencesAppearanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D2771427E870D4003365FD /* PreferencesAppearanceView.swift */; };
 		37D315C22D4A42280019C1F8 /* RecentActivityFavoritesHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D315C12D4A42200019C1F8 /* RecentActivityFavoritesHandlerTests.swift */; };
 		37D315C32D4A42280019C1F8 /* RecentActivityFavoritesHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D315C12D4A42200019C1F8 /* RecentActivityFavoritesHandlerTests.swift */; };
-		37D60F142D7F091A005C3419 /* AddBookmarkSettingsPersisting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D60F132D7F0913005C3419 /* AddBookmarkSettingsPersisting.swift */; };
-		37D60F152D7F091A005C3419 /* AddBookmarkSettingsPersisting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D60F132D7F0913005C3419 /* AddBookmarkSettingsPersisting.swift */; };
-		37D60F172D806FE9005C3419 /* AddBookmarkSettingsPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D60F162D806FE8005C3419 /* AddBookmarkSettingsPersistorMock.swift */; };
-		37D60F182D806FE9005C3419 /* AddBookmarkSettingsPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D60F162D806FE8005C3419 /* AddBookmarkSettingsPersistorMock.swift */; };
 		37DB56EF2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB56EE2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift */; };
 		37DB56F02C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB56EE2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift */; };
 		37DB56F22C3B36B80093D4DC /* RemoteMessagingClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB56F12C3B36B80093D4DC /* RemoteMessagingClientTests.swift */; };
@@ -4033,8 +4029,6 @@
 		37D23788288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "TabCollectionViewModelTests+PinnedTabs.swift"; sourceTree = "<group>"; };
 		37D2771427E870D4003365FD /* PreferencesAppearanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesAppearanceView.swift; sourceTree = "<group>"; };
 		37D315C12D4A42200019C1F8 /* RecentActivityFavoritesHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentActivityFavoritesHandlerTests.swift; sourceTree = "<group>"; };
-		37D60F132D7F0913005C3419 /* AddBookmarkSettingsPersisting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBookmarkSettingsPersisting.swift; sourceTree = "<group>"; };
-		37D60F162D806FE8005C3419 /* AddBookmarkSettingsPersistorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddBookmarkSettingsPersistorMock.swift; sourceTree = "<group>"; };
 		37D9BBA329376EE8000B99F9 /* DuckDuckGoAppStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DuckDuckGoAppStore.entitlements; sourceTree = "<group>"; };
 		37DB56EE2C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRemoteMessagingAvailabilityProvider.swift; sourceTree = "<group>"; };
 		37DB56F12C3B36B80093D4DC /* RemoteMessagingClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingClientTests.swift; sourceTree = "<group>"; };
@@ -8242,7 +8236,6 @@
 		9F0FFFB62BCCAE80007C87DD /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				37D60F162D806FE8005C3419 /* AddBookmarkSettingsPersistorMock.swift */,
 				9F0FFFB72BCCAE9C007C87DD /* AddEditBookmarkDialogViewModelMock.swift */,
 				9F0FFFBA2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift */,
 				9F0FFFBD2BCCAF1F007C87DD /* BookmarkAllTabsDialogViewModelMock.swift */,
@@ -9088,7 +9081,6 @@
 		AAB549DD25DAB8E90058460B /* ViewModel */ = {
 			isa = PBXGroup;
 			children = (
-				37D60F132D7F0913005C3419 /* AddBookmarkSettingsPersisting.swift */,
 				B69A14F12B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift */,
 				B69A14F52B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift */,
 				9FEE986C2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift */,
@@ -12788,7 +12780,6 @@
 				3706FC99293F65D500E42796 /* PreferencesSection.swift in Sources */,
 				B6C8CAA82AD010DD0060E1CD /* YandexDataImporter.swift in Sources */,
 				B655124929A79465009BFE1C /* NavigationActionExtension.swift in Sources */,
-				37D60F142D7F091A005C3419 /* AddBookmarkSettingsPersisting.swift in Sources */,
 				3706FC9A293F65D500E42796 /* AutoconsentManagement.swift in Sources */,
 				3706FC9C293F65D500E42796 /* BookmarkStore.swift in Sources */,
 				3706FC9D293F65D500E42796 /* PrivacyDashboardViewController.swift in Sources */,
@@ -13063,7 +13054,6 @@
 				BBFF355E2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,
 				3199AF842C80736C003AEBDC /* DuckPlayerOnboardingLocationValidatorTests.swift in Sources */,
 				EEC8EB402982CD550065AA39 /* JSAlertViewModelTests.swift in Sources */,
-				37D60F172D806FE9005C3419 /* AddBookmarkSettingsPersistorMock.swift in Sources */,
 				BDA764922BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,
 				3706FE4B293F661700E42796 /* BookmarksHTMLImporterTests.swift in Sources */,
 				37219B3E2CC27DB700C9D7A8 /* NewTabPageSearchBoxExperimentTests.swift in Sources */,
@@ -13828,7 +13818,6 @@
 				AABEE6AB24ACA0F90043105B /* SuggestionTableRowView.swift in Sources */,
 				37CD54CB27F2FDD100F1F7B9 /* DownloadsPreferences.swift in Sources */,
 				CBECDB872CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */,
-				37D60F152D7F091A005C3419 /* AddBookmarkSettingsPersisting.swift in Sources */,
 				4B1E6EF227AB5E5D00F51793 /* PasswordManagementItemList.swift in Sources */,
 				AAC5E4D025D6A709007F5990 /* Bookmark.swift in Sources */,
 				37FC2A182CF903080048E226 /* MockPrivacyStats.swift in Sources */,
@@ -14948,7 +14937,6 @@
 				317295D22AF058D3002C3206 /* MockWaitlistTermsAndConditionsActionHandler.swift in Sources */,
 				B6C843DA2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */,
 				B693956326F1C2A40015B914 /* FileDownloadManagerMock.swift in Sources */,
-				37D60F182D806FE9005C3419 /* AddBookmarkSettingsPersistorMock.swift in Sources */,
 				B63ED0D826AE729600A9DAD1 /* PermissionModelTests.swift in Sources */,
 				B69B504B2726CA2900758A2B /* MockStatisticsStore.swift in Sources */,
 				C17CA7AD2B9B52E6008EC3C1 /* NavigationBarPopoversTests.swift in Sources */,

@@ -101,6 +101,12 @@ final class DuckPlayerViewModel: ObservableObject {
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
+    /// Default parameters applied to all YouTube video URLs
+    let defaultParameters: [String: String] = [
+        Constants.relParameter: Constants.disabled,
+        Constants.playsInlineParameter: Constants.enabled
+    ]
+
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played

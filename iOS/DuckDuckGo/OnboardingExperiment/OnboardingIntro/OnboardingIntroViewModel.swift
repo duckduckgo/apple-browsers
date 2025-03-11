@@ -29,21 +29,24 @@ final class OnboardingIntroViewModel: ObservableObject {
     var onCompletingOnboardingIntro: (() -> Void)?
     private var introSteps: [OnboardingIntroStep]
 
+    private let defaultBrowserManager: DefaultBrowserManaging
     private let pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting
-    private let onboardingManager: OnboardingAddToDockManaging
+    private let onboardingManager: OnboardingManaging
     private let isIpad: Bool
     private let urlOpener: URLOpener
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
     init(
+        defaultBrowserManager: DefaultBrowserManaging = DefaultBrowserManager(),
         pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting,
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
+        onboardingManager: OnboardingManaging = OnboardingManager(),
         isIpad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
         urlOpener: URLOpener = UIApplication.shared,
         appIconProvider: @escaping () -> AppIcon = { AppIconManager.shared.appIcon },
         addressBarPositionProvider: @escaping () -> AddressBarPosition = { AppUserDefaults().currentAddressBarPosition }
     ) {
+        self.defaultBrowserManager = defaultBrowserManager
         self.pixelReporter = pixelReporter
         self.onboardingManager = onboardingManager
         self.isIpad = isIpad
@@ -72,7 +75,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func setDefaultBrowserAction() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
+        let urlPath = onboardingManager.settingsURLPath
+
+        if let url = URL(string: urlPath) {
             urlOpener.open(url)
         }
         pixelReporter.measureChooseBrowserCTAAction()
@@ -98,6 +103,9 @@ final class OnboardingIntroViewModel: ObservableObject {
     }
 
     func appIconPickerContinueAction() {
+        // Check if user set DDG as default browser.
+        measureDDGDefaultBrowserIfNeeded()
+
         if appIconProvider() != .defaultAppIcon {
             pixelReporter.measureChooseCustomAppIconColor()
         }
@@ -162,6 +170,19 @@ private extension OnboardingIntroViewModel {
             state = makeViewState(for: .appIconSelection)
             pixelReporter.measureChooseAppIconImpression()
         }
+    }
+
+    func measureDDGDefaultBrowserIfNeeded() {
+        guard onboardingManager.isSetAsDefaultBrowserEnabled else { return }
+
+        defaultBrowserManager.defaultBrowserInfo()
+            .onNewValue { newInfo in
+                // Send experimental pixel
+                Logger.onboarding.debug("Succesfully received default browser result: \(newInfo.isDefaultBrowser)")
+            }
+            .onFailure { failure in
+                // Send Debug pixel
+            }
     }
 
 }

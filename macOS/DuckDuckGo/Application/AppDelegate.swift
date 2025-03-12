@@ -837,7 +837,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
+                /// Displays the "Browser Updated/Downgraded" notification only after the first complete update cycle
                 if let self, progress.isDone, self.shouldCheckNewApplicationVersion {
+                    /// Proceed only if no newer update is available for the user
                     if case .updateCycleDone(.finishedWithNoUpdateFound) = progress {
                         self.updateController.checkNewApplicationVersion()
                     }

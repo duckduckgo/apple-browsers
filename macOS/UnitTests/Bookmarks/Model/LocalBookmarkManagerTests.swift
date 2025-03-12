@@ -642,6 +642,25 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenBookmarkIsMovedUsingAddObjectsWithUUIDs_ThenLastUsedFolderIsUpdatedWithNewParentFolder() async throws {
+        let (bookmarkManager, _) = await aManager()
+        let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")
+        let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
+        var bookmark: Bookmark?
+
+        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
+            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1)
+        }
+
+        let id = try XCTUnwrap(bookmark?.id)
+        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
+            bookmarkManager.add(objectsWithUUIDs: [id], to: folder2, completion: { _ in })
+        }
+
+        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder2.id)
+    }
+
+    @MainActor
     func testWhenFolderIsMoved_ThenLastUsedFolderIsUpdatedWithNewParentFolder() async throws {
         let (bookmarkManager, _) = await aManager()
         let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")

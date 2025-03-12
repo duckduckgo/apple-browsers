@@ -400,6 +400,7 @@ final class LocalBookmarkManager: BookmarkManager {
             if error == nil {
                 self?.requestSync()
             }
+            self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent?.id
             completion(error)
         }
     }

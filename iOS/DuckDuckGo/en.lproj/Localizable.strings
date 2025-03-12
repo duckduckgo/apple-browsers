@@ -794,6 +794,9 @@
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
+/* Close All Tabs */
+"close.all.tabs" = "Close All Tabs";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Skip";
 
@@ -2936,8 +2939,17 @@ Take back control of your personal information with the browser designed for dat
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Select All";
+
+/* Deselect all tabs */
+"tab.select.none" = "Deselect All";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Tab Switcher";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Bookmark All Tabs";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";

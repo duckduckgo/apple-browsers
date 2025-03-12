@@ -202,6 +202,7 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    // Accessibility label - DO NOT LOCALISE
     public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
 
     public static let themeNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
@@ -245,9 +246,9 @@ public struct UserText {
     public static let openHomeTab = NSLocalizedString("tab.open.home", value: "Open home tab", comment: "Accessibility label on tab cell")
     public static let closeHomeTab = NSLocalizedString("tab.close.home", value: "Close home tab", comment: "Accessibility label on remove button")
 
-    public static let selectAllTabs = NotLocalizedString("tab.select.all", value: "Select All", comment: "Select all tabs")
+    public static let selectAllTabs = NSLocalizedString("tab.select.all", value: "Select All", comment: "Select all tabs")
 
-    public static let deselectAllTabs = NotLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
+    public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
@@ -258,6 +259,8 @@ public struct UserText {
         let format = Bundle.main.localizedString(forKey: "tab.close", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
+
+    public static let closeAllTabs: String = NSLocalizedString("close.all.tabs", value: "Close All Tabs", comment: "Close All Tabs")
 
     public static func closeAllTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "closeAllTabs.withCount", value: nil, table: nil)
@@ -304,9 +307,7 @@ public struct UserText {
         return message.format(arguments: title, address)
     }
 
-    public static let tabSwitcherBookmarkPage = NotLocalizedString("tab.switcher.bookmark.page", value: "Bookmark This Page", comment: "Bookmark this page menu item")
-
-    public static let tabSwitcherBookmarkAllTabs = NotLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
+    public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
     public static func tabSwitcherSelectTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.switcher.select-tabs.withCount", value: nil, table: nil)

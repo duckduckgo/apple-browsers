@@ -292,9 +292,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Present Duck Player
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                self.duckPlayer.presentPill(for: videoID, timestamp: nil)
-            }
+            self.duckPlayer.presentPill(for: videoID, timestamp: nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.loadNativeDuckPlayerVideo(videoID: videoID)
             }

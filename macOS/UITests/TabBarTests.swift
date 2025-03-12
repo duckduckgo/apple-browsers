@@ -33,18 +33,56 @@ class TabBarTests: UITestCase {
         UITests.firstRun()
     }
 
-    func testWhenClickingAddTab_ThenTabsOpen() throws {
-//        let app = XCUIApplication()
-//
-//        let tabbarviewitemElementsQuery = app.windows.collectionViews.otherElements.containing(.group, identifier: "TabBarViewItem")
-//        // click on add tab button twice
-//        tabbarviewitemElementsQuery.children(matching: .group).element(boundBy: 1).children(matching: .button).element.click()
-//        tabbarviewitemElementsQuery.children(matching: .group).element(boundBy: 2).children(matching: .button).element.click()
-//
-//        let tabs = app.windows.collectionViews.otherElements.containing(.group, identifier: "TabBarViewItem").children(matching: .group)
-//            .matching(identifier: "TabBarViewItem")
-//
-//        XCTAssertEqual(tabs.count, 3)
-        _ = XCTSkip("Test needs accessibility identifier debugging before usage")
+    func testTabGetsToRecentlyClosedTabWhenCurrentTabIsClosed() {
+        openThreeSitesOnSameWindow()
+        pinsPageOne()
+        moveToRightEndTab()
+        /// Closes last tab
+        app.typeKey("W", modifierFlags: [.command])
+
+        /// Asserts that the pinned tab
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    // MARK: - Utilities
+
+    private func moveToRightEndTab() {
+        let toolbar = app.toolbars.firstMatch
+        let toolbarCoordinate = toolbar.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let startPoint = toolbarCoordinate.withOffset(CGVector(dx: 160, dy: 0))
+        startPoint.press(forDuration: 0.1)
+
+        sleep(1)
+    }
+
+    private func openThreeSitesOnSameWindow() {
+        openSite(pageTitle: "Page #1")
+        app.openNewTab()
+        openSite(pageTitle: "Page #2")
+        app.openNewTab()
+        openSite(pageTitle: "Page #3")
+        app.openNewTab()
+        openSite(pageTitle: "Page #4")
+    }
+
+    private func pinsPageOne() {
+        app.typeKey("[", modifierFlags: [.command, .shift])
+        app.typeKey("[", modifierFlags: [.command, .shift])
+        app.typeKey("[", modifierFlags: [.command, .shift])
+        app.menuItems["Pin Tab"].tap()
+    }
+
+    private func openSite(pageTitle: String) {
+        let url = UITests.simpleServedPage(titled: pageTitle)
+        let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]
+        XCTAssertTrue(
+            addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar text field didn't become available in a reasonable timeframe."
+        )
+        addressBarTextField.typeURL(url)
+        XCTAssertTrue(
+            app.windows.firstMatch.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Visited site didn't load with the expected title in a reasonable timeframe."
+        )
     }
 }

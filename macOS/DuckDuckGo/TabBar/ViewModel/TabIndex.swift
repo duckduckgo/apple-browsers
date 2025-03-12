@@ -171,6 +171,161 @@ extension TabIndex {
             return .unpinned(max(0, min(index, viewModel.tabsCount - 1)))
         }
     }
+
+    // MARK: - Logic when closing a tab
+
+    /// When closing a tab, the following rules will be used to find the appropriate tab to activate. Rules will be evaluated top to bottom and evaluation stops once a tab has been found:
+    /// 1. If this tab has a parent (i.e. has been opened via "Open In New Tab"):
+    ///     a. Try to find the next tab with the same parent tab
+    ///     b. Try to find the previous tab with the same parent tab
+    ///     c. Try to find the parent tab
+    /// 2. Try to find the next tab that has the closing tab as it's parent
+    /// 3. Try to find the previous tab that has the closing tab as it's parent
+    /// 4. Try to find the previously closed tab.
+    /// 5. Try to find the next tab
+    /// 6. Try to find the previous tab
+    @MainActor
+    func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: Tab, withParent parentTab: Tab?) -> TabIndex? {
+        if let parentTab = parentTab {
+            if let nextTabWithSameParent = findNextTabWithSameParent(for: viewModel, parentTab: parentTab) {
+                return nextTabWithSameParent
+            }
+
+            if let previousTabWithSameParent = findPreviousTabWithSameParent(for: viewModel, parentTab: parentTab) {
+                return previousTabWithSameParent
+            }
+
+            if let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
+                return parentTabIndex
+            }
+        }
+
+        return findNewSelectionIndexWithoutParent(for: viewModel, removedTab: removedTab)
+    }
+
+    private enum SearchDirection {
+        case next, previous
+    }
+
+    @MainActor
+    private func findNextTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
+        return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .next)
+    }
+
+    @MainActor
+    private func findPreviousTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
+        return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .previous)
+    }
+
+    @MainActor
+    private func findTabWithParent(for viewModel: TabCollectionViewModel, parentTab: Tab, direction: SearchDirection) -> TabIndex? {
+        var currentIndex = self
+        if let viewModelTab = viewModel.tabViewModel(at: currentIndex), viewModelTab.tab.parentTab == parentTab {
+            return currentIndex
+        }
+
+        while let nextIndex = direction == .next ? currentIndex.getRighteousTab(for: viewModel) : currentIndex.getLeftTab(for: viewModel) {
+            if let viewModelTab = viewModel.tabViewModel(at: nextIndex), viewModelTab.tab.parentTab == parentTab {
+                return nextIndex
+            }
+            currentIndex = nextIndex
+        }
+        return nil
+    }
+
+    @MainActor
+    private func findNewSelectionIndexWithoutParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
+        if let nextTabWithRemovedTabAsParent = findNextTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
+            return nextTabWithRemovedTabAsParent
+        }
+
+        if let previousTabWithRemovedTabAsParent = findPreviousTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
+            return previousTabWithRemovedTabAsParent
+        }
+
+        /// Rule 4: Try to find the recently closed tab
+        if let recentlyClosedTabIndex = viewModel.getLastSelectedTab() {
+            return recentlyClosedTabIndex
+        }
+
+        /// The tab index being manipulate was the tab index of the removed/closed tab. The problem is that this new
+        if viewModel.tabViewModel(at: self) != nil {
+            return self
+        }
+
+        if let nextIndex = getRighteousTab(for: viewModel) {
+            return nextIndex
+        }
+
+        if let previousIndex = getLeftTab(for: viewModel) {
+            return previousIndex
+        }
+
+        return nil
+    }
+
+    @MainActor
+    private func findNextTabWithRemovedTabAsParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
+        var currentIndex = self
+
+        if let viewModelTab = viewModel.tabViewModel(at: currentIndex), viewModelTab.tab.parentTab == removedTab {
+            return currentIndex
+        }
+
+        while let nextIndex = currentIndex.getRighteousTab(for: viewModel) {
+            if let viewModelTab = viewModel.tabViewModel(at: nextIndex), viewModelTab.tab.parentTab == removedTab {
+                return nextIndex
+            }
+            currentIndex = nextIndex
+        }
+        return nil
+    }
+
+    @MainActor
+    private func findPreviousTabWithRemovedTabAsParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
+        var currentIndex = self
+        while let previousIndex = currentIndex.getLeftTab(for: viewModel) {
+            if let viewModelTab = viewModel.tabViewModel(at: previousIndex), viewModelTab.tab.parentTab == removedTab {
+                return previousIndex
+            }
+            currentIndex = previousIndex
+        }
+        return nil
+    }
+
+    /// Gets the tab to the right, if it is the last one, returns nil.
+    @MainActor
+    private func getRighteousTab(for viewModel: TabCollectionViewModel) -> TabIndex? {
+        switch self {
+        case .pinned(let index):
+            if index >= viewModel.pinnedTabsCount - 1 {
+                return viewModel.tabsCount > 0 ? .unpinned(0) : nil
+            }
+            return .pinned(index + 1)
+        case .unpinned(let index):
+            if index >= viewModel.tabCollection.tabs.count - 1 {
+                return nil
+            }
+            return .unpinned(index + 1)
+        }
+    }
+
+    /// Gets the tab to the left, if it is the last one, returns nil.
+    @MainActor
+    private func getLeftTab(for viewModel: TabCollectionViewModel) -> TabIndex? {
+        switch self {
+        case .pinned(let index):
+            if index == 0 {
+                return nil
+            }
+            return .pinned(index - 1)
+        case .unpinned(let index):
+            if index == 0 {
+                return viewModel.pinnedTabsCount > 0 ? .pinned(viewModel.pinnedTabsCount - 1) : nil
+            }
+            return .unpinned(index - 1)
+        }
+    }
 }
 
 private extension TabCollectionViewModel {

@@ -25,6 +25,7 @@ import MaliciousSiteProtection
 
 final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     @Published var shouldShowMaliciousSiteProtectionSection: Bool
+    @Published var shouldShowScamSiteProtectionCopy: Bool
     @Published var isMaliciousSiteProtectionOn: Bool {
         didSet {
             updateMaliciousSiteProtection(enabled: isMaliciousSiteProtectionOn)
@@ -44,6 +45,7 @@ final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.urlOpener = urlOpener
         shouldShowMaliciousSiteProtectionSection = featureFlagger.isMaliciousSiteProtectionEnabled
+        shouldShowScamSiteProtectionCopy = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.scamSiteProtection)
         isMaliciousSiteProtectionOn = manager.isMaliciousSiteProtectionOn
     }
 

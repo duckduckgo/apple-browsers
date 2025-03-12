@@ -24,7 +24,7 @@ import Core
 final class OnboardingManagerMock: OnboardingAddToDockManaging, OnboardingSetAsDefaultExperimentManaging, OnboardingSettingsURLProvider {
     private(set) var didCallSettingsURLPath = false
 
-    var isSetAsDefaultBrowserEnabled: Bool = false
+    var isEnrolledInSetAsDefaultBrowserExperiment: Bool = false
 
     var settingsURLPathToReturn: String = "www.example.com"
     var settingsURLPath: String {

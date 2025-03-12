@@ -252,5 +252,5 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .onboarding }
 
-    case setAsDefaultBrowser
+    case setAsDefaultBrowserExperiment
 }

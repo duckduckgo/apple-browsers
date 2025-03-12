@@ -88,7 +88,7 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
         variantManagerMock.currentVariant = VariantIOS(name: "zz", weight: 0, isIncluded: VariantIOS.When.always, features: [])
 
         // WHEN
-        let result = sut.isSetAsDefaultBrowserEnabled
+        let result = sut.isEnrolledInSetAsDefaultBrowserExperiment
 
         // THEN
         #expect(!result)

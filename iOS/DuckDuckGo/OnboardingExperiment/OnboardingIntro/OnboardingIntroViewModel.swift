@@ -173,7 +173,7 @@ private extension OnboardingIntroViewModel {
     }
 
     func measureDDGDefaultBrowserIfNeeded() {
-        guard onboardingManager.isSetAsDefaultBrowserEnabled else { return }
+        guard onboardingManager.isEnrolledInSetAsDefaultBrowserExperiment else { return }
 
         defaultBrowserManager.defaultBrowserInfo()
             .onNewValue { newInfo in

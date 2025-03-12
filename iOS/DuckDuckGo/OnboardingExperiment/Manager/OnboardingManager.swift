@@ -92,13 +92,13 @@ extension OnboardingManager: OnboardingSettingsURLProvider {}
 // MARK: - Set Default Browser Experiment
 
 protocol OnboardingSetAsDefaultExperimentManaging: AnyObject {
-    var isSetAsDefaultBrowserEnabled: Bool { get }
+    var isEnrolledInSetAsDefaultBrowserExperiment: Bool { get }
     func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort?
 }
 
 extension OnboardingManager: OnboardingSetAsDefaultExperimentManaging {
 
-    var isSetAsDefaultBrowserEnabled: Bool {
+    var isEnrolledInSetAsDefaultBrowserExperiment: Bool {
         resolveSetAsDefaultBrowserExperimentCohort() != nil
     }
 

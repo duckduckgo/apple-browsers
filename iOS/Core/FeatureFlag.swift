@@ -220,7 +220,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
         case .onboardingSetAsDefaultBrowser:
-            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowser))
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         }
     }
 }
@@ -247,7 +247,7 @@ public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescr
 }
 
 public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
-    // Control cohort with no changes applied.
+    /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.
     case treatment

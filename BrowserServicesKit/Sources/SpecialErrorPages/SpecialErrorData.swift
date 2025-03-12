@@ -23,6 +23,7 @@ public enum SpecialErrorKind: String, Encodable {
     case ssl
     case phishing
     case malware
+    case scam
 }
 
 public enum SpecialErrorData: Encodable, Equatable {
@@ -72,6 +73,7 @@ public extension MaliciousSiteProtection.ThreatKind {
         switch self {
         case .malware: .malware
         case .phishing: .phishing
+        case .scam: .scam
         }
     }
 }

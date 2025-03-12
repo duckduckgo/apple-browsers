@@ -30,6 +30,7 @@ final class MaliciousSiteProtectionManagerTests {
     private var dataManager: MaliciousSiteProtection.DataManager!
     private var preferencesManagerMock: MockMaliciousSiteProtectionPreferencesManager!
     private var featureFlaggerMock: MockMaliciousSiteProtectionFeatureFlags!
+    private var scamProtectionSupported = false
 
     init() {
         dataManager = MaliciousSiteProtection.DataManager(
@@ -47,7 +48,10 @@ final class MaliciousSiteProtectionManagerTests {
             dataManager: dataManager,
             detector: mockDetector,
             preferencesManager: preferencesManagerMock,
-            maliciousSiteProtectionFeatureFlagger: featureFlaggerMock
+            maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
+            supportedThreatsProvider: {
+                return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
+            }
         )
     }
 
@@ -80,6 +84,7 @@ final class MaliciousSiteProtectionManagerTests {
         arguments: [
             "https://phishing.com",
             "https://malware.com",
+            "https://scam.com"
         ]
     )
     func whenFeatureIsDisabledThenThreatIsNotDetected(path: String) async throws {
@@ -99,6 +104,7 @@ final class MaliciousSiteProtectionManagerTests {
         arguments: [
             "https://phishing.com",
             "https://malware.com",
+            "https://scam.com"
         ]
     )
     func whenEvaluateURL_AndShouldNotDetectMaliciousThreatForDomain_ThenReturnNil(path: String) async throws {
@@ -119,11 +125,13 @@ final class MaliciousSiteProtectionManagerTests {
         arguments: [
             "https://phishing.com",
             "https://malware.com",
+            "https://scam.com"
         ]
     )
     func whenEvaluateURL_AndPreferenceDisabled_ThenReturnNil(path: String) async throws {
         // GIVEN
         preferencesManagerMock.isMaliciousSiteProtectionOn = false
+        featureFlaggerMock.isScamProtectionEnabled = true
         featureFlaggerMock.shouldDetectMaliciousThreatForDomainResult = true
         let url = try #require(URL(string: path))
 
@@ -139,6 +147,7 @@ final class MaliciousSiteProtectionManagerTests {
         arguments: [
             (path: "https://phishing.com", threat: ThreatKind.phishing),
             (path: "https://malware.com", threat: .malware),
+            (path: "https://scam.com", threat: .scam),
             (path: "https://trusted.com", threat: nil)
         ]
     )
@@ -146,6 +155,7 @@ final class MaliciousSiteProtectionManagerTests {
         // GIVEN
         preferencesManagerMock.isMaliciousSiteProtectionOn = true
         featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
+        featureFlaggerMock.isScamProtectionEnabled = true
         featureFlaggerMock.shouldDetectMaliciousThreatForDomainResult = true
         let url = try #require(URL(string: threatInfo.path))
 

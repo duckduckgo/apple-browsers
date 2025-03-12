@@ -160,11 +160,11 @@ final class MockOnboaringSuggestionsPixelReporting: OnboardingSearchSuggestionsP
     private(set) var didCallTrackSearchOptionTapped = false
     private(set) var didCallTrackSiteOptionTapped = false
 
-    func trackSearchSuggetionOptionTapped() {
+    func measureSearchSuggetionOptionTapped() {
         didCallTrackSearchOptionTapped = true
     }
 
-    func trackSiteSuggetionOptionTapped() {
+    func measureSiteSuggetionOptionTapped() {
         didCallTrackSiteOptionTapped = true
     }
 

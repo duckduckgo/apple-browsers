@@ -20,13 +20,8 @@ import Foundation
 
 public protocol BrowserTab {
 
+    var tabId: String? { get }
     var url: URL { get }
     var title: String { get }
 
-}
-
-extension Score {
-    init(browserTab: BrowserTab, query: Query) {
-        self.init(title: browserTab.title, url: browserTab.url, visitCount: 0, query: query)
-    }
 }

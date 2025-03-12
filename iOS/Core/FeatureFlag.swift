@@ -76,6 +76,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
 
+    /// https://app.asana.com/0/1204186595873227/1209164066387913
+    case scamSiteProtection
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -105,7 +108,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25, .scamSiteProtection, .maliciousSiteProtection:
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
@@ -179,7 +182,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatDeepLink:
             return .remoteReleasable(.subfeature(AIChatSubfeature.deepLink))
         case .tabManagerMultiSelection:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
@@ -194,6 +197,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .scamSiteProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:

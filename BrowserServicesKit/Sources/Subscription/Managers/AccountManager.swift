@@ -27,7 +27,9 @@ public protocol AccountManagerKeychainAccessDelegate: AnyObject {
 public protocol AccountManager {
 
     var delegate: AccountManagerKeychainAccessDelegate? { get set }
+    /// The `accessToken` is long lasting and is used to authenticate API requests and VPN connections
     var accessToken: String? { get }
+    /// The `authToken` is short lasting and is obtained when the user purchases the subscription, is immediately exchanged for a long lasting `accessToken`
     var authToken: String? { get }
     var email: String? { get }
     var externalID: String? { get }

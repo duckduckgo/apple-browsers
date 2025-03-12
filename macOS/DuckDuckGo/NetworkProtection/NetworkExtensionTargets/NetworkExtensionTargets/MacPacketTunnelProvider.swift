@@ -458,7 +458,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             }
 
             self.accountManager = accountManager
-            tokenHandler = accountManager
+            tokenHandler = tokenStore
         } else {
             // MARK: V2
             let configuration = URLSessionConfiguration.default

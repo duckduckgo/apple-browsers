@@ -23,7 +23,7 @@ public struct OEmbedResponse: Decodable {
     public let title: String
     public let authorName: String
     public let thumbnailUrl: String
-    
+
     private enum CodingKeys: String, CodingKey {
         case title
         case authorName = "author_name"

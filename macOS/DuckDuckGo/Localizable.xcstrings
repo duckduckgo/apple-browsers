@@ -1642,66 +1642,6 @@
         }
       }
     },
-    "ai-chat.menu.new" : {
-      "comment" : "Menu item to launch AI Chat",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neuer AI Chat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "New AI Chat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nuevo AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nouvel AI Chat"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nuova AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nieuwe AI Chat"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nowy AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novo AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запустить AI Chat"
-          }
-        }
-      }
-    },
     "ai-chat.onboarding.popover.accept" : {
       "comment" : "AI Chat onboarding CTA for approval",
       "extractionState" : "extracted_with_value",
@@ -1758,66 +1698,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить ярлык"
-          }
-        }
-      }
-    },
-    "ai-chat.onboarding.popover.confirmation" : {
-      "comment" : "Confirmation for accepting the AI Chat onboarding popover",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Shortcut hinzugefügt!"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat shortcut added!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Se ha añadido un acceso directo a AI Chat!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raccourci AI Chat ajouté !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scorciatoia per AI Chat aggiunta!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling naar AI Chat toegevoegd!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dodano skrót do AI Chat!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atalho do AI Chat adicionado!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ярлык AI Chat добавлен!"
           }
         }
       }
@@ -1882,66 +1762,6 @@
         }
       }
     },
-    "ai-chat.onboarding.popover.message-markdown" : {
-      "comment" : "AI Chat onboarding popover message, make sure to keep Settings and AI Chat inside ** **",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du kannst diese und andere AI Chat-Funktionen in **Einstellungen** > **AI Chat** anpassen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "You can adjust this and other AI Chat features in **Settings** > **AI Chat**."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes ajustar esta y otras funciones de AI Chat en **Ajustes** > **AI Chat**."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez ajuster cela et d'autres fonctionnalités d'AI Chat dans **Réglages** > **AI Chat**."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puoi regolare questa e altre funzionalità di AI Chat in **Impostazioni** > **AI Chat**."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je kunt deze en andere AI Chat-functies aanpassen in **Instellingen** > **AI Chat**."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Możesz dostosować tę i inne funkcje AI Chat, wybierając kolejno **Ustawienia** > **AI Chat**."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Podes ajustar esta e outras funcionalidades do AI Chat em **Definições** > **AI Chat**."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Эту и другие функции AI Chat можно отрегулировать в разделе **Настройки > AI Chat**."
-          }
-        }
-      }
-    },
     "ai-chat.onboarding.popover.reject" : {
       "comment" : "AI Chat onboarding CTA for rejection",
       "extractionState" : "extracted_with_value",
@@ -2002,246 +1822,6 @@
         }
       }
     },
-    "ai-chat.onboarding.popover.title" : {
-      "comment" : "AI Chat onboarding popover title",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starte AI Chat direkt von deiner Symbolleiste"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Launch AI Chat directly from your toolbar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia AI Chat directamente desde la barra de herramientas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lancez AI Chat directement depuis votre barre d'outils"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvia AI Chat direttamente dalla barra degli strumenti"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start AI Chat rechtstreeks vanuit je werkbalk"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uruchom AI Chat bezpośrednio z paska narzędzi"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia o AI Chat diretamente a partir da tua barra de ferramentas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запуск AI Chat прямо с панели инструментов"
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption" : {
-      "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starte den AI Chat schneller, indem du Verknüpfungen zur Symbolleiste oder zum Menü deines Browsers hinzufügst"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Launch AI Chat faster by adding shortcuts to your browser toolbar or menu"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre AI Chat más rápido añadiendo accesos directos a la barra de herramientas o al menú de tu navegador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accélérez le lancement d'AI Chat en ajoutant des raccourcis à la barre d'outils ou au menu de votre navigateur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvia AI Chat più velocemente aggiungendo scorciatoie alla barra degli strumenti o al menu del browser"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start AI Chat sneller door snelkoppelingen toe te voegen aan de werkbalk of het menu van je browser"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Szybciej uruchamiaj AI Chat, dodając skróty do paska narzędzi lub menu przeglądarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia o AI Chat mais rapidamente ao adicionar atalhos à barra de ferramentas ou ao menu do navegador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы быстрее запускать функцию AI Chat, добавьте ее ярлык на панель инструментов или в меню браузера."
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption.link.fallback" : {
-      "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat ist eine optionale Funktion, die unter duck.ai verfügbar ist und es dir ermöglicht, private Unterhaltungen mit beliebten KI-Chatmodellen von Drittanbietern zu führen. Deine Chats werden nicht zum Trainieren von Chatmodellen verwendet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat is an optional feature available at duck.ai that lets you have private conversations with popular 3rd-party AI chat models. Your chats are not used to train chat models."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat es una función opcional disponible en duck.ai que te permite tener conversaciones privadas con populares modelos de chat de IA de terceros. Tus chats no se utilizan para entrenar modelos de chat."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat est une fonctionnalité optionnelle disponible sur duck.ai qui vous permet d'avoir des conversations privées avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner des modèles de discussion."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat è una funzionalità opzionale disponibile su duck.ai che consente di intrattenere conversazioni private con i più diffusi modelli di chat AI di terze parti. Le tue chat non vengono usate per addestrare modelli di chat."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat is een optionele functie die beschikbaar is op duck.ai en waarmee je privégesprekken kunt voeren met populaire AI-chatmodellen van derden. Je chats worden niet gebruikt om chatmodellen te trainen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat to opcjonalna funkcja dostępna pod adresem duck.ai, która umożliwia prowadzenie prywatnych rozmów z popularnymi modelami czatu AI innych firm. Twoje czaty nie są używane do trenowania modeli czatu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O AI Chat é uma funcionalidade opcional disponível no duck.ai que te permite ter conversas privadas com modelos de AI chat populares de terceiros. As tuas conversas não são utilizadas para treinar modelos de chat."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat — это дополнительная функция duck.ai, которая позволяет вести приватные беседы с популярными сторонними чат-моделями на базе ИИ. Содержимое чатов не применяется для обучения чат-ботов."
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption.link.markdown" : {
-      "comment" : "Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and ()",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat ist eine optionale Funktion, die unter [duck.ai](https://duck.ai) verfügbar ist und es dir ermöglicht, private Unterhaltungen mit beliebten KI-Chatmodellen von Drittanbietern zu führen. Deine Chats werden nicht zum Trainieren von Chatmodellen verwendet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat is an optional feature available at [duck.ai](https://duck.ai) that lets you have private conversations with popular 3rd-party AI chat models. Your chats are not used to train chat models."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat es una función opcional disponible en [duck.ai](https://duck.ai) que te permite mantener conversaciones privadas con modelos populares de chat de IA de terceros. Tus chats no se utilizan para entrenar modelos de chat."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat est une fonctionnalité optionnelle disponible sur [duck.ai](https://duck.ai) qui vous permet d'avoir des conversations privées avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner des modèles de discussion."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat è una funzionalità opzionale disponibile su [duck.ai](https://duck.ai) che consente di intrattenere conversazioni private con i più comuni modelli di chat AI di terze parti. Le tue chat non vengono usate per addestrare modelli di chat."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat is een optionele functie die beschikbaar is op [duck.ai](https://duck.ai) waarmee je privégesprekken kunt voeren met populaire AI-chatmodellen van derden. Je chats worden niet gebruikt om chatmodellen te trainen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat to opcjonalna funkcja dostępna pod adresem [duck.ai] (https://duck.ai), która umożliwia prowadzenie prywatnych rozmów z popularnymi modelami czatu AI innych firm. Twoje czaty nie są używane do trenowania modeli czatu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O AI Chat é uma funcionalidade opcional disponível no [duck.ai](https://duck.ai) que te permite ter conversas privadas com modelos de AI chat populares de terceiros. As tuas conversas não são utilizadas para treinar modelos de chat."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat — это дополнительная функция [duck.ai](https://duck.ai), которая позволяет вести приватные беседы с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения чат-ботов."
-          }
-        }
-      }
-    },
     "ai-chat.preferences.learn-more" : {
       "comment" : "AI Chat preferences button to learn more about it",
       "extractionState" : "extracted_with_value",
@@ -2298,126 +1878,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Узнать больше"
-          }
-        }
-      }
-    },
-    "ai-chat.show-in-application-menu.toggle" : {
-      "comment" : "Show AI Chat in application menus",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "„Neuer AI Chat“ in den Datei- und Anwendungsmenüs anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show “New AI Chat” in File and application menus"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar «Nuevo AI Chat» en los menús Archivo y Aplicación"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher « Nouvel AI Chat » dans les menus Fichier et Application"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra \"AI Chat\" nel menu File e in quello delle applicazioni"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "'Nieuwe AI Chat' toevoegen aan de menu's 'Bestand' en 'Toepassing'"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż „Nowy AI Chat” w menu plików i aplikacji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar “Novo AI Chat” nos menus de ficheiro e aplicação"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать опцию «Запустить AI Chat» в меню «Файл» и меню приложения"
-          }
-        }
-      }
-    },
-    "ai-chat.show-in-toolbar.toggle" : {
-      "comment" : "Show AI Chat in toolbar",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat in der Browser-Symbolleiste anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show AI Chat shortcut in browser toolbar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar el acceso directo a AI Chat en la barra de herramientas del navegador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher le raccourci AI Chat dans la barre d'outils du navigateur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra la scorciatoia AI Chat nella barra degli strumenti del browser"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling naar AI Chat weergeven op browserwerkbalk"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż skrót AI Chat na pasku narzędzi przeglądarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar atalho do AI Chat na barra de ferramentas do navegador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать ярлык функции AI Chat на панели инструментов браузера"
           }
         }
       }
@@ -27963,9 +27423,57 @@
       "comment" : "Explanation of what deleting site data means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
           }
         }
@@ -28215,9 +27723,57 @@
       "comment" : "Title of a dialog asking the user to confirm deleting history",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Delete history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete history?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Delete history?"
           }
         }
@@ -38526,62 +38082,62 @@
         }
       }
     },
-    "malware.error.page.tab.title" : {
-      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malware.",
+    "malicious.site.error.page.tab.title" : {
+      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malicious.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warnung: Website ist möglicherweise bösartig"
+            "value" : "Warnung: Sicherheitsrisiko"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warning: Site May Be Malicious"
+            "value" : "Warning: Security Risk"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advertencia: el sitio puede ser malicioso"
+            "value" : "Advertencia: riesgo de seguridad"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avertissement : le site est peut-être malveillant"
+            "value" : "Avertissement : risque de sécurité"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attenzione: il sito potrebbe essere dannoso"
+            "value" : "Attenzione: rischio per la sicurezza"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opgelet: Deze website kan schadelijk zijn"
+            "value" : "Waarschuwing: veiligheidsrisico"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ostrzeżenie: witryna może być złośliwa"
+            "value" : "Ostrzeżenie: Zagrożenie bezpieczeństwa"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aviso: o site pode ser malicioso"
+            "value" : "Aviso: Risco para a segurança"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Внимание! Потенциально вредоносный сайт"
+            "value" : "Предупреждение: угроза безопасности"
           }
         }
       }
@@ -44026,10 +43582,58 @@
       "comment" : "Menu item that opens all URLs in a new Fire Window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle in neuem Fire Window öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open All in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir todo en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ouvrir dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutto in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open All in New Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir tudo numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть все в новом окне Fire Window"
           }
         }
       }
@@ -49226,66 +48830,6 @@
         }
       }
     },
-    "phishing.error.page.tab.title" : {
-      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Phishing.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warnung: Es könnte sich um eine betrügerische Website handeln"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Warning: Site May Be Deceptive"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Advertencia: el sitio puede ser engañoso"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avertissement : le site est peut-être trompeur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attenzione: il sito potrebbe essere ingannevole"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waarschuwing: website is mogelijk misleidend"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ostrzeżenie: witryna może być złośliwa"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aviso: o site pode ser enganador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Внимание! Потенциально мошеннический сайт"
-          }
-        }
-      }
-    },
     "pin.tab" : {
       "comment" : "Menu item. Pin as a verb",
       "extractionState" : "extracted_with_value",
@@ -49342,66 +48886,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепить вкладку"
-          }
-        }
-      }
-    },
-    "pinning.hide-aichat-shortcut" : {
-      "comment" : "Menu item for hiding the AI Chat shortcut",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Verknüpfung ausblenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hide AI Chat Shortcut"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar acceso directo a AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer le raccourci de chat IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nascondi scorciatoia AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling voor AI-chat verbergen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ukryj skrót do AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar atalho do AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть ярлык AI Chat"
           }
         }
       }
@@ -49702,66 +49186,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скрыть ярлык для VPN"
-          }
-        }
-      }
-    },
-    "pinning.show-aichat-shortcut" : {
-      "comment" : "Menu item for showing the AI Chat shortcut",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Verknüpfung anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show AI Chat Shortcut"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar acceso directo a AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher le raccourci AI Chat"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra scorciatoia AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling voor AI Chat weergeven"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż skrót do AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar atalho do AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать ярлык AI Chat"
           }
         }
       }
@@ -57798,66 +57222,6 @@
         }
       }
     },
-    "preferences.about.duckduckgo-tagline" : {
-      "comment" : "About screen",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Schutz, unsere Priorität."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your protection, our priority."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu protección, nuestra prioridad."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre protection, notre priorité."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La tua protezione, la nostra priorità."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jouw bescherming, onze prioriteit."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoje bezpieczeństwo jest naszym priorytetem."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tua proteção, a nossa prioridade."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваша защита — наш приоритет."
-          }
-        }
-      }
-    },
     "preferences.about.duckduckgo-tagline-new" : {
       "comment" : "About screen",
       "extractionState" : "extracted_with_value",
@@ -58334,66 +57698,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить DuckDuckGo на док-панель…"
-          }
-        }
-      }
-    },
-    "preferences.ai-chat" : {
-      "comment" : "Title of the option to show AI Chat in preferences",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KI-Chat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat de IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat IA"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-chat"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Czat AI"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat com IA"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чат с ИИ"
           }
         }
       }
@@ -62156,9 +61460,8 @@
         }
       }
     },
-    "Reopen All Windows from Last Session" : {
+    "Reopen All Windows From Last Session" : {
       "comment" : "Main Menu History item",
-      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

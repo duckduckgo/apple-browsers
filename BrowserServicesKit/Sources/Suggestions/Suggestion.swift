@@ -25,7 +25,7 @@ public enum Suggestion: Equatable {
     case bookmark(title: String, url: URL, isFavorite: Bool, allowedInTopHits: Bool)
     case historyEntry(title: String?, url: URL, allowedInTopHits: Bool)
     case internalPage(title: String, url: URL)
-    case openTab(title: String, url: URL)
+    case openTab(title: String, url: URL, tabId: String?)
     case unknown(value: String)
 
     public var url: URL? {
@@ -34,7 +34,7 @@ public enum Suggestion: Equatable {
              .historyEntry(title: _, url: let url, allowedInTopHits: _),
              .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
              .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url):
+             .openTab(title: _, url: let url, _):
             return url
         case .phrase, .unknown:
             return nil
@@ -47,7 +47,7 @@ public enum Suggestion: Equatable {
             return title
         case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
              .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _):
+             .openTab(title: let title, url: _, _):
             return title
         case .phrase, .website, .unknown:
             return nil
@@ -121,7 +121,7 @@ extension Suggestion {
     }
 
     init(tab: BrowserTab) {
-        self = .openTab(title: tab.title, url: tab.url)
+        self = .openTab(title: tab.title, url: tab.url, tabId: tab.tabId)
     }
 
     init(url: URL) {

@@ -105,7 +105,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool
     }
     var showCalled: ShowArgs?
-    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool) {
+    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool) {
         showCalled = .init(url: url, source: source, newTab: newTab)
     }
     var showBookmarksTabCalled = false

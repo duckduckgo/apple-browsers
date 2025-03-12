@@ -83,6 +83,9 @@ if [[ "$old_revision" -lt "$new_revision" ]] || [[ "$*" == *"-f"* ]]; then
     performUpdate malware hashPrefix "${work_dir}/malwareHashPrefixes.json"
     performUpdate malware filterSet "${work_dir}/malwareFilterSet.json"
 
+    performUpdate scam hashPrefix "${work_dir}/scamHashPrefixes.json"
+    performUpdate scam filterSet "${work_dir}/scamFilterSet.json"
+
     updateRevision
 else
     printf 'Nothing to update\n\n'

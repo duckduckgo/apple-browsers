@@ -44,6 +44,8 @@ class MaliciousSiteProtectionEmbeddedDataProviderTest: XCTestCase {
                     "4fd2868a4f264501ec175ab866504a2a96c8d21a3b5195b405a4a83b51eae504"
                 case .malware:
                     "7f80bcae89250c4ecc4ed91b5a4c3a09fe6f098622369f2f46a8ab69023a7683"
+                case .scam:
+                    ""
                 }
             case .hashPrefixSet(let key):
                 switch key.threatKind {
@@ -51,6 +53,8 @@ class MaliciousSiteProtectionEmbeddedDataProviderTest: XCTestCase {
                     "21b047a9950fcaf86034a6b16181e18815cb8d276386d85c8977ca8c5f8aa05f"
                 case .malware:
                     "ef31819296d83136cdb131e877e08fd120571d4c82512ba8c3eb964885ec07bc"
+                case .scam:
+                    ""
                 }
             }
         }

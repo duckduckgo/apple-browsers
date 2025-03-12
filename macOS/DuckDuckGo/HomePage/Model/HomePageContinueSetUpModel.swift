@@ -68,7 +68,6 @@ extension HomePage.Models {
         private let tabOpener: ContinueSetUpModelTabOpening
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
-        private let subscriptionManager: SubscriptionManager
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
@@ -137,8 +136,7 @@ extension HomePage.Models {
              tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
-             subscriptionManager: SubscriptionManager = Application.appDelegate.subscriptionManager) {
+             privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -147,7 +145,6 @@ extension HomePage.Models {
             self.emailManager = emailManager
             self.duckPlayerPreferences = duckPlayerPreferences
             self.privacyConfigurationManager = privacyConfigurationManager
-            self.subscriptionManager = subscriptionManager
             self.settings = .init()
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()

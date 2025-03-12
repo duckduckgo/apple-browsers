@@ -69,6 +69,7 @@ final class DuckPlayerNativeUIPresenter {
     /// A publisher to notify when a video playback request is needed
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
     private var playerCancellables = Set<AnyCancellable>()
+    @MainActor
     private var containerCancellables = Set<AnyCancellable>()
 
     /// Application Settings

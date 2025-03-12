@@ -349,7 +349,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     // Add a convenience initializer that creates a new presenter
     convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-                    featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.init(settings: settings,
                   featureFlagger: featureFlagger,
                   nativeUIPresenter: DuckPlayerNativeUIPresenter())

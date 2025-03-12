@@ -37,8 +37,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private static var vpnLogger = VPNLogger()
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-
-    static private let isAuthV2Enabled = false
+    
     private var accountManager: AccountManager?
     private let subscriptionManager: (any SubscriptionManagerV2)?
 
@@ -436,7 +435,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // MARK: - Configure Subscription ------------------------------------------------------------------------------------------------------------
+        // MARK: - Configure Subscription
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
@@ -524,8 +523,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
                                                                    autoRecoveryHandler: {
-                // TODO Implement
-            })
+                // todo Implement
+            },
+                                                                   initForPurchase: false)
             self.subscriptionManager = subscriptionManager
             
             entitlementsCheck = {
@@ -538,7 +538,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             self.accountManager = nil
         }
 
-        // MARK: - -----------------------------------------------------------------------------------------------------------------------------------
+        // MARK: -
 
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()

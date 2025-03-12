@@ -1953,13 +1953,13 @@
 "onboarding.highlights.appIconSelection.title" = "Quelle couleur me va le mieux ?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Bloquez les demandes et les fenêtres contextuelles de cookies";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Bloquez les fenêtres contextuelles de cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités ciblées";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités qui pistent";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Effacez rapidement les données de navigation";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Supprimez les données de navigation d'un seul clic";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloquer les traqueurs tiers";
@@ -1975,6 +1975,24 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "C'est parti !";
+
+/* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
+"onboarding.privacypro.promo.buttons.learnMore" = "En savoir plus";
+
+/* Button to continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.skip" = "Ignorer";
+
+/* The title of the onboarding dialog that promotes Privacy Pro */
+"onboarding.privacypro.promo.title" = "Oh, avant que j'oublie...";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
+"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo dispose également d’un %1$@ intégré !\n\nActivez-le grâce à un %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "abonnement Privacy Pro payant";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Ajouter un widget";

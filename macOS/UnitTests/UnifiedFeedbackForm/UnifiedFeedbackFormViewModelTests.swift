@@ -34,6 +34,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
 
         XCTAssertEqual(viewModel.viewState, .feedbackPending)
@@ -45,6 +46,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
@@ -64,6 +66,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .success(response)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "hello@example.com"
@@ -82,6 +85,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         let text = "Some feedback report text"
@@ -100,6 +104,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "invalid-email"
@@ -119,6 +124,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.userEmail = "hello@example.com"
@@ -139,6 +145,7 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
                                                      apiService: MockAPIService(apiResponse: .failure(Error.generic)),
                                                      vpnMetadataCollector: collector,
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
                                                      feedbackSender: sender)
         viewModel.delegate = delegate
 
@@ -149,6 +156,12 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
 }
 
 // MARK: - Mocks
+
+private class MockDBPMetadataCollector: UnifiedMetadataCollector {
+    func collectMetadata() async -> DBPFeedbackMetadata {
+        .init(vpnConnectionState: "disconnected", vpnBypassStatus: "off")
+    }
+}
 
 private class MockVPNMetadataCollector: UnifiedMetadataCollector {
     var collectedMetadata = false

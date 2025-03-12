@@ -107,6 +107,7 @@ final class OnboardingDebugViewModel: ObservableObject {
         settings.browsingFinalDialogShown = false
         settings.lastVisitedOnboardingWebsiteURLPath = nil
         settings.lastShownContextualOnboardingDialogType = nil
+        settings.privacyProPromotionDialogShown = false
     }
 }
 

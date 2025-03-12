@@ -377,9 +377,9 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let historyCapture: HistoryCapture
-    weak var duckPlayer: DuckPlayerControlling?    
+    weak var duckPlayer: DuckPlayerControlling?
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
-        let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(), 
+        let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
         if duckPlayer.settings.nativeUI {
@@ -429,7 +429,7 @@ class TabViewController: UIViewController {
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
         self.certificateTrustEvaluator = certificateTrustEvaluator
-        self.duckPlayer = duckPlayer        
+        self.duckPlayer = duckPlayer
         self.privacyProDataReporter = privacyProDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -483,8 +483,8 @@ class TabViewController: UIViewController {
     }
 
     override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)        
-
+        super.viewWillAppear(animated)
+        
         registerForResignActive()
     }
 
@@ -914,8 +914,8 @@ class TabViewController: UIViewController {
     public func reload() {
         wasLoadingStoppedExternally = false
         updateContentMode()
-        cachedRuntimeConfigurationForDomain = [:]        
-        duckPlayerNavigationHandler.handleReload(webView: webView)        
+        cachedRuntimeConfigurationForDomain = [:]
+        duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
 
     }

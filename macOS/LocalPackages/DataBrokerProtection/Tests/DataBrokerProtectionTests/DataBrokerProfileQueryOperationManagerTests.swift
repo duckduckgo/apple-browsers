@@ -23,7 +23,7 @@ import PixelKit
 @testable import DataBrokerProtection
 
 final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
-    let sut = DataBrokerProfileQueryOperationManager()
+    let sut = DataBrokerProfileQueryOperationManager(vpnIPCClient: nil, dbpSettings: nil)
     let mockWebOperationRunner = MockWebJobRunner()
     let mockDatabase = MockDatabase()
     let mockUserNotificationService = MockUserNotificationService()
@@ -662,7 +662,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
 
             if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
-                case .optOutSuccess(_, _, _, let type):
+                case .optOutSuccess(_, _, _, let type, _, _):
                     XCTAssertEqual(type, .child)
                 default: XCTFail("We should be firing the opt-out submit pixel last")
                 }
@@ -695,7 +695,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
 
             if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
-                case .optOutSuccess(_, _, _, let type):
+                case .optOutSuccess(_, _, _, let type, _, _):
                     XCTAssertEqual(type, .parent)
                 default: XCTFail("We should be firing the opt-out submit pixel last")
                 }
@@ -733,7 +733,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
 
         if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
             switch lastPixelFired {
-            case .optOutSubmitSuccess(_, _, _, let tries, _):
+            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
                 XCTAssertEqual(tries, 3)
             default: XCTFail("We should be firing the opt-out submit-success pixel last")
             }
@@ -751,7 +751,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
         } catch {
             if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
-                case .optOutFailure(_, _, _, _, _, let tries, _, _):
+                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
                     XCTAssertEqual(tries, 3)
                 default: XCTFail("We should be firing the opt-out submit-success pixel last")
                 }

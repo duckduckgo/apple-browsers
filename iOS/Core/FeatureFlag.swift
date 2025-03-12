@@ -179,7 +179,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatDeepLink:
             return .remoteReleasable(.subfeature(AIChatSubfeature.deepLink))
         case .tabManagerMultiSelection:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:

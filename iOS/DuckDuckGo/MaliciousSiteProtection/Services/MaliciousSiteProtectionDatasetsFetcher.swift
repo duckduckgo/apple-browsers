@@ -22,6 +22,7 @@ import MaliciousSiteProtection
 import BackgroundTasks
 import Core
 import Combine
+import BrowserServicesKit
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     func startFetching()
@@ -37,6 +38,7 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
     private let application: BackgroundRefreshCapable
 
     private var preferencesManagerCancellable: AnyCancellable?
+    private var featureFlagOverrideCancellable: AnyCancellable?
 
     private var shouldUpdateHashPrefixSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastHashPrefixSetUpdateDate` is mistakenly set in the far future
@@ -222,6 +224,23 @@ extension MaliciousSiteProtectionDatasetsFetcher {
         }
 
         setupBindings()
+        subscribeToScamProtectionFlagChanges()
+    }
+
+    private func subscribeToScamProtectionFlagChanges() {
+        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        featureFlagOverrideCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .scamSiteProtection || $0.0 == .maliciousSiteProtection }
+            .sink { [weak self] (_, value) in
+                if value {
+                    self?.startUpdateTasks()
+                } else {
+                    self?.stopUpdateTasks()
+                }
+            }
     }
 
     private func scheduleBackgroundRefreshTask(datasetType: DataManager.StoredDataType.Kind) {

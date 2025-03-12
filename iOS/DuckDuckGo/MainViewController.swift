@@ -963,46 +963,79 @@ class MainViewController: UIViewController {
         }
     }
 
-    func loadQueryInNewTab(_ query: String, reuseExisting: Bool = false) {
+    /// Represents the policy for reusing existing tabs for a query or URL being opened.
+    enum ExistingTabReusePolicy: Equatable {
+        /// Reuse any existing tab that matches the URL or is a New Tab Page.
+        case any
+        /// Reuse a specific tab identified by its ID.
+        case tabWithId(String)
+    }
+
+    /// Loads a search query in a new tab, with an option to reuse an existing tab.
+    ///
+    /// - Parameters:
+    ///   - query: The search query to be loaded.
+    ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
+    func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none) {
         dismissOmniBar()
         guard let url = URL.makeSearchURL(query: query) else {
             Logger.lifecycle.error("Couldn‘t form URL for query: \(query, privacy: .public)")
             return
         }
+
         loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil)
     }
 
-    func loadUrlInNewTab(_ url: URL, reuseExisting: Bool = false, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
+    /// Load URL in a new tab, with option to reuse an existing tab.
+    ///
+    /// - Parameters:
+    ///   - url: The URL to be loaded.
+    ///   - reuseExisting: The policy for reusing an existing tab. Defaults to `none`, meaning no reuse.
+    ///   - inheritedAttribution: The attribution state to be inherited from a parent tab, if any.
+    ///   - fromExternalLink: A flag indicating if the URL is from an external link. Defaults to `false`.
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false) {
+
         func worker() {
             allowContentUnderflow = false
             viewCoordinator.navigationBarContainer.alpha = 1
             loadViewIfNeeded()
-            if reuseExisting, let existing = tabManager.first(withUrl: url) {
+
+            // Check if a specific tab ID should be reused.
+            if case .tabWithId(let id) = reuseExisting, let existing = tabManager.first(withId: id) {
+                selectTab(existing)
+            }
+            // Check if an existing tab with the same URL should be reused.
+            else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
                 selectTab(existing)
                 return
-            } else if reuseExisting, let existing = tabManager.firstHomeTab() {
+            }
+            // Check if a tab presenting a New Tab page should be reused.
+            else if reuseExisting != .none, let existing = tabManager.firstHomeTab() {
                 if autoClearInProgress {
                     autoClearShouldRefreshUIAfterClear = false
                 }
                 tabManager.selectTab(existing)
                 loadUrl(url, fromExternalLink: fromExternalLink)
-            } else {
+            }
+            // Add a new tab if no existing tab is reused.
+            else {
                 addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink)
             }
+
             refreshOmniBar()
             refreshTabIcon()
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.model)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         }
-        
+
         if clearInProgress {
             postClear = worker
         } else {
             worker()
         }
     }
-    
+
     func enterSearch() {
         if presentedViewController == nil {
             showBars()
@@ -2268,11 +2301,11 @@ extension MainViewController: AutocompleteViewControllerDelegate {
         case .historyEntry(_, url: let url, _):
             loadUrl(url)
 
-        case .openTab(title: _, url: let url):
+        case .openTab(title: _, url: let url, tabId: let tabId):
             if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
                 self.closeTab(tab)
             }
-            loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: .noAttribution)
+            loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
         case .unknown(value: let value), .internalPage(title: let value, url: _):
             assertionFailure("Unknown suggestion: \(value)")
@@ -2313,7 +2346,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
             }
         case .website(url: let url):
             viewCoordinator.omniBar.textField.text = url.absoluteString
-        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _):
+        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _):
             viewCoordinator.omniBar.textField.text = title
             if title.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)

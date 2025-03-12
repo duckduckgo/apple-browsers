@@ -462,6 +462,7 @@ extension ContextualDaxDialogsFactoryTests {
 final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false
+    var userHasSeenTryVisitSiteDialog: Bool = false
 }
 
 

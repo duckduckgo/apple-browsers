@@ -113,7 +113,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         finalDialog?.dismissAction(false)
         XCTAssertTrue(onDismissedRun)
         wait(for: [expectation], timeout: 5.0)
-        XCTAssertTrue(contextualOnboardingLogicMock.didCallsetFinalOnboardingDialogSeen)
+        XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFinalOnboardingDialogSeen)
     }
 
     func testCreateAddFavoriteDialogCreatesAContextualDaxDialog() {

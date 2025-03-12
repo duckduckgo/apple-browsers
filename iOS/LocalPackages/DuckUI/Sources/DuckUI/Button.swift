@@ -37,7 +37,6 @@ public struct PrimaryButtonStyle: ButtonStyle {
         let pressedBackgroundColor = Color(designSystemColor: .buttonsPrimaryPressed)
         let disabledBackgroundColor = Color(designSystemColor: .buttonsPrimaryDisabled)
         let standardForegroundColor = Color(designSystemColor: .buttonsPrimaryText)
-        let pressedForegroundColor = Color(designSystemColor: .buttonsPrimaryPressed)
         let disabledForegroundColor = Color(designSystemColor: .buttonsPrimaryTextDisabled)
         let backgroundColor = disabled ? disabledBackgroundColor : standardBackgroundColor
         let foregroundColor = disabled ? disabledForegroundColor : standardForegroundColor
@@ -47,7 +46,7 @@ public struct PrimaryButtonStyle: ButtonStyle {
             .multilineTextAlignment(.center)
             .lineLimit(nil)
             .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
-            .foregroundColor(configuration.isPressed ? pressedForegroundColor : foregroundColor)
+            .foregroundColor(foregroundColor)
             .padding(.vertical)
             .padding(.horizontal, fullWidth ? nil : 24)
             .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.height - 10 : Consts.height)

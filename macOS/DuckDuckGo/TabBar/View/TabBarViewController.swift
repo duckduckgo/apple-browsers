@@ -214,9 +214,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
+        // Replace collection
         pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
-        if tabCollectionViewModel.selectedTab?.isPinned ?? false {
-            pinnedTabsViewModel?.selectedItem = tabCollectionViewModel.selectedTab
+
+        // Refresh tab selection
+        if let selectionIndex = tabCollectionViewModel.selectionIndex {
+            tabCollectionViewModel.select(at: selectionIndex)
+        }
+        if tabCollectionViewModel.selectionIndex == nil {
+            if tabCollectionViewModel.tabs.count > 0 {
+                tabCollectionViewModel.select(at: .unpinned(0))
+            } else {
+                tabCollectionViewModel.select(at: .pinned(0))
+            }
         }
     }
 

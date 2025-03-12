@@ -77,13 +77,13 @@ final class DuckPlayerNavigationHandler: NSObject {
     weak var tabNavigationHandler: DuckPlayerTabNavigationHandling?
 
     /// Cancellable for observing DuckPlayer Mode changes
-    private var duckPlayerModeCancellable: AnyCancellable?
+    @MainActor private var duckPlayerModeCancellable: AnyCancellable?
 
     /// Cancellable for observing DuckPlayer Navigation Request
-    private var duckPlayerNavigationRequestCancellable: AnyCancellable?
+    @MainActor private var duckPlayerNavigationRequestCancellable: AnyCancellable?
 
     /// Cancellable for observing DuckPlayer dismissal
-    private var duckPlayerDismissalCancellable: AnyCancellable?
+    @MainActor private var duckPlayerDismissalCancellable: AnyCancellable?
 
     /// JavaScript for media playback control        
     private let mediaControlScript: String = {
@@ -160,7 +160,6 @@ final class DuckPlayerNavigationHandler: NSObject {
     }
 
     deinit {
-        // Clean up Combine subscriptions
         duckPlayerModeCancellable?.cancel()
         duckPlayerNavigationRequestCancellable?.cancel()
         duckPlayerDismissalCancellable?.cancel()
@@ -228,9 +227,9 @@ final class DuckPlayerNavigationHandler: NSObject {
             self.redirectToDuckPlayerVideo(url: request.url, webView: webView)
             return
         }
-        // Otherwise, just load the simulated request
-        // New tabs require a short interval so the Omnibars dismissal propagates
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             webView.loadSimulatedRequest(request, responseHTML: responseHTML)
         }
     }
@@ -365,9 +364,9 @@ final class DuckPlayerNavigationHandler: NSObject {
         guard UIDevice.current.userInterfaceIdiom == .phone else { return }
 
         if referrer == .youtube {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: nil)
         } else {
-            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID)
+            duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: .other, timestamp: nil)
         }
     }
 
@@ -635,8 +634,10 @@ final class DuckPlayerNavigationHandler: NSObject {
     }
 
     /// Register a DuckPlayer mode Observe to handle events when the mode changes
+    @MainActor
     private func setupPlayerModeObserver() {
-        duckPlayerModeCancellable =  duckPlayer.settings.duckPlayerSettingsPublisher
+        duckPlayerModeCancellable = duckPlayer.settings.duckPlayerSettingsPublisher
+            .receive(on: RunLoop.main)
             .sink { [weak self] in
                 self?.duckPlayerOverlayUsagePixels?.duckPlayerMode = self?.duckPlayer.settings.mode ?? .disabled
             }
@@ -827,12 +828,12 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill()
+            duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.invalidURL)
         }
 
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill()
+            duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -855,7 +856,7 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             // the pill.  Youtube adds #fragments to Watch main pages
             // When presenting settings and preferences
             if !url.isYoutubeWatch {
-                duckPlayer.dismissPill()
+                duckPlayer.dismissPill(reset: false, animated: true)
             }
 
             // Present the Pill if needed
@@ -901,16 +902,15 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     // even if the DOM is changing during early initialization
     // Once the page has loaded, the JS mutation observer takes care
     // Of pausing newly added elements. 
+    @MainActor
     private func pauseVideoStart(webView: WKWebView) async {
         // First phase: try every 0.05s for 1 second
         Task { @MainActor in
             let startTime = Date()
-
             while Date().timeIntervalSince(startTime) < 1.0 {
                 self.toggleMediaPlayback(webView, pause: true)
                 try? await Task.sleep(nanoseconds: 50_000_000)
             }
-
         }
     }
     // swiftlint: enable cyclomatic_complexity
@@ -1139,9 +1139,22 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
         duckPlayer.setHostViewController(hostViewController)
+    }
 
-        // Ensure the tab is not muted
-        toggleAudioForTab(hostViewController.webView, mute: false)
+    /// Handles DuckPlayer Updates when WebView appears
+    /// To be implemented based on requested changes
+    @MainActor
+    func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
+        setHostViewController(hostViewController)
+        print("hostViewController.tabModel.link?.url: \(hostViewController.tabModel.link?.url)")
+        if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
+            self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
+        }
+    }
+
+    /// Handles DuckPlayer Updates when WebView dissapears
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
+        duckPlayer.dismissPill(reset: false, animated: false)
     }
 
 }

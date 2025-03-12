@@ -78,8 +78,8 @@ final class NavigationBarViewController: NSViewController {
 
     private let dragDropManager: BookmarkDragDropManager
 
-    private var subscriptionManager: SubscriptionManager {
-        Application.appDelegate.subscriptionManager
+    private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
+        Application.appDelegate.subscriptionAuthV1toV2Bridge
     }
 
     var addressBarViewController: AddressBarViewController?
@@ -122,10 +122,8 @@ final class NavigationBarViewController: NSViewController {
     static private let homeButtonLeftPosition = 0
 
     private let networkProtectionButtonModel: NetworkProtectionNavBarButtonModel
-    private let networkProtectionFeatureActivation: NetworkProtectionFeatureActivation
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
-                       networkProtectionFeatureActivation: NetworkProtectionFeatureActivation = NetworkProtectionKeychainTokenStore(),
                        downloadListCoordinator: DownloadListCoordinator = .shared,
                        dragDropManager: BookmarkDragDropManager = .shared,
                        networkProtectionPopoverManager: NetPPopoverManager,
@@ -139,7 +137,6 @@ final class NavigationBarViewController: NSViewController {
             self.init(
                 coder: coder,
                 tabCollectionViewModel: tabCollectionViewModel,
-                networkProtectionFeatureActivation: networkProtectionFeatureActivation,
                 downloadListCoordinator: downloadListCoordinator,
                 dragDropManager: dragDropManager,
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
@@ -155,7 +152,6 @@ final class NavigationBarViewController: NSViewController {
     init?(
         coder: NSCoder,
         tabCollectionViewModel: TabCollectionViewModel,
-        networkProtectionFeatureActivation: NetworkProtectionFeatureActivation,
         downloadListCoordinator: DownloadListCoordinator,
         dragDropManager: BookmarkDragDropManager,
         networkProtectionPopoverManager: NetPPopoverManager,
@@ -169,7 +165,6 @@ final class NavigationBarViewController: NSViewController {
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager, statusReporter: networkProtectionStatusReporter)
-        self.networkProtectionFeatureActivation = networkProtectionFeatureActivation
         self.downloadListCoordinator = downloadListCoordinator
         self.dragDropManager = dragDropManager
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -406,7 +401,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func toggleNetworkProtectionPopover() {
-        guard NetworkProtectionKeychainTokenStore().isFeatureActivated else {
+        guard Application.appDelegate.subscriptionAuthV1toV2Bridge.isUserAuthenticated else {
             return
         }
 

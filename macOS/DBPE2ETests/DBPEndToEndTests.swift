@@ -44,7 +44,9 @@ final class DBPEndToEndTests: XCTestCase {
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), privacyConfig: PrivacyConfigurationManagingMock())
+                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+                                                     vpnBypassSettings: VPNBypassSettingsProvidingMock(),
+                                                     privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
@@ -426,6 +428,18 @@ private extension DBPEndToEndTests {
                      addresses: [.init(city: "Dallas", state: "TX")],
                      phones: [],
                      birthYear: birthYear)
+    }
+
+    final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
+        var vpnBypassSupport: Bool
+        var vpnBypass: Bool
+        var vpnBypassOnboardingShown: Bool
+
+        init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
+            self.vpnBypassSupport = vpnBypassSupport
+            self.vpnBypass = vpnBypass
+            self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
+        }
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {

@@ -43,6 +43,8 @@ public struct UserDefaultsWrapper<T> {
 
         case daxIsDismissed = "com.duckduckgo.ios.daxOnboardingIsDismissed"
         case daxHomeScreenMessagesSeen = "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen"
+        case daxTryAnonymousSearchShown = "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown"
+        case daxTryVisitSiteShown = "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown"
         case daxBrowsingAfterSearchShown = "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown"
         case daxBrowsingWithTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown"
         case daxBrowsingWithoutTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown"
@@ -55,6 +57,7 @@ public struct UserDefaultsWrapper<T> {
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
         case daxLastVisitedOnboardingWebsite = "com.duckduckgo.ios.daxOnboardingLastVisitedWebsite"
         case daxLastShownContextualOnboardingDialogType = "com.duckduckgo.ios.daxLastShownContextualOnboardingDialogType"
+        case daxPrivacyProPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
 
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
         case faviconTabsCacheNeedsCleanup = "com.duckduckgo.ios.favicons.tabsCacheNeedsCleanup"

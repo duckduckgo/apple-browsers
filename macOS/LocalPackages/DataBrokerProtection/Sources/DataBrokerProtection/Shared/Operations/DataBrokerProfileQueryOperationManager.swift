@@ -18,6 +18,8 @@
 
 import Foundation
 import Common
+import NetworkProtection
+import NetworkProtectionIPC
 import os.log
 
 enum OperationsError: Error {
@@ -66,6 +68,26 @@ extension OperationsManager {
 }
 
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
+    private let vpnIPCClient: VPNControllerXPCClient?
+    private let dbpSettings: DataBrokerProtectionSettings?
+
+    init(vpnIPCClient: VPNControllerXPCClient?, dbpSettings: DataBrokerProtectionSettings?) {
+        vpnIPCClient?.register { _ in }
+        self.vpnIPCClient = vpnIPCClient
+        self.dbpSettings = dbpSettings
+    }
+
+    init() {
+        self.init(vpnIPCClient: VPNControllerXPCClient.shared, dbpSettings: DataBrokerProtectionSettings())
+    }
+
+    private var vpnConnectionState: String {
+        vpnIPCClient?.connectionStatusObserver.recentValue.description ?? "unknown"
+    }
+
+    private var vpnBypassStatus: String {
+        dbpSettings?.vpnBypassStatus.rawValue ?? "unknown"
+    }
 
     internal func runOperation(operationData: BrokerJobData,
                                brokerProfileQueryData: BrokerProfileQueryData,
@@ -133,7 +155,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             dataBroker: brokerProfileQueryData.dataBroker.name,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
             handler: pixelHandler,
-            isImmediateOperation: isManual
+            isImmediateOperation: isManual,
+            vpnConnectionState: vpnConnectionState,
+            vpnBypassStatus: vpnBypassStatus
         )
 
         do {
@@ -344,7 +368,8 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
-                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart, brokerType: brokerProfileQueryData.dataBroker.type))
+                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
+                                                     brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
                 }
             }
         }
@@ -400,9 +425,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         let retriesCalculatorUseCase = OperationRetriesCalculatorUseCase()
-        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(dataBroker: brokerProfileQueryData.dataBroker.url,
-                                                                                  dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-                                                                                  handler: pixelHandler)
+        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
+            dataBroker: brokerProfileQueryData.dataBroker.url,
+            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
+            handler: pixelHandler,
+            vpnConnectionState: vpnConnectionState,
+            vpnBypassStatus: vpnBypassStatus
+        )
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
@@ -548,4 +577,33 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
     }
 
+}
+
+extension Bundle {
+    struct Keys {
+        static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
+        static let dbpBackgroundAgentBundleId = "DBP_BACKGROUND_AGENT_BUNDLE_ID"
+    }
+
+    var vpnMenuAgentBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Keys.vpnMenuAgentBundleId) as? String else {
+            fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
+        }
+        return bundleID
+    }
+
+    var dbpBackgroundAgentBundleId: String {
+        guard let bundleID = object(forInfoDictionaryKey: Keys.dbpBackgroundAgentBundleId) as? String else {
+            fatalError("Info.plist is missing \(Keys.dbpBackgroundAgentBundleId)")
+        }
+        return bundleID
+    }
+}
+
+extension VPNControllerXPCClient {
+    static let shared = VPNControllerXPCClient()
+
+    convenience init() {
+        self.init(machServiceName: Bundle.main.vpnMenuAgentBundleId)
+    }
 }

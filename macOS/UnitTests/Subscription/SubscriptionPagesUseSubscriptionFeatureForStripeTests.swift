@@ -1,5 +1,5 @@
 //
-//  SubscriptionPagesUseSubscriptionFeatureTestsForStripe.swift
+//  SubscriptionPagesUseSubscriptionFeatureForStripeTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -28,7 +28,7 @@ import PixelKitTestingUtilities
 import os.log
 
 @available(macOS 12.0, *)
-final class SubscriptionPagesUseSubscriptionFeatureTestsForStripe: XCTestCase {
+final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
 
     private struct Constants {
         static let userDefaultsSuiteName = "SubscriptionPagesUseSubscriptionFeatureTests"
@@ -369,7 +369,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTestsForStripe: XCTestCase {
 }
 
 @available(macOS 12.0, *)
-extension SubscriptionPagesUseSubscriptionFeatureTestsForStripe {
+extension SubscriptionPagesUseSubscriptionFeatureForStripeTests {
 
     func ensureUserAuthenticatedState() {
         accountStorage.authToken = Constants.authToken

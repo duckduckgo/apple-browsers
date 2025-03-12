@@ -73,7 +73,6 @@ extension NSPopover {
 
     @objc func adjustFrame(_ frame: NSRect) -> NSRect {
         var frame = frame
-        frame.size.width -= 12
         let boundingFrame = self.boundingFrame
         if !boundingFrame.isInfinite, boundingFrame.width > frame.width {
             frame.origin.x = min(max(frame.minX, boundingFrame.minX), boundingFrame.maxX - frame.width)

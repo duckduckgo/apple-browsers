@@ -76,9 +76,9 @@ struct SettingsDuckPlayerView: View {
                                         selectedOption: viewModel.duckPlayerModeBinding)
                     .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
 
-                    if (viewModel.state.duckPlayerOpenInNewTabEnabled) {
+                    if viewModel.state.duckPlayerOpenInNewTabEnabled {
                             SettingsCellView(label: UserText.settingsOpenDuckPlayerNewTabLabel,
-                                            accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))                        
+                                            accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))
                     }
                 }
 
@@ -105,12 +105,12 @@ struct SettingsDuckPlayerView: View {
                         SettingsCellView(label: UserText.duckPlayerNativeAutoplayVideos,
                                         accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }                    
+                    }
 
                 }
 
                 Section("Experimental", content: {
-                    SettingsCellView(label: "Use Native UI", 
+                    SettingsCellView(label: "Use Native UI",
                                    accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
                         .onChange(of: viewModel.state.duckPlayerNativeUI) { _ in
                             showNewTabAlert = true

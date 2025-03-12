@@ -1,5 +1,5 @@
 //
-//  DuckPlayerNavigationHandler.swift
+//  WebDuckPlayerNavigationHandler.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -119,12 +119,12 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
     init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-        appSettings: AppSettings,
-        pixelFiring: PixelFiring.Type = Pixel.self,
-        dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
-        tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
-        duckPlayerOverlayUsagePixels: DuckPlayerOverlayPixelFiring? = DuckPlayerOverlayUsagePixels()) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         appSettings: AppSettings,
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+         tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
+         duckPlayerOverlayUsagePixels: DuckPlayerOverlayPixelFiring? = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings

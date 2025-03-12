@@ -196,7 +196,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
@@ -221,7 +221,7 @@ extension MainCoordinator: URLHandling {
             controller.newTab(reuseExisting: true, allowingKeyboard: false)
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: true)
+            controller.loadQueryInNewTab(query, reuseExisting: .any)
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:

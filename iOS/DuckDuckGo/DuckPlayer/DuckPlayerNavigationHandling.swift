@@ -138,6 +138,13 @@ protocol DuckPlayerNavigationHandling: AnyObject {
 
     /// Sets the host view controller for the navigation handler.
     func setHostViewController(_ hostViewController: TabViewController)
+
+    /// Handles DuckPlayer Updates when WebView appears
+    func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController)
+
+    /// Handles DuckPlayer Updates when WebView dissapears
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController)
+
 }
 
 /// Protocol defining the tab navigation handling for Duck Player.

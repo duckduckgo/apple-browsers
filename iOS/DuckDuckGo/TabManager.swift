@@ -249,6 +249,10 @@ class TabManager {
         return model.tabs.first(where: { $0.link == nil })
     }
 
+    func first(withId id: String) -> Tab? {
+        return model.tabs.first { $0.uid == id }
+    }
+
     func first(withUrl url: URL) -> Tab? {
         return model.tabs.first(where: {
             guard let linkUrl = $0.link?.url else { return false }

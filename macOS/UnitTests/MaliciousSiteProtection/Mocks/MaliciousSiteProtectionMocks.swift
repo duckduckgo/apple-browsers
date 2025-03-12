@@ -88,6 +88,8 @@ final class MockMaliciousSiteDetector: MaliciousSiteProtection.MaliciousSiteDete
             .phishing
         } else if url.absoluteString.contains("malware") {
             .malware
+        } else if url.absoluteString.contains("scam") {
+            .scam
         } else {
             nil
         }

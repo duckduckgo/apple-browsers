@@ -58,7 +58,7 @@ final class AIChatWebViewController: UIViewController {
         super.viewDidLoad()
 
         view.backgroundColor = .black
-
+        downloadHandler.delegate = self
         setupWebView()
         setupLoadingView()
         loadWebsite()
@@ -174,22 +174,36 @@ extension AIChatWebViewController: WKNavigationDelegate {
     }
 }
 
-final class DownloadHandler: NSObject,  WKDownloadDelegate {
+final class DownloadHandler: NSObject, WKDownloadDelegate {
+    weak var delegate: DownloadHandlerDelegate?
+    private var filename: String?
 
-    // This function determines the destination URL for the downloaded file
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
+        filename = suggestedFilename
         let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let destinationURL = documentsDirectory.appendingPathComponent(suggestedFilename)
-        return destinationURL
+        return documentsDirectory.appendingPathComponent(suggestedFilename)
     }
 
-    // This function handles download failure
-    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-        print("Download failed with error: \(error.localizedDescription)")
-    }
-
-    // This function is called when the download finishes successfully
     func downloadDidFinish(_ download: WKDownload) {
-        print("Download finished successfully")
+        guard let filename = filename else { return }
+        Task { @MainActor in
+            self.delegate?.showDownloadCompleteToast(filename: filename)
+        }
     }
+
+    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        print("Download failed: \(error.localizedDescription)")
+    }
+}
+
+protocol DownloadHandlerDelegate: AnyObject {
+    @MainActor func showDownloadCompleteToast(filename: String)
+}
+
+extension AIChatWebViewController: DownloadHandlerDelegate {
+    @MainActor func showDownloadCompleteToast(filename: String) {
+        view.presentDownloadToast(fileName: filename) {
+            
+        }
+     }
 }

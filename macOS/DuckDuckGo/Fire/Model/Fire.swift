@@ -318,7 +318,7 @@ final class Fire {
         case .none:
             return
         case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel):
-            if tabCollectionViewModel.tabs.count == 0 {
+            if tabCollectionViewModel.allTabsCount == 0 {
                 closeWindow(of: tabCollectionViewModel)
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):

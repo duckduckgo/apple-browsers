@@ -29,6 +29,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
 
     var container: NSPersistentContainer!
     var context: NSManagedObjectContext!
+    var foldersStore: BookmarkFolderStoreMock!
 
     enum BookmarkManagerError: Error {
         case somethingReallyBad
@@ -822,7 +823,8 @@ fileprivate extension LocalBookmarkManagerTests {
     private func makeManager(@BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
         let bookmarkStoreMock = BookmarkStoreMock(contextProvider: context.map { context in { context } }, bookmarks: bookmarks().build())
         let faviconManagerMock = MainActor.assumeIsolated { FaviconManagerMock() }
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        foldersStore = BookmarkFolderStoreMock()
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock, foldersStore: foldersStore)
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).makeManager \(String(describing: bookmarkManager)) with \(bookmarkStoreMock.debugDescription, privacy: .public)")
 
         return (bookmarkManager, bookmarkStoreMock)

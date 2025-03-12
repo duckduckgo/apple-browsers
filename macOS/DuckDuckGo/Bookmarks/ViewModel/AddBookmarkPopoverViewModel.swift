@@ -24,7 +24,6 @@ import Persistence
 final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private let bookmarkManager: BookmarkManager
-    private let foldersStore: BookmarkFoldersStore
     var buttonClicked: (() -> Void)?
 
     @Published private(set) var bookmark: Bookmark
@@ -37,7 +36,6 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
                 bookmarkManager.add(bookmark: bookmark, to: selectedFolder) { _ in
                     // this is an invalid callback fired before bookmarks finish reloading
                 }
-                foldersStore.lastBookmarkSingleTabFolderIdUsed = selectedFolder?.id
             }
         }
     }
@@ -62,11 +60,8 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private var bookmarkListCancellable: AnyCancellable?
 
-    init(bookmark: Bookmark,
-         foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmark: Bookmark, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
         self.bookmarkManager = bookmarkManager
-        self.foldersStore = foldersStore
         self.bookmark = bookmark
         self.bookmarkTitle = bookmark.title
         self.isBookmarkFavorite = bookmark.isFavorite

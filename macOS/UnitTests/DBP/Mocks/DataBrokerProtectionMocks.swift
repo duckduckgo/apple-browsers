@@ -20,15 +20,13 @@ import Foundation
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockAccountManager: AccountManager, SubscriptionAuthenticationStateProvider {
+final class MockAccountManager: AccountManager {
 
     var hasEntitlementResult: Result<Bool, any Error> = .success(true)
 
     var delegate: AccountManagerKeychainAccessDelegate?
 
-    var isUserAuthenticated: Bool {
-        accessToken != nil
-    }
+    var isUserAuthenticated = false
 
     var accessToken: String? = ""
 

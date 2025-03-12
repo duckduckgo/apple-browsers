@@ -160,20 +160,6 @@ public final class DefaultAccountManager: AccountManager {
         }
     }
 
-    public func storeAccessToken(token: String) {
-        Logger.subscription.info("[AccountManager] storeAccessToken")
-
-        do {
-            try accessTokenStorage.store(accessToken: token)
-        } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
-        }
-    }
-
     public func storeAccount(token: String, email: String?, externalID: String?) {
         Logger.subscription.info("[AccountManager] storeAccount")
 

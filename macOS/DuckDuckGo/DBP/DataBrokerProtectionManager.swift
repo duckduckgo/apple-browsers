@@ -34,15 +34,14 @@ public final class DataBrokerProtectionManager {
 
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
+        let accountManager = Application.appDelegate.subscriptionManager.accountManager
         let freemiumDBPFirstProfileSavedNotifier = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+                                                                                        accountManager: accountManager)
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
     lazy var dataManager: DataBrokerProtectionDataManager = {
-        let dataManager = DataBrokerProtectionDataManager(profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier,
-                                                          pixelHandler: pixelHandler,
-                                                          fakeBrokerFlag: fakeBrokerFlag)
+        let dataManager = DataBrokerProtectionDataManager(profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier, pixelHandler: pixelHandler, fakeBrokerFlag: fakeBrokerFlag)
         dataManager.delegate = self
         return dataManager
     }()
@@ -59,8 +58,7 @@ public final class DataBrokerProtectionManager {
     }()
 
     private init() {
-        self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
     }
 
     public func isUserAuthenticated() -> Bool {

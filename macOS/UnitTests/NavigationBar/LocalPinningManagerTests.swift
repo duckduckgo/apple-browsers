@@ -21,6 +21,15 @@ import NetworkProtection
 
 @testable import DuckDuckGo_Privacy_Browser
 
+private struct NetworkProtectionFeatureActivationMock: NetworkProtectionFeatureActivation {
+
+    let activated: Bool = true
+
+    var isFeatureActivated: Bool {
+        activated
+    }
+}
+
 final class LocalPinningManagerTests: XCTestCase {
 
     override func setUp() {
@@ -34,7 +43,7 @@ final class LocalPinningManagerTests: XCTestCase {
     }
 
     private func createManager() -> LocalPinningManager {
-        return LocalPinningManager()
+        return LocalPinningManager(networkProtectionFeatureActivation: NetworkProtectionFeatureActivationMock())
     }
 
     func testWhenTogglingPinningForAView_AndViewIsNotPinned_ThenViewBecomesPinned() {

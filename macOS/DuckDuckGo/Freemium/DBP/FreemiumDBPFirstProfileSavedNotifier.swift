@@ -27,7 +27,7 @@ import OSLog
 final class FreemiumDBPFirstProfileSavedNotifier: DBPProfileSavedNotifier {
 
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
-    private var authenticationStateProvider: any SubscriptionAuthenticationStateProvider
+    private var accountManager: AccountManager
     private let notificationCenter: NotificationCenter
 
     /// Initializes the notifier with the necessary dependencies to check user state and post notifications.
@@ -36,11 +36,9 @@ final class FreemiumDBPFirstProfileSavedNotifier: DBPProfileSavedNotifier {
     ///   - freemiumDBPUserStateManager: Manages the user state related to Freemium DBP.
     ///   - accountManager: Manages account-related information, such as whether the user is authenticated.
     ///   - notificationCenter: The notification center for posting notifications. Defaults to the system's default notification center.
-    init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
-         authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
-         notificationCenter: NotificationCenter = .default) {
+    init(freemiumDBPUserStateManager: FreemiumDBPUserStateManager, accountManager: AccountManager, notificationCenter: NotificationCenter = .default) {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
-        self.authenticationStateProvider = authenticationStateProvider
+        self.accountManager = accountManager
         self.notificationCenter = notificationCenter
     }
 
@@ -51,7 +49,7 @@ final class FreemiumDBPFirstProfileSavedNotifier: DBPProfileSavedNotifier {
     ///
     /// If all conditions are met, the method posts a `pirProfileSaved` notification via the `NotificationCenter` and records that the notification has been posted.
     func postProfileSavedNotificationIfPermitted() {
-        guard !authenticationStateProvider.isUserAuthenticated
+        guard !accountManager.isUserAuthenticated
                 && freemiumDBPUserStateManager.didActivate
                 && !freemiumDBPUserStateManager.didPostFirstProfileSavedNotification else { return }
 

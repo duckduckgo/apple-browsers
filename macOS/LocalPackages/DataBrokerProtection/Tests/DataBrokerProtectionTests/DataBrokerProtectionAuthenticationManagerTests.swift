@@ -23,11 +23,11 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
     var authenticationManager: DataBrokerProtectionAuthenticationManager!
     var subscriptionManager: MockDataBrokerProtectionSubscriptionManaging!
 
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         subscriptionManager = MockDataBrokerProtectionSubscriptionManaging()
     }
 
-    override func tearDownWithError() throws {
+    override func tearDown() async throws {
         authenticationManager = nil
         subscriptionManager = nil
     }
@@ -40,13 +40,12 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
         XCTAssertEqual(authenticationManager.isUserAuthenticated, false)
     }
 
-    func testEmptyAccessTokenResultsInNilAuthHeader() async {
+    func testEmptyAccessTokenResultsInNilAuthHeader() {
         subscriptionManager.accessTokenValue = nil
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 
-        let authHeader = await authenticationManager.getAuthHeader()
-        XCTAssertNil(authHeader)
+        XCTAssertNil(authenticationManager.getAuthHeader())
     }
 
     func testUserAuthenticatedWhenSubscriptionManagerReturnsTrue() {
@@ -57,14 +56,13 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
         XCTAssertEqual(authenticationManager.isUserAuthenticated, true)
     }
 
-    func testNonEmptyAccessTokenResultsInValidAuthHeader() async {
+    func testNonEmptyAccessTokenResultsInValidAuthHeader() {
         let accessToken = "validAccessToken"
         subscriptionManager.accessTokenValue = accessToken
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 
-        let authHeader = await authenticationManager.getAuthHeader()
-        XCTAssertNotNil(authHeader)
+        XCTAssertNotNil(authenticationManager.getAuthHeader())
     }
 
     func testValidEntitlementCheckWithSuccess() async {
@@ -109,7 +107,6 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
 }
 
 final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSubscriptionManaging {
-
     typealias EntitlementResult = Result<Bool, Error>
 
     var userAuthenticatedValue = false
@@ -121,7 +118,7 @@ final class MockDataBrokerProtectionSubscriptionManaging: DataBrokerProtectionSu
         userAuthenticatedValue
     }
 
-    func accessToken() async -> String? {
+    var accessToken: String? {
         accessTokenValue
     }
 

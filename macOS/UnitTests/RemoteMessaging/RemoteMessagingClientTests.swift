@@ -23,7 +23,6 @@ import RemoteMessaging
 import Freemium
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import SubscriptionTestingUtilities
 
 struct MockRemoteMessagingStoreProvider: RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring {
@@ -67,7 +66,6 @@ final class RemoteMessagingClientTests: XCTestCase {
     var remoteMessagingDatabaseLocation: URL!
     var bookmarksDatabase: CoreDataDatabase!
     var bookmarksDatabaseLocation: URL!
-    var subscriptionAuthV1toV2Bridge: SubscriptionAuthV1toV2BridgeMock!
 
     override func setUpWithError() throws {
         setUpRemoteMessagingDatabase()
@@ -75,7 +73,6 @@ final class RemoteMessagingClientTests: XCTestCase {
 
         availabilityProvider = MockRemoteMessagingAvailabilityProvider()
         storeProvider = MockRemoteMessagingStoreProvider()
-        subscriptionAuthV1toV2Bridge = SubscriptionAuthV1toV2BridgeMock()
     }
 
     override func tearDownWithError() throws {
@@ -128,8 +125,7 @@ final class RemoteMessagingClientTests: XCTestCase {
                 pinnedTabsManager: PinnedTabsManager(),
                 internalUserDecider: InternalUserDeciderMock(),
                 statisticsStore: MockStatisticsStore(),
-                variantManager: MockVariantManager(),
-                subscriptionManager: subscriptionAuthV1toV2Bridge
+                variantManager: MockVariantManager()
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )

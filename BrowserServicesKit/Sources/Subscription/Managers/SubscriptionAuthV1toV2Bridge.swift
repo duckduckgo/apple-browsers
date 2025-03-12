@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Common
 
 /// Temporary bridge between auth v1 and v2, this is implemented by SubscriptionManager V1 and V2
 public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
@@ -28,8 +27,6 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
     func url(for type: SubscriptionURL) -> URL
     var email: String? { get }
-    var currentEnvironment: SubscriptionEnvironment { get }
-    func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
 }
 
 extension SubscriptionAuthV1toV2Bridge {

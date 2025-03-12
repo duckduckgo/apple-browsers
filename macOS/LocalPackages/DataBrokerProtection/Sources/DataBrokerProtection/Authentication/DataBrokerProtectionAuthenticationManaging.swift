@@ -27,9 +27,9 @@ public enum AuthenticationError: Error, Equatable {
 
 public protocol DataBrokerProtectionAuthenticationManaging {
     var isUserAuthenticated: Bool { get }
-    func accessToken() async -> String?
+    var accessToken: String? { get }
     func hasValidEntitlement() async throws -> Bool
-    func getAuthHeader() async -> String?
+    func getAuthHeader() -> String?
 }
 
 public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
@@ -39,8 +39,8 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
         subscriptionManager.isUserAuthenticated
     }
 
-    public func accessToken() async -> String? {
-        await subscriptionManager.accessToken()
+    public var accessToken: String? {
+        subscriptionManager.accessToken
     }
 
     public init(subscriptionManager: any DataBrokerProtectionSubscriptionManaging) {
@@ -51,8 +51,7 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
         try await subscriptionManager.hasValidEntitlement()
     }
 
-    public func getAuthHeader() async -> String? {
-        let token = await accessToken()
-        return ServicesAuthHeaderBuilder().getAuthHeader(token)
+    public func getAuthHeader() -> String? {
+        ServicesAuthHeaderBuilder().getAuthHeader(accessToken)
     }
 }

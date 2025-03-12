@@ -19,7 +19,6 @@
 import AppKit
 import SubscriptionUI
 import WebKit
-import Subscription
 
 @MainActor
 final class SubscriptionUIHandler: SubscriptionUIHandling {
@@ -28,12 +27,12 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
     fileprivate var mainWindowController: MainWindowController? { windowControllersManager.lastKeyMainWindowController }
     fileprivate var currentWindow: NSWindow? { mainWindowController?.window }
     fileprivate var currentMainViewController: MainViewController? { mainWindowController?.mainViewController }
+
     typealias WindowControllersManagerProvider = () -> WindowControllersManager
     fileprivate nonisolated let windowControllersManagerProvider: WindowControllersManagerProvider
     fileprivate var progressViewController: ProgressViewController?
 
-    @MainActor
-    init(windowControllersManagerProvider: @escaping WindowControllersManagerProvider) {
+    @MainActor init(windowControllersManagerProvider: @escaping WindowControllersManagerProvider) {
         self.windowControllersManagerProvider = windowControllersManagerProvider
     }
 
@@ -56,7 +55,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
 
     func presentSubscriptionAccessViewController(handler: any SubscriptionAccessActionHandling, message: WKScriptMessage) {
         let actionHandlers = SubscriptionAccessActionHandlers(openActivateViaEmailURL: {
-            let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activateViaEmail)
+            let url = Application.appDelegate.subscriptionManager.url(for: .activateViaEmail)
             handler.subscriptionAccessActionOpenURLHandler(url: url)
         }, restorePurchases: {
             handler.subscriptionAccessActionRestorePurchases(message: message)
@@ -64,7 +63,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
             handler.subscriptionAccessActionHandleAction(event: event)
         })
 
-        let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
+        let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionManager,
                                                                                    actionHandlers: actionHandlers)
         currentMainViewController?.presentAsSheet(newSubscriptionAccessViewController)
     }

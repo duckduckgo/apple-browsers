@@ -1,7 +1,7 @@
 //
-//  DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift
+//  NetworkProtectionFeatureActivation.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,14 +17,20 @@
 //
 
 import Foundation
-import AppKit
-import Subscription
-import BrowserServicesKit
 
-extension DefaultSubscriptionFeatureAvailability {
+public protocol NetworkProtectionFeatureActivation {
 
-    convenience init() {
-        self.init(privacyConfigurationManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
-                  purchasePlatform: Application.appDelegate.subscriptionManager.currentEnvironment.purchasePlatform)
+    /// Has the invite code flow been completed and an oAuth token stored?
+    ///
+    var isFeatureActivated: Bool { get }
+}
+
+extension NetworkProtectionKeychainTokenStore: NetworkProtectionFeatureActivation {
+    public var isFeatureActivated: Bool {
+        do {
+            return try fetchToken() != nil
+        } catch {
+            return false
+        }
     }
 }

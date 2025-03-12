@@ -35,7 +35,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
     private let userDefaults: UserDefaults
     private let subscriptionAvailability: SubscriptionFeatureAvailability
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let accountManager: AccountManager
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
@@ -43,14 +43,14 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
          pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         accountManager: AccountManager,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureDisabler = featureDisabler
         self.pixelHandler = pixelHandler
         self.userDefaults = userDefaults
         self.subscriptionAvailability = subscriptionAvailability
-        self.subscriptionManager = subscriptionManager
+        self.accountManager = accountManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
@@ -80,19 +80,25 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
 
     /// Checks DBP prerequisites
     ///
-    /// Prerequisites are satisfied if either:
+    /// Prerequisites are satisified if either:
     /// 1. The user is an active freemium user (e.g has activated freemium and is not authenticated)
     /// 2. The user has a subscription with valid entitlements
     ///
     /// - Returns: Bool indicating prerequisites are satisfied
     func arePrerequisitesSatisfied() async -> Bool {
 
-        let isAuthenticated = subscriptionManager.isUserAuthenticated
+        let isAuthenticated = accountManager.isUserAuthenticated
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
-        // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
-        let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .dataBrokerProtection,
-                                                                        cachePolicy: .reloadIgnoringLocalCacheData)) ?? false
+        let entitlements = await accountManager.hasEntitlement(forProductName: .dataBrokerProtection,
+                                                               cachePolicy: .reloadIgnoringLocalCacheData)
+        var hasEntitlements: Bool
+        switch entitlements {
+        case .success(let value):
+            hasEntitlements = value
+        case .failure:
+            hasEntitlements = false
+        }
 
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
 

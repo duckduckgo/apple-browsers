@@ -76,7 +76,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     weak var broker: UserScriptMessageBroker?
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
 
     let featureName = "useIdentityTheftRestoration"
@@ -84,8 +84,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
         HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability()) {
+    init(subscriptionManager: SubscriptionManager, subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
     }
@@ -105,7 +104,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature {
     }
 
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        if let accessToken = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.getAccessToken() {
+        if let accessToken = await Application.appDelegate.subscriptionManager.accountManager.accessToken {
             return ["token": accessToken]
         } else {
             return [String: String]()

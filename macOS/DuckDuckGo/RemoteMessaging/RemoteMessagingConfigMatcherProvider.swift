@@ -37,8 +37,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         pinnedTabsManager: PinnedTabsManager,
         internalUserDecider: InternalUserDecider,
         statisticsStore: StatisticsStore = LocalStatisticsStore(),
-        variantManager: VariantManager = DefaultVariantManager(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        variantManager: VariantManager = DefaultVariantManager()
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -48,7 +47,6 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.internalUserDecider = internalUserDecider
         self.statisticsStore = statisticsStore
         self.variantManager = variantManager
-        self.subscriptionManager = subscriptionManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -59,7 +57,6 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let internalUserDecider: InternalUserDecider
     let statisticsStore: StatisticsStore
     let variantManager: VariantManager
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -71,7 +68,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             favoritesCount = BookmarkUtils.numberOfFavorites(for: appearancePreferences.favoritesDisplayMode, in: context)
         }
 
-        let isPrivacyProSubscriber = subscriptionManager.isUserAuthenticated
+        let subscriptionManager = await Application.appDelegate.subscriptionManager
+
+        let isPrivacyProSubscriber = subscriptionManager.accountManager.isUserAuthenticated
         let isPrivacyProEligibleUser = subscriptionManager.canPurchase
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
@@ -85,30 +84,39 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var privacyProPurchasePlatform: String?
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
-        do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
-            privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            privacyProPurchasePlatform = subscription.platform.rawValue
+        if let accessToken = subscriptionManager.accountManager.accessToken {
+            let subscriptionResult = await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: accessToken)
 
-            switch subscription.status {
-            case .autoRenewable, .gracePeriod:
-                isPrivacyProSubscriptionActive = true
-            case .notAutoRenewable:
-                isPrivacyProSubscriptionActive = true
-                isPrivacyProSubscriptionExpiring = true
-            case .expired, .inactive:
-                isPrivacyProSubscriptionExpired = true
-            case .unknown:
-                break // Not supported in RMF
+            if case let .success(subscription) = subscriptionResult {
+                privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+                privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+                privacyProPurchasePlatform = subscription.platform.rawValue
+
+                switch subscription.status {
+                case .autoRenewable, .gracePeriod:
+                    isPrivacyProSubscriptionActive = true
+                case .notAutoRenewable:
+                    isPrivacyProSubscriptionActive = true
+                    isPrivacyProSubscriptionExpiring = true
+                case .expired, .inactive:
+                    isPrivacyProSubscriptionExpired = true
+                case .unknown:
+                    break // Not supported in RMF
+                }
+
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscription: subscription
+                )
+            } else {
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscription: nil
+                )
             }
-
-            surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
-                statisticsStore: statisticsStore,
-                vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscription: subscription
-            )
-        } catch {
+        } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
@@ -130,7 +138,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let deprecatedRemoteMessageStorage = DefaultSurveyRemoteMessagingStorage.surveys()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
-        let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
+        let isCurrentFreemiumDBPUser = !subscriptionManager.accountManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,

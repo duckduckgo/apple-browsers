@@ -426,8 +426,8 @@ final class AddressBarTextField: NSTextField {
 #endif
 
         // Prevent typing in subscription URLs directly in the address bar
-        let baseURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .baseURL)
-        let identityTheftRestorationURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .identityTheftRestoration)
+        let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)
+        let identityTheftRestorationURL = Application.appDelegate.subscriptionManager.url(for: .identityTheftRestoration)
         if providedUrl.isChild(of: baseURL) || providedUrl.isChild(of: identityTheftRestorationURL) {
             self.updateValue(selectedTabViewModel: nil, addressBarString: nil) // reset
             self.window?.makeFirstResponder(nil)

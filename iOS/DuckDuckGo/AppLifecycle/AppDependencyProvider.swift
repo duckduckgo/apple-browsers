@@ -115,7 +115,7 @@ final class AppDependencyProvider: DependencyProvider {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        // MARK: - Configure Subscription
+        // MARK: - Configure Subscription ------------------------------------------------------------------------------------------------------------
 
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
@@ -217,7 +217,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
                                                                    autoRecoveryHandler: {
-                // todo Implement
+                // TODO: Implement
             },
                                                                    isInternalUserEnabled: {
                 ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser

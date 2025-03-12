@@ -46,6 +46,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         sut = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                     baseURL: Constants.redirectURL,
+                                                    canPurchase: { [self] in canPurchase },
                                                     tld: TLD(),
                                                     featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)))
     }
@@ -62,7 +63,6 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         // WHEN
         subscriptionManager.urlForPurchaseFromRedirect = expectedURL
-        subscriptionManager.canPurchase = true
         let result = sut.redirectURL(for: url)
 
         // THEN
@@ -104,7 +104,6 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         // WHEN
         subscriptionManager.urlForPurchaseFromRedirect = expectedURL
-        subscriptionManager.canPurchase = true
         let result = sut.redirectURL(for: url)
 
         // THEN

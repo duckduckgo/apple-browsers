@@ -161,7 +161,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: @escaping PixelHandler,
                 autoRecoveryHandler: @escaping AutoRecoveryHandler,
-                initForPurchase: Bool = true,
                 isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -171,18 +170,18 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         self.autoRecoveryHandler = autoRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
 
-        if initForPurchase {
-            switch currentEnvironment.purchasePlatform {
-            case .appStore:
-                if #available(macOS 12.0, iOS 15.0, *) {
-                    setupForAppStore()
-                } else {
-                    assertionFailure("Trying to setup AppStore where not supported")
-                }
-            case .stripe:
-                break
+#if !NETP_SYSTEM_EXTENSION
+        switch currentEnvironment.purchasePlatform {
+        case .appStore:
+            if #available(macOS 12.0, iOS 15.0, *) {
+                setupForAppStore()
+            } else {
+                assertionFailure("Trying to setup AppStore where not supported")
             }
+        case .stripe:
+            break
         }
+#endif
     }
 
     public var canPurchase: Bool {
@@ -358,12 +357,9 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             // Send notification when entitlements change
-            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newEntitlements) {
+            if currentCachedEntitlements != newEntitlements {
                 Logger.subscription.debug("Entitlements changed - New \(newEntitlements) Old \(String(describing: currentCachedEntitlements))")
-
-                // TMP: Convert to Entitlement (authV1)
-                let entitlements = newEntitlements.map { $0.entitlement }
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: newEntitlements])
             }
 
             return resultTokenContainer
@@ -469,23 +465,5 @@ extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {
 
     public func removeAccessToken() {
         removeTokenContainer()
-    }
-}
-
-extension SubscriptionEntitlement {
-
-    var entitlement: Entitlement {
-        switch self {
-        case .networkProtection:
-            return Entitlement(product: .networkProtection)
-        case .dataBrokerProtection:
-            return Entitlement(product: .dataBrokerProtection)
-        case .identityTheftRestoration:
-            return Entitlement(product: .identityTheftRestoration)
-        case .identityTheftRestorationGlobal:
-            return Entitlement(product: .identityTheftRestorationGlobal)
-        case .unknown:
-            return Entitlement(product: .unknown)
-        }
     }
 }

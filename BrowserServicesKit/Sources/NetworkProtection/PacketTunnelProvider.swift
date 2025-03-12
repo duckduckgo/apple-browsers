@@ -28,8 +28,6 @@ import os.log
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    public static let isAuthV2Enabled = false
-
     public enum Event {
         case userBecameActive
         case connectionTesterStatusChange(_ status: ConnectionTesterStatus, server: String)
@@ -458,7 +456,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         super.init()
 
         observeSettingChanges()
-        Logger.networkProtectionMemory.debug("[+] PacketTunnelProvider initialized")
     }
 
     deinit {
@@ -495,7 +492,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     open func load(options: StartupOptions) async throws {
-        Logger.networkProtection.log("Loading startup options")
         loadKeyValidity(from: options)
         loadSelectedEnvironment(from: options)
         loadSelectedServer(from: options)
@@ -503,11 +499,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         loadDNSSettings(from: options)
         loadTesterEnabled(from: options)
 #if os(macOS)
-        if !Self.isAuthV2Enabled {
-            try await loadAuthToken(from: options)
-        } else {
-            try await loadTokenContainer(from: options)
-        }
+        try await loadAuthToken(from: options)
+        // Not used for no: try await loadTokenContainer(from: options)
 #endif
     }
 
@@ -587,25 +580,20 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
 #if os(macOS)
     private func loadAuthToken(from options: StartupOptions) async throws {
-        Logger.networkProtection.log("Load auth token")
         switch options.authToken {
         case .set(let newAuthToken):
-            Logger.networkProtection.log("Set new token: \(newAuthToken)")
             if let currentAuthToken = try? await tokenHandler.getToken(), currentAuthToken == newAuthToken {
-                Logger.networkProtection.log("Token unchanged, using the current one")
                 return
             }
 
             try await tokenHandler.adoptToken(newAuthToken)
         case .useExisting:
-            Logger.networkProtection.log("Use existing token")
             do {
                 try await tokenHandler.getToken()
             } catch {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
             }
         case .reset:
-            Logger.networkProtection.log("Reset token")
             // This case should in theory not be possible, but it's ideal to have this in place
             // in case an error in the controller on the client side allows it.
             try? await tokenHandler.removeToken()
@@ -617,7 +605,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         Logger.networkProtection.log("Load token container")
         switch options.tokenContainer {
         case .set(let newTokenContainer):
-            Logger.networkProtection.log("Set new token")
+            Logger.networkProtection.log("Set new token - \(newTokenContainer.debugDescription, privacy: .public)")
             do {
                 try await tokenHandler.adoptToken(newTokenContainer)
                 // Important: Here we force the token refresh in order to immediately branch the system extension token from the main app one.
@@ -692,7 +680,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @MainActor
     open override func startTunnel(options: [String: NSObject]? = nil) async throws {
-        Logger.networkProtection.log("🚀 Starting tunnel")
 
         // It's important to have this as soon as possible since it helps setup PixelKit
         prepareToConnect(using: tunnelProviderProtocol)
@@ -705,7 +692,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         do {
             try await load(options: startupOptions)
-            Logger.networkProtection.log("🟢 Startup options loaded correctly")
+            Logger.networkProtection.log("Startup options loaded correctly")
 
 #if os(iOS)
             if (try? await tokenHandler.getToken()) == nil {
@@ -847,7 +834,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     open override func stopTunnel(with reason: NEProviderStopReason) async {
         providerEvents.fire(.tunnelStopAttempt(.begin))
 
-        Logger.networkProtection.log("🛑 Stopping tunnel with reason \(String(describing: reason), privacy: .public)")
+        Logger.networkProtection.log("Stopping tunnel with reason \(String(describing: reason), privacy: .public)")
 
         do {
             try await stopTunnel()
@@ -1042,7 +1029,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     @available(iOS 17.0, *)
     private func updateConnectOnDemand(enabled: Bool) async throws {
-        Logger.networkProtectionIPC.log("Updating Connect on Demand to \(enabled)")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         if let manager = managers.first {
             manager.isOnDemandEnabled = enabled

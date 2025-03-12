@@ -149,7 +149,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     weak var delegate: UnifiedFeedbackFormViewModelDelegate?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let accountManager: any AccountManager
     private let apiService: any Networking.APIService
     private let vpnMetadataCollector: any UnifiedMetadataCollector
     private let dbpMetadataCollector: any UnifiedMetadataCollector
@@ -159,7 +159,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
          apiService: any Networking.APIService,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,
@@ -168,7 +168,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          source: UnifiedFeedbackSource = .default) {
         self.viewState = .feedbackPending
 
-        self.subscriptionManager = subscriptionManager
+        self.accountManager = subscriptionManager.accountManager
         self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
         self.dbpMetadataCollector = dbpMetadataCollector
@@ -292,7 +292,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
         guard !userEmail.isEmpty else { return }
 
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
+        guard let accessToken = accountManager.accessToken else {
             throw Error.missingAccessToken
         }
 

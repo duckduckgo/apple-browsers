@@ -108,7 +108,7 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isInstalled
+            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
         }
     }
 

@@ -40,12 +40,16 @@ protocol VPNFeatureGatekeeper {
 struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     private static var subscriptionAuthTokenPrefix: String { "ddg:" }
     private let vpnUninstaller: VPNUninstalling
+    private let networkProtectionFeatureActivation: NetworkProtectionFeatureActivation
     private let defaults: UserDefaults
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
 
-    init(vpnUninstaller: VPNUninstalling = VPNUninstaller(),
+    init(networkProtectionFeatureActivation: NetworkProtectionFeatureActivation = NetworkProtectionKeychainTokenStore(),
+         vpnUninstaller: VPNUninstalling = VPNUninstaller(),
          defaults: UserDefaults = .netP,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: SubscriptionManager) {
+
+        self.networkProtectionFeatureActivation = networkProtectionFeatureActivation
         self.vpnUninstaller = vpnUninstaller
         self.defaults = defaults
         self.subscriptionManager = subscriptionManager
@@ -61,7 +65,12 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     /// For subscription users this means they have entitlements.
     ///
     func canStartVPN() async throws -> Bool {
-        try await subscriptionManager.isEnabled(feature: .networkProtection)
+        switch await subscriptionManager.accountManager.hasEntitlement(forProductName: .networkProtection) {
+        case .success(let hasEntitlement):
+            return hasEntitlement
+        case .failure(let error):
+            throw error
+        }
     }
 
     /// Whether the user can see the VPN entry points in the UI.
@@ -70,13 +79,13 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     /// For subscription users this means they are authenticated.
     ///
     func isVPNVisible() -> Bool {
-        subscriptionManager.isUserAuthenticated
+        subscriptionManager.accountManager.isUserAuthenticated
     }
 
     /// Returns whether the VPN should be uninstalled automatically.
     /// This is only true when the user is not an Easter Egg user, the waitlist test has ended, and the user is onboarded.
     func shouldUninstallAutomatically() -> Bool {
-        !subscriptionManager.isUserAuthenticated && LoginItem.vpnMenu.status.isInstalled
+        !subscriptionManager.accountManager.isUserAuthenticated && LoginItem.vpnMenu.status.isInstalled
     }
 
     /// Whether the user is fully onboarded

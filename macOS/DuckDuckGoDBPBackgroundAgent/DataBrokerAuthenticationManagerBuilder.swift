@@ -22,8 +22,15 @@ import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
-    static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
+    static func buildAuthenticationManager(subscriptionManager: SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
         let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
+
+    }
+}
+
+extension DefaultAccountManager: DataBrokerProtectionAccountManaging {
+    public func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, any Error> {
+        await hasEntitlement(forProductName: .dataBrokerProtection, cachePolicy: .reloadIgnoringLocalCacheData)
     }
 }

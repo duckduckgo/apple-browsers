@@ -73,15 +73,10 @@ extension NSPopover {
 
     @objc func adjustFrame(_ frame: NSRect) -> NSRect {
         var frame = frame
+        frame.size.width -= 12
         let boundingFrame = self.boundingFrame
         if !boundingFrame.isInfinite, boundingFrame.width > frame.width {
-            var rightEdge = boundingFrame.maxX
-            if positioningView?.window?.isFullScreen == true {
-                // Move the popover to the left in full screen to ensure it's fully shown on screen.
-                // This fixes presenting from "More Options" menu.
-                rightEdge -= 48
-            }
-            frame.origin.x = min(max(frame.minX, boundingFrame.minX), rightEdge - frame.width)
+            frame.origin.x = min(max(frame.minX, boundingFrame.minX), boundingFrame.maxX - frame.width)
         }
         return frame
     }

@@ -20,6 +20,10 @@ import SwiftUIExtensions
 
 struct HistoryViewOnboardingView: View {
 
+    enum Const {
+        static let width: CGFloat = 384
+    }
+
     @ObservedObject var model: HistoryViewOnboardingViewModel
 
     var body: some View {
@@ -66,11 +70,11 @@ struct HistoryViewOnboardingView: View {
         .padding(.horizontal, 16)
         .padding(.top, 20)
         .padding(.bottom, 16)
-        .frame(width: 384)
+        .frame(width: Const.width)
     }
 }
 
 #Preview {
     HistoryViewOnboardingView(model: .init(ctaCallback: { _ in }))
-        .frame(width: 384)
+        .frame(width: HistoryViewOnboardingView.Const.width)
 }

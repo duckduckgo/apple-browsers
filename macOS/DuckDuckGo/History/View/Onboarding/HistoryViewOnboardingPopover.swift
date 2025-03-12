@@ -27,6 +27,7 @@ final class HistoryViewOnboardingPopover: NSPopover {
         self.ctaCallback = ctaCallback
         super.init()
         self.behavior = .semitransient
+        contentSize = .init(width: HistoryViewOnboardingView.Const.width, height: 200)
         setupContentController()
     }
 

@@ -109,7 +109,6 @@ class FavoritesOverlay: UIViewController {
     }
     
     @objc private func keyboardDidShow(notification: NSNotification) {
-        guard !AppWidthObserver.shared.isLargeWidth else { return }
         let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: Constants.keyboardShowingBottomInset, right: 0.0)
         collectionView.contentInset = inset
         collectionView.scrollIndicatorInsets = inset

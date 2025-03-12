@@ -460,6 +460,7 @@ class TabViewController: UIViewController {
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
+        registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
         
         if #available(iOS 16.4, *) {
@@ -486,6 +487,13 @@ class TabViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector:
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    private func registerForOrientationDidChangeNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(updateRoundedCorners),
+                                               name: UIDevice.orientationDidChangeNotification,
                                                object: nil)
     }
 
@@ -576,6 +584,13 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
+    @objc func updateRoundedCorners() {
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            webView.layer.cornerRadius = isPortrait ? 12 : 0
+            webViewContainer.backgroundColor = .systemPink
+        }
+    }
+
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
     // of the Fire button, but the app still does so in the event that previously persisted cookies have not yet been consumed.
     func attachWebView(configuration: WKWebViewConfiguration,
@@ -608,11 +623,9 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            webViewContainer.backgroundColor = UIColor(designSystemColor: .background)
-            webView.layer.cornerRadius = 12.0
-            webView.clipsToBounds = true
-        }
+        webView.clipsToBounds = true
+        updateRoundedCorners()
+
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([

@@ -211,7 +211,11 @@ class OmniBar: UIView {
     var textFieldTapped = true
 
     private func configureSeparator() {
-        separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            separatorHeightConstraint.constant = 0.0
+        } else {
+            separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
+        }
     }
 
     private func configureEditingMenu() {

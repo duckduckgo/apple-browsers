@@ -1159,6 +1159,7 @@
 		CBD79F4D2D130F6500DBB45A /* Simulated.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD79F4C2D130F6300DBB45A /* Simulated.swift */; };
 		CBDD5DDF29A6736A00832877 /* APIHeadersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDD5DDE29A6736A00832877 /* APIHeadersTests.swift */; };
 		CBDD5DE129A6741300832877 /* MockBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDD5DE029A6741300832877 /* MockBundle.swift */; };
+		CBDEDA162D8079E500123E00 /* RoundedCornersMaskView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDEDA152D8079E500123E00 /* RoundedCornersMaskView.swift */; };
 		CBECDB6F2CD3DFBE005B8B87 /* PageRefreshMonitor in Frameworks */ = {isa = PBXBuildFile; productRef = CBECDB6E2CD3DFBE005B8B87 /* PageRefreshMonitor */; };
 		CBECDB7A2CD981CE005B8B87 /* AppPageRefreshMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB792CD981C6005B8B87 /* AppPageRefreshMonitor.swift */; };
 		CBEFB9142AE0844700DEDE7B /* CriticalAlerts.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEFB9102ADFFE7900DEDE7B /* CriticalAlerts.swift */; };
@@ -3205,6 +3206,7 @@
 		CBD7AE812AF6D5B6009052FD /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBDD5DDE29A6736A00832877 /* APIHeadersTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = APIHeadersTests.swift; sourceTree = "<group>"; };
 		CBDD5DE029A6741300832877 /* MockBundle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockBundle.swift; sourceTree = "<group>"; };
+		CBDEDA152D8079E500123E00 /* RoundedCornersMaskView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedCornersMaskView.swift; sourceTree = "<group>"; };
 		CBE099292AF6D54D000EFC47 /* lv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lv; path = lv.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBECB27B2AF6D58D006960FA /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CBECDB792CD981C6005B8B87 /* AppPageRefreshMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPageRefreshMonitor.swift; sourceTree = "<group>"; };
@@ -7342,6 +7344,7 @@
 				CBEFB9102ADFFE7900DEDE7B /* CriticalAlerts.swift */,
 				85B9814D2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift */,
 				85DE68192B6A8BB000DED4FE /* MainViewCoordinator.swift */,
+				CBDEDA152D8079E500123E00 /* RoundedCornersMaskView.swift */,
 			);
 			name = Main;
 			sourceTree = "<group>";
@@ -8618,6 +8621,7 @@
 				6F9FFE262C579BCD00A238BE /* NewTabPageShortcutsSettingsStorage.swift in Sources */,
 				C1D21E2D293A5965006E5A05 /* AutofillLoginSession.swift in Sources */,
 				D6B9E8D22CDA4420002B640C /* DuckPlayerOverlayUsagePixels.swift in Sources */,
+				CBDEDA162D8079E500123E00 /* RoundedCornersMaskView.swift in Sources */,
 				4B53648A26718D0E001AA041 /* EmailWaitlist.swift in Sources */,
 				D63677F52BBDB1C300605BA5 /* DaxLogoNavbarTitle.swift in Sources */,
 				8524CC98246D66E100E59D45 /* String+Markdown.swift in Sources */,

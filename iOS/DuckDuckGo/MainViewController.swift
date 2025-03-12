@@ -645,7 +645,11 @@ class MainViewController: UIViewController {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
             viewCoordinator.omniBar.moveSeparatorToBottom()
-            viewCoordinator.showToolbarSeparator()
+            if ExperimentalThemingManager().isExperimentalThemingEnabled {
+                viewCoordinator.hideToolbarSeparator()
+            } else {
+                viewCoordinator.showToolbarSeparator()
+            }
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
 
         case .bottom:

@@ -1242,6 +1242,11 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsAddressBar = NSLocalizedString("settings.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let settingsExperimentalSection = NotLocalizedString("settings.experimental.section.title", value: "Experimental theming (internal only) ", comment: "Settings screen section title for experimental features")
+    public static let settingsExperimentalSectionFooter = NotLocalizedString(
+        "settings.experimental.section.footer",
+        value: "App restart is required to apply changes",
+        comment: "Settings screen section footer text for experimental features"
+    )
     public static let settingsExperimentalMainSwitch = NotLocalizedString("settings.experimental.main.switch", value: "Experimental appearance", comment: "Settings screen cell title for experimental main switch")
     public static let settingsExperimentalWarmColorsSwitch = NotLocalizedString("settings.experimental.warm.colors.switch", value: "Use warm colors set", comment: "Settings screen cell title for experimental warm colors switch")
 

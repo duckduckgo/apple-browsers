@@ -244,5 +244,309 @@ Bloqueei-os!
 			<string>%1$d palavras-passe eliminadas</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar separador</string>
+			<key>other</key>
+			<string>Fechar separadores</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar separador</string>
+			<key>other</key>
+			<string>Fechar os %1$d separadores</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar separador?</string>
+			<key>other</key>
+			<string>Fechar %1$d separadores?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar outro separador?</string>
+			<key>other</key>
+			<string>Fechar %1$d outros separadores?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tens a certeza de que queres fechar o separador?</string>
+			<key>other</key>
+			<string>Tens a certeza de que queres fechar estes separadores?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar separador?</string>
+			<key>other</key>
+			<string>Fechar %1$d separadores?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tens a certeza de que queres fechar este separador?</string>
+			<key>other</key>
+			<string>Tens a certeza de que queres fechar estes separadores?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar separador?</string>
+			<key>other</key>
+			<string>Fechar os %1$d separadores?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tens a certeza de que queres fechar este separador?</string>
+			<key>other</key>
+			<string>Tens a certeza de que queres fechar todos os separadores?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Selecionar separador</string>
+			<key>other</key>
+			<string>Selecionar separadores</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Fechar outro separador</string>
+			<key>other</key>
+			<string>Fechar outros separadores</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Partilhar link</string>
+			<key>other</key>
+			<string>Partilhar %1$d links</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Partilhar separador selecionado</string>
+			<key>other</key>
+			<string>Partilhar separadores selecionados</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Adicionar separador aos marcadores</string>
+			<key>other</key>
+			<string>Adicionar %1$d separadores aos marcadores</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Marcador adicionado</string>
+			<key>other</key>
+			<string>%1$d marcadores adicionados</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Adicionar separador selecionado aos marcadores?</string>
+			<key>other</key>
+			<string>Adicionar %1$d separadores aos marcadores?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Adicionar separador selecionado aos marcadores?</string>
+			<key>other</key>
+			<string>Adicionar %1$d separadores aos marcadores?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d selecionado</string>
+			<key>other</key>
+			<string>%1$d selecionados</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d separador selecionado</string>
+			<key>other</key>
+			<string>%1$d separadores selecionados</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

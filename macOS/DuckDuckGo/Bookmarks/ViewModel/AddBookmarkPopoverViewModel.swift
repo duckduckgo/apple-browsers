@@ -32,7 +32,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     @Published var selectedFolder: BookmarkFolder? {
         didSet {
-            if oldValue?.id != selectedFolder?.id {
+            if oldValue?.id != selectedFolder?.id, bookmark.parentFolderUUID != selectedFolder?.id {
                 bookmarkManager.add(bookmark: bookmark, to: selectedFolder) { _ in
                     // this is an invalid callback fired before bookmarks finish reloading
                 }
@@ -42,15 +42,20 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     @Published var isBookmarkFavorite: Bool {
         didSet {
-            bookmark.isFavorite = isBookmarkFavorite
-            bookmarkManager.update(bookmark: bookmark)
+            if bookmark.isFavorite != isBookmarkFavorite {
+                bookmark.isFavorite = isBookmarkFavorite
+                bookmarkManager.update(bookmark: bookmark)
+            }
         }
     }
 
     @Published var bookmarkTitle: String {
         didSet {
-            bookmark.title = bookmarkTitle.trimmingWhitespace()
-            bookmarkManager.update(bookmark: bookmark)
+            let updatedTitle = bookmarkTitle.trimmingWhitespace()
+            if updatedTitle != bookmark.title {
+                bookmark.title = updatedTitle
+                bookmarkManager.update(bookmark: bookmark)
+            }
         }
     }
 

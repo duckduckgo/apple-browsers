@@ -397,7 +397,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _=NSPopover.swizzleShowRelativeToRectOnce
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard NSApp.runType.requiresEnvironment else { return }
         defer {

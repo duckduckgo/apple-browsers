@@ -41,10 +41,6 @@ Focus on what matters for your changes:
 ### Notes to Reviewer
 <!-- Anything specific you want reviewers to focus on -->
 
-### Optional E2E tests**:
-- [ ] Run macOS PIR E2E tests
-	Check this to run the Personal Information Removal end to end tests. If updating CCF, or any PIR related code, tick this.
-
 ---
 ###### Internal references:
 [Definition of Done](https://app.asana.com/0/1202500774821704/1207634633537039/f) | [Engineering Expectations](https://app.asana.com/0/59792373528535/199064865822552) | [Tech Design Template](https://app.asana.com/0/59792373528535/184709971311943)

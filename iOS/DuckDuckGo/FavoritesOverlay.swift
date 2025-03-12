@@ -33,7 +33,6 @@ class FavoritesOverlay: UIViewController {
     struct Constants {
         static let margin: CGFloat = 28
         static let footerPadding: CGFloat = 50
-        static let keyboardShowingBottomInset: CGFloat = 160
     }
     
     private let layout = UICollectionViewFlowLayout()

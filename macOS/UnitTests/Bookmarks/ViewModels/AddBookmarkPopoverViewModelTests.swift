@@ -33,10 +33,9 @@ final class AddBookmarkPopoverViewModelTests: XCTestCase {
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [bookmark])
         bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
         bookmarkManager.loadBookmarks()
-        foldersStore = BookmarkFolderStoreMock()
         buttonClickedCallsCount = 0
 
-        viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, foldersStore: foldersStore, bookmarkManager: bookmarkManager)
+        viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
         viewModel.buttonClicked = {
             self.buttonClickedCallsCount += 1
         }
@@ -56,15 +55,6 @@ final class AddBookmarkPopoverViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.bookmark.title, "abcd")
         viewModel.bookmarkTitle = "Sample bookmark"
         XCTAssertEqual(viewModel.bookmark.title, "Sample bookmark")
-    }
-
-    @MainActor
-    func testWhenSelectedFolderIsUpdatedThenFoldersStoreIsUpdated() throws {
-        let folder = BookmarkFolder(id: "1", title: "Sample folder")
-        viewModel.selectedFolder = folder
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, "1")
-        viewModel.selectedFolder = nil
-        XCTAssertNil(foldersStore.lastBookmarkSingleTabFolderIdUsed)
     }
 
     @MainActor

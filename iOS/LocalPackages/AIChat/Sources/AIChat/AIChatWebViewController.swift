@@ -26,6 +26,7 @@ protocol AIChatWebViewControllerDelegate: AnyObject {
 final class AIChatWebViewController: UIViewController {
     weak var delegate: AIChatWebViewControllerDelegate?
     private let chatModel: AIChatViewModeling
+    private var downloadHandler = DownloadHandler()
 
     private lazy var webView: WKWebView = {
         let webView = WKWebView(frame: .zero, configuration: chatModel.webViewConfiguration)
@@ -127,12 +128,33 @@ extension AIChatWebViewController: WKNavigationDelegate {
             return .allow
         }
 
+        if url.absoluteString.contains("blob:") {
+            //delegate?.aiChatWebViewController(self, didRequestToLoad: url)
+            return .allow
+        }
+
         if chatModel.shouldAllowRequestWithNavigationAction(navigationAction) {
             return .allow
         } else {
             delegate?.aiChatWebViewController(self, didRequestToLoad: url)
             return .cancel
         }
+    }
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        guard let url = navigationResponse.response.url else {
+            return .allow
+        }
+
+        if url.absoluteString.contains("blob:") {
+            return .download
+        }
+        return .allow
+
+    }
+
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        download.delegate = downloadHandler
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -149,5 +171,25 @@ extension AIChatWebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingView.stopAnimating()
+    }
+}
+
+final class DownloadHandler: NSObject,  WKDownloadDelegate {
+
+    // This function determines the destination URL for the downloaded file
+    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let destinationURL = documentsDirectory.appendingPathComponent(suggestedFilename)
+        return destinationURL
+    }
+
+    // This function handles download failure
+    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
+        print("Download failed with error: \(error.localizedDescription)")
+    }
+
+    // This function is called when the download finishes successfully
+    func downloadDidFinish(_ download: WKDownload) {
+        print("Download finished successfully")
     }
 }

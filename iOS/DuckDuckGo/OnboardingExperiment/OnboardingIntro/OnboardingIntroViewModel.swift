@@ -63,19 +63,19 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func onAppear() {
         state = makeViewState(for: .introDialog)
-        pixelReporter.trackOnboardingIntroImpression()
+        pixelReporter.measureOnboardingIntroImpression()
     }
 
     func startOnboardingAction() {
         state = makeViewState(for: .browserComparison)
-        pixelReporter.trackBrowserComparisonImpression()
+        pixelReporter.measureBrowserComparisonImpression()
     }
 
     func setDefaultBrowserAction() {
         if let url = URL(string: UIApplication.openSettingsURLString) {
             urlOpener.open(url)
         }
-        pixelReporter.trackChooseBrowserCTAAction()
+        pixelReporter.measureChooseBrowserCTAAction()
 
         handleSetDefaultBrowserAction()
     }
@@ -87,32 +87,32 @@ final class OnboardingIntroViewModel: ObservableObject {
     func addToDockContinueAction(isShowingAddToDockTutorial: Bool) {
         state = makeViewState(for: .appIconSelection)
         if isShowingAddToDockTutorial {
-            pixelReporter.trackAddToDockTutorialDismissCTAAction()
+            pixelReporter.measureAddToDockTutorialDismissCTAAction()
         } else {
-            pixelReporter.trackAddToDockPromoDismissCTAAction()
+            pixelReporter.measureAddToDockPromoDismissCTAAction()
         }
     }
 
     func addtoDockShowTutorialAction() {
-        pixelReporter.trackAddToDockPromoShowTutorialCTAAction()
+        pixelReporter.measureAddToDockPromoShowTutorialCTAAction()
     }
 
     func appIconPickerContinueAction() {
         if appIconProvider() != .defaultAppIcon {
-            pixelReporter.trackChooseCustomAppIconColor()
+            pixelReporter.measureChooseCustomAppIconColor()
         }
 
         if isIpad {
             onCompletingOnboardingIntro?()
         } else {
             state = makeViewState(for: .addressBarPositionSelection)
-            pixelReporter.trackAddressBarPositionSelectionImpression()
+            pixelReporter.measureAddressBarPositionSelectionImpression()
         }
     }
 
     func selectAddressBarPositionAction() {
         if addressBarPositionProvider() == .bottom {
-            pixelReporter.trackChooseBottomAddressBarPosition()
+            pixelReporter.measureChooseBottomAddressBarPosition()
         }
         onCompletingOnboardingIntro?()
     }
@@ -157,10 +157,10 @@ private extension OnboardingIntroViewModel {
     func handleSetDefaultBrowserAction() {
         if onboardingManager.addToDockEnabledState == .intro {
             state = makeViewState(for: .addToDockPromo)
-            pixelReporter.trackAddToDockPromoImpression()
+            pixelReporter.measureAddToDockPromoImpression()
         } else {
             state = makeViewState(for: .appIconSelection)
-            pixelReporter.trackChooseAppIconImpression()
+            pixelReporter.measureChooseAppIconImpression()
         }
     }
 

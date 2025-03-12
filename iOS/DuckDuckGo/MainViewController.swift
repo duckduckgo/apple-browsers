@@ -1459,9 +1459,9 @@ class MainViewController: UIViewController {
 
     func fireOnboardingCustomSearchPixelIfNeeded(query: String) {
         if contextualOnboardingLogic.isShowingSearchSuggestions {
-            contextualOnboardingPixelReporter.trackCustomSearch()
+            contextualOnboardingPixelReporter.measureCustomSearch()
         } else if contextualOnboardingLogic.isShowingSitesSuggestions {
-            contextualOnboardingPixelReporter.trackCustomSite()
+            contextualOnboardingPixelReporter.measureCustomSite()
         }
     }
 
@@ -1972,9 +1972,9 @@ extension MainViewController: OmniBarDelegate {
     func onPrivacyIconPressed(isHighlighted: Bool) {
         guard !isSERPPresented else { return }
 
-        // Track first tap of privacy icon button
+        // Measure first tap of privacy icon button
         if isHighlighted {
-            contextualOnboardingPixelReporter.trackPrivacyDashboardOpenedForFirstTime()
+            contextualOnboardingPixelReporter.measurePrivacyDashboardOpenedForFirstTime()
         }
         // Dismiss privacy icon animation when showing privacy dashboard
         dismissPrivacyDashboardButtonPulse()

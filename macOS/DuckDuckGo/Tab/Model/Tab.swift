@@ -1278,7 +1278,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         invalidateInteractionStateData()
         statisticsLoader?.refreshRetentionAtb(isSearch: navigation.url.isDuckDuckGoSearch)
         if !navigation.url.isDuckDuckGoSearch {
-            onboardingPixelReporter.trackSiteVisited()
+            onboardingPixelReporter.measureSiteVisited()
         }
         navigationDidEndPublisher.send(self)
     }

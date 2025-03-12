@@ -19,7 +19,7 @@
 import Foundation
 
 /// A structure representing suggestions fetched from duckduckgo.com/ac
-public struct APIResult: Codable {
+public struct APIResult: Decodable {
 
     public struct SuggestionResult: Codable {
 
@@ -28,15 +28,11 @@ public struct APIResult: Codable {
 
     }
 
-    var items = [SuggestionResult]()
+    public var items = [SuggestionResult]()
 
     init() {}
 
     public init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-        while !container.isAtEnd {
-            let item = try container.decode(SuggestionResult.self)
-            items.append(item)
-        }
+        items = try .init(from: decoder)
     }
 }

@@ -34,7 +34,7 @@ extension TabCollectionViewModel: NSSecureCoding {
         // Burner tabs aren't stored
         let burnerMode = BurnerMode.regular
         self.init(tabCollection: tabCollection,
-                  selectionIndex: index,
+                  selectionIndex: .unpinned(index),
                   burnerMode: burnerMode)
     }
 

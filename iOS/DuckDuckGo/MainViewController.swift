@@ -986,7 +986,7 @@ class MainViewController: UIViewController {
         loadUrlInNewTab(url, reuseExisting: reuseExisting, inheritedAttribution: nil)
     }
 
-    /// Loads a URL in a new tab, with options to reuse an existing tab.
+    /// Load URL in a new tab, with option to reuse an existing tab.
     ///
     /// - Parameters:
     ///   - url: The URL to be loaded.
@@ -1009,7 +1009,7 @@ class MainViewController: UIViewController {
                 selectTab(existing)
                 return
             }
-            // Check if a tab representing a New Tab page should be reused.
+            // Check if a tab presenting a New Tab page should be reused.
             else if reuseExisting != .none, let existing = tabManager.firstHomeTab() {
                 if autoClearInProgress {
                     autoClearShouldRefreshUIAfterClear = false

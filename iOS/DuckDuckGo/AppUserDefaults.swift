@@ -459,9 +459,8 @@ public class AppUserDefaults: AppSettings {
 
     var duckPlayerNativeUISERPEnabled: Bool {
         get {
-            // Use object(forKey:) which returns nil if key doesn't exist
             if userDefaults?.object(forKey: Keys.duckPlayerNativeUISERPEnabled) == nil {
-                return true  // Default value when not set
+                return true
             }
             return userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) ?? true
         }
@@ -482,8 +481,7 @@ public class AppUserDefaults: AppSettings {
             return .ask
         }
         set {
-            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
-            // Reset Hidden overlay setting when changing Mode
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)            
             userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
                                             object: duckPlayerNativeYoutubeMode)

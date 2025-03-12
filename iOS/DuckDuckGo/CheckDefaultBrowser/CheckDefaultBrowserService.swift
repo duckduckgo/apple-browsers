@@ -36,10 +36,6 @@ protocol CheckDefaultBrowserService: AnyObject {
 // Usually we would make an interface with the same method and have UIApplication conform to it.
 // The issue with the above approach is that it requires marking the protocol `@available(iOS 18.2, *)`.
 // That will cause issues with injecting the parameter as it is available only for iOS 18.2.
-//enum CheckDefaultBrowserServiceFactory {
-
-// MARK: - iOS 18.2
-
 protocol ApplicationDefaultCategoryChecking: AnyObject {
     @available(iOS 18.2, *)
     func isDefault(_ category: UIApplication.Category) throws -> Bool

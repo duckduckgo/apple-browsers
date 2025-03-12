@@ -242,7 +242,7 @@ protocol DuckPlayerControlling: AnyObject {
     func presentPill(for videoID: String, timestamp: TimeInterval?)
 
     /// Dismisses the bottom sheet
-    func dismissPill(animated: Bool)
+    func dismissPill(reset: Bool, animated: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
     func hidePillForHiddenChrome()
@@ -325,9 +325,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
+    ///   - nativeUIPresenter: The native UI presenter.
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         nativeUIPresenter: DuckPlayerNativeUIPresenting = DuckPlayerNativeUIPresenter()) {
+         nativeUIPresenter: DuckPlayerNativeUIPresenting) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
@@ -340,6 +341,14 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                                              selector: #selector(handleChromeVisibilityChange(_:)),
                                              name: .browserChromeVisibilityChanged,
                                              object: nil)
+    }
+
+    // Add a convenience initializer that creates a new presenter
+    convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+        self.init(settings: settings,
+                  featureFlagger: featureFlagger,
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter())
     }
 
     deinit {
@@ -759,9 +768,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     /// Add cleanup method to remove the sheet    
-    func dismissPill(animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool) {
         Task {
-            await nativeUIPresenter.dismissPill(reset: true, animated: animated)
+            await nativeUIPresenter.dismissPill(reset: reset, animated: animated)
         }
     }
 

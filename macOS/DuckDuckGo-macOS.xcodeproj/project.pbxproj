@@ -1880,6 +1880,10 @@
 		566B736A2BECC02D00FF1959 /* SyncAlertsPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566B73682BECBF8400FF1959 /* SyncAlertsPresenter.swift */; };
 		566B736C2BECC3C600FF1959 /* SyncPausedStateManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566B736B2BECC3C600FF1959 /* SyncPausedStateManaging.swift */; };
 		566B736D2BECC3C600FF1959 /* SyncPausedStateManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566B736B2BECC3C600FF1959 /* SyncPausedStateManaging.swift */; };
+		567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */ = {isa = PBXBuildFile; fileRef = 567311252D71DDDB002DAF62 /* scamFilterSet.json */; };
+		567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */ = {isa = PBXBuildFile; fileRef = 567311262D71DDDB002DAF62 /* scamHashPrefixes.json */; };
+		567311292D71DDDB002DAF62 /* scamFilterSet.json in Resources */ = {isa = PBXBuildFile; fileRef = 567311252D71DDDB002DAF62 /* scamFilterSet.json */; };
+		5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */ = {isa = PBXBuildFile; fileRef = 567311262D71DDDB002DAF62 /* scamHashPrefixes.json */; };
 		5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5677A9362C9812E800DA7B0A /* TrackerMessageProvider.swift */; };
 		5677A9382C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5677A9362C9812E800DA7B0A /* TrackerMessageProvider.swift */; };
 		5677A93C2C98414800DA7B0A /* ContextualOnboardingStateMachineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5677A9392C983FF100DA7B0A /* ContextualOnboardingStateMachineTests.swift */; };
@@ -4362,6 +4366,8 @@
 		566B196029CDB7C9007E38F4 /* CapturingOptionsButtonMenuDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingOptionsButtonMenuDelegate.swift; sourceTree = "<group>"; };
 		566B73682BECBF8400FF1959 /* SyncAlertsPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncAlertsPresenter.swift; sourceTree = "<group>"; };
 		566B736B2BECC3C600FF1959 /* SyncPausedStateManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPausedStateManaging.swift; sourceTree = "<group>"; };
+		567311252D71DDDB002DAF62 /* scamFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = scamFilterSet.json; sourceTree = "<group>"; };
+		567311262D71DDDB002DAF62 /* scamHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = scamHashPrefixes.json; sourceTree = "<group>"; };
 		5677A9362C9812E800DA7B0A /* TrackerMessageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerMessageProvider.swift; sourceTree = "<group>"; };
 		5677A9392C983FF100DA7B0A /* ContextualOnboardingStateMachineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingStateMachineTests.swift; sourceTree = "<group>"; };
 		567A23BD2C7F539C0010F66C /* SpecialErrorPageUserScriptExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScriptExtension.swift; sourceTree = "<group>"; };
@@ -10311,6 +10317,8 @@
 				CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */,
 				CDE248A72C821FFE00F9399D /* MaliciousSiteProtectionState.swift */,
 				84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */,
+				567311252D71DDDB002DAF62 /* scamFilterSet.json */,
+				567311262D71DDDB002DAF62 /* scamHashPrefixes.json */,
 				84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */,
 				CDE248A62C821FFE00F9399D /* phishingFilterSet.json */,
 				CDE248A32C821FFE00F9399D /* phishingHashPrefixes.json */,
@@ -11233,6 +11241,8 @@
 				37EE56012D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
 				37EE56022D5F197300D53C7C /* dark-shield.json in Resources */,
 				37EE56032D5F197300D53C7C /* dark-shield-dot.json in Resources */,
+				567311292D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
+				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
 				37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */,
@@ -11437,6 +11447,8 @@
 				37EE55D82D5F197300D53C7C /* dark-flame-mouse-over.json in Resources */,
 				37EE55D92D5F197300D53C7C /* dark-shield.json in Resources */,
 				37EE55DA2D5F197300D53C7C /* dark-shield-dot.json in Resources */,
+				567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
+				567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
 				37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */,

@@ -46,6 +46,7 @@ public struct UpdateManager: InternalUpdateManaging {
     private let updateIntervalProvider: UpdateIntervalProvider
     private let sleeper: Sleeper
     private let updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage
+    private let supportedThreatsProvider: SupportedThreatsProvider
 
     #if os(iOS)
     public var lastHashPrefixSetUpdateDate: Date {
@@ -57,20 +58,26 @@ public struct UpdateManager: InternalUpdateManaging {
     }
     #endif
 
-    public init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, updateIntervalProvider: updateIntervalProvider)
+    public init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, updateIntervalProvider: updateIntervalProvider, supportedThreatsProvider: supportedThreatsProvider)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, sleeper: Sleeper = .default, updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage = UpdateManagerInfoStore(), updateIntervalProvider: @escaping UpdateIntervalProvider) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, sleeper: Sleeper = .default, updateInfoStorage: MaliciousSiteProtectioUpdateManagerInfoStorage = UpdateManagerInfoStore(), updateIntervalProvider: @escaping UpdateIntervalProvider, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
         self.updateIntervalProvider = updateIntervalProvider
         self.sleeper = sleeper
         self.updateInfoStorage = updateInfoStorage
+        self.supportedThreatsProvider = supportedThreatsProvider
     }
 
     func updateData<DataKey: MaliciousSiteDataKey>(for key: DataKey) async throws {
+        let supportedThreats = supportedThreatsProvider()
+        if !supportedThreats.contains(key.threatKind) {
+            return
+        }
+
         // load currently stored data set
         var dataSet = await dataManager.dataSet(for: key)
         let oldRevision = dataSet.revision
@@ -114,7 +121,9 @@ public struct UpdateManager: InternalUpdateManaging {
         Task.detached {
             // run update jobs in background for every data type
             try await withThrowingTaskGroup(of: Never.self) { group in
-                for dataType in DataManager.StoredDataType.allCases {
+                let supportedThreats = supportedThreatsProvider()
+                let filteredDataTypes = DataManager.StoredDataType.allCases.filter { supportedThreats.contains($0.threatKind) }
+                for dataType in filteredDataTypes {
                     // get update interval from provider
                     guard let updateInterval = updateIntervalProvider(dataType) else { continue }
                     guard updateInterval > 0 else {
@@ -144,7 +153,8 @@ public struct UpdateManager: InternalUpdateManaging {
         Task {
             // run update jobs in background for every data type
             await withTaskGroup(of: Bool.self) { group in
-                for dataType in DataManager.StoredDataType.dataTypes(for: datasetType) {
+                let supportedThreats = supportedThreatsProvider()
+                for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats) {
                     group.addTask {
                         do {
                             try await self.updateData(for: dataType.dataKey)

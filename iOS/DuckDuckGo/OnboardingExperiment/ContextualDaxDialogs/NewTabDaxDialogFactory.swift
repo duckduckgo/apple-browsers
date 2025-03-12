@@ -78,7 +78,8 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTrySearchUnique)
+            self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
+            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
         }
     }
 
@@ -90,7 +91,8 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
+            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
         }
     }
 
@@ -119,16 +121,16 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
 
         let showAddToDockTutorialAction: () -> Void = { [weak self] in
-            self?.onboardingPixelReporter.trackAddToDockPromoShowTutorialCTAAction()
+            self?.onboardingPixelReporter.measureAddToDockPromoShowTutorialCTAAction()
         }
 
         let dismissAction = { [weak self] isDismissedFromAddToDockTutorial in
             if isDismissedFromAddToDockTutorial {
-                self?.onboardingPixelReporter.trackAddToDockTutorialDismissCTAAction()
+                self?.onboardingPixelReporter.measureAddToDockTutorialDismissCTAAction()
             } else {
-                self?.onboardingPixelReporter.trackEndOfJourneyDialogCTAAction()
+                self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
                 if shouldShowAddToDock {
-                    self?.onboardingPixelReporter.trackAddToDockPromoDismissCTAAction()
+                    self?.onboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
                 }
             }
             onDismiss()
@@ -147,9 +149,9 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.trackScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             if shouldShowAddToDock {
-                self?.onboardingPixelReporter.trackAddToDockPromoImpression()
+                self?.onboardingPixelReporter.measureAddToDockPromoImpression()
             }
         }
     }

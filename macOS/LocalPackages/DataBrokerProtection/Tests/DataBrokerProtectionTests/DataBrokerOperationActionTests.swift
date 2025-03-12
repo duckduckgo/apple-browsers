@@ -226,7 +226,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenSolveCaptchaActionIsRun_thenCaptchaIsResolved() async {
-        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil)
+        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),
@@ -250,7 +250,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenSolveCapchaActionFailsToSubmitDataToTheBackend_thenOperationFails() async {
-        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil)
+        let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),
@@ -373,7 +373,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
 
     func testWhenGetCaptchaActionRuns_thenStageIsSetToCaptchaParse() async {
         let mockStageCalculator = MockStageDurationCalculator()
-        let captchaAction = GetCaptchaInfoAction(id: "1", actionType: .getCaptchaInfo, selector: "captcha", dataSource: nil)
+        let captchaAction = GetCaptchaInfoAction(id: "1", actionType: .getCaptchaInfo, selector: "captcha", dataSource: nil, captchaType: nil)
         let sut = OptOutJob(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,

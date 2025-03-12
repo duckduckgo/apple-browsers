@@ -270,7 +270,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         // Mock implementation
     }
 
-    func dismissPill(animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool) {
         // Mock implementation
     }
 
@@ -281,6 +281,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func showPillForVisibleChrome() {
         // Mock implementation
     }
+    
 }
 
 enum MockFeatureFlag: Hashable {

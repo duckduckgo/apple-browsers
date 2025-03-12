@@ -23,6 +23,7 @@ public struct MaliciousSiteError: Error, Equatable {
     public enum Code: Int {
         case phishing = 1
         case malware = 2
+        case scam = 3
     }
     public let code: Code
     public let failingUrl: URL
@@ -39,6 +40,8 @@ public struct MaliciousSiteError: Error, Equatable {
             code = .phishing
         case .malware:
            code = .malware
+        case .scam:
+            code = .scam
         }
         self.init(code: code, failingUrl: failingUrl)
     }
@@ -47,6 +50,7 @@ public struct MaliciousSiteError: Error, Equatable {
         switch code {
         case .phishing: .phishing
         case .malware: .malware
+        case .scam: .scam
         }
     }
 
@@ -72,6 +76,8 @@ extension MaliciousSiteError: LocalizedError {
             return "Phishing detected"
         case .malware:
              return "Malware detected"
+        case .scam:
+            return "Scam Detected"
         }
     }
 

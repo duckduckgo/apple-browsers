@@ -24,8 +24,18 @@ import os.log
 import Combine
 
 struct DuckPlayerWebView: UIViewRepresentable {
-   let viewModel: DuckPlayerViewModel
-   let coordinator: Coordinator
+    let viewModel: DuckPlayerViewModel
+    let coordinator: Coordinator
+
+    /// Script to get current timestamp
+    private let getCurrentTimeScript: String = {
+        guard let url = Bundle.main.url(forResource: "getCurrentTimestamp", withExtension: "js"),
+                let script = try? String(contentsOf: url) else {
+            assertionFailure("Failed to load get current timestamp script")
+            return ""
+        }
+        return script
+    }()
 
    struct Constants {
        static let referrerHeader: String = "Referer"
@@ -47,12 +57,18 @@ struct DuckPlayerWebView: UIViewRepresentable {
        configuration.allowsInlineMediaPlayback = true
        configuration.mediaTypesRequiringUserActionForPlayback = []
 
+       // Add script for getting timestamp
+       let userContentController = WKUserContentController()
+       let script = WKUserScript(source: getCurrentTimeScript, injectionTime: .atDocumentEnd, forMainFrameOnly: false)
+       userContentController.addUserScript(script)
+       configuration.userContentController = userContentController
+
        // Use non-persistent data store to prevent cookie storage
        configuration.websiteDataStore = .nonPersistent()
 
        // Set up preferences with privacy-focused settings
        let preferences = WKWebpagePreferences()
-       preferences.allowsContentJavaScript = true  // Needed for YouTube player
+       preferences.allowsContentJavaScript = true
        configuration.defaultWebpagePreferences = preferences
 
        // Prevent automatic window opening
@@ -77,7 +93,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
    func updateUIView(_ webView: WKWebView, context: Context) {
        guard let url = viewModel.getVideoURL() else { return }
-       Logger.duckplayer.debug("Updating WebView with URL: \(url)")
+       Logger.duckplayer.debug("Loading video with URL: \(url)")
        var request = URLRequest(url: url)
        request.setValue(Constants.referrerHeaderValue, forHTTPHeaderField: Constants.referrerHeader)
        webView.load(request)
@@ -89,6 +105,24 @@ struct DuckPlayerWebView: UIViewRepresentable {
        init(viewModel: DuckPlayerViewModel) {
            self.viewModel = viewModel
            super.init()
+       }
+
+       /// Gets the current timestamp of the playing video
+       /// - Parameter webView: The WKWebView instance
+       /// - Returns: The current timestamp in seconds
+       @MainActor
+       func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
+           do {
+               let result = try await (webView.evaluateJavaScript("getCurrentTime()") as Any)
+               if let timestamp = result as? TimeInterval {
+                   return timestamp
+               } else {
+                   Logger.duckplayer.error("Invalid timestamp type: \(String(describing: result))")
+               }
+           } catch {
+               Logger.duckplayer.error("Error getting video timestamp: \(error.localizedDescription)")
+           }
+           return 0
        }
 
        private func handleYouTubeWatchURL(_ url: URL) {
@@ -134,5 +168,9 @@ struct DuckPlayerWebView: UIViewRepresentable {
            return nil
        }
 
+       @MainActor
+       func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+           viewModel.startObservingTimestamp(webView: webView, coordinator: self)
+       }
    }
 }

@@ -61,6 +61,7 @@ final class DuckPlayerMiniPillViewModel: ObservableObject {
     }
 
     // Gets the video title from the Youtube API oembed endpoint
+    @MainActor
     private func updateMetadata() async throws {
         if let response = await oEmbedService.fetchMetadata(for: videoID) {
             self.title = response.title

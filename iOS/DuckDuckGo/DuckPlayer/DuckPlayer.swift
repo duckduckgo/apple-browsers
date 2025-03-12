@@ -171,7 +171,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - url: The URL of the video.
     ///   - webView: The web view to load the video in.
-    func openVideoInDuckPlayer(url: URL, webView: WKWebView)
+    @MainActor func openVideoInDuckPlayer(url: URL, webView: WKWebView)
 
     /// Opens DuckPlayer Settings
     func openDuckPlayerSettings()
@@ -232,17 +232,17 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - videoID: The ID of the video to load
     ///   - source: The source of the video navigation.
-    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource)
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource, timestamp: TimeInterval?)
 
     /// Presents a bottom sheet asking the user how they want to open the video
     ///
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
-    ///   - timestamp: The timestamp of the video
-    func presentPill(for videoID: String, timestamp: String?)
+    ///   - timestamp: The current timestamp of the video
+    func presentPill(for videoID: String, timestamp: TimeInterval?)
 
     /// Dismisses the bottom sheet
-    func dismissPill()
+    func dismissPill(animated: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
     func hidePillForHiddenChrome()
@@ -253,9 +253,9 @@ protocol DuckPlayerControlling: AnyObject {
 
 extension DuckPlayerControlling {
 
-    // Convenience method to load a native DuckPlayerView - Default to other
+    // Convenience method to load a native DuckPlayerView - Default to other and nil timestamp
     func loadNativeDuckPlayerVideo(videoID: String) {
-        loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other)
+        loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other, timestamp: nil)
     }
 }
 
@@ -406,11 +406,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
     }
 
-    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other) {
+    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
         guard let hostView = hostView else { return }
 
         Task { @MainActor in
-            let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: nil)
+            let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: timestamp)
 
             publishers.navigation
                 .sink { [weak self] url in
@@ -743,7 +743,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video    
-    func presentPill(for videoID: String, timestamp: String?) {
+    func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
 
         Task {
@@ -751,16 +751,17 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
 
         nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoID in
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            .sink { [weak self] videoDetails in
+                let (videoID, timestamp) = videoDetails
+                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
     }
 
     /// Add cleanup method to remove the sheet    
-    func dismissPill() {
+    func dismissPill(animated: Bool) {
         Task {
-            await nativeUIPresenter.dismissPill(reset: true)
+            await nativeUIPresenter.dismissPill(reset: true, animated: animated)
         }
     }
 
@@ -780,8 +781,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupSubscriptions() {
         // Set up the subscription once and keep it alive
         nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoID in
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            .sink { [weak self] videoDetails in
+                let (videoID, timestamp) = videoDetails
+                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
     }

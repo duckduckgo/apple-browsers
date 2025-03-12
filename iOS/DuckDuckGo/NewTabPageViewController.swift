@@ -290,6 +290,13 @@ extension NewTabPageViewController {
 
         let onDismiss = { [weak self] in
             guard let self else { return }
+
+            let nextSpec = dialogProvider.nextHomeScreenMessageNew()
+            guard nextSpec != .privacyProPromotion else {
+                showNextDaxDialog()
+                return
+            }
+
             dialogProvider.dismiss()
             self.dismissHostingController(didFinishNTPOnboarding: true)
             // Make the address bar first responder after closing the new tab page final dialog.

@@ -467,11 +467,14 @@ class TabViewController: UIViewController {
         }
 
         observeNetPConnectionStatusChanges()
+        
+        // Link DuckPlayer to current Tab
+        duckPlayerNavigationHandler?.setHostViewController(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-
+        
         registerForResignActive()
     }
 
@@ -532,9 +535,10 @@ class TabViewController: UIViewController {
         resetNavigationBar()
         delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
         tabModel.viewed = true
+
+        // Update DuckPlayer when WebView appears
+        duckPlayerNavigationHandler?.updateDuckPlayerForWebViewAppearance(self)
         
-        // Link DuckPlayer to current Tab
-        duckPlayerNavigationHandler?.setHostViewController(self)
     }
 
     override func buildActivities() -> [UIActivity] {

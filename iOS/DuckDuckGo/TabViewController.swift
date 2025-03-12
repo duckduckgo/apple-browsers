@@ -383,11 +383,11 @@ class TabViewController: UIViewController {
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
         if duckPlayer.settings.nativeUI {
-            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer, 
+            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
         } else {
-            return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer, 
+            return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
         }

@@ -396,11 +396,11 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - allowFirstVideo: Whether to allow the first video to play.
     ///   - disableNewTab: Ignores Open in New tab settings
     private func loadWithDuckPlayerParameters(_ request: URLRequest,
-                                            referrer: DuckPlayerReferrer,
-                                            webView: WKWebView,
-                                            forceNewTab: Bool = false,
-                                            allowFirstVideo: Bool = false,
-                                            disableNewTab: Bool = false) {
+                                              referrer: DuckPlayerReferrer,
+                                              webView: WKWebView,
+                                              forceNewTab: Bool = false,
+                                              allowFirstVideo: Bool = false,
+                                              disableNewTab: Bool = false) {
 
         guard let url = request.url else {
             return

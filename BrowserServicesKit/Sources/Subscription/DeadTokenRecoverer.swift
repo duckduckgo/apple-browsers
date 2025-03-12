@@ -38,8 +38,8 @@ public actor DeadTokenRecoverer {
             switch await restoreFlow.restoreAccountFromPastPurchase() {
             case .success:
                 break
-            case .failure:
-                try reportFailure()
+            case .failure(let error):
+                try reportFailure(error: error)
             }
         case .stripe:
             Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")
@@ -47,15 +47,20 @@ public actor DeadTokenRecoverer {
         }
     }
 
-    private static func reportFailure() throws {
-        recoveryAttemptCount = 0
-        throw SubscriptionManagerError.tokenUnRefreshable
-    }
+    public static func reportDeadRefreshToken() async throws {
+        if recoveryAttemptCount != 0 {
+            Logger.subscription.debug("Recovery attempt already in progress, skipping...")
+            try reportFailure()
+        }
+        recoveryAttemptCount += 1
 
-    public static func attemptRecoveryFromPastPurchase(subscriptionManager: any SubscriptionManagerV2) async throws {
         Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, removing the subscription and notifying the user...")
-        await subscriptionManager.signOut(notifyUI: true)
         NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
         try reportFailure()
+    }
+
+    private static func reportFailure(error: Error? = nil) throws {
+        recoveryAttemptCount = 0
+        throw SubscriptionManagerError.tokenUnRefreshable(error: error)
     }
 }

@@ -25,15 +25,16 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
     case tokenUnavailable(error: Error?)
     case confirmationHasInvalidSubscription
     case noProductsFound
-    case tokenUnRefreshable
+    case tokenUnRefreshable(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
         case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
+        case (.tokenUnRefreshable(let lhsError), .tokenUnRefreshable(let rhsError)):
+            return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
-            (.noProductsFound, .noProductsFound),
-            (.tokenUnRefreshable, .tokenUnRefreshable):
+            (.noProductsFound, .noProductsFound):
             return true
         default:
             return false
@@ -48,8 +49,8 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
-        case .tokenUnRefreshable:
-            "Token is not refreshable, the account will be logged out"
+        case .tokenUnRefreshable(error: let error):
+            "Token is not refreshable: \(String(describing: error))"
         }
     }
 }
@@ -392,12 +393,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
         pixelHandler(.deadToken)
         await signOut(notifyUI: false)
-        do {
-            try await tokenRecoveryHandler?()
-            return try await getTokenContainer(policy: .local)
-        } catch {
-            throw SubscriptionManagerError.tokenUnRefreshable
-        }
+
+        try await tokenRecoveryHandler?()
+
+        return try await getTokenContainer(policy: .local)
     }
 
     public func exchange(tokenV1: String) async throws -> TokenContainer {

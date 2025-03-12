@@ -299,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             } else {
                 subscriptionManager.tokenRecoveryHandler = {
-                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager)
+                    try await DeadTokenRecoverer.reportDeadRefreshToken()
                 }
             }
 

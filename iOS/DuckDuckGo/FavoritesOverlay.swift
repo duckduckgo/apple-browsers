@@ -109,7 +109,12 @@ class FavoritesOverlay: UIViewController {
     }
     
     @objc private func keyboardDidShow(notification: NSNotification) {
-        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: Constants.keyboardShowingBottomInset, right: 0.0)
+        guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+
+        let keyboardFrameInView = self.view.convert(keyboardFrame, from: nil)
+        let intersection = keyboardFrameInView.intersection(view.bounds)
+
+        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: intersection.height, right: 0.0)
         collectionView.contentInset = inset
         collectionView.scrollIndicatorInsets = inset
     }

@@ -67,7 +67,37 @@ final class FaviconUserScript: NSObject, StaticUserScript {
         delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: documentUrl)
     }
 
+
     static let source = """
+(() => {
+function send() {
+    const selectors = [
+        "link[rel='favicon']",
+        "link[rel*='icon']",
+        "link[rel='apple-touch-icon']",
+        "link[rel='apple-touch-icon-precomposed']"
+    ];
+    const favicons = Array.from(document.head.querySelectorAll(selectors.join(','))).map(x=>{
+        return { href: x.href, rel: x.rel }
+    });
+    const resp = { favicons, documentUrl: document.URL }
+    webkit.messageHandlers.faviconFound.postMessage(resp);
+}
+send()
+const ob = new MutationObserver(mutations => {
+    for (let mutation of mutations) {
+        if (mutation.type === "attributes" && mutation.target.tagName === "LINK") {
+            send()
+            break;
+        }
+    }
+})
+ob.observe(document.head, { attributeFilter: ["rel", "href"], attributes: true, subtree: true });
+})();
+
+"""
+
+    static let source_old = """
 (function() {
     function getFavicon() {
         return findFavicons()[0];

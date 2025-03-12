@@ -34,6 +34,7 @@ class DockCustomizerMock: DockCustomization {
     }
 
     var dockStatus: Bool = false
+    var wasAddToDockCalled: Bool = false
 
     var isAddedToDock: Bool {
         return dockStatus
@@ -41,6 +42,7 @@ class DockCustomizerMock: DockCustomization {
 
     @discardableResult
     func addToDock() -> Bool {
+        wasAddToDockCalled = true
         if !dockStatus {
             dockStatus = true
             return true

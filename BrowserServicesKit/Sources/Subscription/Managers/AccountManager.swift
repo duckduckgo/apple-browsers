@@ -36,6 +36,7 @@ public protocol AccountManager {
     func storeAccount(token: String, email: String?, externalID: String?)
     func signOut(skipNotification: Bool)
     func signOut()
+    func removeAccessToken() throws
 
     // Entitlements
     func hasEntitlement(forProductName productName: Entitlement.ProductName, cachePolicy: APICachePolicy) async -> Result<Bool, Error>
@@ -159,6 +160,20 @@ public final class DefaultAccountManager: AccountManager {
         }
     }
 
+    public func storeAccessToken(token: String) {
+        Logger.subscription.info("[AccountManager] storeAccessToken")
+
+        do {
+            try accessTokenStorage.store(accessToken: token)
+        } catch {
+            if let error = error as? AccountKeychainAccessError {
+                delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
+            } else {
+                assertionFailure("Expected AccountKeychainAccessError")
+            }
+        }
+    }
+
     public func storeAccount(token: String, email: String?, externalID: String?) {
         Logger.subscription.info("[AccountManager] storeAccount")
 
@@ -217,6 +232,10 @@ public final class DefaultAccountManager: AccountManager {
         if !skipNotification {
             NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
         }
+    }
+
+    public func removeAccessToken() throws {
+        try accessTokenStorage.removeAccessToken()
     }
 
     // MARK: -

@@ -47,15 +47,24 @@ public struct SubscriptionEnvironment: Codable {
         case appStore, stripe
     }
 
+    /// Defines environment used by auth and subscription related APIs
     public var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment
+
+    /// Defines platform used for purchasing the subscription
     public var purchasePlatform: SubscriptionEnvironment.PurchasePlatform
 
-    public init(serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment, purchasePlatform: SubscriptionEnvironment.PurchasePlatform) {
+    /// Override for base subscription URL (only to be used during testing and development)
+    public var customBaseSubscriptionURL: URL?
+
+    public init(serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment,
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
+                customBaseSubscriptionURL: URL? = nil) {
         self.serviceEnvironment = serviceEnvironment
         self.purchasePlatform = purchasePlatform
+        self.customBaseSubscriptionURL = customBaseSubscriptionURL
     }
 
     public var description: String {
-        "ServiceEnvironment: \(serviceEnvironment.rawValue), PurchasePlatform: \(purchasePlatform.rawValue)"
+        "ServiceEnvironment: \(serviceEnvironment.rawValue), PurchasePlatform: \(purchasePlatform.rawValue), CustomBaseSubscriptionURL: \(customBaseSubscriptionURL?.absoluteString ?? "")"
     }
 }

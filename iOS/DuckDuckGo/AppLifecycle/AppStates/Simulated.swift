@@ -21,7 +21,7 @@ import Core
 import UIKit
 
 @MainActor
-struct Simulated: AppState {
+struct Simulated {
 
     init() {
         Pixel.isDryRun = true
@@ -43,11 +43,5 @@ struct Simulated: AppState {
         let request = URLRequest(url: URL(string: "about:blank")!)
         webView.load(request)
     }
-
-}
-
-extension Simulated {
-
-    mutating func handle(action: AppAction) { }
 
 }

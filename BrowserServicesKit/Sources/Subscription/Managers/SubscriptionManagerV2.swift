@@ -61,7 +61,7 @@ public enum SubscriptionPixelType {
     case subscriptionIsActive
 }
 
-public protocol SubscriptionManagerV2: SubscriptionTokenProvider {
+public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
 
     // Environment
     static func loadEnvironmentFrom(userDefaults: UserDefaults) -> SubscriptionEnvironment?
@@ -95,7 +95,6 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider {
     func getCustomerPortalURL() async throws -> URL
 
     // User
-    var isUserAuthenticated: Bool { get }
     var userEmail: String? { get }
 
     /// Sign out the user and clear all the tokens and subscription cache
@@ -154,32 +153,36 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let pixelHandler: PixelHandler
     private let autoRecoveryHandler: AutoRecoveryHandler
     public let currentEnvironment: SubscriptionEnvironment
+    private let isInternalUserEnabled: () -> Bool
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
                 pixelHandler: @escaping PixelHandler,
-                autoRecoveryHandler: @escaping AutoRecoveryHandler) {
+                autoRecoveryHandler: @escaping AutoRecoveryHandler,
+                initForPurchase: Bool = true,
+                isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
         self.subscriptionEndpointService = subscriptionEndpointService
         self.currentEnvironment = subscriptionEnvironment
         self.pixelHandler = pixelHandler
         self.autoRecoveryHandler = autoRecoveryHandler
+        self.isInternalUserEnabled = isInternalUserEnabled
 
-#if !NETP_SYSTEM_EXTENSION
-        switch currentEnvironment.purchasePlatform {
-        case .appStore:
-            if #available(macOS 12.0, iOS 15.0, *) {
-                setupForAppStore()
-            } else {
-                assertionFailure("Trying to setup AppStore where not supported")
+        if initForPurchase {
+            switch currentEnvironment.purchasePlatform {
+            case .appStore:
+                if #available(macOS 12.0, iOS 15.0, *) {
+                    setupForAppStore()
+                } else {
+                    assertionFailure("Trying to setup AppStore where not supported")
+                }
+            case .stripe:
+                break
             }
-        case .stripe:
-            break
         }
-#endif
     }
 
     public var canPurchase: Bool {
@@ -265,7 +268,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             throw SubscriptionEndpointServiceError.noData
         } catch {
             Logger.networking.error("Error getting subscription: \(error, privacy: .public)")
-            throw SubscriptionEndpointServiceError.noData
+            throw error // check if the original error is ok instead than SubscriptionEndpointServiceError.noData
         }
     }
 
@@ -291,7 +294,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     // MARK: - URLs
 
     public func url(for type: SubscriptionURL) -> URL {
-        type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
+        if let customBaseSubscriptionURL = currentEnvironment.customBaseSubscriptionURL,
+           isInternalUserEnabled() {
+            return type.subscriptionURL(withCustomBaseURL: customBaseSubscriptionURL, environment: currentEnvironment.serviceEnvironment)
+        }
+
+        return type.subscriptionURL(environment: currentEnvironment.serviceEnvironment)
     }
 
     public func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL {
@@ -350,9 +358,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             // Send notification when entitlements change
-            if currentCachedEntitlements != newEntitlements {
+            if !SubscriptionEntitlement.areEntitlementsEqual(currentCachedEntitlements, newEntitlements) {
                 Logger.subscription.debug("Entitlements changed - New \(newEntitlements) Old \(String(describing: currentCachedEntitlements))")
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: newEntitlements])
+
+                // TMP: Convert to Entitlement (authV1)
+                let entitlements = newEntitlements.map { $0.entitlement }
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
             }
 
             return resultTokenContainer
@@ -458,5 +469,23 @@ extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {
 
     public func removeAccessToken() {
         removeTokenContainer()
+    }
+}
+
+extension SubscriptionEntitlement {
+
+    var entitlement: Entitlement {
+        switch self {
+        case .networkProtection:
+            return Entitlement(product: .networkProtection)
+        case .dataBrokerProtection:
+            return Entitlement(product: .dataBrokerProtection)
+        case .identityTheftRestoration:
+            return Entitlement(product: .identityTheftRestoration)
+        case .identityTheftRestorationGlobal:
+            return Entitlement(product: .identityTheftRestorationGlobal)
+        case .unknown:
+            return Entitlement(product: .unknown)
+        }
     }
 }

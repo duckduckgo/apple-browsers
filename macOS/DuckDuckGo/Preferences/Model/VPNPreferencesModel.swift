@@ -24,6 +24,7 @@ import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
+import PixelKit
 
 final class VPNPreferencesModel: ObservableObject {
 
@@ -46,15 +47,8 @@ final class VPNPreferencesModel: ObservableObject {
             guard settings.excludeLocalNetworks != excludeLocalNetworks else {
                 return
             }
-
             settings.excludeLocalNetworks = excludeLocalNetworks
-
-            Task {
-                // We need to allow some time for the setting to propagate
-                // But ultimately this should actually be a user choice
-                try await Task.sleep(interval: 0.1)
-                try await vpnXPCClient.command(.restartAdapter)
-            }
+            reloadVPN()
         }
     }
 
@@ -76,6 +70,10 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var isAppExclusionsFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.networkProtectionAppExclusions)
+    }
+
+    var isRiskySitesProtectionFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
     }
 
     private var isExclusionsFeatureAvailableInBuild: Bool {
@@ -110,13 +108,36 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
+            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isInstalled
         }
     }
 
-    @Published public var dnsSettings: NetworkProtectionDNSSettings = .default
-    @Published public var isCustomDNSSelected = false
-    @Published public var customDNSServers: String?
+    @Published public var dnsSettings: NetworkProtectionDNSSettings
+    @Published public var isCustomDNSSelected: Bool {
+        didSet {
+            if oldValue != isCustomDNSSelected {
+                updateDNSSettings()
+            }
+        }
+    }
+    @Published public var customDNSServers: String? {
+        didSet {
+            if oldValue != customDNSServers {
+                updateDNSSettings()
+            }
+        }
+    }
+    @Published var isBlockRiskyDomainsOn: Bool {
+        didSet {
+            if oldValue != isBlockRiskyDomainsOn {
+                updateDNSSettings()
+            }
+        }
+    }
+
+    var didRiskySitesProtectionDefaultToTrue: Bool {
+        settings.didBlockRiskyDomainsDefaultToTrue
+    }
 
     private let vpnXPCClient: VPNControllerXPCClient
     private let settings: VPNSettings
@@ -126,7 +147,7 @@ final class VPNPreferencesModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     init(vpnXPCClient: VPNControllerXPCClient = .shared,
-         settings: VPNSettings = .init(defaults: .netP),
+         settings: VPNSettings = NSApp.delegateTyped.vpnSettings,
          proxySettings: TransparentProxySettings = .init(defaults: .netP),
          pinningManager: PinningManager = LocalPinningManager.shared,
          defaults: UserDefaults = .netP,
@@ -139,9 +160,7 @@ final class VPNPreferencesModel: ObservableObject {
         self.featureFlagger = featureFlagger
 
         connectOnLogin = settings.connectOnLogin
-        excludedAppsCount = proxySettings.appRoutingRules.filter { (_, rule) in
-            rule == .exclude
-        }.count
+        excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
         notifyStatusChanges = settings.notifyStatusChanges
@@ -150,6 +169,10 @@ final class VPNPreferencesModel: ObservableObject {
         showUninstallVPN = defaults.networkProtectionOnboardingStatus != .default
         onboardingStatus = defaults.networkProtectionOnboardingStatus
         locationItem = VPNLocationPreferenceItemModel(selectedLocation: settings.selectedLocation)
+        isBlockRiskyDomainsOn = settings.isBlockRiskyDomainsOn
+        customDNSServers = settings.customDnsServers.joined(separator: ", ")
+        dnsSettings = settings.dnsSettings
+        isCustomDNSSelected = settings.dnsSettings.usesCustomDNS
 
         subscribeToAppRoutingRulesChanges()
         subscribeToOnboardingStatusChanges(defaults: defaults)
@@ -165,8 +188,8 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToAppRoutingRulesChanges() {
         proxySettings.appRoutingRulesPublisher
             .map { rules in
-                rules.filter { (_, rule) in
-                    rule == .exclude
+                rules.filter { (bundleId, rule) in
+                    rule == .exclude && !bundleId.isDBPBackgroundAgentBundleId
                 }.count
             }
             .assign(to: \.excludedAppsCount, onWeaklyHeld: self)
@@ -232,14 +255,35 @@ final class VPNPreferencesModel: ObservableObject {
 
     private func subscribeToDNSSettingsChanges() {
         settings.dnsSettingsPublisher
-            .assign(to: \.dnsSettings, onWeaklyHeld: self)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newDNSSettings in
+                guard let self = self else { return }
+                self.dnsSettings = newDNSSettings
+                if self.isCustomDNSSelected != newDNSSettings.usesCustomDNS {
+                    self.isCustomDNSSelected = newDNSSettings.usesCustomDNS
+                }
+                if self.customDNSServers != self.settings.customDnsServers.joined(separator: ", ") {
+                    self.customDNSServers = self.settings.customDnsServers.joined(separator: ", ")
+                }
+                if case .ddg(let blockRiskyDomains) = newDNSSettings,
+                   self.isBlockRiskyDomainsOn != blockRiskyDomains {
+                    self.isBlockRiskyDomainsOn = blockRiskyDomains
+                }
+            }
             .store(in: &cancellables)
-        isCustomDNSSelected = settings.dnsSettings.usesCustomDNS
-        customDNSServers = settings.dnsSettings.dnsServersText
+    }
+
+    func reloadVPN() {
+        Task {
+            // Allow some time for the change to propagate
+            try await Task.sleep(interval: 0.1)
+            try await vpnXPCClient.command(.restartAdapter)
+        }
     }
 
     func resetDNSSettings() {
-        settings.dnsSettings = .default
+        settings.dnsSettings = .ddg(blockRiskyDomains: settings.isBlockRiskyDomainsOn)
+        reloadVPN()
     }
 
     @MainActor
@@ -282,13 +326,55 @@ final class VPNPreferencesModel: ObservableObject {
     func manageExcludedSites() {
         WindowControllersManager.shared.showVPNDomainExclusions()
     }
+
+    @MainActor
+    func openNewTab(with url: URL) {
+        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
+    }
+
+    private func updateDNSSettings() {
+        // Fire the corresponding pixel events.
+        if settings.dnsSettings != self.dnsSettings {
+            if settings.dnsSettings.usesCustomDNS {
+                PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionDNSUpdateCustom,
+                              frequency: .legacyDailyAndCount)
+            } else {
+                PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionDNSUpdateDefault,
+                              frequency: .legacyDailyAndCount)
+            }
+        }
+
+        if isCustomDNSSelected {
+            guard let serversText = customDNSServers, !serversText.isEmpty else {
+                return
+            }
+            let servers = serversText.split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            settings.dnsSettings = .custom(servers)
+        } else {
+            settings.dnsSettings = .ddg(blockRiskyDomains: isBlockRiskyDomainsOn)
+        }
+        reloadVPN()
+    }
 }
 
 extension NetworkProtectionDNSSettings {
     var dnsServersText: String? {
         switch self {
-        case .default: return nil
+        case .ddg: return ""
         case .custom(let servers): return servers.joined(separator: ", ")
         }
+    }
+}
+
+extension TransparentProxySettings {
+    var excludedAppsMinusDBPAgent: [String] {
+        excludedApps.filter { !$0.isDBPBackgroundAgentBundleId }
+    }
+}
+
+extension String {
+    fileprivate var isDBPBackgroundAgentBundleId: Bool {
+        self == Bundle.main.dbpBackgroundAgentBundleId
     }
 }

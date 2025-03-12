@@ -22,28 +22,15 @@ import NetworkProtectionIPC
 import Common
 import Subscription
 import BrowserServicesKit
-
-extension NetworkProtectionDeviceManager {
-
-    @MainActor
-    static func create() -> NetworkProtectionDeviceManager {
-        let settings = Application.appDelegate.vpnSettings
-        let keyStore = NetworkProtectionKeychainKeyStore()
-        let tokenStore = NetworkProtectionKeychainTokenStore()
-        return NetworkProtectionDeviceManager(environment: settings.selectedEnvironment,
-                                              tokenHandler: tokenStore,
-                                              keyStore: keyStore,
-                                              errorEvents: .networkProtectionAppDebugEvents)
-    }
-}
+import Networking
 
 extension NetworkProtectionKeychainTokenStore {
     convenience init() {
         self.init(useAccessTokenProvider: true)
     }
 
-    convenience init(useAccessTokenProvider: Bool) {
-        let accessTokenProvider: () -> String? = { Application.appDelegate.subscriptionManager.accountManager.accessToken }
+    convenience init(useAccessTokenProvider: Bool) { // only used in AuthV1
+        let accessTokenProvider: AccessTokenProvider = { Application.appDelegate.subscriptionManagerV1?.accountManager.accessToken }
         self.init(keychainType: .default,
                   errorEvents: .networkProtectionAppDebugEvents,
                   useAccessTokenProvider: useAccessTokenProvider,
@@ -51,19 +38,20 @@ extension NetworkProtectionKeychainTokenStore {
     }
 }
 
-extension NetworkProtectionKeychainKeyStore {
-    convenience init() {
-        self.init(keychainType: .default,
-                  errorEvents: .networkProtectionAppDebugEvents)
-    }
-}
-
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings
+
+        var tokenHandler: any SubscriptionTokenHandling
+        if !Application.appDelegate.isAuthV2Enabled {
+            tokenHandler = NetworkProtectionKeychainTokenStore()
+        } else {
+            // swiftlint:disable:next force_cast
+            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
+        }
         self.init(
             environment: settings.selectedEnvironment,
-            tokenHandler: NetworkProtectionKeychainTokenStore(),
+            tokenHandler: tokenHandler,
             errorEvents: .networkProtectionAppDebugEvents
         )
     }

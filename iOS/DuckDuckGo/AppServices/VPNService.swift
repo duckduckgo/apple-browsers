@@ -28,45 +28,32 @@ final class VPNService: NSObject {
     private let tunnelController = AppDependencyProvider.shared.networkProtectionTunnelController
     private let widgetRefreshModel = NetworkProtectionWidgetRefreshModel()
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
-
-    private lazy var vpnWorkaround: VPNRedditSessionWorkaround = VPNRedditSessionWorkaround(accountManager: accountManager,
-                                                                                            tunnelController: tunnelController)
     private let vpnFeatureVisibility: DefaultNetworkProtectionVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
     private let tipKitAppEventsHandler = TipKitAppEventHandler()
 
     private let mainCoordinator: MainCoordinator
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let application: UIApplication
     init(mainCoordinator: MainCoordinator,
-         accountManager: AccountManager = AppDependencyProvider.shared.accountManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
          application: UIApplication = UIApplication.shared,
          notificationCenter: UNUserNotificationCenter = .current()) {
         self.mainCoordinator = mainCoordinator
-        self.accountManager = accountManager
+        self.subscriptionManager = subscriptionManager
         self.application = application
         super.init()
 
         notificationCenter.delegate = self
-    }
 
-    func onLaunching() {
         widgetRefreshModel.beginObservingVPNStatus()
         tipKitAppEventsHandler.appDidFinishLaunching()
     }
 
-    func onWebViewReadyForInteractions() {
-        installRedditSessionWorkaround()
-    }
-
-    private func installRedditSessionWorkaround() {
-        Task {
-            await vpnWorkaround.installRedditSessionWorkaround()
-        }
-    }
+    // MARK: - Resume
 
     @MainActor
-    func onForeground() {
-        refreshVPNWidget()
+    func resume() {
+        widgetRefreshModel.refreshVPNWidget()
         presentExpiredEntitlementAlertIfNeeded()
         presentExpiredEntitlementNotificationIfNeeded()
 
@@ -78,17 +65,6 @@ final class VPNService: NSObject {
                 await VPNSnoozeLiveActivityManager().endSnoozeActivityIfNecessary()
             }
         }
-    }
-
-    func onBackground() {
-        Task { @MainActor in
-            await refreshVPNShortcuts()
-            await vpnWorkaround.removeRedditSessionWorkaround()
-        }
-    }
-
-    private func refreshVPNWidget() {
-        widgetRefreshModel.refreshVPNWidget()
     }
 
     private func presentExpiredEntitlementNotificationIfNeeded() {
@@ -119,7 +95,7 @@ final class VPNService: NSObject {
 
     private func stopAndRemoveVPNIfNotAuthenticated() async {
         // Only remove the VPN if the user is not authenticated, and it's installed:
-        guard !accountManager.isUserAuthenticated, await tunnelController.isInstalled else {
+        guard !subscriptionManager.isUserAuthenticated, await tunnelController.isInstalled else {
             return
         }
 
@@ -127,11 +103,20 @@ final class VPNService: NSObject {
         await tunnelController.removeVPN(reason: .didBecomeActiveCheck)
     }
 
+    // MARK: - Suspend
+
+    func suspend() {
+        Task { @MainActor in
+            await refreshVPNShortcuts()
+        }
+    }
+
     @MainActor
     private func refreshVPNShortcuts() async {
-        guard vpnFeatureVisibility.shouldShowVPNShortcut(),
-              case .success(true) = await accountManager.hasEntitlement(forProductName: .networkProtection,
-                                                                        cachePolicy: .returnCacheDataDontLoad)
+        guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
+              let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection,
+                                                                            cachePolicy: .returnCacheDataDontLoad),
+              hasEntitlement
         else {
             application.shortcutItems = nil
             return

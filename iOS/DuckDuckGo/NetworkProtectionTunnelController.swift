@@ -23,7 +23,7 @@ import Core
 import Foundation
 import NetworkExtension
 import NetworkProtection
-import Subscription
+import Common
 
 enum VPNConfigurationRemovalReason: String {
     case didBecomeActiveCheck
@@ -38,7 +38,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private let featureFlagger: FeatureFlagger
     private var internalManager: NETunnelProviderManager?
     private let debugFeatures = NetworkProtectionDebugFeatures()
-    private let tokenStore: NetworkProtectionKeychainTokenStore
+    private let tokenHandler: any SubscriptionTokenHandling
     private let errorStore = NetworkProtectionTunnelErrorStore()
     private let snoozeTimingStore = NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults)
     private let notificationCenter: NotificationCenter = .default
@@ -122,16 +122,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    // MARK: - Enforce Routes
-
-    private var enforceRoutes: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionEnforceRoutes)
-    }
-
     // MARK: - Initializers
 
-    init(accountManager: AccountManager,
-         tokenStore: NetworkProtectionKeychainTokenStore,
+    init(tokenHandler: any SubscriptionTokenHandling,
          featureFlagger: FeatureFlagger,
          persistentPixel: PersistentPixelFiring,
          settings: VPNSettings) {
@@ -139,7 +132,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.featureFlagger = featureFlagger
         self.persistentPixel = persistentPixel
         self.settings = settings
-        self.tokenStore = tokenStore
+        self.tokenHandler = tokenHandler
 
         subscribeToSnoozeTimingChanges()
         subscribeToStatusChanges()
@@ -268,7 +261,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             // Intentional no-op
             break
         default:
-            try start(tunnelManager)
+            try await start(tunnelManager)
         }
     }
 
@@ -276,7 +269,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         internalManager = nil
     }
 
-    private func start(_ tunnelManager: NETunnelProviderManager) throws {
+    private func start(_ tunnelManager: NETunnelProviderManager) async throws {
         var options = [String: NSObject]()
 
         if Self.shouldSimulateFailure {
@@ -285,14 +278,23 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         options["activationAttemptId"] = UUID().uuidString as NSString
+
         do {
-            options["authToken"] = try tokenStore.fetchToken() as NSString?
+            let token =  try await tokenHandler.getToken()
+            options["authToken"] = NSString(string: token)
         } catch {
             throw StartError.fetchAuthTokenFailed(error)
         }
+
         options[NetworkProtectionOptionKey.selectedEnvironment] = AppDependencyProvider.shared.vpnSettings
             .selectedEnvironment.rawValue as NSString
-        if let data = try? JSONEncoder().encode(AppDependencyProvider.shared.vpnSettings.dnsSettings) {
+
+        ensureRiskyDomainsEnabledIfNeeded()
+        var dnsSettings = settings.dnsSettings
+        if dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
+            dnsSettings = .ddg(blockRiskyDomains: false)
+        }
+        if let data = try? JSONEncoder().encode(dnsSettings) {
             options[NetworkProtectionOptionKey.dnsSettings] = NSData(data: data)
         }
 
@@ -307,6 +309,19 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         } catch {
             Pixel.fire(pixel: .networkProtectionActivationRequestFailed, error: error)
             throw StartError.startVPNFailed(error)
+        }
+    }
+
+    private func ensureRiskyDomainsEnabledIfNeeded() {
+        // If current dnsSettings is .ddg with blockRiskyDomains false,
+        // and we haven't yet defaulted, and the risky domains protection feature is on,
+        // then update dnsSettings to .ddg(blockRiskyDomains: true) and mark the flag.
+        if case .ddg(let blockRiskyDomains) = settings.dnsSettings,
+           !blockRiskyDomains,
+           !settings.didBlockRiskyDomainsDefaultToTrue,
+           featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {
+            settings.dnsSettings = .ddg(blockRiskyDomains: true)
+            settings.didBlockRiskyDomainsDefaultToTrue = true
         }
     }
 
@@ -364,7 +379,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             protocolConfiguration.disconnectOnSleep = false
 
             // Enforce routes
-            protocolConfiguration.enforceRoutes = enforceRoutes
+            protocolConfiguration.enforceRoutes = true
 
             // We will control excluded networks through includedRoutes / excludedRoutes
             protocolConfiguration.excludeLocalNetworks = false

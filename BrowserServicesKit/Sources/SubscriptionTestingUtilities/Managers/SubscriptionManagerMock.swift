@@ -22,6 +22,8 @@ import Common
 
 public final class SubscriptionManagerMock: SubscriptionManager {
 
+    public var email: String?
+
     public var accountManager: AccountManager
     public var subscriptionEndpointService: SubscriptionEndpointService
     public var authEndpointService: AuthEndpointService
@@ -83,4 +85,63 @@ public final class SubscriptionManagerMock: SubscriptionManager {
     // MARK: -
 
     let internalStorePurchaseManager: StorePurchaseManager
+
+    public func getToken() async throws -> String {
+        guard let accessToken = accountManager.accessToken else {
+            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+        }
+        return accessToken
+    }
+
+    public func removeToken() async throws {
+        assertionFailure("Unsupported")
+    }
+
+    public func getAccessToken() async throws -> String {
+        try await getToken()
+    }
+
+    public func removeAccessToken() {
+        try? accountManager.removeAccessToken()
+    }
+
+    public func refreshToken() async throws {
+        assertionFailure("Unsupported")
+    }
+
+    public func adoptToken(_ someKindOfToken: Any) async throws {
+        assertionFailure("Unsupported")
+    }
+
+    public var isUserAuthenticated: Bool {
+        accountManager.isUserAuthenticated
+    }
+
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+
+        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+        switch result {
+        case .success(let hasEntitlements):
+            return hasEntitlements
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    public func signOut(notifyUI: Bool) async {
+        accountManager.signOut(skipNotification: !notifyUI)
+    }
+
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+        if let accessToken = accountManager.accessToken {
+            let subscriptionResult = await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: cachePolicy.apiCachePolicy)
+            if case let .success(subscription) = subscriptionResult {
+                return subscription
+            } else {
+                throw SubscriptionEndpointServiceError.noData
+            }
+        } else {
+            throw SubscriptionEndpointServiceError.noData
+        }
+    }
 }

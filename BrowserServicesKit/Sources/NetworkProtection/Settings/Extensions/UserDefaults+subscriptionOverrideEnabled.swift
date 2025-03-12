@@ -34,7 +34,7 @@ extension UserDefaults {
         }
     }
 
-    public func resetsubscriptionOverrideEnabled() {
+    public func resetSubscriptionOverrideEnabled() {
         removeObject(forKey: subscriptionOverrideEnabledKey)
     }
 }

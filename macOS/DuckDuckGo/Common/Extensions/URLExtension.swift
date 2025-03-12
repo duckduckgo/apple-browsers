@@ -94,7 +94,10 @@ extension URL {
             return nil
         }
 
-        var url = Self.duckDuckGo.appendingParameter(name: DuckDuckGoParameters.search.rawValue, value: trimmedQuery)
+        // encode spaces as "+"
+        var queryItem = URLQueryItem(percentEncodingName: DuckDuckGoParameters.search.rawValue, value: trimmedQuery, withAllowedCharacters: .init(charactersIn: " "))
+        queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
+        var url = Self.duckDuckGo.appending(percentEncodedQueryItem: queryItem)
 
         // Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
         // https://app.asana.com/0/1199230911884351/1205979030848528/f
@@ -376,6 +379,10 @@ extension URL {
         return URL(string: "https://duckduckgo.com/updates")!
     }
 
+    static var internalFeedbackForm: URL {
+        return URL(string: "https://go.duckduckgo.com/feedback")!
+    }
+
     static var webTrackingProtection: URL {
         return URL(string: "https://help.duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/")!
     }
@@ -397,6 +404,8 @@ extension URL {
     }
 
     static var maliciousSiteProtectionLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/phishing-and-malware-protection/")!
+
+    static var dnsBlocklistLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!
 
     static var searchSettings: URL {
         return URL(string: "https://duckduckgo.com/settings/")!

@@ -21,24 +21,29 @@ import History
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockHistoryGroupingDataSource: HistoryGroupingDataSource {
+final class CapturingHistoryGroupingDataSource: HistoryGroupingDataSource, HistoryDeleting {
+    func delete(_ visits: [Visit]) async {
+        deleteCalls.append(visits)
+    }
+
     var history: BrowsingHistory? = []
+    var deleteCalls: [[Visit]] = []
 }
 
 final class HistoryGroupingProviderTests: XCTestCase {
-    private var dataSource: MockHistoryGroupingDataSource!
+    private var dataSource: CapturingHistoryGroupingDataSource!
     private var featureFlagger: MockFeatureFlagger!
     private var provider: HistoryGroupingProvider!
 
     override func setUp() async throws {
-        dataSource = MockHistoryGroupingDataSource()
+        dataSource = CapturingHistoryGroupingDataSource()
         featureFlagger = MockFeatureFlagger()
-        provider = HistoryGroupingProvider(dataSource: dataSource, featureFlagger: featureFlagger)
+        provider = await HistoryGroupingProvider(dataSource: dataSource, featureFlagger: featureFlagger)
     }
 
     // MARK: - getRecentVisits with deduplication
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreDeduplicatedLeavingMostRecentVisit() throws {
+    func testWhenHistoryViewIsEnabledThenRecentVisitsAreDeduplicatedLeavingMostRecentVisit() async throws {
         featureFlagger.isFeatureOn = true
 
         let date = Date.noonToday
@@ -50,13 +55,13 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         let firstRecentVisit = try XCTUnwrap(recentVisits[safe: 0])
         XCTAssertEqual(recentVisits.count, 1)
         XCTAssertEqual(firstRecentVisit.date, date.addingTimeInterval(-1))
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreSortedByMostRecentVisit() throws {
+    func testWhenHistoryViewIsEnabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
         featureFlagger.isFeatureOn = true
 
         let date = Date.noonToday
@@ -72,7 +77,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         let firstRecentVisit = try XCTUnwrap(recentVisits[safe: 0])
         let secondRecentVisit = try XCTUnwrap(recentVisits[safe: 1])
         XCTAssertEqual(recentVisits.count, 2)
@@ -80,7 +85,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         XCTAssertEqual(secondRecentVisit.date, date.addingTimeInterval(-3))
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToMaxCount() throws {
+    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToMaxCount() async throws {
         featureFlagger.isFeatureOn = true
 
         let date = Date.noonToday
@@ -102,7 +107,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 3)
+        let recentVisits = await provider.getRecentVisits(maxCount: 3)
         XCTAssertEqual(recentVisits.count, 3)
         XCTAssertEqual(recentVisits.map(\.date), [
             date.addingTimeInterval(-1),
@@ -111,7 +116,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToCurrentDay() throws {
+    func testWhenHistoryViewIsEnabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
         featureFlagger.isFeatureOn = true
 
         let date = Date.noonToday
@@ -133,7 +138,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         XCTAssertEqual(recentVisits.count, 3)
         XCTAssertEqual(recentVisits.map(\.date), [
             date.addingTimeInterval(-3),
@@ -144,7 +149,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
 
     // MARK: - getRecentVisits without deduplication
 
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreNotDeduplicated() throws {
+    func testWhenHistoryViewIsDisabledThenRecentVisitsAreNotDeduplicated() async throws {
         featureFlagger.isFeatureOn = false
 
         let date = Date.noonToday
@@ -156,7 +161,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         XCTAssertEqual(recentVisits.count, 3)
         XCTAssertEqual(recentVisits.map(\.date), [
             date.addingTimeInterval(-1),
@@ -165,7 +170,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreSortedByMostRecentVisit() throws {
+    func testWhenHistoryViewIsDisabledThenRecentVisitsAreSortedByMostRecentVisit() async throws {
         featureFlagger.isFeatureOn = false
 
         let date = Date.noonToday
@@ -181,7 +186,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         XCTAssertEqual(recentVisits.count, 5)
         XCTAssertEqual(recentVisits.map(\.historyEntry?.url), [
             "https://example.com/index2.html".url!,
@@ -199,7 +204,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToMaxCount() throws {
+    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToMaxCount() async throws {
         featureFlagger.isFeatureOn = false
 
         let date = Date.noonToday
@@ -215,7 +220,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 3)
+        let recentVisits = await provider.getRecentVisits(maxCount: 3)
         XCTAssertEqual(recentVisits.count, 3)
         XCTAssertEqual(recentVisits.map(\.date), [
             date.addingTimeInterval(-1),
@@ -224,7 +229,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
         ])
     }
 
-    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToCurrentDay() throws {
+    func testWhenHistoryViewIsDisabledThenRecentVisitsAreLimitedToCurrentDay() async throws {
         featureFlagger.isFeatureOn = false
 
         let date = Date.noonToday
@@ -240,7 +245,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let recentVisits = provider.getRecentVisits(maxCount: 100)
+        let recentVisits = await provider.getRecentVisits(maxCount: 100)
         XCTAssertEqual(recentVisits.count, 3)
         XCTAssertEqual(recentVisits.map(\.date), [
             date.addingTimeInterval(-3),
@@ -251,7 +256,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
 
     // MARK: - getVisitGroupings with deduplication
 
-    func testWhenHistoryViewIsEnabledThenVisitGroupingsAreDeduplicated() throws {
+    func testWhenHistoryViewIsEnabledThenVisitGroupingsAreDeduplicated() async throws {
         featureFlagger.isFeatureOn = true
 
         let date = Date.noonToday
@@ -282,7 +287,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let groupings = provider.getVisitGroupings()
+        let groupings = await provider.getVisitGroupings()
 
         XCTAssertEqual(groupings.count, 6)
         XCTAssertEqual(groupings.map { $0.visits.map(\.date) }, [
@@ -337,7 +342,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
 
     // MARK: - getVisitGroupings without deduplication
 
-    func testWhenHistoryViewIsDisabledThenVisitGroupingsAreNotDeduplicated() throws {
+    func testWhenHistoryViewIsDisabledThenVisitGroupingsAreNotDeduplicated() async throws {
         featureFlagger.isFeatureOn = false
 
         let date = Date.noonToday
@@ -368,7 +373,7 @@ final class HistoryGroupingProviderTests: XCTestCase {
             ])
         ]
 
-        let groupings = provider.getVisitGroupings()
+        let groupings = await provider.getVisitGroupings()
 
         XCTAssertEqual(groupings.count, 6)
         XCTAssertEqual(groupings.map { $0.visits.map(\.date) }, [

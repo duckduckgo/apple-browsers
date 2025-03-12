@@ -162,7 +162,7 @@ class TabManager {
         }
     }
     
-    private func controller(for tab: Tab) -> TabViewController? {
+    func controller(for tab: Tab) -> TabViewController? {
         return tabControllerCache.first { $0.tabModel === tab }
     }
 
@@ -249,6 +249,10 @@ class TabManager {
         return model.tabs.first(where: { $0.link == nil })
     }
 
+    func first(withId id: String) -> Tab? {
+        return model.tabs.first { $0.uid == id }
+    }
+
     func first(withUrl url: URL) -> Tab? {
         return model.tabs.first(where: {
             guard let linkUrl = $0.link?.url else { return false }
@@ -294,6 +298,22 @@ class TabManager {
 
         save()
         return controller
+    }
+
+    /// Warning! This will leave the underlying tabs empty.  This is intentional so that the the
+    ///  Tab Switcher's UICollectionView 'delete items' function doesn't complain about mis-matching
+    ///   number of items.
+    func bulkRemoveTabs(_ indexPaths: [IndexPath]) {
+        indexPaths.forEach {
+            let tab = model.get(tabAt: $0.row)
+            previewsSource.removePreview(forTab: tab)
+            if let controller = controller(for: tab) {
+                removeFromCache(controller)
+            }
+            interactionStateSource?.removeStateForTab(tab)
+        }
+        model.remove(indexPaths)
+        save()
     }
 
     func remove(at index: Int) {

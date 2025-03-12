@@ -147,13 +147,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
     func testWhenDidAcknowledgeContextualOnboardingSearchIsCalledThenSetSearchMessageSeenOnLogic() {
         // GIVEN
-        XCTAssertFalse(onboardingLogicMock.didCallsetsetSearchMessageSeen)
+        XCTAssertFalse(onboardingLogicMock.didCallSetSearchMessageSeen)
 
         // WHEN
         sut.didAcknowledgeContextualOnboardingSearch()
 
         // THEN
-        XCTAssertTrue(onboardingLogicMock.didCallsetsetSearchMessageSeen)
+        XCTAssertTrue(onboardingLogicMock.didCallSetSearchMessageSeen)
     }
 
     func testWhenDidShowContextualOnboardingTrackersDialog_AndShouldShowPrivacyAnimation_ShieldIconAnimationActivated() {
@@ -228,11 +228,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating {
     var expectation: XCTestExpectation?
+    private(set) var didCallSetTryAnonymousSearchMessageSeen = false
+    private(set) var didCallSetTryVisitSiteMessageSeen = false
     private(set) var didCallSetFireEducationMessageSeen = false
-    private(set) var didCallsetFinalOnboardingDialogSeen = false
-    private(set) var didCallsetsetSearchMessageSeen = false
+    private(set) var didCallSetFinalOnboardingDialogSeen = false
+    private(set) var didCallSetSearchMessageSeen = false
     private(set) var didCallEnableAddFavoriteFlow = false
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
@@ -245,17 +247,25 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
     var isShowingSitesSuggestions: Bool = false
     var isShowingAddToDockDialog: Bool = false
 
+    func setTryAnonymousSearchMessageSeen() {
+        didCallSetTryAnonymousSearchMessageSeen = true
+    }
+
+    func setTryVisitSiteMessageSeen() {
+        didCallSetTryVisitSiteMessageSeen = true
+    }
+
     func setFireEducationMessageSeen() {
         didCallSetFireEducationMessageSeen = true
     }
 
     func setFinalOnboardingDialogSeen() {
-        didCallsetFinalOnboardingDialogSeen = true
+        didCallSetFinalOnboardingDialogSeen = true
         expectation?.fulfill()
     }
 
     func setSearchMessageSeen() {
-        didCallsetsetSearchMessageSeen = true
+        didCallSetSearchMessageSeen = true
     }
 
     func setPrivacyButtonPulseSeen() {
@@ -274,6 +284,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
         didCallClearedBrowserData = true
     }
 
+    var privacyProPromotionDialogSeen: Bool = false
 }
 
 extension WKNavigation {

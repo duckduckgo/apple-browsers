@@ -331,16 +331,22 @@ final class LocalBookmarkStore: BookmarkStore {
         })
     }
 
-    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: ParentFolderType) {
+    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType) {
         do {
             try applyChangesAndSave { context in
                 // Fetch Parent folder
                 let parentFolder = try bookmarkEntity(for: parent, in: context)
                 // Create new Folder for all bookmarks
-                let newFolderMO = BookmarkEntity.makeFolder(title: folderName, parent: parentFolder, context: context)
+                let bookmarksFolder: BookmarkEntity = {
+                    guard let folderName else {
+                        return parentFolder
+                    }
+                    return BookmarkEntity.makeFolder(title: folderName, parent: parentFolder, context: context)
+                }()
+
                 // Save the bookmarks
                 websitesInfo.forEach { info in
-                    _ = BookmarkEntity.makeBookmark(title: info.title, url: info.url.absoluteString, parent: newFolderMO, context: context)
+                    _ = BookmarkEntity.makeBookmark(title: info.title, url: info.url.absoluteString, parent: bookmarksFolder, context: context)
                 }
             }
         } catch {

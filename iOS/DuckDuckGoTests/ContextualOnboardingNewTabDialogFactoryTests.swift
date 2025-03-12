@@ -43,7 +43,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         factory = NewTabDaxDialogFactory(
             delegate: mockDelegate,
-            contextualOnboardingLogic: contextualOnboardingLogicMock,
+            daxDialogsFlowCoordinator: contextualOnboardingLogicMock,
             onboardingPixelReporter: pixelReporterMock,
             onboardingManager: onboardingManagerMock
         )
@@ -113,7 +113,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         finalDialog?.dismissAction(false)
         XCTAssertTrue(onDismissedRun)
         wait(for: [expectation], timeout: 5.0)
-        XCTAssertTrue(contextualOnboardingLogicMock.didCallsetFinalOnboardingDialogSeen)
+        XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFinalOnboardingDialogSeen)
     }
 
     func testCreateAddFavoriteDialogCreatesAContextualDaxDialog() {

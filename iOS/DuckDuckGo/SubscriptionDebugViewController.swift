@@ -24,15 +24,27 @@ import Core
 import NetworkProtection
 import StoreKit
 import BrowserServicesKit
+import Networking
 
 final class SubscriptionDebugViewController: UITableViewController {
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-    private var subscriptionManager: SubscriptionManager {
-        AppDependencyProvider.shared.subscriptionManager
+    private var subscriptionManagerV1: SubscriptionManager {
+        AppDependencyProvider.shared.subscriptionManager!
+    }
+    private var subscriptionManagerV2: SubscriptionManagerV2 {
+        AppDependencyProvider.shared.subscriptionManagerV2!
     }
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
+    }
+
+    var currentEnvironment: SubscriptionEnvironment {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            return subscriptionManagerV1.currentEnvironment
+        } else {
+            return subscriptionManagerV2.currentEnvironment
+        }
     }
 
     // swiftlint:disable:next force_cast
@@ -43,8 +55,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         Sections.api: "Make API Call",
         Sections.appstore: "App Store",
         Sections.environment: "Environment",
+        Sections.customBaseSubscriptionURL: "Custom Base Subscription URL",
         Sections.pixels: "Promo Pixel Parameters",
-        Sections.metadata: "StoreKit Metadata"
+        Sections.metadata: "StoreKit Metadata",
+        Sections.featureFlags: "Feature Flags"
     ]
 
     enum Sections: Int, CaseIterable {
@@ -52,6 +66,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case api
         case appstore
         case environment
+        case customBaseSubscriptionURL
         case pixels
         case metadata
         case featureFlags
@@ -62,20 +77,25 @@ final class SubscriptionDebugViewController: UITableViewController {
         case clearAuthData
         case showAccountDetails
     }
-    
+
     enum SubscriptionRows: Int, CaseIterable {
         case validateToken
         case checkEntitlements
         case getSubscription
     }
-    
+
     enum AppStoreRows: Int, CaseIterable {
         case syncAppStoreAccount
     }
-    
+
     enum EnvironmentRows: Int, CaseIterable {
         case staging
         case production
+    }
+
+    enum CustomBaseSubscriptionURLRows: Int, CaseIterable {
+        case current
+        case reset
     }
 
     enum PixelsRows: Int, CaseIterable {
@@ -109,9 +129,18 @@ final class SubscriptionDebugViewController: UITableViewController {
         return titles[section]
     }
 
+    var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            return subscriptionManagerV1.currentEnvironment.serviceEnvironment
+        } else {
+            return subscriptionManagerV2.currentEnvironment.serviceEnvironment
+        }
+    }
+
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
+        cell.textLabel?.textColor = UIColor.label
         cell.detailTextLabel?.text = nil
         cell.accessoryType = .none
 
@@ -142,7 +171,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 break
             }
 
-        
+
         case .appstore:
             switch AppStoreRows(rawValue: indexPath.row) {
             case .syncAppStoreAccount:
@@ -150,9 +179,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .none:
                 break
             }
-        
+
         case .environment:
-            let currentEnv = subscriptionManager.currentEnvironment.serviceEnvironment
+            let currentEnv = serviceEnvironment
             switch EnvironmentRows(rawValue: indexPath.row) {
             case .staging:
                 cell.textLabel?.text = "Staging"
@@ -163,6 +192,26 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .none:
                 break
             }
+
+        case .customBaseSubscriptionURL:
+            switch CustomBaseSubscriptionURLRows(rawValue: indexPath.row) {
+            case .current:
+                if let currentURL = currentEnvironment.customBaseSubscriptionURL {
+                    cell.textLabel?.text = currentURL.absoluteString
+                } else {
+                    cell.textLabel?.text = " - "
+                }
+
+                cell.textLabel?.sizeToFit()
+                cell.detailTextLabel?.sizeToFit()
+                cell.textLabel?.numberOfLines = 0
+            case .reset:
+                cell.textLabel?.text = "Edit Custom URL"
+                cell.textLabel?.textColor = UIColor(designSystemColor: .accent)
+            case .none:
+                break
+            }
+
 
         case .pixels:
             switch PixelsRows(rawValue: indexPath.row) {
@@ -206,6 +255,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .api: return SubscriptionRows.allCases.count
         case .appstore: return AppStoreRows.allCases.count
         case .environment: return EnvironmentRows.allCases.count
+        case .customBaseSubscriptionURL: return CustomBaseSubscriptionURLRows.allCases.count
         case .pixels: return PixelsRows.allCases.count
         case .metadata: return MetadataRows.allCases.count
         case .featureFlags: return FeatureFlagRows.allCases.count
@@ -237,6 +287,11 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .environment:
             guard let subEnv: EnvironmentRows = EnvironmentRows(rawValue: indexPath.row) else { return }
             changeSubscriptionEnvironment(envRows: subEnv)
+        case .customBaseSubscriptionURL:
+            switch CustomBaseSubscriptionURLRows(rawValue: indexPath.row) {
+            case .reset: presentCustomBaseSubscriptionURLAlert(at: indexPath)
+            default: break
+            }
         case .pixels:
             switch PixelsRows(rawValue: indexPath.row) {
             case .randomize: showRandomizedParamters()
@@ -254,7 +309,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
         tableView.deselectRow(at: indexPath, animated: true)
     }
-    
+
     private func changeSubscriptionEnvironment(envRows: EnvironmentRows) {
         var subEnvDesc: String
         switch envRows {
@@ -301,9 +356,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     private func openSubscriptionRestoreFlow() {
         guard let mainVC = view.window?.rootViewController as? MainViewController else { return }
 
-        
+
         if let navigationController = mainVC.presentedViewController as? UINavigationController {
-            
+
             navigationController.popToRootViewController {
                 if navigationController.viewControllers.first is SettingsHostingController {
                     mainVC.segueToSubscriptionRestoreFlow()
@@ -317,18 +372,58 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func clearAuthData() {
-        subscriptionManager.accountManager.signOut()
-        showAlert(title: "Data cleared!")
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            clearAuthDataV1()
+        } else {
+            clearAuthDataV2()
+        }
     }
-    
+
+    private func clearAuthDataV1() {
+        Task {
+            await subscriptionManagerV1.signOut(notifyUI: true)
+            showAlert(title: "Data cleared!")
+        }
+    }
+
+    private func clearAuthDataV2() {
+        Task {
+            await subscriptionManagerV1.signOut(notifyUI: true)
+            showAlert(title: "Data cleared!")
+        }
+    }
+
     private func showAccountDetails() {
-        let title = subscriptionManager.accountManager.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
-        let message = subscriptionManager.accountManager.isUserAuthenticated ?
-        ["Service Environment: \(subscriptionManager.currentEnvironment.serviceEnvironment.description)",
-            "AuthToken: \(subscriptionManager.accountManager.authToken ?? "")",
-            "AccessToken: \(subscriptionManager.accountManager.accessToken ?? "")",
-            "Email: \(subscriptionManager.accountManager.email ?? "")"].joined(separator: "\n") : nil
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            showAccountDetailsV1()
+        } else {
+            showAccountDetailsV2()
+        }
+    }
+
+    private func showAccountDetailsV1() {
+        let title = subscriptionManagerV1.accountManager.isUserAuthenticated ? "Authenticated" : "Not Authenticated"
+        let message = subscriptionManagerV1.accountManager.isUserAuthenticated ?
+        ["Service Environment: \(subscriptionManagerV1.currentEnvironment.serviceEnvironment.description)",
+         "AuthToken: \(subscriptionManagerV1.accountManager.authToken ?? "")",
+         "AccessToken: \(subscriptionManagerV1.accountManager.accessToken ?? "")",
+         "Email: \(subscriptionManagerV1.accountManager.email ?? "")"].joined(separator: "\n") : nil
         showAlert(title: title, message: message)
+    }
+
+    private func showAccountDetailsV2() {
+        Task {
+            let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .local)
+            let authenticated = tokenContainer != nil
+            let title = authenticated ? "Authenticated" : "Not Authenticated"
+            let message = authenticated ?
+            ["Service Environment: \(subscriptionManagerV2.currentEnvironment.serviceEnvironment)",
+             "AuthToken: \(tokenContainer?.accessToken ?? "")",
+             "Email: \(tokenContainer?.decodedAccessToken.email ?? "")"].joined(separator: "\n") : nil
+            DispatchQueue.main.async {
+                self.showAlert(title: title, message: message)
+            }
+        }
     }
 
     private func showRandomizedParamters() {
@@ -349,7 +444,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                 autofillUser=\(reporter.isAutofillUser().toString) (count=\(reporter._accountsCount))
                 validOpenTabsCount=\(reporter.isValidOpenTabsCount().toString) (count=\(reporter._tabsCount))
                 searchUser=\(reporter.isSearchUser().toString) (count=\(reporter._searchCount))
-
+                
                 Randomized: \(reportedParameters.joined(separator: ", "))
                 """
         showAlert(title: "", message: message)
@@ -362,9 +457,17 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func syncAppleIDAccount() {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            syncAppleIDAccountV1()
+        } else {
+            syncAppleIDAccountV2()
+        }
+    }
+
+    private func syncAppleIDAccountV1() {
         Task {
             do {
-                try await subscriptionManager.storePurchaseManager().syncAppleIDAccount()
+                try await subscriptionManagerV1.storePurchaseManager().syncAppleIDAccount()
             } catch {
                 showAlert(title: "Error syncing!", message: error.localizedDescription)
                 return
@@ -373,14 +476,35 @@ final class SubscriptionDebugViewController: UITableViewController {
             showAlert(title: "Account synced!", message: "")
         }
     }
-    
-    private func validateToken() {
+
+    private func syncAppleIDAccountV2() {
         Task {
-            guard let token = subscriptionManager.accountManager.accessToken else {
+            do {
+                try await subscriptionManagerV2.storePurchaseManager().syncAppleIDAccount()
+            } catch {
+                showAlert(title: "Error syncing!", message: error.localizedDescription)
+                return
+            }
+
+            showAlert(title: "Account synced!", message: "")
+        }
+    }
+
+    private func validateToken() {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            validateTokenV1()
+        } else {
+            validateTokenV2()
+        }
+    }
+
+    private func validateTokenV1() {
+        Task {
+            guard let token = subscriptionManagerV1.accountManager.accessToken else {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
                 return
             }
-            switch await subscriptionManager.authEndpointService.validateToken(accessToken: token) {
+            switch await subscriptionManagerV1.authEndpointService.validateToken(accessToken: token) {
             case .success(let response):
                 showAlert(title: "Token details", message: "\(response)")
             case .failure(let error):
@@ -388,15 +512,36 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         }
     }
-    
-    private func getSubscriptionDetails() {
+
+    private func validateTokenV2() {
         Task {
-            guard let token = subscriptionManager.accountManager.accessToken else {
+            do {
+                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
+            } catch OAuthClientError.missingTokens {
+                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
+            } catch {
+                showAlert(title: "Error Validating Token", message: "\(error)")
+            }
+        }
+    }
+
+    private func getSubscriptionDetails() {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            getSubscriptionDetailsV1()
+        } else {
+            getSubscriptionDetailsV2()
+        }
+    }
+
+    private func getSubscriptionDetailsV1() {
+        Task {
+            guard let token = subscriptionManagerV1.accountManager.accessToken else {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Subscription not available")
                 return
             }
-            switch await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token,
-                                                                                         cachePolicy: .reloadIgnoringLocalCacheData) {
+            switch await subscriptionManagerV1.subscriptionEndpointService.getSubscription(accessToken: token,
+                                                                                           cachePolicy: .reloadIgnoringLocalCacheData) {
             case .success(let response):
                 showAlert(title: "Subscription info", message: "\(response)")
             case .failure(let error):
@@ -404,18 +549,37 @@ final class SubscriptionDebugViewController: UITableViewController {
             }
         }
     }
-    
+
+    private func getSubscriptionDetailsV2() {
+        Task {
+            do {
+                let subscription = try await subscriptionManagerV2.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+                showAlert(title: "Subscription info", message: subscription.debugDescription)
+            } catch {
+                showAlert(title: "Subscription info", message: "\(error)")
+            }
+        }
+    }
+
     private func checkEntitlements() {
+        if !AppDependencyProvider.shared.isAuthV2Enabled {
+            checkEntitlementsV1()
+        } else {
+            checkEntitlementsV2()
+        }
+    }
+
+    private func checkEntitlementsV1() {
         Task {
             var results: [String] = []
-            guard subscriptionManager.accountManager.accessToken != nil else {
+            guard subscriptionManagerV1.accountManager.accessToken != nil else {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Subscription not available")
                 return
             }
             let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
             for entitlement in entitlements {
-                if case let .success(result) = await subscriptionManager.accountManager.hasEntitlement(forProductName: entitlement,
-                                                                                                       cachePolicy: .reloadIgnoringLocalCacheData) {
+                if case let .success(result) = await subscriptionManagerV1.accountManager.hasEntitlement(forProductName: entitlement,
+                                                                                                         cachePolicy: .reloadIgnoringLocalCacheData) {
                     let resultSummary = "Entitlement check for \(entitlement.rawValue): \(result)"
                     results.append(resultSummary)
                     print(resultSummary)
@@ -424,29 +588,131 @@ final class SubscriptionDebugViewController: UITableViewController {
             showAlert(title: "Available Entitlements", message: results.joined(separator: "\n"))
         }
     }
-    
+
+    private func checkEntitlementsV2() {
+        Task {
+            do {
+                let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
+                let entitlementsDescription = tokenContainer.decodedAccessToken.subscriptionEntitlements.map { entitlement in
+                    return entitlement.rawValue
+                }.joined(separator: "\n")
+                showAlert(title: "Available Entitlements", message: entitlementsDescription)
+            } catch OAuthClientError.missingTokens {
+                showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
+            } catch {
+                showAlert(title: "Error retrieving entitlements", message: "\(error)")
+            }
+        }
+    }
+
     private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) {
-        
+
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var newSubscriptionEnvironment = SubscriptionEnvironment.default
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            subscriptionManager.accountManager.signOut()
+            Task {
+                await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+
+                // Save Subscription environment
+                DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+
+                // The VPN environment is forced to match the subscription environment
+                let settings = AppDependencyProvider.shared.vpnSettings
+                switch newSubscriptionEnvironment.serviceEnvironment {
+                case .production:
+                    settings.selectedEnvironment = .production
+                case .staging:
+                    settings.selectedEnvironment = .staging
+                }
+                NetworkProtectionLocationListCompositeRepository.clearCache()
+            }
+        }
+    }
+
+    private func setCustomBaseSubscriptionURL(_ url: URL?) {
+
+        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+        let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+
+        if currentSubscriptionEnvironment.customBaseSubscriptionURL != url {
+            var newSubscriptionEnvironment = currentSubscriptionEnvironment
+            newSubscriptionEnvironment.customBaseSubscriptionURL = url
 
             // Save Subscription environment
             DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+        }
+    }
 
-            // The VPN environment is forced to match the subscription environment
-            let settings = AppDependencyProvider.shared.vpnSettings
-            switch newSubscriptionEnvironment.serviceEnvironment {
-            case .production:
-                settings.selectedEnvironment = .production
-            case .staging:
-                settings.selectedEnvironment = .staging
+    private func presentCustomBaseSubscriptionURLAlert(at indexPath: IndexPath) {
+        let alert = UIAlertController(title: "Set a custom base subscription URL", message: nil, preferredStyle: .alert)
+
+        alert.addTextField { textField in
+            textField.placeholder = SubscriptionURL.baseURL.subscriptionURL(environment: .production).absoluteString
+            textField.text = self.currentEnvironment.customBaseSubscriptionURL?.absoluteString
+        }
+
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { _ in
+            self.tableView.reloadData()
+        }
+        alert.addAction(cancelAction)
+
+        let resetAction = UIAlertAction(title: "Clear and reset to default", style: .destructive) { _ in
+            self.presentConfirmationForCustomBaseSubscriptionURLAlert(url: nil)
+        }
+        alert.addAction(resetAction)
+
+        let submitAction = UIAlertAction(title: "Update custom URL", style: .default) { _ in
+            guard let inputString = alert.textFields?.first?.text,
+                  let newURL = URL(string: inputString),
+                  newURL != self.currentEnvironment.customBaseSubscriptionURL
+            else {
+                return
             }
-            NetworkProtectionLocationListCompositeRepository.clearCache()
+
+            guard newURL.scheme != nil else {
+                self.showAlert(title: "URL is missing a scheme")
+                return
+            }
+
+            self.presentConfirmationForCustomBaseSubscriptionURLAlert(url: newURL)
+        }
+        alert.addAction(submitAction)
+
+        let cell = self.tableView.cellForRow(at: indexPath)!
+        present(controller: alert, fromView: cell)
+    }
+
+    private func presentConfirmationForCustomBaseSubscriptionURLAlert(url: URL?) {
+        let messageFirstLine = {
+            if let url {
+                "Are you sure you want to change the base subscription URL to `\(url.absoluteString)` ?"
+            } else {
+                "Are you sure you want to reset the base subscription URL?"
+            }
+        }()
+
+        let message = """
+                    \(messageFirstLine)
+                    
+                    This setting IS persisted between app runs. The custom base subscription URL is used for front-end URLs. Custom URL is only used when internal user mode is enabled.
+                    
+                    This action will close the app, do you want to proceed?
+                    """
+        let alertController = UIAlertController(title: "⚠️ App restart required! The changes are persistent",
+                                                message: message,
+                                                preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
+            self?.setCustomBaseSubscriptionURL(url)
+            // Close the app
+            exit(0)
+        })
+        let okAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertController.addAction(okAction)
+        DispatchQueue.main.async {
+            self.present(alertController, animated: true, completion: nil)
         }
     }
 

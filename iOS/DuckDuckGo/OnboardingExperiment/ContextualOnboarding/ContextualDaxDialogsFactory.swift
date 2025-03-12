@@ -70,7 +70,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         case .afterSearch:
             rootView = AnyView(
                 afterSearchDialog(
-                    shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog,
+                    shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog && !contextualOnboardingSettings.userHasSeenTryVisitSiteDialog,
                     delegate: delegate,
                     afterSearchPixelEvent: spec.pixelName,
                     onSizeUpdate: onSizeUpdate
@@ -124,6 +124,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             { [weak delegate, weak self] in
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
+                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
         } else {
@@ -142,6 +143,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate, pixelReporter: contextualOnboardingPixelReporter)
         return OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: viewModel)
             .onFirstAppear { [weak self] in
+                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
                 self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
     }
@@ -225,6 +227,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 protocol ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool { get }
     var userHasSeenFireDialog: Bool { get }
+    var userHasSeenTryVisitSiteDialog: Bool { get }
 }
 
 extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
@@ -237,6 +240,10 @@ extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
     
     var userHasSeenFireDialog: Bool {
         fireMessageExperimentShown
+    }
+
+    var userHasSeenTryVisitSiteDialog: Bool {
+        tryVisitASiteShown
     }
 
 }

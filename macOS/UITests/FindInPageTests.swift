@@ -217,8 +217,7 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        let statusFieldTextContent = try XCTUnwrap(statusField.value as? String)
-        XCTAssertEqual(statusFieldTextContent, "1 of 4") // Note: this is not a localized test element, and it should have a localization strategy.
+        assertElement(statusField, hasValue: "1 of 4")
     }
 
     func test_findInPage_showsFocusAndOccurrenceHighlighting() throws {
@@ -243,9 +242,7 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        let statusFieldTextContent = try XCTUnwrap(statusField.value as? String)
-        // Note: the following is not a localized test element, but it should have a localization strategy.
-        XCTAssertEqual(statusFieldTextContent, "1 of 4", "Unexpected status field text content after a \"Find in Page\" operation.")
+        assertElement(statusField, hasValue: "1 of 4")
 
         let webViewWithSelectedWordsScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInScreenshot = try XCTUnwrap(webViewWithSelectedWordsScreenshot.image.matchingPixels(of: .findHighlightColor))
@@ -277,9 +274,8 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        let statusFieldTextContent = try XCTUnwrap(statusField.value as? String)
         // Note: the following is not a localized test element, but it should have a localization strategy.
-        XCTAssertEqual(statusFieldTextContent, "1 of 4", "Unexpected status field text content after a \"Find in Page\" operation.")
+        assertElement(statusField, hasValue: "1 of 4")
         let findInPageScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindScreenshot = try XCTUnwrap(findInPageScreenshot.image.matchingPixels(of: .findHighlightColor))
         let findHighlightPoints = Set(highlightedPixelsInFindScreenshot.map { $0.point }) // Coordinates of highlighted pixels in the find screenshot
@@ -290,13 +286,8 @@ class FindInPageTests: UITestCase {
             "Couldn't find \"Find Next\" main menu bar item in a reasonable timeframe."
         )
         findNextMenuBarItem.click()
-        let updatedStatusField = app.textFields["FindInPageController.statusField"]
-        let updatedStatusFieldTextContent = updatedStatusField.value as! String
-        XCTAssertTrue(
-            updatedStatusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Couldn't find the updated \"Find in Page\" statusField in a reasonable timeframe."
-        )
-        XCTAssertEqual(updatedStatusFieldTextContent, "2 of 4", "Unexpected status field text content after a \"Find Next\" operation.")
+        assertElement(statusField, hasValue: "2 of 4")
+
         let findNextScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindNextScreenshot =
             try XCTUnwrap(Set(findNextScreenshot.image
@@ -337,9 +328,8 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        let statusFieldTextContent = try XCTUnwrap(statusField.value as? String)
-        // Note: the following is not a localized test element, but it should have a localization strategy.
-        XCTAssertEqual(statusFieldTextContent, "1 of 4", "Unexpected status field text content after a \"Find in Page\" operation.")
+        assertElement(statusField, hasValue: "1 of 4")
+
         let findInPageScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindScreenshot = try XCTUnwrap(findInPageScreenshot.image.matchingPixels(of: .findHighlightColor))
         let findHighlightPoints = Set(highlightedPixelsInFindScreenshot.map { $0.point }) // Coordinates of highlighted pixels in the find screenshot
@@ -350,13 +340,8 @@ class FindInPageTests: UITestCase {
         )
 
         findInPageNextButton.click()
-        let updatedStatusField = app.textFields["FindInPageController.statusField"]
-        let updatedStatusFieldTextContent = updatedStatusField.value as! String
-        XCTAssertTrue(
-            updatedStatusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Couldn't find the updated \"Find in Page\" statusField in a reasonable timeframe."
-        )
-        XCTAssertEqual(updatedStatusFieldTextContent, "2 of 4", "Unexpected status field text content after a \"Find Next\" operation.")
+        assertElement(statusField, hasValue: "2 of 4")
+
         let findNextScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindNextScreenshot = try XCTUnwrap(findNextScreenshot.image.matchingPixels(of: .findHighlightColor))
         let findNextHighlightPoints = highlightedPixelsInFindNextScreenshot.map { $0.point }
@@ -395,22 +380,14 @@ class FindInPageTests: UITestCase {
             statusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Couldn't find \"Find in Page\" statusField in a reasonable timeframe."
         )
-        let statusFieldTextContent = try XCTUnwrap(statusField.value as? String)
+        assertElement(statusField, hasValue: "1 of 4")
 
-        // Note: the following is not a localized test element, but it should have a localization strategy.
-        XCTAssertEqual(statusFieldTextContent, "1 of 4", "Unexpected status field text content after a \"Find in Page\" operation.")
         let findInPageScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindScreenshot = try XCTUnwrap(findInPageScreenshot.image.matchingPixels(of: .findHighlightColor))
         let findHighlightPoints = Set(highlightedPixelsInFindScreenshot.map { $0.point }) // Coordinates of highlighted pixels in the find screenshot
         app.typeKey("g", modifierFlags: [.command])
-        let updatedStatusField = app.textFields["FindInPageController.statusField"]
-        let updatedStatusFieldTextContent = updatedStatusField.value as! String
-        XCTAssertTrue(
-            updatedStatusField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Couldn't find the updated \"Find in Page\" statusField in a reasonable timeframe."
-        )
+        assertElement(statusField, hasValue: "2 of 4")
 
-        XCTAssertEqual(updatedStatusFieldTextContent, "2 of 4", "Unexpected status field text content after a \"Find Next\" operation.")
         let findNextScreenshot = loremIpsumWebView.screenshot()
         let highlightedPixelsInFindNextScreenshot = try XCTUnwrap(findNextScreenshot.image.matchingPixels(of: .findHighlightColor))
         let findNextHighlightPoints = highlightedPixelsInFindNextScreenshot.map { $0.point }
@@ -434,13 +411,7 @@ private extension FindInPageTests {
     /// A shared URL to reference the local HTML file
     class var loremIpsumFileURL: URL {
         let loremIpsumFileName = "lorem_ipsum.html"
-        XCTAssertNotNil(
-            FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first,
-            "It wasn't possible to obtain a local file URL for the sandbox Documents directory."
-        )
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let loremIpsumHTMLFileURL = documentsDirectory.appendingPathComponent(loremIpsumFileName)
-        return loremIpsumHTMLFileURL
+        return FileManager.default.temporaryDirectory.appendingPathComponent(loremIpsumFileName)
     }
 
     /// Save a local HTML file for testing find behavor against

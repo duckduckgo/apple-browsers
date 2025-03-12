@@ -41,6 +41,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 
     var history: BrowsingHistory? { get }
     var allHistoryVisits: [Visit]? { get }
+    var historyDictionary: [URL: HistoryEntry]? { get }
     var historyDictionaryPublisher: Published<[URL: HistoryEntry]?>.Publisher { get }
 
     @discardableResult func addVisit(of url: URL) -> Visit?
@@ -60,6 +61,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 }
 
 extension HistoryCoordinating {
+    @discardableResult
     public func addVisit(of url: URL) -> Visit? {
         addVisit(of: url, at: Date())
     }
@@ -160,6 +162,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func markFailedToLoadUrl(_ url: URL) {
+        // historyEntry.failedToLoad = true
         mark(url: url, keyPath: \HistoryEntry.failedToLoad, value: true)
     }
 

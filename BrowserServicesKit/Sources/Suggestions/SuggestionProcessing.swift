@@ -31,14 +31,12 @@ public enum Platform {
 final class SuggestionProcessing {
 
     private let platform: Platform
-    private var urlFactory: (String) -> URL?
 
-    init(platform: Platform, urlFactory: @escaping (String) -> URL?) {
+    init(platform: Platform) {
         self.platform = platform
-        self.urlFactory = urlFactory
     }
 
-    func result(for query: Query,
+    func result(for query: String,
                 from history: [HistorySuggestion],
                 bookmarks: [Bookmark],
                 internalPages: [InternalPage],
@@ -116,8 +114,8 @@ final class SuggestionProcessing {
                         return true
                     }
 
-                case .openTab(title: let title, url: let url):
-                    if case .openTab(let searchTitle, let searchUrl) = suggestion,
+                case .openTab(title: let title, url: let url, tabId: _):
+                    if case .openTab(let searchTitle, let searchUrl, _) = suggestion,
                        searchTitle == title,
                        searchUrl.naked == url.naked {
                         return true
@@ -194,7 +192,7 @@ final class SuggestionProcessing {
 
     // MARK: - History and Bookmarks
 
-    private func localSuggestions(from history: [HistorySuggestion], bookmarks: [Bookmark], internalPages: [InternalPage], openTabs: [BrowserTab], query: Query) -> [Suggestion] {
+    private func localSuggestions(from history: [HistorySuggestion], bookmarks: [Bookmark], internalPages: [InternalPage], openTabs: [BrowserTab], query: String) -> [Suggestion] {
         enum LocalSuggestion {
             case bookmark(Bookmark)
             case history(HistorySuggestion)
@@ -202,20 +200,21 @@ final class SuggestionProcessing {
             case openTab(BrowserTab)
         }
         let localSuggestions: [LocalSuggestion] = bookmarks.map(LocalSuggestion.bookmark) + openTabs.map(LocalSuggestion.openTab) + history.map(LocalSuggestion.history) + internalPages.map(LocalSuggestion.internalPage)
-        let queryTokens = Score.tokens(from: query)
+        let lowerQuery = query.lowercased()
+        let queryTokens = lowerQuery.tokenized()
 
         let result: [Suggestion] = localSuggestions
             // Score items
-            .map { item -> (item: LocalSuggestion, score: Score) in
+            .map { item -> (item: LocalSuggestion, score: Int) in
                 let score = switch item {
                 case .bookmark(let bookmark):
-                    Score(bookmark: bookmark, query: query, queryTokens: queryTokens)
+                    ScoringService.score(bookmark: bookmark, lowercasedQuery: lowerQuery, queryTokens: queryTokens)
                 case .history(let historyEntry):
-                    Score(historyEntry: historyEntry, query: query, queryTokens: queryTokens)
+                    ScoringService.score(historyEntry: historyEntry, lowercasedQuery: lowerQuery, queryTokens: queryTokens)
                 case .internalPage(let internalPage):
-                    Score(internalPage: internalPage, query: query, queryTokens: queryTokens)
+                    ScoringService.score(internalPage: internalPage, lowercasedQuery: lowerQuery, queryTokens: queryTokens)
                 case .openTab(let tab):
-                    Score(browserTab: tab, query: query)
+                    ScoringService.score(browserTab: tab, lowercasedQuery: lowerQuery)
                 }
 
                 return (item, score)

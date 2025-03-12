@@ -258,7 +258,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill(reset: true, animated: true)
+            
             return .notHandled(.invalidURL)
         }
 
@@ -292,7 +292,10 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Present Duck Player
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
-            loadNativeDuckPlayerVideo(videoID: videoID)
+             self.duckPlayer.presentPill(for: videoID, timestamp: nil)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                self.loadNativeDuckPlayerVideo(videoID: videoID)                
+            }
             return .handled(.duckPlayerEnabled)
         }
 

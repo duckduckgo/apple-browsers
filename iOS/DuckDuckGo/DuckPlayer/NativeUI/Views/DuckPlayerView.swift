@@ -67,18 +67,11 @@ struct DuckPlayerView: View {
                 Spacer()
                 GeometryReader { geometry in
                     ZStack {
-                        RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                            .fill(Color.black)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                                    .stroke(Color(designSystemColor: .background).opacity(0.1), lineWidth: 1)
-                            )
-                        webView.clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-
+                        webView
                     }
                     .frame(
-                        width: geometry.size.width - (Constants.horizontalPadding * 2),
-                        height: (geometry.size.width - (Constants.horizontalPadding * 2)) * Constants.videoAspectRatio
+                        width: geometry.size.width,
+                        height: geometry.size.width * Constants.videoAspectRatio
                     )
                     .position(
                         x: geometry.size.width / 2,
@@ -110,6 +103,8 @@ struct DuckPlayerView: View {
                     .frame(height: Constants.bottomButtonHeight)
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
+                } else {
+                    Spacer()
                 }
 
             }

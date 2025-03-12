@@ -801,12 +801,8 @@ final class BrowserTabViewController: NSViewController {
         (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: true)
     }
 
-    var shouldCloseWindow: Bool {
-        return pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled && tabCollectionViewModel.allTabsCount == 0 || !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled && tabCollectionViewModel.tabs.count == 0
-    }
-
     private func showTabContent(of tabViewModel: TabViewModel?) {
-        if shouldCloseWindow {
+        guard tabCollectionViewModel.allTabsCount > 0 else {
             view.window?.performClose(self)
             return
         }

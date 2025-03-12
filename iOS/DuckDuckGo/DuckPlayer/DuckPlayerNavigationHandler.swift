@@ -828,12 +828,12 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill(animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.invalidURL)
         }
 
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill(animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true)
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -856,7 +856,7 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             // the pill.  Youtube adds #fragments to Watch main pages
             // When presenting settings and preferences
             if !url.isYoutubeWatch {
-                duckPlayer.dismissPill(animated: true)
+                duckPlayer.dismissPill(reset: false, animated: true)
             }
 
             // Present the Pill if needed
@@ -1145,7 +1145,16 @@ extension DuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// To be implemented based on requested changes
     @MainActor
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
-        // NOOP
+        setHostViewController(hostViewController)
+        print("hostViewController.tabModel.link?.url: \(hostViewController.tabModel.link?.url)")
+        if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
+            self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
+        }
+    }
+
+    /// Handles DuckPlayer Updates when WebView dissapears
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
+        duckPlayer.dismissPill(reset: false, animated: false)
     }
 
 }

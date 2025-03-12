@@ -67,9 +67,7 @@ final class DuckPlayerNativeUIPresenter {
     private var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
-    @MainActor
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
-    @MainActor
     private var playerCancellables = Set<AnyCancellable>()
     @MainActor
     private var containerCancellables = Set<AnyCancellable>()
@@ -221,6 +219,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Determine the pill type
         let pillType: PillType = state.hasBeenShown ? .reEntry : .entry
 
+        // If no specific timestamp is provided, use the current stave value
+        let timestamp = timestamp ?? state.timestamp ?? 0
+
         // If we already have a container view model, just update the content and show it again
         if let existingViewModel = containerViewModel, let hostingController = containerViewController {
             updatePillContent(for: pillType, videoID: videoID, timestamp: timestamp, in: hostingController)
@@ -313,7 +314,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         hostingController.modalPresentationStyle = .overFullScreen
         hostingController.isModalInPresentation = false
 
-        // Update State        
+        // Update State
         self.state.hasBeenShown = true
 
         // Subscribe to Navigation Request Publisher
@@ -337,6 +338,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             .sink { [weak self] timestamp in
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
+                self.state.timestamp = timestamp
                 self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
             }
             .store(in: &playerCancellables)

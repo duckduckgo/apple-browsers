@@ -85,7 +85,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
     @Published private(set) var timestamp: TimeInterval = 0
-    
+
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
@@ -94,7 +94,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled,
+        Constants.playsInlineParameter: Constants.enabled
     ]
 
     /// Creates a new DuckPlayerViewModel instance
@@ -176,7 +176,7 @@ final class DuckPlayerViewModel: ObservableObject {
     func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
         self.webView = webView
         self.coordinator = coordinator
-        
+
         timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             Task {
@@ -188,7 +188,7 @@ final class DuckPlayerViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Stops observing the video timestamp
     func stopObservingTimestamp() {
         timestampUpdateTimer?.invalidate()
@@ -198,7 +198,7 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
-    
+
     /// Handles device orientation change notifications
     @objc private func handleOrientationChange() {
         updateOrientation()

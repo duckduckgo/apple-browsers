@@ -136,7 +136,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
 }
 
 final class MockSuggestionLoading: SuggestionLoading {
-    func getSuggestions(query: Query, usingDataSource dataSource: any SuggestionLoadingDataSource, completion: @escaping (SuggestionResult?, (any Error)?) -> Void) {
+    func getSuggestions(query: String, usingDataSource dataSource: any SuggestionLoadingDataSource, completion: @escaping (SuggestionResult?, (any Error)?) -> Void) {
     }
 }
 

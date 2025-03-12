@@ -38,7 +38,7 @@ protocol WindowControllersManagerProtocol {
     func register(_ windowController: MainWindowController)
     func unregister(_ windowController: MainWindowController)
 
-    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool)
+    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool)
     func showBookmarksTab()
 
     @discardableResult
@@ -64,6 +64,9 @@ extension WindowControllersManagerProtocol {
                        popUp: Bool = false,
                        lazyLoadTabs: Bool = false) -> MainWindow? {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: false, isMaximized: false, isFullscreen: false)
+    }
+    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool) {
+        show(url: url, tabId: nil, source: source, newTab: newTab)
     }
 }
 
@@ -172,7 +175,7 @@ extension WindowControllersManager {
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
-    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool = false) {
+    func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
         if source == .bookmark {
             PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
@@ -192,7 +195,7 @@ extension WindowControllersManager {
 
             // Switch to already open tab if present
             if [.appOpenUrl, .switchToOpenTab].contains(source),
-               let url, switchToOpenTab(with: url, preferring: windowController) == true {
+               let url, switchToOpenTab(withId: tabId, url: url, preferring: windowController) == true {
 
                 if let selectedTabViewModel, let selectionIndex,
                    case .newtab = selectedTabViewModel.tab.content {
@@ -220,13 +223,16 @@ extension WindowControllersManager {
         }
     }
 
-    private func switchToOpenTab(with url: URL, preferring mainWindowController: MainWindowController) -> Bool {
+    private func switchToOpenTab(withId tabId: String?, url: URL, preferring mainWindowController: MainWindowController) -> Bool {
         for (windowIdx, windowController) in ([mainWindowController] + mainWindowControllers).enumerated() {
             // prefer current main window
             guard windowIdx == 0 || windowController !== mainWindowController else { continue }
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
             guard let index = tabCollectionViewModel.indexInAllTabs(where: {
-                $0.content.urlForWebView == url || (url.isSettingsURL && $0.content.urlForWebView?.isSettingsURL == true)
+                if let tabId {
+                    return $0.id == tabId
+                }
+                return $0.content.urlForWebView == url || (url.isSettingsURL && $0.content.urlForWebView?.isSettingsURL == true)
             }) else { continue }
 
             windowController.window?.makeKeyAndOrderFront(self)
@@ -238,6 +244,9 @@ extension WindowControllersManager {
             }
 
             return true
+        }
+        if tabId != nil { // fallback to Switch to Tab by URL
+            return switchToOpenTab(withId: nil, url: url, preferring: mainWindowController)
         }
         return false
     }

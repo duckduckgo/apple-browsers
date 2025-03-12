@@ -90,7 +90,11 @@ final class SuggestionTableCellView: NSTableCellView {
 
         attributedString = suggestionViewModel.tableCellViewAttributedString
         iconImageView.image = suggestionViewModel.icon
-        suffixTextField.stringValue = suggestionViewModel.suffix
+        if let suffix = suggestionViewModel.suffix, !suffix.isEmpty {
+            suffixTextField.stringValue = " – " + suffix
+        } else {
+            suffixTextField.stringValue = ""
+        }
         setRemoveButtonHidden(true)
         if case .openTab = suggestionViewModel.suggestion {
             switchToTabBox.isHidden = false

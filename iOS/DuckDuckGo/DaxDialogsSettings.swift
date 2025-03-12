@@ -26,6 +26,10 @@ protocol DaxDialogsSettings: AnyObject {
     // Used to understand if users completed the old onboarding flow and should not be prompted in-context dax dialogs.
     var homeScreenMessagesSeen: Int { get }
 
+    var tryAnonymousSearchShown: Bool { get set }
+
+    var tryVisitASiteShown: Bool { get set }
+
     var browsingAfterSearchShown: Bool { get set }
     
     var browsingWithTrackersShown: Bool { get set }
@@ -58,7 +62,13 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     
     @UserDefaultsWrapper(key: .daxHomeScreenMessagesSeen, defaultValue: 0)
     var homeScreenMessagesSeen: Int
-    
+
+    @UserDefaultsWrapper(key: .daxTryAnonymousSearchShown, defaultValue: false)
+    var tryAnonymousSearchShown: Bool
+
+    @UserDefaultsWrapper(key: .daxTryVisitSiteShown, defaultValue: false)
+    var tryVisitASiteShown: Bool
+
     @UserDefaultsWrapper(key: .daxBrowsingAfterSearchShown, defaultValue: false)
     var browsingAfterSearchShown: Bool
     

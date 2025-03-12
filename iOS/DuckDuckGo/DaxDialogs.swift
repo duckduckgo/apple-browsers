@@ -416,7 +416,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     func setTryAnonymousSearchMessageSeen() {
-        // Show "Try a search" dialog only once.
         settings.tryAnonymousSearchShown = true
     }
 

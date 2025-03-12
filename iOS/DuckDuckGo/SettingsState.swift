@@ -70,7 +70,6 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var isExperimentalThemingEnabled: Bool
-    var isWarmColorPaletteEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -131,7 +130,6 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalThemingEnabled: false,
-            isWarmColorPaletteEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

@@ -86,8 +86,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1206226850447395/1209291055975934
     case experimentalBrowserTheming
 
-    case warmColorTheme
-
     /// https://app.asana.com/0/1206488453854252/1208706841336530
     case privacyProOnboardingCTAMarch25
 
@@ -114,7 +112,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom, .warmColorTheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25, .scamSiteProtection, .maliciousSiteProtection:
+        case .textZoom, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25, .scamSiteProtection, .maliciousSiteProtection:
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
@@ -215,8 +213,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
-        case .warmColorTheme:
-            return .internalOnly()
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
         case .onboardingSetAsDefaultBrowser:

@@ -133,7 +133,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
 
 enum PrivacyProErrorPixel: PixelKitEventV2 {
 
-    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType, accessError: AccountKeychainAccessError)
+    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType, accessError: any Error)
 
     var name: String {
         switch self {
@@ -146,7 +146,7 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
         case .privacyProKeychainAccessError(let accessType, let accessError):
             return [
                 "type": accessType.rawValue,
-                "error": accessError.errorDescription
+                "error": accessError.localizedDescription
             ]
         }
     }

@@ -664,10 +664,10 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 
 extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
         let parameters = [
             PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.errorDescription,
+            PixelParameters.privacyProKeychainError: error.localizedDescription,
             PixelParameters.source: "vpn"
         ]
 

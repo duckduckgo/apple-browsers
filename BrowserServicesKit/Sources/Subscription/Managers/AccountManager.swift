@@ -21,7 +21,7 @@ import Common
 import os.log
 
 public protocol AccountManagerKeychainAccessDelegate: AnyObject {
-    func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: Error)
+    func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error)
 }
 
 public protocol AccountManager {

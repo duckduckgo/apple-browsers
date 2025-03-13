@@ -277,7 +277,7 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
 
     enum SetAsDefaultExperimentMetrics {
         /// Unique identifier for the subfeature being tested.
-        static let subfeatureIdentifier = FeatureFlag.onboardingSetAsDefaultBrowser.rawValue
+        static let subfeatureIdentifier = OnboardingSubfeature.setAsDefaultBrowserExperiment.rawValue
 
         /// Metric identifiers for various user actions during the experiment.
         static let metricDefaultBrowserSet = "setAsDefaultBrowser"
@@ -292,7 +292,7 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
             for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
             metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserSet,
             conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
-            value: "true"
+            value: "1"
         )
     }
 
@@ -301,7 +301,7 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
             for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
             metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserNotSet,
             conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
-            value: "true"
+            value: "1"
         )
     }
     

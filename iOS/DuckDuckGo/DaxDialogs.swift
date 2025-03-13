@@ -42,6 +42,8 @@ protocol ContextualOnboardingLogic {
     var isShowingSitesSuggestions: Bool { get }
     var isShowingAddToDockDialog: Bool { get }
 
+    func setTryAnonymousSearchMessageSeen()
+    func setTryVisitSiteMessageSeen()
     func setSearchMessageSeen()
     func setFireEducationMessageSeen()
     func clearedBrowserData()
@@ -381,7 +383,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         case BrowsingSpec.SpecType.afterSearch.rawValue:
             return BrowsingSpec.afterSearch
         case BrowsingSpec.SpecType.visitWebsite.rawValue:
-            return .visitWebsite
+            return nil
         case BrowsingSpec.SpecType.withoutTrackers.rawValue:
             return BrowsingSpec.withoutTrackers
         case BrowsingSpec.SpecType.siteIsMajorTracker.rawValue:
@@ -420,6 +422,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     func fireButtonPulseCancelled() {
         fireButtonPulseTimer?.invalidate()
         settings.fireButtonEducationShownOrExpired = true
+    }
+
+    func setTryAnonymousSearchMessageSeen() {
+        settings.tryAnonymousSearchShown = true
+    }
+
+    func setTryVisitSiteMessageSeen() {
+        settings.tryVisitASiteShown = true
     }
 
     func setSearchMessageSeen() {
@@ -544,11 +554,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             return .final
         }
 
-        if !settings.browsingAfterSearchShown {
+        // If try a visit hasn't been show return initial
+        if !settings.tryAnonymousSearchShown {
             return .initial
         }
 
-        if firstSearchSeenButNoSiteVisited {
+        if !settings.tryVisitASiteShown {
             return .subsequent
         }
         

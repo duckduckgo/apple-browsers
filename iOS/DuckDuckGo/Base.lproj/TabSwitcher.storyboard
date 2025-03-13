@@ -26,7 +26,7 @@
                                 </items>
                             </navigationBar>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="XZT-ek-lrC">
-                                <rect key="frame" x="0.0" y="69.5" width="375" height="548.5"/>
+                                <rect key="frame" x="0.0" y="69.5" width="375" height="597.5"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="14" minimumInteritemSpacing="14" id="bWt-k2-BEm">
                                     <size key="itemSize" width="327" height="206"/>
@@ -325,7 +325,7 @@
                             <constraint firstItem="PrD-ff-flI" firstAttribute="leading" secondItem="WJ0-lP-E4v" secondAttribute="leading" id="B4L-BE-vvi"/>
                             <constraint firstAttribute="trailing" secondItem="PrD-ff-flI" secondAttribute="trailing" id="BaM-0l-RFS"/>
                             <constraint firstItem="3Kd-yL-Gby" firstAttribute="centerX" secondItem="Nqt-nV-6p2" secondAttribute="centerX" id="CDY-b4-gBI"/>
-                            <constraint firstItem="PrD-ff-flI" firstAttribute="top" secondItem="XZT-ek-lrC" secondAttribute="bottom" id="J8G-Xc-ZM0"/>
+                            <constraint firstAttribute="bottom" secondItem="XZT-ek-lrC" secondAttribute="bottom" id="J8G-Xc-ZM0"/>
                             <constraint firstItem="3Kd-yL-Gby" firstAttribute="width" secondItem="WJ0-lP-E4v" secondAttribute="width" id="MMS-h8-g8C"/>
                             <constraint firstItem="XZT-ek-lrC" firstAttribute="centerX" secondItem="Nqt-nV-6p2" secondAttribute="centerX" id="SmA-Z9-yAN"/>
                             <constraint firstItem="XZT-ek-lrC" firstAttribute="width" secondItem="Nqt-nV-6p2" secondAttribute="width" id="XCa-fk-cv9"/>

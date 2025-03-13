@@ -22,7 +22,6 @@ import Common
 import AppKitExtensions
 
 public protocol DataBrokerProtectionSubscriptionManaging {
-    var isUserAuthenticated: Bool { get }
     func accessToken() async -> String?
     func hasValidEntitlement() async throws -> Bool
 }
@@ -30,10 +29,6 @@ public protocol DataBrokerProtectionSubscriptionManaging {
 public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
 
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-
-    public var isUserAuthenticated: Bool {
-        subscriptionManager.isUserAuthenticated
-    }
 
     public func accessToken() async -> String? {
         // We use a staging token for privacy pro supplied through a github secret/action

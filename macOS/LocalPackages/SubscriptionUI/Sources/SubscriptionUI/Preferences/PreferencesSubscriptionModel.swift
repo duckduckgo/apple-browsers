@@ -829,22 +829,26 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
     }
 
     private func updateAvailableSubscriptionFeatures() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)
-        let vpnFeature = features.first { $0.entitlement == .networkProtection }
-        let dbpFeature = features.first { $0.entitlement == .dataBrokerProtection }
-        let itrFeature = features.first { $0.entitlement == .identityTheftRestoration }
-        let itrgFeature = features.first { $0.entitlement == .identityTheftRestorationGlobal }
+        do {
+            let features = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)
+            let vpnFeature = features.first { $0.entitlement == .networkProtection }
+            let dbpFeature = features.first { $0.entitlement == .dataBrokerProtection }
+            let itrFeature = features.first { $0.entitlement == .identityTheftRestoration }
+            let itrgFeature = features.first { $0.entitlement == .identityTheftRestorationGlobal }
 
-        Task { @MainActor in
-            // Should show
-            shouldShowVPN = vpnFeature != nil
-            shouldShowDBP = dbpFeature != nil
-            shouldShowITR = itrFeature != nil || itrgFeature != nil
+            Task { @MainActor in
+                // Should show
+                shouldShowVPN = vpnFeature != nil
+                shouldShowDBP = dbpFeature != nil
+                shouldShowITR = itrFeature != nil || itrgFeature != nil
 
-            // is active/enabled
-            hasAccessToVPN = vpnFeature?.isAvailableForUser ?? false
-            hasAccessToDBP = dbpFeature?.isAvailableForUser ?? false
-            hasAccessToITR = itrFeature?.isAvailableForUser ?? false || itrgFeature?.isAvailableForUser ?? false
+                // is active/enabled
+                hasAccessToVPN = vpnFeature?.isAvailableForUser ?? false
+                hasAccessToDBP = dbpFeature?.isAvailableForUser ?? false
+                hasAccessToITR = itrFeature?.isAvailableForUser ?? false || itrgFeature?.isAvailableForUser ?? false
+            }
+        } catch {
+            Logger.subscription.log("Error getting current subscription features: \(error, privacy: .public)")
         }
     }
 

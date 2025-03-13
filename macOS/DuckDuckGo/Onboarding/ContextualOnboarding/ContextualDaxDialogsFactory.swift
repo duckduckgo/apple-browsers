@@ -46,7 +46,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
             dialogView = AnyView(tryFireButtonDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed))
         case .highFive:
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onGotItPressed: onGotItPressed))
-            onboardingPixelReporter.trackLastDialogShown()
+            onboardingPixelReporter.measureLastDialogShown()
         }
         let adjustedView = {
             HStack {

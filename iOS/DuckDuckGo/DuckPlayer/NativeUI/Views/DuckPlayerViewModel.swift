@@ -32,23 +32,6 @@ import WebKit
 @MainActor
 final class DuckPlayerViewModel: ObservableObject {
 
-    /// A publisher to notify when Youtube navigation is required.
-    /// Emits the videoID that should be opened in YouTube.
-    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
-
-    /// A publisher to notify when the settings button is pressed.    
-    let settingsRequestPublisher = PassthroughSubject<Void, Never>()
-
-    /// A publisher to notify when the view is dismissed
-    let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
-
-    /// Current interface orientation state.
-    /// - `true` when device is in landscape orientation
-    /// - `false` when device is in portrait orientation
-    @Published private var isLandscape: Bool = false
-
-    weak var duckPlayer: DuckPlayerControlling?
-
     /// Constants used for YouTube URL generation and parameters
     enum Constants {
         /// Base URL for privacy-preserving YouTube embeds
@@ -68,43 +51,65 @@ final class DuckPlayerViewModel: ObservableObject {
         static let startParameter = "start"
     }
 
+    /// A publisher to notify when Youtube navigation is required.
+    /// Emits the videoID that should be opened in YouTube.
+    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
+
+    /// A publisher to notify when the settings button is pressed.    
+    let settingsRequestPublisher = PassthroughSubject<Void, Never>()
+
+    /// A publisher to notify when the view is dismissed
+    let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
+
     /// The YouTube video ID to be played
     let videoID: String
+
+    /// Default parameters applied to all YouTube video URLs
+    let defaultParameters: [String: String] = [
+        Constants.relParameter: Constants.disabled,
+        Constants.playsInlineParameter: Constants.enabled
+    ]
+
+    /// The referrer for the DuckPlayer
+    let source: DuckPlayer.VideoNavigationSource
 
     /// App settings instance for accessing user preferences
     var appSettings: AppSettings
 
     /// Whether the "Watch in YouTube" button should be visible
-    /// Returns `false` when in landscape mode to maximize video viewing area
+    /// This is only shown for SERP videos as otherwise the video is already on YouTube    
     var shouldShowYouTubeButton: Bool {
-        !isLandscape
+        !isLandscape && source == .serp
     }
 
     var cancellables = Set<AnyCancellable>()
 
+    /// The DuckPlayer instance
+    weak var duckPlayer: DuckPlayerControlling?
+
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
     @Published private(set) var timestamp: TimeInterval = 0
-    
+
+    /// Current interface orientation state.
+    /// - `true` when device is in landscape orientation
+    /// - `false` when device is in portrait orientation
+    @Published var isLandscape: Bool = false
+
     // MARK: - Private Properties
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
-    /// Default parameters applied to all YouTube video URLs
-    let defaultParameters: [String: String] = [
-        Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled,
-    ]
-
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source: DuckPlayer.VideoNavigationSource = .other) {
         self.videoID = videoID
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
+        self.source = source
         self.url = getVideoURL()
     }
 
@@ -176,7 +181,7 @@ final class DuckPlayerViewModel: ObservableObject {
     func startObservingTimestamp(webView: WKWebView, coordinator: DuckPlayerWebView.Coordinator) {
         self.webView = webView
         self.coordinator = coordinator
-        
+
         timestampUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             Task {
@@ -188,7 +193,7 @@ final class DuckPlayerViewModel: ObservableObject {
             }
         }
     }
-    
+
     /// Stops observing the video timestamp
     func stopObservingTimestamp() {
         timestampUpdateTimer?.invalidate()
@@ -198,7 +203,7 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Private Methods
-    
+
     /// Handles device orientation change notifications
     @objc private func handleOrientationChange() {
         updateOrientation()

@@ -38,37 +38,40 @@ struct DuckPlayerView: View {
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
         static let duckPlayerYoutubeImage: String = "OpenInYoutube"
         static let bottomButtonHeight: CGFloat = 44
+        static let grabHandleHeight: CGFloat = 4
+        static let grabHandleWidth: CGFloat = 36
     }
 
     var body: some View {
         ZStack {
             // Background with blur effect
             Color(.black)
-            .opacity(0.97)
             .edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
+                // Grab Handle
+                if !viewModel.isLandscape {
+                    Capsule()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: Constants.grabHandleWidth, height: Constants.grabHandleHeight)
+                        .padding(.top, 8)
+                }
+
                 // Header
-                header
-                    .frame(height: Constants.headerHeight)
-                    .background(Color.black)
+                if !viewModel.isLandscape {
+                    header
+                        .frame(height: Constants.headerHeight)
+                }
 
                 // Video Container
                 Spacer()
                 GeometryReader { geometry in
                     ZStack {
-                        RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                            .fill(Color.black)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                                    .stroke(Color(designSystemColor: .background).opacity(0.1), lineWidth: 1)
-                            )
-                        webView.clipShape(RoundedRectangle(cornerRadius: Constants.cornerRadius))
-
+                        webView
                     }
                     .frame(
-                        width: geometry.size.width - (Constants.horizontalPadding * 2),
-                        height: (geometry.size.width - (Constants.horizontalPadding * 2)) * Constants.videoAspectRatio
+                        width: geometry.size.width,
+                        height: geometry.size.width * Constants.videoAspectRatio
                     )
                     .position(
                         x: geometry.size.width / 2,
@@ -96,26 +99,25 @@ struct DuckPlayerView: View {
                                 }
                             }
                         }
-                        Button {
-                            viewModel.openSettings()
-                            dismiss()
-                        } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.2))
-                                    .frame(width: 44, height: 44)
-                                Image(Constants.duckPlayerSettingsImage)
-                                    .foregroundColor(.white)
-                            }
-                        }
                     }
                     .frame(height: Constants.bottomButtonHeight)
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
+                } else {
+                    Spacer()
                 }
 
             }
         }
+        .gesture(
+            DragGesture()
+                .onEnded { gesture in
+                    // Check if the drag was predominantly downward and had enough velocity
+                    if gesture.translation.height > 100 && gesture.predictedEndTranslation.height > 0 {
+                        dismiss()
+                    }
+                }
+        )
         .onFirstAppear {
             viewModel.onFirstAppear()
         }
@@ -130,6 +132,19 @@ struct DuckPlayerView: View {
     private var header: some View {
         HStack(spacing: Constants.horizontalPadding) {
 
+            // Settings Button
+            Button {
+                viewModel.openSettings()
+                dismiss()
+            } label: {
+                ZStack {
+                    Image(Constants.duckPlayerSettingsImage)
+                    .foregroundColor(.white)
+                }
+            }
+
+            Spacer()
+
             HStack {
                 Image(Constants.daxLogo)
                     .resizable()
@@ -139,9 +154,9 @@ struct DuckPlayerView: View {
                 Text(UserText.duckPlayerFeatureName)
                     .foregroundColor(.white)
                     .font(.headline)
-
-                Spacer()
             }
+
+            Spacer()
 
             // Close Button
             Button(action: { dismiss() }, label: {

@@ -101,7 +101,7 @@ class MockMaliciousSiteProtectionAPIClient: MaliciousSiteProtection.APIClient.Mo
 
     var matchesForHashPrefix: (String) throws -> APIClient.Response.Matches = { _ in
         .init(matches: [
-            Match(hostname: "example.com", url: "https://example.com/mal", regex: ".*", hash: "a379a6f6eeafb9a55e378c118034e2751e682fab9f2d30ab13d2125586ce1947", category: nil),
+            Match(hostname: "example.com", url: "https://example.com/mal", regex: ".*", hash: "a379a6f6eeafb9a55e378c118034e2751e682fab9f2d30ab13d2125586ce1947", category: "phishing"),
             Match(hostname: "test.com", url: "https://test.com/mal", regex: ".*test.*", hash: "aa00bb11aa00cc11bb00cc11", category: nil)
         ])
     }

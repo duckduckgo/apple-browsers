@@ -409,21 +409,27 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                      showWebView: Bool = false,
                                      userNotificationService: DataBrokerProtectionUserNotificationService,
                                      shouldRunNextStep: @escaping () -> Bool) async throws {
-        guard let brokerId = brokerProfileQueryData.dataBroker.id, let profileQueryId = brokerProfileQueryData.profileQuery.id, let extractedProfileId = extractedProfile.id else {
+        // 1. Validate that the broker and profile query data objects each have an ID:
+        guard let brokerId = brokerProfileQueryData.dataBroker.id,
+              let profileQueryId = brokerProfileQueryData.profileQuery.id,
+              let extractedProfileId = extractedProfile.id else {
             // Maybe send pixel?
             throw OperationsError.idsMissingForBrokerOrProfileQuery
         }
 
+        // 2. Validate that profile hasn't already been opted-out:
         guard extractedProfile.removedDate == nil else {
             Logger.dataBrokerProtection.log("Profile already removed, skipping...")
             return
         }
 
+        // 3. Validate that profile is eligible to be opted-out now:
         guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
             Logger.dataBrokerProtection.log("Broker opts out in parent, skipping...")
             return
         }
 
+        // 4. Set up dependencies used to report the status of the opt-out job:
         let retriesCalculatorUseCase = OperationRetriesCalculatorUseCase()
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: brokerProfileQueryData.dataBroker.url,
@@ -432,39 +438,29 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
         )
+
+        // 5. Record the start of the opt-out job:
         stageDurationCalculator.fireOptOutStart()
         Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
+        // 6. Set up a defer block to report opt-out job completion regardless of its success:
         defer {
-            Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
-
-            try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-            do {
-                try updateOperationDataDates(
-                    origin: .optOut,
-                    brokerId: brokerId,
-                    profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId,
-                    schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                    database: database
-                )
-            } catch {
-                handleOperationError(
-                    origin: .optOut,
-                    brokerId: brokerId,
-                    profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId,
-                    error: error,
-                    database: database,
-                    schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
-                )
-            }
-            notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)
+            reportOptOutJobCompletion(
+                brokerProfileQueryData: brokerProfileQueryData,
+                extractedProfileId: extractedProfileId,
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                database: database,
+                notificationCenter: notificationCenter
+            )
         }
 
+        // 7. Perform the opt-out:
         do {
+            // 7a. Mark the profile as having its opt-out job started:
             try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
 
+            // 7b. Perform the opt-out itself:
             try await runner.optOut(profileQuery: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
                                     stageCalculator: stageDurationCalculator,
@@ -472,13 +468,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 
+            // 7c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
             let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
             let updater = OperationPreferredDateUpdaterUseCase(database: database)
-            try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker,
-                                                            profileQueryId: profileQueryId)
+            try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
 
             try database.addAttempt(extractedProfileId: extractedProfileId,
                                     attemptUUID: stageDurationCalculator.attemptId,
@@ -493,6 +489,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 extractedProfileId: extractedProfileId
             )
         } catch {
+            // 8. Catch errors from the opt-out job and report them:
             let tries = try? retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
             handleOperationError(
@@ -506,6 +503,38 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
             throw error
         }
+    }
+
+    private func reportOptOutJobCompletion(brokerProfileQueryData: BrokerProfileQueryData,
+                                           extractedProfileId: Int64,
+                                           brokerId: Int64,
+                                           profileQueryId: Int64,
+                                           database: DataBrokerProtectionRepository,
+                                           notificationCenter: NotificationCenter) {
+        Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
+
+        try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+        do {
+            try updateOperationDataDates(
+                origin: .optOut,
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                extractedProfileId: extractedProfileId,
+                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
+                database: database
+            )
+        } catch {
+            handleOperationError(
+                origin: .optOut,
+                brokerId: brokerId,
+                profileQueryId: profileQueryId,
+                extractedProfileId: extractedProfileId,
+                error: error,
+                database: database,
+                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
+            )
+        }
+        notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)
     }
 
     private func incrementOptOutAttemptCountIfNeeded(database: DataBrokerProtectionRepository,

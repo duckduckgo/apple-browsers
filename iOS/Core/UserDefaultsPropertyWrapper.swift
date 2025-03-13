@@ -186,6 +186,9 @@ public struct UserDefaultsWrapper<T> {
         case maliciousSiteProtectionEnabled = "com.duckduckgo.ios.maliciousSiteProtection.enabled"
         case voiceSearchTargetPreferences = "voiceSearchTargetPreferences"
 
+        // Check Default Browser
+        case defaultBrowserInfo = "com.duckduckgo.ios.defaultBrowserInfo"
+
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"
     }

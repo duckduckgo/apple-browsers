@@ -35,10 +35,9 @@ public actor DeadTokenRecoverer {
 
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
-            switch await restoreFlow.restoreAccountFromPastPurchase() {
-            case .success:
-                break
-            case .failure(let error):
+            do {
+                try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
+            } catch {
                 try reportFailure(error: error)
             }
         case .stripe:

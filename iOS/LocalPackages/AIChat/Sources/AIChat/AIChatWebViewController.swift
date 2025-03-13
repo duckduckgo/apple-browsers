@@ -26,7 +26,7 @@ protocol AIChatWebViewControllerDelegate: AnyObject {
 final class AIChatWebViewController: UIViewController {
     weak var delegate: AIChatWebViewControllerDelegate?
     private let chatModel: AIChatViewModeling
-    private var downloadHandler = DownloadHandler()
+    private var downloadHandler: DownloadHandling
 
     private lazy var webView: WKWebView = {
         let webView = WKWebView(frame: .zero, configuration: chatModel.webViewConfiguration)
@@ -45,8 +45,9 @@ final class AIChatWebViewController: UIViewController {
         return activityIndicator
     }()
 
-    init(chatModel: AIChatViewModeling) {
+    init(chatModel: AIChatViewModeling, downloadHandler: DownloadHandling = DownloadHandler()) {
         self.chatModel = chatModel
+        self.downloadHandler = downloadHandler
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -58,10 +59,26 @@ final class AIChatWebViewController: UIViewController {
         super.viewDidLoad()
 
         view.backgroundColor = .black
-        downloadHandler.delegate = self
         setupWebView()
         setupLoadingView()
         loadWebsite()
+        setupDownloadHandler()
+    }
+
+    private func setupDownloadHandler() {
+        downloadHandler.onDownloadComplete = { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .success(let filename):
+                self.view.showDownloadCompletionToast(for: filename) {
+                    print("File downloaded: \(filename)")
+                }
+
+            case .failure(let error):
+                print("Download failed with error: \(error.localizedDescription)")
+            }
+        }
     }
 
     private func setupWebView() {
@@ -171,38 +188,5 @@ extension AIChatWebViewController: WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loadingView.stopAnimating()
-    }
-}
-
-final class DownloadHandler: NSObject, WKDownloadDelegate {
-    weak var delegate: DownloadHandlerDelegate?
-    private var filename: String?
-
-    func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
-        filename = suggestedFilename
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDirectory.appendingPathComponent(suggestedFilename)
-    }
-
-    func downloadDidFinish(_ download: WKDownload) {
-        guard let filename = filename else { return }
-        Task { @MainActor in
-            self.delegate?.showDownloadCompleteToast(filename: filename)
-        }
-    }
-
-    func download(_ download: WKDownload, didFailWithError error: Error, resumeData: Data?) {
-        print("Download failed: \(error.localizedDescription)")
-    }
-}
-
-protocol DownloadHandlerDelegate: AnyObject {
-    @MainActor func showDownloadCompleteToast(filename: String)
-}
-
-extension AIChatWebViewController: DownloadHandlerDelegate {
-    @MainActor func showDownloadCompleteToast(filename: String) {
-        view.showDownloadCompletionToast(for: filename) {
-        }
     }
 }

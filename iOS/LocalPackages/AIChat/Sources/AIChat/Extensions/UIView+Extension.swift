@@ -34,6 +34,12 @@ extension UIView {
         displayToast(with: message, buttonTitle: UserText.downloadToastShow, onButtonTapped: onButtonTapped)
     }
 
+    func showDownloadFailedToast() {
+        var message = AttributedString(UserText.downloadFailed)
+        message.foregroundColor = .white
+        displayToast(with: message, buttonTitle: "", onButtonTapped: nil)
+    }
+
     private func createDownloadCompletionMessage(for fileName: String) -> AttributedString {
         var attributedMessage = AttributedString(String(format: UserText.downloadComplete, fileName))
         attributedMessage.foregroundColor = .white
@@ -44,12 +50,12 @@ extension UIView {
         return attributedMessage
     }
 
-    private func displayToast(with message: AttributedString, buttonTitle: String, onButtonTapped: @escaping () -> Void) {
+    private func displayToast(with message: AttributedString, buttonTitle: String, onButtonTapped: (() -> Void)?) {
         let toastView = createToastView(with: message, buttonTitle: buttonTitle, onButtonTapped: onButtonTapped)
         animateToastAppearance(toastView)
     }
 
-    private func createToastView(with message: AttributedString, buttonTitle: String, onButtonTapped: @escaping () -> Void) -> UIView {
+    private func createToastView(with message: AttributedString, buttonTitle: String, onButtonTapped: (() -> Void)?) -> UIView {
         let toastView = ToastView(message: message, buttonTitle: buttonTitle, onShowButtonTapped: onButtonTapped)
         let hostingController = UIHostingController(rootView: toastView)
         hostingController.view.isUserInteractionEnabled = true

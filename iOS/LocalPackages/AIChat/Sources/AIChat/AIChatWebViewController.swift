@@ -77,7 +77,7 @@ final class AIChatWebViewController: UIViewController {
                 }
 
             case .failure(let error):
-                print("Download failed with error: \(error.localizedDescription)")
+                self.view.showDownloadFailedToast()
             }
         }
     }

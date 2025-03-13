@@ -29,7 +29,7 @@ private enum Constants {
 struct ToastView: View {
     let message: AttributedString
     let buttonTitle: String
-    let onShowButtonTapped: () -> Void
+    let onShowButtonTapped: (() -> Void)?
 
     var body: some View {
         HStack {
@@ -39,10 +39,12 @@ struct ToastView: View {
 
             Spacer()
 
-            Button(action: onShowButtonTapped) {
-                Text(UserText.downloadToastShow)
-                    .bold()
-                    .foregroundColor(Constants.textColor)
+            if let onShowButtonTapped = onShowButtonTapped {
+                Button(action: onShowButtonTapped) {
+                    Text(buttonTitle)
+                        .bold()
+                        .foregroundColor(Constants.textColor)
+                }
             }
         }
         .padding()

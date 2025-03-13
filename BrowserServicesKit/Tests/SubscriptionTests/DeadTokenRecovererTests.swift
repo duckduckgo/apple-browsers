@@ -38,19 +38,15 @@ final class DeadTokenRecovererTests: XCTestCase {
     }
 
     func testRecoverSuccess() async throws {
-        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeDeadTokenContainer()
-        subscriptionManager.resultSubscription = SubscriptionMockFactory.appleSubscription
         restoreFlow.restoreAccountFromPastPurchaseResult = .success("something")
 
         try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
 
-        XCTAssertTrue(restoreFlow.restoreAccountFromPastPurchaseCalled)
+        XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func testRecoverExpiredSubscription() async throws {
-        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeDeadTokenContainer()
-        subscriptionManager.resultSubscription = SubscriptionMockFactory.expiredSubscription
-        restoreFlow.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
+    func testRecoverFailure() async throws {
+        restoreFlow.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.failedToFetchSubscriptionDetails)
 
         do {
             try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)

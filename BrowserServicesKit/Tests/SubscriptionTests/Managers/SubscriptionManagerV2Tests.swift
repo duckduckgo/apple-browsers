@@ -238,14 +238,16 @@ class SubscriptionManagerV2Tests: XCTestCase {
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
         overrideTokenResponseInRecoveryHandler = .failure(SubscriptionManagerError.tokenRefreshFailed(error: nil))
-        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
-        mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
+        mockSubscriptionEndpointService.getSubscriptionResult = .failure(SubscriptionEndpointServiceError.noData)
+        mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.tokenUnavailable {
+
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
+            assertionFailure("Wrong error: \(error)")
         }
     }
 

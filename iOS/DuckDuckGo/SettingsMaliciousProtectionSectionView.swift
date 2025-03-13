@@ -34,7 +34,6 @@ struct SettingsMaliciousProtectionSectionView: View {
     }
 
     var body: some View {
-        let toggleMessage = model.shouldShowScamSiteProtectionCopy ? UserText.MaliciousSiteProtectionSettings.toggleMessage : UserText.MaliciousSiteProtectionSettings.toggleMessageDeprecated
         if model.shouldShowMaliciousSiteProtectionSection {
             Section(
                 header: Text(UserText.MaliciousSiteProtectionSettings.header),
@@ -52,7 +51,7 @@ struct SettingsMaliciousProtectionSectionView: View {
                     }
             ) {
                 SettingsCellView(
-                    label: toggleMessage,
+                    label: model.maliciousSiteProtectionMessage,
                     accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn)
                 )
             }

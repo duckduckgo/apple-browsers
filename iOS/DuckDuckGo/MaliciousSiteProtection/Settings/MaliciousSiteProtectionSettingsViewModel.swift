@@ -22,10 +22,11 @@ import Combine
 import Core
 import SwiftUI
 import MaliciousSiteProtection
+import BrowserServicesKit
 
 final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     @Published var shouldShowMaliciousSiteProtectionSection: Bool
-    @Published var shouldShowScamSiteProtectionCopy: Bool
+    @Published var maliciousSiteProtectionMessage: String
     @Published var isMaliciousSiteProtectionOn: Bool {
         didSet {
             updateMaliciousSiteProtection(enabled: isMaliciousSiteProtectionOn)
@@ -33,19 +34,20 @@ final class MaliciousSiteProtectionSettingsViewModel: ObservableObject {
     }
 
     private let manager: MaliciousSiteProtectionPreferencesManaging
-    private let featureFlagger: MaliciousSiteProtectionFeatureFlagger
+    private let featureFlagger: FeatureFlagger
     private let urlOpener: URLOpener
 
     init(
         manager: MaliciousSiteProtectionPreferencesManaging,
-        featureFlagger: MaliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: AppDependencyProvider.shared.featureFlagger),
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         urlOpener: URLOpener = UIApplication.shared
     ) {
         self.manager = manager
         self.featureFlagger = featureFlagger
         self.urlOpener = urlOpener
-        shouldShowMaliciousSiteProtectionSection = featureFlagger.isMaliciousSiteProtectionEnabled
-        shouldShowScamSiteProtectionCopy = AppDependencyProvider.shared.featureFlagger.isFeatureOn(.scamSiteProtection)
+        shouldShowMaliciousSiteProtectionSection = featureFlagger.isFeatureOn(.maliciousSiteProtection)
+        let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
+        maliciousSiteProtectionMessage = isScamProtectionEnabled ? UserText.MaliciousSiteProtectionSettings.toggleMessage : UserText.MaliciousSiteProtectionSettings.toggleMessageDeprecated
         isMaliciousSiteProtectionOn = manager.isMaliciousSiteProtectionOn
     }
 

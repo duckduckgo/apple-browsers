@@ -220,11 +220,12 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
 
     // MARK: - Video Handling Methods
+    @MainActor
     func openVideoInDuckPlayer(url: URL, webView: WKWebView) {
         // Mock implementation
     }
 
-    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource) {
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource, timestamp: TimeInterval?) {
         // Mock implementation
     }
 
@@ -265,11 +266,11 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
 
     // MARK: - Pill UI Methods
-    func presentPill(for videoID: String, timestamp: String? = nil) {
+    func presentPill(for videoID: String, timestamp: TimeInterval?) {
         // Mock implementation
     }
 
-    func dismissPill() {
+    func dismissPill(reset: Bool, animated: Bool) {
         // Mock implementation
     }
 
@@ -280,6 +281,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func showPillForVisibleChrome() {
         // Mock implementation
     }
+    
 }
 
 enum MockFeatureFlag: Hashable {
@@ -349,28 +351,34 @@ final class MockDuckPlayerInternalUserDecider: InternalUserDecider {
 }
 
 final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
-
-    var videoPlaybackRequest: PassthroughSubject<String, Never>
+    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
 
     init() {
-        videoPlaybackRequest = PassthroughSubject<String, Never>()
+        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
     }
 
-    @MainActor func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: String?) {
-        // NOOP
+    @MainActor
+    func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
+        // Mock implementation
     }
-
-    @MainActor func dismissPill(reset: Bool) {}
-
-    @MainActor func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: String?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
-        (navigation: PassthroughSubject<URL, Never>(), settings: PassthroughSubject<Void, Never>())
+    
+    @MainActor
+    func dismissPill(reset: Bool, animated: Bool) {
+        // Mock implementation
     }
-
-    @MainActor func showBottomSheetForVisibleChrome() {
-        // NOOP
+    
+    @MainActor
+    func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+        return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
-
-    @MainActor func hideBottomSheetForHiddenChrome() {
-        // NOOP
+    
+    @MainActor
+    func showBottomSheetForVisibleChrome() {
+        // Mock implementation
+    }
+    
+    @MainActor
+    func hideBottomSheetForHiddenChrome() {
+        // Mock implementation
     }
 }

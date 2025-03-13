@@ -51,6 +51,7 @@ struct DuckPlayerView: View {
                 // Header
                 header
                     .frame(height: Constants.headerHeight)
+                    .background(Color.black)
 
                 // Video Container
                 Spacer()

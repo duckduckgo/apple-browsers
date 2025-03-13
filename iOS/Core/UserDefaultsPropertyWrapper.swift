@@ -43,6 +43,8 @@ public struct UserDefaultsWrapper<T> {
 
         case daxIsDismissed = "com.duckduckgo.ios.daxOnboardingIsDismissed"
         case daxHomeScreenMessagesSeen = "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen"
+        case daxTryAnonymousSearchShown = "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown"
+        case daxTryVisitSiteShown = "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown"
         case daxBrowsingAfterSearchShown = "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown"
         case daxBrowsingWithTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown"
         case daxBrowsingWithoutTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown"
@@ -183,6 +185,9 @@ public struct UserDefaultsWrapper<T> {
         // Malicious Site Protection
         case maliciousSiteProtectionEnabled = "com.duckduckgo.ios.maliciousSiteProtection.enabled"
         case voiceSearchTargetPreferences = "voiceSearchTargetPreferences"
+
+        // Check Default Browser
+        case defaultBrowserInfo = "com.duckduckgo.ios.defaultBrowserInfo"
 
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"

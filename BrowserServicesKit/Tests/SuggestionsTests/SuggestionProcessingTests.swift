@@ -26,7 +26,7 @@ final class SuggestionProcessingTests: XCTestCase {
 
     func testWhenOnlyHistoryMatches_ThenHistoryInTopHits() {
 
-        let processing = SuggestionProcessing(platform: .mobile, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .mobile)
         let result = processing.result(for: "Duck",
                                        from: HistoryEntryMock.duckHistoryWithoutDuckDuckGo,
                                        bookmarks: [],
@@ -51,7 +51,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "http://ducktails.com", title: "Duck Tails", isFavorite: false)
         ]
 
-        let processing = SuggestionProcessing(platform: .mobile, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .mobile)
         let result = processing.result(for: "Duck Tails",
                                        from: HistoryEntryMock.duckHistoryWithoutDuckDuckGo,
                                        bookmarks: bookmarks,
@@ -87,7 +87,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "wikipedia.org", title: "Wikipedia", isFavorite: false)
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "Duck Tails",
                                        from: HistoryEntryMock.duckHistoryWithoutDuckDuckGo,
                                        bookmarks: bookmarks,
@@ -161,7 +161,7 @@ final class SuggestionProcessingTests: XCTestCase {
                            isDownload: false),
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "Duck",
                                        from: history,
                                        bookmarks: [],
@@ -170,8 +170,8 @@ final class SuggestionProcessingTests: XCTestCase {
                                        apiResult: APIResult.anAPIResult)
 
         XCTAssertEqual(result?.topHits, [
-            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
-            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
+            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!, tabId: nil),
+            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!, tabId: nil),
         ])
         // Filter out history entries that are already in top hits
         let topHitUrls = Set(result?.topHits.map { $0.url!.absoluteString } ?? [])
@@ -200,7 +200,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "http://wikipedia.org", title: "Wikipedia", isFavorite: false),
         ]
 
-        let processing = SuggestionProcessing(platform: .mobile, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .mobile)
         let result = processing.result(for: "Duck",
                                        from: [], // No history records
                                        bookmarks: bookmarks,
@@ -210,8 +210,8 @@ final class SuggestionProcessingTests: XCTestCase {
 
         // Assert that the top hits include the open tabs
         XCTAssertEqual(result?.topHits, [
-            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
-            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
+            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!, tabId: nil),
+            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!, tabId: nil),
         ])
 
         // Filter out bookmarks that are already in top hits
@@ -240,7 +240,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "http://wikipedia.org", title: "Wikipedia", isFavorite: false),
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "Duck",
                                        from: [], // No history records
                                        bookmarks: bookmarks,
@@ -250,8 +250,8 @@ final class SuggestionProcessingTests: XCTestCase {
 
         // Assert that the top hits include the open tabs
         XCTAssertEqual(result?.topHits, [
-            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
-            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
+            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!, tabId: nil),
+            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!, tabId: nil),
         ])
 
         // Filter out bookmarks that are already in top hits
@@ -329,7 +329,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "http://duckme.com", title: "Duck me!", isFavorite: false),
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "Duck",
                                        from: history,
                                        bookmarks: bookmarks,
@@ -338,8 +338,8 @@ final class SuggestionProcessingTests: XCTestCase {
                                        apiResult: APIResult.anAPIResult)
 
         XCTAssertEqual(result?.topHits, [
-            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
-            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
+            .openTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!, tabId: nil),
+            .openTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!, tabId: nil),
         ])
         // Filter out history entries that are already in top hits
         let topHitUrls = Set(result?.topHits.map { $0.url!.absoluteString } ?? [])
@@ -366,7 +366,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "wikipedia.org", title: "Wikipedia", isFavorite: false)
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "DuckDuckGo",
                                        from: HistoryEntryMock.duckHistoryWithoutDuckDuckGo,
                                        bookmarks: bookmarks,
@@ -389,7 +389,7 @@ final class SuggestionProcessingTests: XCTestCase {
             BookmarkMock(url: "wikipedia.org", title: "Wikipedia", isFavorite: false)
         ]
 
-        let processing = SuggestionProcessing(platform: .desktop, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .desktop)
         let result = processing.result(for: "Duck",
                                        from: HistoryEntryMock.duckHistoryWithoutDuckDuckGo,
                                        bookmarks: bookmarks,
@@ -406,7 +406,7 @@ final class SuggestionProcessingTests: XCTestCase {
 
     func testWhenOnMobile_ThenBookmarksAlwaysInTopHits() {
 
-        let processing = SuggestionProcessing(platform: .mobile, urlFactory: Self.simpleUrlFactory)
+        let processing = SuggestionProcessing(platform: .mobile)
         let result = processing.result(for: "Duck",
                                               from: [],
                                               bookmarks: BookmarkMock.someBookmarks,
@@ -420,7 +420,7 @@ final class SuggestionProcessingTests: XCTestCase {
 
     func testWhenDuplicatesAreInSourceArrays_ThenTheOneWithTheBiggestInformationValueIsUsed() {
         func runAssertion(_ platform: Platform) {
-            let processing = SuggestionProcessing(platform: platform, urlFactory: Self.simpleUrlFactory)
+            let processing = SuggestionProcessing(platform: platform)
             let result = processing.result(for: "DuckDuckGo",
                                                   from: HistoryEntryMock.aHistory,
                                                   bookmarks: BookmarkMock.someBookmarks,
@@ -440,7 +440,7 @@ final class SuggestionProcessingTests: XCTestCase {
     func testWhenBuildingTopHits_ThenOnlyWebsiteSuggestionsAreUsedForNavigationalSuggestions() {
 
         func runAssertion(_ platform: Platform) {
-            let processing = SuggestionProcessing(platform: platform, urlFactory: Self.simpleUrlFactory)
+            let processing = SuggestionProcessing(platform: platform)
 
             let result = processing.result(for: "DuckDuckGo",
                                                  from: HistoryEntryMock.aHistory,
@@ -462,7 +462,7 @@ final class SuggestionProcessingTests: XCTestCase {
     func testWhenWebsiteInTopHits_ThenWebsiteRemovedFromSuggestions() {
 
         func runAssertion(_ platform: Platform) {
-            let processing = SuggestionProcessing(platform: platform, urlFactory: Self.simpleUrlFactory)
+            let processing = SuggestionProcessing(platform: platform)
 
             guard let result = processing.result(for: "DuckDuckGo",
                                                  from: [],

@@ -112,7 +112,7 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
     }
 
     func sendOneTimeCohortSubscriptionStatusPixel() {
-        if userIsNotEnrolled { return }
+        if userIsNotEnrolled || !subscriptionManager.isUserAuthenticated { return }
 
         var parameters: [String: String] = [:]
 

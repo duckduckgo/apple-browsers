@@ -695,17 +695,6 @@ class MainViewController: UIViewController {
 
         findInPageBottomLayoutConstraint.constant = keyboardHeight
 
-        if let suggestionsTray = suggestionTrayController {
-            let suggestionsFrameInView = suggestionsTray.view.convert(suggestionsTray.contentFrame, to: view)
-
-            let overflow = suggestionsFrameInView.intersection(keyboardFrameInView).height
-            if overflow > 0 && !appSettings.currentAddressBarPosition.isBottom {
-                suggestionsTray.applyContentInset(UIEdgeInsets(top: 0, left: 0, bottom: overflow, right: 0))
-            } else {
-                suggestionsTray.applyContentInset(.zero)
-            }
-        }
-
         let y = self.view.frame.height - keyboardHeight
         let frame = self.findInPageView.frame
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
@@ -1637,12 +1626,14 @@ class MainViewController: UIViewController {
                 self?.onNetworkProtectionAccountSignIn(notification)
             }
             .store(in: &vpnCancellables)
+
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onEntitlementsChange(notification)
             }
             .store(in: &vpnCancellables)
+
         NotificationCenter.default.publisher(for: .accountDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1654,6 +1645,13 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.onNetworkProtectionEntitlementMessagingChange()
+            }
+            .store(in: &vpnCancellables)
+
+        NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.onExpiredRefreshTokenDetected(notification)
             }
             .store(in: &vpnCancellables)
 
@@ -1715,6 +1713,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         tunnelDefaults.resetEntitlementMessaging()
         Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
+    }
+
+    @objc
+    private func onExpiredRefreshTokenDetected(_ notification: Notification) {
+        // Not implemented : https://app.asana.com/0/1205842942115003/1209622270835329/f
     }
 
     var networkProtectionTunnelController: NetworkProtectionTunnelController {

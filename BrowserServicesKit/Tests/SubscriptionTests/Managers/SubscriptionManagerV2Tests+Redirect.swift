@@ -59,11 +59,10 @@ extension SubscriptionManagerV2Tests {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
             pixelHandler: { _ in },
-            autoRecoveryHandler: {
-                if let overrideTokenResponse = self.overrideTokenResponse {
+            tokenRecoveryHandler: {
+                if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
                     self.mockOAuthClient.getTokensResponse = overrideTokenResponse
                 }
-                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(endpointService: self.mockSubscriptionEndpointService, restoreFlow: self.mockAppStoreRestoreFlowV2)
             }
         )
 

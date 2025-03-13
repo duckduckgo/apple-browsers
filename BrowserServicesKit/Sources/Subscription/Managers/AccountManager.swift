@@ -21,13 +21,15 @@ import Common
 import os.log
 
 public protocol AccountManagerKeychainAccessDelegate: AnyObject {
-    func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError)
+    func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error)
 }
 
 public protocol AccountManager {
 
     var delegate: AccountManagerKeychainAccessDelegate? { get set }
+    /// The `accessToken` is long lasting and is used to authenticate API requests and VPN connections
     var accessToken: String? { get }
+    /// The `authToken` is short lasting and is obtained when the user purchases the subscription, is immediately exchanged for a long lasting `accessToken`
     var authToken: String? { get }
     var email: String? { get }
     var externalID: String? { get }
@@ -94,12 +96,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             return try storage.getAuthToken()
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .getAuthToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
-
+            delegate?.accountManagerKeychainAccessFailed(accessType: .getAuthToken, error: error)
             return nil
         }
     }
@@ -108,12 +105,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             return try accessTokenStorage.getAccessToken()
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .getAccessToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
-
+            delegate?.accountManagerKeychainAccessFailed(accessType: .getAccessToken, error: error)
             return nil
         }
     }
@@ -122,12 +114,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             return try storage.getEmail()
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .getEmail, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
-
+            delegate?.accountManagerKeychainAccessFailed(accessType: .getEmail, error: error)
             return nil
         }
     }
@@ -136,12 +123,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             return try storage.getExternalID()
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .getExternalID, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
-
+            delegate?.accountManagerKeychainAccessFailed(accessType: .getExternalID, error: error)
             return nil
         }
     }
@@ -152,11 +134,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             try storage.store(authToken: token)
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeAuthToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .storeAuthToken, error: error)
         }
     }
 
@@ -166,11 +144,7 @@ public final class DefaultAccountManager: AccountManager {
         do {
             try accessTokenStorage.store(accessToken: token)
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
         }
     }
 
@@ -180,31 +154,19 @@ public final class DefaultAccountManager: AccountManager {
         do {
             try accessTokenStorage.store(accessToken: token)
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .storeAccessToken, error: error)
         }
 
         do {
             try storage.store(email: email)
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeEmail, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .storeEmail, error: error)
         }
 
         do {
             try storage.store(externalID: externalID)
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .storeExternalID, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .storeExternalID, error: error)
         }
         NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
     }
@@ -222,11 +184,7 @@ public final class DefaultAccountManager: AccountManager {
             subscriptionEndpointService.signOut()
             entitlementsCache.reset()
         } catch {
-            if let error = error as? AccountKeychainAccessError {
-                delegate?.accountManagerKeychainAccessFailed(accessType: .clearAuthenticationData, error: error)
-            } else {
-                assertionFailure("Expected AccountKeychainAccessError")
-            }
+            delegate?.accountManagerKeychainAccessFailed(accessType: .clearAuthenticationData, error: error)
         }
 
         if !skipNotification {

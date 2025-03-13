@@ -202,8 +202,7 @@ protocol DownloadHandlerDelegate: AnyObject {
 
 extension AIChatWebViewController: DownloadHandlerDelegate {
     @MainActor func showDownloadCompleteToast(filename: String) {
-        view.presentDownloadToast(fileName: filename) {
-            
+        view.showDownloadCompletionToast(for: filename) {
         }
-     }
+    }
 }

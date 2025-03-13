@@ -47,6 +47,7 @@ final class DeadTokenRecovererTests: XCTestCase {
 
     func testRecoverFailure() async throws {
         restoreFlow.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.failedToFetchSubscriptionDetails)
+        restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenError = AppStoreRestoreFlowErrorV2.failedToFetchSubscriptionDetails
 
         do {
             try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)

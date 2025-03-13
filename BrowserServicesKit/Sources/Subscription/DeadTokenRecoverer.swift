@@ -38,7 +38,7 @@ public actor DeadTokenRecoverer {
             do {
                 try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
             } catch {
-                try reportFailure(error: error)
+                do { try reportFailure(error: error) } catch { throw error}
             }
         case .stripe:
             Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")

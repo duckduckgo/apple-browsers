@@ -818,6 +818,22 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // Set As Default Browser Debug Pixels
+        // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
+
+        /// Fired when a successful result (either true or false) is returned from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserSuccessfulResult
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method
+        /// and we don’t have a persisted version of the previous result.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure
+
+        /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserUnknownFailure
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -1680,6 +1696,11 @@ extension Pixel.Event {
             return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
+
+        case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
+        case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
 
             // MARK: Ad Attribution
 

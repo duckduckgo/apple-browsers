@@ -41,8 +41,14 @@ public protocol AIChatSettingsProvider {
     /// The local feature flag for the AI Chat shortcut in voice search.
     var isAIChatVoiceSearchFeatureEnabled: Bool { get }
 
+    /// The local feature flag for the AI Chat shortcut in tab switcher..
+    var isAIChatTabSwitcherFeatureEnabled: Bool { get }
+
     /// The user settings state for the AI Chat voice search
     var isAIChatVoiceSearchUserSettingsEnabled: Bool { get }
+
+    /// The user settings state for the AI Chat in tab manager
+    var isAIChatTabSwitcherUserSettingsEnabled: Bool { get }
 
     /// Updates the user settings state for the AI Chat browsing menu.
     func enableAIChatBrowsingMenuUserSettings(enable: Bool)
@@ -52,5 +58,8 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat voice search
     func enableAIChatVoiceSearchUserSettings(enable: Bool)
+
+    /// Updates the user settings state for the AI Chat voice search
+    func enableAIChatTabSwitcherUserSettings(enable: Bool)
 
 }

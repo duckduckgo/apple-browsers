@@ -31,6 +31,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatAddressBarShortcutFeatureEnabled: Bool
     public var isAIChatVoiceSearchFeatureEnabled: Bool
     public var isAIChatVoiceSearchUserSettingsEnabled: Bool
+    public var isAIChatTabSwitcherFeatureEnabled: Bool
+    public var isAIChatTabSwitcherUserSettingsEnabled: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
                 isAIChatAddressBarUserSettingsEnabled: Bool = false,
@@ -39,7 +41,9 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool = false,
                 isAIChatAddressBarShortcutFeatureEnabled: Bool = false,
                 isAIChatVoiceSearchFeatureEnabled: Bool = false,
-                isAIChatVoiceSearchUserSettingsEnabled: Bool = false) {
+                isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
+                isAIChatTabSwitcherFeatureEnabled: Bool = false,
+                isAIChatTabSwitcherUserSettingsEnabled: Bool = false) {
 
         self.aiChatURL = aiChatURL
         self.isAIChatAddressBarUserSettingsEnabled = isAIChatAddressBarUserSettingsEnabled
@@ -49,6 +53,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
         self.isAIChatVoiceSearchFeatureEnabled = isAIChatVoiceSearchFeatureEnabled
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
+        self.isAIChatTabSwitcherFeatureEnabled = isAIChatTabSwitcherFeatureEnabled
+        self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
     }
     
     public func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -61,6 +67,10 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
 
     public func enableAIChatVoiceSearchUserSettings(enable: Bool) {
         isAIChatVoiceSearchUserSettingsEnabled = enable
+    }
+
+    public func enableAIChatTabSwitcherUserSettings(enable: Bool) {
+        isAIChatTabSwitcherFeatureEnabled = enable
     }
 
 }

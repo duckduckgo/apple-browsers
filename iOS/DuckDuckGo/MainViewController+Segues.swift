@@ -174,7 +174,8 @@ extension MainViewController {
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
-                                      tabManager: self.tabManager)
+                                      tabManager: self.tabManager,
+                                      aiChatSettings: self.aiChatSettings)
         }) else {
             assertionFailure()
             return

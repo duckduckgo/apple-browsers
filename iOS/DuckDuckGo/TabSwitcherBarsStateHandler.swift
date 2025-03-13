@@ -19,6 +19,7 @@
 
 import UIKit
 
+#warning("NOT UNIT TESTED")
 class TabSwitcherBarsStateHandler {
 
     let plusButton = UIBarButtonItem()
@@ -33,25 +34,30 @@ class TabSwitcherBarsStateHandler {
     let deselectAllButton = UIBarButtonItem()
     let duckChatButton = UIBarButtonItem()
 
-    var bottomBarItems = [UIBarButtonItem]()
-    var isBottomBarHidden = false
-    var topBarLeftButtonItems = [UIBarButtonItem]()
-    var topBarRightButtonItems = [UIBarButtonItem]()
+    private(set) var bottomBarItems = [UIBarButtonItem]()
+    private(set) var isBottomBarHidden = false
+    private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
+    private(set) var topBarRightButtonItems = [UIBarButtonItem]()
 
-    var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
-    var selectedTabsCount: Int = 0
-    var totalTabsCount: Int = 0
-    var containsWebPages = false
-    var canShowSelectionMenu = false
+    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
+    private(set) var selectedTabsCount: Int = 0
+    private(set) var totalTabsCount: Int = 0
+    private(set) var containsWebPages = false
+    private(set) var showAIChatButton = false
+    private(set) var canShowEditButton = false
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
                 totalTabsCount: Int,
-                containsWebPages: Bool) {
+                containsWebPages: Bool,
+                showAIChatButton: Bool) {
 
         guard interfaceMode != self.interfaceMode
                 || selectedTabsCount != self.selectedTabsCount
-                || totalTabsCount != self.totalTabsCount else {
+                || totalTabsCount != self.totalTabsCount
+                || containsWebPages != self.containsWebPages
+                || showAIChatButton != self.showAIChatButton
+        else {
             // If nothing has changed, don't update
             return
         }
@@ -60,15 +66,16 @@ class TabSwitcherBarsStateHandler {
         self.selectedTabsCount = selectedTabsCount
         self.totalTabsCount = totalTabsCount
         self.containsWebPages = containsWebPages
+        self.showAIChatButton = showAIChatButton
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
 
-        let canShowEditButton = self.totalTabsCount > 1 || containsWebPages
-        
+        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
+
         updateBottomBar()
-        updateTopLeftButtons(canShowEditButton: canShowEditButton)
-        updateTopRightButtons(canShowEditButton: canShowEditButton)
+        updateTopLeftButtons()
+        updateTopRightButtons()
     }
 
     func updateBottomBar() {
@@ -100,7 +107,7 @@ class TabSwitcherBarsStateHandler {
         }
     }
 
-    func updateTopLeftButtons(canShowEditButton: Bool) {
+    func updateTopLeftButtons() {
 
         switch interfaceMode {
         case .singleSelectNormal:
@@ -138,25 +145,26 @@ class TabSwitcherBarsStateHandler {
         }
     }
 
-    func updateTopRightButtons(canShowEditButton: Bool) {
+    func updateTopRightButtons() {
 
         switch interfaceMode {
         case .singleSelectNormal:
             topBarRightButtonItems = [
-                duckChatButton,
+                showAIChatButton ? duckChatButton : nil,
                 tabSwitcherStyleButton,
-            ]
+            ].compactMap { $0 }
 
         case .singleSelectLarge, .multiSelectAvailableLarge:
             topBarRightButtonItems = [
                 doneButton,
+                showAIChatButton ? duckChatButton : nil,
                 fireButton,
                 plusButton,
-            ]
+            ].compactMap { $0 }
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
-                duckChatButton,
+                showAIChatButton ? duckChatButton : nil,
                 canShowEditButton ? editButton : nil,
             ].compactMap { $0 }
 

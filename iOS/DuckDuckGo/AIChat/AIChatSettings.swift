@@ -71,6 +71,10 @@ struct AIChatSettings: AIChatSettingsProvider {
         userDefaults.showAIChatAddressBar && isAIChatAddressBarShortcutFeatureEnabled
     }
 
+    var isAIChatTabSwitcherUserSettingsEnabled: Bool {
+        userDefaults.showAIChatTabSwitcher && isAIChatTabSwitcherFeatureEnabled
+    }
+
     var isAIChatFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.aiChat)
     }
@@ -91,6 +95,10 @@ struct AIChatSettings: AIChatSettingsProvider {
         featureFlagger.isFeatureOn(.aiChatBrowsingToolbarShortcut)
     }
 
+    var isAIChatTabSwitcherFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatTabSwitcherShortcut)
+    }
+
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
         userDefaults.showAIChatBrowsingMenu = enable
         triggerSettingsChangedNotification()
@@ -103,6 +111,11 @@ struct AIChatSettings: AIChatSettingsProvider {
 
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
         userDefaults.showAIChatVoiceSearch = enable
+        triggerSettingsChangedNotification()
+    }
+
+    func enableAIChatTabSwitcherUserSettings(enable: Bool) {
+        userDefaults.showAIChatTabSwitcher = enable
         triggerSettingsChangedNotification()
     }
 
@@ -127,12 +140,14 @@ private extension UserDefaults {
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
+        static let showAIChatTabSwitcher = "aichat.settings.showAIChatTabSwitcher"
 
     }
 
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
+    static let showAIChatTabSwitcherDefaultValue = true
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {
@@ -164,6 +179,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatAddressBar else { return }
             set(newValue, forKey: Keys.showAIChatAddressBar)
+        }
+    }
+
+    @objc dynamic var showAIChatTabSwitcher: Bool {
+        get {
+            value(forKey: Keys.showAIChatTabSwitcher) as? Bool ?? Self.showAIChatTabSwitcherDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatTabSwitcher else { return }
+            set(newValue, forKey: Keys.showAIChatTabSwitcher)
         }
     }
 }

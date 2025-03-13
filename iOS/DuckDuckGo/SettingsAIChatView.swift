@@ -58,6 +58,11 @@ struct SettingsAIChatView: View {
                     SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
                 }
+
+                if viewModel.state.aiChat.isAIChatTabSwitcherFeatureFlagEnabled {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                }
             }
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,

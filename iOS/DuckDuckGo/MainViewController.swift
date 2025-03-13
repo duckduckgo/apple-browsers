@@ -2753,6 +2753,12 @@ extension MainViewController: TabSwitcherDelegate {
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
     }
 
+    func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        tabSwitcher.dismiss(animated: true) {
+            self.openAIChat()
+        }
+    }
+
 }
 
 extension MainViewController: BookmarksDelegate {

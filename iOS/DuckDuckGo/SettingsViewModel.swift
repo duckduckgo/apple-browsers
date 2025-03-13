@@ -518,7 +518,8 @@ extension SettingsViewModel {
             aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
                                          isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
                                          isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
-                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
+                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled,
+                                         isAIChatTabSwitcherFeatureFlagEnabled: aiChatSettings.isAIChatTabSwitcherFeatureEnabled)
         )
 
         updateRecentlyVisitedSitesVisibility()
@@ -995,6 +996,15 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatTabSwitcherEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
             }
         )
     }

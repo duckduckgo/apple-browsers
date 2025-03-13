@@ -50,6 +50,7 @@ public enum FeatureFlag: String {
     case adAttributionReporting
     case aiChat
     case aiChatBrowsingToolbarShortcut
+    case aiChatTabSwitcherShortcut
     case aiChatAddressBarShortcut
     case aiChatDeepLink
     case tabManagerMultiSelection
@@ -195,6 +196,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
         case .aiChatAddressBarShortcut:
             return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
+        case .aiChatTabSwitcherShortcut:
+            return .enabled
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:

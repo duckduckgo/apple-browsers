@@ -55,6 +55,7 @@ struct SettingsState {
         var isAIChatBrowsingMenuFeatureFlagEnabled: Bool
         var isAIChatAddressBarFeatureFlagEnabled: Bool
         var isAIChatVoiceSearchFeatureFlagEnabled: Bool
+        var isAIChatTabSwitcherFeatureFlagEnabled: Bool
     }
 
     struct SyncSettings {
@@ -166,7 +167,8 @@ struct SettingsState {
             aiChat: AIChat(enabled: false,
                            isAIChatBrowsingMenuFeatureFlagEnabled: false,
                            isAIChatAddressBarFeatureFlagEnabled: false,
-                           isAIChatVoiceSearchFeatureFlagEnabled: false)
+                           isAIChatVoiceSearchFeatureFlagEnabled: false,
+                           isAIChatTabSwitcherFeatureFlagEnabled: false)
         )
     }
 }

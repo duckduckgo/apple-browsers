@@ -22,6 +22,7 @@ import Core
 import Onboarding
 import class UIKit.UIApplication
 
+@MainActor
 final class OnboardingIntroViewModel: ObservableObject {
     @Published private(set) var state: OnboardingView.ViewState = .landing
 
@@ -37,14 +38,26 @@ final class OnboardingIntroViewModel: ObservableObject {
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
+    convenience init(pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting) {
+        self.init(
+            defaultBrowserManager: DefaultBrowserManager(),
+            pixelReporter: pixelReporter,
+            onboardingManager: OnboardingManager(),
+            isIpad: UIDevice.current.userInterfaceIdiom == .pad,
+            urlOpener: UIApplication.shared,
+            appIconProvider: { AppIconManager.shared.appIcon },
+            addressBarPositionProvider:{ AppUserDefaults().currentAddressBarPosition }
+        )
+    }
+
     init(
-        defaultBrowserManager: DefaultBrowserManaging = DefaultBrowserManager(),
+        defaultBrowserManager: DefaultBrowserManaging,
         pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting,
-        onboardingManager: OnboardingManaging = OnboardingManager(),
-        isIpad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-        urlOpener: URLOpener = UIApplication.shared,
-        appIconProvider: @escaping () -> AppIcon = { AppIconManager.shared.appIcon },
-        addressBarPositionProvider: @escaping () -> AddressBarPosition = { AppUserDefaults().currentAddressBarPosition }
+        onboardingManager: OnboardingManaging,
+        isIpad: Bool,
+        urlOpener: URLOpener,
+        appIconProvider: @escaping () -> AppIcon,
+        addressBarPositionProvider: @escaping () -> AddressBarPosition
     ) {
         self.defaultBrowserManager = defaultBrowserManager
         self.pixelReporter = pixelReporter

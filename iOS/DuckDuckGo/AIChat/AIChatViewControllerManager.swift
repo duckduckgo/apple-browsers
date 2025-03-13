@@ -26,6 +26,7 @@ import Core
 
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didFinishDownload fileName: String)
 }
 
 final class AIChatViewControllerManager {
@@ -124,6 +125,13 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
 
     func aiChatViewControllerDidFinish(_ viewController: AIChatViewController) {
         viewController.dismiss(animated: true)
+    }
+
+    func aiChatViewController(_ viewController: AIChatViewController, didFinishDownload fileName: String) {
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.aiChatViewControllerManager(self, didFinishDownload: fileName)
+        }
     }
 }
 

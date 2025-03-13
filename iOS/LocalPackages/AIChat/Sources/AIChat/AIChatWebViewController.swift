@@ -21,6 +21,7 @@ import WebKit
 
 protocol AIChatWebViewControllerDelegate: AnyObject {
     @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL)
+    @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didFinishDownload fileName: String)
 }
 
 final class AIChatWebViewController: UIViewController {
@@ -72,7 +73,7 @@ final class AIChatWebViewController: UIViewController {
             switch result {
             case .success(let filename):
                 self.view.showDownloadCompletionToast(for: filename) {
-                    print("File downloaded: \(filename)")
+                    self.delegate?.aiChatWebViewController(self, didFinishDownload: filename)
                 }
 
             case .failure(let error):
@@ -145,12 +146,7 @@ extension AIChatWebViewController: WKNavigationDelegate {
             return .allow
         }
 
-        if url.absoluteString.contains("blob:") {
-            //delegate?.aiChatWebViewController(self, didRequestToLoad: url)
-            return .allow
-        }
-
-        if chatModel.shouldAllowRequestWithNavigationAction(navigationAction) {
+        if shouldAllowNavigation(for: url, with: navigationAction) {
             return .allow
         } else {
             delegate?.aiChatWebViewController(self, didRequestToLoad: url)
@@ -162,12 +158,7 @@ extension AIChatWebViewController: WKNavigationDelegate {
         guard let url = navigationResponse.response.url else {
             return .allow
         }
-
-        if url.absoluteString.contains("blob:") {
-            return .download
-        }
-        return .allow
-
+        return url.scheme == SchemeType.blob ? .download : .allow
     }
 
     func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
@@ -175,18 +166,30 @@ extension AIChatWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        loadingView.startAnimating()
+        updateLoadingState(isLoading: true)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
+
+    private func shouldAllowNavigation(for url: URL, with navigationAction: WKNavigationAction) -> Bool {
+        return url.scheme == SchemeType.blob || chatModel.shouldAllowRequestWithNavigationAction(navigationAction)
+    }
+    
+    private func updateLoadingState(isLoading: Bool) {
+        isLoading ? loadingView.startAnimating() : loadingView.stopAnimating()
+    }
+}
+
+enum SchemeType {
+    static let blob = "blob"
 }

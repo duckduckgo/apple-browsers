@@ -34,6 +34,13 @@ public protocol AIChatViewControllerDelegate: AnyObject {
     ///
     /// - Parameter viewController: The `AIChatViewController` instance that has finished.
     func aiChatViewControllerDidFinish(_ viewController: AIChatViewController)
+
+    /// Tells the delegate that the `AIChatViewController` has finished downloading a file.
+    ///
+    /// - Parameters:
+    ///   - viewController: The `AIChatViewController` instance that completed the download.
+    ///   - fileName: The name of the file that was downloaded.
+    func aiChatViewController(_ viewController: AIChatViewController, didFinishDownload fileName: String)
 }
 
 public final class AIChatViewController: UIViewController {
@@ -158,6 +165,10 @@ extension AIChatViewController {
 }
 
 extension AIChatViewController: AIChatWebViewControllerDelegate {
+    func aiChatWebViewController(_ viewController: AIChatWebViewController, didFinishDownload fileName: String) {
+        delegate?.aiChatViewController(self, didFinishDownload: fileName)
+    }
+    
     func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL) {
         delegate?.aiChatViewController(self, didRequestToLoad: url)
     }

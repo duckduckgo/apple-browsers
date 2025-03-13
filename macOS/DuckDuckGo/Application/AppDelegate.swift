@@ -97,7 +97,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
-    private var shouldCheckNewApplicationVersion = true
     private var updateProgressCancellable: AnyCancellable?
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
@@ -848,14 +847,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in
-                /// Displays the "Browser Updated/Downgraded" notification only after the first complete update cycle
-                if let self, progress.isDone, self.shouldCheckNewApplicationVersion {
-                    /// Proceed only if no newer update is available for the user
-                    if case .updateCycleDone(.finishedWithNoUpdateFound) = progress {
-                        self.updateController.checkNewApplicationVersion()
-                    }
-                    self.shouldCheckNewApplicationVersion = false
-                }
+                self?.updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
             }
 #endif
     }

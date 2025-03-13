@@ -36,9 +36,10 @@ extension UIView {
 
     private func createDownloadCompletionMessage(for fileName: String) -> AttributedString {
         var attributedMessage = AttributedString(String(format: UserText.downloadComplete, fileName))
+        attributedMessage.foregroundColor = .white
+
         if let fileNameRange = attributedMessage.range(of: fileName) {
             attributedMessage[fileNameRange].font = .boldSystemFont(ofSize: UIFont.systemFontSize)
-            attributedMessage[fileNameRange].foregroundColor = .white
         }
         return attributedMessage
     }

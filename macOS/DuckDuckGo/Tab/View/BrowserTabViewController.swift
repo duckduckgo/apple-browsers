@@ -1468,7 +1468,7 @@ extension BrowserTabViewController {
     }
 
     private func handleTabSelectedInKeyWindow(_ tabIndex: TabIndex) {
-        if tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
+        if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled, tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
             makeWebViewSnapshot()
         } else {
             hideWebViewSnapshotIfNeeded()

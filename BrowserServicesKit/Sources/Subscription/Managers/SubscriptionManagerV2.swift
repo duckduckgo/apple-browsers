@@ -25,13 +25,13 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
     case tokenUnavailable(error: Error?)
     case confirmationHasInvalidSubscription
     case noProductsFound
-    case tokenUnRefreshable(error: Error?)
+    case tokenRefreshFailed(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
         case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
-        case (.tokenUnRefreshable(let lhsError), .tokenUnRefreshable(let rhsError)):
+        case (.tokenRefreshFailed(let lhsError), .tokenRefreshFailed(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound):
@@ -49,7 +49,7 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
-        case .tokenUnRefreshable(error: let error):
+        case .tokenRefreshFailed(error: let error):
             "Token is not refreshable: \(String(describing: error))"
         }
     }
@@ -128,7 +128,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Parameter policy: The policy that will be used to get the token, it effects the tokens source and validity
     /// - Returns: The TokenContainer
     /// - Throws: A `SubscriptionManagerError`.
-    ///     `tokenUnRefreshable` if the token cannot be refreshed, typically due to an expired refresh token.
+    ///     `tokenRefreshFailed` if the token cannot be refreshed, typically due to an expired refresh token.
     ///     `tokenUnavailable` if the token is not available for the reason specified by the underlying error.
     @discardableResult
     func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer

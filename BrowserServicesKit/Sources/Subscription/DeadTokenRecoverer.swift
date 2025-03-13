@@ -61,6 +61,6 @@ public actor DeadTokenRecoverer {
 
     private static func reportFailure(error: Error? = nil) throws {
         recoveryAttemptCount = 0
-        throw SubscriptionManagerError.tokenUnRefreshable(error: error)
+        throw SubscriptionManagerError.tokenRefreshFailed(error: error)
     }
 }

@@ -237,15 +237,15 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        overrideTokenResponseInRecoveryHandler = .failure(SubscriptionManagerError.tokenUnRefreshable)
+        overrideTokenResponseInRecoveryHandler = .failure(SubscriptionManagerError.tokenRefreshFailed(error: nil))
         mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
         }
     }
 
@@ -256,16 +256,16 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
         }
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
         }
     }
 }

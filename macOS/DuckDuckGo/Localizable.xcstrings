@@ -57517,19 +57517,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Would you like to merge pinned tabs from all existing windows?"
-          }
-        }
-      }
-    },
-    "preferences-pinned-tabs.description" : {
-      "comment" : "Pinned tabs Settings section description",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pinned tabs behaviour in browser windows."
+            "value" : "Would you like to combine pinned tabs to be shared across all windows?"
           }
         }
       }

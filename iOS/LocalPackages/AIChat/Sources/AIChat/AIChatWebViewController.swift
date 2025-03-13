@@ -76,7 +76,7 @@ final class AIChatWebViewController: UIViewController {
                     self.delegate?.aiChatWebViewController(self, didFinishDownload: filename)
                 }
 
-            case .failure(let error):
+            case .failure:
                 self.view.showDownloadFailedToast()
             }
         }

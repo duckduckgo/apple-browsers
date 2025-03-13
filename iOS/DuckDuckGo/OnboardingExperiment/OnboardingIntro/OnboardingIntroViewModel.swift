@@ -46,7 +46,7 @@ final class OnboardingIntroViewModel: ObservableObject {
             isIpad: UIDevice.current.userInterfaceIdiom == .pad,
             urlOpener: UIApplication.shared,
             appIconProvider: { AppIconManager.shared.appIcon },
-            addressBarPositionProvider:{ AppUserDefaults().currentAddressBarPosition }
+            addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
         )
     }
 

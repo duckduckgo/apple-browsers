@@ -534,7 +534,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         } else {
             isUserAuthenticated = subscriptionManagerV2.isUserAuthenticated
             entitlementsCheck = {
-                .success(await self.subscriptionManagerV2.isFeatureAvailableForUser(.networkProtection))
+                do {
+                    let available = try await self.subscriptionManagerV2.isFeatureAvailableForUser(.networkProtection)
+                    return .success(available)
+                } catch {
+                    return .failure(error)
+                }
             }
         }
         guard isUserAuthenticated else { return }

@@ -512,16 +512,20 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                  subscriptionEndpointService: subscriptionEndpointService,
                                                                  subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   autoRecoveryHandler: {
-                // todo Implement
+                                                                   tokenRecoveryHandler: {
+                Logger.networkProtection.error("Expired refresh token detected")
             },
                                                                    initForPurchase: false)
 
             entitlementsCheck = {
                 Logger.networkProtection.log("Subscription Entitlements check...")
-                let isNetworkProtectionEnabled = await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
-                Logger.networkProtection.log("Network protection is \( isNetworkProtectionEnabled ? "🟢 Enabled" : "⚫️ Disabled", privacy: .public)")
-                return .success(isNetworkProtectionEnabled)
+                do {
+                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
+                    Logger.networkProtection.log("Network protection is \( isNetworkProtectionEnabled ? "🟢 Enabled" : "⚫️ Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
+                } catch {
+                    return .failure(error)
+                }
             }
 
             // Subscription initial tasks

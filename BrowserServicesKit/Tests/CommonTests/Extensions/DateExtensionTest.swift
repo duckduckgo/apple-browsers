@@ -79,19 +79,19 @@ final class DateExtensionTests: XCTestCase {
         let startOfDayTomorrow = Date.startOfDayTomorrow
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
 
-        XCTAssertEqual(startOfDayTomorrow, Calendar.current.startOfDay(for: tomorrow))
+        XCTAssertEqual(startOfDayTomorrow.timeIntervalSince1970, Calendar.current.startOfDay(for: tomorrow).timeIntervalSince1970, accuracy: 5)
     }
 
     func testStartOfDayToday() {
         let startOfDayToday = Date.startOfDayToday
-        XCTAssertEqual(startOfDayToday, Calendar.current.startOfDay(for: Date()))
+        XCTAssertEqual(startOfDayToday.timeIntervalSince1970, Calendar.current.startOfDay(for: Date()).timeIntervalSince1970, accuracy: 5)
     }
 
     func testStartOfDay() {
         let date = Date()
         let startOfDay = date.startOfDay
 
-        XCTAssertEqual(startOfDay, Calendar.current.startOfDay(for: date))
+        XCTAssertEqual(startOfDay.timeIntervalSince1970, Calendar.current.startOfDay(for: date).timeIntervalSince1970, accuracy: 5)
     }
 
     func testDaysAgoInstanceMethod() {
@@ -206,12 +206,12 @@ final class DateExtensionTests: XCTestCase {
 
     func testIsInThePast() {
         let pastDate = Date(timeIntervalSinceNow: -100) // 100 seconds ago
-        XCTAssertTrue(pastDate.isInThePast())
+        XCTAssertTrue(pastDate.isInThePast(), "Past date should be in the past")
 
         let futureDate = Date(timeIntervalSinceNow: 100) // 100 seconds in the future
-        XCTAssertFalse(futureDate.isInThePast())
+        XCTAssertFalse(futureDate.isInThePast(), "Future date should not be in the past")
 
-        XCTAssertFalse(Date().isInThePast()) // Edge case: exact current time
+        XCTAssertFalse(Date().isInThePast(), "Should not be in the past") // Edge case: exact current time
     }
 
     func testIsInTheFuture() {

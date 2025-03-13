@@ -291,6 +291,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                    canPerformAuthMigration: true,
                                                                    canHandlePixels: true)
 
+            // Expired refresh token recovery
+            if #available(iOS 15.0, macOS 12.0, *) {
+                let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
+                subscriptionManager.tokenRecoveryHandler = {
+                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                }
+            } else {
+                subscriptionManager.tokenRecoveryHandler = {
+                    try await DeadTokenRecoverer.reportDeadRefreshToken()
+                }
+            }
+
             subscriptionCookieManager = SubscriptionCookieManagerV2(subscriptionManager: subscriptionManager, currentCookieStore: {
                 WKHTTPCookieStoreWrapper(store: WKWebsiteDataStore.default().httpCookieStore)
             }, eventMapping: SubscriptionCookieManageEventPixelMapping())

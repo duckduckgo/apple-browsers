@@ -292,7 +292,7 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
             for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
             metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserSet,
             conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
-            value: ""
+            value: "true"
         )
     }
 
@@ -301,7 +301,7 @@ extension OnboardingPixelReporter: OnboardingSetAsDefaultBrowserExperimentReport
             for: SetAsDefaultExperimentMetrics.subfeatureIdentifier,
             metric: SetAsDefaultExperimentMetrics.metricDefaultBrowserNotSet,
             conversionWindowDays: SetAsDefaultExperimentMetrics.conversionWindowDays,
-            value: ""
+            value: "true"
         )
     }
     

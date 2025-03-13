@@ -50,6 +50,7 @@ public enum AppStoreRestoreFlowErrorV2: LocalizedError, Equatable {
 @available(macOS 12.0, iOS 15.0, *)
 public protocol AppStoreRestoreFlowV2 {
     @discardableResult func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowErrorV2>
+    func restoreSubscriptionAfterExpiredRefreshToken() async throws
 }
 
 @available(macOS 12.0, iOS 15.0, *)
@@ -89,5 +90,19 @@ public final class DefaultAppStoreRestoreFlowV2: AppStoreRestoreFlowV2 {
             Logger.subscriptionAppStoreRestoreFlow.error("Error activating past transaction: \(error, privacy: .public)")
             return .failure(.pastTransactionAuthenticationError)
         }
+    }
+
+    public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
+        Logger.subscriptionAppStoreRestoreFlow.log("Restoring subscription after expired refresh token")
+
+        // Clear subscription Cache
+        subscriptionManager.clearSubscriptionCache()
+
+        guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else {
+            Logger.subscriptionAppStoreRestoreFlow.error("Missing last transaction")
+            throw AppStoreRestoreFlowErrorV2.missingAccountOrTransactions
+        }
+
+        _ = try await subscriptionManager.getSubscriptionFrom(lastTransactionJWSRepresentation: lastTransactionJWSRepresentation)
     }
 }

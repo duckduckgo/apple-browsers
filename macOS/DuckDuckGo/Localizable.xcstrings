@@ -27426,7 +27426,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Dadurch wirst du von diesen Websites abgemeldet, die Website-Einstellungen werden zurückgesetzt und gespeicherte Sitzungen werden entfernt. Cookies und Daten einer „Fireproof“-Website werden nicht gelöscht."
           }
         },
         "en" : {
@@ -27438,43 +27438,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Esto cerrará tu sesión en estos sitios, restablecerá las preferencias del sitio y eliminará las sesiones guardadas. Las cookies y los datos del sitio Fireproof no se eliminarán."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Ceci vous déconnectera de ces sites, réinitialisera les préférences des sites et supprimera les sessions enregistrées. Les cookies et les données Fireproof des sites ne seront pas supprimés."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "In questo modo potrai uscire da questi siti, reimpostare le preferenze del sito e rimuovere le sessioni salvate. I cookie e i dati del sito Fireproof non saranno eliminati."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Je wordt nu afgemeld bij deze sites, je sitevoorkeuren worden opnieuw ingesteld en opgeslagen sessies worden verwijderd. Fireproof site-cookies en -gegevens worden niet verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Spowoduje to wylogowanie z tych witryn, zresetowanie preferencji dotyczących witryn i usunięcie zapisanych sesji. Pliki cookie i dane witryn oznaczonych jako Fireproof nie zostaną usunięte."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Esta ação termina a tua sessão nestes sites, repõe as preferências dos sites e remove as sessões guardadas. Os cookies e dados dos sites Fireproof não serão eliminados."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+            "value" : "Вы выйдете из учетных записей на этих сайтах, настройки сайтов будут сброшены, а сохраненные сеансы — удалены. Куки-файлы и данные «огнеупорных» сайтов не удаляются."
           }
         }
       }
@@ -27726,7 +27726,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Verlauf löschen?"
           }
         },
         "en" : {
@@ -27738,43 +27738,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "¿Borrar historial?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Supprimer l'historique ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Cancellare la cronologia?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Geschiedenis verwijderen?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Usunąć historię?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Apagar histórico?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete history?"
+            "value" : "Удалить историю?"
           }
         }
       }
@@ -28626,115 +28626,175 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verlaufsseite anzeigen"
+            "value" : "Verlauf anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "View History Page"
+            "value" : "View History"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ver tu página de historial"
+            "value" : "Ver historial"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voir la page d'historique"
+            "value" : "Voir l'historique"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visualizza la pagina Cronologia"
+            "value" : "Visualizza cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bekijk de geschiedenispagina"
+            "value" : "Geschiedenis weergeven"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wyświetl stronę historii"
+            "value" : "Wyświetl historię"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ver página de histórico"
+            "value" : "Ver histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просмотреть страницу истории"
+            "value" : "Просмотреть историю"
           }
         }
       }
     },
-    "history.view.onboarding.message" : {
-      "comment" : "Message for the history view onboarding popover",
+    "history.view.onboarding.local.storage.explanation" : {
+      "comment" : "Message for the history view onboarding popover explaining that history is kept locally.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir haben eine spezielle Verlaufsseite hinzugefügt, die es dir erleichtert, die von dir besuchten Seiten anzuzeigen, erneut zu besuchen und zu löschen."
+            "value" : "Der Verlauf wird nur auf deinem Gerät gespeichert und kann jederzeit mit dem Fire Button gelöscht werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+            "value" : "History is only stored on your device and can be deleted at any time using the Fire Button."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hemos añadido una página de historial exclusiva, para que puedas ver, volver a abrir y borrar los sitios que has visitado anteriormente de forma más sencilla."
+            "value" : "El historial solo se almacena en tu dispositivo y se puede eliminar en cualquier momento usando el Fire Button."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nous avons ajouté une page d’historique dédiée, ce qui vous permet de voir, de revisiter et d’effacer plus facilement les sites que vous avez déjà consultés."
+            "value" : "L'historique est uniquement stocké sur votre appareil et peut être supprimé à tout moment à l'aide du Fire Button."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abbiamo aggiunto una pagina dedicata alla cronologia che ti consente di visualizzare, rivisitare e cancellare i siti che hai visitato in precedenza."
+            "value" : "La cronologia è memorizzata solo sul tuo dispositivo e può essere cancellata in qualsiasi momento usando il Fire Button."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We hebben een speciale geschiedenispagina toegevoegd. Zo kun je makkelijker de sites die je eerder hebt bezocht bekijken, opnieuw bezoeken en wissen."
+            "value" : "Je geschiedenis wordt alleen op je apparaat opgeslagen en kan op elk moment worden gewist met de Fire Button."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaliśmy specjalną stronę historii, dzięki której możesz łatwiej przeglądać wcześniej odwiedzone strony, przeglądać je i usuwać."
+            "value" : "Historia jest przechowywana tylko na Twoim urządzeniu i można ją usunąć w dowolnym momencie za pomocą przycisku Fire Button."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionámos uma página de histórico dedicada para ser mais fácil ver, revisitar e limpar os sites que visitaste anteriormente."
+            "value" : "O histórico é guardado apenas no teu dispositivo e pode ser apagado em qualquer altura com o Fire Button."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Мы добавили отдельную страницу «История», где можно легко просмотреть, заново открыть и удалить ранее посещенные сайты."
+            "value" : "История хранится только на вашем устройстве, и ее можно в любой момент стереть с помощью кнопки Fire Button."
+          }
+        }
+      }
+    },
+    "history.view.onboarding.message" : {
+      "comment" : "Message for the history view onboarding popover. Please make sure to keep ••• intact. %@ will be replaced with a keyboard shortcut for accessing history (e.g. '⌘Y').",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir haben eine neue Verlaufsseite hinzugefügt, um die Suche im Verlauf und seine Verwaltung zu vereinfachen. Greife jederzeit über das Menü ••• oder das „Verlauf“-Menü oder durch Drücken von %@ darauf zu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We added a new History page for easier history searching and management. Access it at any time from the ••• or History menu, or by pressing %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemos añadido una nueva página de historial para facilitar la búsqueda y gestión del historial. Accede a él en cualquier momento desde el menú ••• o el menú Historial, o pulsando %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous avons ajouté une nouvelle page Historique pour faciliter la recherche et la gestion de l'historique. Vous pouvez y accéder à tout moment à partir du menu ••• ou Historique, ou en appuyant sur %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbiamo aggiunto una nuova pagina Cronologia per facilitare la ricerca e la gestione della cronologia. Accedi in qualsiasi momento dal menu ••• o Cronologia, oppure premendo %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We hebben een nieuwe pagina Geschiedenis toegevoegd om je geschiedenis gemakkelijker te doorzoeken en beheren. Open hem via het menu ••• of het menu Geschiedenis, of door op %@ te drukken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaliśmy nową stronę Historia, aby ułatwić jej przeszukiwanie i zarządzanie historią. Możesz uzyskać do niej dostęp w dowolnym momencie z menu ••• lub Historia, albo naciskając %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionámos uma nova página de Histórico para facilitar a pesquisa e gestão do histórico. Acede a qualquer momento a partir do atalho ••• ou do menu Histórico, ou prime %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для удобства поиска и управления журналом посещений мы добавили новую страницу \"История\". Ее всегда можно открыть из меню \"История\" (•••) или с помощью сочетания клавиш %@."
           }
         }
       }
@@ -28746,55 +28806,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwalte deinen Verlauf"
+            "value" : "Einfacheres Verlaufsmanagement"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Your History"
+            "value" : "Easier History Management"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestiona tu historial"
+            "value" : "Gestión de historial más sencilla"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gérer votre historique"
+            "value" : "Gestion simplifiée de l'historique"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestisci la cronologia"
+            "value" : "Gestione più semplice della cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beheer je geschiedenis"
+            "value" : "Eenvoudiger beheer van Geschiedenis"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zarządzanie historią"
+            "value" : "Łatwiejsze zarządzanie historią"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gere o teu histórico"
+            "value" : "Gestão mais fácil do histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Управление историей"
+            "value" : "Упрощенное управление историей"
           }
         }
       }
@@ -43570,10 +43630,58 @@
       "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle im aktuellen Fenster öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open All in Current Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir todo en la ventana actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ouvrir dans la fenêtre actuelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutto nella finestra corrente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles openen in het huidige venster"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz wszystko w bieżącym oknie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir tudo na janela atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть все в текущем окне"
           }
         }
       }
@@ -43621,7 +43729,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open All in New Fire Window"
+            "value" : "Otwórz wszystko w nowym oknie Fire Window"
           }
         },
         "pt" : {
@@ -62509,7 +62617,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ustaw jako domyślne"
+            "value" : "Ustaw jako domyślną"
           }
         },
         "pt" : {

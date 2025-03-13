@@ -27,6 +27,13 @@ final class HistoryViewOnboardingPopover: NSPopover {
         self.ctaCallback = ctaCallback
         super.init()
         self.behavior = .semitransient
+        /// popover frame used for positioning is 26px wider than `contentSize.width`
+        /// and makes the popover appear partially outside of the window.
+        /// Subtract 12px to ensure that the popover is fully contained within the window.
+        ///
+        /// Height is an arbitrary value and it doesn't influence positioning. It will be
+        /// updated with the actual height of the popover's SwiftUI view.
+        contentSize = .init(width: HistoryViewOnboardingView.Const.width - 12, height: 200)
         setupContentController()
     }
 

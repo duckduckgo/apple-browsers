@@ -59,14 +59,17 @@ public final class AIChatViewController: UIViewController {
     ///   - webViewConfiguration: A `WKWebViewConfiguration` object used to configure the web view.
     ///   - requestAuthHandler: A `AIChatRequestAuthorizationHandling` object to handle decide policy callbacks
     ///   - inspectableWebView: Boolean indicating if the webView should be inspectable
+    ///   - downloadsPath: URL indicating the path where downloads should be saved
     public convenience init(settings: AIChatSettingsProvider,
                             webViewConfiguration: WKWebViewConfiguration,
                             requestAuthHandler: AIChatRequestAuthorizationHandling,
-                            inspectableWebView: Bool) {
+                            inspectableWebView: Bool,
+                            downloadsPath: URL) {
         let chatModel = AIChatViewModel(webViewConfiguration: webViewConfiguration,
                                         settings: settings,
                                         requestAuthHandler: requestAuthHandler,
-                                        inspectableWebView: inspectableWebView)
+                                        inspectableWebView: inspectableWebView,
+                                        downloadsPath: downloadsPath)
         self.init(chatModel: chatModel)
     }
 
@@ -125,7 +128,9 @@ extension AIChatViewController {
     private func addWebViewController() {
         guard webViewController == nil else { return }
 
-        let viewController = AIChatWebViewController(chatModel: chatModel)
+        let downloadsHandler = DownloadHandler(downloadsPath: chatModel.downloadsPath)
+        let viewController = AIChatWebViewController(chatModel: chatModel,
+                                                     downloadHandler: downloadsHandler)
         viewController.delegate = self
         webViewController = viewController
 

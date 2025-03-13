@@ -22,17 +22,22 @@ import WebKit
 typealias DownloadCompletionHandler = (Result<String, Error>) -> Void
 
 protocol DownloadHandling: WKDownloadDelegate {
+    var downloadsPath: URL { get set }
     var onDownloadComplete: DownloadCompletionHandler? { get set }
 }
 
 final class DownloadHandler: NSObject, DownloadHandling {
     var onDownloadComplete: DownloadCompletionHandler?
+    var downloadsPath: URL
     private var filename: String?
+
+    init(downloadsPath: URL) {
+        self.downloadsPath = downloadsPath
+    }
 
     func download(_ download: WKDownload, decideDestinationUsing response: URLResponse, suggestedFilename: String) async -> URL? {
         filename = suggestedFilename
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsDirectory.appendingPathComponent(suggestedFilename)
+        return downloadsPath.appendingPathComponent(suggestedFilename)
     }
 
     func downloadDidFinish(_ download: WKDownload) {

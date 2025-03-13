@@ -34,9 +34,12 @@ final class AIChatViewControllerManager {
     private var payloadHandler = AIChatPayloadHandler()
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private weak var userContentController: UserContentController?
+    private let downloadsDirectoryHandler: DownloadsDirectoryHandling
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.downloadsDirectoryHandler = downloadsDirectoryHandler
     }
 
     @MainActor
@@ -62,12 +65,15 @@ final class AIChatViewControllerManager {
         let userContentController = UserContentController()
         userContentController.delegate = self
 
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+
         webviewConfiguration.userContentController = userContentController
         self.userContentController = userContentController
         let aiChatViewController = AIChatViewController(settings: settings,
                                                         webViewConfiguration: webviewConfiguration,
                                                         requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
-                                                        inspectableWebView: inspectableWebView)
+                                                        inspectableWebView: inspectableWebView,
+                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory)
         aiChatViewController.delegate = self
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(

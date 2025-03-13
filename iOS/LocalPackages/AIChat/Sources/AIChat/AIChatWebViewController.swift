@@ -45,7 +45,7 @@ final class AIChatWebViewController: UIViewController {
         return activityIndicator
     }()
 
-    init(chatModel: AIChatViewModeling, downloadHandler: DownloadHandling = DownloadHandler()) {
+    init(chatModel: AIChatViewModeling, downloadHandler: DownloadHandling) {
         self.chatModel = chatModel
         self.downloadHandler = downloadHandler
         super.init(nibName: nil, bundle: nil)

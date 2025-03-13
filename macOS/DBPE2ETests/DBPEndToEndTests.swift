@@ -125,7 +125,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: profileSavedExpectation,
                                withTimeout: 3,
                                whenCondition: {
-            autoreleasepool {
+            autoreleasepool { // All autoreleasepool uses have been added as part of https://app.asana.com/0/1193060753475688/1209661386167901 in order to bring down the memory usage from 20Gb+ to 60-70Mb
                 try! database.fetchProfile() != nil
             }
         })

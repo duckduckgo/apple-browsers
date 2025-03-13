@@ -31,7 +31,6 @@ public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
         return restoreAccountFromPastPurchaseResult
     }
 
-
     public var restoreSubscriptionAfterExpiredRefreshTokenCalled: Bool = false
     public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
         restoreSubscriptionAfterExpiredRefreshTokenCalled = true

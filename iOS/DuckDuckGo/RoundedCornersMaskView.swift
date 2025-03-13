@@ -135,10 +135,8 @@ final class RoundedCornersMaskView: UIView {
             cornersToApply = [.topLeft, .topRight, .bottomLeft, .bottomRight]
         }
 
-        for (index, corner) in cornersToApply.enumerated() {
-            if index < cornerViews.count {
-                applyCornerMask(to: cornerViews[index], corner: corner, cornerRadius: cornerRadius)
-            }
+        for (index, corner) in cornersToApply.enumerated() where index < cornerViews.count {
+            applyCornerMask(to: cornerViews[index], corner: corner, cornerRadius: cornerRadius)
         }
     }
 

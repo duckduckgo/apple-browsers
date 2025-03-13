@@ -381,9 +381,17 @@ class TabViewController: UIViewController {
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
-        return DuckPlayerNavigationHandler(duckPlayer: duckPlayer,
+        
+        if duckPlayer.settings.nativeUI {
+            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
+        } else {
+            return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
+                                         appSettings: appSettings,
+                                         tabNavigationHandler: self)
+        }
+        
     }()
 
     let contextualOnboardingPresenter: ContextualOnboardingPresenting

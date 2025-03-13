@@ -68,6 +68,53 @@ enum DuckPlayerMode: Equatable, Codable, CustomStringConvertible, CaseIterable {
     }
 }
 
+/// Represents the different modes for Duck Player operation.
+enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, CaseIterable {
+    case auto, ask, never
+
+    private static let autoString = "auto"
+    private static let askString = "ask"
+    private static let neverString = "never"
+
+    var description: String {
+        switch self {
+        case .auto:
+            return UserText.duckPlayerNativeYoutubeAutoLabel
+        case .ask:
+            return UserText.duckPlayerNativeYoutubeAskLabel
+        case .never:
+            return UserText.duckPlayerNativeYoutubeNeverLabel
+        }
+    }
+
+    var stringValue: String {
+        switch self {
+        case .auto:
+            return Self.autoString
+        case .ask:
+            return Self.askString
+        case .never:
+            return Self.neverString
+        }
+    }
+
+    /// Initializes a `NativeDuckPlayerYoutubeMode` from a string value.
+    ///
+    /// - Parameter stringValue: The string representation of the mode.
+    init?(stringValue: String) {
+        switch stringValue {
+        case Self.autoString:
+            self = .auto
+        case Self.askString:
+            self = .ask
+        case Self.neverString:
+            self = .never
+        default:
+            return nil
+        }
+    }
+}
+
 // Custom Error privacy config settings
 struct CustomErrorSettings: Codable {
     let signInRequiredSelector: String
@@ -93,6 +140,12 @@ protocol DuckPlayerSettings: AnyObject {
 
     /// Determines if the native UI should be used
     var nativeUI: Bool { get }
+
+    /// Determines if the native UI should be used for SERP
+    var nativeUISERPEnabled: Bool { get }
+
+    /// Determines if the native UI should be used for Youtube
+    var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get }
 
     /// Autoplay Videos when opening
     var autoplay: Bool { get }
@@ -203,6 +256,20 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
         return appSettings.duckPlayerNativeUI && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    // Determines if DuckPlayer Native is enabled for SERP
+    var nativeUISERPEnabled: Bool {
+        return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+    }
+
+    // Determines the Youtube mode for DuckPlayer Native
+    var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode {
+        if isFeatureEnabled {
+            return appSettings.duckPlayerNativeYoutubeMode
+        } else {
+            return .never
+        }
     }
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)

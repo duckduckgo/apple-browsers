@@ -29,6 +29,8 @@ struct SettingsDuckPlayerView: View {
     /// This property ensures that the associated action is only triggered once per viewing session, preventing redundant executions.
     @State private var hasFiredSettingsDisplayedPixel = false
 
+    @State private var showNewTabAlert = false
+
     @EnvironmentObject var viewModel: SettingsViewModel
     var body: some View {
         List {
@@ -68,32 +70,63 @@ struct SettingsDuckPlayerView: View {
             }
 
             Section {
-                SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
-                                       options: DuckPlayerMode.allCases,
-                                       selectedOption: viewModel.duckPlayerModeBinding)
-                .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                
-                if (viewModel.state.duckPlayerOpenInNewTabEnabled || viewModel.isInternalUser) && !viewModel.state.duckPlayerNativeUI {
-                        SettingsCellView(label: UserText.settingsOpenDuckPlayerNewTabLabel,
-                                         accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))
-                    
+                if !viewModel.state.duckPlayerNativeUI {
+                    SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
+                                        options: DuckPlayerMode.allCases,
+                                        selectedOption: viewModel.duckPlayerModeBinding)
+                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+
+                    if viewModel.state.duckPlayerOpenInNewTabEnabled {
+                            SettingsCellView(label: UserText.settingsOpenDuckPlayerNewTabLabel,
+                                            accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))
+                    }
                 }
-                
+
             }
-            
+
             /// Experimental features for internal users
             if viewModel.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone {
-                Section("Experimental (Internal only)", content: {
-                    SettingsCellView(label: "Use Native UI (Alpha)", accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
-                    if viewModel.appSettings.duckPlayerNativeUI {
-                        SettingsCellView(label: UserText.duckPlayerNativeAutoplayVideos, accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
+
+                if viewModel.appSettings.duckPlayerNativeUI {
+                    Section(footer: Text(UserText.duckPlayerNativeUseOnSERPFooter)) {
+                        SettingsCellView(label: UserText.duckPlayerNativeUseOnSERPLabel,
+                                        accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                     }
+
+                    Section(footer: Text(UserText.duckPlayerNativeUseOnYoutubeFooter)) {
+                       SettingsPickerCellView(label: UserText.duckPlayerNativeUseOnYoutubeLabel,
+                                        options: NativeDuckPlayerYoutubeMode.allCases,
+                                        selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    }
+
+                    Section {
+                        SettingsCellView(label: UserText.duckPlayerNativeAutoplayVideos,
+                                        accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    }
+
+                }
+
+                Section("Experimental", content: {
+                    SettingsCellView(label: "Use Native UI",
+                                   accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
+                        .onChange(of: viewModel.state.duckPlayerNativeUI) { _ in
+                            showNewTabAlert = true
+                        }
                 })
+
             }
         }
         .applySettingsListModifiers(title: UserText.duckPlayerFeatureName,
                                     displayMode: .inline,
                                     viewModel: viewModel)
+        .alert("Note to testers", isPresented: $showNewTabAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect.")
+        }
     }
 }
 

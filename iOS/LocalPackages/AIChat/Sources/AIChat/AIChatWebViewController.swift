@@ -186,7 +186,11 @@ extension AIChatWebViewController: WKNavigationDelegate {
     }
     
     private func updateLoadingState(isLoading: Bool) {
-        isLoading ? loadingView.startAnimating() : loadingView.stopAnimating()
+        if isLoading {
+            loadingView.startAnimating()
+        } else {
+            loadingView.stopAnimating()
+        }
     }
 }
 

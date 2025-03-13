@@ -1,5 +1,5 @@
 //
-//  DownloadToastView.swift
+//  ToastView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 private enum Constants {
     static let cornerRadius: CGFloat = 8

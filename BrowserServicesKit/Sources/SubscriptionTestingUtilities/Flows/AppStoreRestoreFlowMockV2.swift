@@ -31,14 +31,12 @@ public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
         return restoreAccountFromPastPurchaseResult
     }
 
+    public var restoreSubscriptionAfterExpiredRefreshTokenError: SubscriptionManagerError? = nil
     public var restoreSubscriptionAfterExpiredRefreshTokenCalled: Bool = false
     public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
         restoreSubscriptionAfterExpiredRefreshTokenCalled = true
-        switch restoreAccountFromPastPurchaseResult! {
-        case .success:
-            break
-        case .failure(let error):
-            throw error
+        if let restoreSubscriptionAfterExpiredRefreshTokenError {
+            throw restoreSubscriptionAfterExpiredRefreshTokenError
         }
     }
 }

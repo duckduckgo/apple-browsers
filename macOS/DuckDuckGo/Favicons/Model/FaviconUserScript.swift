@@ -21,6 +21,7 @@ import UserScript
 
 protocol FaviconUserScriptDelegate: AnyObject {
 
+    @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
                            for documentUrl: URL)

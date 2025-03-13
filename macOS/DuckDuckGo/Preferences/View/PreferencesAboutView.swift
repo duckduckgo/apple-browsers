@@ -230,8 +230,12 @@ extension Preferences {
                     Image(nsImage: .criticalUpdateNotificationInfo)
                         .foregroundColor(.red)
                 } else {
-                    ProgressView()
-                        .scaleEffect(0.6)
+                    if #available(macOS 13.0, *) {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                    } else {
+                        ProgressView()
+                    }
                 }
             }
         }

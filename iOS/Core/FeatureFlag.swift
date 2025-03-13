@@ -90,6 +90,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1206488453854252/1208706841336530
     case privacyProOnboardingCTAMarch25
+
+    /// https://app.asana.com/0/1206329551987282/1209130794450271
+    case onboardingSetAsDefaultBrowser
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -99,6 +103,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             PrivacyProFreeTrialExperimentCohort.self
         case .privacyProOnboardingCTAMarch25:
             PrivacyProOnboardingCTAMarch25Cohort.self
+        case .onboardingSetAsDefaultBrowser:
+            OnboardingSetAsDefaultBrowserCohort.self
         default:
             nil
         }
@@ -112,6 +118,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
+        case .onboardingSetAsDefaultBrowser:
+            if #available(iOS 18.3, *) {
+                return true
+            } else {
+                return false
+            }
         default:
             return false
         }
@@ -207,6 +219,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
+        case .onboardingSetAsDefaultBrowser:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         }
     }
 }
@@ -226,6 +240,13 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
 }
 
 public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
+    case control
+    /// Treatment cohort where the experiment modifications are applied.
+    case treatment
+}
+
+public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

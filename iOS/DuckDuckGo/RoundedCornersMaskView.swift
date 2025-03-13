@@ -19,26 +19,35 @@
 
 import UIKit
 
+/**
+ * RoundedCornerView
+ *
+ * A UIView subclass that applies quarter-circle cutout masks to specified corners.
+ *
+ * - Set `cornerRadius` to control the size of the cutouts
+ * - Use `cornersPosition` (.top, .bottom, or .all) to specify which corners to mask
+ * - Provide views in `cornerViews` array in order: top-left, top-right, bottom-left, bottom-right
+ *
+ */
 final class RoundedCornersMaskView: UIView {
 
-    // MARK: - Nested Types
-    enum Corners {
+    enum CornersPosition {
+
         case top
         case bottom
         case all
+
     }
 
-    // MARK: - Properties
     private let cornerRadius: CGFloat
     private let cornerColor: UIColor
-    private let corners: Corners
+    private let cornersPosition: CornersPosition
     private var cornerViews: [UIView] = []
 
-    // MARK: - Initialization
-    init(cornerRadius: CGFloat, cornerColor: UIColor, corners: Corners = .top) {
+    init(cornerRadius: CGFloat, cornerColor: UIColor, cornersPosition: CornersPosition = .top) {
         self.cornerRadius = cornerRadius
         self.cornerColor = cornerColor
-        self.corners = corners
+        self.cornersPosition = cornersPosition
         super.init(frame: .zero)
         setupView()
     }
@@ -46,12 +55,11 @@ final class RoundedCornersMaskView: UIView {
     required init?(coder: NSCoder) {
         self.cornerRadius = 20
         self.cornerColor = .white
-        self.corners = .top
+        self.cornersPosition = .top
         super.init(coder: coder)
         setupView()
     }
 
-    // MARK: - Setup
     private func setupView() {
         backgroundColor = .clear
         isUserInteractionEnabled = false
@@ -64,10 +72,9 @@ final class RoundedCornersMaskView: UIView {
         cornerViews.removeAll()
 
         // Determine which corners to create
-        let shouldCreateTopCorners = (corners == .top || corners == .all)
-        let shouldCreateBottomCorners = (corners == .bottom || corners == .all)
+        let shouldCreateTopCorners = (cornersPosition == .top || cornersPosition == .all)
+        let shouldCreateBottomCorners = (cornersPosition == .bottom || cornersPosition == .all)
 
-        // Create top corners if needed
         if shouldCreateTopCorners {
             let leftTopCorner = createCornerView()
             let rightTopCorner = createCornerView()
@@ -87,7 +94,6 @@ final class RoundedCornersMaskView: UIView {
             cornerViews.append(contentsOf: [leftTopCorner, rightTopCorner])
         }
 
-        // Create bottom corners if needed
         if shouldCreateBottomCorners {
             let leftBottomCorner = createCornerView()
             let rightBottomCorner = createCornerView()
@@ -119,36 +125,66 @@ final class RoundedCornersMaskView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // Apply masks to corner views
-        if corners == .top || corners == .all {
-            if cornerViews.count >= 2 {
-                applyTopLeftMask(to: cornerViews[0])
-                applyTopRightMask(to: cornerViews[1])
+        var cornersToApply: [Corner] = []
+        switch cornersPosition {
+        case .top:
+            cornersToApply = [.topLeft, .topRight]
+        case .bottom:
+            cornersToApply = [.bottomLeft, .bottomRight]
+        case .all:
+            cornersToApply = [.topLeft, .topRight, .bottomLeft, .bottomRight]
+        }
+
+        for (index, corner) in cornersToApply.enumerated() {
+            if index < cornerViews.count {
+                applyCornerMask(to: cornerViews[index], corner: corner, cornerRadius: cornerRadius)
+            }
+        }
+    }
+
+    private enum Corner {
+
+        case topLeft, topRight, bottomLeft, bottomRight
+
+        func arcCenter(radius: CGFloat) -> (x: CGFloat, y: CGFloat) {
+            switch self {
+            case .topLeft: return (radius, radius)
+            case .topRight: return (0, radius)
+            case .bottomLeft: return (radius, 0)
+            case .bottomRight: return (0, 0)
             }
         }
 
-        if corners == .bottom || corners == .all {
-            let startIndex = (corners == .all) ? 2 : 0
-            if cornerViews.count >= startIndex + 2 {
-                applyBottomLeftMask(to: cornerViews[startIndex])
-                applyBottomRightMask(to: cornerViews[startIndex + 1])
+        var angles: (start: CGFloat, end: CGFloat) {
+            switch self {
+            case .topLeft: return (.pi, .pi * 1.5)
+            case .topRight: return (.pi * 1.5, .pi * 2)
+            case .bottomLeft: return (.pi * 0.5, .pi)
+            case .bottomRight: return (0, .pi * 0.5)
             }
         }
+
     }
 
-    private func applyTopLeftMask(to view: UIView) {
+    private func applyCornerMask(to view: UIView, corner: Corner, cornerRadius: CGFloat) {
         let maskLayer = CAShapeLayer()
 
         // Create a path for the entire rectangle
         let path = UIBezierPath(rect: view.bounds)
 
+        // Get corner-specific parameters
+        let center = corner.arcCenter(radius: cornerRadius)
+        let angles = corner.angles
+
         // Create a path for the quarter circle to cut out
-        let circlePath = UIBezierPath(arcCenter: CGPoint(x: cornerRadius, y: cornerRadius),
-                                     radius: cornerRadius,
-                                     startAngle: .pi,
-                                     endAngle: .pi * 1.5,
-                                     clockwise: true)
-        circlePath.addLine(to: CGPoint(x: cornerRadius, y: cornerRadius))
+        let circlePath = UIBezierPath(
+            arcCenter: CGPoint(x: center.x, y: center.y),
+            radius: cornerRadius,
+            startAngle: angles.start,
+            endAngle: angles.end,
+            clockwise: true
+        )
+        circlePath.addLine(to: CGPoint(x: center.x, y: center.y))
         circlePath.close()
 
         // Append the circle path to cut it out from the rectangle
@@ -158,69 +194,4 @@ final class RoundedCornersMaskView: UIView {
         view.layer.mask = maskLayer
     }
 
-    private func applyTopRightMask(to view: UIView) {
-        let maskLayer = CAShapeLayer()
-
-        // Create a path for the entire rectangle
-        let path = UIBezierPath(rect: view.bounds)
-
-        // Create a path for the quarter circle to cut out
-        let circlePath = UIBezierPath(arcCenter: CGPoint(x: 0, y: cornerRadius),
-                                     radius: cornerRadius,
-                                     startAngle: .pi * 1.5,
-                                     endAngle: .pi * 2,
-                                     clockwise: true)
-        circlePath.addLine(to: CGPoint(x: 0, y: cornerRadius))
-        circlePath.close()
-
-        // Append the circle path to cut it out from the rectangle
-        path.append(circlePath)
-        maskLayer.path = path.cgPath
-        maskLayer.fillRule = .evenOdd
-        view.layer.mask = maskLayer
-    }
-
-    private func applyBottomLeftMask(to view: UIView) {
-        let maskLayer = CAShapeLayer()
-
-        // Create a path for the entire rectangle
-        let path = UIBezierPath(rect: view.bounds)
-
-        // Create a path for the quarter circle to cut out
-        let circlePath = UIBezierPath(arcCenter: CGPoint(x: cornerRadius, y: 0),
-                                     radius: cornerRadius,
-                                     startAngle: .pi * 0.5,
-                                     endAngle: .pi,
-                                     clockwise: true)
-        circlePath.addLine(to: CGPoint(x: cornerRadius, y: 0))
-        circlePath.close()
-
-        // Append the circle path to cut it out from the rectangle
-        path.append(circlePath)
-        maskLayer.path = path.cgPath
-        maskLayer.fillRule = .evenOdd
-        view.layer.mask = maskLayer
-    }
-
-    private func applyBottomRightMask(to view: UIView) {
-        let maskLayer = CAShapeLayer()
-
-        // Create a path for the entire rectangle
-        let path = UIBezierPath(rect: view.bounds)
-
-        // Create a path for the quarter circle to cut out
-        let circlePath = UIBezierPath(arcCenter: CGPoint(x: 0, y: 0),
-                                     radius: cornerRadius,
-                                     startAngle: 0,
-                                     endAngle: .pi * 0.5,
-                                     clockwise: true)
-        circlePath.addLine(to: CGPoint(x: 0, y: 0))
-        circlePath.close()
-
-        // Append the circle path to cut it out from the rectangle
-        path.append(circlePath)
-        maskLayer.path = path.cgPath
-        maskLayer.fillRule = .evenOdd
-        view.layer.mask = maskLayer
-    }
 }

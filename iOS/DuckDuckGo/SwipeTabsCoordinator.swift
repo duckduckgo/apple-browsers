@@ -415,7 +415,7 @@ class OmniBarCell: UICollectionViewCell {
         if ExperimentalThemingManager().isExperimentalThemingEnabled,
            AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
            isPortrait {
-            let maskView = RoundedCornersMaskView(cornerRadius: 12.0, cornerColor: .systemPink, corners: .bottom)
+            let maskView = RoundedCornersMaskView(cornerRadius: 12.0, cornerColor: .systemPink, cornersPosition: .bottom)
             addSubview(maskView)
             roundCornersMaskView = maskView
 

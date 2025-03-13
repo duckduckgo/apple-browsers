@@ -118,6 +118,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     func unregister(_ windowController: MainWindowController) {
+        pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
+
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
             Logger.general.error("WindowControllersManager: Window Controller not registered")
             return

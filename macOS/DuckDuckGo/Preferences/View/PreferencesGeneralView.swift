@@ -131,8 +131,6 @@ extension Preferences {
 
                     PreferencePaneSubSection {
 
-                        TextMenuItemCaption(UserText.pinnedTabsDescription)
-
                         Picker(selection: Binding(
                             get: { tabsModel.sharedPinnedTabs },
                             set: { newValue in

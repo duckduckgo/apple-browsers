@@ -734,7 +734,6 @@ struct UserText {
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned Tabs", comment: "Title for Pinned Tabs section in settings")
-    static let pinnedTabsDescription = NSLocalizedString("preferences-pinned-tabs.description", value: "Pinned tabs behaviour in browser windows.", comment: "Pinned tabs Settings section description")
     static let sharedPinnedTabs = NSLocalizedString("preferences-pinned-tabs-shared", value: "Shared across all windows", comment: "Option for pinned tabs behavior")
     static let perWindowPinnedTabs = NSLocalizedString("preferences-pinned-tabs-per-window", value: "Different in each window", comment: "Option for pinned tabs behavior")
     static let pinnedTabsWarning = NSLocalizedString("preferences-pinned-tabs-warning", value: "Would you like to merge pinned tabs from all existing windows?", comment: "Warning before switching from per window pinned tabs to shared pinned tabs")

@@ -43,6 +43,7 @@ public actor DeadTokenRecoverer {
         case .stripe:
             Logger.subscription.debug("Subscription purchased via Stripe can't be restored automatically, notifying the user...")
             NotificationCenter.default.post(name: .expiredRefreshTokenDetected, object: self, userInfo: nil)
+            throw SubscriptionManagerError.tokenRefreshFailed(error: nil)
         }
     }
 

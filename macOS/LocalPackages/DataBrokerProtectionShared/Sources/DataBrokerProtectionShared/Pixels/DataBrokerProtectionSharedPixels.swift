@@ -1,7 +1,7 @@
 //
-//  DataBrokerProtectionPixels.swift
+//  DataBrokerProtectionSharedPixels.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +17,9 @@
 //
 
 import Foundation
-import Common
-import BrowserServicesKit
-import Configuration
 import PixelKit
-import DataBrokerProtectionShared
+import Common
+import Configuration
 
 enum ErrorCategory: Equatable {
     case networkError
@@ -43,7 +41,8 @@ enum ErrorCategory: Equatable {
     }
 }
 
-public enum DataBrokerProtectionPixels {
+public enum DataBrokerProtectionSharedPixels {
+
     struct Consts {
         static let dataBrokerParamKey = "data_broker"
         static let dataBrokerVersionKey = "broker_version"
@@ -116,36 +115,6 @@ public enum DataBrokerProtectionPixels {
     case optOutSuccess(dataBroker: String, attemptId: UUID, duration: Double, brokerType: DataBrokerHierarchy)
     case optOutFailure(dataBroker: String, dataBrokerVersion: String, attemptId: UUID, duration: Double, stage: String, tries: Int, emailPattern: String?, actionID: String?)
 
-    // Backgrond Agent events
-    case backgroundAgentStarted
-    case backgroundAgentStartedStoppingDueToAnotherInstanceRunning
-
-    // IPC server events
-    case ipcServerProfileSavedCalledByApp
-    case ipcServerProfileSavedReceivedByAgent
-    case ipcServerProfileSavedXPCError(error: Error?)
-    case ipcServerImmediateScansInterrupted
-    case ipcServerImmediateScansFinishedWithoutError
-    case ipcServerImmediateScansFinishedWithError(error: Error?)
-
-    case ipcServerAppLaunchedCalledByApp
-    case ipcServerAppLaunchedReceivedByAgent
-    case ipcServerAppLaunchedXPCError(error: Error?)
-    case ipcServerAppLaunchedScheduledScansBlocked
-    case ipcServerAppLaunchedScheduledScansInterrupted
-    case ipcServerAppLaunchedScheduledScansFinishedWithoutError
-    case ipcServerAppLaunchedScheduledScansFinishedWithError(error: Error?)
-
-    // DataBrokerProtection User Notifications
-    case dataBrokerProtectionNotificationSentFirstScanComplete
-    case dataBrokerProtectionNotificationOpenedFirstScanComplete
-    case dataBrokerProtectionNotificationSentFirstRemoval
-    case dataBrokerProtectionNotificationOpenedFirstRemoval
-    case dataBrokerProtectionNotificationScheduled2WeeksCheckIn
-    case dataBrokerProtectionNotificationOpened2WeeksCheckIn
-    case dataBrokerProtectionNotificationSentAllRecordsRemoved
-    case dataBrokerProtectionNotificationOpenedAllRecordsRemoved
-
     // Scan/Search pixels
     case scanSuccess(dataBroker: String, matchesFound: Int, duration: Double, tries: Int, isImmediateOperation: Bool)
     case scanFailed(dataBroker: String, dataBrokerVersion: String, duration: Double, tries: Int, isImmediateOperation: Bool)
@@ -170,21 +139,9 @@ public enum DataBrokerProtectionPixels {
     case optOutJobAt21DaysConfirmed(dataBroker: String)
     case optOutJobAt21DaysUnconfirmed(dataBroker: String)
 
-    // Web UI - loading errors
-    case webUILoadingStarted(environment: String)
-    case webUILoadingFailed(errorCategory: String)
-    case webUILoadingSuccess(environment: String)
-
     // Backend service errors
     case generateEmailHTTPErrorDaily(statusCode: Int, environment: String, wasOnWaitlist: Bool)
     case emptyAccessTokenDaily(environment: String, wasOnWaitlist: Bool, callSite: BackendServiceCallSite)
-
-    // Home View
-    case homeViewShowNoPermissionError
-    case homeViewShowWebUI
-    case homeViewShowBadPathError
-    case homeViewCTAMoveApplicationClicked
-    case homeViewCTAGrantPermissionClicked
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
@@ -216,7 +173,7 @@ public enum DataBrokerProtectionPixels {
     case weeklyChildBrokerOrphanedOptOuts(dataBrokerName: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
 }
 
-extension DataBrokerProtectionPixels: PixelKitEvent {
+extension DataBrokerProtectionSharedPixels: PixelKitEvent {
     public var name: String {
         switch self {
         case .parentChildMatches: return "m_mac_dbp_macos_parent-child-broker-matches"
@@ -256,43 +213,6 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
         case .secureVaultKeyStoreUpdateError: return "m_mac_dbp_secure_vault_keystore_update_error"
         case .secureVaultError: return "m_mac_dbp_secure_vault_error"
 
-        case .backgroundAgentStarted: return "m_mac_dbp_background-agent_started"
-        case .backgroundAgentStartedStoppingDueToAnotherInstanceRunning: return "m_mac_dbp_background-agent_started_stopping-due-to-another-instance-running"
-
-            // IPC Server Pixels
-        case .ipcServerProfileSavedCalledByApp: return "m_mac_dbp_ipc-server_profile-saved_called-by-app"
-        case .ipcServerProfileSavedReceivedByAgent: return "m_mac_dbp_ipc-server_profile-saved_received-by-agent"
-        case .ipcServerProfileSavedXPCError: return "m_mac_dbp_ipc-server_profile-saved_xpc-error"
-        case .ipcServerImmediateScansInterrupted: return "m_mac_dbp_ipc-server_immediate-scans_interrupted"
-        case .ipcServerImmediateScansFinishedWithoutError: return "m_mac_dbp_ipc-server_immediate-scans_finished_without-error"
-        case .ipcServerImmediateScansFinishedWithError: return "m_mac_dbp_ipc-server_immediate-scans_finished_with-error"
-
-        case .ipcServerAppLaunchedCalledByApp: return "m_mac_dbp_ipc-server_app-launched_called-by-app"
-        case .ipcServerAppLaunchedReceivedByAgent: return "m_mac_dbp_ipc-server_app-launched_received-by-agent"
-        case .ipcServerAppLaunchedXPCError: return "m_mac_dbp_ipc-server_app-launched_xpc-error"
-        case .ipcServerAppLaunchedScheduledScansBlocked: return "m_mac_dbp_ipc-server_app-launched_scheduled-scans_blocked"
-        case .ipcServerAppLaunchedScheduledScansInterrupted: return "m_mac_dbp_ipc-server_app-launched_scheduled-scans_interrupted"
-        case .ipcServerAppLaunchedScheduledScansFinishedWithoutError: return "m_mac_dbp_ipc-server_app-launched_scheduled-scans_finished_without-error"
-        case .ipcServerAppLaunchedScheduledScansFinishedWithError: return "m_mac_dbp_ipc-server_app-launched_scheduled-scans_finished_with-error"
-
-            // User Notifications
-        case .dataBrokerProtectionNotificationSentFirstScanComplete:
-            return "m_mac_dbp_notification_sent_first_scan_complete"
-        case .dataBrokerProtectionNotificationOpenedFirstScanComplete:
-            return "m_mac_dbp_notification_opened_first_scan_complete"
-        case .dataBrokerProtectionNotificationSentFirstRemoval:
-            return "m_mac_dbp_notification_sent_first_removal"
-        case .dataBrokerProtectionNotificationOpenedFirstRemoval:
-            return "m_mac_dbp_notification_opened_first_removal"
-        case .dataBrokerProtectionNotificationScheduled2WeeksCheckIn:
-            return "m_mac_dbp_notification_scheduled_2_weeks_check_in"
-        case .dataBrokerProtectionNotificationOpened2WeeksCheckIn:
-            return "m_mac_dbp_notification_opened_2_weeks_check_in"
-        case .dataBrokerProtectionNotificationSentAllRecordsRemoved:
-            return "m_mac_dbp_notification_sent_all_records_removed"
-        case .dataBrokerProtectionNotificationOpenedAllRecordsRemoved:
-            return "m_mac_dbp_notification_opened_all_records_removed"
-
             // KPIs - engagement
         case .dailyActiveUser: return "m_mac_dbp_engagement_dau"
         case .weeklyActiveUser: return "m_mac_dbp_engagement_wau"
@@ -302,10 +222,6 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
         case .weeklyReportRemovals: return "m_mac_dbp_event_weekly-report_removals"
         case .scanningEventNewMatch: return "m_mac_dbp_event_scanning-events_new-match"
         case .scanningEventReAppearance: return "m_mac_dbp_event_scanning-events_re-appearance"
-
-        case .webUILoadingStarted: return "m_mac_dbp_web_ui_loading_started"
-        case .webUILoadingSuccess: return "m_mac_dbp_web_ui_loading_success"
-        case .webUILoadingFailed: return "m_mac_dbp_web_ui_loading_failed"
 
             // Additional opt out metrics
         case .optOutJobAt7DaysConfirmed: return "m_mac_dbp_optoutjob_at-7-days_confirmed"
@@ -318,13 +234,6 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
             // Backend service errors
         case .generateEmailHTTPErrorDaily: return "m_mac_dbp_service_email-generate-http-error"
         case .emptyAccessTokenDaily: return "m_mac_dbp_service_empty-auth-token"
-
-            // Home View
-        case .homeViewShowNoPermissionError: return "m_mac_dbp_home_view_show-no-permission-error"
-        case .homeViewShowWebUI: return "m_mac_dbp_home_view_show-web-ui"
-        case .homeViewShowBadPathError: return "m_mac_dbp_home_view_show-bad-path-error"
-        case .homeViewCTAMoveApplicationClicked: return "m_mac_dbp_home_view-cta-move-application-clicked"
-        case .homeViewCTAGrantPermissionClicked: return "m_mac_dbp_home_view-cta-grant-permission-clicked"
 
             // Initial scans pixels
         case .initialScanTotalDuration: return "m_mac_dbp_initial_scan_duration"
@@ -428,33 +337,12 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
                 .optOutJobAt21DaysConfirmed(let dataBroker),
                 .optOutJobAt21DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .webUILoadingStarted(let environment):
-            return [Consts.environmentKey: environment]
-        case .webUILoadingSuccess(let environment):
-            return [Consts.environmentKey: environment]
-        case .webUILoadingFailed(let error):
-            return [Consts.errorCategoryKey: error]
-        case .backgroundAgentStarted,
-                .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
-                .dataBrokerProtectionNotificationSentFirstScanComplete,
-                .dataBrokerProtectionNotificationOpenedFirstScanComplete,
-                .dataBrokerProtectionNotificationSentFirstRemoval,
-                .dataBrokerProtectionNotificationOpenedFirstRemoval,
-                .dataBrokerProtectionNotificationScheduled2WeeksCheckIn,
-                .dataBrokerProtectionNotificationOpened2WeeksCheckIn,
-                .dataBrokerProtectionNotificationSentAllRecordsRemoved,
-                .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
-                .dailyActiveUser,
+        case .dailyActiveUser,
                 .weeklyActiveUser,
                 .monthlyActiveUser,
 
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
-                .homeViewShowNoPermissionError,
-                .homeViewShowWebUI,
-                .homeViewShowBadPathError,
-                .homeViewCTAMoveApplicationClicked,
-                .homeViewCTAGrantPermissionClicked,
                 .entitlementCheckValid,
                 .entitlementCheckInvalid,
                 .entitlementCheckError,
@@ -465,20 +353,6 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
                 .invalidPayload,
                 .failedToParsePrivacyConfig:
             return [:]
-        case .ipcServerProfileSavedCalledByApp,
-                .ipcServerProfileSavedReceivedByAgent,
-                .ipcServerProfileSavedXPCError,
-                .ipcServerImmediateScansInterrupted,
-                .ipcServerImmediateScansFinishedWithoutError,
-                .ipcServerImmediateScansFinishedWithError,
-                .ipcServerAppLaunchedCalledByApp,
-                .ipcServerAppLaunchedReceivedByAgent,
-                .ipcServerAppLaunchedXPCError,
-                .ipcServerAppLaunchedScheduledScansBlocked,
-                .ipcServerAppLaunchedScheduledScansInterrupted,
-                .ipcServerAppLaunchedScheduledScansFinishedWithoutError,
-                .ipcServerAppLaunchedScheduledScansFinishedWithError:
-            return [Consts.bundleIDParamKey: Bundle.main.bundleIdentifier ?? "nil"]
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description]
         case .scanFailed(let dataBroker, let dataBrokerVersion, let duration, let tries, let isImmediateOperation):
@@ -534,46 +408,48 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
     }
 }
 
-public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionPixels> {
+public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
-    public init() {
+    public enum Platform {
+        case macOS
+        case iOS
+
+        var pixelNamePrefix: String {
+            switch self {
+            case .macOS: return "m_mac_"
+            case .iOS: return "m_ios_"
+            }
+        }
+    }
+
+    let pixelKit: PixelKit
+    let platform: Platform
+
+    public init(pixelKit: PixelKit, platform: Platform) {
+        self.pixelKit = pixelKit
+        self.platform = platform
         super.init { event, _, _, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                PixelKit.fire(event, frequency: .daily)
+                PixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
-                PixelKit.fire(event, frequency: .daily)
+                PixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _),
                     .actionFailedError(let error, _, _, _),
                     .otherError(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
+                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
+                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .errorLoadingCachedConfig(let error):
-                PixelKit.fire(DebugEvent(event, error: error))
+                PixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error),
                     .secureVaultKeyStoreUpdateError(let error),
                     .failedToParsePrivacyConfig(let error):
-                PixelKit.fire(DebugEvent(event, error: error))
-            case .ipcServerProfileSavedXPCError(error: let error),
-                    .ipcServerImmediateScansFinishedWithError(error: let error),
-                    .ipcServerAppLaunchedXPCError(error: let error),
-                    .ipcServerAppLaunchedScheduledScansFinishedWithError(error: let error):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
-            case .ipcServerProfileSavedCalledByApp,
-                    .ipcServerProfileSavedReceivedByAgent,
-                    .ipcServerImmediateScansInterrupted,
-                    .ipcServerImmediateScansFinishedWithoutError,
-                    .ipcServerAppLaunchedCalledByApp,
-                    .ipcServerAppLaunchedReceivedByAgent,
-                    .ipcServerAppLaunchedScheduledScansBlocked,
-                    .ipcServerAppLaunchedScheduledScansInterrupted,
-                    .ipcServerAppLaunchedScheduledScansFinishedWithoutError:
-                PixelKit.fire(event, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
+                PixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -589,19 +465,9 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
                     .optOutFillForm,
                     .optOutSuccess,
                     .optOutFailure,
-                    .backgroundAgentStarted,
-                    .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
                     .scanSuccess,
                     .scanFailed,
                     .scanError,
-                    .dataBrokerProtectionNotificationSentFirstScanComplete,
-                    .dataBrokerProtectionNotificationOpenedFirstScanComplete,
-                    .dataBrokerProtectionNotificationSentFirstRemoval,
-                    .dataBrokerProtectionNotificationOpenedFirstRemoval,
-                    .dataBrokerProtectionNotificationScheduled2WeeksCheckIn,
-                    .dataBrokerProtectionNotificationOpened2WeeksCheckIn,
-                    .dataBrokerProtectionNotificationSentAllRecordsRemoved,
-                    .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
                     .dailyActiveUser,
                     .weeklyActiveUser,
                     .monthlyActiveUser,
@@ -615,9 +481,6 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
                     .optOutJobAt21DaysUnconfirmed,
                     .scanningEventNewMatch,
                     .scanningEventReAppearance,
-                    .webUILoadingFailed,
-                    .webUILoadingStarted,
-                    .webUILoadingSuccess,
                     .initialScanTotalDuration,
                     .initialScanSiteLoadDuration,
                     .initialScanPostLoadingDuration,
@@ -631,23 +494,18 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts:
 
-                PixelKit.fire(event)
+                PixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
 
-            case .homeViewShowNoPermissionError,
-                    .homeViewShowWebUI,
-                    .homeViewShowBadPathError,
-                    .homeViewCTAMoveApplicationClicked,
-                    .homeViewCTAGrantPermissionClicked,
-                    .entitlementCheckValid,
+            case .entitlementCheckValid,
                     .entitlementCheckInvalid,
                     .entitlementCheckError:
-                PixelKit.fire(event, frequency: .legacyDailyAndCount)
+                PixelKit.fire(event, frequency: .legacyDailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 
             }
         }
     }
 
-    override init(mapping: @escaping EventMapping<DataBrokerProtectionPixels>.Mapping) {
+    override init(mapping: @escaping EventMapping<DataBrokerProtectionSharedPixels>.Mapping) {
         fatalError("Use init()")
     }
 }

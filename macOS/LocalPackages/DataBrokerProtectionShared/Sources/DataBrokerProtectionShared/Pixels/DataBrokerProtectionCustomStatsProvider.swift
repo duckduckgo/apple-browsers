@@ -19,7 +19,7 @@
 import Foundation
 
 /// Type encapsulating custom data broker and global stats
-struct CustomOptOutStats: Equatable {
+public struct CustomOptOutStats: Equatable {
     let customIndividualDataBrokerStat: [CustomIndividualDataBrokerStat]
     let customAggregateBrokersStat: CustomAggregateBrokersStat
 }
@@ -36,7 +36,7 @@ struct CustomAggregateBrokersStat: Equatable {
 }
 
 // Conforming types provide a method to calculate `CustomOptOutStats`
-protocol DataBrokerProtectionCustomOptOutStatsProvider {
+public protocol DataBrokerProtectionCustomOptOutStatsProvider {
 
     /// This method calculates custom statistics for data brokers based on the provided query data within a specified date range.
     /// - Parameters:
@@ -49,9 +49,12 @@ protocol DataBrokerProtectionCustomOptOutStatsProvider {
                            andQueryData queryData: [BrokerProfileQueryData]) -> CustomOptOutStats
 }
 
-struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider {
+public struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider {
 
-    func customOptOutStats(startDate: Date?,
+    public init() {
+    }
+
+    public func customOptOutStats(startDate: Date?,
                            endDate: Date,
                            andQueryData queryData: [BrokerProfileQueryData]) -> CustomOptOutStats {
 

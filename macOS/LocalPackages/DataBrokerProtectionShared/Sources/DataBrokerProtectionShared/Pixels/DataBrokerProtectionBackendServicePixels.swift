@@ -27,22 +27,22 @@ public enum BackendServiceCallSite: String {
     case submitCaptchaToBeResolvedRequest
 }
 
-protocol DataBrokerProtectionBackendServicePixels {
+public protocol DataBrokerProtectionBackendServicePixels {
     func fireGenerateEmailHTTPError(statusCode: Int)
     func fireEmptyAccessToken(callSite: BackendServiceCallSite)
 }
 
-final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerProtectionBackendServicePixels {
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+public final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerProtectionBackendServicePixels {
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let settings: DataBrokerProtectionSettings
 
-    init(pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
-         settings: DataBrokerProtectionSettings = DataBrokerProtectionSettings()) {
+    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+         settings: DataBrokerProtectionSettings) {
         self.pixelHandler = pixelHandler
         self.settings = settings
     }
 
-    func fireGenerateEmailHTTPError(statusCode: Int) {
+    public func fireGenerateEmailHTTPError(statusCode: Int) {
         let environment = settings.selectedEnvironment.rawValue
 
         pixelHandler.fire(.generateEmailHTTPErrorDaily(statusCode: statusCode,
@@ -50,7 +50,7 @@ final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerProtectio
                                                        wasOnWaitlist: false))
     }
 
-    func fireEmptyAccessToken(callSite: BackendServiceCallSite) {
+    public func fireEmptyAccessToken(callSite: BackendServiceCallSite) {
         let environment = settings.selectedEnvironment.rawValue
 
         pixelHandler.fire(.emptyAccessTokenDaily(environment: environment,

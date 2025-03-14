@@ -22,13 +22,13 @@ import BrowserServicesKit
 import PixelKit
 import Common
 
-protocol DataBrokerProtectionEventPixelsRepository {
+public protocol DataBrokerProtectionEventPixelsRepository {
     func markWeeklyPixelSent()
 
     func getLatestWeeklyPixel() -> Date?
 }
 
-final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtectionEventPixelsRepository {
+public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtectionEventPixelsRepository {
 
     enum Consts {
         static let weeklyPixelKey = "macos.browser.data-broker-protection.eventsWeeklyPixelKey"
@@ -36,35 +36,35 @@ final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtectionEve
 
     private let userDefaults: UserDefaults
 
-    init(userDefaults: UserDefaults = .standard) {
+    public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
     }
 
-    func markWeeklyPixelSent() {
+    public func markWeeklyPixelSent() {
         userDefaults.set(Date(), forKey: Consts.weeklyPixelKey)
     }
 
-    func getLatestWeeklyPixel() -> Date? {
+    public func getLatestWeeklyPixel() -> Date? {
         userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
     }
 }
 
-final class DataBrokerProtectionEventPixels {
+public final class DataBrokerProtectionEventPixels {
 
     private let database: DataBrokerProtectionRepository
     private let repository: DataBrokerProtectionEventPixelsRepository
-    private let handler: EventMapping<DataBrokerProtectionPixels>
+    private let handler: EventMapping<DataBrokerProtectionSharedPixels>
     private let calendar = Calendar.current
 
-    init(database: DataBrokerProtectionRepository,
+    public init(database: DataBrokerProtectionRepository,
          repository: DataBrokerProtectionEventPixelsRepository = DataBrokerProtectionEventPixelsUserDefaults(),
-         handler: EventMapping<DataBrokerProtectionPixels>) {
+         handler: EventMapping<DataBrokerProtectionSharedPixels>) {
         self.database = database
         self.repository = repository
         self.handler = handler
     }
 
-    func tryToFireWeeklyPixels() {
+    public func tryToFireWeeklyPixels() {
         if shouldWeFireWeeklyPixel() {
             fireWeeklyReportPixels()
             repository.markWeeklyPixelSent()

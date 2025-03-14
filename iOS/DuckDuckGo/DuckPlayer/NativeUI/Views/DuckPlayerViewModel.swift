@@ -91,6 +91,14 @@ final class DuckPlayerViewModel: ObservableObject {
     @Published private(set) var url: URL?
     @Published private(set) var timestamp: TimeInterval = 0
 
+    // Automatic open on Youtube toggle
+    @Published var showAutoOpenOnYoutubeToggle: Bool = true
+    @Published var autoOpenOnYoutube: Bool = false {
+        didSet {
+            appSettings.duckPlayerNativeYoutubeMode = autoOpenOnYoutube ? .auto : .ask
+        }
+    }
+
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
     /// - `false` when device is in portrait orientation
@@ -110,6 +118,7 @@ final class DuckPlayerViewModel: ObservableObject {
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
         self.source = source
+        self.autoOpenOnYoutube = appSettings.duckPlayerNativeYoutubeMode == .auto
         self.url = getVideoURL()
     }
 
@@ -200,6 +209,13 @@ final class DuckPlayerViewModel: ObservableObject {
         timestampUpdateTimer = nil
         webView = nil
         coordinator = nil
+    }
+
+    // MARK: - Public Methods
+    
+    /// Hides the auto-open toggle UI element
+    func hideAutoOpenToggle() {
+        showAutoOpenOnYoutubeToggle = false
     }
 
     // MARK: - Private Methods

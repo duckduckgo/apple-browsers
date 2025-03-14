@@ -25,6 +25,7 @@ struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
+    @State private var autoOpenOnYoutube: Bool = false
 
     enum Constants {
         static let headerHeight: CGFloat = 56
@@ -79,6 +80,31 @@ struct DuckPlayerView: View {
                     )
                 }
 
+                // Show only if the source is youtube and the setting is not already on 
+                // if turned to 'on' it will hide after 2 seconds
+                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube {
+                    ZStack {
+                         RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.2))
+                        HStack(spacing: 8) {
+                            Text(UserText.duckPlayerNativeAutoOpenLabel)
+                                .daxButton()
+                                .daxBodyBold()
+                                .foregroundColor(.white)
+                            Spacer()
+                            Toggle(isOn: $autoOpenOnYoutube) {}
+                                .labelsHidden()
+                                .tint(.init(designSystemColor: .accent))
+                        }
+                        .padding(.horizontal, 12)
+                    }
+                    .frame(height: Constants.bottomButtonHeight)
+                    .padding(.horizontal, Constants.horizontalPadding)
+                    .padding(.bottom, Constants.horizontalPadding)
+                    .transition(.opacity)
+                    .animation(.easeInOut, value: viewModel.showAutoOpenOnYoutubeToggle)
+                }
+
                 if viewModel.shouldShowYouTubeButton {
                     HStack(spacing: 8) {
                         Button {
@@ -120,12 +146,26 @@ struct DuckPlayerView: View {
         )
         .onFirstAppear {
             viewModel.onFirstAppear()
+            autoOpenOnYoutube = viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
         }
         .onDisappear {
             viewModel.onDisappear()
+        }
+        // Add onChange handler to update the viewModel when local state changes
+        .onChange(of: autoOpenOnYoutube) { newValue in
+            viewModel.autoOpenOnYoutube = newValue
+            
+            // When toggle is set to true, hide the view after 2 seconds
+            if newValue {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    withAnimation {
+                        viewModel.hideAutoOpenToggle()
+                    }
+                }
+            }
         }
     }
 
@@ -168,4 +208,5 @@ struct DuckPlayerView: View {
         }
         .padding(.horizontal, Constants.horizontalPadding)
     }
+
 }

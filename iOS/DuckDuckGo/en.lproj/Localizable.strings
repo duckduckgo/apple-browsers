@@ -1245,6 +1245,9 @@
 /* Text displayed when DuckPlayer is automatically enabled for Youtube */
 "duckPlayerNative.auto.label" = "Automatically";
 
+/* Label for the automatic youtun */
+"duckPlayerNative.auto.open.label" = "Auto-open Duck Player on Youtube";
+
 /* Text displayed when DuckPlayer is in off for youtube. */
 "duckPlayerNative.never.label" = "Don't Show";
 

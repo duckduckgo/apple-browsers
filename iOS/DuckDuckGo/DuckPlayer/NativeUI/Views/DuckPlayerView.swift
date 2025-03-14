@@ -25,16 +25,19 @@ struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
+    
+    // Local state for auto open on Youtube toggle
     @State private var autoOpenOnYoutube: Bool = false
+    
+    // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
-    @State private var showToggle: Bool = true
+    @State private var showOpenInYoutubeToggle: Bool = true
 
     enum Constants {
         static let headerHeight: CGFloat = 56
         static let iconSize: CGFloat = 32
         static let cornerRadius: CGFloat = 12
-        static let horizontalPadding: CGFloat = 16
-        static let videoAspectRatio: CGFloat = 9/16 // 16:9 in portrait
+        static let horizontalPadding: CGFloat = 12
         static let daxLogoSize: CGFloat = 24.0
         static let daxLogo = "Home"
         static let duckPlayerImage: String = "DuckPlayer"
@@ -43,6 +46,7 @@ struct DuckPlayerView: View {
         static let bottomButtonHeight: CGFloat = 44
         static let grabHandleHeight: CGFloat = 4
         static let grabHandleWidth: CGFloat = 36
+        static let videoContainerPadding: CGFloat = 20
     }
 
     var body: some View {
@@ -74,7 +78,7 @@ struct DuckPlayerView: View {
                     }
                     .frame(
                         width: geometry.size.width,
-                        height: geometry.size.width * Constants.videoAspectRatio
+                        height: geometry.size.height
                     )
                     .position(
                         x: geometry.size.width / 2,
@@ -83,7 +87,7 @@ struct DuckPlayerView: View {
                 }
 
                 // Show only if the source is youtube and the toggle should be visible
-                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showToggle {
+                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
                     ZStack {
                          RoundedRectangle(cornerRadius: 8)
                             .fill(Color.gray.opacity(0.2))
@@ -97,13 +101,14 @@ struct DuckPlayerView: View {
                                 .labelsHidden()
                                 .tint(.init(designSystemColor: .accent))
                         }
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, Constants.horizontalPadding)
                     }
                     .frame(height: Constants.bottomButtonHeight)
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
+                    .padding(.top, Constants.videoContainerPadding)
                     .transition(.opacity)
-                    .animation(.easeInOut, value: showToggle)
+                    .animation(.easeInOut, value: showOpenInYoutubeToggle)
                 }
 
                 if viewModel.shouldShowYouTubeButton {
@@ -130,6 +135,7 @@ struct DuckPlayerView: View {
                     .frame(height: Constants.bottomButtonHeight)
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
+                    .padding(.top, Constants.videoContainerPadding)
                 } else {
                     Spacer()
                 }
@@ -148,7 +154,7 @@ struct DuckPlayerView: View {
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube
-            showToggle = !viewModel.autoOpenOnYoutube
+            showOpenInYoutubeToggle = !viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
@@ -164,7 +170,7 @@ struct DuckPlayerView: View {
 
                 let task = DispatchWorkItem {
                     withAnimation {
-                        showToggle = false
+                        showOpenInYoutubeToggle = false
                         viewModel.autoOpenOnYoutube = true
                         viewModel.hideAutoOpenToggle()
                     }

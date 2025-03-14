@@ -82,6 +82,12 @@ final class DuckPlayerViewModel: ObservableObject {
         !isLandscape && source == .serp
     }
 
+    /// Whether the auto-open on YouTube toggle should be visible
+    /// This is hidden in landscape mode or when explicitly set to hidden
+    var shouldShowAutoOpenToggle: Bool {
+        !isLandscape && showAutoOpenOnYoutubeToggle
+    }
+
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -175,7 +181,18 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Updates the current interface orientation state
     func updateOrientation() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            isLandscape = windowScene.interfaceOrientation.isLandscape
+            let newIsLandscape = windowScene.interfaceOrientation.isLandscape
+            isLandscape = newIsLandscape
+
+            // Update toggle visibility based on orientation
+            if newIsLandscape {
+                // Hide toggle in landscape mode
+                showAutoOpenOnYoutubeToggle = false
+            } else if !showAutoOpenOnYoutubeToggle && !autoOpenOnYoutube {
+                // Restore toggle visibility in portrait mode if it wasn't explicitly hidden
+                // and auto-open is not enabled
+                showAutoOpenOnYoutubeToggle = true
+            }
         }
     }
 

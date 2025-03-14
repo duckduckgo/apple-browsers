@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import DataBrokerProtectionShared
 
 struct MapperToUI {
 
@@ -472,25 +473,5 @@ fileprivate extension BrokerJobData {
 fileprivate extension Array where Element == HistoryEvent {
     var closestHistoryEvent: HistoryEvent? {
         self.sorted(by: { $0.date > $1.date }).first
-    }
-}
-
-extension HistoryEvent {
-
-    var isError: Bool {
-        switch type {
-        case .error:
-            return true
-        default:
-            return false
-        }
-    }
-
-    var error: String? {
-        switch type {
-        case .error(let error):
-            return error.name
-        default: return nil
-        }
     }
 }

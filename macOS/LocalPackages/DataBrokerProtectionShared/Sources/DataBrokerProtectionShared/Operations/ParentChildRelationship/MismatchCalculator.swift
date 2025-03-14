@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 import os.log
 import Common
+import DataBrokerProtectionShared
 
 enum MismatchValues: Int {
     case parentSiteHasMoreMatches
@@ -37,16 +38,22 @@ enum MismatchValues: Int {
     }
 }
 
-protocol MismatchCalculator {
-    init(database: DataBrokerProtectionRepository, pixelHandler: EventMapping<DataBrokerProtectionPixels>)
+public protocol MismatchCalculator {
+    init(database: DataBrokerProtectionRepository, pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
     func calculateMismatches()
 }
 
-struct DefaultMismatchCalculator: MismatchCalculator {
+public struct DefaultMismatchCalculator: MismatchCalculator {
+    
     let database: DataBrokerProtectionRepository
-    let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    func calculateMismatches() {
+    public init(database: any DataBrokerProtectionRepository, pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+        self.database = database
+        self.pixelHandler = pixelHandler
+    }
+
+    public func calculateMismatches() {
         let brokerProfileQueryData: [BrokerProfileQueryData]
         do {
             brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()

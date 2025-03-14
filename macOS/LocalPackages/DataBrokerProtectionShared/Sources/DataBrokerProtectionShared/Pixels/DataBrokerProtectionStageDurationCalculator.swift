@@ -22,7 +22,7 @@ import BrowserServicesKit
 import PixelKit
 import SecureStorage
 
-enum Stage: String {
+public enum Stage: String {
     case start
     case emailGenerate = "email-generate"
     case captchaParse = "captcha-parse"
@@ -36,7 +36,7 @@ enum Stage: String {
     case fillForm = "fill-form"
 }
 
-protocol StageDurationCalculator {
+public protocol StageDurationCalculator {
     var attemptId: UUID { get }
     var isImmediateOperation: Bool { get }
 
@@ -64,7 +64,7 @@ protocol StageDurationCalculator {
 
 final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator {
     let isImmediateOperation: Bool
-    let handler: EventMapping<DataBrokerProtectionPixels>
+    let handler: EventMapping<DataBrokerProtectionSharedPixels>
     let attemptId: UUID
     let dataBroker: String
     let dataBrokerVersion: String
@@ -78,7 +78,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          startTime: Date = Date(),
          dataBroker: String,
          dataBrokerVersion: String,
-         handler: EventMapping<DataBrokerProtectionPixels>,
+         handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false) {
         self.attemptId = attemptId
         self.startTime = startTime

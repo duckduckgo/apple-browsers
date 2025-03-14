@@ -22,7 +22,7 @@ import BrowserServicesKit
 import PixelKit
 import Common
 
-protocol DataBrokerProtectionEngagementPixelsRepository {
+public protocol DataBrokerProtectionEngagementPixelsRepository {
     func markDailyPixelSent()
     func markWeeklyPixelSent()
     func markMonthlyPixelSent()
@@ -32,7 +32,7 @@ protocol DataBrokerProtectionEngagementPixelsRepository {
     func getLatestMonthlyPixel() -> Date?
 }
 
-final class DataBrokerProtectionEngagementPixelsUserDefaults: DataBrokerProtectionEngagementPixelsRepository {
+public final class DataBrokerProtectionEngagementPixelsUserDefaults: DataBrokerProtectionEngagementPixelsRepository {
 
     enum Consts {
         static let dailyPixelKey = "macos.browser.data-broker-protection.dailyPixelKey"
@@ -42,31 +42,31 @@ final class DataBrokerProtectionEngagementPixelsUserDefaults: DataBrokerProtecti
 
     private let userDefaults: UserDefaults
 
-    init(userDefaults: UserDefaults = .standard) {
+    public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
     }
 
-    func markDailyPixelSent() {
+    public func markDailyPixelSent() {
         userDefaults.set(Date(), forKey: Consts.dailyPixelKey)
     }
 
-    func markWeeklyPixelSent() {
+    public func markWeeklyPixelSent() {
         userDefaults.set(Date(), forKey: Consts.weeklyPixelKey)
     }
 
-    func markMonthlyPixelSent() {
+    public func markMonthlyPixelSent() {
         userDefaults.set(Date(), forKey: Consts.monthlyPixelKey)
     }
 
-    func getLatestDailyPixel() -> Date? {
+    public func getLatestDailyPixel() -> Date? {
         userDefaults.object(forKey: Consts.dailyPixelKey) as? Date
     }
 
-    func getLatestWeeklyPixel() -> Date? {
+    public func getLatestWeeklyPixel() -> Date? {
         userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
     }
 
-    func getLatestMonthlyPixel() -> Date? {
+    public func getLatestMonthlyPixel() -> Date? {
         userDefaults.object(forKey: Consts.monthlyPixelKey) as? Date
     }
 
@@ -92,20 +92,20 @@ final class DataBrokerProtectionEngagementPixelsUserDefaults: DataBrokerProtecti
    - WAU Pixel Last Sent 2024-03-19
    - MAU Pixel Last Sent 2024-03-19
  */
-final class DataBrokerProtectionEngagementPixels {
+public final class DataBrokerProtectionEngagementPixels {
     private let database: DataBrokerProtectionRepository
     private let repository: DataBrokerProtectionEngagementPixelsRepository
-    private let handler: EventMapping<DataBrokerProtectionPixels>
+    private let handler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    init(database: DataBrokerProtectionRepository,
-         handler: EventMapping<DataBrokerProtectionPixels>,
+    public init(database: DataBrokerProtectionRepository,
+         handler: EventMapping<DataBrokerProtectionSharedPixels>,
          repository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults()) {
         self.database = database
         self.handler = handler
         self.repository = repository
     }
 
-    func fireEngagementPixel(currentDate: Date = Date()) {
+    public func fireEngagementPixel(currentDate: Date = Date()) {
         guard (try? database.fetchProfile()) != nil else {
             Logger.dataBrokerProtection.log("No profile. We do not fire any pixel because we do not consider it an engaged user.")
             return
@@ -132,7 +132,7 @@ final class DataBrokerProtectionEngagementPixels {
             return true
         }
 
-        return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily)
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .daily)
     }
 
     private func shouldWeFireWeeklyPixel(date: Date) -> Bool {
@@ -140,7 +140,7 @@ final class DataBrokerProtectionEngagementPixels {
             return true
         }
 
-        return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly)
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .weekly)
     }
 
     private func shouldWeFireMonthlyPixel(date: Date) -> Bool {
@@ -148,6 +148,6 @@ final class DataBrokerProtectionEngagementPixels {
             return true
         }
 
-        return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly)
+        return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: latestPixelFire, endDate: date, daysDifference: .monthly)
     }
 }

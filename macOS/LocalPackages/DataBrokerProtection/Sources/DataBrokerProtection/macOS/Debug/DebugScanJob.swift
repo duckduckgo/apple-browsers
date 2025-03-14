@@ -71,7 +71,6 @@ final class DebugScanJob: DataBrokerJob {
     let cookieHandler: CookieHandler
     let pixelHandler: EventMapping<DataBrokerProtectionPixels>
     var postLoadingSiteStartTime: Date?
-    let sleepObserver: SleepObserver
 
     private let fileManager = FileManager.default
     private let debugScanContentPath: String?
@@ -103,7 +102,6 @@ final class DebugScanJob: DataBrokerJob {
         pixelHandler =  EventMapping(mapping: { _, _, _, _ in
             // We do not need the pixel handler for the debug
         })
-        self.sleepObserver = FakeSleepObserver()
     }
 
     func run(inputValue: Void,

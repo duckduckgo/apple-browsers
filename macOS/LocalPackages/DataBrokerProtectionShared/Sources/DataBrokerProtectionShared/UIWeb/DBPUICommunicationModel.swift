@@ -32,24 +32,28 @@ extension DBPUIError: LocalizedError {
 }
 
 /// Enum to represent the requested UI State
-enum DBPUIState: String, Codable {
+public enum DBPUIState: String, Codable {
     case onboarding = "Onboarding"
     case profileReview = "ProfileReview"
     case dashboard = "Dashboard"
 }
 
 /// Handshake request from the UI
-struct DBPUIHandshake: Codable {
+public struct DBPUIHandshake: Codable {
     let version: Int
 }
 
 /// User-related data intended to be returned as part of a hardshake response
-struct DBPUIHandshakeUserData: Codable, Equatable {
-    let isAuthenticatedUser: Bool
+public struct DBPUIHandshakeUserData: Codable, Equatable {
+    public let isAuthenticatedUser: Bool
+
+    public init(isAuthenticatedUser: Bool) {
+        self.isAuthenticatedUser = isAuthenticatedUser
+    }
 }
 
 /// Data type returned in response to a handshake request
-struct DBPUIHandshakeResponse: Codable {
+public struct DBPUIHandshakeResponse: Codable {
     let version: Int
     let success: Bool
     let userdata: DBPUIHandshakeUserData
@@ -58,13 +62,13 @@ struct DBPUIHandshakeResponse: Codable {
 /// Standard response from the host to the UI. The response contains the
 /// current version of the host's communication protocol and a bool value
 /// indicating if the requested operation was successful.
-struct DBPUIStandardResponse: Codable {
+public struct DBPUIStandardResponse: Codable {
     let version: Int
     let success: Bool
     let id: String?
     let message: String?
 
-    init(version: Int, success: Bool, id: String? = nil, message: String? = nil) {
+    public init(version: Int, success: Bool, id: String? = nil, message: String? = nil) {
         self.version = version
         self.success = success
         self.id = id
@@ -73,23 +77,37 @@ struct DBPUIStandardResponse: Codable {
 }
 
 /// Message Object representing a user profile name
-struct DBPUIUserProfileName: Codable {
-    let first: String
-    let middle: String?
-    let last: String
-    let suffix: String?
+public struct DBPUIUserProfileName: Codable {
+    public let first: String
+    public let middle: String?
+    public let last: String
+    public let suffix: String?
+
+    public init(first: String, middle: String? = nil, last: String, suffix: String? = nil) {
+        self.first = first
+        self.middle = middle
+        self.last = last
+        self.suffix = suffix
+    }
 }
 
 /// Message Object representing a user profile address
-struct DBPUIUserProfileAddress: Codable {
-    let street: String?
-    let city: String
-    let state: String
-    let zipCode: String?
+public struct DBPUIUserProfileAddress: Codable {
+    public let street: String?
+    public let city: String
+    public let state: String
+    public let zipCode: String?
+
+    public init(street: String? = nil, city: String, state: String, zipCode: String? = nil) {
+        self.street = street
+        self.city = city
+        self.state = state
+        self.zipCode = zipCode
+    }
 }
 
 extension DBPUIUserProfileAddress {
-    init(addressCityState: AddressCityState) {
+    public init(addressCityState: AddressCityState) {
         self.init(street: addressCityState.fullAddress,
                   city: addressCityState.city,
                   state: addressCityState.state,
@@ -99,37 +117,57 @@ extension DBPUIUserProfileAddress {
 
 /// Message Object representing a user profile containing one or more names and addresses
 /// also contains the user profile's birth year
-struct DBPUIUserProfile: Codable {
-    let names: [DBPUIUserProfileName]
-    let birthYear: Int
-    let addresses: [DBPUIUserProfileAddress]
+public struct DBPUIUserProfile: Codable {
+    public let names: [DBPUIUserProfileName]
+    public let birthYear: Int
+    public let addresses: [DBPUIUserProfileAddress]
+
+    public init(names: [DBPUIUserProfileName], birthYear: Int, addresses: [DBPUIUserProfileAddress]) {
+        self.names = names
+        self.birthYear = birthYear
+        self.addresses = addresses
+    }
 }
 
 /// Message Object representing an index. This is used to determine a particular name or
 /// address that should be removed from a user profile
-struct DBPUIIndex: Codable {
-    let index: Int
+public struct DBPUIIndex: Codable {
+    public let index: Int
+
+    public init(index: Int) {
+        self.index = index
+    }
 }
 
-struct DBPUINameAtIndex: Codable {
-    let index: Int
-    let name: DBPUIUserProfileName
+public struct DBPUINameAtIndex: Codable {
+    public let index: Int
+    public let name: DBPUIUserProfileName
+
+    public init(index: Int, name: DBPUIUserProfileName) {
+        self.index = index
+        self.name = name
+    }
 }
 
-struct DBPUIAddressAtIndex: Codable {
-    let index: Int
-    let address: DBPUIUserProfileAddress
+public struct DBPUIAddressAtIndex: Codable {
+    public let index: Int
+    public let address: DBPUIUserProfileAddress
+
+    public init(index: Int, address: DBPUIUserProfileAddress) {
+        self.index = index
+        self.address = address
+    }
 }
 
 /// Message Object representing a data broker
-struct DBPUIDataBroker: Codable, Hashable {
-    let name: String
-    let url: String
-    let date: Double?
-    let parentURL: String?
-    let optOutUrl: String
+public struct DBPUIDataBroker: Codable, Hashable {
+    public let name: String
+    public let url: String
+    public let date: Double?
+    public let parentURL: String?
+    public let optOutUrl: String
 
-    init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String) {
+    public init(name: String, url: String, date: Double? = nil, parentURL: String?, optOutUrl: String) {
         self.name = name
         self.url = url
         self.date = date
@@ -137,43 +175,64 @@ struct DBPUIDataBroker: Codable, Hashable {
         self.optOutUrl = optOutUrl
     }
 
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(name)
     }
 }
 
-struct DBPUIDataBrokerList: DBPUISendableMessage {
-    let dataBrokers: [DBPUIDataBroker]
+public struct DBPUIDataBrokerList: DBPUISendableMessage {
+    public let dataBrokers: [DBPUIDataBroker]
+
+    public init(dataBrokers: [DBPUIDataBroker]) {
+        self.dataBrokers = dataBrokers
+    }
 }
 
 /// Message Object representing a requested change to the user profile's brith year
-struct DBPUIBirthYear: Codable {
-    let year: Int
+public struct DBPUIBirthYear: Codable {
+    public let year: Int
+
+    public init(year: Int) {
+        self.year = year
+    }
 }
 
 /// Message object containing information related to a profile match on a data broker
 /// The message contains the data broker on which the profile was found and the names
 /// and addresses that were matched
-struct DBPUIDataBrokerProfileMatch: Codable {
-    let dataBroker: DBPUIDataBroker
-    let name: String
-    let addresses: [DBPUIUserProfileAddress]
-    let alternativeNames: [String]
-    let relatives: [String]
-    let foundDate: Double
-    let optOutSubmittedDate: Double?
-    let estimatedRemovalDate: Double?
-    let removedDate: Double?
-    let hasMatchingRecordOnParentBroker: Bool
+public struct DBPUIDataBrokerProfileMatch: Codable {
+    public let dataBroker: DBPUIDataBroker
+    public let name: String
+    public let addresses: [DBPUIUserProfileAddress]
+    public let alternativeNames: [String]
+    public let relatives: [String]
+    public let foundDate: Double
+    public let optOutSubmittedDate: Double?
+    public let estimatedRemovalDate: Double?
+    public let removedDate: Double?
+    public let hasMatchingRecordOnParentBroker: Bool
+
+    public init(dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+        self.dataBroker = dataBroker
+        self.name = name
+        self.addresses = addresses
+        self.alternativeNames = alternativeNames
+        self.relatives = relatives
+        self.foundDate = foundDate
+        self.optOutSubmittedDate = optOutSubmittedDate
+        self.estimatedRemovalDate = estimatedRemovalDate
+        self.removedDate = removedDate
+        self.hasMatchingRecordOnParentBroker = hasMatchingRecordOnParentBroker
+    }
 }
 
 extension DBPUIDataBrokerProfileMatch {
-    init(optOutJobData: OptOutJobData,
-         dataBrokerName: String,
-         dataBrokerURL: String,
-         dataBrokerParentURL: String?,
-         parentBrokerOptOutJobData: [OptOutJobData]?,
-         optOutUrl: String) {
+    public init(optOutJobData: OptOutJobData,
+                dataBrokerName: String,
+                dataBrokerURL: String,
+                dataBrokerParentURL: String?,
+                parentBrokerOptOutJobData: [OptOutJobData]?,
+                optOutUrl: String) {
         let extractedProfile = optOutJobData.extractedProfile
 
         /*
@@ -220,7 +279,10 @@ extension DBPUIDataBrokerProfileMatch {
                   hasMatchingRecordOnParentBroker: hasFoundParentMatch)
     }
 
-    init(optOutJobData: OptOutJobData, dataBroker: DataBroker, parentBrokerOptOutJobData: [OptOutJobData]?, optOutUrl: String) {
+    public init(optOutJobData: OptOutJobData,
+                dataBroker: DataBroker,
+                parentBrokerOptOutJobData: [OptOutJobData]?,
+                optOutUrl: String) {
         self.init(optOutJobData: optOutJobData,
                   dataBrokerName: dataBroker.name,
                   dataBrokerURL: dataBroker.url,
@@ -237,7 +299,7 @@ extension DBPUIDataBrokerProfileMatch {
     ///
     /// - Parameter queryData: An array of `BrokerProfileQueryData` objects, which contains data brokers and their respective opt-out data.
     /// - Returns: An array of `DBPUIDataBrokerProfileMatch` objects representing matches for each data broker, including parent brokers and mirror sites.
-    static func profileMatches(from queryData: [BrokerProfileQueryData]) -> [DBPUIDataBrokerProfileMatch] {
+    public static func profileMatches(from queryData: [BrokerProfileQueryData]) -> [DBPUIDataBrokerProfileMatch] {
         // Group the query data by data broker URL to easily find parent data broker opt-outs later.
         let brokerURLsToQueryData = Dictionary(grouping: queryData, by: { $0.dataBroker.url })
 
@@ -287,14 +349,21 @@ extension DBPUIDataBrokerProfileMatch {
 protocol DBPUISendableMessage: Codable {}
 
 /// Message representing the state of any scans and opt outs without state and grouping removed profiles by broker
-struct DBPUIScanAndOptOutMaintenanceState: DBPUISendableMessage {
+public struct DBPUIScanAndOptOutMaintenanceState: DBPUISendableMessage {
     let inProgressOptOuts: [DBPUIDataBrokerProfileMatch]
     let completedOptOuts: [DBPUIOptOutMatch]
     let scanSchedule: DBPUIScanSchedule
     let scanHistory: DBPUIScanHistory
+
+    public init(inProgressOptOuts: [DBPUIDataBrokerProfileMatch], completedOptOuts: [DBPUIOptOutMatch], scanSchedule: DBPUIScanSchedule, scanHistory: DBPUIScanHistory) {
+        self.inProgressOptOuts = inProgressOptOuts
+        self.completedOptOuts = completedOptOuts
+        self.scanSchedule = scanSchedule
+        self.scanHistory = scanHistory
+    }
 }
 
-struct DBPUIOptOutMatch: DBPUISendableMessage {
+public struct DBPUIOptOutMatch: DBPUISendableMessage {
     let dataBroker: DBPUIDataBroker
     let matches: Int
     let name: String
@@ -308,7 +377,7 @@ struct DBPUIOptOutMatch: DBPUISendableMessage {
 }
 
 extension DBPUIOptOutMatch {
-    init?(profileMatch: DBPUIDataBrokerProfileMatch, matches: Int) {
+    public init?(profileMatch: DBPUIDataBrokerProfileMatch, matches: Int) {
         guard let removedDate = profileMatch.removedDate else { return nil }
         let dataBroker = profileMatch.dataBroker
         self.init(dataBroker: dataBroker,
@@ -325,47 +394,77 @@ extension DBPUIOptOutMatch {
 }
 
 /// Data representing the initial scan progress
-struct DBPUIScanProgress: DBPUISendableMessage {
+public struct DBPUIScanProgress: DBPUISendableMessage {
 
-    struct ScannedBroker: Codable, Equatable {
-
-        enum Status: String, Codable {
+    public struct ScannedBroker: Codable, Equatable {
+        public enum Status: String, Codable {
             case inProgress = "in-progress"
             case completed
         }
 
-        let name: String
-        let url: String
-        let status: Status
+        public let name: String
+        public let url: String
+        public let status: Status
+
+        public init(name: String, url: String, status: DBPUIScanProgress.ScannedBroker.Status) {
+            self.name = name
+            self.url = url
+            self.status = status
+        }
     }
 
-    let currentScans: Int
-    let totalScans: Int
-    let scannedBrokers: [ScannedBroker]
+    public let currentScans: Int
+    public let totalScans: Int
+    public let scannedBrokers: [ScannedBroker]
+
+    public init(currentScans: Int, totalScans: Int, scannedBrokers: [DBPUIScanProgress.ScannedBroker]) {
+            self.currentScans = currentScans
+            self.totalScans = totalScans
+            self.scannedBrokers = scannedBrokers
+    }
 }
 
 /// Data to represent the intial scan state
 /// It will show the current scans + total, and the results found
-struct DBPUIInitialScanState: DBPUISendableMessage {
+public struct DBPUIInitialScanState: DBPUISendableMessage {
     let resultsFound: [DBPUIDataBrokerProfileMatch]
     let scanProgress: DBPUIScanProgress
+
+    public init(resultsFound: [DBPUIDataBrokerProfileMatch], scanProgress: DBPUIScanProgress) {
+        self.resultsFound = resultsFound
+        self.scanProgress = scanProgress
+    }
 }
 
-struct DBPUIScanDate: DBPUISendableMessage {
+public struct DBPUIScanDate: DBPUISendableMessage {
     let date: Double
     let dataBrokers: [DBPUIDataBroker]
+
+    public init(date: Double, dataBrokers: [DBPUIDataBroker]) {
+        self.date = date
+        self.dataBrokers = dataBrokers
+    }
 }
 
-struct DBPUIScanSchedule: DBPUISendableMessage {
+public struct DBPUIScanSchedule: DBPUISendableMessage {
     let lastScan: DBPUIScanDate
     let nextScan: DBPUIScanDate
+
+    public init(lastScan: DBPUIScanDate, nextScan: DBPUIScanDate) {
+        self.lastScan = lastScan
+        self.nextScan = nextScan
+    }
 }
 
-struct DBPUIScanHistory: DBPUISendableMessage {
+public struct DBPUIScanHistory: DBPUISendableMessage {
     let sitesScanned: Int
+
+    public init(sitesScanned: Int) {
+        self.sitesScanned = sitesScanned
+    }
 }
 
-struct DBPUIDebugMetadata: DBPUISendableMessage {
+public struct DBPUIDebugMetadata: DBPUISendableMessage {
     let lastRunAppVersion: String
     let lastRunAgentVersion: String?
     let isAgentRunning: Bool
@@ -380,19 +479,19 @@ struct DBPUIDebugMetadata: DBPUISendableMessage {
     let lastStartedSchedulerOperationTimestamp: Double?
     let lastStartedSchedulerOperationBrokerUrl: String?
 
-    init(lastRunAppVersion: String,
-         lastRunAgentVersion: String? = nil,
-         isAgentRunning: Bool = false,
-         lastSchedulerOperationType: String? = nil,
-         lastSchedulerOperationTimestamp: Double? = nil,
-         lastSchedulerOperationBrokerUrl: String? = nil,
-         lastSchedulerErrorMessage: String? = nil,
-         lastSchedulerErrorTimestamp: Double? = nil,
-         lastSchedulerSessionStartTimestamp: Double? = nil,
-         agentSchedulerState: String? = nil,
-         lastStartedSchedulerOperationType: String? = nil,
-         lastStartedSchedulerOperationTimestamp: Double? = nil,
-         lastStartedSchedulerOperationBrokerUrl: String? = nil) {
+    public init(lastRunAppVersion: String,
+                lastRunAgentVersion: String? = nil,
+                isAgentRunning: Bool = false,
+                lastSchedulerOperationType: String? = nil,
+                lastSchedulerOperationTimestamp: Double? = nil,
+                lastSchedulerOperationBrokerUrl: String? = nil,
+                lastSchedulerErrorMessage: String? = nil,
+                lastSchedulerErrorTimestamp: Double? = nil,
+                lastSchedulerSessionStartTimestamp: Double? = nil,
+                agentSchedulerState: String? = nil,
+                lastStartedSchedulerOperationType: String? = nil,
+                lastStartedSchedulerOperationTimestamp: Double? = nil,
+                lastStartedSchedulerOperationBrokerUrl: String? = nil) {
         self.lastRunAppVersion = lastRunAppVersion
         self.lastRunAgentVersion = lastRunAgentVersion
         self.isAgentRunning = isAgentRunning

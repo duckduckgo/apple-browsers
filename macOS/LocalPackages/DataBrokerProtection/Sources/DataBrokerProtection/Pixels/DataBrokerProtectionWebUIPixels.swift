@@ -20,6 +20,7 @@ import Foundation
 import Common
 import BrowserServicesKit
 import PixelKit
+import DataBrokerProtectionShared
 
 final class DataBrokerProtectionWebUIPixels {
 

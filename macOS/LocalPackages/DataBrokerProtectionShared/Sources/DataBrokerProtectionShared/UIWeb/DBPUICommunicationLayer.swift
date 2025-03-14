@@ -23,7 +23,7 @@ import UserScript
 import Common
 import os.log
 
-protocol DBPUICommunicationDelegate: AnyObject {
+public protocol DBPUICommunicationDelegate: AnyObject {
     func getHandshakeUserData() -> DBPUIHandshakeUserData?
     func saveProfile() async throws
     func getUserProfile() -> DBPUIUserProfile?
@@ -68,13 +68,13 @@ enum DBPUISendableMethodName: String {
     case setState
 }
 
-struct DBPUICommunicationLayer: Subfeature {
+public struct DBPUICommunicationLayer: Subfeature {
     private let webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let privacyConfig: PrivacyConfigurationManaging
 
-    var messageOriginPolicy: MessageOriginPolicy
-    var featureName: String = "dbpuiCommunication"
-    weak var broker: UserScriptMessageBroker?
+    public var messageOriginPolicy: MessageOriginPolicy
+    public var featureName: String = "dbpuiCommunication"
+    weak public var broker: UserScriptMessageBroker?
 
     weak var delegate: DBPUICommunicationDelegate?
 
@@ -91,7 +91,7 @@ struct DBPUICommunicationLayer: Subfeature {
         ])
     }
 
-    func handler(forMethodNamed methodName: String) -> Handler? {
+    public func handler(forMethodNamed methodName: String) -> Handler? {
         guard let actionResult = DBPUIReceivedMethodName(rawValue: methodName) else {
             Logger.dataBrokerProtection.log("Cant parse method: \(methodName, privacy: .public)")
             return nil

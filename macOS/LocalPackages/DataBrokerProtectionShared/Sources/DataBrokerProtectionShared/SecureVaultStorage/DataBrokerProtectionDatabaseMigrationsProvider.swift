@@ -28,34 +28,34 @@ enum DataBrokerProtectionDatabaseMigrationErrors: Error {
 }
 
 /// Conforming types provide migrations for the PIR database. Mostly utilized for testing.
-protocol DataBrokerProtectionDatabaseMigrationsProvider {
+public protocol DataBrokerProtectionDatabaseMigrationsProvider {
     static var v2Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v3Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v4Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v5Migrations: (inout DatabaseMigrator) throws -> Void { get }
 }
 
-final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
+public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
 
-    static var v2Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+    public static var v2Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
         migrator.registerMigration("v1", migrate: migrateV1(database:))
         migrator.registerMigration("v2", migrate: migrateV2(database:))
     }
 
-    static var v3Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+    public static var v3Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
         migrator.registerMigration("v1", migrate: migrateV1(database:))
         migrator.registerMigration("v2", migrate: migrateV2(database:))
         migrator.registerMigration("v3", migrate: migrateV3(database:))
     }
 
-    static var v4Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+    public static var v4Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
         migrator.registerMigration("v1", migrate: migrateV1(database:))
         migrator.registerMigration("v2", migrate: migrateV2(database:))
         migrator.registerMigration("v3", migrate: migrateV3(database:))
         migrator.registerMigration("v4", migrate: migrateV4(database:))
     }
 
-    static var v5Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+    public static var v5Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
         migrator.registerMigration("v1", migrate: migrateV1(database:))
         migrator.registerMigration("v2", migrate: migrateV2(database:))
         migrator.registerMigration("v3", migrate: migrateV3(database:))

@@ -18,12 +18,13 @@
 
 import Foundation
 import WebKit
+import WebKitExtensions
 import BrowserServicesKit
 import UserScript
 
-final class DBPUIUserContentController: WKUserContentController {
+public final class DBPUIUserContentController: WKUserContentController {
 
-    let dbpUIUserScripts: DBPUIUserScript
+    public let dbpUIUserScripts: DBPUIUserScript
 
     @MainActor
     init(with privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -56,11 +57,11 @@ final class DBPUIUserContentController: WKUserContentController {
 }
 
 @MainActor
-final class DBPUIUserScript: UserScriptsProvider {
-    lazy var userScripts: [UserScript] = [contentScopeUserScriptIsolated]
+public final class DBPUIUserScript: UserScriptsProvider {
+    public lazy var userScripts: [UserScript] = [contentScopeUserScriptIsolated]
 
     let contentScopeUserScriptIsolated: ContentScopeUserScript
-    var dbpUICommunicationLayer: DBPUICommunicationLayer
+    public var dbpUICommunicationLayer: DBPUICommunicationLayer
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
 
     init(privacyConfig: PrivacyConfigurationManaging,
@@ -77,7 +78,7 @@ final class DBPUIUserScript: UserScriptsProvider {
     }
 
     @MainActor
-    func loadWKUserScripts() async -> [WKUserScript] {
+    public func loadWKUserScripts() async -> [WKUserScript] {
         return await withTaskGroup(of: WKUserScriptBox.self) { @MainActor group in
             var wkUserScripts = [WKUserScript]()
             userScripts.forEach { userScript in
@@ -97,10 +98,10 @@ final class DBPUIUserScript: UserScriptsProvider {
 extension WKWebViewConfiguration {
 
     @MainActor
-    func applyDBPUIConfiguration(privacyConfig: PrivacyConfigurationManaging,
-                                 prefs: ContentScopeProperties,
-                                 delegate: DBPUICommunicationDelegate,
-                                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable) {
+    public func applyDBPUIConfiguration(privacyConfig: PrivacyConfigurationManaging,
+                                        prefs: ContentScopeProperties,
+                                        delegate: DBPUICommunicationDelegate,
+                                        webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable) {
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = DBPUIUserContentController(with: privacyConfig,
                                                                prefs: prefs,

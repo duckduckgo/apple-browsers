@@ -70,27 +70,23 @@ public protocol DataBrokerProtectionRepository {
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 }
 
-final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
+public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
     private static let profileId: Int64 = 1 // At the moment, we only support one profile for DBP.
 
     private let fakeBrokerFlag: DataBrokerDebugFlag
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
-    private let vault: (any DataBrokerProtectionSecureVault)?
-    private let secureVaultErrorReporter: SecureVaultReporting?
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let vault: (any DataBrokerProtectionSecureVault)
 
-    init(fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker(),
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
-         vault: (any DataBrokerProtectionSecureVault)? = nil,
-         secureVaultErrorReporter: SecureVaultReporting? = DataBrokerProtectionSecureVaultErrorReporter.shared) {
+    public init(fakeBrokerFlag: DataBrokerDebugFlag,
+         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+         vault: (any DataBrokerProtectionSecureVault)) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
-        self.secureVaultErrorReporter = secureVaultErrorReporter
     }
 
-    func save(_ profile: DataBrokerProtectionProfile) async throws {
+    public func save(_ profile: DataBrokerProtectionProfile) async throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
 
             if try vault.fetchProfile(with: Self.profileId) != nil {
                 try await updateProfile(profile, vault: vault)
@@ -105,7 +101,6 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
 
     public func fetchProfile() throws -> DataBrokerProtectionProfile? {
         do {
-            let vault = try DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.fetchProfile(with: Self.profileId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchProfile")
@@ -115,7 +110,6 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
 
     public func deleteProfileData() throws {
         do {
-            let vault = try DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.deleteProfileData()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.deleteProfileData")
@@ -123,9 +117,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
+    public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         do {
-            let vault = try DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.fetchChildBrokers(for: parentBroker)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchChildBrokers for parentBroker")
@@ -133,9 +126,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func save(_ extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64 {
+    public func save(_ extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64 {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.save(extractedProfile: extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.save extractedProfile brokerId profileQueryId")
@@ -143,9 +135,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData? {
+    public func brokerProfileQueryData(for brokerId: Int64, and profileQueryId: Int64) throws -> BrokerProfileQueryData? {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             guard let broker = try vault.fetchBroker(with: brokerId),
                   let profileQuery = try vault.fetchProfileQuery(with: profileQueryId),
                   let scanJob = try vault.fetchScan(brokerId: brokerId, profileQueryId: profileQueryId) else {
@@ -168,9 +159,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
+    public func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.fetchExtractedProfiles(for: brokerId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfiles for brokerId")
@@ -178,9 +168,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updatePreferredRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updatePreferredRunDate date brokerID profileQueryId")
@@ -188,9 +177,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updatePreferredRunDate(
                 date,
                 brokerId: brokerId,
@@ -202,9 +190,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateLastRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updateLastRunDate date brokerID profileQueryId")
@@ -212,9 +199,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateLastRunDate(
                 date,
                 brokerId: brokerId,
@@ -227,9 +213,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateAttemptCount(
                 count,
                 brokerId: brokerId,
@@ -242,9 +227,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.incrementAttemptCount(
                 brokerId: brokerId,
                 profileQueryId: profileQueryId,
@@ -256,12 +240,11 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateSubmittedSuccessfullyDate(_ date: Date?,
+    public func updateSubmittedSuccessfullyDate(_ date: Date?,
                                          forBrokerId brokerId: Int64,
                                          profileQueryId: Int64,
                                          extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateSubmittedSuccessfullyDate(
                 date,
                 forBrokerId: brokerId,
@@ -274,12 +257,11 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                forBrokerId brokerId: Int64,
                                                profileQueryId: Int64,
                                                extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateSevenDaysConfirmationPixelFired(
                 pixelFired,
                 forBrokerId: brokerId,
@@ -292,12 +274,11 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                   forBrokerId brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateFourteenDaysConfirmationPixelFired(
                 pixelFired,
                 forBrokerId: brokerId,
@@ -310,12 +291,11 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateTwentyOneDaysConfirmationPixelFired(
                 pixelFired,
                 forBrokerId: brokerId,
@@ -328,9 +308,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
+    public func updateRemovedDate(_ date: Date?, on extractedProfileId: Int64) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.updateRemovedDate(for: extractedProfileId, with: date)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.updateRemovedDate date on extractedProfileId")
@@ -338,9 +317,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func add(_ historyEvent: HistoryEvent) throws {
+    public func add(_ historyEvent: HistoryEvent) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
 
             if  let extractedProfileId = historyEvent.extractedProfileId {
                 try vault.save(historyEvent: historyEvent, brokerId: historyEvent.brokerId, profileQueryId: historyEvent.profileQueryId, extractedProfileId: extractedProfileId)
@@ -353,9 +331,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             let brokers = try vault.fetchAllBrokers()
             let profileQueries = try vault.fetchAllProfileQueries(for: Self.profileId)
             var brokerProfileQueryDataList = [BrokerProfileQueryData]()
@@ -385,9 +362,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {
+    public func saveOptOutJob(optOut: OptOutJobData, extractedProfile: ExtractedProfile) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.save(brokerId: optOut.brokerId,
                            profileQueryId: optOut.profileQueryId,
                            extractedProfile: extractedProfile,
@@ -405,9 +381,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent? {
+    public func fetchLastEvent(brokerId: Int64, profileQueryId: Int64) throws -> HistoryEvent? {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             let events = try vault.fetchEvents(brokerId: brokerId, profileQueryId: profileQueryId)
             return events.max(by: { $0.date < $1.date })
         } catch {
@@ -416,9 +391,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func hasMatches() throws -> Bool {
+    public func hasMatches() throws -> Bool {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.hasMatches()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.hasMatches")
@@ -426,9 +400,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
+    public func fetchScanHistoryEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             guard let scan = try vault.fetchScan(brokerId: brokerId, profileQueryId: profileQueryId) else {
                 return [HistoryEvent]()
             }
@@ -439,9 +412,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent] {
+    public func fetchOptOutHistoryEvents(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> [HistoryEvent] {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             guard let optOut = try vault.fetchOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId) else {
                 return [HistoryEvent]()
             }
@@ -452,9 +424,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchAllAttempts() throws -> [AttemptInformation] {
+    public func fetchAllAttempts() throws -> [AttemptInformation] {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.fetchAllAttempts()
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAllAttempts")
@@ -462,9 +433,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
+    public func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             return try vault.fetchAttemptInformation(for: extractedProfileId)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.fetchAttemptInformation for extractedProfileId")
@@ -472,9 +442,8 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
+    public func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
         do {
-            let vault = try self.vault ?? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: secureVaultErrorReporter)
             try vault.save(extractedProfileId: extractedProfileId,
                            attemptUUID: attemptUUID,
                            dataBroker: dataBroker,
@@ -487,7 +456,7 @@ final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
     }
 
     private func handleError(_ error: Error, context: String) {
-        let event: DataBrokerProtectionPixels
+        let event: DataBrokerProtectionSharedPixels
         switch error {
         case is DatabaseError:
             event = .databaseError(error: error, functionOccurredIn: context)

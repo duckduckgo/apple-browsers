@@ -32,12 +32,12 @@ public enum EmailError: Error, Equatable, Codable {
     case unknownHTTPError
 }
 
-struct EmailData: Decodable {
+public struct EmailData: Decodable {
     let pattern: String?
     let emailAddress: String
 }
 
-protocol EmailServiceProtocol {
+public protocol EmailServiceProtocol {
     func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData
     func getConfirmationLink(from email: String,
                              numberOfRetries: Int,
@@ -46,7 +46,7 @@ protocol EmailServiceProtocol {
                              shouldRunNextStep: @escaping () -> Bool) async throws -> URL
 }
 
-struct EmailService: EmailServiceProtocol {
+public struct EmailService: EmailServiceProtocol {
     private struct Constants {
         static let endpointSubPath = "/dbp/em/v0"
     }
@@ -56,17 +56,17 @@ struct EmailService: EmailServiceProtocol {
     private let settings: DataBrokerProtectionSettings
     private let servicePixel: DataBrokerProtectionBackendServicePixels
 
-    init(urlSession: URLSession = URLSession.shared,
-         authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         settings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(),
-         servicePixel: DataBrokerProtectionBackendServicePixels = DefaultDataBrokerProtectionBackendServicePixels()) {
+    public init(urlSession: URLSession = URLSession.shared,
+                authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                settings: DataBrokerProtectionSettings,
+                servicePixel: DataBrokerProtectionBackendServicePixels) {
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.settings = settings
         self.servicePixel = servicePixel
     }
 
-    func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
+    public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
 
         var urlComponents = URLComponents(url: settings.selectedEnvironment.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path = "\(Constants.endpointSubPath)/generate"
@@ -109,7 +109,7 @@ struct EmailService: EmailServiceProtocol {
         }
     }
 
-    func getConfirmationLink(from email: String,
+    public func getConfirmationLink(from email: String,
                              numberOfRetries: Int = 100,
                              pollingInterval: TimeInterval = 30,
                              attemptId: UUID,

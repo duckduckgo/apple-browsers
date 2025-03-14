@@ -22,15 +22,14 @@ import SecureStorage
 import PixelKit
 import Common
 
-final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultReporting {
-    static let shared = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: DataBrokerProtectionPixelsHandler())
+public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultReporting {
 
-    let pixelHandler: EventMapping<DataBrokerProtectionPixels>
-    private init(pixelHandler: EventMapping<DataBrokerProtectionPixels>) {
+    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
         self.pixelHandler = pixelHandler
     }
 
-    func secureVaultError(_ error: SecureStorageError) {
+    public func secureVaultError(_ error: SecureStorageError) {
         switch error {
         case .initFailed(let cause as SecureStorageError):
             switch cause {

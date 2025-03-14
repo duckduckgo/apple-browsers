@@ -18,7 +18,7 @@
 
 import Foundation
 
-struct MapperToDB {
+public struct MapperToDB {
 
     private let mechanism: (Data) throws -> Data
     private let jsonEncoder = JSONEncoder()

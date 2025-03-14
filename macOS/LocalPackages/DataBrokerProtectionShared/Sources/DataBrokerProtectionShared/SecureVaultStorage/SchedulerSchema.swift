@@ -21,7 +21,7 @@ import BrowserServicesKit
 import SecureStorage
 import GRDB
 
-struct ProfileQueryDB: Codable {
+public struct ProfileQueryDB: Codable {
     let id: Int64?
     let profileId: Int64
     let first: Data
@@ -38,7 +38,7 @@ struct ProfileQueryDB: Codable {
 }
 
 extension ProfileQueryDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "profileQuery"
+    public static let databaseTableName: String = "profileQuery"
 
     enum Columns: String, ColumnExpression {
         case id
@@ -56,7 +56,7 @@ extension ProfileQueryDB: PersistableRecord, FetchableRecord {
         case deprecated
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         id = row[Columns.id]
         profileId = row[Columns.profileId]
         first = row[Columns.first]
@@ -72,7 +72,7 @@ extension ProfileQueryDB: PersistableRecord, FetchableRecord {
         deprecated = row[Columns.deprecated]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.id] = id
         container[Columns.profileId] = profileId
         container[Columns.first] = first
@@ -89,7 +89,7 @@ extension ProfileQueryDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct BrokerDB: Codable {
+public struct BrokerDB: Codable {
     let id: Int64?
     let name: String
     let json: Data
@@ -98,7 +98,7 @@ struct BrokerDB: Codable {
 }
 
 extension BrokerDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "broker"
+    public static let databaseTableName: String = "broker"
 
     enum Columns: String, ColumnExpression {
         case id
@@ -108,7 +108,7 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         case url
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         id = row[Columns.id]
         name = row[Columns.name]
         json = row[Columns.json]
@@ -116,7 +116,7 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         url = row[Columns.url]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.id] = id
         container[Columns.name] = name
         container[Columns.json] = json
@@ -125,7 +125,7 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct ScanDB: Codable {
+public struct ScanDB: Codable {
     let brokerId: Int64
     let profileQueryId: Int64
     var lastRunDate: Date?
@@ -133,7 +133,7 @@ struct ScanDB: Codable {
 }
 
 extension ScanDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "scan"
+    public static let databaseTableName: String = "scan"
 
     static let profileQuery = belongsTo(ProfileQueryDB.self)
     static let broker = belongsTo(BrokerDB.self)
@@ -145,14 +145,14 @@ extension ScanDB: PersistableRecord, FetchableRecord {
         case preferredRunDate
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         brokerId = row[Columns.brokerId]
         profileQueryId = row[Columns.profileQueryId]
         lastRunDate = row[Columns.lastRunDate]
         preferredRunDate = row[Columns.preferredRunDate]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.brokerId] = brokerId
         container[Columns.profileQueryId] = profileQueryId
         container[Columns.lastRunDate] = lastRunDate
@@ -160,7 +160,7 @@ extension ScanDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct ScanHistoryEventDB: Codable {
+public struct ScanHistoryEventDB: Codable {
     let brokerId: Int64
     let profileQueryId: Int64
     let event: Data
@@ -168,7 +168,7 @@ struct ScanHistoryEventDB: Codable {
 }
 
 extension ScanHistoryEventDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "scanHistoryEvent"
+    public static let databaseTableName: String = "scanHistoryEvent"
 
     static let profileQuery = belongsTo(ProfileQueryDB.self)
     static let broker = belongsTo(BrokerDB.self)
@@ -180,14 +180,14 @@ extension ScanHistoryEventDB: PersistableRecord, FetchableRecord {
         case timestamp
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         brokerId = row[Columns.brokerId]
         profileQueryId = row[Columns.profileQueryId]
         event = row[Columns.event]
         timestamp = row[Columns.timestamp]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.brokerId] = brokerId
         container[Columns.profileQueryId] = profileQueryId
         container[Columns.event] = event
@@ -195,7 +195,7 @@ extension ScanHistoryEventDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct OptOutDB: Codable {
+public struct OptOutDB: Codable {
     let brokerId: Int64
     let profileQueryId: Int64
     let extractedProfileId: Int64
@@ -215,7 +215,7 @@ struct OptOutDB: Codable {
 }
 
 extension OptOutDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "optOut"
+    public static let databaseTableName: String = "optOut"
 
     static let profileQuery = belongsTo(ProfileQueryDB.self)
     static let broker = belongsTo(BrokerDB.self)
@@ -239,7 +239,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         case twentyOneDaysConfirmationPixelFired
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         brokerId = row[Columns.brokerId]
         profileQueryId = row[Columns.profileQueryId]
         extractedProfileId = row[Columns.extractedProfileId]
@@ -253,7 +253,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
         twentyOneDaysConfirmationPixelFired = row[Columns.twentyOneDaysConfirmationPixelFired]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.brokerId] = brokerId
         container[Columns.profileQueryId] = profileQueryId
         container[Columns.extractedProfileId] = extractedProfileId
@@ -268,7 +268,7 @@ extension OptOutDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct OptOutHistoryEventDB: Codable {
+public struct OptOutHistoryEventDB: Codable {
     let brokerId: Int64
     let profileQueryId: Int64
     let extractedProfileId: Int64
@@ -277,7 +277,7 @@ struct OptOutHistoryEventDB: Codable {
 }
 
 extension OptOutHistoryEventDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "optOutHistoryEvent"
+    public static let databaseTableName: String = "optOutHistoryEvent"
 
     static let profileQuery = belongsTo(ProfileQueryDB.self)
     static let broker = belongsTo(BrokerDB.self)
@@ -291,7 +291,7 @@ extension OptOutHistoryEventDB: PersistableRecord, FetchableRecord {
         case timestamp
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         brokerId = row[Columns.brokerId]
         profileQueryId = row[Columns.profileQueryId]
         extractedProfileId = row[Columns.extractedProfileId]
@@ -299,7 +299,7 @@ extension OptOutHistoryEventDB: PersistableRecord, FetchableRecord {
         timestamp = row[Columns.timestamp]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.brokerId] = brokerId
         container[Columns.profileQueryId] = profileQueryId
         container[Columns.extractedProfileId] = extractedProfileId
@@ -308,7 +308,7 @@ extension OptOutHistoryEventDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct ExtractedProfileDB: Codable {
+public struct ExtractedProfileDB: Codable {
     let id: Int64?
     let brokerId: Int64
     let profileQueryId: Int64
@@ -317,7 +317,7 @@ struct ExtractedProfileDB: Codable {
 }
 
 extension ExtractedProfileDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "extractedProfile"
+    public static let databaseTableName: String = "extractedProfile"
 
     static let profileQuery = belongsTo(ProfileQueryDB.self)
     static let broker = belongsTo(BrokerDB.self)
@@ -330,7 +330,7 @@ extension ExtractedProfileDB: PersistableRecord, FetchableRecord {
         case removedDate
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         id = row[Columns.id]
         brokerId = row[Columns.brokerId]
         profileQueryId = row[Columns.profileQueryId]
@@ -338,7 +338,7 @@ extension ExtractedProfileDB: PersistableRecord, FetchableRecord {
         removedDate = row[Columns.removedDate]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.id] = id
         container[Columns.brokerId] = brokerId
         container[Columns.profileQueryId] = profileQueryId
@@ -347,7 +347,7 @@ extension ExtractedProfileDB: PersistableRecord, FetchableRecord {
     }
 }
 
-struct OptOutAttemptDB: Codable {
+public struct OptOutAttemptDB: Codable {
     let extractedProfileId: Int64
     let dataBroker: String
     var attemptId: String
@@ -356,7 +356,7 @@ struct OptOutAttemptDB: Codable {
 }
 
 extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
-    static let databaseTableName: String = "optOutAttempt"
+    public static let databaseTableName: String = "optOutAttempt"
 
     static let extractedProfile = belongsTo(ExtractedProfileDB.self)
 
@@ -368,7 +368,7 @@ extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
         case startDate
     }
 
-    init(row: Row) throws {
+    public init(row: Row) throws {
         extractedProfileId = row[Columns.extractedProfileId]
         dataBroker = row[Columns.dataBroker]
         attemptId = row[Columns.attemptId]
@@ -376,7 +376,7 @@ extension OptOutAttemptDB: PersistableRecord, FetchableRecord {
         startDate = row[Columns.startDate]
     }
 
-    func encode(to container: inout PersistenceContainer) throws {
+    public func encode(to container: inout PersistenceContainer) throws {
         container[Columns.extractedProfileId] = extractedProfileId
         container[Columns.dataBroker] = dataBroker
         container[Columns.attemptId] = attemptId

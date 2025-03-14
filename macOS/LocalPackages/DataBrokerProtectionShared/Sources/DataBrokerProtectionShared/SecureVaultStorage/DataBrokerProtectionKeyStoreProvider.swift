@@ -22,6 +22,10 @@ import BrowserServicesKit
 import SecureStorage
 import os.log
 
+public protocol GroupNameProviding {
+    var appGroupName: String { get }
+}
+
 final class DataBrokerProtectionKeyStoreProvider: SecureStorageKeyStoreProvider {
 
     struct Constants {
@@ -57,12 +61,12 @@ final class DataBrokerProtectionKeyStoreProvider: SecureStorageKeyStoreProvider 
     }
 
     let keychainService: KeychainService
-    private let groupNameProvider: GroupNameProviding
+    private let appGroupName: String
 
-    init(keychainService: KeychainService = DefaultKeychainService(),
-         groupNameProvider: GroupNameProviding = Bundle.main) {
+    init(appGroupName: String,
+         keychainService: KeychainService = DefaultKeychainService()) {
         self.keychainService = keychainService
-        self.groupNameProvider = groupNameProvider
+        self.appGroupName = appGroupName
     }
 
     func readData(named: String, serviceName: String) throws -> Data? {
@@ -74,7 +78,7 @@ final class DataBrokerProtectionKeyStoreProvider: SecureStorageKeyStoreProvider 
            kSecClass: kSecClassGenericPassword,
            kSecUseDataProtectionKeychain: true,
            kSecAttrSynchronizable: false,
-           kSecAttrAccessGroup: groupNameProvider.appGroupName,
+           kSecAttrAccessGroup: appGroupName,
            kSecAttrAccount: named,
        ] as [String: Any]
     }

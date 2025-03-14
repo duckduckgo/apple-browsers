@@ -47,7 +47,7 @@ struct PhoneDB: Codable {
     let profileId: Int64
 }
 
-struct FullProfileDB: FetchableRecord, Decodable {
+public struct FullProfileDB: FetchableRecord, Decodable {
     var profile: ProfileDB
     var names: [NameDB]
     var addresses: [AddressDB]

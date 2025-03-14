@@ -20,21 +20,21 @@ import Foundation
 import BrowserServicesKit
 import SecureStorage
 
-typealias DataBrokerProtectionVaultFactory = SecureVaultFactory<DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>>
+public typealias DataBrokerProtectionVaultFactory = SecureVaultFactory<DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>>
 
-// swiftlint:disable identifier_name
-let DataBrokerProtectionSecureVaultFactory: DataBrokerProtectionVaultFactory = SecureVaultFactory<DefaultDataBrokerProtectionSecureVault>(
-    makeCryptoProvider: {
-        return DataBrokerProtectionCryptoProvider()
-    }, makeKeyStoreProvider: { _ in
-        return DataBrokerProtectionKeyStoreProvider()
-    }, makeDatabaseProvider: { key in
-        try DefaultDataBrokerProtectionDatabaseProvider.create(key: key)
-    }
-)
-// swiftlint:enable identifier_name
+public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String, databaseFileURL: URL) -> DataBrokerProtectionVaultFactory {
+    return SecureVaultFactory<DefaultDataBrokerProtectionSecureVault>(
+        makeCryptoProvider: {
+            return DataBrokerProtectionCryptoProvider()
+        }, makeKeyStoreProvider: { _ in
+            return DataBrokerProtectionKeyStoreProvider(appGroupName: appGroupName)
+        }, makeDatabaseProvider: { key in
+            try DefaultDataBrokerProtectionDatabaseProvider.create(file: databaseFileURL, key: key)
+        }
+    )
+}
 
-protocol DataBrokerProtectionSecureVault: SecureVault {
+public protocol DataBrokerProtectionSecureVault: SecureVault {
     func save(profile: DataBrokerProtectionProfile) throws -> Int64
     func update(profile: DataBrokerProtectionProfile) throws -> Int64
     func fetchProfile(with id: Int64) throws -> DataBrokerProtectionProfile?
@@ -112,24 +112,24 @@ protocol DataBrokerProtectionSecureVault: SecureVault {
     func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
 }
 
-final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
-    typealias DataBrokerProtectionStorageProviders = SecureStorageProviders<T>
+public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDatabaseProvider>: DataBrokerProtectionSecureVault {
+    public typealias DataBrokerProtectionStorageProviders = SecureStorageProviders<T>
 
     private let providers: DataBrokerProtectionStorageProviders
 
-    required init(providers: DataBrokerProtectionStorageProviders) {
+    public required init(providers: DataBrokerProtectionStorageProviders) {
         self.providers = providers
     }
 
-    func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
+    public func save(profile: DataBrokerProtectionProfile) throws -> Int64 {
         return try self.providers.database.saveProfile(profile: profile, mapperToDB: MapperToDB(mechanism: l2Encrypt(data:)))
     }
 
-    func update(profile: DataBrokerProtectionProfile) throws -> Int64 {
+    public func update(profile: DataBrokerProtectionProfile) throws -> Int64 {
         return try self.providers.database.updateProfile(profile: profile, mapperToDB: MapperToDB(mechanism: l2Encrypt(data:)))
     }
 
-    func fetchProfile(with id: Int64) throws -> DataBrokerProtectionProfile? {
+    public func fetchProfile(with id: Int64) throws -> DataBrokerProtectionProfile? {
         let profile = try self.providers.database.fetchProfile(with: id)
 
         if let profile = profile {
@@ -140,21 +140,21 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func deleteProfileData() throws {
+    public func deleteProfileData() throws {
         try self.providers.database.deleteProfileData()
     }
 
-    func save(broker: DataBroker) throws -> Int64 {
+    public func save(broker: DataBroker) throws -> Int64 {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         return try self.providers.database.save(mapper.mapToDB(broker))
     }
 
-    func update(_ broker: DataBroker, with id: Int64) throws {
+    public func update(_ broker: DataBroker, with id: Int64) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         return try self.providers.database.update(mapper.mapToDB(broker, id: id))
     }
 
-    func fetchBroker(with id: Int64) throws -> DataBroker? {
+    public func fetchBroker(with id: Int64) throws -> DataBroker? {
         if let broker = try self.providers.database.fetchBroker(with: id) {
             let mapper = MapperToModel(mechanism: l2Decrypt(data:))
             return try mapper.mapToModel(broker)
@@ -163,7 +163,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         return nil
     }
 
-    func fetchBroker(with name: String) throws -> DataBroker? {
+    public func fetchBroker(with name: String) throws -> DataBroker? {
         if let broker = try self.providers.database.fetchBroker(with: name) {
             let mapper = MapperToModel(mechanism: l2Decrypt(data:))
             return try mapper.mapToModel(broker)
@@ -172,37 +172,37 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         return nil
     }
 
-    func fetchAllBrokers() throws -> [DataBroker] {
+    public func fetchAllBrokers() throws -> [DataBroker] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchAllBrokers().map(mapper.mapToModel(_:))
     }
 
-    func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
+    public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         let brokers = try self.providers.database.fetchAllBrokers().map(mapper.mapToModel(_:))
 
         return brokers.filter { $0.parent == parentBroker }
     }
 
-    func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
+    public func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         return try self.providers.database.save(mapper.mapToDB(profileQuery, relatedTo: profileId))
     }
 
-    func delete(profileQuery: ProfileQuery, profileId: Int64) throws {
+    public func delete(profileQuery: ProfileQuery, profileId: Int64) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         return try self.providers.database.delete(mapper.mapToDB(profileQuery, relatedTo: profileId))
     }
 
-    func update(_ profileQuery: ProfileQuery, brokerIDs: [Int64], profileId: Int64) throws -> Int64 {
+    public func update(_ profileQuery: ProfileQuery, brokerIDs: [Int64], profileId: Int64) throws -> Int64 {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         let profileQueryDB = try mapper.mapToDB(profileQuery, relatedTo: profileId)
 
         return try self.providers.database.update(profileQueryDB)
     }
 
-    func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
+    public func fetchProfileQuery(with id: Int64) throws -> ProfileQuery? {
         let profileQuery = try self.providers.database.fetchProfileQuery(with: id)
 
         if let profileQuery = profileQuery {
@@ -213,12 +213,12 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchAllProfileQueries(for profileId: Int64) throws -> [ProfileQuery] {
+    public func fetchAllProfileQueries(for profileId: Int64) throws -> [ProfileQuery] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         return try self.providers.database.fetchAllProfileQueries(for: profileId).map(mapper.mapToModel(_:))
     }
 
-    func save(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
+    public func save(brokerId: Int64, profileQueryId: Int64, lastRunDate: Date?, preferredRunDate: Date?) throws {
         try self.providers.database.save(
             brokerId: brokerId,
             profileQueryId: profileQueryId,
@@ -227,15 +227,15 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         )
     }
 
-    func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         try self.providers.database.updatePreferredRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId)
     }
 
-    func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64) throws {
         try self.providers.database.updateLastRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId)
     }
 
-    func fetchScan(brokerId: Int64, profileQueryId: Int64) throws -> ScanJobData? {
+    public func fetchScan(brokerId: Int64, profileQueryId: Int64) throws -> ScanJobData? {
         if let scanDB = try self.providers.database.fetchScan(brokerId: brokerId, profileQueryId: profileQueryId) {
             let scanEvents = try self.providers.database.fetchScanEvents(brokerId: brokerId, profileQueryId: profileQueryId)
             let mapper = MapperToModel(mechanism: l2Decrypt(data:))
@@ -246,7 +246,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchAllScans() throws -> [ScanJobData] {
+    public func fetchAllScans() throws -> [ScanJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         var scans = [ScanJobData]()
         let scansDB = try self.providers.database.fetchAllScans()
@@ -259,7 +259,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         return scans
     }
 
-    func save(brokerId: Int64,
+    public func save(brokerId: Int64,
               profileQueryId: Int64,
               extractedProfile: ExtractedProfile,
               createdDate: Date,
@@ -287,30 +287,30 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         )
     }
 
-    func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         try self.providers.database.updatePreferredRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         try self.providers.database.updateLastRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         try self.providers.database.updateAttemptCount(count, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func incrementAttemptCount(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         try self.providers.database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    func updateSubmittedSuccessfullyDate(_ date: Date?,
+    public func updateSubmittedSuccessfullyDate(_ date: Date?,
                                          forBrokerId brokerId: Int64,
                                          profileQueryId: Int64,
                                          extractedProfileId: Int64) throws {
         try self.providers.database.updateSubmittedSuccessfullyDate(date, forBrokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                forBrokerId brokerId: Int64,
                                                profileQueryId: Int64,
                                                extractedProfileId: Int64) throws {
@@ -320,7 +320,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
                                                                           extractedProfileId: extractedProfileId)
     }
 
-    func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                   forBrokerId brokerId: Int64,
                                                   profileQueryId: Int64,
                                                   extractedProfileId: Int64) throws {
@@ -330,7 +330,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
                                                                              extractedProfileId: extractedProfileId)
     }
 
-    func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
+    public func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws {
@@ -340,7 +340,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
                                                                               extractedProfileId: extractedProfileId)
     }
 
-    func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
+    public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         if let optOutResult = try self.providers.database.fetchOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId) {
             let optOutEvents = try self.providers.database.fetchOptOutEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
@@ -350,7 +350,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchOptOuts(brokerId: Int64, profileQueryId: Int64) throws -> [OptOutJobData] {
+    public func fetchOptOuts(brokerId: Int64, profileQueryId: Int64) throws -> [OptOutJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchOptOuts(brokerId: brokerId, profileQueryId: profileQueryId).map {
@@ -363,7 +363,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchOptOuts(brokerId: Int64) throws -> [OptOutJobData] {
+    public func fetchOptOuts(brokerId: Int64) throws -> [OptOutJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchOptOuts(brokerId: brokerId).map {
@@ -376,7 +376,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchAllOptOuts() throws -> [OptOutJobData] {
+    public func fetchAllOptOuts() throws -> [OptOutJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchAllOptOuts().map {
@@ -389,19 +389,19 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws {
+    public func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
 
         try self.providers.database.save(mapper.mapToDB(historyEvent, brokerId: brokerId, profileQueryId: profileQueryId))
     }
 
-    func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
+    public func save(historyEvent: HistoryEvent, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
 
         try self.providers.database.save(mapper.mapToDB(historyEvent, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId))
     }
 
-    func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
+    public func fetchEvents(brokerId: Int64, profileQueryId: Int64) throws -> [HistoryEvent] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         let scanEvents = try self.providers.database.fetchScanEvents(brokerId: brokerId, profileQueryId: profileQueryId).map(mapper.mapToModel(_:))
         let optOutEvents = try self.providers.database.fetchOptOutEvents(brokerId: brokerId, profileQueryId: profileQueryId).map(mapper.mapToModel(_:))
@@ -409,13 +409,13 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         return scanEvents + optOutEvents
     }
 
-    func save(extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64 {
+    public func save(extractedProfile: ExtractedProfile, brokerId: Int64, profileQueryId: Int64) throws -> Int64 {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
 
         return try self.providers.database.save(mapper.mapToDB(extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId))
     }
 
-    func fetchExtractedProfile(with id: Int64) throws -> ExtractedProfile? {
+    public func fetchExtractedProfile(with id: Int64) throws -> ExtractedProfile? {
         if let extractedProfile = try self.providers.database.fetchExtractedProfile(with: id) {
             let mapper = MapperToModel(mechanism: l2Decrypt(data:))
             return try mapper.mapToModel(extractedProfile)
@@ -424,34 +424,34 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfile] {
+    public func fetchExtractedProfiles(for brokerId: Int64, with profileQueryId: Int64) throws -> [ExtractedProfile] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         let extractedProfiles = try self.providers.database.fetchExtractedProfiles(for: brokerId, with: profileQueryId)
 
         return try extractedProfiles.map(mapper.mapToModel(_:))
     }
 
-    func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
+    public func fetchExtractedProfiles(for brokerId: Int64) throws -> [ExtractedProfile] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         let extractedProfiles = try self.providers.database.fetchExtractedProfiles(for: brokerId)
 
         return try extractedProfiles.map(mapper.mapToModel(_:))
     }
 
-    func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
+    public func updateRemovedDate(for extractedProfileId: Int64, with date: Date?) throws {
         try self.providers.database.updateRemovedDate(for: extractedProfileId, with: date)
     }
 
-    func hasMatches() throws -> Bool {
+    public func hasMatches() throws -> Bool {
         try self.providers.database.hasMatches()
     }
 
-    func fetchAllAttempts() throws -> [AttemptInformation] {
+    public func fetchAllAttempts() throws -> [AttemptInformation] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         return try self.providers.database.fetchAllAttempts().map(mapper.mapToModel(_:))
     }
 
-    func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
+    public func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation? {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         if let attemptDB = try self.providers.database.fetchAttemptInformation(for: extractedProfileId) {
             return mapper.mapToModel(attemptDB)
@@ -460,7 +460,7 @@ final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectionDataba
         }
     }
 
-    func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
+    public func save(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         try self.providers.database.save(mapper.mapToDB(extractedProfileId: extractedProfileId,
                                                         attemptUUID: attemptUUID,

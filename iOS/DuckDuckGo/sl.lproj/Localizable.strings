@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Preklic ni dovoljen več kot enkrat.";
 
+/* Close All Tabs */
+"close.all.tabs" = "Zapri vse zavihke";
+
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Odpri \"%1$@\" ob %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Izberi vse";
+
+/* Deselect all tabs */
+"tab.select.none" = "Počisti izbiro vsega";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Preklopi med zavihki";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Dodaj vse zavihke med zaznamke";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Povečajte ali zmanjšajte velikost besedila na vseh spletnih mestih.";

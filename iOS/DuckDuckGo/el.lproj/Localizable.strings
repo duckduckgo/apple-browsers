@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Δεν μπορείτε να ακυρώσετε περισσότερες από μία φορές";
 
+/* Close All Tabs */
+"close.all.tabs" = "Κλείσιμο όλων των καρτελών";
+
 /* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Άνοιγμα \"%1$@\" στο %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Επιλογή όλων";
+
+/* Deselect all tabs */
+"tab.select.none" = "Αποεπιλογή όλων";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Εναλλαγή καρτελών";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Προσθήκη σελιδοδείκτη σε όλες τις καρτέλες";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Αυξήστε ή μειώστε το μέγεθος του κειμένου σε όλους τους ιστότοπους.";

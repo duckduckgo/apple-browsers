@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anularea nu este permisă mai mult de o singură dată";
 
+/* Close All Tabs */
+"close.all.tabs" = "Închide toate filele";
+
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Deschide \"%1$@\" la %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Selectează tot";
+
+/* Deselect all tabs */
+"tab.select.none" = "Deselectează tot";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Comutator între file";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Marchează toate filele";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Mărește sau micșorează dimensiunea textului pe toate site-urile.";

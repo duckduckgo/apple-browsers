@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anulowanie nie jest dozwolone więcej niż jeden raz";
 
+/* Close All Tabs */
+"close.all.tabs" = "Zamknij wszystkie karty";
+
 /* No comment provided by engineer. */
 "Confirm" = "Potwierdź";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otwórz „%1$@” w %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Wybierz wszystko";
+
+/* Deselect all tabs */
+"tab.select.none" = "Usuń wszystkie zaznaczenia";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Przełącznik kart";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Dodaj wszystkie karty do zakładek";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zwiększ lub zmniejsz rozmiar tekstu na wszystkich stronach.";

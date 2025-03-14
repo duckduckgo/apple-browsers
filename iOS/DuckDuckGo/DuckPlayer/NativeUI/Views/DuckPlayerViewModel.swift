@@ -32,23 +32,6 @@ import WebKit
 @MainActor
 final class DuckPlayerViewModel: ObservableObject {
 
-    /// A publisher to notify when Youtube navigation is required.
-    /// Emits the videoID that should be opened in YouTube.
-    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
-
-    /// A publisher to notify when the settings button is pressed.    
-    let settingsRequestPublisher = PassthroughSubject<Void, Never>()
-
-    /// A publisher to notify when the view is dismissed
-    let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
-
-    /// Current interface orientation state.
-    /// - `true` when device is in landscape orientation
-    /// - `false` when device is in portrait orientation
-    @Published private var isLandscape: Bool = false
-
-    weak var duckPlayer: DuckPlayerControlling?
-
     /// Constants used for YouTube URL generation and parameters
     enum Constants {
         /// Base URL for privacy-preserving YouTube embeds
@@ -68,28 +51,18 @@ final class DuckPlayerViewModel: ObservableObject {
         static let startParameter = "start"
     }
 
+    /// A publisher to notify when Youtube navigation is required.
+    /// Emits the videoID that should be opened in YouTube.
+    let youtubeNavigationRequestPublisher = PassthroughSubject<String, Never>()
+
+    /// A publisher to notify when the settings button is pressed.    
+    let settingsRequestPublisher = PassthroughSubject<Void, Never>()
+
+    /// A publisher to notify when the view is dismissed
+    let dismissPublisher = PassthroughSubject<TimeInterval, Never>()
+
     /// The YouTube video ID to be played
     let videoID: String
-
-    /// App settings instance for accessing user preferences
-    var appSettings: AppSettings
-
-    /// Whether the "Watch in YouTube" button should be visible
-    /// Returns `false` when in landscape mode to maximize video viewing area
-    var shouldShowYouTubeButton: Bool {
-        !isLandscape
-    }
-
-    var cancellables = Set<AnyCancellable>()
-
-    /// The generated URL for the embedded YouTube player
-    @Published private(set) var url: URL?
-    @Published private(set) var timestamp: TimeInterval = 0
-
-    // MARK: - Private Properties
-    private var timestampUpdateTimer: Timer?
-    private var webView: WKWebView?
-    private var coordinator: DuckPlayerWebView.Coordinator?
 
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
@@ -97,14 +70,46 @@ final class DuckPlayerViewModel: ObservableObject {
         Constants.playsInlineParameter: Constants.enabled
     ]
 
+    /// The referrer for the DuckPlayer
+    let source: DuckPlayer.VideoNavigationSource
+
+    /// App settings instance for accessing user preferences
+    var appSettings: AppSettings
+
+    /// Whether the "Watch in YouTube" button should be visible
+    /// This is only shown for SERP videos as otherwise the video is already on YouTube    
+    var shouldShowYouTubeButton: Bool {
+        !isLandscape && source == .serp
+    }
+
+    var cancellables = Set<AnyCancellable>()
+
+    /// The DuckPlayer instance
+    weak var duckPlayer: DuckPlayerControlling?
+
+    /// The generated URL for the embedded YouTube player
+    @Published private(set) var url: URL?
+    @Published private(set) var timestamp: TimeInterval = 0
+
+    /// Current interface orientation state.
+    /// - `true` when device is in landscape orientation
+    /// - `false` when device is in portrait orientation
+    @Published var isLandscape: Bool = false
+
+    // MARK: - Private Properties
+    private var timestampUpdateTimer: Timer?
+    private var webView: WKWebView?
+    private var coordinator: DuckPlayerWebView.Coordinator?
+
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source: DuckPlayer.VideoNavigationSource = .other) {
         self.videoID = videoID
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
+        self.source = source
         self.url = getVideoURL()
     }
 

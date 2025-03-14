@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "L'annulation ne peut pas être effectuée plus d'une fois";
 
+/* Close All Tabs */
+"close.all.tabs" = "Fermer tous les onglets";
+
 /* No comment provided by engineer. */
 "Confirm" = "Confirmer";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ouvrir « %1$@ » via %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Tout sélectionner";
+
+/* Deselect all tabs */
+"tab.select.none" = "Tout désélectionner";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Outil de changement d'onglet";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Ajouter tous les onglets aux signets";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Augmentez ou diminuez la taille du texte sur tous les sites.";

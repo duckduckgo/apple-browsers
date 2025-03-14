@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Atcelt nav atļauts vairāk nekā vienu reizi";
 
+/* Close All Tabs */
+"close.all.tabs" = "Aizvērt visas cilnes";
+
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atvērt “%1$@” vietnē %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Atlasīt visus";
+
+/* Deselect all tabs */
+"tab.select.none" = "Noņemt atlasi visiem";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Ciļņu pārslēdzējs";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Pievienot grāmatzīmes visām cilnēm";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Palielini vai samazini teksta lielumu visās vietnēs.";

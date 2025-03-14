@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Tühistamine ei ole lubatud rohkem kui üks kord";
 
+/* Close All Tabs */
+"close.all.tabs" = "Sule kõik vahelehed";
+
 /* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Ava \"%1$@\" aadressil %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Vali kõik";
+
+/* Deselect all tabs */
+"tab.select.none" = "Tühista kogu valik";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Vahekaardi vahetaja";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Lisa kõigile vahekaartidele järjehoidja";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurendage või vähendage teksti suurust kõigil saitidel.";

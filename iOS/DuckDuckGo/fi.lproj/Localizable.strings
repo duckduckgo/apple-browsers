@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Peruutus on sallittu vain kerran";
 
+/* Close All Tabs */
+"close.all.tabs" = "Sulje kaikki välilehdet";
+
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Avaa \"%1$@\" osoitteessa %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Valitse kaikki";
+
+/* Deselect all tabs */
+"tab.select.none" = "Poista kaikkien valinta";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Välilehtien vaihtotyökalu";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Lisää kaikki välilehdet kirjanmerkkeihin";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Suurenna tai pienennä tekstin kokoa kaikilla sivustoilla.";

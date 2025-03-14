@@ -18,65 +18,31 @@
 
 import Foundation
 import Combine
+import Common
 import AppKitExtensions
+import BrowserServicesKit
+import DataBrokerProtectionShared
 
-public final class DataBrokerProtectionSettings {
-    private let defaults: UserDefaults
-
-    private enum Keys {
-        static let runType = "dbp.environment.run-type"
-    }
-
-    public enum SelectedEnvironment: String, Codable {
-        case production
-        case staging
-
-        public static var `default`: SelectedEnvironment = .production
-
-        public var endpointURL: URL {
-            switch self {
-            case .production:
-                return URL(string: "https://dbp.duckduckgo.com")!
-            case .staging:
-                return URL(string: "https://dbp-staging.duckduckgo.com")!
-            }
-        }
-    }
-
-    public init(defaults: UserDefaults) {
-        self.defaults = defaults
-    }
-
-    public convenience init() {
-        self.init(defaults: .dbp)
-    }
-
-    // MARK: - Environment
-
-    public var selectedEnvironment: SelectedEnvironment {
-        get {
-            defaults.dataBrokerProtectionSelectedEnvironment
-        }
-
-        set {
-            defaults.dataBrokerProtectionSelectedEnvironment = newValue
-        }
-    }
+extension DataBrokerProtectionSettings {
 
     public func updateStoredRunType() {
-        storedRunType = NSApplication.runType
+        storedRunType = AppVersion.runType
     }
 
-    public private(set) var storedRunType: NSApplication.RunType? {
+    public private(set) var storedRunType: AppVersion.AppRunType? {
         get {
             guard let runType = UserDefaults.dbp.string(forKey: Keys.runType) else {
                 return nil
             }
-            return NSApplication.RunType(rawValue: runType)
+            return AppVersion.AppRunType(rawValue: runType)
         }
         set(runType) {
             UserDefaults.dbp.set(runType?.rawValue, forKey: Keys.runType)
         }
+    }
+
+    public var runType: AppVersion.AppRunType? {
+        return storedRunType
     }
 
     // MARK: - Show in Menu Bar
@@ -97,36 +63,10 @@ public final class DataBrokerProtectionSettings {
 }
 
 extension UserDefaults {
-    private var selectedEnvironmentKey: String {
-        "dataBrokerProtectionSelectedEnvironmentRawValue"
-    }
-
+    
     static let showMenuBarIconDefaultValue = false
     private var showMenuBarIconKey: String {
         "dataBrokerProtectionShowMenuBarIcon"
-    }
-
-    // MARK: - Environment
-
-    @objc
-    dynamic var dataBrokerProtectionSelectedEnvironmentRawValue: String {
-        get {
-            value(forKey: selectedEnvironmentKey) as? String ?? DataBrokerProtectionSettings.SelectedEnvironment.default.rawValue
-        }
-
-        set {
-            set(newValue, forKey: selectedEnvironmentKey)
-        }
-    }
-
-    var dataBrokerProtectionSelectedEnvironment: DataBrokerProtectionSettings.SelectedEnvironment {
-        get {
-            DataBrokerProtectionSettings.SelectedEnvironment(rawValue: dataBrokerProtectionSelectedEnvironmentRawValue) ?? .default
-        }
-
-        set {
-            dataBrokerProtectionSelectedEnvironmentRawValue = newValue.rawValue
-        }
     }
 
     // MARK: - Show in Menu Bar

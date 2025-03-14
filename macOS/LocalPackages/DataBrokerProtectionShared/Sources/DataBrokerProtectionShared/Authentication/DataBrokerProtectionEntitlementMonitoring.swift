@@ -18,7 +18,7 @@
 
 import Foundation
 
-protocol DataBrokerProtectionEntitlementMonitoring {
+public protocol DataBrokerProtectionEntitlementMonitoring {
     func start(checkEntitlementFunction: @escaping () async throws -> Bool, interval: TimeInterval, callback: @escaping (DataBrokerProtectionEntitlementMonitorResult) -> Void)
     func stop()
 }
@@ -29,10 +29,13 @@ public enum DataBrokerProtectionEntitlementMonitorResult {
     case error
 }
 
-final class DataBrokerProtectionEntitlementMonitor: DataBrokerProtectionEntitlementMonitoring {
+public final class DataBrokerProtectionEntitlementMonitor: DataBrokerProtectionEntitlementMonitoring {
     private var timer: Timer?
 
-    func start(checkEntitlementFunction: @escaping () async throws -> Bool, interval: TimeInterval, callback: @escaping (DataBrokerProtectionEntitlementMonitorResult) -> Void) {
+    public init() {
+    }
+
+    public func start(checkEntitlementFunction: @escaping () async throws -> Bool, interval: TimeInterval, callback: @escaping (DataBrokerProtectionEntitlementMonitorResult) -> Void) {
         timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             Task {
                 do {
@@ -49,7 +52,7 @@ final class DataBrokerProtectionEntitlementMonitor: DataBrokerProtectionEntitlem
         }
     }
 
-    func stop() {
+    public func stop() {
         timer?.invalidate()
         timer = nil
     }

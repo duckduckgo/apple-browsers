@@ -61,9 +61,9 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
-    @Published var sharedPinnedTabs: Bool {
+    @Published var pinnedTabsMode: PinnedTabsMode {
         didSet {
-            persistor.sharedPinnedTabs = sharedPinnedTabs
+            persistor.sharedPinnedTabs = pinnedTabsMode == .shared
         }
     }
 
@@ -72,7 +72,7 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         preferNewTabsToWindows = persistor.preferNewTabsToWindows
         switchToNewTabWhenOpened = persistor.switchToNewTabWhenOpened
         newTabPosition = persistor.newTabPosition
-        sharedPinnedTabs = persistor.sharedPinnedTabs
+        pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .different
     }
 
     private var persistor: TabsPreferencesPersistor
@@ -81,4 +81,9 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
 enum NewTabPosition: String, CaseIterable {
     case atEnd
     case nextToCurrent
+}
+
+enum PinnedTabsMode: String, CaseIterable {
+    case shared
+    case different
 }

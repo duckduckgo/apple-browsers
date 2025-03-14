@@ -44,7 +44,7 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
     init(tabsPreferences: TabsPreferences = TabsPreferences.shared) {
         self.tabsPreferences = tabsPreferences
 
-        settingChangedPublisher = tabsPreferences.$sharedPinnedTabs
+        settingChangedPublisher = tabsPreferences.$pinnedTabsMode
             .map { _ in () }
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
@@ -63,7 +63,7 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
     }
 
     var arePerWindowPinnedTabsEnabled: Bool {
-        return !tabsPreferences.sharedPinnedTabs
+        return tabsPreferences.pinnedTabsMode == .different
     }
 
     @MainActor

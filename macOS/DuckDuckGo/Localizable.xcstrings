@@ -49394,6 +49394,30 @@
         }
       }
     },
+    "pinned.tabs.mode.different" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are different in each window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Different in each window"
+          }
+        }
+      }
+    },
+    "pinned.tabs.mode.shared" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are shared across all windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared across all windows"
+          }
+        }
+      }
+    },
     "pinning.hide-aichat-shortcut" : {
       "comment" : "Menu item for hiding the AI Chat shortcut",
       "extractionState" : "stale",
@@ -57486,30 +57510,6 @@
         }
       }
     },
-    "preferences-pinned-tabs-per-window" : {
-      "comment" : "Option for pinned tabs behavior",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Different in each window"
-          }
-        }
-      }
-    },
-    "preferences-pinned-tabs-shared" : {
-      "comment" : "Option for pinned tabs behavior",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Shared across all windows"
-          }
-        }
-      }
-    },
     "preferences-pinned-tabs-warning" : {
       "comment" : "Warning before switching from per window pinned tabs to shared pinned tabs",
       "extractionState" : "extracted_with_value",
@@ -57523,13 +57523,13 @@
       }
     },
     "preferences-pinned-tabs.title" : {
-      "comment" : "Title for Pinned Tabs section in settings",
+      "comment" : "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pinned Tabs"
+            "value" : "Pinned tabs are"
           }
         }
       }

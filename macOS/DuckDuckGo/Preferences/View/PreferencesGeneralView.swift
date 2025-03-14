@@ -40,7 +40,7 @@ extension Preferences {
         let featureFlagger = NSApp.delegateTyped.featureFlagger
 
         @State private var showWarningAlert = false
-        @State private var pendingSelection: Bool? = nil
+        @State private var pendingSelection: PinnedTabsMode? = nil
 
         var body: some View {
             PreferencePane(UserText.general) {
@@ -122,45 +122,32 @@ extension Preferences {
                             }
                             .fixedSize()
                         }
-                    }
-                }
-
-                // SECTION: Pinned Tabs
-
-                PreferencePaneSection(UserText.pinnedTabs) {
-
-                    PreferencePaneSubSection {
-
-                        Picker(selection: Binding(
-                            get: { tabsModel.sharedPinnedTabs },
-                            set: { newValue in
-                                if newValue {
-                                    // Attempting to switch to shared, show warning
-                                    pendingSelection = newValue
-                                    showWarningAlert = true
-                                } else {
-                                    // Directly allow switching to per-window
-                                    tabsModel.sharedPinnedTabs = newValue
+                        HStack {
+                            Picker(UserText.pinnedTabs, selection: Binding(
+                                get: { tabsModel.pinnedTabsMode },
+                                set: { newValue in
+                                    if newValue == .shared {
+                                        // Attempting to switch to the shared mode that requires warning
+                                        pendingSelection = newValue
+                                        showWarningAlert = true
+                                    } else {
+                                        tabsModel.pinnedTabsMode = newValue
+                                    }
                                 }
-                            }),
-                            label: EmptyView()
-                        ) {
-                            Text(UserText.perWindowPinnedTabs).tag(false)
-                            VStack(alignment: .leading, spacing: 0) {
-                                HStack(spacing: 15) {
-                                    Text(UserText.sharedPinnedTabs)
+                            )) {
+                                ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
+                                    Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
-                            }.tag(true)
+                            }
+                            .fixedSize()
                         }
-                        .pickerStyle(.radioGroup)
-                        .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
                         .alert(isPresented: $showWarningAlert) {
                             Alert(
                                 title: Text(UserText.pinnedTabsWarning),
                                 primaryButton: .default(Text(UserText.ok)) {
                                     // Apply the change only if confirmed
                                     if let selection = pendingSelection {
-                                        tabsModel.sharedPinnedTabs = selection
+                                        tabsModel.pinnedTabsMode = selection
                                     }
                                 },
                                 secondaryButton: .cancel {

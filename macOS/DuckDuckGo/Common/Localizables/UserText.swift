@@ -733,9 +733,7 @@ struct UserText {
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
 
-    static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned Tabs", comment: "Title for Pinned Tabs section in settings")
-    static let sharedPinnedTabs = NSLocalizedString("preferences-pinned-tabs-shared", value: "Shared across all windows", comment: "Option for pinned tabs behavior")
-    static let perWindowPinnedTabs = NSLocalizedString("preferences-pinned-tabs-per-window", value: "Different in each window", comment: "Option for pinned tabs behavior")
+    static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarning = NSLocalizedString("preferences-pinned-tabs-warning", value: "Would you like to combine pinned tabs to be shared across all windows?", comment: "Warning before switching from per window pinned tabs to shared pinned tabs")
     static let pinnedTabsDiscoveryPopoverTitle = NSLocalizedString("pinned-tabs.discovery.popover.title", value: "Pinned Tabs Behaviour", comment: "Title for pinned tabs discoverability dialog")
     static let pinnedTabsDiscoveryPopoverMessage = NSLocalizedString("pinned-tabs.discovery.popover.message", value: "You can adjust the behaviour of pinned tabs to be either shared or different across browser windows.", comment: "Info message to users about option to adjust behavior of pinned tabs")
@@ -762,6 +760,15 @@ struct UserText {
             return NSLocalizedString("context.menu.new.tab.mode.at.end", value: "Add to the right of other tabs", comment: "Preferences > Tabs > At end of list")
         case .nextToCurrent:
             return NSLocalizedString("context.menu.new.tab.mode.next.to.current", value: "Add to the right of the current tab", comment: "Preferences > Tabs > Next to current tab")
+        }
+    }
+
+    static func pinnedTabsMode(for mode: PinnedTabsMode) -> String {
+        switch mode {
+        case .shared:
+            return NSLocalizedString("pinned.tabs.mode.shared", value: "Shared across all windows", comment: "Preferences > Tabs > Pinned tabs are shared across all windows")
+        case .different:
+            return NSLocalizedString("pinned.tabs.mode.different", value: "Different in each window", comment: "Preferences > Tabs > Pinned tabs are different in each window")
         }
     }
 

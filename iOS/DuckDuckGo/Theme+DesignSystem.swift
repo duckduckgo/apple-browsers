@@ -99,7 +99,7 @@ extension Theme {
     var searchBarBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
     var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .variousIPadTabs) }
     var tabsBarSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
-    var navigationBarTintColor: UIColor { UIColor(designSystemColor: .icons) }
+    var navigationBarTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var searchBarTextDeemphasisColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var tableCellHighlightedBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
 }

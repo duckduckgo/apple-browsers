@@ -45,10 +45,6 @@ final class FaviconUserScript: NSObject, Subfeature {
     weak var broker: UserScriptMessageBroker?
     weak var delegate: FaviconUserScriptDelegate?
 
-    func with(broker: UserScriptMessageBroker) {
-        self.broker = broker
-    }
-
     enum MessageNames: String, CaseIterable {
         case faviconFound
     }

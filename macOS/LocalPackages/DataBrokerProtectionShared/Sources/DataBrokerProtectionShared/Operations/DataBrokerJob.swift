@@ -34,7 +34,6 @@ public protocol DataBrokerJob: CCFCommunicationDelegate {
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var sleepObserver: SleepObserver? { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -221,8 +220,7 @@ public extension DataBrokerJob {
         if stageCalculator.isImmediateOperation {
             let dataBrokerURL = self.query.dataBroker.url
             let durationInMs = (Date().timeIntervalSince(startTime) * 1000).rounded(.towardZero)
-            let sleepTime = sleepObserver?.totalSleepTime() ?? 0
-            pixelHandler.fire(.initialScanSiteLoadDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL, sleepDuration: sleepTime))
+            pixelHandler.fire(.initialScanSiteLoadDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL))
         }
     }
 
@@ -230,8 +228,7 @@ public extension DataBrokerJob {
         if stageCalculator.isImmediateOperation, let postLoadingSiteStartTime = self.postLoadingSiteStartTime {
             let dataBrokerURL = self.query.dataBroker.url
             let durationInMs = (Date().timeIntervalSince(postLoadingSiteStartTime) * 1000).rounded(.towardZero)
-            let sleepTime = sleepObserver?.totalSleepTime() ?? 0
-            pixelHandler.fire(.initialScanPostLoadingDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL, sleepDuration: sleepTime))
+            pixelHandler.fire(.initialScanPostLoadingDuration(duration: durationInMs, hasError: hasError, brokerURL: dataBrokerURL))
         }
     }
 

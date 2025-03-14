@@ -44,7 +44,6 @@ final class ScanJob: DataBrokerJob {
     let clickAwaitTime: TimeInterval
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
-    let sleepObserver: SleepObserver?
 
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
@@ -56,7 +55,6 @@ final class ScanJob: DataBrokerJob {
          clickAwaitTime: TimeInterval = 0,
          stageDurationCalculator: StageDurationCalculator,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         sleepObserver: SleepObserver?,
          shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -70,7 +68,6 @@ final class ScanJob: DataBrokerJob {
         self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
-        self.sleepObserver = sleepObserver
     }
 
     func run(inputValue: InputValue,

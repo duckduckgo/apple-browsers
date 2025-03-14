@@ -1806,12 +1806,6 @@ final class MockDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerProtect
     }
 }
 
-final class MockSleepObserver: SleepObserver {
-    func totalSleepTime() -> TimeInterval {
-        1
-    }
-}
-
 final class MockActionsHandler: ActionsHandler {
 
     var didCallNextAction = false

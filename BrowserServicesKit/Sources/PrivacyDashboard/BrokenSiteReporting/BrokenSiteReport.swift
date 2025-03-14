@@ -239,9 +239,9 @@ public struct BrokenSiteReport {
             "vpnOn": vpnOn.description,
             "userRefreshCount": String(userRefreshCount),
             "locale": locale.localeIdentifierAsJsonFormat,
-            "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged.description),
-            "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed?.description),
-            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed?.description)
+            "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
+            "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
+            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed)
         ]
 
         if mode == .regular {

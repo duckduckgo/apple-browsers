@@ -77,7 +77,7 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let vault: (any DataBrokerProtectionSecureVault)
 
-    public init(fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker(),
+    public init(fakeBrokerFlag: DataBrokerDebugFlag,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          vault: (any DataBrokerProtectionSecureVault)) {
         self.fakeBrokerFlag = fakeBrokerFlag

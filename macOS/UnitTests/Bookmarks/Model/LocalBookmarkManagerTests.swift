@@ -634,8 +634,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         }
 
         let id = try XCTUnwrap(bookmark?.id)
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.move(objectUUIDs: [id], toIndex: nil, withinParentFolder: .parent(uuid: folder2.id))
+        await withCheckedContinuation { continuation in
+            bookmarkManager.move(objectUUIDs: [id], toIndex: nil, withinParentFolder: .parent(uuid: folder2.id)) { _ in
+                continuation.resume()
+            }
         }
 
         XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder2.id)
@@ -666,8 +668,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")
         let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
 
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.move(objectUUIDs: [folder2.id], toIndex: nil, withinParentFolder: .parent(uuid: folder1.id))
+        await withCheckedContinuation { continuation in
+            bookmarkManager.move(objectUUIDs: [folder2.id], toIndex: nil, withinParentFolder: .parent(uuid: folder1.id)) { _ in
+                continuation.resume()
+            }
         }
 
         XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder1.id)

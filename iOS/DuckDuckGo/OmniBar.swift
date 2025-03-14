@@ -650,13 +650,13 @@ extension OmniBar {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        backgroundColor = theme.omniBarBackgroundColor
+        backgroundColor = .systemPink
         tintColor = theme.barTintColor
         
         configureTextField()
 
-        editingBackground?.backgroundColor = theme.searchBarBackgroundColor
-        editingBackground?.borderColor = theme.searchBarBackgroundColor
+        editingBackground?.backgroundColor = .white
+        editingBackground?.borderColor = .white
         
         privacyIconAndTrackersAnimator.resetImageProvider()
         

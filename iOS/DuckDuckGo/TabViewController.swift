@@ -43,6 +43,7 @@ import os.log
 import Navigation
 import Subscription
 
+
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -586,7 +587,7 @@ class TabViewController: UIViewController {
 
     @objc func updateRoundedCorners() {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            webView.layer.cornerRadius = isPortrait ? 12 : 0
+//            webView.layer.cornerRadius = isPortrait ? 12 : 0
             webViewContainer.backgroundColor = .systemPink
         }
     }
@@ -653,10 +654,10 @@ class TabViewController: UIViewController {
 
         // Initialize DuckPlayerNavigationHandler
         if let handler = duckPlayerNavigationHandler,
-            let webView = webView {
+           let webView = webView {
             handler.handleAttach(webView: webView)
         }
-        
+
         if consumeCookies {
             consumeCookiesThenLoadRequest(request)
         } else if !didRestoreWebViewState, let urlRequest = request {
@@ -690,7 +691,106 @@ class TabViewController: UIViewController {
             userContentController?.assertObjectDeallocated(after: 1.0)
         }
 #endif
+
+        // Initial setup
+        setupMask()
+
+        // Observe the contentOffset of the scrollView
+        scrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, change in
+            guard let self = self, let newOffset = change.newValue else { return }
+            self.updateMaskForScroll(with: newOffset)
+        }
+
+        // Also observe content size changes to handle bottom corners correctly
+        contentSizeObservation = webView.scrollView.observe(\.contentSize, options: [.new]) { [weak self] scrollView, change in
+            guard let self = self else { return }
+            self.updateMaskForScroll(with: self.webView.scrollView.contentOffset)
+        }
     }
+
+    private func setupMask() {
+        // Apply initial mask
+        updateMaskForScroll(with: webView.scrollView.contentOffset)
+
+        // Apply the mask to the webView layer
+        webView.layer.mask = maskLayer
+        webView.scrollView.backgroundColor = .systemPink
+        webView.backgroundColor = .systemPink
+    }
+
+    private func updateMaskForScroll(with offset: CGPoint) {
+        let cornerRadius = isPortrait ? 12 : 0
+        let scrollView = webView.scrollView
+
+        // Create the mask path
+        let maskPath = UIBezierPath()
+
+        // Handle the main content area with rounded corners
+        var contentRect = webView.bounds
+        var cornersToRound: UIRectCorner = [.topLeft, .topRight]
+
+        // Handle pull-to-refresh area
+        if offset.y < 0 {
+            // Create rectangle for the pull-to-refresh area
+            let refreshRect = CGRect(x: 0, y: 0, width: contentRect.width, height: -offset.y)
+            maskPath.append(UIBezierPath(rect: refreshRect))
+
+            // Adjust content rect to start below refresh area
+            contentRect.origin.y = -offset.y
+            contentRect.size.height += offset.y
+        }
+
+        // Calculate bottom position
+        let contentBottom = scrollView.contentSize.height + scrollView.contentInset.bottom
+        let visibleBottom = offset.y + scrollView.bounds.height
+
+        // Check if we're at or past the bottom
+        if visibleBottom >= contentBottom {
+            cornersToRound.insert([.bottomLeft, .bottomRight])
+
+            // If we're bouncing past the bottom, split into two parts
+            let overscroll = visibleBottom - contentBottom
+            if overscroll > 0 {
+                // Visible content with rounded corners
+                let visibleHeight = contentRect.height - overscroll
+                let visibleRect = CGRect(x: 0, y: contentRect.origin.y,
+                                        width: contentRect.width, height: visibleHeight)
+
+                let visiblePath = UIBezierPath(
+                    roundedRect: visibleRect,
+                    byRoundingCorners: cornersToRound,
+                    cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
+                )
+
+                // Overscroll area (no rounded corners)
+                let overscrollRect = CGRect(x: 0, y: contentRect.origin.y + visibleHeight,
+                                           width: contentRect.width, height: overscroll)
+                let overscrollPath = UIBezierPath(rect: overscrollRect)
+
+                maskPath.append(visiblePath)
+                maskPath.append(overscrollPath)
+
+                // Apply the mask and return early
+                maskLayer.path = maskPath.cgPath
+                return
+            }
+        }
+
+        // Standard case - apply rounded corners to the content rect
+        let contentPath = UIBezierPath(
+            roundedRect: contentRect,
+            byRoundingCorners: cornersToRound,
+            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
+        )
+        maskPath.append(contentPath)
+
+        // Apply the mask
+        maskLayer.path = maskPath.cgPath
+    }
+
+    private var scrollObservation: NSKeyValueObservation?
+    private var contentSizeObservation: NSKeyValueObservation?
+    private let maskLayer = CAShapeLayer()
 
     private func addObservers() {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
@@ -711,7 +811,7 @@ class TabViewController: UIViewController {
             }
         }, for: .valueChanged)
 
-        refreshControl.backgroundColor = .systemBackground
+        refreshControl.backgroundColor = .systemPink
         refreshControl.tintColor = .label
     }
 

@@ -487,7 +487,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
         XCTAssertEqual(firedPixel.metric, "setAsDefaultBrowser")
         XCTAssertEqual(firedPixel.conversionWindow, 0...0)
-        XCTAssertEqual(firedPixel.value, "")
+        XCTAssertEqual(firedPixel.value, "1")
     }
 
     func testWhenMeasureDidNotSetDDGAsDefaultBrowserThenOnboardingDidNotSetDDGAsDefaultBrowserPixelFires() throws {
@@ -503,7 +503,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
         XCTAssertEqual(firedPixel.metric, "rejectSetAsDefaultBrowser")
         XCTAssertEqual(firedPixel.conversionWindow, 0...0)
-        XCTAssertEqual(firedPixel.value, "")
+        XCTAssertEqual(firedPixel.value, "1")
     }
 
 }

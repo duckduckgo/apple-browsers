@@ -21,7 +21,7 @@ import WebKit
 
 protocol AIChatWebViewControllerDelegate: AnyObject {
     @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL)
-    @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didFinishDownload fileName: String)
+    @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestOpenDownloadWithFileName fileName: String)
 }
 
 final class AIChatWebViewController: UIViewController {
@@ -73,7 +73,7 @@ final class AIChatWebViewController: UIViewController {
             switch result {
             case .success(let filename):
                 self.view.showDownloadCompletionToast(for: filename) {
-                    self.delegate?.aiChatWebViewController(self, didFinishDownload: filename)
+                    self.delegate?.aiChatWebViewController(self, didRequestOpenDownloadWithFileName: filename)
                 }
 
             case .failure:

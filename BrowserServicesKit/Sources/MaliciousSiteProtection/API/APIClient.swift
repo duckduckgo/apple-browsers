@@ -89,7 +89,7 @@ public extension MaliciousSiteDetector {
         public func headers(for requestType: APIRequestType, platform: Platform, authToken: String?) -> APIRequestV2.HeadersV2 {
             .init(userAgent: Networking.APIRequest.Headers.userAgent,
                   additionalHeaders: [
-                    HTTPHeaderKey.authToken: authToken ?? "36d11d1b4acee44a6f0b3902337b8b4c459100e1c73021ef48acb73fccf7a2a8",
+                    HTTPHeaderKey.authToken: authToken ?? "7cf93ee564654b410b3a2ec9c769dda93b1aa9d3c490fc2abdf7dea969367fcd",
                   ])
         }
     }

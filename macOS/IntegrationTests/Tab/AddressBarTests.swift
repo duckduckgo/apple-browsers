@@ -962,7 +962,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenControlTextDidChange_ThenreporterTrackAddressBarTypedInCalled() async throws {
+    func test_WhenControlTextDidChange_ThenreportermeasureAddressBarTypedInCalled() async throws {
         // GIVEN
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab)]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -975,7 +975,7 @@ class AddressBarTests: XCTestCase {
         textField?.controlTextDidChange(.init(name: .PasswordManagerChanged))
 
         // THEN
-        XCTAssertTrue(reporter.trackAddressBarTypedInCalled)
+        XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
     }
 }
 
@@ -1020,15 +1020,15 @@ class MockCertificateEvaluator: CertificateTrustEvaluating {
 }
 
 class CapturingOnboardingAddressBarReporting: OnboardingAddressBarReporting {
-    var trackAddressBarTypedInCalled = false
+    var measureAddressBarTypedInCalled = false
 
-    func trackAddressBarTypedIn() {
-        trackAddressBarTypedInCalled = true
+    func measureAddressBarTypedIn() {
+        measureAddressBarTypedInCalled = true
     }
 
-    func trackPrivacyDashboardOpened() {
+    func measurePrivacyDashboardOpened() {
     }
 
-    func trackSiteVisited() {
+    func measureSiteVisited() {
     }
 }

@@ -88,3 +88,4 @@ excluded:
   - macOS/release
   - macOS/DerivedData
   - macOS/.ruby-lsp
+  - macOS/vendor

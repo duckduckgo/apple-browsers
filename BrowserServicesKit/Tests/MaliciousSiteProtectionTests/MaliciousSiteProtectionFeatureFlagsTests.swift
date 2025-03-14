@@ -24,6 +24,7 @@ import XCTest
 class MaliciousSiteProtectionFeatureFlagsTests: XCTestCase {
     private var sut: MaliciousSiteProtectionFeatureFlags!
     private var isFeatureEnabled: Bool = false
+    private var isScamProtectionEnabled: Bool = false
     private var configurationManagerMock: PrivacyConfigurationManagerMock!
 
     override func setUp() {

@@ -335,11 +335,15 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @objc
     func checkEntitlementsV2() {
         Task {
-            let features = await subscriptionManagerV2.currentSubscriptionFeatures(forceRefresh: true)
-            let descriptions = features.map({ feature in
-                "\(feature.entitlement.rawValue): Available: \(feature.isAvailableForUser)"
-            })
-            showAlert(title: "Check Entitlements", message: descriptions.joined(separator: "\n"))
+            do {
+                let features = try await subscriptionManagerV2.currentSubscriptionFeatures(forceRefresh: true)
+                let descriptions = features.map({ feature in
+                    "\(feature.entitlement.rawValue): Available: \(feature.isAvailableForUser)"
+                })
+                showAlert(title: "Check Entitlements", message: descriptions.joined(separator: "\n"))
+            } catch {
+                showAlert(title: "Check Entitlements", message: "Error: \(error)")
+            }
         }
     }
 

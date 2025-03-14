@@ -316,5 +316,385 @@ Zablokowałem ich!
 			<string>Usunięto %1$d hasła</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknij kartę</string>
+			<key>few</key>
+			<string>Zamknij karty</string>
+			<key>many</key>
+			<string>Zamknij karty</string>
+			<key>other</key>
+			<string>Zamknij karty</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknij kartę</string>
+			<key>few</key>
+			<string>Zamknij wszystkie %1$d karty</string>
+			<key>many</key>
+			<string>Zamknij wszystkie %1$d kart</string>
+			<key>other</key>
+			<string>Zamknij wszystkie %1$d karty</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknąć kartę?</string>
+			<key>few</key>
+			<string>Zamknąć %1$d karty?</string>
+			<key>many</key>
+			<string>Zamknąć %1$d kart?</string>
+			<key>other</key>
+			<string>Zamknąć %1$d karty?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknąć inną kartę?</string>
+			<key>few</key>
+			<string>Zamknąć %1$d inne karty?</string>
+			<key>many</key>
+			<string>Zamknąć %1$d innych kart?</string>
+			<key>other</key>
+			<string>Zamknąć %1$d innej karty?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Czy na pewno chcesz zamknąć tę kartę?</string>
+			<key>few</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+			<key>many</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+			<key>other</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknąć kartę?</string>
+			<key>few</key>
+			<string>Zamknąć %1$d karty?</string>
+			<key>many</key>
+			<string>Zamknąć %1$d kart?</string>
+			<key>other</key>
+			<string>Zamknąć %1$d karty?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Czy na pewno chcesz zamknąć tę kartę?</string>
+			<key>few</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+			<key>many</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+			<key>other</key>
+			<string>Czy na pewno chcesz zamknąć te karty?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknąć kartę?</string>
+			<key>few</key>
+			<string>Zamknąć wszystkie %1$d karty?</string>
+			<key>many</key>
+			<string>Zamknąć wszystkie %1$d kart?</string>
+			<key>other</key>
+			<string>Zamknąć wszystkie %1$d karty?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Czy na pewno chcesz zamknąć tę kartę?</string>
+			<key>few</key>
+			<string>Czy na pewno chcesz zamknąć wszystkie karty?</string>
+			<key>many</key>
+			<string>Czy na pewno chcesz zamknąć wszystkie karty?</string>
+			<key>other</key>
+			<string>Czy na pewno chcesz zamknąć wszystkie karty?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Wybierz kartę</string>
+			<key>few</key>
+			<string>Wybierz karty</string>
+			<key>many</key>
+			<string>Wybierz karty</string>
+			<key>other</key>
+			<string>Wybierz karty</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zamknij inną kartę</string>
+			<key>few</key>
+			<string>Zamknij inne karty</string>
+			<key>many</key>
+			<string>Zamknij inne karty</string>
+			<key>other</key>
+			<string>Zamknij inne karty</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Udostępnij link</string>
+			<key>few</key>
+			<string>Udostępnij %1$d linki</string>
+			<key>many</key>
+			<string>Udostępnij %1$d linków</string>
+			<key>other</key>
+			<string>Udostępnij %1$d linku</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Udostępnij wybraną kartę</string>
+			<key>few</key>
+			<string>Udostępnij wybrane karty</string>
+			<key>many</key>
+			<string>Udostępnij wybrane karty</string>
+			<key>other</key>
+			<string>Udostępnij wybrane karty</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodaj kartę do zakładek</string>
+			<key>few</key>
+			<string>Dodaj %1$d karty do zakładek</string>
+			<key>many</key>
+			<string>Dodaj %1$d kart do zakładek</string>
+			<key>other</key>
+			<string>Dodaj %1$d karty do zakładek</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodano zakładkę</string>
+			<key>few</key>
+			<string>Dodano %1$d zakładki</string>
+			<key>many</key>
+			<string>Dodano %1$d zakładek</string>
+			<key>other</key>
+			<string>Dodano %1$d zakładki</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodać wybraną kartę do zakładek?</string>
+			<key>few</key>
+			<string>Dodać %1$d karty do zakładek?</string>
+			<key>many</key>
+			<string>Dodać %1$d kart do zakładek?</string>
+			<key>other</key>
+			<string>Dodać %1$d karty do zakładek?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodać wybraną kartę do zakładek?</string>
+			<key>few</key>
+			<string>Dodać %1$d karty do zakładek?</string>
+			<key>many</key>
+			<string>Dodać %1$d kart do zakładek?</string>
+			<key>other</key>
+			<string>Dodać %1$d karty do zakładek?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Wybrano %1$d</string>
+			<key>few</key>
+			<string>Wybrano %1$d</string>
+			<key>many</key>
+			<string>Wybrano %1$d</string>
+			<key>other</key>
+			<string>Wybrano %1$d</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d wybrana karta</string>
+			<key>few</key>
+			<string>%1$d wybrane karty</string>
+			<key>many</key>
+			<string>%1$d wybranych kart</string>
+			<key>other</key>
+			<string>%1$d wybranej karty</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

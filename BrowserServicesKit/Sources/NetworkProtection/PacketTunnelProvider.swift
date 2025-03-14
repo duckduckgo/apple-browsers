@@ -590,7 +590,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         Logger.networkProtection.log("Load auth token")
         switch options.authToken {
         case .set(let newAuthToken):
-            Logger.networkProtection.log("Set new token: \(newAuthToken)")
+            Logger.networkProtection.log("Set new token")
             if let currentAuthToken = try? await tokenHandler.getToken(), currentAuthToken == newAuthToken {
                 Logger.networkProtection.log("Token unchanged, using the current one")
                 return
@@ -1581,12 +1581,11 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     /// iOS 17+ supports disabling on-demand, but macOS does not... so we resort to removing the subscription token
     /// which should prevent the VPN from even trying to start.
     ///
+#if os(macOS)
     @MainActor
     private func attemptShutdownDueToRevokedAccess() async {
         let cancelTunnel = {
- #if os(macOS)
             try? await self.tokenHandler.removeToken()
- #endif
             self.cancelTunnelWithError(TunnelError.vpnAccessRevoked)
         }
 
@@ -1600,6 +1599,24 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             await cancelTunnel()
         }
     }
+    #else
+    @MainActor
+    private func attemptShutdownDueToRevokedAccess() async {
+        let cancelTunnel = {
+            self.cancelTunnelWithError(TunnelError.vpnAccessRevoked)
+        }
+
+        if #available(iOS 17, *) {
+            do {
+                try await handleShutDown()
+            } catch {
+                cancelTunnel()
+            }
+        } else {
+            cancelTunnel()
+        }
+    }
+#endif
 
     @MainActor
     public func startMonitors(testImmediately: Bool) async throws {

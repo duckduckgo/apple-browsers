@@ -270,6 +270,7 @@ extension TabSwitcherViewController {
         topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
+        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
 
         refreshBarButtons()
     }
@@ -347,8 +348,7 @@ extension TabSwitcherViewController {
             }),
 
             UIMenu(title: "", options: [.displayInline], children: [
-                // Zero forces the 'generic' close all tabs string
-                destructive(UserText.closeAllTabs(withCount: 0), "Tab-Close-16", { [weak self] in
+                destructive(UserText.closeAllTabs, "Tab-Close-16", { [weak self] in
                     self?.editMenuCloseAllTabs()
                 })
             ]),

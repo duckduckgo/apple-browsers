@@ -60,9 +60,6 @@ class TabSwitcherBarsStateHandler {
         self.totalTabsCount = totalTabsCount
         self.containsWebPages = containsWebPages
 
-        self.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
-
         let canShowEditButton = self.totalTabsCount > 1 || containsWebPages
         
         updateBottomBar()

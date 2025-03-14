@@ -207,16 +207,31 @@ extension TabIndex {
         case next, previous
     }
 
+    /// - Parameters:
+    ///   - viewModel: The `TabCollectionViewModel` to search within
+    ///   - parentTab: The parent tab to find the next tab for
+    /// - Returns: The `TabIndex` of the next tab with the same parent, if found
     @MainActor
     private func findNextTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
         return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .next)
     }
 
+    /// - Parameters:
+    ///   - viewModel: The `TabCollectionViewModel` to search within
+    ///   - parentTab: The parent tab to find the previous tab for
+    /// - Returns: The `TabIndex` of the previous tab with the same parent, if found
     @MainActor
     private func findPreviousTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
         return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .previous)
     }
 
+    /// Finds the next or previous tab that has the given parent tab
+    ///
+    /// - Parameters:
+    ///   - viewModel: The `TabCollectionViewModel` to search within
+    ///   - parentTab: The parent tab to find the tab for
+    ///   - direction: The direction to search in (.next or .previous)
+    /// - Returns: The `TabIndex` of the first tab found with the given parent, if any
     @MainActor
     private func findTabWithParent(for viewModel: TabCollectionViewModel, parentTab: Tab, direction: SearchDirection) -> TabIndex? {
         var currentIndex = self
@@ -233,6 +248,15 @@ extension TabIndex {
         return nil
     }
 
+    /// Finds the new tab index to select after closing a tab that doesn't have a parent
+    ///
+    /// The rules are:
+    /// 1. Try to find the next tab that has the closed tab as its parent
+    /// 2. Try to find the previous tab that has the closed tab as its parent
+    /// 3. Try to find the recently closed tab
+    /// 4. Try to find the current tab index (if it still exists)
+    /// 5. Try to find the next tab
+    /// 6. Try to find the previous tab
     @MainActor
     private func findNewSelectionIndexWithoutParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
         if let nextTabWithRemovedTabAsParent = findNextTabWithRemovedTabAsParent(for: viewModel, removedTab: removedTab) {
@@ -243,12 +267,12 @@ extension TabIndex {
             return previousTabWithRemovedTabAsParent
         }
 
-        /// Rule 4: Try to find the recently closed tab
         if let recentlyClosedTabIndex = viewModel.getLastSelectedTab() {
             return recentlyClosedTabIndex
         }
 
-        /// The tab index being manipulate was the tab index of the removed/closed tab. The problem is that this new
+        /// Given of the nature of when this method is called, the tab index being manipulated (self) could be the tab to the right.
+        /// So we need to check for self to see if it exists, if it exists, we return it.
         if viewModel.tabViewModel(at: self) != nil {
             return self
         }
@@ -264,6 +288,12 @@ extension TabIndex {
         return nil
     }
 
+    /// Finds the next tab that has the given removed tab as its parent
+    ///
+    /// - Parameters:
+    ///   - viewModel: The `TabCollectionViewModel` to search within
+    ///   - removedTab: The tab that was removed
+    /// - Returns: The `TabIndex` of the next tab with the given removed tab as its parent, if found
     @MainActor
     private func findNextTabWithRemovedTabAsParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
         var currentIndex = self
@@ -281,6 +311,12 @@ extension TabIndex {
         return nil
     }
 
+    /// Finds the previous tab that has the given removed tab as its parent
+    ///
+    /// - Parameters:
+    ///   - viewModel: The `TabCollectionViewModel` to search within
+    ///   - removedTab: The tab that was removed
+    /// - Returns: The `TabIndex` of the previous tab with the given removed tab as its parent, if found
     @MainActor
     private func findPreviousTabWithRemovedTabAsParent(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
         var currentIndex = self
@@ -293,7 +329,9 @@ extension TabIndex {
         return nil
     }
 
-    /// Gets the tab to the right, if it is the last one, returns nil.
+    /// Gets the tab to the right of the current tab index
+    ///
+    /// If the current tab index is the last one, returns `nil`
     @MainActor
     private func getRighteousTab(for viewModel: TabCollectionViewModel) -> TabIndex? {
         switch self {
@@ -310,7 +348,9 @@ extension TabIndex {
         }
     }
 
-    /// Gets the tab to the left, if it is the last one, returns nil.
+    /// Gets the tab to the left of the current tab index
+    ///
+    /// If the current tab index is the first one, returns `nil`
     @MainActor
     private func getLeftTab(for viewModel: TabCollectionViewModel) -> TabIndex? {
         switch self {

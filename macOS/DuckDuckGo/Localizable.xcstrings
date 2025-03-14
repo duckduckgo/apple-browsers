@@ -49353,7 +49353,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Go To Settings…"
+            "value" : "Use Different Pinned Tabs"
           }
         }
       }
@@ -49365,7 +49365,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can adjust the behaviour of pinned tabs to be either shared or different across browser windows."
+            "value" : "You can now choose to have shared or different pinned tabs across multiple browser windows."
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.message.2" : {
+      "comment" : "Info message to users about option to adjust behavior of pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can change this anytime in Settings."
           }
         }
       }
@@ -49377,19 +49389,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "No Thanks"
+            "value" : "Not Now"
           }
         }
       }
     },
     "pinned-tabs.discovery.popover.title" : {
-      "comment" : "Title for pinned tabs discoverability dialog",
+      "comment" : "Title for pinned tabs discovery dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pinned Tabs Behaviour"
+            "value" : "New Pinned Tab Settings"
           }
         }
       }

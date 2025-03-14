@@ -23,8 +23,8 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
     enum Constants {
         static let verticalSpacing: CGFloat = 16
-        static let panelWidth: CGFloat = 310
-        static let panelHeight: CGFloat = 178
+        static let panelWidth: CGFloat = 390
+        static let panelHeight: CGFloat = 172
     }
 
     var callback: ((Bool) -> Void)?
@@ -35,6 +35,9 @@ struct PinnedTabsDiscoveryPopUpView: View {
                 Text(UserText.pinnedTabsDiscoveryPopoverTitle)
                     .font(.headline)
                 Text(.init(UserText.pinnedTabsDiscoveryPopoverMessage))
+                    .foregroundColor(.primary)
+                Text(.init(UserText.pinnedTabsDiscoveryPopoverMessage2))
+                    .foregroundColor(.secondary)
             }
 
             HStack {
@@ -45,7 +48,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
                 createButton(title: UserText.pinnedTabsDiscoveryPopoverAccept,
                              style: DefaultActionButtonStyle(enabled: true)) {
-                    openSettings()
+                    setPerWindowPinnedTabs()
                     callback?(true)
                 }
             }
@@ -66,9 +69,9 @@ struct PinnedTabsDiscoveryPopUpView: View {
         .padding(0)
     }
 
-    private func openSettings() {
+    private func setPerWindowPinnedTabs() {
         Task.detached { @MainActor in
-            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .general)
+            TabsPreferences.shared.pinnedTabsMode = .different
         }
     }
 }

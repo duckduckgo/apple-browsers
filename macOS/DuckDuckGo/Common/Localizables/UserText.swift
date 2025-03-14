@@ -735,10 +735,11 @@ struct UserText {
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
     static let pinnedTabsWarning = NSLocalizedString("preferences-pinned-tabs-warning", value: "Would you like to combine pinned tabs to be shared across all windows?", comment: "Warning before switching from per window pinned tabs to shared pinned tabs")
-    static let pinnedTabsDiscoveryPopoverTitle = NSLocalizedString("pinned-tabs.discovery.popover.title", value: "Pinned Tabs Behaviour", comment: "Title for pinned tabs discoverability dialog")
-    static let pinnedTabsDiscoveryPopoverMessage = NSLocalizedString("pinned-tabs.discovery.popover.message", value: "You can adjust the behaviour of pinned tabs to be either shared or different across browser windows.", comment: "Info message to users about option to adjust behavior of pinned tabs")
-    static let pinnedTabsDiscoveryPopoverReject = NSLocalizedString("pinned-tabs.discovery.popover.reject", value: "No Thanks", comment: "Button to close the popover")
-    static let pinnedTabsDiscoveryPopoverAccept = NSLocalizedString("pinned-tabs.discovery.popover.accept", value: "Go To Settings…", comment: "Button opening Settings")
+    static let pinnedTabsDiscoveryPopoverTitle = NSLocalizedString("pinned-tabs.discovery.popover.title", value: "New Pinned Tab Settings", comment: "Title for pinned tabs discovery dialog")
+    static let pinnedTabsDiscoveryPopoverMessage = NSLocalizedString("pinned-tabs.discovery.popover.message", value: "You can now choose to have shared or different pinned tabs across multiple browser windows.", comment: "Info message to users about option to adjust behavior of pinned tabs")
+    static let pinnedTabsDiscoveryPopoverMessage2 = NSLocalizedString("pinned-tabs.discovery.popover.message.2", value: "You can change this anytime in Settings.", comment: "Info message to users about option to adjust behavior of pinned tabs")
+    static let pinnedTabsDiscoveryPopoverReject = NSLocalizedString("pinned-tabs.discovery.popover.reject", value: "Not Now", comment: "Button to close the popover")
+    static let pinnedTabsDiscoveryPopoverAccept = NSLocalizedString("pinned-tabs.discovery.popover.accept", value: "Use Different Pinned Tabs", comment: "Button opening Settings")
 
     static let homePage = NSLocalizedString("preferences-homepage.title", value: "Homepage", comment: "Title for Homepage section in settings")
     static let homePageDescription = NSLocalizedString("preferences-homepage.description", value: "When navigating home or opening new windows.", comment: "Homepage behavior description")

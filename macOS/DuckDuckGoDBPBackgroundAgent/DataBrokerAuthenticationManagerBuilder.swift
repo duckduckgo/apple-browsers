@@ -18,18 +18,20 @@
 
 import Foundation
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
     static func buildAuthenticationManager(subscriptionManager: SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
-        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager)
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
+        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, dbpSettings: settings)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 
     }
 }
 
-extension DefaultAccountManager: DataBrokerProtectionAccountManaging {
+extension DefaultAccountManager: @retroactive DataBrokerProtectionAccountManaging {
     public func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, any Error> {
         await hasEntitlement(forProductName: .dataBrokerProtection, cachePolicy: .reloadIgnoringLocalCacheData)
     }

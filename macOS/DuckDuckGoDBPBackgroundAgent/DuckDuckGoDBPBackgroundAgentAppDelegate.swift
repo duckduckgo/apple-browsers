@@ -21,6 +21,7 @@ import Combine
 import Common
 import ServiceManagement
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import BrowserServicesKit
 import PixelKit
 import Networking
@@ -85,7 +86,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
 @main
 final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDelegate {
-    private let settings = DataBrokerProtectionSettings()
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
     private let subscriptionManager: SubscriptionManager

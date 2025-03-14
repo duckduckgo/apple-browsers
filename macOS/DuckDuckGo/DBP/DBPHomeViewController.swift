@@ -18,6 +18,7 @@
 
 import Foundation
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import AppKit
 import Common
 import SwiftUI

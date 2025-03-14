@@ -18,13 +18,13 @@
 
 import Foundation
 import SecureStorage
+import DataBrokerProtectionShared
 
 final class DataBrokerForceOptOutViewModel: ObservableObject {
     private let dataManager: DataBrokerProtectionDataManager
     @Published var optOutData = [OptOutViewData]()
 
-    internal init(dataManager: DataBrokerProtectionDataManager =
-                  DataBrokerProtectionDataManager(pixelHandler: DataBrokerProtectionPixelsHandler())) {
+    internal init(dataManager: DataBrokerProtectionDataManager) {
         self.dataManager = dataManager
         loadNotRemovedOptOutData()
     }

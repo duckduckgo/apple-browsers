@@ -19,6 +19,8 @@
 import Foundation
 import BrowserServicesKit
 import DataBrokerProtection
+import DataBrokerProtectionShared
+import PixelKit
 import LoginItems
 import Common
 import Freemium
@@ -40,7 +42,22 @@ public final class DataBrokerProtectionManager {
     }()
 
     lazy var dataManager: DataBrokerProtectionDataManager = {
-        let dataManager = DataBrokerProtectionDataManager(profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier, pixelHandler: pixelHandler, fakeBrokerFlag: fakeBrokerFlag)
+        let fakeBroker = DataBrokerDebugFlagFakeBroker()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: "DBP", fileName: "Vault.db", appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+
+        guard let pixelKit = PixelKit.shared else {
+            fatalError("PixelKit not set up")
+        }
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+            fatalError("Failed to make secure storage vault")
+        }
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+
+        let dataManager = DataBrokerProtectionDataManager(database: database, profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
         dataManager.delegate = self
         return dataManager
     }()

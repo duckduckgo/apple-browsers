@@ -17,12 +17,14 @@
 //
 
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import Foundation
 import AppKit
 import Common
 import LoginItems
 import NetworkProtectionProxy
 import os.log
+import PixelKit
 
 final class DataBrokerProtectionDebugMenu: NSMenu {
 
@@ -265,9 +267,20 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func forceBrokerJSONFilesUpdate() {
-        if let updater = DefaultDataBrokerProtectionBrokerUpdater.provideForDebug() {
-            updater.updateBrokers()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: "DBP", fileName: "Vault.db", appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+
+        guard let pixelKit = PixelKit.shared else {
+            fatalError("PixelKit not set up")
         }
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+            fatalError("Failed to make secure storage vault")
+        }
+
+        let updater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
+        updater.updateBrokers()
     }
 
     @objc private func toggleShowStatusMenuItem() {

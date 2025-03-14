@@ -43,6 +43,7 @@ import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import RemoteMessaging
 import os.log
 import Freemium
@@ -296,8 +297,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
-        let dbpSettings = DataBrokerProtectionSettings()
-        DataBrokerProtectionSettings().alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        dbpSettings.alignTo(subscriptionEnvironment: subscriptionManager.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()

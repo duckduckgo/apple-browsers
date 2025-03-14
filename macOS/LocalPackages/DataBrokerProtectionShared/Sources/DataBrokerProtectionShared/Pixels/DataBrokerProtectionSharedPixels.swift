@@ -176,90 +176,90 @@ public enum DataBrokerProtectionSharedPixels {
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
     public var name: String {
         switch self {
-        case .parentChildMatches: return "m_mac_dbp_macos_parent-child-broker-matches"
+        case .parentChildMatches: return "parent-child-broker-matches"
             // SLO and SLI Pixels: https://app.asana.com/0/1203581873609357/1205337273100857/f
             // Stage Pixels
-        case .optOutStart: return "m_mac_dbp_macos_optout_stage_start"
-        case .optOutEmailGenerate: return "m_mac_dbp_macos_optout_stage_email-generate"
-        case .optOutCaptchaParse: return "m_mac_dbp_macos_optout_stage_captcha-parse"
-        case .optOutCaptchaSend: return "m_mac_dbp_macos_optout_stage_captcha-send"
-        case .optOutCaptchaSolve: return "m_mac_dbp_macos_optout_stage_captcha-solve"
-        case .optOutSubmit: return "m_mac_dbp_macos_optout_stage_submit"
-        case .optOutEmailReceive: return "m_mac_dbp_macos_optout_stage_email-receive"
-        case .optOutEmailConfirm: return "m_mac_dbp_macos_optout_stage_email-confirm"
-        case .optOutValidate: return "m_mac_dbp_macos_optout_stage_validate"
-        case .optOutFinish: return "m_mac_dbp_macos_optout_stage_finish"
-        case .optOutFillForm: return "m_mac_dbp_macos_optout_stage_fill-form"
+        case .optOutStart: return "optout_stage_start"
+        case .optOutEmailGenerate: return "optout_stage_email-generate"
+        case .optOutCaptchaParse: return "optout_stage_captcha-parse"
+        case .optOutCaptchaSend: return "optout_stage_captcha-send"
+        case .optOutCaptchaSolve: return "optout_stage_captcha-solve"
+        case .optOutSubmit: return "optout_stage_submit"
+        case .optOutEmailReceive: return "optout_stage_email-receive"
+        case .optOutEmailConfirm: return "optout_stage_email-confirm"
+        case .optOutValidate: return "optout_stage_validate"
+        case .optOutFinish: return "optout_stage_finish"
+        case .optOutFillForm: return "optout_stage_fill-form"
 
             // Process Pixels
-        case .optOutSubmitSuccess: return "m_mac_dbp_macos_optout_process_submit-success"
-        case .optOutSuccess: return "m_mac_dbp_macos_optout_process_success"
-        case .optOutFailure: return "m_mac_dbp_macos_optout_process_failure"
+        case .optOutSubmitSuccess: return "optout_process_submit-success"
+        case .optOutSuccess: return "optout_process_success"
+        case .optOutFailure: return "optout_process_failure"
 
             // Scan/Search pixels: https://app.asana.com/0/1203581873609357/1205337273100855/f
-        case .scanSuccess: return "m_mac_dbp_macos_search_stage_main_status_success"
-        case .scanFailed: return "m_mac_dbp_macos_search_stage_main_status_failure"
-        case .scanError: return "m_mac_dbp_macos_search_stage_main_status_error"
+        case .scanSuccess: return "search_stage_main_status_success"
+        case .scanFailed: return "search_stage_main_status_failure"
+        case .scanError: return "search_stage_main_status_error"
 
             // Debug Pixels
-        case .httpError: return "m_mac_data_broker_http_error"
-        case .actionFailedError: return "m_mac_data_broker_action-failed_error"
-        case .otherError: return "m_mac_data_broker_other_error"
-        case .databaseError: return "m_mac_data_broker_database_error"
-        case .cocoaError: return "m_mac_data_broker_cocoa_error"
-        case .miscError: return "m_mac_data_broker_misc_client_error"
-        case .secureVaultInitError: return "m_mac_dbp_secure_vault_init_error"
-        case .secureVaultKeyStoreReadError: return "m_mac_dbp_secure_vault_keystore_read_error"
-        case .secureVaultKeyStoreUpdateError: return "m_mac_dbp_secure_vault_keystore_update_error"
-        case .secureVaultError: return "m_mac_dbp_secure_vault_error"
+        case .httpError: return "data_broker_http_error"
+        case .actionFailedError: return "data_broker_action-failed_error"
+        case .otherError: return "data_broker_other_error"
+        case .databaseError: return "data_broker_database_error"
+        case .cocoaError: return "data_broker_cocoa_error"
+        case .miscError: return "data_broker_misc_client_error"
+        case .secureVaultInitError: return "dbp_secure_vault_init_error"
+        case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
+        case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
+        case .secureVaultError: return "dbp_secure_vault_error"
 
             // KPIs - engagement
-        case .dailyActiveUser: return "m_mac_dbp_engagement_dau"
-        case .weeklyActiveUser: return "m_mac_dbp_engagement_wau"
-        case .monthlyActiveUser: return "m_mac_dbp_engagement_mau"
+        case .dailyActiveUser: return "dbp_engagement_dau"
+        case .weeklyActiveUser: return "dbp_engagement_wau"
+        case .monthlyActiveUser: return "dbp_engagement_mau"
 
-        case .weeklyReportScanning: return "m_mac_dbp_event_weekly-report_scanning"
-        case .weeklyReportRemovals: return "m_mac_dbp_event_weekly-report_removals"
-        case .scanningEventNewMatch: return "m_mac_dbp_event_scanning-events_new-match"
-        case .scanningEventReAppearance: return "m_mac_dbp_event_scanning-events_re-appearance"
+        case .weeklyReportScanning: return "dbp_event_weekly-report_scanning"
+        case .weeklyReportRemovals: return "dbp_event_weekly-report_removals"
+        case .scanningEventNewMatch: return "dbp_event_scanning-events_new-match"
+        case .scanningEventReAppearance: return "dbp_event_scanning-events_re-appearance"
 
             // Additional opt out metrics
-        case .optOutJobAt7DaysConfirmed: return "m_mac_dbp_optoutjob_at-7-days_confirmed"
-        case .optOutJobAt7DaysUnconfirmed: return "m_mac_dbp_optoutjob_at-7-days_unconfirmed"
-        case .optOutJobAt14DaysConfirmed: return "m_mac_dbp_optoutjob_at-14-days_confirmed"
-        case .optOutJobAt14DaysUnconfirmed: return "m_mac_dbp_optoutjob_at-14-days_unconfirmed"
-        case .optOutJobAt21DaysConfirmed: return "m_mac_dbp_optoutjob_at-21-days_confirmed"
-        case .optOutJobAt21DaysUnconfirmed: return "m_mac_dbp_optoutjob_at-21-days_unconfirmed"
+        case .optOutJobAt7DaysConfirmed: return "dbp_optoutjob_at-7-days_confirmed"
+        case .optOutJobAt7DaysUnconfirmed: return "dbp_optoutjob_at-7-days_unconfirmed"
+        case .optOutJobAt14DaysConfirmed: return "dbp_optoutjob_at-14-days_confirmed"
+        case .optOutJobAt14DaysUnconfirmed: return "dbp_optoutjob_at-14-days_unconfirmed"
+        case .optOutJobAt21DaysConfirmed: return "dbp_optoutjob_at-21-days_confirmed"
+        case .optOutJobAt21DaysUnconfirmed: return "dbp_optoutjob_at-21-days_unconfirmed"
 
             // Backend service errors
-        case .generateEmailHTTPErrorDaily: return "m_mac_dbp_service_email-generate-http-error"
-        case .emptyAccessTokenDaily: return "m_mac_dbp_service_empty-auth-token"
+        case .generateEmailHTTPErrorDaily: return "dbp_service_email-generate-http-error"
+        case .emptyAccessTokenDaily: return "dbp_service_empty-auth-token"
 
             // Initial scans pixels
-        case .initialScanTotalDuration: return "m_mac_dbp_initial_scan_duration"
-        case .initialScanSiteLoadDuration: return "m_mac_dbp_scan_broker_site_loaded"
-        case .initialScanPostLoadingDuration: return "m_mac_dbp_initial_scan_broker_post_loading"
-        case .initialScanPreStartDuration: return "m_mac_dbp_initial_scan_pre_start_duration"
+        case .initialScanTotalDuration: return "dbp_initial_scan_duration"
+        case .initialScanSiteLoadDuration: return "dbp_scan_broker_site_loaded"
+        case .initialScanPostLoadingDuration: return "dbp_initial_scan_broker_post_loading"
+        case .initialScanPreStartDuration: return "dbp_initial_scan_pre_start_duration"
 
             // Entitlements
-        case .entitlementCheckValid: return "m_mac_dbp_macos_entitlement_valid"
-        case .entitlementCheckInvalid: return "m_mac_dbp_macos_entitlement_invalid"
-        case .entitlementCheckError: return "m_mac_dbp_macos_entitlement_error"
+        case .entitlementCheckValid: return "entitlement_valid"
+        case .entitlementCheckInvalid: return "entitlement_invalid"
+        case .entitlementCheckError: return "entitlement_error"
 
-        case .globalMetricsWeeklyStats: return "m_mac_dbp_weekly_stats"
-        case .globalMetricsMonthlyStats: return "m_mac_dbp_monthly_stats"
-        case .dataBrokerMetricsWeeklyStats: return "m_mac_dbp_databroker_weekly_stats"
-        case .dataBrokerMetricsMonthlyStats: return "m_mac_dbp_databroker_monthly_stats"
+        case .globalMetricsWeeklyStats: return "dbp_weekly_stats"
+        case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
+        case .dataBrokerMetricsWeeklyStats: return "dbp_databroker_weekly_stats"
+        case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
 
             // Configuration
-        case .invalidPayload(let configuration): return "m_mac_dbp_\(configuration.rawValue)_invalid_payload".lowercased()
-        case .errorLoadingCachedConfig: return "m_mac_dbp_configuration_error_loading_cached_config"
-        case .failedToParsePrivacyConfig: return "m_mac_dbp_configuration_failed_to_parse"
+        case .invalidPayload(let configuration): return "dbp_\(configuration.rawValue)_invalid_payload".lowercased()
+        case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
+        case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
 
             // Various monitoring pixels
-        case .customDataBrokerStatsOptoutSubmit: return "m_mac_dbp_databroker_custom_stats_optoutsubmit"
-        case .customGlobalStatsOptoutSubmit: return "m_mac_dbp_custom_stats_optoutsubmit"
-        case .weeklyChildBrokerOrphanedOptOuts: return "m_mac_dbp_weekly_child-broker_orphaned-optouts"
+        case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
+        case .customGlobalStatsOptoutSubmit: return "dbp_custom_stats_optoutsubmit"
+        case .weeklyChildBrokerOrphanedOptOuts: return "dbp_weekly_child-broker_orphaned-optouts"
         }
     }
 

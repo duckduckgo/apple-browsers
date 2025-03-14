@@ -401,7 +401,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let url = try XCTUnwrap("https://example.com".url)
         await actionsHandler.open(url)
         XCTAssertEqual(tabOpener.openCalls, [url])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened, .dailyAndStandard)])
+        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -418,7 +418,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewTabCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened, .dailyAndStandard)])
+        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -435,7 +435,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewWindowCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened, .dailyAndStandard)])
+        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -452,11 +452,11 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewFireWindowCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened, .dailyAndStandard)])
+        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
-    func testThatOpenActionsForMultipleItemsDoNotFirePixel() async throws {
+    func testThatOpenActionsForMultipleItemsFirePixelForMultipleItems() async throws {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: try XCTUnwrap("https://example1.com".url), date: Date()),
             .init(uuid: "efgh", url: try XCTUnwrap("https://example2.com".url), date: Date())
@@ -475,7 +475,11 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         // Wait for a short time to allow the async task to complete
         try? await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(firePixelCalls, [])
+        XCTAssertEqual(firePixelCalls, [
+            .init(.itemOpened(.multiple), .dailyAndStandard),
+            .init(.itemOpened(.multiple), .dailyAndStandard),
+            .init(.itemOpened(.multiple), .dailyAndStandard)
+        ])
     }
 
     // MARK: - addBookmarks

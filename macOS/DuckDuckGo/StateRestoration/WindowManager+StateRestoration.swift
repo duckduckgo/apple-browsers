@@ -29,6 +29,7 @@ extension WindowsManager {
         }
 
         if let pinnedTabsCollection = state.applicationPinnedTabs {
+            migrateSharedPinnedTabsSettingIfNecessary(pinnedTabsCollection)
             WindowControllersManager.shared.restorePinnedTabs(pinnedTabsCollection)
         }
         if includeWindows {
@@ -66,6 +67,20 @@ extension WindowsManager {
         if let pinnedTabs = item.pinnedTabs, let pinnedTabsManager, pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
             pinnedTabsManager.setUp(with: pinnedTabs)
         }
+    }
+
+    // Shared pinned tabs migration
+
+    @UserDefaultsWrapper(key: .pinnedTabsMigrated, defaultValue: false)
+    static var pinnedTabsMigrated: Bool
+
+    private class func migrateSharedPinnedTabsSettingIfNecessary(_ collection: TabCollection) {
+        guard !pinnedTabsMigrated else { return }
+        pinnedTabsMigrated = true
+
+        // Set the shared pinned tabs setting only in case shared pinned tabs are restored
+        guard !collection.tabs.isEmpty else { return }
+        TabsPreferences.shared.pinnedTabsMode = .shared
     }
 
 }

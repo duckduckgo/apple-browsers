@@ -460,6 +460,7 @@ extension TabSwitcherViewController {
             self?.deselectAllTabs()
         }
 
+        barsHandler.menuButton.accessibilityLabel = "More Menu"
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()

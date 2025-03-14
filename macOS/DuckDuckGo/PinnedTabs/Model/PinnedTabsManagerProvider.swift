@@ -23,6 +23,7 @@ protocol PinnedTabsManagerProviding {
     var arePerWindowPinnedTabsEnabled: Bool { get }
     var arePinnedTabsEmpty: Bool { get }
     var currentPinnedTabManagers: [PinnedTabsManager] { get }
+    var areDifferentPinnedTabsPresent: Bool { get }
 
     func getNewPinnedTabsManager(shouldMigrate: Bool,
                                  tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager
@@ -82,6 +83,15 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
         } else {
             return [Application.appDelegate.pinnedTabsManager]
         }
+    }
+
+    @MainActor
+    var areDifferentPinnedTabsPresent: Bool {
+        guard arePerWindowPinnedTabsEnabled else { return false }
+
+        let pinnedTabManagersWithTabs = allPerWindowPinnedTabsManagers.filter { !$0.tabCollection.tabs.isEmpty }
+
+        return pinnedTabManagersWithTabs.count >= 2
     }
 
     @MainActor

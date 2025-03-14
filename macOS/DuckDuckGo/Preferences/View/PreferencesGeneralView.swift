@@ -38,6 +38,7 @@ extension Preferences {
         @State private var isAddedToDock = false
         var dockCustomizer: DockCustomizer
         let featureFlagger = NSApp.delegateTyped.featureFlagger
+        let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
         @State private var showWarningAlert = false
         @State private var pendingSelection: PinnedTabsMode? = nil
@@ -127,9 +128,14 @@ extension Preferences {
                                 get: { tabsModel.pinnedTabsMode },
                                 set: { newValue in
                                     if newValue == .shared {
-                                        // Attempting to switch to the shared mode that requires warning
-                                        pendingSelection = newValue
-                                        showWarningAlert = true
+                                        // Attempting to switch to the shared mode that requires warning in case
+                                        // the app is going to combine existing pinned tabs
+                                        if pinnedTabsManagerProvider.areDifferentPinnedTabsPresent {
+                                            pendingSelection = newValue
+                                            showWarningAlert = true
+                                        } else {
+                                            tabsModel.pinnedTabsMode = newValue
+                                        }
                                     } else {
                                         tabsModel.pinnedTabsMode = newValue
                                     }

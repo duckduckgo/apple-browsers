@@ -286,8 +286,7 @@ public struct BrokenSiteReport {
         default:
             return ""
         }
-    };
-
+    }
 
     private func encodeErrors(_ errors: [Error]) -> String {
         let errorDescriptions: [String] = errors.map {

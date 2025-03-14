@@ -14,7 +14,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "4.0.0")
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", branch: "mariusz/add-alternative-colors")
     ],
     targets: [
         .target(

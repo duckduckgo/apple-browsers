@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Otkazivanje nije dopušteno više od jednom";
 
+/* Close All Tabs */
+"close.all.tabs" = "Zatvori sve kartice";
+
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdi";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otvorite „%1$@” na %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Odaberi sve";
+
+/* Deselect all tabs */
+"tab.select.none" = "Poništi odabir svega";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Mjenjač kartica";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Označi sve kartice";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Povećajte ili smanjite veličinu teksta na svim web-mjestima.";

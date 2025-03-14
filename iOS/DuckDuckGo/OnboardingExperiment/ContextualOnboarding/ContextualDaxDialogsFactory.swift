@@ -125,7 +125,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingSearch()
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
-                self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
         } else {
             { [weak delegate] in
@@ -135,7 +135,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
 
         return OnboardingFirstSearchDoneDialog(message: dialogMessage(), shouldFollowUp: shouldFollowUpToWebsiteSearch, viewModel: viewModel, gotItAction: gotItAction)
             .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.trackScreenImpression(event: afterSearchPixelEvent)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
             }
     }
 
@@ -144,7 +144,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         return OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: viewModel)
             .onFirstAppear { [weak self] in
                 self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
-                self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
             }
     }
 
@@ -157,21 +157,21 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             } else {
                 onSizeUpdate()
                 delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
-                self?.contextualOnboardingPixelReporter.trackScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
             }
         })
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
         .onFirstAppear { [weak self] in
-            self?.contextualOnboardingPixelReporter.trackScreenImpression(event: spec.pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: spec.pixelName)
         }
     }
 
     private func fireDialog(pixelName: Pixel.Event) -> some View {
         OnboardingFireDialog()
             .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.trackScreenImpression(event: pixelName)
+                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             }
     }
 
@@ -188,17 +188,17 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
 
         let showAddToDockTutorialAction: () -> Void = { [weak self] in
-            self?.contextualOnboardingPixelReporter.trackAddToDockPromoShowTutorialCTAAction()
+            self?.contextualOnboardingPixelReporter.measureAddToDockPromoShowTutorialCTAAction()
         }
 
         let dismissAction = { [weak delegate, weak self] isDismissedFromAddToDockTutorial in
             delegate?.didTapDismissContextualOnboardingAction()
             if isDismissedFromAddToDockTutorial {
-                self?.contextualOnboardingPixelReporter.trackAddToDockTutorialDismissCTAAction()
+                self?.contextualOnboardingPixelReporter.measureAddToDockTutorialDismissCTAAction()
             } else {
-                self?.contextualOnboardingPixelReporter.trackEndOfJourneyDialogCTAAction()
+                self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
                 if shouldShowAddToDock {
-                    self?.contextualOnboardingPixelReporter.trackAddToDockPromoDismissCTAAction()
+                    self?.contextualOnboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
                 }
             }
         }
@@ -213,9 +213,9 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         )
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
-            self?.contextualOnboardingPixelReporter.trackScreenImpression(event: pixelName)
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             if shouldShowAddToDock {
-                self?.contextualOnboardingPixelReporter.trackAddToDockPromoImpression()
+                self?.contextualOnboardingPixelReporter.measureAddToDockPromoImpression()
             }
         }
     }

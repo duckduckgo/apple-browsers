@@ -84,7 +84,8 @@ extension BookmarkManager {
 final class LocalBookmarkManager: BookmarkManager {
     static let shared = LocalBookmarkManager()
 
-    init(bookmarkStore: BookmarkStore? = nil, faviconManagement: FaviconManagement? = nil) {
+    init(bookmarkStore: BookmarkStore? = nil, faviconManagement: FaviconManagement? = nil, foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore()) {
+        self.foldersStore = foldersStore
         if let bookmarkStore {
             self.bookmarkStore = bookmarkStore
         }
@@ -120,6 +121,7 @@ final class LocalBookmarkManager: BookmarkManager {
     private lazy var bookmarkStore: BookmarkStore = LocalBookmarkStore(bookmarkDatabase: BookmarkDatabase.shared)
     private lazy var faviconManagement: FaviconManagement = FaviconManager.shared
     private lazy var sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults()
+    private let foldersStore: BookmarkFoldersStore
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -222,6 +224,7 @@ final class LocalBookmarkManager: BookmarkManager {
                 return
             }
 
+            self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent?.id
             self?.loadBookmarks()
             self?.requestSync()
         }
@@ -397,6 +400,7 @@ final class LocalBookmarkManager: BookmarkManager {
             if error == nil {
                 self?.requestSync()
             }
+            self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent?.id
             completion(error)
         }
     }
@@ -421,6 +425,7 @@ final class LocalBookmarkManager: BookmarkManager {
             if error == nil {
                 self?.requestSync()
             }
+            self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent.folderID
             completion(error)
         }
     }

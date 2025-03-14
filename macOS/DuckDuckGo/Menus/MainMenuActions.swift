@@ -339,7 +339,7 @@ extension AppDelegate {
         DispatchQueue.main.async {
             FireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.trackFireButtonPressed()
+            pixelReporter.measureFireButtonPressed()
         }
     }
 

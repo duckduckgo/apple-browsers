@@ -160,7 +160,7 @@ class MockFrameInfo: WKFrameInfo {
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
-
+        
     private let duckPlayerSettingsSubject = PassthroughSubject<Void, Never>()
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> {
         duckPlayerSettingsSubject.eraseToAnyPublisher()
@@ -174,6 +174,8 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var autoplay: Bool = false
     var customError: Bool = false
     var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
+    var nativeUISERPEnabled: Bool = true
+    var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 
@@ -270,7 +272,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         // Mock implementation
     }
 
-    func dismissPill(animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool) {
         // Mock implementation
     }
 
@@ -281,6 +283,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func showPillForVisibleChrome() {
         // Mock implementation
     }
+    
 }
 
 enum MockFeatureFlag: Hashable {

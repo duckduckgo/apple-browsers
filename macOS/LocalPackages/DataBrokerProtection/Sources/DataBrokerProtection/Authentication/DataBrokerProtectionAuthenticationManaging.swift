@@ -36,7 +36,15 @@ public final class DataBrokerProtectionAuthenticationManager: DataBrokerProtecti
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
 
     public var isUserAuthenticated: Bool {
-        subscriptionManager.isUserAuthenticated
+        var token: String?
+        // extremely ugly hack, will be removed as soon auth v1 is removed
+        let semaphore = DispatchSemaphore(value: 0)
+        Task {
+            token = await accessToken()
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return token != nil
     }
 
     public func accessToken() async -> String? {

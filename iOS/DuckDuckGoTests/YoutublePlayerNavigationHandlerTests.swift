@@ -34,7 +34,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
     var playerSettings: MockDuckPlayerSettings!
     var player: MockDuckPlayer!
     var featureFlagger: MockDuckPlayerFeatureFlagger!
-    var handler: DuckPlayerNavigationHandler!
+    var handler: WebDuckPlayerNavigationHandler!
     var tabNavigator: MockDuckPlayerTabNavigator!
     var nativeUIPresenter: MockDuckPlayerNativeUIPresenting!
 
@@ -53,7 +53,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Create and assign the mock tab navigator
         tabNavigator = MockDuckPlayerTabNavigator()
 
-        handler = DuckPlayerNavigationHandler(duckPlayer: player,
+        handler = WebDuckPlayerNavigationHandler(duckPlayer: player,
                                               featureFlagger: featureFlagger,
                                               appSettings: mockAppSettings,
                                               pixelFiring: PixelFiringMock.self,

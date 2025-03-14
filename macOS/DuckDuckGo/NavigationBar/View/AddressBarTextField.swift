@@ -975,7 +975,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
     func controlTextDidChange(_ obj: Notification) {
         handleTextDidChange()
-        onboardingDelegate?.trackAddressBarTypedIn()
+        onboardingDelegate?.measureAddressBarTypedIn()
     }
 
     private func handleTextDidChange() {

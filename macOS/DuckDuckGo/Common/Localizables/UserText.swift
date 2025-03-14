@@ -210,9 +210,16 @@ struct UserText {
     static let mainMenuHelpDuckDuckGoHelp = NSLocalizedString("DuckDuckGo Help", comment: "Main Menu Help item")
 
     // MARK: - History
-    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Manage Your History", comment: "Title for the history view onboarding popover")
-    static let historyViewOnboardingMessage = NSLocalizedString("history.view.onboarding.message", value: "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited.", comment: "Message for the history view onboarding popover")
-    static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History Page", comment: "Accept button label on the history view onboarding popover")
+    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Easier History Management", comment: "Title for the history view onboarding popover")
+
+    static func historyViewOnboardingMessage(shortcut: String) -> String {
+        let localized = NSLocalizedString("history.view.onboarding.message",
+                                          value: "We added a new History page for easier history searching and management. Access it at any time from the ••• or History menu, or by pressing %@.",
+                                          comment: "Message for the history view onboarding popover. Please make sure to keep ••• intact. %@ will be replaced with a keyboard shortcut for accessing history (e.g. '⌘Y').")
+        return String(format: localized, shortcut)
+    }
+    static let historyViewOnboardingLocalStorageExplanation = NSLocalizedString("history.view.onboarding.local.storage.explanation", value: "History is only stored on your device and can be deleted at any time using the Fire Button.", comment: "Message for the history view onboarding popover explaining that history is kept locally.")
+    static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History", comment: "Accept button label on the history view onboarding popover")
 
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
     static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
@@ -304,8 +311,7 @@ struct UserText {
     static let webProcessCrashPageHeader = NSLocalizedString("page.crash.header", value: "This webpage has crashed.", comment: "Error page heading text shown when a Web Page process had crashed")
     static let webProcessCrashPageMessage = NSLocalizedString("page.crash.message", value: "Try reloading the page or come back later.", comment: "Error page message text shown when a Web Page process had crashed")
     static let sslErrorPageTabTitle = NSLocalizedString("ssl.error.page.tab.title", value: "Warning: Site May Be Insecure", comment: "Title shown in an error page tab that warn users of security risks on a website due to SSL issues")
-    static let phishingErrorPageTabTitle = NSLocalizedString("phishing.error.page.tab.title", value: "Warning: Site May Be Deceptive", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Phishing.")
-    static let malwareErrorPageTabTitle = NSLocalizedString("malware.error.page.tab.title", value: "Warning: Site May Be Malicious", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malware.")
+    static let maliciousSiteErrorPageTabTitle = NSLocalizedString("malicious.site.error.page.tab.title", value: "Warning: Security Risk", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malicious.")
 
     static let openSystemPreferences = NSLocalizedString("open.preferences", value: "Open System Preferences", comment: "Open System Preferences (to re-enable permission for the App) (up to and including macOS 12")
     static let openSystemSettings = NSLocalizedString("open.settings", value: "Open System Settings…", comment: "This string represents a prompt or button label prompting the user to open system settings")

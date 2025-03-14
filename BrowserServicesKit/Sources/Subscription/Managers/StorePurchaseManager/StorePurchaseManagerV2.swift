@@ -111,22 +111,29 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             await updatePurchasedProducts()
             await updateAvailableProducts()
         } catch {
-            Logger.subscriptionStorePurchaseManager.error("[StorePurchaseManager] Error: \(String(reflecting: error), privacy: .public) (\(error.localizedDescription, privacy: .public))")
+            Logger.subscriptionStorePurchaseManager.error("Error: \(String(reflecting: error), privacy: .public) (\(error.localizedDescription, privacy: .public))")
             throw error
         }
     }
 
+    func getAvailableProducts() async -> [any SubscriptionProduct] {
+        if availableProducts.isEmpty {
+            await updateAvailableProducts()
+        }
+        return availableProducts
+    }
+
     public func subscriptionOptions() async -> SubscriptionOptionsV2? {
-        let nonFreeTrialProducts = availableProducts.filter { !$0.isFreeTrialProduct }
+        let nonFreeTrialProducts = await getAvailableProducts().filter { !$0.isFreeTrialProduct }
         let ids = nonFreeTrialProducts.map(\.self.id)
-        Logger.subscription.debug("[StorePurchaseManager] Returning SubscriptionOptions for products: \(ids)")
+        Logger.subscriptionStorePurchaseManager.debug("Returning SubscriptionOptions for products: \(ids)")
         return await subscriptionOptions(for: nonFreeTrialProducts)
     }
 
     public func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        let freeTrialProducts = availableProducts.filter { $0.isFreeTrialProduct }
+        let freeTrialProducts = await getAvailableProducts().filter { $0.isFreeTrialProduct }
         let ids = freeTrialProducts.map(\.self.id)
-        Logger.subscription.debug("[StorePurchaseManager] Returning Free Trial SubscriptionOptions for products: \(ids)")
+        Logger.subscriptionStorePurchaseManager.debug("Returning Free Trial SubscriptionOptions for products: \(ids)")
         return await subscriptionOptions(for: freeTrialProducts)
     }
 
@@ -151,7 +158,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             self.currentStorefrontRegion = storefrontRegion
             let applicableProductIdentifiers = storeSubscriptionConfiguration.subscriptionIdentifiers(for: storefrontRegion)
             let availableProducts = try await productFetcher.products(for: applicableProductIdentifiers)
-            Logger.subscription.info("[StorePurchaseManager] updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
+            Logger.subscriptionStorePurchaseManager.log("updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
 
             if Set(availableProducts.map { $0.id }) != Set(self.availableProducts.map { $0.id }) {
                 self.availableProducts = availableProducts
@@ -220,7 +227,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
     @MainActor
     public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
 
-        guard let product = availableProducts.first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
+        guard let product = await getAvailableProducts().first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
         Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID, privacy: .public))")
 

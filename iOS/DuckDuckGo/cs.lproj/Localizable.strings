@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Zrušení není povoleno víc než jednou";
 
+/* Close All Tabs */
+"close.all.tabs" = "Zavřít všechny karty";
+
 /* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Otevřít \"%1$@\" na %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Vybrat vše";
+
+/* Deselect all tabs */
+"tab.select.none" = "Zrušit výběr všeho";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Přepínač karet";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Dát do záložek všechny karty";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Zvětši nebo zmenši text na všech webech.";

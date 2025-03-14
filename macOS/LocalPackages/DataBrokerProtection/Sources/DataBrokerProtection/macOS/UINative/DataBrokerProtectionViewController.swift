@@ -23,6 +23,7 @@ import BrowserServicesKit
 import PixelKit
 import WebKit
 import Combine
+import DataBrokerProtectionShared
 
 final public class DataBrokerProtectionViewController: NSViewController {
     private let dataManager: DataBrokerProtectionDataManaging

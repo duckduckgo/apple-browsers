@@ -27,15 +27,20 @@ import os.log
 import Freemium
 import Subscription
 import UserNotifications
+import DataBrokerProtectionShared
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                     accountManager: AccountManager) -> DataBrokerProtectionAgentManager {
+        guard let pixelKit = PixelKit.shared else {
+            fatalError("PixelKit not set up")
+        }
         let pixelHandler = DataBrokerProtectionPixelsHandler()
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
-        let dbpSettings = DataBrokerProtectionSettings()
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let executionConfig = DataBrokerExecutionConfig(mode: dbpSettings.storedRunType == .integrationTests ? .fastForIntegrationTests : .normal)
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: executionConfig)
 
@@ -66,25 +71,35 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                             featureToggles: features)
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let dataManager = DataBrokerProtectionDataManager(pixelHandler: pixelHandler, fakeBrokerFlag: fakeBroker)
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: "DBP", fileName: "Vault.db", appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+            fatalError("Failed to make secure storage vault")
+        }
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
-                                                           pixelHandler: pixelHandler)
+                                                           pixelHandler: sharedPixelsHandler)
 
-        var brokerUpdater: DataBrokerProtectionBrokerUpdater?
-        if let vault = try? DataBrokerProtectionSecureVaultFactory.makeVault(reporter: nil) {
-            brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: pixelHandler)
-        }
+        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
-                                                       operationsCreator: operationsBuilder,
-                                                       mismatchCalculator: mismatchCalculator,
-                                                       brokerUpdater: brokerUpdater,
-                                                       pixelHandler: pixelHandler)
+                                                                    operationsCreator: operationsBuilder,
+                                                                    mismatchCalculator: mismatchCalculator,
+                                                                    brokerUpdater: brokerUpdater,
+                                                                    pixelHandler: sharedPixelsHandler)
 
-        let emailService = EmailService(authenticationManager: authenticationManager)
-        let captchaService = CaptchaService(authenticationManager: authenticationManager)
+        let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
+                                                                                   settings: dbpSettings)
+        let emailService = EmailService(authenticationManager:authenticationManager,
+                                        settings: dbpSettings,
+                                        servicePixel: backendServicePixels)
+        let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
         let runnerProvider = DataBrokerJobRunnerProvider(privacyConfigManager: privacyConfigurationManager,
                                                          contentScopeProperties: contentScopeProperties,
                                                          emailService: emailService,
@@ -103,7 +118,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             config: executionConfig,
             runnerProvider: runnerProvider,
             notificationCenter: NotificationCenter.default,
-            pixelHandler: pixelHandler,
+            pixelHandler: sharedPixelsHandler,
             userNotificationService: notificationService)
 
         return DataBrokerProtectionAgentManager(
@@ -113,6 +128,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             queueManager: queueManager,
             dataManager: dataManager,
             operationDependencies: operationDependencies,
+            sharedPixelsHandler: sharedPixelsHandler,
             pixelHandler: pixelHandler,
             agentStopper: agentstopper,
             configurationManager: configurationManager,
@@ -130,6 +146,7 @@ public final class DataBrokerProtectionAgentManager {
     private let queueManager: DataBrokerProtectionQueueManager
     private let dataManager: DataBrokerProtectionDataManaging
     private let operationDependencies: DataBrokerOperationDependencies
+    private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
@@ -148,6 +165,7 @@ public final class DataBrokerProtectionAgentManager {
          queueManager: DataBrokerProtectionQueueManager,
          dataManager: DataBrokerProtectionDataManaging,
          operationDependencies: DataBrokerOperationDependencies,
+         sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          pixelHandler: EventMapping<DataBrokerProtectionPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
@@ -161,6 +179,7 @@ public final class DataBrokerProtectionAgentManager {
         self.queueManager = queueManager
         self.dataManager = dataManager
         self.operationDependencies = operationDependencies
+        self.sharedPixelsHandler = sharedPixelsHandler
         self.pixelHandler = pixelHandler
         self.agentStopper = agentStopper
         self.configurationManger = configurationManager
@@ -202,9 +221,9 @@ extension DataBrokerProtectionAgentManager {
 
         let database = operationDependencies.database
 
-        let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: pixelHandler)
-        let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: pixelHandler)
+        let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler)
+        let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: sharedPixelsHandler)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel()
@@ -231,7 +250,7 @@ private extension DataBrokerProtectionAgentManager {
     ///   - completion: Completion handler
     func startFreemiumOrSubscriptionScheduledOperations(showWebView: Bool,
                                                         operationDependencies: DataBrokerOperationDependencies,
-                                                        errorHandler: ((DataBrokerProtectionAgentErrorCollection?) -> Void)?,
+                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         if authenticationManager.isUserAuthenticated {
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, operationDependencies: operationDependencies, errorHandler: errorHandler, completion: completion)

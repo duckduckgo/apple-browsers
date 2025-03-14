@@ -22,6 +22,7 @@ import BrowserServicesKit
 import UserScript
 import Common
 import os.log
+import DataBrokerProtectionShared
 
 struct DebugScanReturnValue {
     let brokerURL: String
@@ -69,9 +70,9 @@ final class DebugScanJob: DataBrokerJob {
     var scanURL: String?
     let clickAwaitTime: TimeInterval
     let cookieHandler: CookieHandler
-    let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
-    let sleepObserver: SleepObserver
+    let sleepObserver: SleepObserver?
 
     private let fileManager = FileManager.default
     private let debugScanContentPath: String?
@@ -106,10 +107,10 @@ final class DebugScanJob: DataBrokerJob {
         self.sleepObserver = FakeSleepObserver()
     }
 
-    func run(inputValue: Void,
-             webViewHandler: WebViewHandler? = nil,
-             actionsHandler: ActionsHandler? = nil,
-             showWebView: Bool) async throws -> DebugScanReturnValue {
+    public func run(inputValue: Void,
+                    webViewHandler: WebViewHandler? = nil,
+                    actionsHandler: ActionsHandler? = nil,
+                    showWebView: Bool) async throws -> DebugScanReturnValue {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
@@ -134,7 +135,7 @@ final class DebugScanJob: DataBrokerJob {
         }
     }
 
-    func runNextAction(_ action: Action) async {
+    public func runNextAction(_ action: Action) async {
         if action as? ExtractAction != nil {
             do {
                 if let path = self.debugScanContentPath {
@@ -150,7 +151,7 @@ final class DebugScanJob: DataBrokerJob {
         await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
     }
 
-    func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+    public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
         if let scanURL = self.scanURL {
             let debugScanReturnValue = DebugScanReturnValue(
                 brokerURL: scanURL,
@@ -164,7 +165,7 @@ final class DebugScanJob: DataBrokerJob {
         await executeNextStep()
     }
 
-    func completeWith(error: Error) async {
+    public func completeWith(error: Error) async {
         if let scanURL = self.scanURL {
             let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, brokerProfileQueryData: query)
             complete(debugScanReturnValue)
@@ -173,7 +174,7 @@ final class DebugScanJob: DataBrokerJob {
         await executeNextStep()
     }
 
-    func executeNextStep() async {
+    public func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
 
@@ -190,7 +191,7 @@ final class DebugScanJob: DataBrokerJob {
         }
     }
 
-    func loadURL(url: URL) async {
+    public func loadURL(url: URL) async {
         do {
             self.scanURL = url.absoluteString
             try await webViewHandler?.load(url: url)

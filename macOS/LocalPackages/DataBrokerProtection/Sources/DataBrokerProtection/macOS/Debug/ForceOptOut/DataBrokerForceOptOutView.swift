@@ -42,7 +42,3 @@ struct DataBrokerForceOptOutView: View {
         .frame(minWidth: 750, minHeight: 700)
     }
 }
-
-#Preview {
-    DataBrokerForceOptOutView(viewModel: DataBrokerForceOptOutViewModel())
-}

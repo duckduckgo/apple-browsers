@@ -1,5 +1,5 @@
 //
-//  DebugScanJob.swift
+//  ScanJob.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -22,36 +22,9 @@ import BrowserServicesKit
 import UserScript
 import Common
 import os.log
-import DataBrokerProtectionShared
 
-struct DebugScanReturnValue {
-    let brokerURL: String
-    let extractedProfiles: [ExtractedProfile]
-    let error: Error?
-    let brokerProfileQueryData: BrokerProfileQueryData
-    let meta: [String: Any]?
-
-    init(brokerURL: String,
-         extractedProfiles: [ExtractedProfile] = [ExtractedProfile](),
-         error: Error? = nil,
-         brokerProfileQueryData: BrokerProfileQueryData,
-         meta: [String: Any]? = nil) {
-        self.brokerURL = brokerURL
-        self.extractedProfiles = extractedProfiles
-        self.error = error
-        self.brokerProfileQueryData = brokerProfileQueryData
-        self.meta = meta
-    }
-}
-
-struct EmptyCookieHandler: CookieHandler {
-    func getAllCookiesFromDomain(_ url: URL) async -> [HTTPCookie]? {
-        return nil
-    }
-}
-
-final class DebugScanJob: DataBrokerJob {
-    typealias ReturnValue = DebugScanReturnValue
+final class ScanJob: DataBrokerJob {
+    typealias ReturnValue = [ExtractedProfile]
     typealias InputValue = Void
 
     let privacyConfig: PrivacyConfigurationManaging
@@ -59,30 +32,29 @@ final class DebugScanJob: DataBrokerJob {
     let query: BrokerProfileQueryData
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
+    let cookieHandler: CookieHandler
     let stageCalculator: StageDurationCalculator
     var webViewHandler: WebViewHandler?
     var actionsHandler: ActionsHandler?
-    var continuation: CheckedContinuation<DebugScanReturnValue, Error>?
+    var continuation: CheckedContinuation<[ExtractedProfile], Error>?
     var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
     let shouldRunNextStep: () -> Bool
     var retriesCountOnError: Int = 0
-    var scanURL: String?
     let clickAwaitTime: TimeInterval
-    let cookieHandler: CookieHandler
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
-
-    private let fileManager = FileManager.default
-    private let debugScanContentPath: String?
 
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
          query: BrokerProfileQueryData,
          emailService: EmailServiceProtocol,
          captchaService: CaptchaServiceProtocol,
+         cookieHandler: CookieHandler = BrokerCookieHandler(),
          operationAwaitTime: TimeInterval = 3,
          clickAwaitTime: TimeInterval = 0,
+         stageDurationCalculator: StageDurationCalculator,
+         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -91,24 +63,17 @@ final class DebugScanJob: DataBrokerJob {
         self.emailService = emailService
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
+        self.stageCalculator = stageDurationCalculator
         self.shouldRunNextStep = shouldRunNextStep
         self.clickAwaitTime = clickAwaitTime
-        if let desktopPath = fileManager.urls(for: .desktopDirectory, in: .userDomainMask).first?.relativePath {
-            self.debugScanContentPath = desktopPath + "/PIR-Debug"
-        } else {
-            self.debugScanContentPath = nil
-        }
-        self.cookieHandler = EmptyCookieHandler()
-        stageCalculator = FakeStageDurationCalculator()
-        pixelHandler =  EventMapping(mapping: { _, _, _, _ in
-            // We do not need the pixel handler for the debug
-        })
+        self.cookieHandler = cookieHandler
+        self.pixelHandler = pixelHandler
     }
 
-    public func run(inputValue: Void,
-                    webViewHandler: WebViewHandler? = nil,
-                    actionsHandler: ActionsHandler? = nil,
-                    showWebView: Bool) async throws -> DebugScanReturnValue {
+    func run(inputValue: InputValue,
+             webViewHandler: WebViewHandler? = nil,
+             actionsHandler: ActionsHandler? = nil,
+             showWebView: Bool) async throws -> [ExtractedProfile] {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
@@ -133,46 +98,12 @@ final class DebugScanJob: DataBrokerJob {
         }
     }
 
-    public func runNextAction(_ action: Action) async {
-        if action as? ExtractAction != nil {
-            do {
-                if let path = self.debugScanContentPath {
-                    let fileName = "\(query.profileQuery.id ?? 0)_\(query.dataBroker.name)"
-                    try await webViewHandler?.takeSnaphost(path: path + "/screenshots/", fileName: "\(fileName).png")
-                    try await webViewHandler?.saveHTML(path: path + "/html/", fileName: "\(fileName).html")
-                }
-            } catch {
-                print("Error: \(error)")
-            }
-        }
-
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
-    }
-
-    public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
-        if let scanURL = self.scanURL {
-            let debugScanReturnValue = DebugScanReturnValue(
-                brokerURL: scanURL,
-                extractedProfiles: profiles,
-                brokerProfileQueryData: query,
-                meta: meta
-            )
-            complete(debugScanReturnValue)
-        }
-
+    func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+        complete(profiles)
         await executeNextStep()
     }
 
-    public func completeWith(error: Error) async {
-        if let scanURL = self.scanURL {
-            let debugScanReturnValue = DebugScanReturnValue(brokerURL: scanURL, error: error, brokerProfileQueryData: query)
-            complete(debugScanReturnValue)
-        }
-
-        await executeNextStep()
-    }
-
-    public func executeNextStep() async {
+    func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
 
@@ -184,22 +115,6 @@ final class DebugScanJob: DataBrokerJob {
         } else {
             Logger.action.debug("Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
-            continuation = nil
-            webViewHandler = nil
         }
-    }
-
-    public func loadURL(url: URL) async {
-        do {
-            self.scanURL = url.absoluteString
-            try await webViewHandler?.load(url: url)
-            await executeNextStep()
-        } catch {
-            await completeWith(error: error)
-        }
-    }
-
-    deinit {
-        Logger.action.debug("DebugScanOperation Deinit")
     }
 }

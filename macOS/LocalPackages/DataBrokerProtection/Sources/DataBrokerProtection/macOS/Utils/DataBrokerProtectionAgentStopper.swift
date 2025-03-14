@@ -20,6 +20,7 @@ import Foundation
 import os.log
 import Common
 import Freemium
+import DataBrokerProtectionShared
 
 protocol DataBrokerProtectionAgentStopper {
     /// Validates if the user is an active freemium user, OR if they have profile data, is authenticated, and has valid entitlement. If any of these conditions are not met, the agent will be stopped.

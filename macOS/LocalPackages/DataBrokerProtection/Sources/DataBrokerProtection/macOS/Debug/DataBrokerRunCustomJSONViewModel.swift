@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import DataBrokerProtectionShared
 import Common
 import ContentScopeScripts
 import Combine
@@ -503,13 +504,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     func appVersion() -> String {
         AppVersion.shared.versionNumber
-    }
-}
-
-final class FakeSleepObserver: SleepObserver {
-
-    func totalSleepTime() -> TimeInterval {
-        return 0
     }
 }
 

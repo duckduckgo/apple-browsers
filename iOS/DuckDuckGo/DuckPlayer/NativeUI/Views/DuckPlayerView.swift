@@ -26,6 +26,8 @@ struct DuckPlayerView: View {
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
     @State private var autoOpenOnYoutube: Bool = false
+    @State private var hideToggleTask: DispatchWorkItem?
+    @State private var showToggle: Bool = true
 
     enum Constants {
         static let headerHeight: CGFloat = 56
@@ -80,9 +82,8 @@ struct DuckPlayerView: View {
                     )
                 }
 
-                // Show only if the source is youtube and the setting is not already on 
-                // if turned to 'on' it will hide after 2 seconds
-                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube {
+                // Show only if the source is youtube and the toggle should be visible
+                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showToggle {
                     ZStack {
                          RoundedRectangle(cornerRadius: 8)
                             .fill(Color.gray.opacity(0.2))
@@ -102,7 +103,7 @@ struct DuckPlayerView: View {
                     .padding(.horizontal, Constants.horizontalPadding)
                     .padding(.bottom, Constants.horizontalPadding)
                     .transition(.opacity)
-                    .animation(.easeInOut, value: viewModel.showAutoOpenOnYoutubeToggle)
+                    .animation(.easeInOut, value: showToggle)
                 }
 
                 if viewModel.shouldShowYouTubeButton {
@@ -147,6 +148,7 @@ struct DuckPlayerView: View {
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube
+            showToggle = !viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
@@ -154,17 +156,24 @@ struct DuckPlayerView: View {
         .onDisappear {
             viewModel.onDisappear()
         }
-        // Add onChange handler to update the viewModel when local state changes
         .onChange(of: autoOpenOnYoutube) { newValue in
-            viewModel.autoOpenOnYoutube = newValue
-            
-            // When toggle is set to true, hide the view after 2 seconds
+            // Create a new task to hide the toggle after 2 seconds
+            hideToggleTask?.cancel()
+
             if newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+
+                let task = DispatchWorkItem {
                     withAnimation {
+                        showToggle = false
+                        viewModel.autoOpenOnYoutube = true
                         viewModel.hideAutoOpenToggle()
                     }
                 }
+
+                hideToggleTask = task
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: task)
+            } else {
+                viewModel.autoOpenOnYoutube = false
             }
         }
     }

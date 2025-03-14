@@ -24,7 +24,7 @@ public class FreemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperime
     public init() {
         super.init { event, _, params, _ in
             switch event {
-            case .subscription:
+            case .subscription, .oneTimeCohortSubscriptionStatusPixel:
                 PixelKit.fire(event, frequency: .uniqueByName, withAdditionalParameters: params)
             default:
                 PixelKit.fire(event, frequency: .uniqueByName)
@@ -60,6 +60,8 @@ public enum FreemiumDBPExperimentPixel: PixelKitEventV2 {
     case firstScanCompleteNotificationClicked
     // Subscription
     case subscription
+    // Follow-up Analysis
+    case oneTimeCohortSubscriptionStatusPixel
 
     public var name: String {
         switch self {
@@ -91,6 +93,8 @@ public enum FreemiumDBPExperimentPixel: PixelKitEventV2 {
             return "dbp-free_notification_opened_first_scan_complete_u"
         case .subscription:
             return "dbp-free_subscription_u"
+        case .oneTimeCohortSubscriptionStatusPixel:
+            return "dbp-free_subscription_status_u"
         }
     }
 

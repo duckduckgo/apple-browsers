@@ -21,7 +21,7 @@ import PixelKit
 import Common
 import Configuration
 
-enum ErrorCategory: Equatable {
+public enum ErrorCategory: Equatable {
     case networkError
     case validationError
     case clientError(httpCode: Int)
@@ -29,7 +29,7 @@ enum ErrorCategory: Equatable {
     case databaseError(domain: String, code: Int)
     case unclassified
 
-    var toString: String {
+    public var toString: String {
         switch self {
         case .networkError: return "network-error"
         case .validationError: return "validation-error"
@@ -43,46 +43,46 @@ enum ErrorCategory: Equatable {
 
 public enum DataBrokerProtectionSharedPixels {
 
-    struct Consts {
-        static let dataBrokerParamKey = "data_broker"
-        static let dataBrokerVersionKey = "broker_version"
-        static let appVersionParamKey = "app_version"
-        static let attemptIdParamKey = "attempt_id"
-        static let durationParamKey = "duration"
-        static let bundleIDParamKey = "bundle_id"
-        static let stageKey = "stage"
-        static let matchesFoundKey = "num_found"
-        static let triesKey = "tries"
-        static let errorCategoryKey = "error_category"
-        static let errorDetailsKey = "error_details"
-        static let errorDomainKey = "error_domain"
-        static let pattern = "pattern"
-        static let isParent = "is_parent"
-        static let actionIDKey = "action_id"
-        static let hadNewMatch = "had_new_match"
-        static let hadReAppereance = "had_re-appearance"
-        static let scanCoverage = "scan_coverage"
-        static let removals = "removals"
-        static let environmentKey = "environment"
-        static let wasOnWaitlist = "was_on_waitlist"
-        static let httpCode = "http_code"
-        static let backendServiceCallSite = "backend_service_callsite"
-        static let isImmediateOperation = "is_manual_scan"
-        static let durationInMs = "duration_in_ms"
-        static let profileQueries = "profile_queries"
-        static let hasError = "has_error"
-        static let brokerURL = "broker_url"
-        static let sleepDuration = "sleep_duration"
-        static let numberOfRecordsFound = "num_found"
-        static let numberOfOptOutsInProgress = "num_inprogress"
-        static let numberOfSucessfulOptOuts = "num_optoutsuccess"
-        static let numberOfOptOutsFailure = "num_optoutfailure"
-        static let durationOfFirstOptOut = "duration_firstoptout"
-        static let numberOfNewRecordsFound = "num_new_found"
-        static let numberOfReappereances = "num_reappeared"
-        static let optOutSubmitSuccessRate = "optout_submit_success_rate"
-        static let childParentRecordDifference = "child-parent-record-difference"
-        static let calculatedOrphanedRecords = "calculated-orphaned-records"
+    public struct Consts {
+        public static let dataBrokerParamKey = "data_broker"
+        public static let dataBrokerVersionKey = "broker_version"
+        public static let appVersionParamKey = "app_version"
+        public static let attemptIdParamKey = "attempt_id"
+        public static let durationParamKey = "duration"
+        public static let bundleIDParamKey = "bundle_id"
+        public static let stageKey = "stage"
+        public static let matchesFoundKey = "num_found"
+        public static let triesKey = "tries"
+        public static let errorCategoryKey = "error_category"
+        public static let errorDetailsKey = "error_details"
+        public static let errorDomainKey = "error_domain"
+        public static let pattern = "pattern"
+        public static let isParent = "is_parent"
+        public static let actionIDKey = "action_id"
+        public static let hadNewMatch = "had_new_match"
+        public static let hadReAppereance = "had_re-appearance"
+        public static let scanCoverage = "scan_coverage"
+        public static let removals = "removals"
+        public static let environmentKey = "environment"
+        public static let wasOnWaitlist = "was_on_waitlist"
+        public static let httpCode = "http_code"
+        public static let backendServiceCallSite = "backend_service_callsite"
+        public static let isImmediateOperation = "is_manual_scan"
+        public static let durationInMs = "duration_in_ms"
+        public static let profileQueries = "profile_queries"
+        public static let hasError = "has_error"
+        public static let brokerURL = "broker_url"
+        public static let sleepDuration = "sleep_duration"
+        public static let numberOfRecordsFound = "num_found"
+        public static let numberOfOptOutsInProgress = "num_inprogress"
+        public static let numberOfSucessfulOptOuts = "num_optoutsuccess"
+        public static let numberOfOptOutsFailure = "num_optoutfailure"
+        public static let durationOfFirstOptOut = "duration_firstoptout"
+        public static let numberOfNewRecordsFound = "num_new_found"
+        public static let numberOfReappereances = "num_reappeared"
+        public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
+        public static let childParentRecordDifference = "child-parent-record-difference"
+        public static let calculatedOrphanedRecords = "calculated-orphaned-records"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String)
@@ -149,11 +149,6 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String, sleepDuration: Double)
     case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String, sleepDuration: Double)
     case initialScanPreStartDuration(duration: Double)
-
-    // Entitlements
-    case entitlementCheckValid
-    case entitlementCheckInvalid
-    case entitlementCheckError
 
     // Configuration
     case invalidPayload(Configuration)
@@ -240,11 +235,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .initialScanSiteLoadDuration: return "dbp_scan_broker_site_loaded"
         case .initialScanPostLoadingDuration: return "dbp_initial_scan_broker_post_loading"
         case .initialScanPreStartDuration: return "dbp_initial_scan_pre_start_duration"
-
-            // Entitlements
-        case .entitlementCheckValid: return "entitlement_valid"
-        case .entitlementCheckInvalid: return "entitlement_invalid"
-        case .entitlementCheckError: return "entitlement_error"
 
         case .globalMetricsWeeklyStats: return "dbp_weekly_stats"
         case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
@@ -343,9 +333,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
-                .entitlementCheckValid,
-                .entitlementCheckInvalid,
-                .entitlementCheckError,
                 .secureVaultInitError,
                 .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
@@ -495,11 +482,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyChildBrokerOrphanedOptOuts:
 
                 PixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
-
-            case .entitlementCheckValid,
-                    .entitlementCheckInvalid,
-                    .entitlementCheckError:
-                PixelKit.fire(event, frequency: .legacyDailyAndCount, withNamePrefix: platform.pixelNamePrefix)
 
             }
         }

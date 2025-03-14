@@ -26,7 +26,6 @@ public protocol WebJobRunner {
     func scan(_ profileQuery: BrokerProfileQueryData,
               stageCalculator: StageDurationCalculator,
               pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-              sleepObserver: SleepObserver?,
               showWebView: Bool,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile]
 
@@ -34,7 +33,6 @@ public protocol WebJobRunner {
                 extractedProfile: ExtractedProfile,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                sleepObserver: SleepObserver?,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
@@ -44,13 +42,11 @@ extension WebJobRunner {
     func scan(_ profileQuery: BrokerProfileQueryData,
               stageCalculator: StageDurationCalculator,
               pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-              sleepObserver: SleepObserver?,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
 
         try await scan(profileQuery,
                        stageCalculator: stageCalculator,
                        pixelHandler: pixelHandler,
-                       sleepObserver: sleepObserver,
                        showWebView: false,
                        shouldRunNextStep: shouldRunNextStep)
     }
@@ -58,7 +54,6 @@ extension WebJobRunner {
     func optOut(profileQuery: BrokerProfileQueryData,
                 extractedProfile: ExtractedProfile,
                 stageCalculator: StageDurationCalculator,
-                sleepObserver: SleepObserver?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 shouldRunNextStep: @escaping () -> Bool) async throws {
 
@@ -66,7 +61,6 @@ extension WebJobRunner {
                          extractedProfile: extractedProfile,
                          stageCalculator: stageCalculator,
                          pixelHandler: pixelHandler,
-                         sleepObserver: sleepObserver,
                          showWebView: false,
                          shouldRunNextStep: shouldRunNextStep)
     }
@@ -92,7 +86,6 @@ final class DataBrokerJobRunner: WebJobRunner {
     func scan(_ profileQuery: BrokerProfileQueryData,
               stageCalculator: StageDurationCalculator,
               pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-              sleepObserver: SleepObserver?,
               showWebView: Bool,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         let scan = ScanJob(
@@ -103,7 +96,6 @@ final class DataBrokerJobRunner: WebJobRunner {
             captchaService: captchaService,
             stageDurationCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            sleepObserver: sleepObserver,
             shouldRunNextStep: shouldRunNextStep
         )
         return try await scan.run(inputValue: (), showWebView: showWebView)
@@ -113,7 +105,6 @@ final class DataBrokerJobRunner: WebJobRunner {
                 extractedProfile: ExtractedProfile,
                 stageCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                sleepObserver: SleepObserver?,
                 showWebView: Bool,
                 shouldRunNextStep: @escaping () -> Bool) async throws {
         let optOut = OptOutJob(
@@ -124,7 +115,6 @@ final class DataBrokerJobRunner: WebJobRunner {
             captchaService: captchaService,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            sleepObserver: sleepObserver,
             shouldRunNextStep: shouldRunNextStep
         )
         try await optOut.run(inputValue: extractedProfile, showWebView: showWebView)

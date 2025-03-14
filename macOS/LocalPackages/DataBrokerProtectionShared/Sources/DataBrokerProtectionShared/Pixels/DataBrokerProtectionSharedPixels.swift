@@ -146,8 +146,8 @@ public enum DataBrokerProtectionSharedPixels {
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
     case initialScanTotalDuration(duration: Double, profileQueries: Int)
-    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String, sleepDuration: Double)
-    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String, sleepDuration: Double)
+    case initialScanSiteLoadDuration(duration: Double, hasError: Bool, brokerURL: String)
+    case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPreStartDuration(duration: Double)
 
     // Configuration

@@ -81,7 +81,6 @@ private extension DataBrokerJobTests {
                 captchaService: CaptchaServiceMock(),
                 stageDurationCalculator: MockStageDurationCalculator(),
                 pixelHandler: MockPixelHandler(),
-                sleepObserver: MockSleepObserver(),
                 shouldRunNextStep: { true })
     }
 
@@ -92,7 +91,6 @@ private extension DataBrokerJobTests {
                   captchaService: CaptchaServiceMock(),
                   stageCalculator: MockStageDurationCalculator(),
                   pixelHandler: MockPixelHandler(),
-                  sleepObserver: MockSleepObserver(),
                   shouldRunNextStep: { true })
     }
 }

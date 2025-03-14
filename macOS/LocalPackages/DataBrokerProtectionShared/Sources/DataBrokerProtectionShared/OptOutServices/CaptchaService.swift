@@ -20,8 +20,8 @@ import Foundation
 import Common
 import os.log
 
-typealias CaptchaTransactionId = String
-typealias CaptchaResolveData = String
+public typealias CaptchaTransactionId = String
+public typealias CaptchaResolveData = String
 
 public enum CaptchaServiceError: Error, Codable {
     case cantGenerateCaptchaServiceURL
@@ -76,7 +76,7 @@ struct CaptchaResult: Codable {
     let meta: Meta
 }
 
-protocol CaptchaServiceProtocol {
+public protocol CaptchaServiceProtocol {
 
     /// Submits captcha information to the backend to start solving it,
     ///
@@ -118,7 +118,7 @@ extension CaptchaServiceProtocol {
     }
 }
 
-struct CaptchaService: CaptchaServiceProtocol {
+public struct CaptchaService: CaptchaServiceProtocol {
     private struct Constants {
         static let endpointSubPath = "/dbp/captcha/v0"
     }
@@ -128,17 +128,17 @@ struct CaptchaService: CaptchaServiceProtocol {
     private let settings: DataBrokerProtectionSettings
     private let servicePixel: DataBrokerProtectionBackendServicePixels
 
-    init(urlSession: URLSession = URLSession.shared,
-         authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         settings: DataBrokerProtectionSettings = DataBrokerProtectionSettings(),
-         servicePixel: DataBrokerProtectionBackendServicePixels = DefaultDataBrokerProtectionBackendServicePixels()) {
+    public init(urlSession: URLSession = URLSession.shared,
+                authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                settings: DataBrokerProtectionSettings,
+                servicePixel: DataBrokerProtectionBackendServicePixels) {
         self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.settings = settings
         self.servicePixel = servicePixel
     }
 
-    func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
+    public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
                                   retries: Int = 5,
                                   pollingInterval: TimeInterval = 1,
                                   attemptId: UUID,
@@ -210,11 +210,11 @@ struct CaptchaService: CaptchaServiceProtocol {
         return result
     }
 
-    func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
-                                   retries: Int = 100,
-                                   pollingInterval: TimeInterval = 50,
-                                   attemptId: UUID,
-                                   shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
+    public func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
+                                          retries: Int = 100,
+                                          pollingInterval: TimeInterval = 50,
+                                          attemptId: UUID,
+                                          shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
 
         let captchaResolveResult: CaptchaResult
 

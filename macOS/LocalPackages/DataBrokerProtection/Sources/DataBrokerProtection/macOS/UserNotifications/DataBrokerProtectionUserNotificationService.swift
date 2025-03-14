@@ -22,6 +22,7 @@ import Common
 import AppKit
 import os.log
 import PixelKit
+import DataBrokerProtectionShared
 
 public enum DataBrokerProtectionNotificationCommand: String {
     case showDashboard = "databrokerprotection://show_dashboard"
@@ -29,14 +30,6 @@ public enum DataBrokerProtectionNotificationCommand: String {
     public var url: URL {
         URL(string: self.rawValue)!
     }
-}
-
-public protocol DataBrokerProtectionUserNotificationService {
-    func requestNotificationPermission()
-    func sendFirstScanCompletedNotification()
-    func sendFirstRemovedNotificationIfPossible()
-    func sendAllInfoRemovedNotificationIfPossible()
-    func scheduleCheckInNotificationIfPossible()
 }
 
 // Protocol to enable injection and testing of `DataBrokerProtectionUserNotificationService`

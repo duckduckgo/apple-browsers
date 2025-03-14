@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Det är inte tillåtet att avbryta mer än en gång";
 
+/* Close All Tabs */
+"close.all.tabs" = "Stäng alla flikar";
+
 /* No comment provided by engineer. */
 "Confirm" = "Bekräfta";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Öppna %1$@ på %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Välj alla";
+
+/* Deselect all tabs */
+"tab.select.none" = "Avmarkera alla";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Flikväxlare";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Bokmärk alla flikar";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Öka eller minska textstorleken på alla webbplatser.";

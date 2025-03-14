@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "No se permite cancelar más de una vez";
 
+/* Close All Tabs */
+"close.all.tabs" = "Cerrar todas las pestañas";
+
 /* No comment provided by engineer. */
 "Confirm" = "Confirmar";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Abrir \"%1$@\" en %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Seleccionar todo";
+
+/* Deselect all tabs */
+"tab.select.none" = "Cancelar selección de todo";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Cambiar pestañas";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Añadir todas las pestañas a marcadores";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Aumenta o disminuye el tamaño del texto en todos los sitios.";

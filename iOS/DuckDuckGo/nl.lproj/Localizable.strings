@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annuleren is niet meer dan één keer toegestaan";
 
+/* Close All Tabs */
+"close.all.tabs" = "Alle tabbladen sluiten";
+
 /* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "'%1$@' op %2$@ openen";
 
+/* Select all tabs */
+"tab.select.all" = "Alles selecteren";
+
+/* Deselect all tabs */
+"tab.select.none" = "Alles deselecteren";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Wisselen tussen tabbladen";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Alle tabbladen toevoegen als bladwijzer?";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Vergroot of verklein de tekstgrootte op alle sites.";

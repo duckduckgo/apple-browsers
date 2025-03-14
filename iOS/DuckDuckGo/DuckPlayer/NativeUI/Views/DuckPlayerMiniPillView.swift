@@ -73,55 +73,69 @@ struct DuckPlayerMiniPillView: View {
             static let viewOffset: CGFloat = 20
             static let regularPadding: CGFloat = 16
             static let bottomSpacer: CGFloat = 25
+            static let grabHandleHeight: CGFloat = 4
+            static let grabHandleWidth: CGFloat = 36
+            static let grabHandleTopPadding: CGFloat = 8
         }
     }
 
+    private var grabHandle: some View {
+        Capsule()
+            .fill(Color(designSystemColor: .textPrimary).opacity(0.3))
+            .frame(width: Constants.Layout.grabHandleWidth, height: Constants.Layout.grabHandleHeight)
+            .padding(.top, Constants.Layout.grabHandleTopPadding)
+    }
+
     private var sheetContent: some View {
-        Button(action: { viewModel.openInDuckPlayer() }) {
-            VStack(spacing: Constants.Layout.stackSpacing) {
-                HStack(spacing: Constants.Layout.stackSpacing) {
-                    // YouTube thumbnail image
-                    Group {
-                        AnimatedAsyncImage(
-                            url: viewModel.thumbnailURL,
-                            width: Constants.Layout.thumbnailSize.w,
-                            height: Constants.Layout.thumbnailSize.h
-                        )
+        VStack(spacing: 0) {
+            grabHandle
+
+            Button(action: { viewModel.openInDuckPlayer() }) {
+                VStack(spacing: Constants.Layout.stackSpacing) {
+                    HStack(spacing: Constants.Layout.stackSpacing) {
+                        // YouTube thumbnail image
+                        Group {
+                            AnimatedAsyncImage(
+                                url: viewModel.thumbnailURL,
+                                width: Constants.Layout.thumbnailSize.w,
+                                height: Constants.Layout.thumbnailSize.h
+                            )
+                        }
+                        .frame(width: Constants.Layout.thumbnailSize.w, height: Constants.Layout.thumbnailSize.h)
+                        .clipShape(RoundedRectangle(cornerRadius: Constants.Layout.thumbnailCornerRadius))
+
+                        VStack(alignment: .leading) {
+                            Text(UserText.duckPlayerNativeOpenInDuckPlayer)
+                                .daxHeadline()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Text(viewModel.title)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .layoutPriority(1)
+
+                        // Play button
+                        Image(systemName: Constants.playImage)
+                            .font(.system(size: Constants.Layout.playButtonFont))
+                            .foregroundColor(.white)
+                            .frame(width: iconSize, height: iconSize)
+                            .background(Color(designSystemColor: .accent))
+                            .clipShape(Circle())
                     }
-                    .frame(width: Constants.Layout.thumbnailSize.w, height: Constants.Layout.thumbnailSize.h)
-                    .clipShape(RoundedRectangle(cornerRadius: Constants.Layout.thumbnailCornerRadius))
-
-                    VStack(alignment: .leading) {
-                        Text(UserText.duckPlayerNativeOpenInDuckPlayer)
-                            .daxHeadline()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text(viewModel.title)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .layoutPriority(1)
-
-                    // Play button
-                    Image(systemName: Constants.playImage)
-                        .font(.system(size: Constants.Layout.playButtonFont))
-                        .foregroundColor(.white)
-                        .frame(width: iconSize, height: iconSize)
-                        .background(Color(designSystemColor: .accent))
-                        .clipShape(Circle())
+                    .padding(Constants.Layout.regularPadding)
                 }
-                .padding(Constants.Layout.regularPadding)
+                .background(Color(designSystemColor: .surface))
+                .cornerRadius(Constants.Layout.cornerRadius)
+                .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
+                .padding(.horizontal, Constants.Layout.regularPadding)
+                .padding(.vertical, Constants.Layout.regularPadding)
+                .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
             }
-            .background(Color(designSystemColor: .surface))
-            .cornerRadius(Constants.Layout.cornerRadius)
-            .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
-            .padding(.horizontal, Constants.Layout.regularPadding)
-            .padding(.vertical, Constants.Layout.regularPadding)
-            .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
         }
     }
 

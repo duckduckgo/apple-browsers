@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Atšaukti negalima daugiau nei vieną kartą";
 
+/* Close All Tabs */
+"close.all.tabs" = "Uždaryti visas korteles";
+
 /* No comment provided by engineer. */
 "Confirm" = "Patvirtinti";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Atidaryti „%1$@“ adresu %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Pasirinkti viską";
+
+/* Deselect all tabs */
+"tab.select.none" = "Atžymėti visus";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Skirtukų perjungiklis";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Pažymėti visus skirtukus";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Padidinti arba sumažinti teksto dydį visose svetainėse.";

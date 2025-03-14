@@ -304,7 +304,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
 
-        let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp)
+        let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp, source: source)
         self.playerViewModel = viewModel // Keep strong reference
 
         let webView = DuckPlayerWebView(viewModel: viewModel)

@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
 
+/* Close All Tabs */
+"close.all.tabs" = "Tüm Sekmeleri Kapat";
+
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "%2$@ adresindeki \"%1$@\" sitesini aç";
 
+/* Select all tabs */
+"tab.select.all" = "Tümünü Seç";
+
+/* Deselect all tabs */
+"tab.select.none" = "Tümünün Seçimini Kaldır";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Sekme Değiştirici";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Tüm Sekmelere Yer İşareti Ekle";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Tüm sitelerde metin boyutunu artırın veya azaltın.";

@@ -749,6 +749,9 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отменянето не е позволено повече от веднъж";
 
+/* Close All Tabs */
+"close.all.tabs" = "Затваряне на всички раздели";
+
 /* No comment provided by engineer. */
 "Confirm" = "Потвърдете";
 
@@ -2818,8 +2821,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Отваряне на \"%1$@\" с адрес %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Избиране на всички";
+
+/* Deselect all tabs */
+"tab.select.none" = "Премахване на избора на всички";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Превключване на раздели";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Поставяне на всички раздели в отметки";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Увеличете или намалете размера на текста във всички сайтове.";

@@ -70,6 +70,7 @@ public enum PrivacyFeature: String {
     case webViewStateRestoration
     case experimentalBrowserTheming
     case setAsDefaultAndAddToDock
+    case onboarding
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -247,3 +248,9 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
      case popoverVsBannerExperiment
  }
+
+public enum OnboardingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .onboarding }
+
+    case setAsDefaultBrowserExperiment
+}

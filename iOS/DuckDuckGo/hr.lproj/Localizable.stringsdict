@@ -316,5 +316,385 @@ Ja sam ih blokirao!
 			<string>Izbrisano je %1$d lozinki</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvori karticu</string>
+			<key>few</key>
+			<string>Zatvori kartice</string>
+			<key>many</key>
+			<string>Zatvori kartica</string>
+			<key>other</key>
+			<string>Zatvori kartica</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvori karticu</string>
+			<key>few</key>
+			<string>Zatvori sve %1$d kartice</string>
+			<key>many</key>
+			<string>Zatvori svih %1$d kartica</string>
+			<key>other</key>
+			<string>Zatvori svih %1$d kartica</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriti karticu?</string>
+			<key>few</key>
+			<string>Zatvoriti %1$d kartice?</string>
+			<key>many</key>
+			<string>Zatvoriti %1$d kartica?</string>
+			<key>other</key>
+			<string>Zatvoriti %1$d kartica?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriti drugu karticu?</string>
+			<key>few</key>
+			<string>Zatvoriti %1$d druge kartice?</string>
+			<key>many</key>
+			<string>Zatvoriti %1$d drugih kartica?</string>
+			<key>other</key>
+			<string>Zatvoriti %1$d drugih kartica?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Jesi li siguran da želiš zatvoriti karticu?</string>
+			<key>few</key>
+			<string>Jesi li siguran da želiš zatvoriti ove kartice?</string>
+			<key>many</key>
+			<string>Jesi li siguran da želiš zatvoriti ove kartice?</string>
+			<key>other</key>
+			<string>Jesi li siguran da želiš zatvoriti ove kartice?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriti karticu?</string>
+			<key>few</key>
+			<string>Zatvoriti %1$d kartice?</string>
+			<key>many</key>
+			<string>Zatvoriti %1$d kartica?</string>
+			<key>other</key>
+			<string>Zatvoriti %1$d kartica?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigurno želiš zatvoriti ove kartice?</string>
+			<key>few</key>
+			<string>Sigurno želiš zatvoriti ove kartice?</string>
+			<key>many</key>
+			<string>Sigurno želiš zatvoriti ove kartice?</string>
+			<key>other</key>
+			<string>Sigurno želiš zatvoriti ove kartice?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvoriti karticu?</string>
+			<key>few</key>
+			<string>Zatvoriti sve %1$d kartice?</string>
+			<key>many</key>
+			<string>Zatvoriti svih %1$d kartica?</string>
+			<key>other</key>
+			<string>Zatvoriti svih %1$d kartica?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Jesi li siguran da želiš zatvoriti ovu karticu?</string>
+			<key>few</key>
+			<string>Jesi li siguran da želiš zatvoriti sve kartice?</string>
+			<key>many</key>
+			<string>Jesi li siguran da želiš zatvoriti sve kartice?</string>
+			<key>other</key>
+			<string>Jesi li siguran da želiš zatvoriti sve kartice?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odaberi karticu</string>
+			<key>few</key>
+			<string>Odaberi kartice</string>
+			<key>many</key>
+			<string>Odaberi kartice</string>
+			<key>other</key>
+			<string>Odaberi kartice</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zatvori drugu karticu</string>
+			<key>few</key>
+			<string>Zatvori druge kartice</string>
+			<key>many</key>
+			<string>Zatvori druge kartice</string>
+			<key>other</key>
+			<string>Zatvori druge kartice</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Podijeli poveznice</string>
+			<key>few</key>
+			<string>Podijeli %1$d poveznice</string>
+			<key>many</key>
+			<string>Podijeli %1$d poveznica</string>
+			<key>other</key>
+			<string>Podijeli %1$d poveznica</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Podijeli odabranu karticu</string>
+			<key>few</key>
+			<string>Podijeli odabrane kartice</string>
+			<key>many</key>
+			<string>Podijeli odabrane kartice</string>
+			<key>other</key>
+			<string>Podijeli odabrane kartice</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Označi karticu</string>
+			<key>few</key>
+			<string>Označi %1$d kartice</string>
+			<key>many</key>
+			<string>Označi %1$d kartica</string>
+			<key>other</key>
+			<string>Označi %1$d kartica</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodana je knjižna oznaka</string>
+			<key>few</key>
+			<string>Dodane su %1$d knjižne oznake</string>
+			<key>many</key>
+			<string>Dodano je %1$d knjižnih oznaka</string>
+			<key>other</key>
+			<string>Dodano je %1$d knjižnih oznaka</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Označiti odabranu karticu?</string>
+			<key>few</key>
+			<string>Označiti %1$d kartice?</string>
+			<key>many</key>
+			<string>Označiti %1$d kartica?</string>
+			<key>other</key>
+			<string>Označiti %1$d kartica?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Označiti odabranu karticu?</string>
+			<key>few</key>
+			<string>Označiti %1$d kartice?</string>
+			<key>many</key>
+			<string>Označiti %1$d kartica?</string>
+			<key>other</key>
+			<string>Označiti %1$d kartica?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odabrano: %1$d</string>
+			<key>few</key>
+			<string>Odabrano: %1$d</string>
+			<key>many</key>
+			<string>Odabrano: %1$d</string>
+			<key>other</key>
+			<string>Odabrano: %1$d</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Odabrano kartica: %1$d</string>
+			<key>few</key>
+			<string>Odabrano kartica: %1$d</string>
+			<key>many</key>
+			<string>Odabrano kartica: %1$d</string>
+			<key>other</key>
+			<string>Odabrano kartica: %1$d</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -6,7 +6,7 @@ defaults:
 
 on:
   push:
-    branches: [ main, "release/**" ]
+    branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
       - 'BrowserServicesKit/**'
       - 'macOS/**'

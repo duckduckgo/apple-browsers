@@ -80,7 +80,7 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    let isAuthV2Enabled: Bool = false
+    let isAuthV2Enabled = false
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge {
         if !isAuthV2Enabled {
             return subscriptionManager!
@@ -121,6 +121,7 @@ final class AppDependencyProvider: DependencyProvider {
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
         var accessTokenProvider: () -> String?
+        var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
         if !isAuthV2Enabled {
             // MARK: Subscription V1
@@ -156,6 +157,7 @@ final class AppDependencyProvider: DependencyProvider {
                 return { accountManager.accessToken }
             }()
             tokenHandler = accountManager
+            authenticationStateProvider = subscriptionManager
         } else {
             // MARK: Subscription V2
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
@@ -216,12 +218,15 @@ final class AppDependencyProvider: DependencyProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   autoRecoveryHandler: {
-                // todo Implement
-            },
                                                                    isInternalUserEnabled: {
                 ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
             })
+
+            let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
+            subscriptionManager.tokenRecoveryHandler = {
+                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+            }
+
             self.subscriptionManagerV2 = subscriptionManager
 
             accessTokenProvider = {
@@ -236,8 +241,9 @@ final class AppDependencyProvider: DependencyProvider {
                 return { token }
             }()
             tokenHandler = subscriptionManager
+            authenticationStateProvider = subscriptionManager
         }
-        vpnFeatureVisibility = DefaultNetworkProtectionVisibility(tokenHandler: tokenHandler)
+        vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,

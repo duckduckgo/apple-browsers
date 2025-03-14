@@ -202,6 +202,7 @@ public struct UserText {
         return String.localizedStringWithFormat(format, count)
     }
 
+    // Accessibility label - DO NOT LOCALISE
     public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
 
     public static let themeNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
@@ -245,9 +246,9 @@ public struct UserText {
     public static let openHomeTab = NSLocalizedString("tab.open.home", value: "Open home tab", comment: "Accessibility label on tab cell")
     public static let closeHomeTab = NSLocalizedString("tab.close.home", value: "Close home tab", comment: "Accessibility label on remove button")
 
-    public static let selectAllTabs = NotLocalizedString("tab.select.all", value: "Select All", comment: "Select all tabs")
+    public static let selectAllTabs = NSLocalizedString("tab.select.all", value: "Select All", comment: "Select all tabs")
 
-    public static let deselectAllTabs = NotLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
+    public static let deselectAllTabs = NSLocalizedString("tab.select.none", value: "Deselect All", comment: "Deselect all tabs")
 
     public static func alertTitleBookmarkSelectedTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "alertTitleBookmarkSelectedTabs.withCount", value: nil, table: nil)
@@ -258,6 +259,8 @@ public struct UserText {
         let format = Bundle.main.localizedString(forKey: "tab.close", value: nil, table: nil)
         return String.localizedStringWithFormat(format, count)
     }
+
+    public static let closeAllTabs: String = NSLocalizedString("close.all.tabs", value: "Close All Tabs", comment: "Close All Tabs")
 
     public static func closeAllTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "closeAllTabs.withCount", value: nil, table: nil)
@@ -304,9 +307,7 @@ public struct UserText {
         return message.format(arguments: title, address)
     }
 
-    public static let tabSwitcherBookmarkPage = NotLocalizedString("tab.switcher.bookmark.page", value: "Bookmark This Page", comment: "Bookmark this page menu item")
-
-    public static let tabSwitcherBookmarkAllTabs = NotLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
+    public static let tabSwitcherBookmarkAllTabs = NSLocalizedString("tab.switcher.bookmarkAll", value: "Bookmark All Tabs", comment: "Bookmark all tabs menu item")
 
     public static func tabSwitcherSelectTabs(withCount count: Int) -> String {
         let format = Bundle.main.localizedString(forKey: "tab.switcher.select-tabs.withCount", value: nil, table: nil)
@@ -1538,6 +1539,13 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
     static let duckPlayerNativeOpenInDuckPlayer = NSLocalizedString("duck-player.native-open-in-duckplayer", value: "Duck Player", comment: "Text for the button to watch a video on DuckPlayer")
     public static let duckPlayerTapToWatchWithoutAds = NSLocalizedString("duckplayer.pill.watch.without.ads", value: "Tap to watch without targeted ads", comment: "Caption for Duck Player entry point")
+    public static let duckPlayerNativeUseOnSERPLabel = NSLocalizedString("duckPlayerNative.use.on.serp.label", value: "Use on Search Results", comment: "Label for the use DuckPlayer on SERP toggle")
+    public static let duckPlayerNativeUseOnSERPFooter = NSLocalizedString("duckPlayerNative.use.on.serp.footer", value: "YouTube videos on DuckDuckGo search results will open in Duck Player.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    public static let duckPlayerNativeUseOnYoutubeLabel = NSLocalizedString("duckPlayerNative.use.on.youtube.label", value: "Use on Youtube.com", comment: "Label for the use DuckPlayer on Youtube toggle")
+    public static let duckPlayerNativeUseOnYoutubeFooter = NSLocalizedString("duckPlayerNative.use.on.youtube.footer", value: "Makes Duck Player available on Youtube video pages.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
+    public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Let me choose", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
+    public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Don't Show", comment: "Text displayed when DuckPlayer is in off for youtube.")
 
     // MARK: - AI Chat
 

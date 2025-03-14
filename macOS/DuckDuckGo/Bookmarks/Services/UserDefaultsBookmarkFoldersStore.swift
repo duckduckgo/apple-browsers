@@ -17,32 +17,36 @@
 //
 
 import Foundation
+import Persistence
 
-/// A type used to provide the ID of the folder where all tabs were last saved.
+/// A type used to provide the IDs of folders used for saving bookmarks.
 protocol BookmarkFoldersStore: AnyObject {
     /// The ID of the folder where all bookmarks from the last session were saved.
     var lastBookmarkAllTabsFolderIdUsed: String? { get set }
+    /// The ID of the folder where a single bookmark was last saved.
+    var lastBookmarkSingleTabFolderIdUsed: String? { get set }
 }
 
 final class UserDefaultsBookmarkFoldersStore: BookmarkFoldersStore {
 
     enum Keys {
         static let bookmarkAllTabsFolderUsedKey = "bookmarks.all-tabs.last-used-folder"
+        static let bookmarkSingleTabFolderUsedKey = "bookmarks.single-tab.last-used-folder"
     }
 
-    private let userDefaults: UserDefaults
+    private let keyValueStore: KeyValueStoring
 
-    init(userDefaults: UserDefaults = .standard) {
-        self.userDefaults = userDefaults
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
     }
 
     var lastBookmarkAllTabsFolderIdUsed: String? {
-        get {
-            userDefaults.string(forKey: Keys.bookmarkAllTabsFolderUsedKey)
-        }
-        set {
-            userDefaults.set(newValue, forKey: Keys.bookmarkAllTabsFolderUsedKey)
-        }
+        get { keyValueStore.object(forKey: Keys.bookmarkAllTabsFolderUsedKey) as? String }
+        set { keyValueStore.set(newValue, forKey: Keys.bookmarkAllTabsFolderUsedKey) }
     }
 
+    var lastBookmarkSingleTabFolderIdUsed: String? {
+        get { keyValueStore.object(forKey: Keys.bookmarkSingleTabFolderUsedKey) as? String }
+        set { keyValueStore.set(newValue, forKey: Keys.bookmarkSingleTabFolderUsedKey) }
+    }
 }

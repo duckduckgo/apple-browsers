@@ -16,125 +16,61 @@
 //  limitations under the License.
 //
 
-import WebKit
+import Common
 import UserScript
+import WebKit
 
 protocol FaviconUserScriptDelegate: AnyObject {
-
     @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
                            for documentUrl: URL)
-
 }
 
-final class FaviconUserScript: NSObject, StaticUserScript {
+final class FaviconUserScript: NSObject, Subfeature {
 
-    struct FaviconLink {
+    struct FaviconsFoundPayload: Codable, Equatable {
+        let documentUrl: String
+        let favicons: [FaviconLink]
+    }
+
+    struct FaviconLink: Codable, Equatable {
         let href: String
         let rel: String
     }
 
-    static var injectionTime: WKUserScriptInjectionTime { .atDocumentEnd }
-    static var forMainFrameOnly: Bool { true }
-    static var script: WKUserScript = FaviconUserScript.makeWKUserScript()
-    var messageNames: [String] { ["faviconFound"] }
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    let featureName: String = "favicon"
 
+    weak var broker: UserScriptMessageBroker?
     weak var delegate: FaviconUserScriptDelegate?
 
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let body = message.body as? [String: Any],
-              let favicons = body["favicons"] as? [[String: Any]],
-              let documentUrlString = body["documentUrl"] as? String else {
-                  assertionFailure("FaviconUserScript: Bad message body")
-                  return
-              }
-
-        let faviconLinks = favicons.compactMap { favicon -> FaviconLink? in
-            if let href = favicon["href"] as? String,
-               let rel = favicon["rel"] as? String {
-                return FaviconLink(href: href, rel: rel)
-            } else {
-                assertionFailure("FaviconUserScript: Failed to get favicon link data")
-                return nil
-            }
-        }
-
-        guard let documentUrl = URL(string: documentUrlString) else {
-            assertionFailure("FaviconUserScript: Failed to make URL from string")
-            return
-        }
-
-        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: documentUrl)
+    func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
     }
 
+    enum MessageNames: String, CaseIterable {
+        case faviconFound
+    }
 
-    static let source = """
-(() => {
-function send() {
-    const selectors = [
-        "link[rel='favicon']",
-        "link[rel*='icon']",
-        "link[rel='apple-touch-icon']",
-        "link[rel='apple-touch-icon-precomposed']"
-    ];
-    const favicons = Array.from(document.head.querySelectorAll(selectors.join(','))).map(x=>{
-        return { href: x.href, rel: x.rel }
-    });
-    const resp = { favicons, documentUrl: document.URL }
-    webkit.messageHandlers.faviconFound.postMessage(resp);
-}
-send()
-const ob = new MutationObserver(mutations => {
-    for (let mutation of mutations) {
-        if (mutation.type === "attributes" && mutation.target.tagName === "LINK") {
-            send()
-            break;
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageNames(rawValue: methodName) {
+        case .faviconFound:
+            return { [weak self] in try await self?.faviconFound(params: $0, original: $1) }
+        default:
+            return nil
         }
     }
-})
-ob.observe(document.head, { attributeFilter: ["rel", "href"], attributes: true, subtree: true });
-})();
 
-"""
-
-    static let source_old = """
-(function() {
-    function getFavicon() {
-        return findFavicons()[0];
-    };
-
-    function findFavicons() {
-         var selectors = [
-            "link[rel='favicon']",
-            "link[rel*='icon']",
-            "link[rel='apple-touch-icon']",
-            "link[rel='apple-touch-icon-precomposed']"
-        ];
-        var favicons = [];
-        while (selectors.length > 0) {
-            var selector = selectors.pop()
-            var icons = document.head.querySelectorAll(selector);
-            for (var i = 0; i < icons.length; i++) {
-                var href = icons[i].href;
-                var rel = icons[i].rel;
-
-                // Exclude SVGs since we can't handle them
-                if (href.indexOf("svg") >= 0 || (icons[i].type && icons[i].type.indexOf("svg") >= 0)) {
-                    continue;
-                }
-                favicons.push({ href: href, rel: rel });
-            }
+    @MainActor
+    private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params),
+              let documentURL = faviconsPayload.documentUrl.url
+        else {
+            return nil
         }
-        return favicons;
-    };
-    try {
-        var favicons = findFavicons();
-        webkit.messageHandlers.faviconFound.postMessage({ favicons: favicons, documentUrl: document.URL });
-    } catch(error) {
-        // webkit might not be defined
-    }
-}) ();
-"""
 
+        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: documentURL)
+        return nil
+    }
 }

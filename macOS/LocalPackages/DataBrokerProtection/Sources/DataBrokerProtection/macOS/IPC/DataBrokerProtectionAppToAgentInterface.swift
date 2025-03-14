@@ -17,46 +17,11 @@
 //
 
 import Foundation
+import DataBrokerProtectionShared
 
 public enum DataBrokerProtectionAppToAgentInterfaceError: Error {
     case loginItemDoesNotHaveNecessaryPermissions
     case appInWrongDirectory
-}
-
-@objc
-public class DataBrokerProtectionAgentErrorCollection: NSObject, NSSecureCoding {
-    /*
-     This needs to be an NSObject (rather than a struct) so it can be represented in Objective C
-     and confrom to NSSecureCoding for the IPC layer.
-     */
-
-    private enum NSSecureCodingKeys {
-        static let oneTimeError = "oneTimeError"
-        static let operationErrors = "operationErrors"
-    }
-
-    public let oneTimeError: Error?
-    public let operationErrors: [Error]?
-
-    public init(oneTimeError: Error? = nil, operationErrors: [Error]? = nil) {
-        self.oneTimeError = oneTimeError
-        self.operationErrors = operationErrors
-        super.init()
-    }
-
-    // MARK: - NSSecureCoding
-
-    public static let supportsSecureCoding = true
-
-    public func encode(with coder: NSCoder) {
-        coder.encode(oneTimeError, forKey: NSSecureCodingKeys.oneTimeError)
-        coder.encode(operationErrors, forKey: NSSecureCodingKeys.operationErrors)
-    }
-
-    public required init?(coder: NSCoder) {
-        oneTimeError = coder.decodeObject(of: NSError.self, forKey: NSSecureCodingKeys.oneTimeError)
-        operationErrors = coder.decodeArrayOfObjects(ofClass: NSError.self, forKey: NSSecureCodingKeys.operationErrors)
-    }
 }
 
 public protocol DataBrokerProtectionAgentAppEvents {

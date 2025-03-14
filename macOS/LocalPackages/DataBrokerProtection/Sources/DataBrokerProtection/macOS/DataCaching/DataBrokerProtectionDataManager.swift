@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import DataBrokerProtectionShared
 
 public extension Notification.Name {
     /// Notification posted when a profile is saved.
@@ -37,10 +38,8 @@ public protocol DataBrokerProtectionDataManaging {
     var cache: InMemoryDataCache { get }
     var delegate: DataBrokerProtectionDataManagerDelegate? { get set }
 
-    init(database: DataBrokerProtectionRepository?,
-         profileSavedNotifier: DBPProfileSavedNotifier?,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
-         fakeBrokerFlag: DataBrokerDebugFlag)
+    init(database: DataBrokerProtectionRepository,
+         profileSavedNotifier: DBPProfileSavedNotifier?)
     func saveProfile(_ profile: DataBrokerProtectionProfile) async throws
     func fetchProfile() throws -> DataBrokerProtectionProfile?
     func prepareProfileCache() throws
@@ -69,11 +68,9 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     internal let database: DataBrokerProtectionRepository
 
-    required public init(database: DataBrokerProtectionRepository? = nil,
-                         profileSavedNotifier: DBPProfileSavedNotifier? = nil,
-                         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
-                         fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker()) {
-        self.database = database ?? DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBrokerFlag, pixelHandler: pixelHandler)
+    required public init(database: DataBrokerProtectionRepository,
+                         profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
+        self.database = database
 
         self.profileSavedNotifier = profileSavedNotifier
         cache.delegate = self
@@ -242,12 +239,12 @@ public final class InMemoryDataCache {
 
 extension InMemoryDataCache: DBPUICommunicationDelegate {
 
-    func getHandshakeUserData() -> DBPUIHandshakeUserData? {
+    public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
         return DBPUIHandshakeUserData(isAuthenticatedUser: isAuthenticatedUser)
     }
 
-    func saveProfile() async throws {
+    public func saveProfile() async throws {
         guard let profile = profile else { return }
         try await delegate?.saveCachedProfileToDatabase(profile)
     }
@@ -276,7 +273,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return address.city.isBlank || address.state.isBlank
     }
 
-    func getUserProfile() -> DBPUIUserProfile? {
+    public func getUserProfile() -> DBPUIUserProfile? {
         let profile = profile ?? emptyProfile
 
         let names = profile.names.map { DBPUIUserProfileName(first: $0.firstName, middle: $0.middleName, last: $0.lastName, suffix: $0.suffix) }
@@ -285,12 +282,12 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return DBPUIUserProfile(names: names, birthYear: profile.birthYear, addresses: addresses)
     }
 
-    func deleteProfileData() throws {
+    public func deleteProfileData() throws {
         profile = emptyProfile
         try delegate?.removeAllData()
     }
 
-    func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool {
+    public func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool {
         let profile = profile ?? emptyProfile
 
         guard !isNameEmpty(name) else { return false }
@@ -306,7 +303,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return true
     }
 
-    func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool {
+    public func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool {
         let profile = profile ?? emptyProfile
 
         var names = profile.names
@@ -319,7 +316,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return false
     }
 
-    func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
+    public func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
         let profile = profile ?? emptyProfile
 
         var names = profile.names
@@ -332,7 +329,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return false
     }
 
-    func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool {
+    public func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool {
         let profile = profile ?? emptyProfile
 
         self.profile = DataBrokerProtectionProfile(names: profile.names, addresses: profile.addresses, phones: profile.phones, birthYear: year.year)
@@ -340,7 +337,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return true
     }
 
-    func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool {
+    public func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool {
         let profile = profile ?? emptyProfile
 
         guard !addressIsEmpty(address) else { return false }
@@ -356,7 +353,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return true
     }
 
-    func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool {
+    public func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool {
         let profile = profile ?? emptyProfile
 
         var addresses = profile.addresses
@@ -370,7 +367,7 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return false
     }
 
-    func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
+    public func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool {
         let profile = profile ?? emptyProfile
 
         var addresses = profile.addresses
@@ -383,26 +380,26 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
         return false
     }
 
-    func startScanAndOptOut() -> Bool {
+    public func startScanAndOptOut() -> Bool {
         // This is now unusused as we decided the web UI shouldn't issue commands directly
         // The background agent itself instead decides to start scans based on events
         // This should be removed once we can remove it from the web side
         return true
     }
 
-    func getInitialScanState() async -> DBPUIInitialScanState {
+    public func getInitialScanState() async -> DBPUIInitialScanState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
         return mapper.initialScanState(brokerProfileQueryData)
     }
 
-    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
+    public func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         await scanDelegate?.updateCacheWithCurrentScans()
 
         return mapper.maintenanceScanState(brokerProfileQueryData)
     }
 
-    func getDataBrokers() async -> [DBPUIDataBroker] {
+    public func getDataBrokers() async -> [DBPUIDataBroker] {
         brokerProfileQueryData
         // 1. We get all brokers (in this list brokers are repeated)
             .map { $0.dataBroker }
@@ -424,13 +421,13 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
             }
     }
 
-    func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
+    public func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         let metadata = await scanDelegate?.getBackgroundAgentMetadata()
 
         return mapper.mapToUIDebugMetadata(metadata: metadata, brokerProfileQueryData: brokerProfileQueryData)
     }
 
-    func openSendFeedbackModal() async {
+    public  func openSendFeedbackModal() async {
         delegate?.willOpenSendFeedbackForm()
     }
 }

@@ -239,9 +239,9 @@ public struct BrokenSiteReport {
             "vpnOn": vpnOn.description,
             "userRefreshCount": String(userRefreshCount),
             "locale": locale.localeIdentifierAsJsonFormat,
-            "consentManaged": cookieConsentInfo?.consentManaged.description ?? "",
-            "consentOptoutFailed": cookieConsentInfo?.optoutFailed?.description ?? "",
-            "consentSelftestFailed": cookieConsentInfo?.selftestFailed?.description ?? ""
+            "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged.description),
+            "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed?.description),
+            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed?.description)
         ]
 
         if mode == .regular {
@@ -276,6 +276,18 @@ public struct BrokenSiteReport {
 #endif
         return result
     }
+
+    private func boolToStringValue(_ value: Bool?) -> String {
+        switch value {
+        case .init(true):
+            return "1"
+        case .init(false):
+            return "0"
+        default:
+            return ""
+        }
+    };
+
 
     private func encodeErrors(_ errors: [Error]) -> String {
         let errorDescriptions: [String] = errors.map {

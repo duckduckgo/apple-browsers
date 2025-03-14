@@ -148,9 +148,9 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "manufacturer"], "Apple")
         XCTAssertEqual(queryItems[valueFor: "os"], "12")
         XCTAssertEqual(queryItems[valueFor: "gpc"], "true")
-        XCTAssertEqual(queryItems[valueFor: "consentManaged"], "true")
-        XCTAssertEqual(queryItems[valueFor: "consentOptoutFailed"], "true")
-        XCTAssertEqual(queryItems[valueFor: "consentSelftestFailed"], "true")
+        XCTAssertEqual(queryItems[valueFor: "consentManaged"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentOptoutFailed"], "1")
+        XCTAssertEqual(queryItems[valueFor: "consentSelftestFailed"], "1")
     }
 
     func makeURLRequest(with parameters: [String: String]) -> URLRequest {

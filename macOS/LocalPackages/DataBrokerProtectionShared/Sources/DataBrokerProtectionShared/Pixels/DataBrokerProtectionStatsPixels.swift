@@ -21,7 +21,7 @@ import Common
 import BrowserServicesKit
 import PixelKit
 
-protocol DataBrokerProtectionStatsPixelsRepository {
+public protocol DataBrokerProtectionStatsPixelsRepository {
 
     var customStatsPixelsLastSentTimestamp: Date? { get set }
 
@@ -32,7 +32,7 @@ protocol DataBrokerProtectionStatsPixelsRepository {
     func getLatestStatsMonthlyPixelDate() -> Date?
 }
 
-final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtectionStatsPixelsRepository {
+public final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtectionStatsPixelsRepository {
 
     enum Consts {
         static let weeklyPixelKey = "macos.browser.data-broker-protection.statsWeeklyPixelKey"
@@ -42,7 +42,7 @@ final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtectionSta
 
     private let userDefaults: UserDefaults
 
-    var customStatsPixelsLastSentTimestamp: Date? {
+    public var customStatsPixelsLastSentTimestamp: Date? {
         get {
             userDefaults.object(forKey: Consts.customStatsPixelKey) as? Date
         }
@@ -51,23 +51,23 @@ final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtectionSta
         }
     }
 
-    init(userDefaults: UserDefaults = .standard) {
+    public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
     }
 
-    func markStatsWeeklyPixelDate() {
+    public func markStatsWeeklyPixelDate() {
         userDefaults.set(Date(), forKey: Consts.weeklyPixelKey)
     }
 
-    func markStatsMonthlyPixelDate() {
+    public func markStatsMonthlyPixelDate() {
         userDefaults.set(Date(), forKey: Consts.monthlyPixelKey)
     }
 
-    func getLatestStatsWeeklyPixelDate() -> Date? {
+    public func getLatestStatsWeeklyPixelDate() -> Date? {
         userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
     }
 
-    func getLatestStatsMonthlyPixelDate() -> Date? {
+    public func getLatestStatsMonthlyPixelDate() -> Date? {
         userDefaults.object(forKey: Consts.monthlyPixelKey) as? Date
     }
 }
@@ -82,7 +82,7 @@ struct StatsByBroker {
     let numberOfReAppereances: Int
     let durationOfFirstOptOut: Int
 
-    var toWeeklyPixel: DataBrokerProtectionPixels {
+    var toWeeklyPixel: DataBrokerProtectionSharedPixels {
         return .dataBrokerMetricsWeeklyStats(dataBrokerURL: dataBrokerURL,
                                              profilesFound: numberOfProfilesFound,
                                              optOutsInProgress: numberOfOptOutsInProgress,
@@ -93,7 +93,7 @@ struct StatsByBroker {
                                              numberOfReappereances: numberOfReAppereances)
     }
 
-    var toMonthlyPixel: DataBrokerProtectionPixels {
+    var toMonthlyPixel: DataBrokerProtectionSharedPixels {
         return .dataBrokerMetricsMonthlyStats(dataBrokerURL: dataBrokerURL,
                                               profilesFound: numberOfProfilesFound,
                                               optOutsInProgress: numberOfOptOutsInProgress,
@@ -107,7 +107,7 @@ struct StatsByBroker {
 
 extension Array where Element == StatsByBroker {
 
-    func toWeeklyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionPixels {
+    func toWeeklyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionSharedPixels {
         let numberOfGlobalProfilesFound = map { $0.numberOfProfilesFound }.reduce(0, +)
         let numberOfGlobalOptOutsInProgress = map { $0.numberOfOptOutsInProgress }.reduce(0, +)
         let numberOfGlobalSuccessfulOptOuts = map { $0.numberOfSuccessfulOptOuts }.reduce(0, +)
@@ -122,7 +122,7 @@ extension Array where Element == StatsByBroker {
                                          numberOfNewRecordsFound: numberOfGlobalNewMatchesFound)
     }
 
-    func toMonthlyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionPixels {
+    func toMonthlyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionSharedPixels {
         let numberOfGlobalProfilesFound = map { $0.numberOfProfilesFound }.reduce(0, +)
         let numberOfGlobalOptOutsInProgress = map { $0.numberOfOptOutsInProgress }.reduce(0, +)
         let numberOfGlobalSuccessfulOptOuts = map { $0.numberOfSuccessfulOptOuts }.reduce(0, +)
@@ -144,7 +144,7 @@ protocol StatsPixels {
 }
 
 /// Conforming types provide a method to check if we should fire custom stats based on an input date
-protocol CustomStatsPixelsTrigger {
+public protocol CustomStatsPixelsTrigger {
 
     /// This method determines whether custom stats pixels should be fired based on the time interval since the provided fromDate.
     /// - Parameter fromDate: An optional date parameter representing the start date. If nil, the method will return true.
@@ -152,9 +152,12 @@ protocol CustomStatsPixelsTrigger {
     func shouldFireCustomStatsPixels(fromDate: Date?) -> Bool
 }
 
-struct DefaultCustomStatsPixelsTrigger: CustomStatsPixelsTrigger {
+public struct DefaultCustomStatsPixelsTrigger: CustomStatsPixelsTrigger {
 
-    func shouldFireCustomStatsPixels(fromDate: Date?) -> Bool {
+    public init() {
+    }
+
+    public func shouldFireCustomStatsPixels(fromDate: Date?) -> Bool {
         guard let fromDate = fromDate else { return true }
 
         let interval = Date().timeIntervalSince(fromDate)
@@ -178,17 +181,17 @@ extension Date {
     }
 }
 
-final class DataBrokerProtectionStatsPixels: StatsPixels {
+public final class DataBrokerProtectionStatsPixels: StatsPixels {
 
     private let database: DataBrokerProtectionRepository
-    private let handler: EventMapping<DataBrokerProtectionPixels>
+    private let handler: EventMapping<DataBrokerProtectionSharedPixels>
     private var repository: DataBrokerProtectionStatsPixelsRepository
     private let customStatsPixelsTrigger: CustomStatsPixelsTrigger
     private let customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider
     private let calendar = Calendar.current
 
-    init(database: DataBrokerProtectionRepository,
-         handler: EventMapping<DataBrokerProtectionPixels>,
+    public init(database: DataBrokerProtectionRepository,
+         handler: EventMapping<DataBrokerProtectionSharedPixels>,
          repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
          customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
          customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
@@ -199,7 +202,7 @@ final class DataBrokerProtectionStatsPixels: StatsPixels {
         self.customOptOutStatsProvider = customOptOutStatsProvider
     }
 
-    func tryToFireStatsPixels() {
+    public func tryToFireStatsPixels() {
         guard let brokerProfileQueryData = try? database.fetchAllBrokerProfileQueryData() else {
             return
         }
@@ -223,7 +226,7 @@ final class DataBrokerProtectionStatsPixels: StatsPixels {
         fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: brokerProfileQueryData)
     }
 
-    func fireCustomStatsPixelsIfNeeded() {
+    public func fireCustomStatsPixelsIfNeeded() {
         let startDate = repository.customStatsPixelsLastSentTimestamp
 
         guard customStatsPixelsTrigger.shouldFireCustomStatsPixels(fromDate: startDate),
@@ -337,7 +340,7 @@ final class DataBrokerProtectionStatsPixels: StatsPixels {
             return 0
         }
 
-        guard let differenceInDays = DataBrokerProtectionPixelsUtilities.numberOfDaysFrom(startDate: dateOfFirstScan, endDate: dateOfFirstSubmittedOptOut) else {
+        guard let differenceInDays = DataBrokerProtectionSharedPixelsUtilities.numberOfDaysFrom(startDate: dateOfFirstScan, endDate: dateOfFirstSubmittedOptOut) else {
             return 0
         }
 
@@ -397,10 +400,10 @@ private extension DataBrokerProtectionStatsPixels {
 
         if let lastWeeklyUpdateDate = repository.getLatestStatsWeeklyPixelDate() {
             // If the last weekly was set we need to compare the date with it.
-            return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: lastWeeklyUpdateDate, endDate: Date(), daysDifference: .weekly)
+            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: lastWeeklyUpdateDate, endDate: Date(), daysDifference: .weekly)
         } else {
             // If the weekly update date was never set we need to check the first scan date.
-            return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .weekly)
+            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .weekly)
         }
     }
 
@@ -412,10 +415,10 @@ private extension DataBrokerProtectionStatsPixels {
 
         if let lastMonthlyUpdateDate = repository.getLatestStatsMonthlyPixelDate() {
             // If the last monthly was set we need to compare the date with it.
-            return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: lastMonthlyUpdateDate, endDate: Date(), daysDifference: .monthly)
+            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: lastMonthlyUpdateDate, endDate: Date(), daysDifference: .monthly)
         } else {
             // If the monthly update date was never set we need to check the first scan date.
-            return DataBrokerProtectionPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .monthly)
+            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .monthly)
         }
     }
 
@@ -470,7 +473,7 @@ private extension DataBrokerProtectionStatsPixels {
         }
     }
 
-    func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionPixels {
+    func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionSharedPixels {
         .customDataBrokerStatsOptoutSubmit(dataBrokerName: dataBrokerStat.dataBrokerName,
                                            optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate)
     }
@@ -479,7 +482,7 @@ private extension DataBrokerProtectionStatsPixels {
         handler.fire(pixel(for: customOptOutStats.customAggregateBrokersStat))
     }
 
-    func pixel(for aggregateStat: CustomAggregateBrokersStat) -> DataBrokerProtectionPixels {
+    func pixel(for aggregateStat: CustomAggregateBrokersStat) -> DataBrokerProtectionSharedPixels {
         .customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: aggregateStat.optoutSubmitSuccessRate)
     }
 }

@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionPixelsUtilities.swift
+//  DataBrokerProtectionSharedPixelsUtilities.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ enum Frequency: Int {
     case monthly = 28
 }
 
-final class DataBrokerProtectionPixelsUtilities {
+final class DataBrokerProtectionSharedPixelsUtilities {
     private static let calendar = Calendar.current
 
     static func shouldWeFirePixel(startDate: Date, endDate: Date, daysDifference: Frequency) -> Bool {

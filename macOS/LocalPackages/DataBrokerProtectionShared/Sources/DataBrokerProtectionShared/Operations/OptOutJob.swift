@@ -43,7 +43,6 @@ final class OptOutJob: DataBrokerJob {
     let clickAwaitTime: TimeInterval
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     var postLoadingSiteStartTime: Date?
-    let sleepObserver: SleepObserver?
 
     // Captcha is a third-party resource that sometimes takes more time to load
     // if we are not able to get the captcha information. We will try to run the action again
@@ -62,7 +61,6 @@ final class OptOutJob: DataBrokerJob {
          clickAwaitTime: TimeInterval = 40,
          stageCalculator: StageDurationCalculator,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         sleepObserver: SleepObserver?,
          shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -76,7 +74,6 @@ final class OptOutJob: DataBrokerJob {
         self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
-        self.sleepObserver = sleepObserver
     }
 
     func run(inputValue: ExtractedProfile,

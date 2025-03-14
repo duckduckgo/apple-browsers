@@ -194,7 +194,6 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                                                                                 notificationCenter: operationDependencies.notificationCenter,
                                                                                 runner: operationDependencies.runnerProvider.getJobRunner(),
                                                                                 pixelHandler: operationDependencies.pixelHandler,
-                                                                                sleepObserver: nil,
                                                                                 showWebView: showWebView,
                                                                                 isImmediateOperation: operationType == .manualScan,
                                                                                 userNotificationService: operationDependencies.userNotificationService,

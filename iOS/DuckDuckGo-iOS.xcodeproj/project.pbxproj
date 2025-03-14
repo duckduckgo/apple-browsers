@@ -6422,7 +6422,6 @@
 		D62EC3B72C24695800FC9D04 /* DuckPlayer */ = {
 			isa = PBXGroup;
 			children = (
-				65F4CB472D7A18F200E89416 /* YoutubeOembedServiceTests.swift */,
 				6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */,
 				D6B67A112C332B6E002122EB /* DuckPlayerMocks.swift */,
 				D62EC3BB2C2470E000FC9D04 /* DuckPlayerTests.swift */,
@@ -9438,7 +9437,6 @@
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
 				9F6933212C5B9A5B00CD6A5D /* OnboardingHostingControllerMock.swift in Sources */,
 				9F6933192C59BB0300CD6A5D /* OnboardingPixelReporterMock.swift in Sources */,
-				65F4CB482D7A18F900E89416 /* YoutubeOembedServiceTests.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */,
 				56D0602D2C383FD2003BAEB5 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */,

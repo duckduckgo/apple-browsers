@@ -36,12 +36,17 @@ tags:
 # Bookmark all
 - assertVisible: Tab Switcher
 - tapOn: Tab Switcher
-- tapOn: "Add all tabs as bookmarks"
+- tapOn: "Edit"
+- tapOn: "Select Tabs"
+- tapOn: "More Menu"
+- tapOn: "Bookmark All Tabs"
 - assertVisible: "Bookmark 2 tabs?"
 - tapOn: "Bookmark"
+- tapOn: "Done"
 
-# can't really tell if it works, but at least it won't crash
-- tapOn: "Toggle between grid and list view"
+# Check style switching works
+- tapOn: "Switch to list view"
+- tapOn: "Switch to grid view"
 
 # Check bookmarks were added
 - tapOn: "Done"

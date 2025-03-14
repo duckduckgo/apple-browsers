@@ -75,6 +75,13 @@ class TabSwitcherViewController: UIViewController {
         case list = "tabsToggleList"
         case grid = "tabsToggleGrid"
 
+        var accessibilityLabel: String {
+            switch self {
+            case .list: "Switch to grid view"
+            case .grid: "Switch to list view"
+            }
+        }
+
     }
 
     @IBOutlet weak var topBarView: UINavigationBar!

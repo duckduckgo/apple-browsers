@@ -173,13 +173,6 @@ private struct AddressBarPostionButtonStyle: ButtonStyle {
     }
 
     private func backgroundColor(_ isHighlighted: Bool) -> Color {
-        switch (colorScheme, isHighlighted) {
-        case (.light, true):
-            return .blueBase.opacity(0.2)
-        case (.dark, true):
-            return .blue30.opacity(0.2)
-        default:
-            return .clear
-        }
+        isHighlighted ? Color(designSystemColor: .buttonsGhostPressedFill) : .clear
     }
 }

@@ -48758,6 +48758,66 @@
         }
       }
     },
+    "phishing-detection.deprecated.enabled.checkbox" : {
+      "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me on sites flagged for phishing or malware."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme sobre sitios marcados como estafas, phishing o malware"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez-moi en garde contre les sites signalés pour escroqueries, pour hameçonnage ou comme étant des logiciels malveillants"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisami sui siti contrassegnati per truffe, phishing o malware"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me op websites die zijn aangeduid als oplichting, phishing of malware"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj mnie przed witrynami oznaczonymi jako oszustwa, wyłudzanie informacji lub złośliwe oprogramowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me sobre sites sinalizados como fraudes, phishing ou malware"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о мошеннических, фишинговых и вредоносных сайтах"
+          }
+        }
+      }
+    },
     "phishing-detection.enabled.checkbox" : {
       "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
       "extractionState" : "extracted_with_value",
@@ -48771,7 +48831,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me on sites flagged for phishing or malware."
+            "value" : "Warn me on sites flagged for scams, phishing, or malware."
           }
         },
         "es" : {
@@ -61564,59 +61624,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from browsing history"
-          }
-        }
-      }
-    },
-    "Reopen All Windows From Last Session" : {
-      "comment" : "Main Menu History item",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle vensters van de laatste sessie opnieuw openen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
           }
         }
       }

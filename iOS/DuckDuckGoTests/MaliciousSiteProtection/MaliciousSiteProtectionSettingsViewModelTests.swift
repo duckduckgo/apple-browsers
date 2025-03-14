@@ -24,12 +24,12 @@ import Testing
 final class MaliciousSiteProtectionSettingsViewModelTests {
     private var sut: MaliciousSiteProtectionSettingsViewModel!
     private var preferencesManager: MockMaliciousSiteProtectionPreferencesManager!
-    private var featureFlagger: MockMaliciousSiteProtectionFeatureFlags!
+    private var featureFlagger: MockFeatureFlagger!
     private var urlOpener: MockURLOpener!
 
     init() {
         preferencesManager = MockMaliciousSiteProtectionPreferencesManager()
-        featureFlagger = MockMaliciousSiteProtectionFeatureFlags()
+        featureFlagger = MockFeatureFlagger()
         urlOpener = MockURLOpener()
         setupSUT()
     }
@@ -37,7 +37,7 @@ final class MaliciousSiteProtectionSettingsViewModelTests {
     @Test("Malicious Site Protection Settings Section should be shown")
     func whenInit_AndIsMaliciousSiteProtectionSetToTrue_ThenShouldShowMaliciousSiteProtectionSectionReturnsTrue() {
         // GIVEN
-        featureFlagger.isMaliciousSiteProtectionEnabled = true
+        featureFlagger.enabledFeatureFlags.append(.maliciousSiteProtection)
         setupSUT()
 
         // WHEN
@@ -50,7 +50,7 @@ final class MaliciousSiteProtectionSettingsViewModelTests {
     @Test("Malicious Site Protection Settings Section should not be shown")
     func whenInit_AndIsMaliciousSiteProtectionSetToFalse_ThenShouldShowMaliciousSiteProtectionSectionReturnsFalse() {
         // GIVEN
-        featureFlagger.isMaliciousSiteProtectionEnabled = false
+        featureFlagger.enabledFeatureFlags = []
         setupSUT()
 
         // WHEN
@@ -58,6 +58,32 @@ final class MaliciousSiteProtectionSettingsViewModelTests {
 
         // THEN
         #expect(!result)
+    }
+
+    @Test("Scam Site Protection Settings Does Not Shows Scam Protection Copy")
+    func whenInit_AndScamSiteProtectionSetToFalse_ThenUseDeprecatedToggleMessage() {
+        // GIVEN
+        featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection]
+        setupSUT()
+
+        // WHEN
+        let result = sut.maliciousSiteProtectionMessage
+
+        // THEN
+        #expect(result == UserText.MaliciousSiteProtectionSettings.toggleMessageDeprecated)
+    }
+
+    @Test("Scam Site Protection Settings Shows Scam Protection Copyy")
+    func whenInit_AndScamSiteProtectionSetToTrue_ThenUseScamProtectionToggleMessage() {
+        // GIVEN
+        featureFlagger.enabledFeatureFlags = [.maliciousSiteProtection, .scamSiteProtection]
+        setupSUT()
+
+        // WHEN
+        let result = sut.maliciousSiteProtectionMessage
+
+        // THEN
+        #expect(result == UserText.MaliciousSiteProtectionSettings.toggleMessage)
     }
 
     @Test("Malicious Site Protection preference is On")

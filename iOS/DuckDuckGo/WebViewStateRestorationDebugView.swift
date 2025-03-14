@@ -53,7 +53,7 @@ struct WebViewStateRestorationDebugView: View {
                             .foregroundColor(Color(designSystemColor: .accent))
                     } else {
                         Image(systemName: "xmark")
-                            .foregroundColor(Color.red40)
+                            .foregroundColor(Color(baseColor: .red40))
                     }
                 }
             }

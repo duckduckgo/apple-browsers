@@ -94,7 +94,6 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         return pinnedTabManagersWithTabs.count >= 2
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     @MainActor
     func getNewPinnedTabsManager(shouldMigrate: Bool = false,
                                  tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager {

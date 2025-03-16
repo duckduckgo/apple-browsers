@@ -106,7 +106,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         pinnedTabsManagerProvider.settingChangedPublisher
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] index in
+            .sink { [weak self] _ in
                 self?.subscribeToCurrentPinnedTabCollections()
             }.store(in: &cancellables)
     }

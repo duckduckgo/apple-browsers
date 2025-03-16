@@ -196,7 +196,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsManagerProvider.settingChangedPublisher
             .dropFirst()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] index in
+            .sink { [weak self] _ in
                 guard let self = self else { return }
 
                 if tabCollectionViewModel.allTabsCount == 0 {
@@ -207,7 +207,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
-
 
     private func updatePinnedTabsViewModel() {
         guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else {

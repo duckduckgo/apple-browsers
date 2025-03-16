@@ -35,7 +35,7 @@ protocol PinnedTabsManagerProviding {
 
 }
 
-class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
+final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
     private let tabsPreferences: TabsPreferences
 
@@ -94,6 +94,7 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
         return pinnedTabManagersWithTabs.count >= 2
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     @MainActor
     func getNewPinnedTabsManager(shouldMigrate: Bool = false,
                                  tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager {
@@ -127,10 +128,8 @@ class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
                 // Collect tabs from per-window pinned tabs managers
                 var tabs = [Tab]()
                 for perWindowPinnedTabManager in allPerWindowPinnedTabsManagers {
-                    for pinnedTab in perWindowPinnedTabManager.tabCollection.tabs {
-                        if !tabs.contains(where: { $0.content == pinnedTab.content }) {
-                            tabs.append(pinnedTab)
-                        }
+                    for pinnedTab in perWindowPinnedTabManager.tabCollection.tabs where !tabs.contains(where: { $0.content == pinnedTab.content }) {
+                        tabs.append(pinnedTab)
                     }
                 }
 

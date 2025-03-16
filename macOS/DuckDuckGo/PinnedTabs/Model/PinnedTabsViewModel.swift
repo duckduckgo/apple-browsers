@@ -98,7 +98,6 @@ final class PinnedTabsViewModel: ObservableObject {
         bindToCollection()
     }
 
-
     private let tabsDidReorderSubject = PassthroughSubject<[Tab], Never>()
     private let contextMenuActionSubject = PassthroughSubject<ContextMenuAction, Never>()
     private(set) var tabsCancellable: AnyCancellable?

@@ -171,7 +171,7 @@ final class TabCollectionViewModel: NSObject {
     convenience init(burnerMode: BurnerMode = .regular) {
         let tabCollection = TabCollection()
         self.init(tabCollection: tabCollection,
-                  pinnedTabsManagerProvider:  Application.appDelegate.pinnedTabsManagerProvider,
+                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                   burnerMode: burnerMode)
     }
 
@@ -726,7 +726,7 @@ final class TabCollectionViewModel: NSObject {
     private func subscribeToPinnedTabsSettingChanged() {
         pinnedTabsManagerProvider?.settingChangedPublisher
             .dropFirst()
-            .sink { [weak self] index in
+            .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)
             }.store(in: &cancellables)

@@ -41,7 +41,7 @@ extension Preferences {
         let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
 
         @State private var showWarningAlert = false
-        @State private var pendingSelection: PinnedTabsMode? = nil
+        @State private var pendingSelection: PinnedTabsMode?
 
         var body: some View {
             PreferencePane(UserText.general) {

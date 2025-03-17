@@ -116,22 +116,27 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 }))
         }
 
+        if proxySettings.proxyAvailable {
+            menuItems.append(contentsOf: [
+                .textWithDetail(
+                    icon: Image(.window16),
+                    title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
+                    detail: "(\(proxySettings.excludedAppsMinusDBPAgent.count))",
+                    action: { [weak self] in
+                        self?.manageExcludedApps()
+                    }),
+                .textWithDetail(
+                    icon: Image(.globe16),
+                    title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
+                    detail: "(\(proxySettings.excludedDomains.count))",
+                    action: { [weak self] in
+                        self?.manageExcludedSites()
+                    }),
+                .divider()
+            ])
+        }
+
         menuItems.append(contentsOf: [
-            .textWithDetail(
-                icon: Image(.window16),
-                title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
-                detail: "(\(proxySettings.excludedAppsMinusDBPAgent.count))",
-                action: { [weak self] in
-                    self?.manageExcludedApps()
-            }),
-            .textWithDetail(
-                icon: Image(.globe16),
-                title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
-                detail: "(\(proxySettings.excludedDomains.count))",
-                action: { [weak self] in
-                    self?.manageExcludedSites()
-            }),
-            .divider(),
             .text(icon: Image(.help16), title: UserText.vpnStatusViewFAQMenuItemTitle, action: {
                 try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
             }),

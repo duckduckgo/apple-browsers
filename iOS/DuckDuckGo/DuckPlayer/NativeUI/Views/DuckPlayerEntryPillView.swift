@@ -44,50 +44,64 @@ struct DuckPlayerEntryPillView: View {
             static let viewOffset: CGFloat = 20
             static let regularPadding: CGFloat = 16
             static let bottomSpacer: CGFloat = 25
+            static let grabHandleHeight: CGFloat = 4
+            static let grabHandleWidth: CGFloat = 36
+            static let grabHandleTopPadding: CGFloat = 8
         }
     }
 
+    private var grabHandle: some View {
+        Capsule()
+            .fill(Color(designSystemColor: .textPrimary).opacity(0.3))
+            .frame(width: Constants.Layout.grabHandleWidth, height: Constants.Layout.grabHandleHeight)
+            .padding(.top, Constants.Layout.grabHandleTopPadding)
+    }
+
     private var sheetContent: some View {
-        Button(action: { viewModel.openInDuckPlayer() }) {
-            VStack(spacing: Constants.Layout.vStackSpacing) {
-                HStack(spacing: Constants.Layout.hStackSpacing) {
+        VStack(spacing: 0) {
+            grabHandle
 
-                    Image(Constants.daxLogo)
-                        .resizable()
-                        .frame(width: Constants.Layout.iconSize, height: Constants.Layout.iconSize)
+            Button(action: { viewModel.openInDuckPlayer() }) {
+                VStack(spacing: Constants.Layout.vStackSpacing) {
+                    HStack(spacing: Constants.Layout.hStackSpacing) {
 
-                    VStack(alignment: .leading) {
-                        Text(UserText.duckPlayerNativeOpenInDuckPlayer)
-                            .daxHeadline()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Image(Constants.daxLogo)
+                            .resizable()
+                            .frame(width: Constants.Layout.iconSize, height: Constants.Layout.iconSize)
 
-                        Text(UserText.duckPlayerTapToWatchWithoutAds)
-                            .daxFootnoteRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        VStack(alignment: .leading) {
+                            Text(UserText.duckPlayerNativeOpenInDuckPlayer)
+                                .daxHeadline()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Text(UserText.duckPlayerTapToWatchWithoutAds)
+                                .daxFootnoteRegular()
+                                .foregroundColor(Color(designSystemColor: .textPrimary))
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .layoutPriority(1)
+
+                        Spacer()
+
+                        Image(systemName: Constants.playImage)
+                            .font(.system(size: Constants.Layout.playButtonFont))
+                            .foregroundColor(.white)
+                            .frame(width: iconSize, height: iconSize)
+                            .background(Color.blue)
+                            .clipShape(Circle())
                     }
-                    .layoutPriority(1)
-
-                    Spacer()
-
-                    Image(systemName: Constants.playImage)
-                        .font(.system(size: Constants.Layout.playButtonFont))
-                        .foregroundColor(.white)
-                        .frame(width: iconSize, height: iconSize)
-                        .background(Color.blue)
-                        .clipShape(Circle())
+                    .padding(Constants.Layout.regularPadding)
                 }
-                .padding(Constants.Layout.regularPadding)
+                .background(Color(designSystemColor: .surface))
+                .cornerRadius(Constants.Layout.cornerRadius)
+                .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
+                .padding(.horizontal, Constants.Layout.regularPadding)
+                .padding(.vertical, Constants.Layout.regularPadding)
+                .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
             }
-            .background(Color(designSystemColor: .surface))
-            .cornerRadius(Constants.Layout.cornerRadius)
-            .shadow(color: Color.black.opacity(Constants.Layout.shadowOpacity), radius: Constants.Layout.shadowRadius, x: Constants.Layout.shadowOffset.width, y: Constants.Layout.shadowOffset.height)
-            .padding(.horizontal, Constants.Layout.regularPadding)
-            .padding(.vertical, Constants.Layout.regularPadding)
-            .padding(.bottom, Constants.Layout.bottomSpacer) // Add padding to cover border during animation                      
         }
     }
 

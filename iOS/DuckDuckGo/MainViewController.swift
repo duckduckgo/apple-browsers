@@ -1626,12 +1626,14 @@ class MainViewController: UIViewController {
                 self?.onNetworkProtectionAccountSignIn(notification)
             }
             .store(in: &vpnCancellables)
+
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onEntitlementsChange(notification)
             }
             .store(in: &vpnCancellables)
+
         NotificationCenter.default.publisher(for: .accountDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1643,6 +1645,13 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.onNetworkProtectionEntitlementMessagingChange()
+            }
+            .store(in: &vpnCancellables)
+
+        NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                self?.onExpiredRefreshTokenDetected(notification)
             }
             .store(in: &vpnCancellables)
 
@@ -1704,6 +1713,11 @@ class MainViewController: UIViewController {
     private func onNetworkProtectionAccountSignIn(_ notification: Notification) {
         tunnelDefaults.resetEntitlementMessaging()
         Logger.networkProtection.info("[NetP Subscription] Reset expired entitlement messaging")
+    }
+
+    @objc
+    private func onExpiredRefreshTokenDetected(_ notification: Notification) {
+        // Not implemented : https://app.asana.com/0/1205842942115003/1209622270835329/f
     }
 
     var networkProtectionTunnelController: NetworkProtectionTunnelController {
@@ -3149,5 +3163,8 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
-    
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
+        segueToDownloads()
+    }
 }

@@ -38,6 +38,9 @@ protocol AIChatViewModeling {
 
     /// Sets inspectable property in the webView
     var inspectableWebView: Bool { get }
+
+    /// Path for AI Chat downloads, like exported chat
+    var downloadsPath: URL { get }
 }
 
 final class AIChatViewModel: AIChatViewModeling {
@@ -45,15 +48,18 @@ final class AIChatViewModel: AIChatViewModeling {
     let webViewConfiguration: WKWebViewConfiguration
     let requestAuthHandler: AIChatRequestAuthorizationHandling
     let inspectableWebView: Bool
+    let downloadsPath: URL
 
     init(webViewConfiguration: WKWebViewConfiguration,
          settings: AIChatSettingsProvider,
          requestAuthHandler: AIChatRequestAuthorizationHandling,
-         inspectableWebView: Bool) {
+         inspectableWebView: Bool,
+         downloadsPath: URL) {
         self.webViewConfiguration = webViewConfiguration
         self.settings = settings
         self.requestAuthHandler = requestAuthHandler
         self.inspectableWebView = inspectableWebView
+        self.downloadsPath = downloadsPath
     }
 
     var aiChatURL: URL {

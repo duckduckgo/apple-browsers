@@ -35,13 +35,7 @@ struct ExperimentalTheme: Theme {
     var navigationBarTintColor: UIColor { baseTheme.navigationBarTintColor }
     var searchBarTextDeemphasisColor: UIColor { baseTheme.searchBarTextDeemphasisColor }
     var browsingMenuHighlightColor: UIColor { baseTheme.browsingMenuHighlightColor }
-    var tableCellSelectedColor: UIColor { baseTheme.tableCellSelectedColor }
-    var tableCellAccessoryColor: UIColor { baseTheme.tableCellAccessoryColor }
     var tableCellHighlightedBackgroundColor: UIColor { baseTheme.tableCellHighlightedBackgroundColor }
-    var homeRowPrimaryTextColor: UIColor { baseTheme.homeRowPrimaryTextColor }
-    var homeRowSecondaryTextColor: UIColor { baseTheme.homeRowSecondaryTextColor }
-    var homePrivacyCellTextColor: UIColor { baseTheme.homePrivacyCellTextColor }
-    var homePrivacyCellSecondaryTextColor: UIColor { baseTheme.homePrivacyCellSecondaryTextColor }
     var activityStyle: UIActivityIndicatorView.Style { baseTheme.activityStyle }
     var destructiveColor: UIColor { baseTheme.destructiveColor }
 

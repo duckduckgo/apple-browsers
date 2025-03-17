@@ -794,6 +794,9 @@
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
+/* Close All Tabs */
+"close.all.tabs" = "Close All Tabs";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Skip";
 
@@ -1235,6 +1238,27 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Let me choose";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Automatically";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Don't Show";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.serp.footer" = "YouTube videos on DuckDuckGo search results will open in Duck Player.";
+
+/* Label for the use DuckPlayer on SERP toggle */
+"duckPlayerNative.use.on.serp.label" = "Use on Search Results";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.youtube.footer" = "Makes Duck Player available on Youtube video pages.";
+
+/* Label for the use DuckPlayer on Youtube toggle */
+"duckPlayerNative.use.on.youtube.label" = "Use on Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Email Protection";
@@ -1757,6 +1781,9 @@ https://duckduckgo.com/mac";
 
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo App for Mac";
+
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "Warn me on sites flagged for scams, phishing, or malware";
 
 /* Button that redirect the user to a web page explaining what Malicious Site Protection is */
 "malicious-site-protection.settings.footer.button.learn-more" = "Learn More";
@@ -2954,8 +2981,17 @@ Take back control of your personal information with the browser designed for dat
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Select All";
+
+/* Deselect all tabs */
+"tab.select.none" = "Deselect All";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Tab Switcher";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Bookmark All Tabs";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";

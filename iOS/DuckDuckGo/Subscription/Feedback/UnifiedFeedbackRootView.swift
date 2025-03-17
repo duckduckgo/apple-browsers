@@ -220,7 +220,6 @@ private struct CompactIssueDescriptionFormView: View {
 private struct IssueDescriptionFormView: View {
     @ObservedObject var viewModel: UnifiedFeedbackFormViewModel
     @FocusState private var isTextEditorFocused: Bool
-    @Environment(\.colorScheme) private var colorScheme
 
     let placeholder: String
 
@@ -236,7 +235,7 @@ private struct IssueDescriptionFormView: View {
     }
 
     private var textFieldBackgroundColor: Color {
-        colorScheme == .light ? Color(designSystemColor: .surface) : Color(uiColor: UIColor(hex: "1C1C1E"))
+        Color(singleUseColor: .unifiedFeedbackFieldBackground)
     }
 
     @ViewBuilder
@@ -349,7 +348,6 @@ private struct IssueDescriptionFormView: View {
 }
 
 private struct IssueDescriptionTextEditor: View {
-    @Environment(\.colorScheme) private var colorScheme
 
     let label: String
     let placeholder: String
@@ -358,7 +356,7 @@ private struct IssueDescriptionTextEditor: View {
     let scrollViewProxy: ScrollViewProxy
 
     private var editorBackgroundColor: Color {
-        colorScheme == .light ? Color(designSystemColor: .surface) : Color(uiColor: UIColor(hex: "1C1C1E"))
+        Color(singleUseColor: .unifiedFeedbackFieldBackground)
     }
 
     var body: some View {

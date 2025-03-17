@@ -81,11 +81,16 @@ protocol AppSettings: AnyObject, AppDebugSettings {
     var crashCollectionOptInStatus: CrashCollectionOptInStatus { get set }
     var crashCollectionShouldRevertOptedInStatusTrigger: Int { get set }
     
+    // Legacy DuckPlayer
     var duckPlayerMode: DuckPlayerMode { get set }
     var duckPlayerAskModeOverlayHidden: Bool { get set }
     var duckPlayerOpenInNewTab: Bool { get set }
+    
+    // DuckPlayer Native UI
     var duckPlayerNativeUI: Bool { get set }
     var duckPlayerAutoplay: Bool { get set }
+    var duckPlayerNativeUISERPEnabled: Bool { get set }
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
 }
 
 protocol AppDebugSettings {

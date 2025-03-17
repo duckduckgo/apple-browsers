@@ -20,7 +20,7 @@ import Foundation
 import Common
 import os.log
 
-public struct DataBrokerScheduleConfig: Codable {
+public struct DataBrokerScheduleConfig: Codable, Sendable {
     let retryError: Int
     let confirmOptOutScan: Int
     let maintenanceScan: Int

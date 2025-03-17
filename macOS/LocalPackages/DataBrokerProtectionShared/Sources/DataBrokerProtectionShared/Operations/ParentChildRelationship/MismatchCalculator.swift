@@ -20,7 +20,6 @@ import Foundation
 import BrowserServicesKit
 import os.log
 import Common
-import DataBrokerProtectionShared
 
 enum MismatchValues: Int {
     case parentSiteHasMoreMatches

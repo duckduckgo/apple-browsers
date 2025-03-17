@@ -166,7 +166,7 @@ public struct DefaultCustomStatsPixelsTrigger: CustomStatsPixelsTrigger {
     }
 }
 
-extension Date {
+public extension Date {
 
     /// Returns the current date minus the specified number of hours
     /// If the date calculate fails, returns the current date

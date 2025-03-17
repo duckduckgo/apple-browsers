@@ -22,6 +22,7 @@ import Foundation
 import XCTest
 
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerOperationActionTests: XCTestCase {
     let webViewHandler = WebViewHandlerMock()

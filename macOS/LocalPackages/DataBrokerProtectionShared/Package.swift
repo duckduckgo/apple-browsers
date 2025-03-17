@@ -51,6 +51,7 @@ let package = Package(
         .target(
             name: "DataBrokerProtectionSharedTestsUtils",
             dependencies: [
+                "DataBrokerProtectionShared",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),

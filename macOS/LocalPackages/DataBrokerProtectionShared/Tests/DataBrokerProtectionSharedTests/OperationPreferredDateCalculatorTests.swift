@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 // https://app.asana.com/0/1204586965688315/1204834439855281/f
 
 final class OperationPreferredDateCalculatorTests: XCTestCase {

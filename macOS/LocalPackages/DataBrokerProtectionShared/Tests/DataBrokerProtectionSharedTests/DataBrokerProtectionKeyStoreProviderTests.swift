@@ -19,6 +19,7 @@
 import XCTest
 import SecureStorage
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
 

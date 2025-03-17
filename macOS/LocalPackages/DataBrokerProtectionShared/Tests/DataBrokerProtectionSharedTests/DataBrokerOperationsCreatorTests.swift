@@ -17,6 +17,7 @@
 //
 
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 import XCTest
 
 final class DataBrokerOperationsCreatorTests: XCTestCase {

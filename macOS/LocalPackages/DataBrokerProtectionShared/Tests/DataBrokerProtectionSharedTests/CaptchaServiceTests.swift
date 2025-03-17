@@ -19,6 +19,8 @@
 import XCTest
 import Foundation
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
+import NetworkingTestingUtils
 
 final class CaptchaServiceTests: XCTestCase {
     private let servicePixel = MockDataBrokerProtectionBackendServicePixels()

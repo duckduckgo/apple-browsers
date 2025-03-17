@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class StatsPixelsTriggerTests: XCTestCase {
 

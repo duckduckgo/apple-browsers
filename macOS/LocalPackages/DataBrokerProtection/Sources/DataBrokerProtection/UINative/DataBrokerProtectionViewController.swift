@@ -52,7 +52,6 @@ final public class DataBrokerProtectionViewController: NSViewController {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let pixelHandler = DataBrokerProtectionPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
         self.webUIViewModel = DBPUIViewModel(dataManager: dataManager,
                                              agentInterface: agentInterface,

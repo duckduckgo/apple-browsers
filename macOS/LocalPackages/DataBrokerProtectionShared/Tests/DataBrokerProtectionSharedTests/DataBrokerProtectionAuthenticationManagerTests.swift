@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
     var authenticationManager: DataBrokerProtectionAuthenticationManager!

@@ -19,6 +19,7 @@
 import XCTest
 @testable import DataBrokerProtection
 import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
 

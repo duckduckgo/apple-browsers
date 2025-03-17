@@ -19,6 +19,7 @@
 import XCTest
 import Foundation
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 

@@ -18,7 +18,7 @@
 
 import Foundation
 
-func areDatesEqualIgnoringSeconds(date1: Date?, date2: Date?) -> Bool {
+public func areDatesEqualIgnoringSeconds(date1: Date?, date2: Date?) -> Bool {
     if date1 == date2 {
         return true
     }
@@ -37,7 +37,7 @@ func areDatesEqualIgnoringSeconds(date1: Date?, date2: Date?) -> Bool {
     return normalizedDate1 == normalizedDate2
 }
 
-func areDatesEqualsOnDayMonthAndYear(date1: Date?, date2: Date?) -> Bool {
+public func areDatesEqualsOnDayMonthAndYear(date1: Date?, date2: Date?) -> Bool {
     if date1 == date2 {
         return true
     }
@@ -56,22 +56,17 @@ func areDatesEqualsOnDayMonthAndYear(date1: Date?, date2: Date?) -> Bool {
     return normalizedDate1 == normalizedDate2
 }
 
-extension HTTPURLResponse {
-    static let ok = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 200, httpVersion: nil, headerFields: [String: String]())!
-    static let noAuth = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 401, httpVersion: nil, headerFields: [String: String]())!
-}
+public typealias RequestHandler = ((URLRequest) throws -> (HTTPURLResponse, Data?))
+public final class MockURLProtocol: URLProtocol {
 
-typealias RequestHandler = ((URLRequest) throws -> (HTTPURLResponse, Data?))
-final class MockURLProtocol: URLProtocol {
+    public static var lastRequest: URLRequest?
+    public static var requestHandlerQueue = [RequestHandler]()
 
-    static var lastRequest: URLRequest?
-    static var requestHandlerQueue = [RequestHandler]()
+    public override class func canInit(with request: URLRequest) -> Bool { true }
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
+    public override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
-
-    override func startLoading() {
+    public override func startLoading() {
         if MockURLProtocol.requestHandlerQueue.isEmpty {
             fatalError("Handler is unavailable.")
         }
@@ -91,6 +86,6 @@ final class MockURLProtocol: URLProtocol {
         }
     }
 
-    override func stopLoading() { }
+    public override func stopLoading() { }
 
 }

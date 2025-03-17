@@ -20,6 +20,7 @@ import XCTest
 import WebKit
 @testable import DataBrokerProtection
 import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 
@@ -108,19 +109,19 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     func getUserProfile() -> DBPUIUserProfile? { nil }
     func deleteProfileData() throws {}
     func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool { false }
-    func setNameAtIndexInCurrentUserProfile(_ payload: DataBrokerProtection.DBPUINameAtIndex) -> Bool { false }
-    func removeNameAtIndexFromUserProfile(_ index: DataBrokerProtection.DBPUIIndex) -> Bool { false }
-    func setBirthYearForCurrentUserProfile(_ year: DataBrokerProtection.DBPUIBirthYear) -> Bool { false }
-    func addAddressToCurrentUserProfile(_ address: DataBrokerProtection.DBPUIUserProfileAddress) -> Bool { false }
-    func setAddressAtIndexInCurrentUserProfile(_ payload: DataBrokerProtection.DBPUIAddressAtIndex) -> Bool { false }
-    func removeAddressAtIndexFromUserProfile(_ index: DataBrokerProtection.DBPUIIndex) -> Bool { false }
+    func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool { false }
+    func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool { false }
+    func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool { false }
+    func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool { false }
+    func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool { false }
+    func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool { false }
     func startScanAndOptOut() -> Bool { false }
 
-    func getInitialScanState() async -> DataBrokerProtection.DBPUIInitialScanState {
+    func getInitialScanState() async -> DBPUIInitialScanState {
         DBPUIInitialScanState(resultsFound: [], scanProgress: .init(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 
-    func getMaintananceScanState() async -> DataBrokerProtection.DBPUIScanAndOptOutMaintenanceState {
+    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         DBPUIScanAndOptOutMaintenanceState(
             inProgressOptOuts: [],
             completedOptOuts: [],
@@ -129,11 +130,11 @@ private final class MockDelegate: DBPUICommunicationDelegate {
         )
     }
 
-    func getDataBrokers() async -> [DataBrokerProtection.DBPUIDataBroker] {
+    func getDataBrokers() async -> [DBPUIDataBroker] {
         []
     }
 
-    func getBackgroundAgentMetadata() async -> DataBrokerProtection.DBPUIDebugMetadata {
+    func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         DBPUIDebugMetadata(lastRunAppVersion: "")
     }
 
@@ -146,9 +147,9 @@ private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsReprese
     var customURL: String?
     var productionURL: String = ""
     var selectedURL: String = ""
-    var selectedURLType: DataBrokerProtection.DataBrokerProtectionWebUIURLType = .production
+    var selectedURLType: DataBrokerProtectionWebUIURLType = .production
     var selectedURLHostname: String = ""
 
     func setCustomURL(_ url: String) {}
-    func setURLType(_ type: DataBrokerProtection.DataBrokerProtectionWebUIURLType) {}
+    func setURLType(_ type: DataBrokerProtectionWebUIURLType) {}
 }

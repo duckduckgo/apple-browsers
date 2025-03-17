@@ -19,6 +19,7 @@
 import XCTest
 import GRDB
 @testable import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 private extension DataBrokerProtectionDatabaseProvider {
     func restoreDatabase(from url: URL) throws {

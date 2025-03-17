@@ -49,7 +49,7 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func applyVPNBypassSetting() async
 }
 
-enum DBPUIReceivedMethodName: String {
+public enum DBPUIReceivedMethodName: String {
     case handshake
     case saveProfile
     case getCurrentUserProfile
@@ -72,7 +72,7 @@ enum DBPUIReceivedMethodName: String {
     case setVPNBypassSetting = "setVpnExclusionSetting"
 }
 
-enum DBPUISendableMethodName: String {
+public enum DBPUISendableMethodName: String {
     case setState
 }
 
@@ -85,15 +85,15 @@ public struct DBPUICommunicationLayer: Subfeature {
     public var featureName: String = "dbpuiCommunication"
     weak public var broker: UserScriptMessageBroker?
 
-    weak var delegate: DBPUICommunicationDelegate?
+    weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
         static let version = 8
     }
 
-    internal init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                  vpnBypassSettings: VPNBypassSettingsProviding,
-                  privacyConfig: PrivacyConfigurationManaging) {
+    public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
+                vpnBypassSettings: VPNBypassSettingsProviding,
+                privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
         self.vpnBypassSettings = vpnBypassSettings
         self.privacyConfig = privacyConfig

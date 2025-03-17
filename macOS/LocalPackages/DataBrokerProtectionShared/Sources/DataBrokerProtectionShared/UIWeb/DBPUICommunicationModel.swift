@@ -54,19 +54,19 @@ public struct DBPUIHandshakeUserData: Codable, Equatable {
 
 /// Data type returned in response to a handshake request
 public struct DBPUIHandshakeResponse: Codable {
-    let version: Int
-    let success: Bool
-    let userdata: DBPUIHandshakeUserData
+    public let version: Int
+    public let success: Bool
+    public let userdata: DBPUIHandshakeUserData
 }
 
 /// Standard response from the host to the UI. The response contains the
 /// current version of the host's communication protocol and a bool value
 /// indicating if the requested operation was successful.
 public struct DBPUIStandardResponse: Codable {
-    let version: Int
-    let success: Bool
-    let id: String?
-    let message: String?
+    public let version: Int
+    public let success: Bool
+    public let id: String?
+    public let message: String?
 
     public init(version: Int, success: Bool, id: String? = nil, message: String? = nil) {
         self.version = version
@@ -346,14 +346,14 @@ extension DBPUIDataBrokerProfileMatch {
 }
 
 /// Protocol to represent a message that can be passed from the host to the UI
-protocol DBPUISendableMessage: Codable {}
+public protocol DBPUISendableMessage: Codable {}
 
 /// Message representing the state of any scans and opt outs without state and grouping removed profiles by broker
 public struct DBPUIScanAndOptOutMaintenanceState: DBPUISendableMessage {
-    let inProgressOptOuts: [DBPUIDataBrokerProfileMatch]
-    let completedOptOuts: [DBPUIOptOutMatch]
-    let scanSchedule: DBPUIScanSchedule
-    let scanHistory: DBPUIScanHistory
+    public let inProgressOptOuts: [DBPUIDataBrokerProfileMatch]
+    public let completedOptOuts: [DBPUIOptOutMatch]
+    public let scanSchedule: DBPUIScanSchedule
+    public let scanHistory: DBPUIScanHistory
 
     public init(inProgressOptOuts: [DBPUIDataBrokerProfileMatch], completedOptOuts: [DBPUIOptOutMatch], scanSchedule: DBPUIScanSchedule, scanHistory: DBPUIScanHistory) {
         self.inProgressOptOuts = inProgressOptOuts
@@ -364,20 +364,20 @@ public struct DBPUIScanAndOptOutMaintenanceState: DBPUISendableMessage {
 }
 
 public struct DBPUIOptOutMatch: DBPUISendableMessage {
-    let dataBroker: DBPUIDataBroker
-    let matches: Int
-    let name: String
-    let alternativeNames: [String]
-    let addresses: [DBPUIUserProfileAddress]
-    let date: Double
-    let foundDate: Double
-    let optOutSubmittedDate: Double?
-    let estimatedRemovalDate: Double?
-    let removedDate: Double?
+    public let dataBroker: DBPUIDataBroker
+    public let matches: Int
+    public let name: String
+    public let alternativeNames: [String]
+    public let addresses: [DBPUIUserProfileAddress]
+    public let date: Double
+    public let foundDate: Double
+    public let optOutSubmittedDate: Double?
+    public let estimatedRemovalDate: Double?
+    public let removedDate: Double?
 }
 
-extension DBPUIOptOutMatch {
-    public init?(profileMatch: DBPUIDataBrokerProfileMatch, matches: Int) {
+public extension DBPUIOptOutMatch {
+    init?(profileMatch: DBPUIDataBrokerProfileMatch, matches: Int) {
         guard let removedDate = profileMatch.removedDate else { return nil }
         let dataBroker = profileMatch.dataBroker
         self.init(dataBroker: dataBroker,
@@ -427,8 +427,8 @@ public struct DBPUIScanProgress: DBPUISendableMessage {
 /// Data to represent the intial scan state
 /// It will show the current scans + total, and the results found
 public struct DBPUIInitialScanState: DBPUISendableMessage {
-    let resultsFound: [DBPUIDataBrokerProfileMatch]
-    let scanProgress: DBPUIScanProgress
+    public let resultsFound: [DBPUIDataBrokerProfileMatch]
+    public let scanProgress: DBPUIScanProgress
 
     public init(resultsFound: [DBPUIDataBrokerProfileMatch], scanProgress: DBPUIScanProgress) {
         self.resultsFound = resultsFound
@@ -437,8 +437,8 @@ public struct DBPUIInitialScanState: DBPUISendableMessage {
 }
 
 public struct DBPUIScanDate: DBPUISendableMessage {
-    let date: Double
-    let dataBrokers: [DBPUIDataBroker]
+    public let date: Double
+    public let dataBrokers: [DBPUIDataBroker]
 
     public init(date: Double, dataBrokers: [DBPUIDataBroker]) {
         self.date = date
@@ -447,8 +447,8 @@ public struct DBPUIScanDate: DBPUISendableMessage {
 }
 
 public struct DBPUIScanSchedule: DBPUISendableMessage {
-    let lastScan: DBPUIScanDate
-    let nextScan: DBPUIScanDate
+    public let lastScan: DBPUIScanDate
+    public let nextScan: DBPUIScanDate
 
     public init(lastScan: DBPUIScanDate, nextScan: DBPUIScanDate) {
         self.lastScan = lastScan
@@ -457,7 +457,7 @@ public struct DBPUIScanSchedule: DBPUISendableMessage {
 }
 
 public struct DBPUIScanHistory: DBPUISendableMessage {
-    let sitesScanned: Int
+    public let sitesScanned: Int
 
     public init(sitesScanned: Int) {
         self.sitesScanned = sitesScanned
@@ -465,19 +465,19 @@ public struct DBPUIScanHistory: DBPUISendableMessage {
 }
 
 public struct DBPUIDebugMetadata: DBPUISendableMessage {
-    let lastRunAppVersion: String
-    let lastRunAgentVersion: String?
-    let isAgentRunning: Bool
-    let lastSchedulerOperationType: String? // scan or optOut
-    let lastSchedulerOperationTimestamp: Double?
-    let lastSchedulerOperationBrokerUrl: String?
-    let lastSchedulerErrorMessage: String?
-    let lastSchedulerErrorTimestamp: Double?
-    let lastSchedulerSessionStartTimestamp: Double?
-    let agentSchedulerState: String? // stopped, running or idle
-    let lastStartedSchedulerOperationType: String?
-    let lastStartedSchedulerOperationTimestamp: Double?
-    let lastStartedSchedulerOperationBrokerUrl: String?
+    public let lastRunAppVersion: String
+    public let lastRunAgentVersion: String?
+    public let isAgentRunning: Bool
+    public let lastSchedulerOperationType: String? // scan or optOut
+    public let lastSchedulerOperationTimestamp: Double?
+    public let lastSchedulerOperationBrokerUrl: String?
+    public let lastSchedulerErrorMessage: String?
+    public let lastSchedulerErrorTimestamp: Double?
+    public let lastSchedulerSessionStartTimestamp: Double?
+    public let agentSchedulerState: String? // stopped, running or idle
+    public let lastStartedSchedulerOperationType: String?
+    public let lastStartedSchedulerOperationTimestamp: Double?
+    public let lastStartedSchedulerOperationBrokerUrl: String?
 
     public init(lastRunAppVersion: String,
                 lastRunAgentVersion: String? = nil,

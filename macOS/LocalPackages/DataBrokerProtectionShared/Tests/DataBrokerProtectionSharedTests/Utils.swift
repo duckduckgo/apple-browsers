@@ -1,7 +1,7 @@
 //
-//  PixelCapturedParameters.swift
+//  Utils.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +17,8 @@
 //
 
 import Foundation
-import PixelKit
 
-struct PixelCapturedParameters {
-    var event: PixelKit.Event?
-    var frequency: PixelKit.Frequency = .standard
-    var headers: [String: String] = [:]
-    var parameters: [String: String]?
-    var error: Error?
-    var namePrefix: String?
-    var reservedCharacters: CharacterSet?
-    var includeAppVersion: Bool?
-    var onComplete: (Bool, Error?) -> Void = { _, _ in }
+extension HTTPURLResponse {
+    static let ok = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 200, httpVersion: nil, headerFields: [String: String]())!
+    static let noAuth = HTTPURLResponse(url: URL(string: "http://www.example.com")!, statusCode: 401, httpVersion: nil, headerFields: [String: String]())!
 }

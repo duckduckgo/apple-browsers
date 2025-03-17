@@ -60,6 +60,11 @@ public struct AddressCityState: Codable, Hashable, Sendable {
     public let city: String
     public let state: String
 
+    public init(city: String, state: String) {
+        self.city = city
+        self.state = state
+    }
+
     public var fullAddress: String {
         "\(city), \(state)"
     }

@@ -27,6 +27,10 @@ import Freemium
 
 @testable import DataBrokerProtectionShared
 
+// swiftlint:disable force_try
+// swiftlint:disable identifier_name
+// swiftlint:disable large_tuple
+
 public extension BrokerProfileQueryData {
 
     static func mock(with steps: [Step] = [Step](),
@@ -2055,3 +2059,7 @@ public extension AttemptInformation {
                            startDate: Date())
     }
 }
+
+// swiftlint:enable force_try
+// swiftlint:enable identifier_name
+// swiftlint:enable large_tuple

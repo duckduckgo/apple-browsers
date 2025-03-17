@@ -17,6 +17,7 @@
 //
 
 @testable import DataBrokerProtection
+@testable import DataBrokerProtectionShared
 import BrowserServicesKit
 import LoginItems
 import XCTest
@@ -51,7 +52,7 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 

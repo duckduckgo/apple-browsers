@@ -41,13 +41,13 @@ struct PinnedTabsDiscoveryPopUpView: View {
             }
 
             HStack {
-                createButton(title: UserText.pinnedTabsDiscoveryPopoverReject,
+                createButton(title: UserText.pinnedTabsDiscoveryPopoverShared,
                              style: StandardButtonStyle()) {
                     callback?(false)
                 }
 
-                createButton(title: UserText.pinnedTabsDiscoveryPopoverAccept,
-                             style: DefaultActionButtonStyle(enabled: true)) {
+                createButton(title: UserText.pinnedTabsDiscoveryPopoverSeparate,
+                             style: StandardButtonStyle()) {
                     setPerWindowPinnedTabs()
                     callback?(true)
                 }
@@ -71,7 +71,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
     private func setPerWindowPinnedTabs() {
         Task.detached { @MainActor in
-            TabsPreferences.shared.pinnedTabsMode = .different
+            TabsPreferences.shared.pinnedTabsMode = .separate
         }
     }
 }

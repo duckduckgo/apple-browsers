@@ -64,7 +64,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     }
 
     var arePerWindowPinnedTabsEnabled: Bool {
-        return tabsPreferences.pinnedTabsMode == .different
+        return tabsPreferences.pinnedTabsMode == .separate
     }
 
     @MainActor

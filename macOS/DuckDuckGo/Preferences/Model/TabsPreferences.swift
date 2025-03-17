@@ -72,7 +72,7 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         preferNewTabsToWindows = persistor.preferNewTabsToWindows
         switchToNewTabWhenOpened = persistor.switchToNewTabWhenOpened
         newTabPosition = persistor.newTabPosition
-        pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .different
+        pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .separate
     }
 
     private var persistor: TabsPreferencesPersistor
@@ -85,5 +85,5 @@ enum NewTabPosition: String, CaseIterable {
 
 enum PinnedTabsMode: String, CaseIterable {
     case shared
-    case different
+    case separate
 }

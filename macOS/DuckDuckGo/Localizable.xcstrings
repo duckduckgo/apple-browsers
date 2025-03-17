@@ -48998,18 +48998,6 @@
         }
       }
     },
-    "pinned-tabs.discovery.popover.accept" : {
-      "comment" : "Button opening Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Use Different Pinned Tabs"
-          }
-        }
-      }
-    },
     "pinned-tabs.discovery.popover.message" : {
       "comment" : "Info message to users about option to adjust behavior of pinned tabs",
       "extractionState" : "extracted_with_value",
@@ -49017,7 +49005,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "You can now choose to have shared or different pinned tabs across multiple browser windows."
+            "value" : "You can now choose to have shared or separate pinned tabs across multiple browser windows."
           }
         }
       }
@@ -49034,14 +49022,26 @@
         }
       }
     },
-    "pinned-tabs.discovery.popover.reject" : {
+    "pinned-tabs.discovery.popover.separate" : {
+      "comment" : "Button opening Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use Separate Pinned Tabs"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.shared" : {
       "comment" : "Button to close the popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Not Now"
+            "value" : "Keep Shared Pinned Tabs"
           }
         }
       }
@@ -49058,14 +49058,14 @@
         }
       }
     },
-    "pinned.tabs.mode.different" : {
+    "pinned.tabs.mode.separate" : {
       "comment" : "Preferences > Tabs > Pinned tabs are different in each window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Different in each window"
+            "value" : "Separate in each window"
           }
         }
       }
@@ -61732,59 +61732,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from browsing history"
-          }
-        }
-      }
-    },
-    "Reopen All Windows From Last Session" : {
-      "comment" : "Main Menu History item",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle vensters van de laatste sessie opnieuw openen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
           }
         }
       }

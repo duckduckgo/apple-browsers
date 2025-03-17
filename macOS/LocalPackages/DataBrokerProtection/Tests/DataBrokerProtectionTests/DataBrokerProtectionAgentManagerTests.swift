@@ -604,7 +604,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         sut.fireMonitoringPixels()
 
         // Then
-        XCTAssertNotNil(mockPixelHandler.lastFiredEvent)
+        XCTAssertNotNil(mockSharedPixelsHandler.lastFiredEvent)
     }
 
     func testWhenFirePixelsCalled_andUserIsNotAuthenticated_thenPixelsAreNotFired() async throws {
@@ -631,7 +631,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         sut.fireMonitoringPixels()
 
         // Then
-        XCTAssertNil(mockPixelHandler.lastFiredEvent)
+        XCTAssertNil(mockSharedPixelsHandler.lastFiredEvent)
     }
 
 }

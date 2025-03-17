@@ -32,6 +32,8 @@ import DataBrokerProtectionShared
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
+    private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
@@ -139,8 +141,6 @@ public class DataBrokerProtectionAgentManagerProvider {
 }
 
 public final class DataBrokerProtectionAgentManager {
-
-    let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
     private let userNotificationService: DataBrokerProtectionUserNotificationService
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler

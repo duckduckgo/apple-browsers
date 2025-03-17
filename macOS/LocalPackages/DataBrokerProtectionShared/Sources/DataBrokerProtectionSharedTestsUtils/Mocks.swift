@@ -633,15 +633,17 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return scanJobData
     }
 
-    public func save(brokerId: Int64, profileQueryId: Int64,
-              extractedProfile: ExtractedProfile,
-              createdDate: Date, lastRunDate: Date?,
-              preferredRunDate: Date?,
-              attemptCount: Int64,
-              submittedSuccessfullyDate: Date?,
-              sevenDaysConfirmationPixelFired: Bool,
-              fourteenDaysConfirmationPixelFired: Bool,
-              twentyOneDaysConfirmationPixelFired: Bool) throws {
+    public func save(brokerId: Int64,
+                     profileQueryId: Int64,
+                     extractedProfile: ExtractedProfile,
+                     createdDate: Date,
+                     lastRunDate: Date?,
+                     preferredRunDate: Date?,
+                     attemptCount: Int64,
+                     submittedSuccessfullyDate: Date?,
+                     sevenDaysConfirmationPixelFired: Bool,
+                     fourteenDaysConfirmationPixelFired: Bool,
+                     twentyOneDaysConfirmationPixelFired: Bool) throws {
     }
 
     public func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws {
@@ -1123,7 +1125,7 @@ public final class MockPixelHandler: EventMapping<DataBrokerProtectionSharedPixe
         })
 
         // Now, set the real closure that captures self and stores parameters.
-        mockMapping = { [weak self] (event, error, params, onComplete) in
+        mockMapping = { [weak self] (event, _, params, _) in
             // Capture the inputs when fire is called
             self?.lastFiredEvent = event
             self?.lastPassedParameters = params

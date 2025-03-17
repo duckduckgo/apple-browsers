@@ -304,7 +304,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
 
-        let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp)
+        let viewModel = DuckPlayerViewModel(videoID: videoID, timestamp: timestamp, source: source)
         self.playerViewModel = viewModel // Keep strong reference
 
         let webView = DuckPlayerWebView(viewModel: viewModel)
@@ -356,12 +356,14 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func hideBottomSheetForHiddenChrome() {
         containerViewModel?.dismiss()
         resetWebViewConstraint()
+        containerViewController?.view.isUserInteractionEnabled = false
     }
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
         containerViewModel?.show()
+        containerViewController?.view.isUserInteractionEnabled = true
     }
 
 }

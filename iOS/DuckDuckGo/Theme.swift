@@ -81,19 +81,15 @@ protocol Theme {
     var autocompleteCellPlusButtonColor: UIColor { get }
 
     var tableCellBackgroundColor: UIColor { get }
-    var tableCellSelectedColor: UIColor { get }
     var tableCellSeparatorColor: UIColor { get }
     var tableCellTextColor: UIColor { get }
     var tableCellSecondaryTextColor: UIColor { get }
     var tableCellAccessoryTextColor: UIColor { get }
-    var tableCellAccessoryColor: UIColor { get }
     var tableCellHighlightedBackgroundColor: UIColor { get }
     var tableHeaderTextColor: UIColor { get }
     
     var tabSwitcherCellBackgroundColor: UIColor { get }
-    var tabSwitcherCellBorderColor: UIColor { get }
     var tabSwitcherCellTextColor: UIColor { get }
-    var tabSwitcherCellSecondaryTextColor: UIColor { get }
     
     var iconCellBorderColor: UIColor { get }
     
@@ -102,13 +98,6 @@ protocol Theme {
     
     var textFieldBackgroundColor: UIColor { get }
     var textFieldFontColor: UIColor { get }
-    
-    var homeRowPrimaryTextColor: UIColor { get }
-    var homeRowSecondaryTextColor: UIColor { get }
-    var homeRowBackgroundColor: UIColor { get }
-    
-    var homePrivacyCellTextColor: UIColor { get }
-    var homePrivacyCellSecondaryTextColor: UIColor { get }
     
     var aboutScreenTextColor: UIColor { get }
     var aboutScreenButtonColor: UIColor { get }

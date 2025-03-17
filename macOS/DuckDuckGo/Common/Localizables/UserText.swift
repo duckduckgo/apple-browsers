@@ -210,9 +210,16 @@ struct UserText {
     static let mainMenuHelpDuckDuckGoHelp = NSLocalizedString("DuckDuckGo Help", comment: "Main Menu Help item")
 
     // MARK: - History
-    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Manage Your History", comment: "Title for the history view onboarding popover")
-    static let historyViewOnboardingMessage = NSLocalizedString("history.view.onboarding.message", value: "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited.", comment: "Message for the history view onboarding popover")
-    static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History Page", comment: "Accept button label on the history view onboarding popover")
+    static let historyViewOnboardingTitle = NSLocalizedString("history.view.onboarding.title", value: "Easier History Management", comment: "Title for the history view onboarding popover")
+
+    static func historyViewOnboardingMessage(shortcut: String) -> String {
+        let localized = NSLocalizedString("history.view.onboarding.message",
+                                          value: "We added a new History page for easier history searching and management. Access it at any time from the ••• or History menu, or by pressing %@.",
+                                          comment: "Message for the history view onboarding popover. Please make sure to keep ••• intact. %@ will be replaced with a keyboard shortcut for accessing history (e.g. '⌘Y').")
+        return String(format: localized, shortcut)
+    }
+    static let historyViewOnboardingLocalStorageExplanation = NSLocalizedString("history.view.onboarding.local.storage.explanation", value: "History is only stored on your device and can be deleted at any time using the Fire Button.", comment: "Message for the history view onboarding popover explaining that history is kept locally.")
+    static let historyViewOnboardingAccept = NSLocalizedString("history.view.onboarding.accept", value: "View History", comment: "Accept button label on the history view onboarding popover")
 
     static let today = NSLocalizedString("today", value: "today", comment: "Date section in history view indicating current day")
     static let yesterday = NSLocalizedString("yesterday", value: "yesterday", comment: "Date section in history view indicating previous day")
@@ -513,7 +520,8 @@ struct UserText {
     static let downloadsOpenPopupOnCompletion = NSLocalizedString("downloads.open.on.completion", value: "Automatically open the Downloads panel when downloads complete", comment: "Checkbox to open a Download Manager popover when downloads are completed")
 
     static let maliciousSiteDetectionHeader = NSLocalizedString("phishing-detection.enabled.header", value: "Site Safety Warnings", comment: "Header for phishing site protection section in the settings page")
-    static let maliciousSiteDetectionIsEnabled = NSLocalizedString("phishing-detection.enabled.checkbox", value: "Warn me on sites flagged for phishing or malware.", comment: "Checkbox that enables or disables the phishing and malware detection feature in the browser")
+    static let maliciousSiteDetectionIsEnabledDeprecated = NSLocalizedString("phishing-detection.deprecated.enabled.checkbox", value: "Warn me on sites flagged for phishing or malware.", comment: "Checkbox that enables or disables the phishing and malware detection feature in the browser")
+    static let maliciousSiteDetectionIsEnabled = NSLocalizedString("phishing-detection.enabled.checkbox", value: "Warn me on sites flagged for scams, phishing, or malware.", comment: "Checkbox that enables or disables the phishing and malware detection feature in the browser")
     static let maliciousDetectionEnabledWarning = NSLocalizedString("phishing-detection.enabled.warning", value: "Disabling this feature can put your personal information at risk.", comment: "A description box to warn users away from disabling the phishing and malware protection feature")
 
     // MARK: Password Manager

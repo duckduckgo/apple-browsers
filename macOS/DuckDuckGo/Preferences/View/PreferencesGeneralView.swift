@@ -197,9 +197,10 @@ extension Preferences {
 
                 // SECTION 7: Phishing Detection
                 if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
+                    let toggleText = featureFlagger.isFeatureOn(.scamSiteProtection) ? UserText.maliciousSiteDetectionIsEnabled : UserText.maliciousSiteDetectionIsEnabledDeprecated
                     PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
                         PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.maliciousSiteDetectionIsEnabled,
+                            ToggleMenuItem(toggleText,
                                            isOn: $maliciousSiteDetectionModel.isEnabled)
                             .onChange(of: maliciousSiteDetectionModel.isEnabled) { newValue in
                                 PixelKit.fire(MaliciousSiteProtection.Event.settingToggled(to: newValue))

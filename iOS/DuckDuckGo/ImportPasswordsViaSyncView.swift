@@ -150,8 +150,8 @@ struct NumberBadge: View {
 
     var number: Int
 
-    let lightBulletColor = Color(0xCCDAFF, alpha: 0.5)
-    let darkBulletColor = Color(0x3969EF, alpha: 0.12)
+    let lightBulletColor = Color(baseColor: .blue0).opacity(0.5)
+    let darkBulletColor = Color(baseColor: .blue50).opacity(0.12)
 
     var body: some View {
         Text("\(number)")

@@ -55,7 +55,7 @@ enum HistoryViewPixel: PixelKitEventV2 {
     /**
      * Event Trigger: History item is opened.
      */
-    case itemOpened
+    case itemOpened(OpenItemType)
 
     /**
      * Event Trigger: History item was deleted. This pixel indicates any type of deletion.
@@ -128,6 +128,10 @@ enum HistoryViewPixel: PixelKitEventV2 {
         }
     }
 
+    enum OpenItemType: String {
+        case single, multiple
+    }
+
     // MARK: - Debug
 
     /**
@@ -164,14 +168,14 @@ enum HistoryViewPixel: PixelKitEventV2 {
             return [Parameters.filter: filter.rawValue]
         case .filterCleared:
             return nil
-        case .itemOpened:
-            return nil
+        case .itemOpened(let type):
+            return [Parameters.type: type.rawValue]
         case .delete:
             return nil
         case .singleItemDeleted:
             return nil
         case .multipleItemsDeleted(let batchKind, let burn):
-            return [Parameters.filter: batchKind.rawValue, Parameters.deleteType: burn ? "burn" : "delete"]
+            return [Parameters.filter: batchKind.rawValue, Parameters.type: burn ? "burn" : "delete"]
         case .onboardingDialogShown:
             return nil
         case .onboardingDialogDismissed:
@@ -187,7 +191,7 @@ enum HistoryViewPixel: PixelKitEventV2 {
 
     enum Parameters {
         static let filter = "filter"
-        static let deleteType = "type"
+        static let type = "type"
         static let message = "message"
         static let source = "source"
     }

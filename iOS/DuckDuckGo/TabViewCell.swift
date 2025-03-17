@@ -155,7 +155,7 @@ final class TabViewCell: UICollectionViewCell {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: .cornflowerBlue,
+                                                 foregroundColor: UIColor(designSystemColor: .accent),
                                                  borderColor: color)
             return image
         }
@@ -384,7 +384,7 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        border.layer.borderColor = theme.tabSwitcherCellBorderColor.cgColor
+        border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
         removeButton.tintColor = UIColor(designSystemColor: .icons)
 

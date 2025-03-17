@@ -113,8 +113,12 @@ struct SettingsState {
     var duckPlayerMode: DuckPlayerMode?
     var duckPlayerOpenInNewTab: Bool
     var duckPlayerOpenInNewTabEnabled: Bool
+    
+    // Duck Player Native UI
     var duckPlayerNativeUI: Bool
     var duckPlayerAutoplay: Bool
+    var duckPlayerNativeUISERPEnabled: Bool
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
 
     // AI Chat
     var aiChat: AIChat
@@ -164,6 +168,8 @@ struct SettingsState {
             duckPlayerOpenInNewTabEnabled: false,
             duckPlayerNativeUI: false,
             duckPlayerAutoplay: true,
+            duckPlayerNativeUISERPEnabled: true,
+            duckPlayerNativeYoutubeMode: .ask,
             aiChat: AIChat(enabled: false,
                            isAIChatBrowsingMenuFeatureFlagEnabled: false,
                            isAIChatAddressBarFeatureFlagEnabled: false,

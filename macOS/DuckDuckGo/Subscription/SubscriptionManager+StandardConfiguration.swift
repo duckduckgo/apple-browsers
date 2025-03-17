@@ -92,7 +92,7 @@ extension DefaultSubscriptionManager {
 
 extension DefaultSubscriptionManager: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
         PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
                       frequency: .legacyDailyAndCount)
     }
@@ -188,18 +188,12 @@ extension DefaultSubscriptionManagerV2 {
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      autoRecoveryHandler: {
-                // todo Implement
-            },
                       isInternalUserEnabled: isInternalUserEnabled)
         } else {
             self.init(oAuthClient: authClient,
                       subscriptionEndpointService: subscriptionEndpointService,
                       subscriptionEnvironment: environment,
                       pixelHandler: pixelHandler,
-                      autoRecoveryHandler: {
-                // todo Implement
-            },
                       isInternalUserEnabled: isInternalUserEnabled)
         }
     }

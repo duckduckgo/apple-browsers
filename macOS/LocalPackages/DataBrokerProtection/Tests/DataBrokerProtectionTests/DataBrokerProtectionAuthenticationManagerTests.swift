@@ -33,7 +33,7 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
     }
 
     func testUserNotAuthenticatedWhenSubscriptionManagerReturnsFalse() {
-        subscriptionManager.userAuthenticatedValue = false
+        subscriptionManager.accessTokenValue = nil
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 
@@ -50,7 +50,7 @@ class DataBrokerProtectionAuthenticationManagerTests: XCTestCase {
     }
 
     func testUserAuthenticatedWhenSubscriptionManagerReturnsTrue() {
-        subscriptionManager.userAuthenticatedValue = true
+        subscriptionManager.accessTokenValue = "some"
 
         authenticationManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
 

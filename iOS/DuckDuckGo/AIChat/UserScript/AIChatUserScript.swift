@@ -17,11 +17,19 @@
 //  limitations under the License.
 //
 
-
 import Common
 import UserScript
 import Foundation
 import AIChat
+
+/// Protocol defining the delegate methods for AIChatUserScript events
+protocol AIChatUserScriptDelegate: AnyObject {
+    /// Called when the user script receives a message from the web content
+    /// - Parameters:
+    ///   - userScript: The user script that received the message
+    ///   - message: The type of message received
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageNames)
+}
 
 final class AIChatUserScript: NSObject, Subfeature {
 
@@ -29,8 +37,11 @@ final class AIChatUserScript: NSObject, Subfeature {
         case openAIChat
         case getAIChatNativeConfigValues
         case getAIChatNativeHandoffData
+        case closeAIChat
+        case openAIChatSettings
     }
 
+    weak var delegate: AIChatUserScriptDelegate?
     private var handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
@@ -55,11 +66,20 @@ final class AIChatUserScript: NSObject, Subfeature {
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageNames(rawValue: methodName) {
         case .getAIChatNativeConfigValues:
+            delegate?.aiChatUserScript(self, didReceiveMessage: .getAIChatNativeConfigValues)
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
+            delegate?.aiChatUserScript(self, didReceiveMessage: .getAIChatNativeHandoffData)
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
+            delegate?.aiChatUserScript(self, didReceiveMessage: .openAIChat)
             return handler.openAIChat
+        case .closeAIChat:
+            delegate?.aiChatUserScript(self, didReceiveMessage: .closeAIChat)
+            return nil
+        case .openAIChatSettings:
+            delegate?.aiChatUserScript(self, didReceiveMessage: .openAIChatSettings)
+            return nil
         default:
             return nil
         }

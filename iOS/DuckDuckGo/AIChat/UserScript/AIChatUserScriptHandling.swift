@@ -69,7 +69,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         AIChatNativeConfigValues(isAIChatHandoffEnabled: isHandoffEnabled,
-                               platform: platform)
+                                 platform: platform,
+                                 supportsClosingAIChat: true,
+                                 supportsOpeningSettings: true)
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {

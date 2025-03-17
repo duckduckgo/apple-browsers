@@ -62,6 +62,8 @@ let package = Package(
             name: "DataBrokerProtectionTests",
             dependencies: [
                 "DataBrokerProtection",
+                "DataBrokerProtectionShared",
+                .product(name: "DataBrokerProtectionSharedTestsUtils", package: "DataBrokerProtectionShared"),
                 "BrowserServicesKit",
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),

@@ -20,6 +20,7 @@ import XCTest
 import Configuration
 import Persistence
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
 
 final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 

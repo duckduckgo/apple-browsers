@@ -56,7 +56,7 @@ public struct ExtractProfileSelectors: Codable, Sendable {
     }
 }
 
-public struct AddressCityState: Codable, Hashable {
+public struct AddressCityState: Codable, Hashable, Sendable {
     public let city: String
     public let state: String
 
@@ -98,19 +98,19 @@ public struct ExtractedProfile: Codable, Sendable {
         case identifier
     }
 
-    init(id: Int64? = nil,
-         name: String? = nil,
-         alternativeNames: [String]? = nil,
-         addressFull: String? = nil,
-         addresses: [AddressCityState]? = nil,
-         phoneNumbers: [String]? = nil,
-         relatives: [String]? = nil,
-         profileUrl: String? = nil,
-         reportId: String? = nil,
-         age: String? = nil,
-         email: String? = nil,
-         removedDate: Date? = nil,
-         identifier: String? = nil) {
+    public init(id: Int64? = nil,
+                name: String? = nil,
+                alternativeNames: [String]? = nil,
+                addressFull: String? = nil,
+                addresses: [AddressCityState]? = nil,
+                phoneNumbers: [String]? = nil,
+                relatives: [String]? = nil,
+                profileUrl: String? = nil,
+                reportId: String? = nil,
+                age: String? = nil,
+                email: String? = nil,
+                removedDate: Date? = nil,
+                identifier: String? = nil) {
         self.id = id
         self.name = name
         self.alternativeNames = alternativeNames

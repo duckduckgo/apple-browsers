@@ -21,6 +21,7 @@ import XCTest
 import Common
 
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
 
 final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 

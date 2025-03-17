@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
 
 final class DataBrokerProtectionDataManagingTests: XCTestCase {
 
@@ -29,8 +30,7 @@ final class DataBrokerProtectionDataManagingTests: XCTestCase {
         mockDatabase = MockDatabase()
         mockDBPProfileSavedNotifier = MockDBPProfileSavedNotifier()
         sut = DataBrokerProtectionDataManager(database: mockDatabase,
-                                              profileSavedNotifier: mockDBPProfileSavedNotifier,
-                                              pixelHandler: MockPixelHandler())
+                                              profileSavedNotifier: mockDBPProfileSavedNotifier)
     }
 
     func testWhenNoMatches_thenZeroMatchesAndZeroBrokersAreReturned() throws {

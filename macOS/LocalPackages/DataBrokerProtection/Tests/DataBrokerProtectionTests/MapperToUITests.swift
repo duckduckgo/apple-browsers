@@ -19,6 +19,7 @@
 import XCTest
 import Foundation
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
 
 final class MapperToUITests: XCTestCase {
 

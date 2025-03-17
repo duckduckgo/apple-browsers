@@ -1455,10 +1455,10 @@ public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator 
     }
 
     public func operations(forOperationType operationType: OperationType,
-                    withPriorityDate priorityDate: Date?,
-                    showWebView: Bool,
-                    errorDelegate: DataBrokerOperationErrorDelegate,
-                    operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
+                           withPriorityDate priorityDate: Date?,
+                           showWebView: Bool,
+                           errorDelegate: DataBrokerOperationErrorDelegate,
+                           operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
         guard !shouldError else { throw DataBrokerProtectionError.unknown("")}
         self.createdType = operationType
         self.priorityDate = priorityDate

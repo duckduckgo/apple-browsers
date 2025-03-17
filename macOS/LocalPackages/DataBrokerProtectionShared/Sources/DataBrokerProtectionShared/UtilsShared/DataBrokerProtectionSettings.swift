@@ -76,7 +76,6 @@ public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
 
     // MARK: - VPN exclusion
 
-    // TODO: This needs to be extacted properly
     public var vpnBypass: Bool {
         get {
             proxySettings[bundleId: "DBP_BACKGROUND_AGENT_BUNDLE_ID"] == .exclude

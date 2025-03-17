@@ -222,7 +222,7 @@ public final class TransparentProxyController {
     /// useful when we're comparing the connection from an event triggered by a status update, so the proxy won't enter an infinite
     /// loop of updating status > loading config > updating status > etc.
     ///
-    public func isUsingConnection(_ connection: NEVPNConnection, loadFromSettings: Bool = false) -> Bool {
+    public func isUsingConnection(_ connection: NEVPNConnection) -> Bool {
         internalManager?.connection === connection
     }
 

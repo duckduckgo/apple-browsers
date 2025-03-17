@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import DesignResourcesKit
 
 private extension UIImage {
     static let highlightedAlertButtonTint = UIImage(named: "AlertButtonHighlightedTint")
@@ -32,6 +33,7 @@ final class JSAlertController: UIViewController {
         static let keyboardAnimationDuration = 0.3
     }
 
+    @IBOutlet var separatorViews: [UIView]!
     @IBOutlet var alertView: UIView!
     @IBOutlet var scrollView: UIScrollView!
     @IBOutlet var keyboardConstraint: NSLayoutConstraint!
@@ -62,6 +64,8 @@ final class JSAlertController: UIViewController {
 
         self.keyboardConstraint.constant = 0
         self.registerForKeyboardNotifications()
+
+        decorate()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -197,6 +201,16 @@ final class JSAlertController: UIViewController {
             self.keyboardConstraint.constant = 0
             self.view.layoutSubviews()
         }
+    }
+
+    private func decorate() {
+        self.titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        self.textField.backgroundColor = UIColor(designSystemColor: .surface)
+        self.messageLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        self.alertView.backgroundColor = UIColor(designSystemColor: .background)
+        self.separatorViews.forEach { $0.backgroundColor = UIColor(designSystemColor: .lines) }
+        self.okButton.setTitleColor(UIColor(designSystemColor: .buttonsSecondaryWireText), for: .normal)
+        self.cancelButton.setTitleColor(UIColor(designSystemColor: .buttonsSecondaryWireText), for: .normal)
     }
 
 }

@@ -47,7 +47,7 @@ struct RemoteMessagingDebugRootView: View {
                                 .font(.system(size: 15))
                             Text(message.json ?? "")
                                 .font(.system(size: 12))
-                                .foregroundStyle(Color.gray70)
+                                .foregroundStyle(Color(baseColor: .gray70))
                         }
                     }
                 } footer: {

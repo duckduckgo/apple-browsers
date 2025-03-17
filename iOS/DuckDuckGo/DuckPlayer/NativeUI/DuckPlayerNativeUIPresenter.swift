@@ -356,12 +356,14 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func hideBottomSheetForHiddenChrome() {
         containerViewModel?.dismiss()
         resetWebViewConstraint()
+        containerViewController?.view.isUserInteractionEnabled = false
     }
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor
     func showBottomSheetForVisibleChrome() {
         containerViewModel?.show()
+        containerViewController?.view.isUserInteractionEnabled = true
     }
 
 }

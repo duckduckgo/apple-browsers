@@ -20,6 +20,8 @@ import Foundation
 import Subscription
 import OSLog
 import PixelKit
+import Common
+import DataBrokerProtection
 
 /// Protocol defining the interface for managing Freemium DBP pixel experiments.
 protocol FreemiumDBPPixelExperimentManaging {
@@ -32,6 +34,8 @@ protocol FreemiumDBPPixelExperimentManaging {
 
     /// Assigns the user to an experimental cohort if eligible.
     func assignUserToCohort()
+
+    func sendOneTimeCohortSubscriptionStatusPixel()
 }
 
 /// Manager responsible for handling user assignments to experimental cohorts and providing pixel parameters for analytics.
@@ -45,6 +49,7 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
 
     private enum PixelKeys {
         static let daysEnrolled = "daysEnrolled"
+        static let experimentCohort = "experimentCohort"
     }
 
     // MARK: - Dependencies
@@ -52,6 +57,9 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let userDefaults: UserDefaults
     private let locale: Locale
+
+    /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
+    private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
 
     // MARK: - Initialization
 
@@ -63,10 +71,12 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
     ///   - locale: Determines user eligibility based on region. Defaults to `Locale.current`.
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          userDefaults: UserDefaults = .dbp,
-         locale: Locale = Locale.current) {
+         locale: Locale = Locale.current,
+         freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler()) {
         self.subscriptionManager = subscriptionManager
         self.userDefaults = userDefaults
         self.locale = locale
+        self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
     }
 
     // MARK: - FreemiumDBPPixelExperimentManaging
@@ -99,6 +109,22 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
         userDefaults.enrollmentDate = Date()
 
         Logger.freemiumDBP.debug("[Freemium DBP] User enrolled to cohort: \(cohort.rawValue)")
+    }
+
+    func sendOneTimeCohortSubscriptionStatusPixel() {
+        if userIsNotEnrolled || !subscriptionManager.isUserAuthenticated { return }
+
+        var parameters: [String: String] = [:]
+
+        if let daysEnrolled = daysEnrolled {
+            parameters[PixelKeys.daysEnrolled] = daysEnrolled
+        }
+
+        if let experimentCohort = experimentCohort?.rawValue {
+            parameters[PixelKeys.experimentCohort] = experimentCohort
+        }
+
+        freemiumDBPExperimentPixelHandler.fire(.oneTimeCohortSubscriptionStatusPixel, parameters: parameters)
     }
 }
 

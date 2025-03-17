@@ -1782,6 +1782,9 @@ https://duckduckgo.com/mac";
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo App for Mac";
 
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "Warn me on sites flagged for scams, phishing, or malware";
+
 /* Button that redirect the user to a web page explaining what Malicious Site Protection is */
 "malicious-site-protection.settings.footer.button.learn-more" = "Learn More";
 

@@ -29,6 +29,15 @@ enum BookmarkStoreFetchPredicateType {
 enum ParentFolderType: Equatable {
     case root
     case parent(uuid: String)
+
+    var folderID: String? {
+        switch self {
+        case .root:
+            return nil
+        case let .parent(uuid):
+            return uuid
+        }
+    }
 }
 
 protocol BookmarkStore {

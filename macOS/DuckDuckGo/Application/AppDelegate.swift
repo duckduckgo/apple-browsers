@@ -97,6 +97,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
+    private var updateProgressCancellable: AnyCancellable?
+
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
         settingsModel: homePageSettingsModel,
@@ -406,7 +408,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _=NSPopover.swizzleShowRelativeToRectOnce
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard NSApp.runType.requiresEnvironment else { return }
         defer {
@@ -514,6 +515,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         subscribeToEmailProtectionStatusNotifications()
         subscribeToDataImportCompleteNotification()
         subscribeToInternalUserChanges()
+        subscribeToUpdateControllerChanges()
 
         fireFailedCompilationsPixelIfNeeded()
 
@@ -537,12 +539,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setUpAutoClearHandler()
 
         setUpAutofillPixelReporter()
-
-#if SPARKLE
-        if NSApp.runType != .uiTests {
-            updateController.checkNewApplicationVersion()
-        }
-#endif
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
 
@@ -593,9 +589,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
 
-        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
+        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { [weak self] isSubscriptionActive in
             if isSubscriptionActive {
                 PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
+
+                // Temporary experiment pixel - https://app.asana.com/0/1206488453854252/1209643339074944
+                guard let self else { return }
+                let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: self.subscriptionAuthV1toV2Bridge)
+                experimentManager.sendOneTimeCohortSubscriptionStatusPixel()
+                // ----
             }
         }
 
@@ -843,6 +845,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         isInternalUserSharingCancellable = internalUserDecider.isInternalUserPublisher
             .assign(to: \.isInternalUser, onWeaklyHeld: UserDefaults.appConfiguration)
+    }
+
+    private func subscribeToUpdateControllerChanges() {
+#if SPARKLE
+        guard NSApp.runType != .uiTests else { return }
+
+        updateProgressCancellable = updateController.updateProgressPublisher
+            .sink { [weak self] progress in
+                self?.updateController.checkNewApplicationVersionIfNeeded(updateProgress: progress)
+            }
+#endif
     }
 
     private func emailDidSignInNotification(_ notification: Notification) {

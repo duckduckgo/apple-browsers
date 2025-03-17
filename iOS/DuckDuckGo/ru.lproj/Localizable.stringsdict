@@ -316,5 +316,385 @@
 			<string>Удалено паролей: %1$d</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку</string>
+			<key>few</key>
+			<string>Закрыть вкладки</string>
+			<key>many</key>
+			<string>Закрыть вкладки</string>
+			<key>other</key>
+			<string>Закрыть вкладки</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку</string>
+			<key>few</key>
+			<string>Закрыть все %1$d вкладки</string>
+			<key>many</key>
+			<string>Закрыть все %1$d вкладок</string>
+			<key>other</key>
+			<string>Закрыть все вкладки (%1$d)</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку?</string>
+			<key>few</key>
+			<string>Закрыть %1$d вкладки?</string>
+			<key>many</key>
+			<string>Закрыть %1$d вкладок?</string>
+			<key>other</key>
+			<string>Закрыть вкладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть другую вкладку?</string>
+			<key>few</key>
+			<string>Закрыть еще %1$d вкладки?</string>
+			<key>many</key>
+			<string>Закрыть еще %1$d вкладок?</string>
+			<key>other</key>
+			<string>Закрыть остальные вкладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Действительно закрыть эту вкладку?</string>
+			<key>few</key>
+			<string>Действительно закрыть эти вкладки?</string>
+			<key>many</key>
+			<string>Действительно закрыть эти вкладки?</string>
+			<key>other</key>
+			<string>Действительно закрыть эти вкладки?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку?</string>
+			<key>few</key>
+			<string>Закрыть %1$d вкладки?</string>
+			<key>many</key>
+			<string>Закрыть %1$d вкладок?</string>
+			<key>other</key>
+			<string>Закрыть вкладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Действительно закрыть эту вкладку?</string>
+			<key>few</key>
+			<string>Действительно закрыть эти вкладки?</string>
+			<key>many</key>
+			<string>Действительно закрыть эти вкладки?</string>
+			<key>other</key>
+			<string>Действительно закрыть эти вкладки?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку?</string>
+			<key>few</key>
+			<string>Закрыть все %1$d вкладки?</string>
+			<key>many</key>
+			<string>Закрыть все %1$d вкладок?</string>
+			<key>other</key>
+			<string>Закрыть все вкладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Вы точно хотите закрыть эту вкладку?</string>
+			<key>few</key>
+			<string>Вы точно хотите закрыть все вкладки?</string>
+			<key>many</key>
+			<string>Вы точно хотите закрыть все вкладки?</string>
+			<key>other</key>
+			<string>Вы точно хотите закрыть все вкладки?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Выберите вкладку</string>
+			<key>few</key>
+			<string>Выберите вкладки</string>
+			<key>many</key>
+			<string>Выберите вкладки</string>
+			<key>other</key>
+			<string>Выберите вкладки</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть другую вкладку</string>
+			<key>few</key>
+			<string>Закрыть остальные вкладки</string>
+			<key>many</key>
+			<string>Закрыть остальные вкладки</string>
+			<key>other</key>
+			<string>Закрыть остальные вкладки</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Поделиться ссылкой</string>
+			<key>few</key>
+			<string>Поделиться %1$d ссылками</string>
+			<key>many</key>
+			<string>Поделиться %1$d ссылками</string>
+			<key>other</key>
+			<string>Поделиться ссылками (%1$d)</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Поделиться выбранной вкладкой</string>
+			<key>few</key>
+			<string>Поделиться выбранными вкладками</string>
+			<key>many</key>
+			<string>Поделиться выбранными вкладками</string>
+			<key>other</key>
+			<string>Поделиться выбранными вкладками</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Сохранить вкладку</string>
+			<key>few</key>
+			<string>Сохранить %1$d вкладки</string>
+			<key>many</key>
+			<string>Сохранить %1$d вкладок</string>
+			<key>other</key>
+			<string>Сохранить вкладки (%1$d)</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закладка добавлена</string>
+			<key>few</key>
+			<string>Добавлено %1$d закладки</string>
+			<key>many</key>
+			<string>Добавлено %1$d закладок</string>
+			<key>other</key>
+			<string>Закладки добавлены (%1$d)</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Сохранить выбранную вкладку?</string>
+			<key>few</key>
+			<string>Сохранить %1$d вкладки?</string>
+			<key>many</key>
+			<string>Сохранить %1$d вкладок?</string>
+			<key>other</key>
+			<string>Сохранить вкладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Добавить выбранную вкладку в закладки?</string>
+			<key>few</key>
+			<string>Добавить %1$d вкладки в закладки?</string>
+			<key>many</key>
+			<string>Добавить %1$d вкладок в закладки?</string>
+			<key>other</key>
+			<string>Добавить вкладки в закладки (%1$d)?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Выбрана %1$d</string>
+			<key>few</key>
+			<string>Выбрано %1$d</string>
+			<key>many</key>
+			<string>Выбрано %1$d</string>
+			<key>other</key>
+			<string>Выбрано %1$d</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d выбранная вкладка</string>
+			<key>few</key>
+			<string>%1$d выбранные вкладки</string>
+			<key>many</key>
+			<string>%1$d выбранных вкладок</string>
+			<key>other</key>
+			<string>Выбранные вкладки (%1$d)</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

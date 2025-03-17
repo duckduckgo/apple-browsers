@@ -207,7 +207,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     func open(_ url: URL) async {
-        firePixel(.itemOpened, .dailyAndStandard)
+        firePixel(.itemOpened(.single), .dailyAndStandard)
         await tabOpener.open(url)
     }
 
@@ -242,9 +242,10 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     private func fireItemOpenedPixel(_ urls: [URL]) {
-        if urls.count == 1 {
-            firePixel(.itemOpened, .dailyAndStandard)
+        guard !urls.isEmpty else {
+            return
         }
+        firePixel(.itemOpened(urls.count == 1 ? .single : .multiple), .dailyAndStandard)
     }
 
     @MainActor

@@ -81,8 +81,7 @@ final class MaliciousSiteProtectionService {
             supportedThreatsProvider: supportedThreatsProvider
         )
 
-        // Register Malicious Site Protection background tasks to fetch datasets
-        manager.registerBackgroundRefreshTaskHandler()
+        maliciousSiteProtectionDatasetsFetcher.registerBackgroundRefreshTaskHandler()
     }
 
     // MARK: - Resume

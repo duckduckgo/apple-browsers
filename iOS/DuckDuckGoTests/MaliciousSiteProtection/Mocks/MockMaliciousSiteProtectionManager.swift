@@ -31,10 +31,6 @@ final class MockMaliciousSiteProtectionManager: MaliciousSiteDetecting, Maliciou
         didCallStartFetching = true
     }
 
-    func registerBackgroundRefreshTaskHandler() {
-        didCallRegisterBackgroundRefreshTaskHandler = true
-    }
-
     func evaluate(_ url: URL) async -> MaliciousSiteProtection.ThreatKind? {
         threatKind
     }

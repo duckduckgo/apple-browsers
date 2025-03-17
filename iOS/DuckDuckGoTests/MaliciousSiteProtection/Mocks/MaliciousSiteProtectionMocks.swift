@@ -76,7 +76,7 @@ final class MockMaliciousSiteProtectionFeatureFlags: MaliciousSiteProtectionFeat
 }
 
 final class MockBackgroundScheduler: BGTaskScheduling {
-    private(set) var capturedRegisteredTaskIdentifiers: [String] = []
+    private(set) var capturedRegisteredTaskIdentifiers: [String: Int] = [:]
 
     private(set) var didCallSubmitTaskRequest = false
     private(set) var capturedSubmittedTaskRequest: BGTaskRequest?
@@ -90,7 +90,9 @@ final class MockBackgroundScheduler: BGTaskScheduling {
     var launchHandlers: [String: ((BGTaskInterface) -> Void)?] = [:]
 
     func register(forTaskWithIdentifier identifier: String, launchHandler: @escaping (BGTaskInterface) -> Void) -> Bool {
-        capturedRegisteredTaskIdentifiers.append(identifier)
+        var counterForTaskIdentifier = capturedRegisteredTaskIdentifiers[identifier] ?? 0
+        counterForTaskIdentifier += 1
+        capturedRegisteredTaskIdentifiers[identifier] = counterForTaskIdentifier
         self.launchHandlers[identifier] = launchHandler
         return true
     }

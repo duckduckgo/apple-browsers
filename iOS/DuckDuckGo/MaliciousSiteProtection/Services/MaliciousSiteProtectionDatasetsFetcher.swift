@@ -26,7 +26,6 @@ import BrowserServicesKit
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     func startFetching()
-    func registerBackgroundRefreshTaskHandler()
 }
 
 final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatasetsFetching {
@@ -36,6 +35,9 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
     private let updateManager: MaliciousSiteUpdateManaging
     private let backgroundTaskScheduler: BGTaskScheduling
     private let application: BackgroundRefreshCapable
+
+    // Avoid multiple background tasks registrations.
+    private static var registeredTaskIdentifiers: Set<String> = []
 
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
@@ -209,8 +211,16 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
 extension MaliciousSiteProtectionDatasetsFetcher {
 
     func registerBackgroundRefreshTaskHandler() {
+        // Risk that tasks have been registered twice from stack trace.
+        // https://errors.duckduckgo.com/organizations/ddg/issues/318442/events/701c65b8012b11f0b86f8d2f8a0908f9/
+        // Although is not clear how ensure that background tasks are registered once.
+        // The system kills the app on the second registration of the same task identifier.
         DataManager.StoredDataType.Kind.allCases.forEach { datasetType in
-            backgroundTaskScheduler.register(forTaskWithIdentifier: datasetType.backgroundTaskIdentifier) { [weak self] backgroundTask in
+            let backgroundTaskIdentifier = datasetType.backgroundTaskIdentifier
+            guard !Self.registeredTaskIdentifiers.contains(backgroundTaskIdentifier) else { return }
+            Self.registeredTaskIdentifiers.insert(backgroundTaskIdentifier)
+
+            backgroundTaskScheduler.register(forTaskWithIdentifier: backgroundTaskIdentifier) { [weak self] backgroundTask in
                 guard let self else { return }
 
                 guard shouldRefresh(datasetType: datasetType) else {
@@ -277,6 +287,17 @@ extension MaliciousSiteProtectionDatasetsFetcher {
     }
 
 }
+
+#if DEBUG
+extension MaliciousSiteProtectionDatasetsFetcher {
+
+    // To be used only in tests
+    static func resetRegisteredTaskIdentifiers() {
+        registeredTaskIdentifiers = []
+    }
+
+}
+#endif
 
 // MARK: - DataManager.StoredDataType.Kind + Background Tasks
 

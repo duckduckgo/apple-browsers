@@ -67,18 +67,6 @@ final class MaliciousSiteProtectionManagerTests {
         #expect(dataFetcherMock.didCallStartFetching)
     }
 
-    @Test("Register Background Tasks Asks DatasetsFetcher to Register Background Tasks")
-    func whenRegisterBackgroundTasksIsCalledThenItAsksDataFetcherToRegisterBackgroundTasks() {
-        // GIVEN
-        #expect(!dataFetcherMock.didCallRegisterBackgroundRefreshTaskHandler)
-
-        // WHEN
-        sut.registerBackgroundRefreshTaskHandler()
-
-        // THEN
-        #expect(dataFetcherMock.didCallRegisterBackgroundRefreshTaskHandler)
-    }
-
     @Test(
         "No Threat Detected when Feature is disabled",
         arguments: [

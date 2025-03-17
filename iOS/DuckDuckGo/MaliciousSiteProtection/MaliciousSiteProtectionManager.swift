@@ -60,10 +60,6 @@ extension MaliciousSiteProtectionManager: MaliciousSiteProtectionDatasetsFetchin
         dataFetcher.startFetching()
     }
     
-    func registerBackgroundRefreshTaskHandler() {
-        dataFetcher.registerBackgroundRefreshTaskHandler()
-    }
-    
 }
 
 // MARK: - MaliciousSiteDetecting

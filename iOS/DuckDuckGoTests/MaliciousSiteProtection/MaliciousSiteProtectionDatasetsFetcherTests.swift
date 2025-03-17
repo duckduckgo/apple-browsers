@@ -35,6 +35,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
 
     init() {
         setupSUT()
+        MaliciousSiteProtectionDatasetsFetcher.resetRegisteredTaskIdentifiers()
     }
 
     func setupSUT(
@@ -271,7 +272,28 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         sut.registerBackgroundRefreshTaskHandler()
 
         // THEN
-        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers == expectedBackgroundTasksIdentifiers)
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers[expectedBackgroundTasksIdentifiers[0]] != nil)
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers[expectedBackgroundTasksIdentifiers[1]] != nil)
+    }
+
+    @Test("Prevent register Background Tasks multiple times When RegisterBackgroundTasksIsCalled")
+    func whenRegisterBackgroundTasksIsCalledThenItAsksDataFetcherToRegisterBackgroundTasks() {
+        // GIVEN
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers.isEmpty)
+
+        // WHEN registering the first time
+        sut.registerBackgroundRefreshTaskHandler()
+
+        // THEN
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh"] == 1)
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] == 1)
+
+        // WHEN registering a second time
+        sut.registerBackgroundRefreshTaskHandler()
+
+        // THEN there are no more registration happening
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionHashPrefixSetRefresh"] == 1)
+        #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] == 1)
     }
 
     @Test(

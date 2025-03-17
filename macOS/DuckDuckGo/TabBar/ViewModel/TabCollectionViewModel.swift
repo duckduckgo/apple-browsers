@@ -106,8 +106,6 @@ final class TabCollectionViewModel: NSObject {
     }
     private weak var previouslySelectedTabViewModel: TabViewModel?
 
-    // In a special occasion, we want to select the "parent" tab after closing the currently selected tab
-    private var selectParentOnRemoval = false
     private var tabLazyLoader: TabLazyLoader<TabCollectionViewModel>?
     private var isTabLazyLoadingRequested: Bool = false
 
@@ -304,7 +302,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .unpinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -319,7 +316,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .pinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -345,10 +341,6 @@ final class TabCollectionViewModel: NSObject {
             delegate?.tabCollectionViewModelDidAppend(self, selected: true)
         } else {
             delegate?.tabCollectionViewModelDidAppend(self, selected: false)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -381,10 +373,6 @@ final class TabCollectionViewModel: NSObject {
         }
         if index.isUnpinnedTab {
             delegate?.tabCollectionViewModelDidInsert(self, at: index.item, selected: selected)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -545,7 +533,6 @@ final class TabCollectionViewModel: NSObject {
 
         otherViewModel.selectUnpinnedTab(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
-        otherViewModel.selectParentOnRemoval = true
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {

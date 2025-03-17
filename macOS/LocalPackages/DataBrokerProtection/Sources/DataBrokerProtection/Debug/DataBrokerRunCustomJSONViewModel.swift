@@ -183,11 +183,11 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,
                                                                                    settings: dbpSettings)
         self.emailService = EmailService(authenticationManager:authenticationManager,
-                                        settings: dbpSettings,
-                                        servicePixel: backendServicePixels)
+                                         settings: dbpSettings,
+                                         servicePixel: backendServicePixels)
         self.captchaService = CaptchaService(authenticationManager: authenticationManager,
-                                            settings: dbpSettings,
-                                            servicePixel: backendServicePixels)
+                                             settings: dbpSettings,
+                                             servicePixel: backendServicePixels)
 
         self.runnerProvider = DataBrokerJobRunnerProvider(
             privacyConfigManager: privacyConfigurationManager,
@@ -210,7 +210,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             var scanResults = [DebugScanReturnValue]()
 
             try await withThrowingTaskGroup(of: DebugScanReturnValue.self) { group in
-
 
                 for queryData in brokerProfileQueryData {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,

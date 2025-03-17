@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionSettings.swift
+//  DataBrokerProtectionSettings+macOS.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -63,7 +63,7 @@ extension DataBrokerProtectionSettings {
 }
 
 extension UserDefaults {
-    
+
     static let showMenuBarIconDefaultValue = false
     private var showMenuBarIconKey: String {
         "dataBrokerProtectionShowMenuBarIcon"

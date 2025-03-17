@@ -31,13 +31,14 @@ final class MaliciousSiteProtectionService {
     init(featureFlagger: FeatureFlagger) {
         let maliciousSiteProtectionAPI = MaliciousSiteProtectionAPI()
 
+        // If Application Support directory is not available leave a trail in crash logs.
+        guard let applicationSupportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            fatalError("Could not found Application Support directory for Malicious Site Protection")
+        }
+
         let maliciousSiteProtectionDataManager = MaliciousSiteProtection.DataManager(
             fileStore: MaliciousSiteProtection.FileStore(
-                dataStoreURL: FileManager.default.urls(
-                    for: .applicationSupportDirectory,
-                    in: .userDomainMask
-                )
-                .first!
+                dataStoreURL: applicationSupportDirectory
             ),
             embeddedDataProvider: nil,
             fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)

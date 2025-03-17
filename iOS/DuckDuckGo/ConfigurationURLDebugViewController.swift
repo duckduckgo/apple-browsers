@@ -209,4 +209,10 @@ final class ConfigurationURLTableViewCell: UITableViewCell {
     @IBOutlet weak var refresh: UIButton!
     @IBOutlet weak var ternary: UILabel!
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+
+        subtitle.textColor = UIColor(designSystemColor: .accent)
+    }
+
 }

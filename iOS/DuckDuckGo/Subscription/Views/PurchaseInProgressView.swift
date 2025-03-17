@@ -27,8 +27,8 @@ struct PurchaseInProgressView: View {
         static let coverOpacity = 0.6
         static let cornerRadius = 12.0
         static let shadowRadius = 10.0
-        static let lightShadowColor = Color.gray50
-        static let darkShadowColor = Color.gray95
+        static let lightShadowColor = Color(baseColor: .gray50)
+        static let darkShadowColor = Color(baseColor: .gray100)
         static let spinnerScale = 2.0
         static let internalZStackWidth = 220.0
         static let horizontalPadding = 20.0

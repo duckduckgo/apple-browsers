@@ -88,7 +88,7 @@ struct NewTabPageSectionsDebugView: View {
                             .foregroundColor(Color(designSystemColor: .accent))
                     } else {
                         Image(systemName: "xmark")
-                            .foregroundColor(Color.red40)
+                            .foregroundColor(Color(baseColor: .red40))
                     }
                 }
 
@@ -104,7 +104,7 @@ struct NewTabPageSectionsDebugView: View {
                     } else {
                         Image(systemName: "xmark")
                             .renderingMode(.template)
-                            .foregroundColor(Color.red40)
+                            .foregroundColor(Color(baseColor: .red40))
                     }
                 }
             }

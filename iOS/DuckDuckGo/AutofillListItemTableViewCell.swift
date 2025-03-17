@@ -41,7 +41,7 @@ class AutofillListItemTableViewCell: UITableViewCell {
     private lazy var subtitleLabel: UILabel = {
         let label = UILabel(frame: CGRect.zero)
         label.font = .preferredFont(forTextStyle: .footnote)
-        label.textColor = .gray50
+        label.textColor = UIColor(baseColor: .gray50)
         label.lineBreakMode = .byTruncatingMiddle
         return label
     }()

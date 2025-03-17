@@ -116,6 +116,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           "-only-testing:DBPE2ETests" \
           -retry-tests-on-failure \
+          -test-iterations 2 \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:

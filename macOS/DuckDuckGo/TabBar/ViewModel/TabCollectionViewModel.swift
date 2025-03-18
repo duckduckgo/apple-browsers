@@ -491,7 +491,7 @@ final class TabCollectionViewModel: NSObject {
 
         let newSelectionIndex: TabIndex
 
-        if let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: tab, withParent: parentTab) {
+        if let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: tab) {
             newSelectionIndex = calculatedIndex
         } else {
             newSelectionIndex = selectionIndex.sanitized(for: self)

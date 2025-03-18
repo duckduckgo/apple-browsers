@@ -185,17 +185,17 @@ extension TabIndex {
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab
     @MainActor
-    func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: Tab, withParent parentTab: Tab?) -> TabIndex? {
-        if let parentTab = parentTab {
-            if let nextTabWithSameParent = findNextTabWithSameParent(for: viewModel, parentTab: parentTab) {
+    func calculateSelectedTabIndexAfterClosing(for viewModel: TabCollectionViewModel, removedTab: Tab) -> TabIndex? {
+        if let parentTabId = removedTab.parentTabID {
+            if let nextTabWithSameParent = findNextTabWithSameParent(for: viewModel, parentTabId: parentTabId) {
                 return nextTabWithSameParent
             }
 
-            if let previousTabWithSameParent = findPreviousTabWithSameParent(for: viewModel, parentTab: parentTab) {
+            if let previousTabWithSameParent = findPreviousTabWithSameParent(for: viewModel, parentTabId: parentTabId) {
                 return previousTabWithSameParent
             }
 
-            if let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
+            if let parentTab = removedTab.parentTab, let parentTabIndex = viewModel.indexInAllTabs(of: parentTab) {
                 return parentTabIndex
             }
         }
@@ -209,38 +209,38 @@ extension TabIndex {
 
     /// - Parameters:
     ///   - viewModel: The `TabCollectionViewModel` to search within
-    ///   - parentTab: The parent tab to find the next tab for
+    ///   - parentTabId: The ID of the parent tab to find the next tab for
     /// - Returns: The `TabIndex` of the next tab with the same parent, if found
     @MainActor
-    private func findNextTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
-        return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .next)
+    private func findNextTabWithSameParent(for viewModel: TabCollectionViewModel, parentTabId: String) -> TabIndex? {
+        return findTabWithParent(for: viewModel, parentTabId: parentTabId, direction: .next)
     }
 
     /// - Parameters:
     ///   - viewModel: The `TabCollectionViewModel` to search within
-    ///   - parentTab: The parent tab to find the previous tab for
+    ///   - parentTabId: The ID of the parent tab to find the next tab for
     /// - Returns: The `TabIndex` of the previous tab with the same parent, if found
     @MainActor
-    private func findPreviousTabWithSameParent(for viewModel: TabCollectionViewModel, parentTab: Tab) -> TabIndex? {
-        return findTabWithParent(for: viewModel, parentTab: parentTab, direction: .previous)
+    private func findPreviousTabWithSameParent(for viewModel: TabCollectionViewModel, parentTabId: String) -> TabIndex? {
+        return findTabWithParent(for: viewModel, parentTabId: parentTabId, direction: .previous)
     }
 
     /// Finds the next or previous tab that has the given parent tab
     ///
     /// - Parameters:
     ///   - viewModel: The `TabCollectionViewModel` to search within
-    ///   - parentTab: The parent tab to find the tab for
+    ///   - parentTabId: The ID of the parent tab to find the next tab for
     ///   - direction: The direction to search in (.next or .previous)
     /// - Returns: The `TabIndex` of the first tab found with the given parent, if any
     @MainActor
-    private func findTabWithParent(for viewModel: TabCollectionViewModel, parentTab: Tab, direction: SearchDirection) -> TabIndex? {
+    private func findTabWithParent(for viewModel: TabCollectionViewModel, parentTabId: String, direction: SearchDirection) -> TabIndex? {
         var currentIndex = self
-        if let viewModelTab = viewModel.tabViewModel(at: currentIndex), viewModelTab.tab.parentTab == parentTab {
+        if let viewModelTab = viewModel.tabViewModel(at: currentIndex), viewModelTab.tab.parentTabID == parentTabId {
             return currentIndex
         }
 
         while let nextIndex = direction == .next ? currentIndex.getRighteousTab(for: viewModel) : currentIndex.getLeftTab(for: viewModel) {
-            if let viewModelTab = viewModel.tabViewModel(at: nextIndex), viewModelTab.tab.parentTab == parentTab {
+            if let viewModelTab = viewModel.tabViewModel(at: nextIndex), viewModelTab.tab.parentTabID == parentTabId {
                 return nextIndex
             }
             currentIndex = nextIndex

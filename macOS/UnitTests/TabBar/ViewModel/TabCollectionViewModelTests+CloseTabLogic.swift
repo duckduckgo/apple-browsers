@@ -111,6 +111,38 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
+    func testFindTabWithSameParent_worksWhenParentGetsRemoved() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        /// Create some normal tabs
+        let normalTabOne = Tab()
+        tabCollectionViewModel.append(tab: normalTabOne, selected: false)
+        let normalTabTwo = Tab()
+        tabCollectionViewModel.append(tab: normalTabTwo, selected: false)
+        let normalTabThree = Tab()
+        tabCollectionViewModel.append(tab: normalTabThree, selected: false)
+
+        /// We create the following tree of tabs: Grandparent -> Parent -> A, B, C
+        let grandParentTab = Tab()
+        tabCollectionViewModel.append(tab: grandParentTab, selected: true)
+        let parentTab = Tab(parentTab: grandParentTab)
+        tabCollectionViewModel.append(tab: parentTab, selected: true)
+        let childA = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childA, selected: true)
+        let childB = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childB, selected: true)
+        let childC = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childC, selected: true)
+
+        tabCollectionViewModel.remove(at: .unpinned(5)) /// We remove the parent tab
+        tabCollectionViewModel.select(at: .unpinned(0)) /// We select the first normal tab
+        tabCollectionViewModel.remove(at: .unpinned(5)) /// We remove the first 'orphan' child tab (Tab A)
+
+        /// The selected tab should be Child B given that is the child tab next to the closed one that shared the same parent
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childB)
+    }
+
+    @MainActor
     func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyClosedTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTab = tabCollectionViewModel.tabCollection.tabs[0]

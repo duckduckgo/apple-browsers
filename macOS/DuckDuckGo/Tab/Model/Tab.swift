@@ -221,6 +221,7 @@ protocol NewWindowPolicyDecisionMaker {
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
+        self.parentTabID = parentTab?.id
         self.securityOrigin = securityOrigin ?? .empty
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
@@ -597,6 +598,7 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     weak private(set) var parentTab: Tab?
+    private(set) var parentTabID: String?
     private var _canBeClosedWithBack: Bool
     var canBeClosedWithBack: Bool {
         // Reset canBeClosedWithBack on any WebView navigation

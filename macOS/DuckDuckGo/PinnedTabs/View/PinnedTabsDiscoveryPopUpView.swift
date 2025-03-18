@@ -23,7 +23,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
     enum Constants {
         static let verticalSpacing: CGFloat = 16
-        static let panelWidth: CGFloat = 410
+        static let panelWidth: CGFloat = 400
         static let panelHeight: CGFloat = 172
     }
 
@@ -51,7 +51,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
                     setPerWindowPinnedTabs()
                     callback?(true)
                 }
-            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing - 8)
+            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing)
         }
         .padding()
         .frame(width: Constants.panelWidth, height: Constants.panelHeight)

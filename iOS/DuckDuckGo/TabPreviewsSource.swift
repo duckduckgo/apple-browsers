@@ -176,46 +176,19 @@ class TabPreviewsSource {
         
         return UIImage(data: data)
     }
-}
 
-class TabPreviewsCleanup {
-    
-    static let shared = TabPreviewsCleanup()
-    
-    private let lock = NSLock()
-    private var isCleaning = false
-    
-    func startCleanup(with model: TabsModel, source: TabPreviewsSource, completion: @escaping () -> Void = {}) {
-        lock.lock()
-        guard let storeDir = source.previewStoreDir, !isCleaning else {
-            lock.unlock()
-            completion()
-            return
-        }
-        isCleaning = true
-        lock.unlock()
-        
-        source.cleanupCache()
-        
-        let validIDs = Set(model.tabs.map { $0.uid })
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let previews = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
-                for previewURL in previews where previewURL.lastPathComponent.hasSuffix(".png") {
-                    let previewID = previewURL.lastPathComponent.dropLast(4)
-                    
-                    if !validIDs.contains(String(previewID)) {
-                        try? FileManager.default.removeItem(at: previewURL)
-                    }
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) {
+        guard let directory = previewStoreDir else { return }
+        Task {
+            let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
+            contents?.forEach {
+                let id = $0.dropping(suffix: ".png")
+                if !ids.contains(id) {
+                    cache[id] = nil
+                    let previewUrl = directory.appending($0)
+                    try? FileManager.default.removeItem(at: previewUrl)
                 }
             }
-            
-            self.lock.lock()
-            self.isCleaning = false
-            self.lock.unlock()
-            
-            completion()
         }
     }
-    
 }

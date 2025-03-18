@@ -30,17 +30,26 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
         .hashPrefixSet: false,
         .filterSet: false
     ]
+    private(set) var updateCallCount = 0
 
     var lastHashPrefixSetUpdateDate: Date = .distantPast
     var lastFilterSetUpdateDate: Date = .distantPast
+
+    var updateDataTaskExecutionTime: TimeInterval = 0
 
     func startPeriodicUpdates() -> Task<Void, any Error> {
         Task { }
     }
     
     func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, any Error> {
+        updateCallCount += 1
         updateDatasets[datasetType] = true
-        return Task { }
+
+        return Task {
+            if updateDataTaskExecutionTime > 0 {
+                try await Task.sleep(interval: updateDataTaskExecutionTime)
+            }
+        }
     }
 }
 
@@ -139,8 +148,11 @@ final class MockMaliciousSiteProtectionDataFetcher: MaliciousSiteProtectionDatas
     private(set) var didCallStartFetching = false
     private(set) var didCallRegisterBackgroundRefreshTaskHandler = false
 
-    func startFetching() {
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
         didCallStartFetching = true
+        return Task {}
     }
     
     func registerBackgroundRefreshTaskHandler() {

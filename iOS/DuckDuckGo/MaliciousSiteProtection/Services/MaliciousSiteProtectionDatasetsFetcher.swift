@@ -25,10 +25,12 @@ import Combine
 import BrowserServicesKit
 
 protocol MaliciousSiteProtectionDatasetsFetching {
-    func startFetching()
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error>
 }
 
-final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatasetsFetching {
+final class MaliciousSiteProtectionDatasetsFetcher {
     private let featureFlagger: MaliciousSiteProtectionFeatureFlagger & MaliciousSiteProtectionFeatureFlagsSettingsProvider
     private let userPreferencesManager: MaliciousSiteProtectionPreferencesProvider
     private let dateProvider: () -> Date
@@ -39,16 +41,23 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
     // Avoid multiple background tasks registrations.
     private static var registeredTaskIdentifiers: Set<String> = []
 
+    @MainActor
+    private(set) var inFlyUpdateTasks: [DataManager.StoredDataType.Kind: Task<Void, any Error>] = [:]
+
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
 
+    @MainActor
     private var shouldUpdateHashPrefixSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastHashPrefixSetUpdateDate` is mistakenly set in the far future
+        inFlyUpdateTasks[.hashPrefixSet] == nil &&
         abs(dateProvider().timeIntervalSince(updateManager.lastHashPrefixSetUpdateDate)) > .minutes(featureFlagger.hashPrefixUpdateFrequency)
     }
 
+    @MainActor
     private var shouldUpdateFilterSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastFilterSetUpdateDate` is mistakenly set in the far future
+        inFlyUpdateTasks[.filterSet] == nil &&
         abs(dateProvider().timeIntervalSince(updateManager.lastFilterSetUpdateDate)) > .minutes(featureFlagger.filterSetUpdateFrequency)
     }
 
@@ -75,23 +84,45 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
 
 // MARK: - Public
 
-extension MaliciousSiteProtectionDatasetsFetcher {
+extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatasetsFetching {
 
-    func startFetching() {
-        guard canFetchDatasets else { return }
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
+        guard canFetchDatasets else { return Task {} }
+
+        var updateTasksToReturn: [Task<Void, Error>] = []
 
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Feature is On and Enabled in App Settings")
 
         // If hashPrefix Sets need to be updated fetch them
         if shouldUpdateHashPrefixSets {
             Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
-            _ = updateManager.updateData(datasetType: .hashPrefixSet)
+            let task = updateManager.updateData(datasetType: .hashPrefixSet)
+            inFlyUpdateTasks[.hashPrefixSet] = task
+            Task {
+                try? await task.value
+                inFlyUpdateTasks[.hashPrefixSet] = nil
+            }
+            updateTasksToReturn.append(task)
         }
 
         // If hashPrefix Sets need to be updated fetch them
         if shouldUpdateFilterSets {
             Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
-            _ = updateManager.updateData(datasetType: .filterSet)
+            let task = updateManager.updateData(datasetType: .filterSet)
+            inFlyUpdateTasks[.filterSet] = task
+            Task {
+                try? await task.value
+                inFlyUpdateTasks[.filterSet] = nil
+            }
+            updateTasksToReturn.append(task)
+        }
+
+        return Task {
+            for task in updateTasksToReturn {
+                try await task.value
+            }
         }
     }
 
@@ -101,12 +132,10 @@ extension MaliciousSiteProtectionDatasetsFetcher {
 
 private extension MaliciousSiteProtectionDatasetsFetcher {
 
-    func setupBindings() {
-        guard featureFlagger.isMaliciousSiteProtectionEnabled else { return }
-        subscribeToDetectionPreferences()
-    }
-
+    @MainActor
     func subscribeToDetectionPreferences() {
+        guard featureFlagger.isMaliciousSiteProtectionEnabled else { return }
+
         let isMaliciousSiteProtectionOn = userPreferencesManager.isMaliciousSiteProtectionOn
 
         preferencesManagerCancellable = userPreferencesManager
@@ -119,25 +148,30 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
             }
     }
 
+    @MainActor
     func handleUserPreferencesChange(wasOn: Bool, isOn: Bool) {
-        // If the feature is turned off in the user Preferences when we launch the App we don't need to stop background tasks.
-        // If the feature was turned off and the user turns it on we want to download the datasets and schedule the background tasks.
-        // If the feature is turned on when in the user Preferences when we launch the App we want to schedule the background tasks as we already started fetching the datasets on App launch.
-        // If the feature was turned on and the user turns it off we want to cancel the background tasks.
         switch (wasOn, isOn) {
+        // If the feature is turned off when the app launches we don't do anything.
+        //   - The datasets won't be fetched on App launch and we don't have to cancel background tasks as they won't be scheduled.
         case (false, false):
             break
+        // If the feature was turned on when the app launches, schedule the background tasks as we already started fetching the datasets on App launch.
         case (true, true):
             // Start only background tasks
             scheduleBackgroundTasksIfNeeded()
+        // If the feature was turned off and the user turns it on we want:
+        //   1. Download the datasets as they haven't downloaded when the app entered foreground.
+        //   2. Schedule background tasks.
         case (false, true):
             // Start downloading and initiate background tasks
             startUpdateTasks()
+        // If the feature was turned on and the user turns it off, cancel the pending background tasks.
         case (true, false):
             stopUpdateTasks()
         }
     }
 
+    @MainActor
     func startUpdateTasks() {
         startFetching()
         scheduleBackgroundTasksIfNeeded()
@@ -180,6 +214,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
         }
     }
 
+    @MainActor
     func shouldRefresh(datasetType: DataManager.StoredDataType.Kind) -> Bool {
         switch datasetType {
         case .hashPrefixSet:
@@ -210,6 +245,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
 
 extension MaliciousSiteProtectionDatasetsFetcher {
 
+    @MainActor
     func registerBackgroundRefreshTaskHandler() {
         // Risk that tasks have been registered twice from stack trace.
         // https://errors.duckduckgo.com/organizations/ddg/issues/318442/events/701c65b8012b11f0b86f8d2f8a0908f9/
@@ -233,7 +269,7 @@ extension MaliciousSiteProtectionDatasetsFetcher {
             }
         }
 
-        setupBindings()
+        subscribeToDetectionPreferences()
         subscribeToScamProtectionFlagChanges()
     }
 

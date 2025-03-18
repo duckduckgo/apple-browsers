@@ -81,11 +81,14 @@ final class MaliciousSiteProtectionService {
             supportedThreatsProvider: supportedThreatsProvider
         )
 
-        maliciousSiteProtectionDatasetsFetcher.registerBackgroundRefreshTaskHandler()
+        Task { @MainActor in
+            maliciousSiteProtectionDatasetsFetcher.registerBackgroundRefreshTaskHandler()
+        }
     }
 
     // MARK: - Resume
 
+    @MainActor
     func resume() {
         manager.startFetching()
     }

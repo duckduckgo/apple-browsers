@@ -22,7 +22,7 @@ import Foundation
 import MaliciousSiteProtection
 @testable import DuckDuckGo
 
-@Suite("Malicious Site Protection - Manager", .serialized)
+@Suite("Malicious Site Protection - Manager")
 final class MaliciousSiteProtectionManagerTests {
     private var sut: MaliciousSiteProtectionManager!
     private var mockDetector: MockMaliciousSiteDetector!
@@ -55,6 +55,7 @@ final class MaliciousSiteProtectionManagerTests {
         )
     }
 
+    @MainActor
     @Test("Start Fetching Datasets Asks DatasetsFetcher To Fetch Data")
     func whenStartFetchingDatasetsIsCalledThenItAsksDataFetcherToFetchData() {
         // GIVEN

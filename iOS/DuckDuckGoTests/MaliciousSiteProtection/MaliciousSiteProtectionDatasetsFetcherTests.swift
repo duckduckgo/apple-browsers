@@ -23,7 +23,7 @@ import MaliciousSiteProtection
 import enum UIKit.UIBackgroundRefreshStatus
 @testable import DuckDuckGo
 
-@Suite("Malicious Site Protection - Feature Flags", .serialized)
+@Suite("Malicious Site Protection - Feature Flags")
 final class MaliciousSiteProtectionDatasetsFetcherTests {
     private var sut: MaliciousSiteProtectionDatasetsFetcher!
     private var updateManagerMock: MockMaliciousSiteProtectionUpdateManager!
@@ -63,8 +63,9 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         )
     }
 
-    // MARK: - Explicitely Fetch Datasets
+    // MARK: - Explicitly Fetch Datasets
 
+    @MainActor
     @Test("Fetch Datasets When Feature Is Enabled and User Turned On the Feature")
     func whenStartFetchingCalled_AndFeatureEnabled_AndPreferencesEnabled_ThenStartUpdateTask() {
         // GIVEN
@@ -81,6 +82,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == true)
     }
 
+    @MainActor
     @Test("Do not Fetch Datasets When Feature is Disabled")
     func whenStartFetchingCalled_AndFeatureDisabled_ThenDoNotStartUpdateTask() {
         // GIVEN
@@ -97,6 +99,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
     }
 
+    @MainActor
     @Test("Do not Fetch Datasets When User Turned Off the Feature")
     func whentartFetchingCalled_AndFeatureEnabled_AndPreferencesDisabled_ThenDoNotStartUpdateTask() {
         // GIVEN
@@ -113,6 +116,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
     }
 
+    @MainActor
     @Test("Fetch Hash Prefix Dataset When Start Fetching Is Called And Last Update Date Is Greater Than Update Interval")
     func whenStartFetchingCalled_AndLastHashPrefixSetUpdateDateIsGreaterThanUpdateInterval_ThenFetchHashPrefixSet() {
         // GIVEN
@@ -135,6 +139,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
     }
 
+    @MainActor
     @Test("Fetch Filter Dataset When Start Fetching Is Called And Last Update Date Is Greater Than Update Interval")
     func whenStartFetchingCalled_AndLastFilterSetUpdateDateIsGreaterThanUpdateInterval_ThenFetchHashPrefixSet() {
         // GIVEN
@@ -157,7 +162,37 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == true)
     }
 
-    @Test("Fetch Datasets When Update Interval Becomes Grather Than Last Update Interval")
+    @MainActor
+    @Test("Check Calling Multiple Times Start Fetching Does Not Trigger Update Tasks if Existing Are In Flight")
+    func whenStartFetchingCalledMultipleTimes_AndUpdateTasksAreInFlight_ThenDoesNotTriggerUpdateTasks() async throws {
+        // GIVEN
+        updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
+        updateManagerMock.lastFilterSetUpdateDate = .distantPast
+        updateManagerMock.updateDataTaskExecutionTime = 0.5
+        featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
+        userPreferencesManagerMock.isMaliciousSiteProtectionOn = true
+        featureFlaggerMock.hashPrefixUpdateFrequency = 1 // Value expressed in minutes
+        featureFlaggerMock.filterSetUpdateFrequency = 1 // Value expressed in minutes
+        #expect(sut.inFlyUpdateTasks.isEmpty)
+
+        // WHEN
+        let firstCallTask = sut.startFetching()
+
+        // THEN
+        #expect(sut.inFlyUpdateTasks.count == 2)
+
+        // WHEN
+        let secondCallTask = sut.startFetching()
+
+        try await firstCallTask.value
+        try await secondCallTask.value
+
+        #expect(updateManagerMock.updateCallCount == 2)
+        #expect(sut.inFlyUpdateTasks.isEmpty)
+    }
+
+    @MainActor
+    @Test("Fetch Datasets When Update Interval Becomes Greater Than Last Update Interval")
     func whenStartFetchingCalled_AndUpdateIntervalBecomesGraterThanLastUpdateDate_ThenFetchDatasets() {
         // GIVEN
         updateManagerMock.lastHashPrefixSetUpdateDate = timeTraveller.getDate()
@@ -195,6 +230,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(updateManagerMock.updateDatasets[.filterSet] == false)
     }
 
+    @MainActor
     @Test("Start Fetching Datasets When User Turns On the Feature And Last Update Is Greater Than Update Interval")
     func whenPreferencesEnabled_AndLastUpdateDateIsGreaterThanUpdateInterval_ThenStartUpdateTask() {
         // GIVEN
@@ -252,13 +288,14 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
             backgroundSchedulerMock.scheduleBackgroundTaskConfirmation = submittedBackgroundTask
 
             // WHEN
-            sut.registerBackgroundRefreshTaskHandler()
+            await sut.registerBackgroundRefreshTaskHandler()
 
             // THEN
             #expect(backgroundSchedulerMock.submittedTaskRequests.map(\.identifier) == expectedBackgroundTasksIdentifiers)
         }
     }
 
+    @MainActor
     @Test("Register Background Tasks")
     func whenRegisterBackgroundRefreshTaskHandlerIsCalledThenRegisterBackgroundTasks() {
         // GIVEN
@@ -276,6 +313,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers[expectedBackgroundTasksIdentifiers[1]] != nil)
     }
 
+    @MainActor
     @Test("Prevent register Background Tasks multiple times When RegisterBackgroundTasksIsCalled")
     func whenRegisterBackgroundTasksIsCalledThenItAsksDataFetcherToRegisterBackgroundTasks() {
         // GIVEN
@@ -296,6 +334,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundSchedulerMock.capturedRegisteredTaskIdentifiers["com.duckduckgo.app.maliciousSiteProtectionFilterSetRefresh"] == 1)
     }
 
+    @MainActor
     @Test(
         "Do Not Execute Background Task When Dataset Does Not Need To Update",
         arguments: [
@@ -334,6 +373,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(abs(earliestBeginDate.timeIntervalSince1970 - Date(timeIntervalSinceNow: .minutes(datasetInfo.updateFrequency)).timeIntervalSince1970) < tolerance)
     }
 
+    @MainActor
     @Test(
         "Execute Background Task When Dataset Needs To Update",
         arguments: [
@@ -345,7 +385,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         // GIVEN
         featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
         userPreferencesManagerMock.isMaliciousSiteProtectionOn = true
-        updateManagerMock.lastFilterSetUpdateDate = .distantPast
+        updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
         updateManagerMock.lastFilterSetUpdateDate = .distantPast
         let identifier = datasetType.backgroundTaskIdentifier
         let backgroundTask = MockBGTask(identifier: identifier)
@@ -360,6 +400,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundTask.expirationHandler != nil)
     }
 
+    @MainActor
     @Test(
         "Check Expiration Handler Cancel Task",
         arguments: [
@@ -371,7 +412,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         // GIVEN
         featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
         userPreferencesManagerMock.isMaliciousSiteProtectionOn = true
-        updateManagerMock.lastFilterSetUpdateDate = .distantPast
+        updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast
         updateManagerMock.lastFilterSetUpdateDate = .distantPast
         let identifier = datasetType.backgroundTaskIdentifier
         let backgroundTask = MockBGTask(identifier: identifier)
@@ -389,6 +430,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundTask.capturedTaskCompletedSuccess == false)
     }
 
+    @MainActor
     @Test("Start Background Update Task When User Turns On the Feature And Background Tasks Are Available")
     func whenUserTurnsOnProtectionThenStartBackgroundUpdateTask() {
         // GIVEN
@@ -407,6 +449,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundSchedulerMock.capturedSubmittedTaskRequest != nil)
     }
 
+    @MainActor
     @Test(
         "Do Not Start Background Update Task When User Turns On the Feature And Background Tasks Are Not Available",
         arguments: [
@@ -432,6 +475,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
         #expect(backgroundSchedulerMock.capturedSubmittedTaskRequest == nil)
     }
 
+    @MainActor
     @Test("Stop Background Update Task When User Turns Off the Feature")
     func whenUserTurnsOffProtectionThenStopBackgroundUpdateTask() {
         // GIVEN

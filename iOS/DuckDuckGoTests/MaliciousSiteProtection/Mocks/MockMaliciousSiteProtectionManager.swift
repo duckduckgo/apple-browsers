@@ -27,8 +27,11 @@ final class MockMaliciousSiteProtectionManager: MaliciousSiteDetecting, Maliciou
 
     var threatKind: ThreatKind?
 
-    func startFetching() {
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
         didCallStartFetching = true
+        return Task {}
     }
 
     func evaluate(_ url: URL) async -> MaliciousSiteProtection.ThreatKind? {

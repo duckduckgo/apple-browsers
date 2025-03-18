@@ -56,7 +56,9 @@ final class MaliciousSiteProtectionManager {
 
 extension MaliciousSiteProtectionManager: MaliciousSiteProtectionDatasetsFetching {
 
-    func startFetching() {
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
         dataFetcher.startFetching()
     }
     

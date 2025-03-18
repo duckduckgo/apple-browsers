@@ -253,7 +253,7 @@ extension TabIndex {
     /// The rules are:
     /// 1. Try to find the next tab that has the closed tab as its parent
     /// 2. Try to find the previous tab that has the closed tab as its parent
-    /// 3. Try to find the recently closed tab
+    /// 3. Try to find the recently opened tab
     /// 4. Try to find the current tab index (if it still exists)
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab

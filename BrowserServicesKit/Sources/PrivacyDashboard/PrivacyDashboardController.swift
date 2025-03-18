@@ -265,7 +265,7 @@ extension PrivacyDashboardController: WKNavigationDelegate {
             .map { serverTrustEvaluation in
                 if let serverTrustEvaluation, let securityTrust = serverTrustEvaluation.securityTrust {
                     // swiftlint:disable:next force_cast
-                    return ServerTrustViewModel(serverTrust: (securityTrust as! SecTrust), isInvalidCert: !serverTrustEvaluation.isValid)
+                    return ServerTrustViewModel(serverTrust: (securityTrust as! SecTrust), isInvalidCert: serverTrustEvaluation.isCertificateInvalid ?? false)
                 }
                 return ServerTrustViewModel(serverTrust: nil, isInvalidCert: false)
             }

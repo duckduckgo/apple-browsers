@@ -26,11 +26,11 @@ extension SecTrust: SecurityTrust {}
 
 public struct ServerTrustEvaluation {
     let securityTrust: SecurityTrust?
-    public let isValid: Bool
+    public let isCertificateInvalid: Bool?
 
-    public init(securityTrust: SecurityTrust?, isValid: Bool) {
+    public init(securityTrust: SecurityTrust?, isCertificateInvalid: Bool?) {
         self.securityTrust = securityTrust
-        self.isValid = isValid
+        self.isCertificateInvalid = isCertificateInvalid
     }
 }
 

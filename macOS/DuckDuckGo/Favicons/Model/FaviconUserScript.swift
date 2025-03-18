@@ -37,6 +37,18 @@ final class FaviconUserScript: NSObject, Subfeature {
     struct FaviconLink: Codable, Equatable {
         let href: URL
         let rel: String
+
+        init(href: URL, rel: String) {
+            self.href = href
+            self.rel = rel
+        }
+
+        func upgradedToHTTPS() -> Self? {
+            guard let httpsHref = href.toHttps() else {
+                return nil
+            }
+            return .init(href: httpsHref, rel: rel)
+        }
     }
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -65,7 +77,9 @@ final class FaviconUserScript: NSObject, Subfeature {
             return nil
         }
 
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl)
+        let faviconLinks = faviconsPayload.favicons.compactMap { $0.upgradedToHTTPS() }
+
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: faviconsPayload.documentUrl)
         return nil
     }
 }

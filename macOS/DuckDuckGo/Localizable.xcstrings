@@ -57121,7 +57121,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Would you like to combine pinned tabs to be shared across all windows?"
+            "value" : "Are you sure you want to share pinned tabs across all windows? This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again."
           }
         }
       }

@@ -713,27 +713,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
 #endif
-        } catch {
-            if startupOptions.startupMethod == .automaticOnDemand {
-                // If the VPN was started by on-demand without the basic prerequisites for
-                // it to work we skip firing pixels.  This should only be possible if the
-                // manual start attempt that preceded failed, or if the subscription has
-                // expired.  In either case it should be enough to record the manual failures
-                // for these prerequisited to avoid flooding our metrics.
-                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
-                try? await Task.sleep(interval: .seconds(15))
-            } else {
-                // If the VPN was started manually without the basic prerequisites we always
-                // want to know as this should not be possible.
-                providerEvents.fire(.tunnelStartAttempt(.begin))
-                providerEvents.fire(.tunnelStartAttempt(.failure(error)))
-            }
 
-            Logger.networkProtection.error("🔴 Stopping VPN due to no auth token")
-            throw error
-        }
-
-        do {
             providerEvents.fire(.tunnelStartAttempt(.begin))
             connectionStatus = .connecting
             resetIssueStateOnTunnelStart(startupOptions)
@@ -743,13 +723,25 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
             providerEvents.fire(.tunnelStartAttempt(.success))
         } catch {
-            Logger.networkProtection.error("🔴 Failed to start tunnel \(error.localizedDescription, privacy: .public)")
+            Logger.networkProtection.error("🔴 Failed to start tunnel: \(error.localizedDescription, privacy: .public)")
 
             if startupOptions.startupMethod == .automaticOnDemand {
+                // If the VPN was started by on-demand without the basic prerequisites for
+                // it to work we skip firing pixels.  This should only be possible if the
+                // manual start attempt that preceded failed, or if the subscription has
+                // expired.  In either case it should be enough to record the manual failures
+                // for these prerequisited to avoid flooding our metrics.
+                providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
+
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
                 try? await Task.sleep(interval: .seconds(15))
+            } else {
+                // If the VPN was started manually without the basic prerequisites we always
+                // want to know as this should not be possible.
+                providerEvents.fire(.tunnelStartAttempt(.begin))
+                providerEvents.fire(.tunnelStartAttempt(.failure(error)))
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)

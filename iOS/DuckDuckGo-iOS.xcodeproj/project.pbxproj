@@ -988,6 +988,7 @@
 		9FCFCD852C75C91A006EB7A0 /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */; };
 		9FD1BDEC2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */; };
 		9FD1BDED2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */; };
+		9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */ = {isa = PBXBuildFile; productRef = 9FDD72042D895D8C0016246B /* CombineSchedulers */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7B62C8FDFD600C7A692 /* OnboardingManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B52C8FDFD600C7A692 /* OnboardingManagerMock.swift */; };
 		9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */; };
@@ -3649,6 +3650,7 @@
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
 				31E69A63280F4CB600478327 /* DuckUI in Frameworks */,
 				F42D541D29DCA40B004C4FF1 /* DesignResourcesKit in Frameworks */,
+				9FDD72052D895D8C0016246B /* CombineSchedulers in Frameworks */,
 				9F254AF12CF8D5250063B308 /* MaliciousSiteProtection in Frameworks */,
 				F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */,
 				4B94B79E2D4831D90014AAB8 /* SyncUI-iOS in Frameworks */,
@@ -7953,6 +7955,7 @@
 				4BC95E7C2D7416B2002FAB32 /* Onboarding */,
 				4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */,
 				4BC95EC42D7418B2002FAB32 /* NetworkProtection */,
+				9FDD72042D895D8C0016246B /* CombineSchedulers */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -8345,6 +8348,7 @@
 				9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */,
 				4BC8948A2C7902E6009AA141 /* XCRemoteSwiftPackageReference "wireguard-apple" */,
 				84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
+				9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */,
 			);
 			productRefGroup = 84E341931E2F7EFB00BDBA6F /* Products */;
 			projectDirPath = "";
@@ -13018,6 +13022,14 @@
 				version = 4.5.1;
 			};
 		};
+		9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/combine-schedulers.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.3;
+			};
+		};
 		B6F997C22B8F374300476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/apple-toolbox.git";
@@ -13343,6 +13355,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
+		};
+		9FDD72042D895D8C0016246B /* CombineSchedulers */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 9FDD72032D895D8C0016246B /* XCRemoteSwiftPackageReference "combine-schedulers" */;
+			productName = CombineSchedulers;
 		};
 		B6DFE6D52BC7E47F00A9CE59 /* SwiftLintTool */ = {
 			isa = XCSwiftPackageProductDependency;

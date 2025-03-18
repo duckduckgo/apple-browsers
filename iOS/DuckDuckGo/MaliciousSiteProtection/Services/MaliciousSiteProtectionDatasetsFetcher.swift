@@ -23,6 +23,7 @@ import BackgroundTasks
 import Core
 import Combine
 import BrowserServicesKit
+import CombineSchedulers
 
 protocol MaliciousSiteProtectionDatasetsFetching {
     @MainActor
@@ -37,6 +38,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     private let updateManager: MaliciousSiteUpdateManaging
     private let backgroundTaskScheduler: BGTaskScheduling
     private let application: BackgroundRefreshCapable
+    private let preferencesScheduler: AnySchedulerOf<DispatchQueue>
 
     // Avoid multiple background tasks registrations.
     private static var registeredTaskIdentifiers: Set<String> = []
@@ -71,7 +73,8 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         userPreferencesManager: MaliciousSiteProtectionPreferencesProvider,
         dateProvider: @escaping () -> Date = Date.init,
         backgroundTaskScheduler: BGTaskScheduling = BGTaskScheduler.shared,
-        application: BackgroundRefreshCapable = UIApplication.shared
+        application: BackgroundRefreshCapable = UIApplication.shared,
+        preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()
     ) {
         self.updateManager = updateManager
         self.featureFlagger = featureFlagger
@@ -79,6 +82,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
         self.dateProvider = dateProvider
         self.backgroundTaskScheduler = backgroundTaskScheduler
         self.application = application
+        self.preferencesScheduler = preferencesScheduler
     }
 }
 
@@ -140,6 +144,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
 
         preferencesManagerCancellable = userPreferencesManager
             .isMaliciousSiteProtectionOnPublisher
+            .debounce(for: 0.5, scheduler: preferencesScheduler)
             .scan((previous: isMaliciousSiteProtectionOn, current: isMaliciousSiteProtectionOn)) { accumulated, newValue in // Get the previous value of the publisher
                 (accumulated.current, newValue)
             }

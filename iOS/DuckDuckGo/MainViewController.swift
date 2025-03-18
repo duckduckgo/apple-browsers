@@ -2757,9 +2757,7 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
-        tabSwitcher.dismiss(animated: true) {
-            self.openAIChat()
-        }
+        self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 
 }

@@ -53,6 +53,7 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
     
+    @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -209,13 +210,12 @@ class TabViewController: UIViewController {
                                                       tab: tabModel,
                                                       favicons: Favicons.shared)
 
-    private let refreshControl = UIRefreshControl()
-
     private let certificateTrustEvaluator: CertificateTrustEvaluating
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
+    private var pullToRefreshLogic: PullToRefreshLogic?
 
     public var url: URL? {
         willSet {
@@ -463,7 +463,7 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
-        
+
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
         }
@@ -586,10 +586,10 @@ class TabViewController: UIViewController {
     }
 
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-//            webView.layer.cornerRadius = isPortrait ? 12 : 0
-            webViewContainer.backgroundColor = .systemPink
-        }
+//        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            webView.layer.cornerRadius = isPortrait ? 12 : 0
+            webViewContainer.backgroundColor = .clear
+//        }
     }
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
@@ -636,11 +636,12 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        webView.scrollView.refreshControl = refreshControl
+        pullToRefreshLogic = PullToRefreshLogic(with: webView, webViewContainer: webViewContainerView, scrollView: scrollView, onRefresh: refreshWebView)
+//        scrollView.refreshControl = refreshControl
         // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
         // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
         // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
-        configureRefreshControl(refreshControl)
+//        configureRefreshControl(refreshControl)
 
         updateContentMode()
 
@@ -691,106 +692,7 @@ class TabViewController: UIViewController {
             userContentController?.assertObjectDeallocated(after: 1.0)
         }
 #endif
-
-        // Initial setup
-        setupMask()
-
-        // Observe the contentOffset of the scrollView
-        scrollObservation = webView.scrollView.observe(\.contentOffset, options: [.new]) { [weak self] scrollView, change in
-            guard let self = self, let newOffset = change.newValue else { return }
-            self.updateMaskForScroll(with: newOffset)
-        }
-
-        // Also observe content size changes to handle bottom corners correctly
-        contentSizeObservation = webView.scrollView.observe(\.contentSize, options: [.new]) { [weak self] scrollView, change in
-            guard let self = self else { return }
-            self.updateMaskForScroll(with: self.webView.scrollView.contentOffset)
-        }
     }
-
-    private func setupMask() {
-        // Apply initial mask
-        updateMaskForScroll(with: webView.scrollView.contentOffset)
-
-        // Apply the mask to the webView layer
-        webView.layer.mask = maskLayer
-        webView.scrollView.backgroundColor = .systemPink
-        webView.backgroundColor = .systemPink
-    }
-
-    private func updateMaskForScroll(with offset: CGPoint) {
-        let cornerRadius = isPortrait ? 12 : 0
-        let scrollView = webView.scrollView
-
-        // Create the mask path
-        let maskPath = UIBezierPath()
-
-        // Handle the main content area with rounded corners
-        var contentRect = webView.bounds
-        var cornersToRound: UIRectCorner = [.topLeft, .topRight]
-
-        // Handle pull-to-refresh area
-        if offset.y < 0 {
-            // Create rectangle for the pull-to-refresh area
-            let refreshRect = CGRect(x: 0, y: 0, width: contentRect.width, height: -offset.y)
-            maskPath.append(UIBezierPath(rect: refreshRect))
-
-            // Adjust content rect to start below refresh area
-            contentRect.origin.y = -offset.y
-            contentRect.size.height += offset.y
-        }
-
-        // Calculate bottom position
-        let contentBottom = scrollView.contentSize.height + scrollView.contentInset.bottom
-        let visibleBottom = offset.y + scrollView.bounds.height
-
-        // Check if we're at or past the bottom
-        if visibleBottom >= contentBottom {
-            cornersToRound.insert([.bottomLeft, .bottomRight])
-
-            // If we're bouncing past the bottom, split into two parts
-            let overscroll = visibleBottom - contentBottom
-            if overscroll > 0 {
-                // Visible content with rounded corners
-                let visibleHeight = contentRect.height - overscroll
-                let visibleRect = CGRect(x: 0, y: contentRect.origin.y,
-                                        width: contentRect.width, height: visibleHeight)
-
-                let visiblePath = UIBezierPath(
-                    roundedRect: visibleRect,
-                    byRoundingCorners: cornersToRound,
-                    cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-                )
-
-                // Overscroll area (no rounded corners)
-                let overscrollRect = CGRect(x: 0, y: contentRect.origin.y + visibleHeight,
-                                           width: contentRect.width, height: overscroll)
-                let overscrollPath = UIBezierPath(rect: overscrollRect)
-
-                maskPath.append(visiblePath)
-                maskPath.append(overscrollPath)
-
-                // Apply the mask and return early
-                maskLayer.path = maskPath.cgPath
-                return
-            }
-        }
-
-        // Standard case - apply rounded corners to the content rect
-        let contentPath = UIBezierPath(
-            roundedRect: contentRect,
-            byRoundingCorners: cornersToRound,
-            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-        )
-        maskPath.append(contentPath)
-
-        // Apply the mask
-        maskLayer.path = maskPath.cgPath
-    }
-
-    private var scrollObservation: NSKeyValueObservation?
-    private var contentSizeObservation: NSKeyValueObservation?
-    private let maskLayer = CAShapeLayer()
 
     private func addObservers() {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress), options: .new, context: nil)
@@ -801,18 +703,17 @@ class TabViewController: UIViewController {
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
-        refreshControl.addAction(UIAction { [weak self] _ in
-            guard let self else { return }
-            reload()
-            delegate?.tabDidRequestRefresh(tab: self)
-            Pixel.fire(pixel: .pullToRefresh)
-            if let url = webView.url {
-                AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
-            }
-        }, for: .valueChanged)
-
-        refreshControl.backgroundColor = .systemPink
-        refreshControl.tintColor = .label
+//        refreshControl.addAction(UIAction { [weak self] _ in
+//            guard let self else { return }
+//            reload()
+//            delegate?.tabDidRequestRefresh(tab: self)
+//            Pixel.fire(pixel: .pullToRefresh)
+//            if let url = webView.url {
+//                AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
+//            }
+//        }, for: .valueChanged)
+//
+//        refreshControl.tintColor = .label
     }
 
     private func consumeCookiesThenLoadRequest(_ request: URLRequest?) {
@@ -1008,10 +909,19 @@ class TabViewController: UIViewController {
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
-    
+
+    private func refreshWebView() {
+        reload()
+        delegate?.tabDidRequestRefresh(tab: self)
+        Pixel.fire(pixel: .pullToRefresh)
+        if let url = webView.url {
+            AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
+        }
+    }
+
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
-        webView.scrollView.refreshControl?.endRefreshing()
+        pullToRefreshLogic?.endRefreshing()
     }
 
     public func reload() {
@@ -1179,7 +1089,7 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
+        pullToRefreshLogic?.setRefreshControlEnabled(isEnabled)
     }
 
     private var didGoBackForward: Bool = false {
@@ -2863,8 +2773,8 @@ extension TabViewController {
         errorMessage.textColor = theme.barTintColor
         
         if let webView {
-            webView.scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
-            webView.scrollView.refreshControl?.tintColor = .secondaryLabel
+            scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
+            scrollView.refreshControl?.tintColor = .secondaryLabel
         }
     }
     

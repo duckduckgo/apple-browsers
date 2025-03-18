@@ -57,8 +57,8 @@ public final class DataBrokerProtectionEventPixels {
     private let calendar = Calendar.current
 
     public init(database: DataBrokerProtectionRepository,
-         repository: DataBrokerProtectionEventPixelsRepository = DataBrokerProtectionEventPixelsUserDefaults(),
-         handler: EventMapping<DataBrokerProtectionSharedPixels>) {
+                repository: DataBrokerProtectionEventPixelsRepository = DataBrokerProtectionEventPixelsUserDefaults(),
+                handler: EventMapping<DataBrokerProtectionSharedPixels>) {
         self.database = database
         self.repository = repository
         self.handler = handler

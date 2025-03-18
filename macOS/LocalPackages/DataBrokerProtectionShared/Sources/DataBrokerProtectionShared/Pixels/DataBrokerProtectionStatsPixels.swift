@@ -191,10 +191,10 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     private let calendar = Calendar.current
 
     public init(database: DataBrokerProtectionRepository,
-         handler: EventMapping<DataBrokerProtectionSharedPixels>,
-         repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
-         customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
-         customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
+                handler: EventMapping<DataBrokerProtectionSharedPixels>,
+                repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
+                customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
+                customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
         self.database = database
         self.handler = handler
         self.repository = repository

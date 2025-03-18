@@ -65,12 +65,7 @@ final class FaviconUserScript: NSObject, Subfeature {
             return nil
         }
 
-        let faviconLinks = faviconsPayload.favicons
-        guard !faviconLinks.isEmpty else {
-            return nil
-        }
-
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: faviconsPayload.documentUrl)
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: faviconsPayload.documentUrl)
         return nil
     }
 }

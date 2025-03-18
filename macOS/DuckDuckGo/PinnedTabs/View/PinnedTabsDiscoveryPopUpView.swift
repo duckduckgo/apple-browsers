@@ -23,7 +23,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
     enum Constants {
         static let verticalSpacing: CGFloat = 16
-        static let panelWidth: CGFloat = 390
+        static let panelWidth: CGFloat = 410
         static let panelHeight: CGFloat = 172
     }
 
@@ -38,7 +38,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
                     .foregroundColor(.primary)
                 Text(.init(UserText.pinnedTabsDiscoveryPopoverMessage2))
                     .foregroundColor(.secondary)
-            }
+            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing)
 
             HStack {
                 createButton(title: UserText.pinnedTabsDiscoveryPopoverShared,
@@ -51,7 +51,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
                     setPerWindowPinnedTabs()
                     callback?(true)
                 }
-            }
+            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing - 8)
         }
         .padding()
         .frame(width: Constants.panelWidth, height: Constants.panelHeight)

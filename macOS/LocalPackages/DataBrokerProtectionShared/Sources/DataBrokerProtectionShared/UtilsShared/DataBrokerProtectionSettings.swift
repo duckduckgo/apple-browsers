@@ -29,6 +29,10 @@ public protocol VPNBypassSettingsProviding: AnyObject {
     var vpnBypassOnboardingShown: Bool { get set }
 }
 
+public protocol AppRunTypeProviding: AnyObject {
+    var runType: AppVersion.AppRunType { get }
+}
+
 public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
     public let defaults: UserDefaults
     public let proxySettings: TransparentProxySettings
@@ -51,10 +55,6 @@ public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
                 return URL(string: "https://dbp-staging.duckduckgo.com")!
             }
         }
-    }
-
-    public var runType: AppVersion.AppRunType? {
-        return AppVersion.runType
     }
 
     public init(defaults: UserDefaults, proxySettings: TransparentProxySettings) {

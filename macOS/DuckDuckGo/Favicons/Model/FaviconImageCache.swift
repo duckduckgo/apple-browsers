@@ -63,7 +63,9 @@ final class FaviconImageCache {
     }
 
     func insert(_ favicons: [Favicon]) {
-        guard loaded else { return }
+        guard !favicons.isEmpty, loaded else {
+            return
+        }
 
         // Remove existing favicon with the same URL
         let oldFavicons = favicons.compactMap { entries[$0.url] }

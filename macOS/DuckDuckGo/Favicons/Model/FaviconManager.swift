@@ -31,7 +31,7 @@ protocol FaviconManagement: AnyObject {
 
     func loadFavicons()
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, completion: @escaping @MainActor (Favicon?) -> Void)
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon?
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]])
 
@@ -129,21 +129,17 @@ final class FaviconManager: FaviconManagement {
     private let imageCache: FaviconImageCache
     private let referenceCache: FaviconReferenceCache
 
-    nonisolated func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink],
-                                        documentUrl: URL,
-                                        completion: @escaping @MainActor (Favicon?) -> Void) {
-        Task {
-            // Manually add favicon.ico into links
-            let faviconLinks = self.createFallbackLinksIfNeeded(faviconLinks, documentUrl: documentUrl)
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
+        // Manually add favicon.ico into links
+        let faviconLinks = createFallbackLinksIfNeeded(faviconLinks, documentUrl: documentUrl)
 
-            await self.awaitFaviconsLoaded()
-            // Fetch favicons if needed
-            let faviconLinksToFetch = await self.filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
-            let newFavicons = await self.fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
-            let favicon = await self.cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.compactMap { URL(string: $0.href) }, for: documentUrl)
+        await awaitFaviconsLoaded()
+        // Fetch favicons if needed
+        let faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
+        let newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
+        let favicon = cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.compactMap { URL(string: $0.href)?.toHttps() }, for: documentUrl)
 
-            await completion(favicon)
-        }
+        return favicon
     }
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) {
@@ -313,7 +309,7 @@ final class FaviconManager: FaviconManagement {
 
         return await withTaskGroup(of: Favicon?.self) { [faviconURLSession] group in
             for faviconLink in faviconLinks {
-                guard let faviconUrl = URL(string: faviconLink.href) else { continue }
+                guard let faviconUrl = URL(string: faviconLink.href)?.toHttps() else { continue }
                 group.addTask {
                     guard let data = try? await faviconURLSession.data(from: faviconUrl).0 else { return nil }
 

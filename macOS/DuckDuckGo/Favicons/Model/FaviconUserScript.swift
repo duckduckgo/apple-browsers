@@ -24,7 +24,7 @@ protocol FaviconUserScriptDelegate: AnyObject {
     @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
-                           for documentUrl: URL)
+                           for documentUrl: URL) async
 }
 
 final class FaviconUserScript: NSObject, Subfeature {
@@ -66,7 +66,7 @@ final class FaviconUserScript: NSObject, Subfeature {
             return nil
         }
 
-        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: documentURL)
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: documentURL)
         return nil
     }
 }

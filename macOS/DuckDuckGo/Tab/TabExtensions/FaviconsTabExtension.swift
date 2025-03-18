@@ -80,14 +80,14 @@ final class FaviconsTabExtension {
 
 extension FaviconsTabExtension: FaviconUserScriptDelegate {
     @MainActor
-    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL) {
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript, didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink], for documentUrl: URL) async {
         guard documentUrl != .error else { return }
-        faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl) { favicon in
-            guard documentUrl == self.content?.urlForWebView, let favicon = favicon else {
-                return
-            }
-            self.favicon = favicon.image
+        let favicon = await faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl)
+
+        guard let favicon, documentUrl == content?.urlForWebView else {
+            return
         }
+        self.favicon = favicon.image
     }
 }
 

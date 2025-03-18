@@ -30,31 +30,13 @@ protocol FaviconUserScriptDelegate: AnyObject {
 final class FaviconUserScript: NSObject, Subfeature {
 
     struct FaviconsFoundPayload: Codable, Equatable {
-        let documentUrl: String
-        let favicons: [FaviconAttr]
-
-        struct FaviconAttr: Codable, Equatable {
-            let href: String
-            let rel: String
-        }
+        let documentUrl: URL
+        let favicons: [FaviconLink]
     }
 
     struct FaviconLink: Codable, Equatable {
-        let url: URL
+        let href: URL
         let rel: String
-
-        init(url: URL, rel: String) {
-            self.url = url
-            self.rel = rel
-        }
-
-        init?(_ attr: FaviconsFoundPayload.FaviconAttr) {
-            guard let url = attr.href.url?.toHttps() else {
-                return nil
-            }
-            self.url = url
-            self.rel = attr.rel
-        }
     }
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -78,18 +60,17 @@ final class FaviconUserScript: NSObject, Subfeature {
 
     @MainActor
     private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params),
-              let documentURL = faviconsPayload.documentUrl.url
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params)
         else {
             return nil
         }
 
-        let faviconLinks = faviconsPayload.favicons.compactMap(FaviconLink.init)
+        let faviconLinks = faviconsPayload.favicons
         guard !faviconLinks.isEmpty else {
             return nil
         }
 
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: documentURL)
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: faviconsPayload.documentUrl)
         return nil
     }
 }

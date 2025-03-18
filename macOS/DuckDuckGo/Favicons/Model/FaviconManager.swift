@@ -155,7 +155,7 @@ final class FaviconManager: FaviconManagement {
         // Fetch favicons if needed
         let faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
         let newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
-        let favicon = cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.url), for: documentUrl)
+        let favicon = cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl)
 
         return favicon
     }
@@ -310,13 +310,13 @@ final class FaviconManager: FaviconManagement {
             return faviconLinks
         }
         return [
-            FaviconUserScript.FaviconLink(url: root.appending("favicon.ico"), rel: "favicon.ico")
+            FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico")
         ]
     }
 
     private nonisolated func filteringAlreadyFetchedFaviconLinks(from faviconLinks: [FaviconUserScript.FaviconLink]) async -> [FaviconUserScript.FaviconLink] {
         let urlsToLinks = faviconLinks.reduce(into: [URL: FaviconUserScript.FaviconLink]()) { result, faviconLink in
-            result[faviconLink.url] = faviconLink
+            result[faviconLink.href] = faviconLink
         }
         let weekAgo = Date.weekAgo
         let cachedFavicons = await self.imageCache.getFavicons(with: urlsToLinks.keys)?
@@ -337,7 +337,7 @@ final class FaviconManager: FaviconManagement {
 
         return await withTaskGroup(of: Favicon?.self) { [faviconURLSession] group in
             for faviconLink in faviconLinks {
-                let faviconUrl = faviconLink.url
+                let faviconUrl = faviconLink.href
                 group.addTask {
                     guard let data = try? await faviconURLSession.data(from: faviconUrl).0 else { return nil }
 

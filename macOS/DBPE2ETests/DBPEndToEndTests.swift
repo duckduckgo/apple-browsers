@@ -46,13 +46,13 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     vpnBypassSettings: VPNBypassSettingsProvidingMock(),
+                                                     vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(), webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 
@@ -443,16 +443,20 @@ private extension DBPEndToEndTests {
                      birthYear: birthYear)
     }
 
-    final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
+    final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
         var vpnBypassSupport: Bool
-        var vpnBypass: Bool
+        var vpnBypassEnabled: Bool
+        var vpnBypassStatus: VPNBypassStatus
         var vpnBypassOnboardingShown: Bool
 
-        init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
+        init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
             self.vpnBypassSupport = vpnBypassSupport
-            self.vpnBypass = vpnBypass
+            self.vpnBypassEnabled = vpnBypassEnabled
+            self.vpnBypassStatus = vpnBypassStatus
             self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
         }
+
+        func applyVPNBypass(_ bypass: Bool) {}
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {

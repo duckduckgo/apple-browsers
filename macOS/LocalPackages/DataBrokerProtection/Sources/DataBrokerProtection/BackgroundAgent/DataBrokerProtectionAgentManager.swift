@@ -28,21 +28,20 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionShared
-import NetworkProtectionProxy
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging) -> DataBrokerProtectionAgentManager {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassFeatureProvider: VPNBypassFeatureProviding) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
         let pixelHandler = DataBrokerProtectionPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let executionConfig = DataBrokerExecutionConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: executionConfig)
 
@@ -122,7 +121,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
             userNotificationService: notificationService,
-            dataBrokerProtectionSettings: dbpSettings)
+            dataBrokerProtectionSettings: dbpSettings,
+            vpnBypassFeatureProvider: vpnBypassFeatureProvider)
 
         return DataBrokerProtectionAgentManager(
             userNotificationService: notificationService,

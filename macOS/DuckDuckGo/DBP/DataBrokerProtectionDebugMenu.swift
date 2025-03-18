@@ -50,7 +50,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
-    private let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
     init() {
         super.init(title: "Personal Information Removal")
@@ -292,13 +292,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func toggleVPNBypass() {
         Task {
-            DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP)).vpnBypass.toggle()
-            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting()
+            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(!VPNBypassFeatureProvider().vpnBypassEnabled)
         }
     }
 
     @objc private func resetVPNBypassOnboarding() {
-        DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP)).vpnBypassOnboardingShown = false
+        DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown = false
     }
 
     @objc private func toggleShowStatusMenuItem() {

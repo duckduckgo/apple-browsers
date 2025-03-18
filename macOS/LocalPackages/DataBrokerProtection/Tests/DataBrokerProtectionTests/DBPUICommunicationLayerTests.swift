@@ -29,7 +29,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
@@ -54,7 +54,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
@@ -76,7 +76,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
 
     func testWhenHandshakeCalled_andDelegateIsNil_thenHandshakeUserDataIsDefaultTrue() async throws {
         // Given
-        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(), privacyConfig: PrivacyConfigurationManagingMock())
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
 
@@ -140,7 +140,7 @@ private final class MockDelegate: DBPUICommunicationDelegate {
 
     func openSendFeedbackModal() async {}
 
-    func applyVPNBypassSetting() async {}
+    func applyVPNBypassSetting(_ bypass: Bool) async {}
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

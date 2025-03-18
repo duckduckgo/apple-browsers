@@ -69,12 +69,12 @@ extension OperationsManager {
 
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
     private let vpnIPCClient: VPNControllerXPCClient?
-    private let dbpSettings: DataBrokerProtectionSettings?
+    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding?
 
-    init(vpnIPCClient: VPNControllerXPCClient?, dbpSettings: DataBrokerProtectionSettings?) {
+    init(vpnIPCClient: VPNControllerXPCClient?, vpnBypassFeatureProvider: VPNBypassFeatureProviding?) {
         vpnIPCClient?.register { _ in }
         self.vpnIPCClient = vpnIPCClient
-        self.dbpSettings = dbpSettings
+        self.vpnBypassFeatureProvider = vpnBypassFeatureProvider
     }
 
     private var vpnConnectionState: String {
@@ -82,7 +82,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
 
     private var vpnBypassStatus: String {
-        dbpSettings?.vpnBypassStatus.rawValue ?? "unknown"
+        vpnBypassFeatureProvider?.vpnBypassStatus.rawValue ?? "unknown"
     }
 
     internal func runOperation(operationData: BrokerJobData,

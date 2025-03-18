@@ -167,16 +167,20 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
-public final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
+public final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
     public var vpnBypassSupport: Bool
-    public var vpnBypass: Bool
+    public var vpnBypassEnabled: Bool
+    public var vpnBypassStatus: VPNBypassStatus
     public var vpnBypassOnboardingShown: Bool
 
-    public init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
+    public init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
         self.vpnBypassSupport = vpnBypassSupport
-        self.vpnBypass = vpnBypass
+        self.vpnBypassEnabled = vpnBypassEnabled
+        self.vpnBypassStatus = vpnBypassStatus
         self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
     }
+
+    public func applyVPNBypass(_ bypass: Bool) {}
 }
 
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
@@ -1439,7 +1443,8 @@ public extension DefaultDataBrokerOperationDependencies {
                                                runnerProvider: MockRunnerProvider(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
-                                               userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)))
+                                               userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+                                               vpnBypassFeatureProvider: VPNBypassFeatureProviderMock())
     }
 }
 

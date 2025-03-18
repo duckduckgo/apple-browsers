@@ -31,13 +31,13 @@ public final class DBPUIUserContentController: WKUserContentController {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         dataBrokerProtectionSettings: DataBrokerProtectionSettings) {
+         vpnBypassFeatureProvider: VPNBypassFeatureProviding) {
 
         dbpUIUserScripts = DBPUIUserScript(privacyConfig: privacyConfigurationManager,
                                            prefs: prefs,
                                            delegate: delegate,
                                            webUISettings: webUISettings,
-                                           dataBrokerProtectionSettings: dataBrokerProtectionSettings)
+                                           vpnBypassFeatureProvider: vpnBypassFeatureProvider)
 
         super.init()
 
@@ -70,11 +70,13 @@ public final class DBPUIUserScript: UserScriptsProvider {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         dataBrokerProtectionSettings: DataBrokerProtectionSettings) {
+         vpnBypassFeatureProvider: VPNBypassFeatureProviding) {
         self.webUISettings = webUISettings
         contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
-        dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings, vpnBypassSettings: dataBrokerProtectionSettings, privacyConfig: privacyConfig)
+        dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
+                                                          vpnBypassFeatureProvider: vpnBypassFeatureProvider,
+                                                          privacyConfig: privacyConfig)
         dbpUICommunicationLayer.delegate = delegate
         dbpUICommunicationLayer.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dbpUICommunicationLayer)
@@ -105,13 +107,13 @@ extension WKWebViewConfiguration {
                                         prefs: ContentScopeProperties,
                                         delegate: DBPUICommunicationDelegate,
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                                        dataBrokerProtectionSettings: DataBrokerProtectionSettings) {
+                                        vpnBypassFeatureProvider: VPNBypassFeatureProviding) {
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = DBPUIUserContentController(with: privacyConfig,
                                                                prefs: prefs,
                                                                delegate: delegate,
                                                                webUISettings: webUISettings,
-                                                               dataBrokerProtectionSettings: dataBrokerProtectionSettings)
+                                                               vpnBypassFeatureProvider: vpnBypassFeatureProvider)
         self.userContentController = userContentController
      }
 }

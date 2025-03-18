@@ -21,7 +21,6 @@ import NetworkProtection
 import NetworkProtectionIPC
 import DataBrokerProtection
 import DataBrokerProtectionShared
-import NetworkProtectionProxy
 
 struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
     let vpnConnectionState: String
@@ -35,20 +34,18 @@ struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
 
 final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
     private let vpnIPCClient: VPNControllerXPCClient
-    private let dbpSettings: DataBrokerProtectionSettings
 
     init() {
         let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
     }
 
     func collectMetadata() async -> DBPFeedbackMetadata {
         DBPFeedbackMetadata(
             vpnConnectionState: vpnIPCClient.connectionStatusObserver.recentValue.description,
-            vpnBypassStatus: dbpSettings.vpnBypassStatus.rawValue
+            vpnBypassStatus: VPNBypassFeatureProvider().vpnBypassStatus.rawValue
         )
     }
 }

@@ -23,7 +23,6 @@ import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionShared
-import NetworkProtectionProxy
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
@@ -33,6 +32,7 @@ protocol DBPUIScanOps: AnyObject {
 public final class DBPUIViewModel {
     private let dataManager: DataBrokerProtectionDataManaging
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
+    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding
 
     private let privacyConfig: PrivacyConfigurationManaging?
     private let prefs: ContentScopeProperties?
@@ -43,6 +43,7 @@ public final class DBPUIViewModel {
 
     public init(dataManager: DataBrokerProtectionDataManaging,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
+                vpnBypassFeatureProvider: VPNBypassFeatureProviding,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
@@ -50,6 +51,7 @@ public final class DBPUIViewModel {
                 webView: WKWebView? = nil) {
         self.dataManager = dataManager
         self.agentInterface = agentInterface
+        self.vpnBypassFeatureProvider = vpnBypassFeatureProvider
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
         self.privacyConfig = privacyConfig
@@ -62,12 +64,12 @@ public final class DBPUIViewModel {
         guard let prefs = prefs else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        let settings = DataBrokerProtectionSettings(defaults: .dbp,
-                                                    proxySettings: TransparentProxySettings(defaults: .netP))
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
                                               delegate: dataManager.cache,
-                                              webUISettings: webUISettings, dataBrokerProtectionSettings: settings)
+                                              webUISettings: webUISettings,
+                                              vpnBypassFeatureProvider: vpnBypassFeatureProvider)
         dataManager.cache.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

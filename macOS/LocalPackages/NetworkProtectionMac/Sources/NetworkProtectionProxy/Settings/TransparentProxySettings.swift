@@ -20,6 +20,7 @@ import Combine
 import Foundation
 
 public protocol TransparentProxySettingsProviding: AnyObject {
+    func isExcluding(appIdentifier: String) -> Bool
     subscript(bundleId bundleID: String) -> VPNRoutingRule? { get set }
 }
 

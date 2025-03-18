@@ -28,12 +28,12 @@ protocol AIChatUserScriptDelegate: AnyObject {
     /// - Parameters:
     ///   - userScript: The user script that received the message
     ///   - message: The type of message received
-    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageNames)
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName)
 }
 
 final class AIChatUserScript: NSObject, Subfeature {
 
-    enum MessageNames: String, CaseIterable {
+    enum MessageName: String, CaseIterable {
         case openAIChat
         case getAIChatNativeConfigValues
         case getAIChatNativeHandoffData
@@ -64,23 +64,18 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        switch MessageNames(rawValue: methodName) {
+        guard let messageName = MessageName(rawValue: methodName) else { return nil }
+
+        delegate?.aiChatUserScript(self, didReceiveMessage: messageName)
+
+        switch messageName {
         case .getAIChatNativeConfigValues:
-            delegate?.aiChatUserScript(self, didReceiveMessage: .getAIChatNativeConfigValues)
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
-            delegate?.aiChatUserScript(self, didReceiveMessage: .getAIChatNativeHandoffData)
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
-            delegate?.aiChatUserScript(self, didReceiveMessage: .openAIChat)
             return handler.openAIChat
-        case .closeAIChat:
-            delegate?.aiChatUserScript(self, didReceiveMessage: .closeAIChat)
-            return nil
-        case .openAIChatSettings:
-            delegate?.aiChatUserScript(self, didReceiveMessage: .openAIChatSettings)
-            return nil
-        default:
+        case .closeAIChat, .openAIChatSettings:
             return nil
         }
     }

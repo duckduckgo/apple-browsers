@@ -34,6 +34,8 @@ final class PrivacyDashboardTabExtension {
 
     @Published private(set) var privacyInfo: PrivacyInfo?
 
+    private(set) var isCertificateValid: Bool = true
+
     private var previousPrivacyInfosByURL: [String: PrivacyInfo] = [:]
 
     private var cancellables = Set<AnyCancellable>()
@@ -86,8 +88,8 @@ final class PrivacyDashboardTabExtension {
 
     @MainActor
     private func updatePrivacyInfo(with trust: SecTrust?) async {
-        let isValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: trust)
-        let serverTrustEvaluation = ServerTrustEvaluation(securityTrust: trust, isValid: isValid)
+        isCertificateValid = certificateTrustEvaluator.evaluateCertificateTrust(trust: trust)
+        let serverTrustEvaluation = ServerTrustEvaluation(securityTrust: trust, isValid: isCertificateValid)
         self.privacyInfo?.serverTrustEvaluation = serverTrustEvaluation
     }
 
@@ -193,6 +195,7 @@ extension PrivacyDashboardTabExtension: AutoconsentUserScriptDelegate {
 protocol PrivacyDashboardProtocol: AnyObject, NavigationResponder {
     var privacyInfo: PrivacyInfo? { get }
     var privacyInfoPublisher: AnyPublisher<PrivacyInfo?, Never> { get }
+    var isCertificateValid: Bool { get }
 
     func setMainFrameConnectionUpgradedTo(_ upgradedUrl: URL?)
 }
@@ -221,7 +224,7 @@ extension Tab {
     }
 
     var isCertificateValid: Bool {
-        self.privacyInfo?.serverTrustEvaluation?.isValid ?? true
+        self.privacyDashboard?.isCertificateValid ?? true
     }
 
 }

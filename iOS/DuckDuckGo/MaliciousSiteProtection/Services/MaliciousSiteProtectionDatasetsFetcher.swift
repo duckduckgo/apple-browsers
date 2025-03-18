@@ -244,6 +244,23 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
         }
     }
 
+    @MainActor
+    func subscribeToScamProtectionFlagChanges() {
+        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        featureFlagOverrideCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .scamSiteProtection || $0.0 == .maliciousSiteProtection }
+            .sink { [weak self] (_, value) in
+                if value {
+                    self?.startUpdateTasks()
+                } else {
+                    self?.stopUpdateTasks()
+                }
+            }
+    }
+
 }
 
 // MARK: - Background Tasks
@@ -276,22 +293,6 @@ extension MaliciousSiteProtectionDatasetsFetcher {
 
         subscribeToDetectionPreferences()
         subscribeToScamProtectionFlagChanges()
-    }
-
-    private func subscribeToScamProtectionFlagChanges() {
-        guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        featureFlagOverrideCancellable = overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .scamSiteProtection || $0.0 == .maliciousSiteProtection }
-            .sink { [weak self] (_, value) in
-                if value {
-                    self?.startUpdateTasks()
-                } else {
-                    self?.stopUpdateTasks()
-                }
-            }
     }
 
     private func scheduleBackgroundRefreshTask(datasetType: DataManager.StoredDataType.Kind) {

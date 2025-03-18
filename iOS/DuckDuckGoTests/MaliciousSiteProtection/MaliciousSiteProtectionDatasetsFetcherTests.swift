@@ -24,7 +24,7 @@ import enum UIKit.UIBackgroundRefreshStatus
 import CombineSchedulers
 @testable import DuckDuckGo
 
-@Suite("Malicious Site Protection - Feature Flags")
+@Suite("Malicious Site Protection - Datasets Fetcher")
 final class MaliciousSiteProtectionDatasetsFetcherTests {
     private var sut: MaliciousSiteProtectionDatasetsFetcher!
     private var updateManagerMock: MockMaliciousSiteProtectionUpdateManager!

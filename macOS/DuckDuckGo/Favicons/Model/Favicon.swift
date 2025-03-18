@@ -62,6 +62,23 @@ struct Favicon {
             default: self = .huge
             }
         }
+
+        var smaller: SizeCategory? {
+            switch self {
+            case .noImage:
+                return nil
+            case .tiny:
+                return .noImage
+            case .small:
+                return .tiny
+            case .medium:
+                return .small
+            case .large:
+                return .medium
+            case .huge:
+                return .large
+            }
+        }
     }
 
     init(identifier: UUID, url: URL, image: NSImage?, relationString: String, documentUrl: URL, dateCreated: Date) {

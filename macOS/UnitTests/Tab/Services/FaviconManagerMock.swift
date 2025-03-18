@@ -37,19 +37,19 @@ final class FaviconManagerMock: FaviconManagement {
         // no-op
     }
 
-    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: DuckDuckGo_Privacy_Browser.Favicon.SizeCategory) -> URL? {
+    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> URL? {
         return nil
     }
 
-    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         return nil
     }
 
-    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         return nil
     }
 
-    func getCachedFavicon(forDomainOrAnySubdomain host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+    func getCachedFavicon(forDomainOrAnySubdomain host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         return nil
     }
 

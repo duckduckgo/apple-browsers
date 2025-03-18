@@ -27,8 +27,8 @@ protocol FaviconUserScriptProvider {
 extension UserScripts: FaviconUserScriptProvider {}
 
 final class FaviconsTabExtension {
+    let faviconManagement: FaviconManagement
     private var cancellables = Set<AnyCancellable>()
-    private let faviconManagement: FaviconManagement
     private weak var faviconUserScript: FaviconUserScript?
     private var content: Tab.TabContent?
     @Published private(set) var favicon: NSImage?

@@ -31,12 +31,30 @@ final class FaviconUserScript: NSObject, Subfeature {
 
     struct FaviconsFoundPayload: Codable, Equatable {
         let documentUrl: String
-        let favicons: [FaviconLink]
+        let favicons: [FaviconAttr]
+
+        struct FaviconAttr: Codable, Equatable {
+            let href: String
+            let rel: String
+        }
     }
 
     struct FaviconLink: Codable, Equatable {
-        let href: String
+        let url: URL
         let rel: String
+
+        init(url: URL, rel: String) {
+            self.url = url
+            self.rel = rel
+        }
+
+        init?(_ attr: FaviconsFoundPayload.FaviconAttr) {
+            guard let url = attr.href.url?.toHttps() else {
+                return nil
+            }
+            self.url = url
+            self.rel = attr.rel
+        }
     }
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -66,7 +84,12 @@ final class FaviconUserScript: NSObject, Subfeature {
             return nil
         }
 
-        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconsPayload.favicons, for: documentURL)
+        let faviconLinks = faviconsPayload.favicons.compactMap(FaviconLink.init)
+        guard !faviconLinks.isEmpty else {
+            return nil
+        }
+
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: documentURL)
         return nil
     }
 }

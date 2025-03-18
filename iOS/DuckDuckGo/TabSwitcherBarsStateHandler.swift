@@ -19,7 +19,6 @@
 
 import UIKit
 
-#warning("NOT UNIT TESTED")
 class TabSwitcherBarsStateHandler {
 
     let plusButton = UIBarButtonItem()
@@ -46,13 +45,16 @@ class TabSwitcherBarsStateHandler {
     private(set) var showAIChatButton = false
     private(set) var canShowEditButton = false
 
+    private(set) var isFirstUpdate = true
+
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
                 totalTabsCount: Int,
                 containsWebPages: Bool,
                 showAIChatButton: Bool) {
 
-        guard interfaceMode != self.interfaceMode
+        guard isFirstUpdate
+                || interfaceMode != self.interfaceMode
                 || selectedTabsCount != self.selectedTabsCount
                 || totalTabsCount != self.totalTabsCount
                 || containsWebPages != self.containsWebPages
@@ -62,6 +64,7 @@ class TabSwitcherBarsStateHandler {
             return
         }
 
+        self.isFirstUpdate = false
         self.interfaceMode = interfaceMode
         self.selectedTabsCount = selectedTabsCount
         self.totalTabsCount = totalTabsCount

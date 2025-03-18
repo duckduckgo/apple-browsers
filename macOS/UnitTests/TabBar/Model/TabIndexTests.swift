@@ -253,7 +253,9 @@ final class TabIndexTests: XCTestCase {
     @MainActor
     private func pinnedTabsManagerProvider(tabsCount: Int) -> PinnedTabsManagerProviding {
         let mock = PinnedTabsManagerProvidingMock()
-        mock.pinnedTabsManager = PinnedTabsManager(tabCollection: tabCollection(tabsCount: tabsCount))
+        let pinnedTabsManager = PinnedTabsManager(tabCollection: tabCollection(tabsCount: tabsCount))
+        mock.pinnedTabsManager = pinnedTabsManager
+        mock.newPinnedTabsManager = pinnedTabsManager
         return mock
     }
 }

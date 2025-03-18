@@ -101,7 +101,7 @@ final class Fire {
          autoconsentManagement: AutoconsentManagement? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
-         pinnedTabsManagerProvider: PinnedTabsManagerProvider? = nil,
+         pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
          tld: TLD,
          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
          syncService: DDGSyncing? = nil,

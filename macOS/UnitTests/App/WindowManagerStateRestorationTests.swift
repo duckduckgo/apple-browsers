@@ -79,7 +79,6 @@ final class WindowManagerStateRestorationTests: XCTestCase {
                 shouldLoadInBackground: false)
         ]
 
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: .init(tabs: pinnedTabs))
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0))
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2))
         WindowsManager.openNewWindow(with: model1)

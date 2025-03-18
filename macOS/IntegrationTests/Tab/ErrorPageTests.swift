@@ -855,6 +855,7 @@ class ErrorPageTests: XCTestCase {
         let provider = PinnedTabsManagerProvidingMock()
         let manager = PinnedTabsManager()
         provider.pinnedTabsManager = manager
+        provider.newPinnedTabsManager = manager
         manager.pin(tab)
 
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: []), pinnedTabsManagerProvider: provider)

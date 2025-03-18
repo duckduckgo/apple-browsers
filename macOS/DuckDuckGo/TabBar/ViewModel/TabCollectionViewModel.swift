@@ -682,8 +682,8 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func handleTabUnpinnedInAnotherTabCollectionViewModel(at index: Int) {
-        if selectionIndex == .pinned(index) {
-            didRemoveTab(tab: tabCollection.tabs[safe: index]!, at: .pinned(index), withParent: nil)
+        if selectionIndex == .pinned(index), let tab = tab(at: .pinned(index)) {
+            didRemoveTab(tab: tab, at: .pinned(index), withParent: nil)
         }
     }
 

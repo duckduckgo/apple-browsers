@@ -42,6 +42,10 @@ extension UserDefaults {
         }
     }
 
+    func resetVPNIsUsingSystemExtension() {
+        removeObject(forKey: #keyPath(vpnIsUsingSystemExtension))
+    }
+
     var vpnIsUsingSystemExtensionPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.vpnIsUsingSystemExtension).eraseToAnyPublisher()
     }

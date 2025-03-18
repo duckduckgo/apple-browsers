@@ -36,7 +36,7 @@ public final class VPNAppState {
     // MARK: - Resetting to Defaults
 
     public func resetToDefaults() {
-        defaults.vpnIsUsingSystemExtension = false
+        defaults.resetVPNIsUsingSystemExtension()
     }
 
     // MARK: - System Extension support

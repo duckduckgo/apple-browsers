@@ -43,7 +43,7 @@ class EnableAutofillSettingsTableViewCell: UITableViewCell {
     private lazy var titleLabel: UILabel = {
         let label = UILabel(frame: CGRect.zero)
         label.font = .preferredFont(forTextStyle: .callout)
-        label.textColor = .gray90
+        label.textColor = UIColor(baseColor: .gray90)
         label.text = UserText.autofillEnableSettings
         label.numberOfLines = 0
         label.lineBreakMode = .byWordWrapping

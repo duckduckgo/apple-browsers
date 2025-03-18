@@ -359,24 +359,29 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                 }))
         }
 
+        if proxySettings.proxyAvailable {
+            menuItems.append(contentsOf: [
+                .textWithDetail(
+                    icon: Image(.window16),
+                    title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
+                    detail: "(\(excludedAppsMinusDBPAgent.count))",
+                    action: { [weak self] in
+
+                        try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.manageExcludedApps)
+                    }),
+                .textWithDetail(
+                    icon: Image(.globe16),
+                    title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
+                    detail: "(\(proxySettings.excludedDomains.count))",
+                    action: { [weak self] in
+
+                        try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.manageExcludedDomains)
+                    }),
+                .divider()
+            ])
+        }
+
         menuItems.append(contentsOf: [
-            .textWithDetail(
-                icon: Image(.window16),
-                title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
-                detail: "(\(excludedAppsMinusDBPAgent.count))",
-                action: { [weak self] in
-
-                    try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.manageExcludedApps)
-            }),
-            .textWithDetail(
-                icon: Image(.globe16),
-                title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
-                detail: "(\(proxySettings.excludedDomains.count))",
-                action: { [weak self] in
-
-                    try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.manageExcludedDomains)
-            }),
-            .divider(),
             .text(icon: Image(.help16), title: UserText.vpnStatusViewFAQMenuItemTitle, action: { [weak self] in
                 try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
             }),
@@ -534,7 +539,12 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         } else {
             isUserAuthenticated = subscriptionManagerV2.isUserAuthenticated
             entitlementsCheck = {
-                .success(await self.subscriptionManagerV2.isFeatureAvailableForUser(.networkProtection))
+                do {
+                    let available = try await self.subscriptionManagerV2.isFeatureAvailableForUser(.networkProtection)
+                    return .success(available)
+                } catch {
+                    return .failure(error)
+                }
             }
         }
         guard isUserAuthenticated else { return }
@@ -566,7 +576,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
 extension DuckDuckGoVPNAppDelegate: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
         PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
                       frequency: .legacyDailyAndCount)
     }

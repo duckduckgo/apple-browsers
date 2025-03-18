@@ -23,7 +23,13 @@ import Core
 class BookmarksTextFieldCell: UITableViewCell {
 
     static let reuseIdentifier = "BookmarksTextFieldCell"
-    
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+    }
+
+
     var title: String? {
         get {
             textField.text

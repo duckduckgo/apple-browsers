@@ -36,10 +36,14 @@ tags:
 
 - tapOn: "Cancel"
 - tapOn: "Tab Switcher"
-- tapOn: "Add all tabs as bookmarks"
+- tapOn: "Edit"
+- tapOn: "Select Tabs"
+- tapOn: "More Menu"
+- tapOn: "Bookmark All Tabs"
 
 - assertVisible: "Bookmark 5 tabs?"
 - tapOn: "Bookmark"
+- tapOn: "Done"
 - tapOn: "Done"
 
 - assertVisible: "Bookmarks"

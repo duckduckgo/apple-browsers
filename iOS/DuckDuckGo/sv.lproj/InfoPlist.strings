@@ -4,6 +4,9 @@
 /* Bundle name */
 "CFBundleName" = "DuckDuckGo";
 
+/* (No Comment) */
+"Duck.ai" = "Duck.ai";
+
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Gör att du kan ladda upp foton och videor";
 
@@ -30,4 +33,7 @@
 
 /* (No Comment) */
 "Search Passwords" = "Sök lösenord";
+
+/* (No Comment) */
+"Voice Search" = "Röstsökning";
 

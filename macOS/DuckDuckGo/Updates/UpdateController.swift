@@ -137,6 +137,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private var internalUserDecider: InternalUserDecider
     private var updateProcessCancellable: AnyCancellable!
 
+    private var shouldCheckNewApplicationVersion = true
+
     // MARK: - Public
 
     init(internalUserDecider: InternalUserDecider) {
@@ -155,7 +157,18 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 #endif
     }
 
-    func checkNewApplicationVersion() {
+    func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {
+        /// Displays the "Browser Updated/Downgraded" notification only after the first complete update cycle
+        if updateProgress.isDone, shouldCheckNewApplicationVersion {
+            /// Proceed only if no newer update is available for the user
+            if case .updateCycleDone(.finishedWithNoUpdateFound) = updateProgress {
+               checkNewApplicationVersion()
+            }
+            shouldCheckNewApplicationVersion = false
+        }
+    }
+
+    private func checkNewApplicationVersion() {
         let updateStatus = ApplicationUpdateDetector.isApplicationUpdated()
         switch updateStatus {
         case .noChange: break

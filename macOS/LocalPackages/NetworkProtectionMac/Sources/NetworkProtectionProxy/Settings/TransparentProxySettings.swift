@@ -19,7 +19,11 @@
 import Combine
 import Foundation
 
-public final class TransparentProxySettings {
+public protocol TransparentProxySettingsProviding: AnyObject {
+    subscript(bundleId bundleID: String) -> VPNRoutingRule? { get set }
+}
+
+public final class TransparentProxySettings: TransparentProxySettingsProviding {
     public enum Change: Codable {
         case appRoutingRules(_ routingRules: VPNAppRoutingRules)
         case excludedDomains(_ excludedDomains: [String])

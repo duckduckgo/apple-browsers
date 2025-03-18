@@ -21,6 +21,7 @@ import NetworkProtection
 import NetworkProtectionIPC
 import DataBrokerProtection
 import DataBrokerProtectionShared
+import NetworkProtectionProxy
 
 struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
     let vpnConnectionState: String
@@ -41,7 +42,7 @@ final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
-        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        self.dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
     }
 
     func collectMetadata() async -> DBPFeedbackMetadata {

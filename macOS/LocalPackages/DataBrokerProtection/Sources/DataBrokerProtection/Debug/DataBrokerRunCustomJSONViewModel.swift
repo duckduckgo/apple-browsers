@@ -23,6 +23,7 @@ import Common
 import ContentScopeScripts
 import Combine
 import os.log
+import NetworkProtectionProxy
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -179,7 +180,8 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                                             messageSecret: messageSecret,
                                                             featureToggles: features)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp,
+                                                       proxySettings: TransparentProxySettings(defaults: .netP))
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,
                                                                                    settings: dbpSettings)
         self.emailService = EmailService(authenticationManager: authenticationManager,

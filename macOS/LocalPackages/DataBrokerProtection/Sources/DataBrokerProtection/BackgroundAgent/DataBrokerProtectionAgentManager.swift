@@ -28,6 +28,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionShared
+import NetworkProtectionProxy
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
@@ -41,7 +42,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         let pixelHandler = DataBrokerProtectionPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
         let executionConfig = DataBrokerExecutionConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: executionConfig)
 

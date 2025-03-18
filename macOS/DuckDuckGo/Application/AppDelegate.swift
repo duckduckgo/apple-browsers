@@ -47,6 +47,7 @@ import DataBrokerProtectionShared
 import RemoteMessaging
 import os.log
 import Freemium
+import NetworkProtectionProxy
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -347,7 +348,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: TransparentProxySettings(defaults: .netP))
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running

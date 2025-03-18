@@ -35,7 +35,7 @@ public protocol AppRunTypeProviding: AnyObject {
 
 public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
     public let defaults: UserDefaults
-    public let proxySettings: TransparentProxySettings
+    public let proxySettings: TransparentProxySettingsProviding
 
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
@@ -57,7 +57,7 @@ public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
         }
     }
 
-    public init(defaults: UserDefaults, proxySettings: TransparentProxySettings) {
+    public init(defaults: UserDefaults, proxySettings: TransparentProxySettingsProviding) {
         self.defaults = defaults
         self.proxySettings = proxySettings
     }

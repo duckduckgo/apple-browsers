@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Common
 import os.log
 import DataBrokerProtectionShared
+import NetworkProtectionProxy
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async
@@ -61,7 +62,8 @@ public final class DBPUIViewModel {
         guard let prefs = prefs else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        let settings = DataBrokerProtectionSettings(defaults: .dbp,
+                                                    proxySettings: TransparentProxySettings(defaults: .netP))
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
                                               delegate: dataManager.cache,

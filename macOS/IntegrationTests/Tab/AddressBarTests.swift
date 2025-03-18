@@ -1014,9 +1014,9 @@ extension NSImage {
 }
 
 class MockCertificateEvaluator: CertificateTrustEvaluating {
-    var isValidCertificate: Bool = true
+    var isValidCertificate: Bool? = true
 
-    func evaluateCertificateTrust(trust: SecTrust?) -> Bool {
+    func evaluateCertificateTrust(trust: SecTrust?) -> Bool? {
         return isValidCertificate
     }
 }

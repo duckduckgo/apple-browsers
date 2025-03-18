@@ -34,11 +34,7 @@ struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
               settings.isAIChatAddressBarUserSettingsEnabled else {
             return .share
         }
-
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            return (url?.isDuckDuckGoSearch == false) ? .share : .chat
-        }
-
-        return (url?.isDuckDuckGoSearch == true) ? .chat : .share
+        
+        return .chat
     }
 }

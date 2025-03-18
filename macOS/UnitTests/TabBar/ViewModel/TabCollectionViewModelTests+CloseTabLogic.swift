@@ -143,7 +143,7 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyClosedTab() {
+    func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyOpenedTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
 

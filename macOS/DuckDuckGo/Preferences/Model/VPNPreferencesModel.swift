@@ -78,7 +78,11 @@ final class VPNPreferencesModel: ObservableObject {
     }
 
     private var isExclusionsFeatureAvailableInBuild: Bool {
+#if APPSTORE
         vpnAppState.isUsingSystemExtension
+#else
+        true
+#endif
     }
 
     /// Whether legacy app exclusions should be shown

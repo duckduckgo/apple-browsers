@@ -110,10 +110,10 @@ public struct EmailService: EmailServiceProtocol {
     }
 
     public func getConfirmationLink(from email: String,
-                             numberOfRetries: Int = 100,
-                             pollingInterval: TimeInterval = 30,
-                             attemptId: UUID,
-                             shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
+                                    numberOfRetries: Int = 100,
+                                    pollingInterval: TimeInterval = 30,
+                                    attemptId: UUID,
+                                    shouldRunNextStep: @escaping () -> Bool) async throws -> URL {
         let pollingTimeInNanoSecondsSeconds = UInt64(pollingInterval * 1000) * NSEC_PER_MSEC
 
         guard let emailResult = try? await extractEmailLink(email: email, attemptId: attemptId) else {

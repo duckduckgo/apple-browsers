@@ -139,10 +139,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
     }
 
     public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
-                                  retries: Int = 5,
-                                  pollingInterval: TimeInterval = 1,
-                                  attemptId: UUID,
-                                  shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
+                                         retries: Int = 5,
+                                         pollingInterval: TimeInterval = 1,
+                                         attemptId: UUID,
+                                         shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
         guard let captchaSubmitResult = try? await submitCaptchaInformationRequest(captchaInfo, attemptId: attemptId) else {
             throw CaptchaServiceError.errorWhenSubmittingCaptcha
         }

@@ -433,92 +433,92 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         if !PacketTunnelProvider.isAuthV2Enabled {
             // MARK: V1
-            let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
-                                                                               serviceName: Self.tokenServiceName,
-                                                                               errorEvents: debugEvents,
-                                                                               useAccessTokenProvider: false,
-                                                                 accessTokenProvider: {
-                assertionFailure("Should not be called")
-                return nil
-            })
-            let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
-                                                                     key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                                     settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
+        let tokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
+                                                             serviceName: Self.tokenServiceName,
+                                                             errorEvents: debugEvents,
+                                                             useAccessTokenProvider: false,
+                                                             accessTokenProvider: {
+            assertionFailure("Should not be called")
+            return nil
+        })
+        let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
+                                                                 key: UserDefaultsCacheKey.subscriptionEntitlements,
+                                                                 settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let accountManager = DefaultAccountManager(accessTokenStorage: tokenStore,
-                                                       entitlementsCache: entitlementsCache,
-                                                       subscriptionEndpointService: subscriptionEndpointService,
-                                                       authEndpointService: authEndpointService)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let accountManager = DefaultAccountManager(accessTokenStorage: tokenStore,
+                                                   entitlementsCache: entitlementsCache,
+                                                   subscriptionEndpointService: subscriptionEndpointService,
+                                                   authEndpointService: authEndpointService)
 
             entitlementsCheck = {
                 Logger.networkProtection.log("Subscription Entitlements check...")
                 return await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .reloadIgnoringLocalCacheData)
             }
 
-            self.accountManager = accountManager
+        self.accountManager = accountManager
             tokenHandler = tokenStore
         } else {
             // MARK: V2
-            let configuration = URLSessionConfiguration.default
-            configuration.httpCookieStorage = nil
-            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-            let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-            let apiService = DefaultAPIService(urlSession: urlSession)
-            let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
-            let tokenStorage = NetworkProtectionKeychainStore(label: "DuckDuckGo Network Protection Auth Token",
-                                                              serviceName: Self.tokenServiceName,
-                                                              keychainType: Bundle.keychainType)
-            let legacyTokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
-                                                                               serviceName: Self.tokenServiceName,
-                                                                               errorEvents: debugEvents,
-                                                                               useAccessTokenProvider: false,
-                                                                               accessTokenProvider: { nil })
-            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
-                                                legacyTokenStorage: legacyTokenStore,
-                                                authService: authService)
+        let configuration = URLSessionConfiguration.default
+        configuration.httpCookieStorage = nil
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
+        let apiService = DefaultAPIService(urlSession: urlSession)
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
+        let tokenStorage = NetworkProtectionKeychainStore(label: "DuckDuckGo Network Protection Auth Token",
+                                                          serviceName: Self.tokenServiceName,
+                                                          keychainType: Bundle.keychainType)
+        let legacyTokenStore = NetworkProtectionKeychainTokenStore(keychainType: Bundle.keychainType,
+                                                                   serviceName: Self.tokenServiceName,
+                                                                   errorEvents: debugEvents,
+                                                                   useAccessTokenProvider: false,
+                                                                   accessTokenProvider: { nil })
+        let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                            legacyTokenStorage: legacyTokenStore,
+                                            authService: authService)
             apiService.authorizationRefresherCallback = { _ in
-                guard let tokenContainer = tokenStorage.tokenContainer else {
-                    throw OAuthClientError.internalError("Missing refresh token")
-                }
-                if tokenContainer.decodedAccessToken.isExpired() {
-                    Logger.networkProtection.debug("Refreshing tokens")
-                    let tokens = try await authClient.getTokens(policy: .localForceRefresh)
-                    return VPNAuthTokenBuilder.getVPNAuthToken(from: tokens.accessToken)
-                } else {
-                    Logger.networkProtection.error("Trying to refresh valid token, using the old one")
-                    return VPNAuthTokenBuilder.getVPNAuthToken(from: tokenContainer.accessToken)
-                }
+            guard let tokenContainer = tokenStorage.tokenContainer else {
+                throw OAuthClientError.internalError("Missing refresh token")
             }
+            if tokenContainer.decodedAccessToken.isExpired() {
+                    Logger.networkProtection.debug("Refreshing tokens")
+                let tokens = try await authClient.getTokens(policy: .localForceRefresh)
+                return VPNAuthTokenBuilder.getVPNAuthToken(from: tokens.accessToken)
+            } else {
+                Logger.networkProtection.error("Trying to refresh valid token, using the old one")
+                return VPNAuthTokenBuilder.getVPNAuthToken(from: tokenContainer.accessToken)
+            }
+        }
 
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                // The SysExt handles only dead token pixels
-                switch type {
-                case .deadToken:
-                    PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
-                case .subscriptionIsActive: // handled by the main app only
-                    break
-                case .v1MigrationFailed:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-                case .v1MigrationSuccessful:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
-                }
+                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
+            // The SysExt handles only dead token pixels
+            switch type {
+            case .deadToken:
+                PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
+            case .subscriptionIsActive: // handled by the main app only
+                break
+            case .v1MigrationFailed:
+                PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
+            case .v1MigrationSuccessful:
+                PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
             }
+        }
 
-            let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
+        let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
                                                                  subscriptionEndpointService: subscriptionEndpointService,
-                                                                 subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
+                                                             subscriptionEnvironment: subscriptionEnvironment,
+                                                             pixelHandler: pixelHandler,
                                                                    tokenRecoveryHandler: {
                 Logger.networkProtection.error("Expired refresh token detected")
             },
-                                                                   initForPurchase: false)
+                                                             initForPurchase: false)
 
             entitlementsCheck = {
-                Logger.networkProtection.log("Subscription Entitlements check...")
+            Logger.networkProtection.log("Subscription Entitlements check...")
                 do {
                     let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
                     Logger.networkProtection.log("Network protection is \( isNetworkProtectionEnabled ? "🟢 Enabled" : "⚫️ Disabled", privacy: .public)")
@@ -531,7 +531,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             // Subscription initial tasks
             Task {
                 await subscriptionManager.loadInitialData()
-            }
+        }
 
             self.accountManager = nil
             tokenHandler = subscriptionManager
@@ -692,6 +692,18 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     // MARK: - Overrideable Connection Events
+
+    // MARK: - Tunnel Start
+
+    @MainActor
+    public override func startTunnel(options: [String: NSObject]? = nil) async throws {
+
+        setupPixels()
+        observeServerChanges()
+        observeStatusUpdateRequests()
+
+        try await super.startTunnel(options: options)
+    }
 
     override func prepareToConnect(using provider: NETunnelProviderProtocol?) {
         Logger.networkProtection.log("Preparing to connect...")

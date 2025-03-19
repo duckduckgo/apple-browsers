@@ -57,8 +57,6 @@ public struct BrokenSiteReport {
 
     }
 
-    let cookieConsentInfo: CookieConsentInfo?
-
 #if os(iOS)
     public enum SiteType: String {
 
@@ -129,8 +127,7 @@ public struct BrokenSiteReport {
         vpnOn: Bool,
         jsPerformance: [Double]?,
         userRefreshCount: Int,
-        locale: Locale = Locale.current,
-        cookieConsentInfo: CookieConsentInfo?
+        locale: Locale = Locale.current
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -154,7 +151,6 @@ public struct BrokenSiteReport {
         self.jsPerformance = jsPerformance
         self.userRefreshCount = userRefreshCount
         self.locale = locale
-        self.cookieConsentInfo = cookieConsentInfo
     }
 #endif
 
@@ -185,8 +181,7 @@ public struct BrokenSiteReport {
         jsPerformance: [Double]?,
         userRefreshCount: Int,
         variant: String,
-        locale: Locale = Locale.current,
-        cookieConsentInfo: CookieConsentInfo?
+        locale: Locale = Locale.current
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -214,7 +209,6 @@ public struct BrokenSiteReport {
         self.userRefreshCount = userRefreshCount
         self.variant = variant
         self.locale = locale
-        self.cookieConsentInfo = cookieConsentInfo
     }
 #endif
 
@@ -238,10 +232,7 @@ public struct BrokenSiteReport {
             "openerContext": openerContext?.rawValue ?? "",
             "vpnOn": vpnOn.description,
             "userRefreshCount": String(userRefreshCount),
-            "locale": locale.localeIdentifierAsJsonFormat,
-            "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
-            "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
-            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed)
+            "locale": locale.localeIdentifierAsJsonFormat
         ]
 
         if mode == .regular {
@@ -275,17 +266,6 @@ public struct BrokenSiteReport {
         result["variant"] = variant
 #endif
         return result
-    }
-
-    private func boolToStringValue(_ value: Bool?) -> String {
-        switch value {
-        case .init(true):
-            return "1"
-        case .init(false):
-            return "0"
-        default:
-            return ""
-        }
     }
 
     private func encodeErrors(_ errors: [Error]) -> String {

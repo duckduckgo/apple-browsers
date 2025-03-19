@@ -19,7 +19,6 @@
 import XCTest
 import DDGSync
 import Combine
-import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SyncErrorHandlerTests: XCTestCase {

@@ -234,7 +234,7 @@ class TabViewController: UIViewController {
             updateTabModel()
             delegate?.tabLoadingStateDidChange(tab: self)
             if let url {
-                let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
+                let finalURL = duckPlayerNavigationHandler?.getDuckURLFor(url)
                 historyCapture.titleDidChange(title, forURL: finalURL)
             }
         }
@@ -259,7 +259,7 @@ class TabViewController: UIViewController {
             return tabModel.link
         }
                         
-        let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+        let finalURL = duckPlayerNavigationHandler?.getDuckURLFor(url) ?? url
         let activeLink = Link(title: title, url: finalURL)
         guard let storedLink = tabModel.link else {
             return activeLink
@@ -378,21 +378,7 @@ class TabViewController: UIViewController {
     let historyManager: HistoryManaging
     let historyCapture: HistoryCapture
     weak var duckPlayer: DuckPlayerControlling?
-    private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
-        let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
-                                   featureFlagger: AppDependencyProvider.shared.featureFlagger)
-        
-        if duckPlayer.settings.nativeUI {
-            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
-                                         appSettings: appSettings,
-                                         tabNavigationHandler: self)
-        } else {
-            return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
-                                         appSettings: appSettings,
-                                         tabNavigationHandler: self)
-        }
-        
-    }()
+    var duckPlayerNavigationHandler: DuckPlayerNavigationHandling?
 
     let contextualOnboardingPresenter: ContextualOnboardingPresenting
     let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -430,6 +416,10 @@ class TabViewController: UIViewController {
         self.syncService = syncService
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.duckPlayer = duckPlayer
+        if let duckPlayer {
+            self.duckPlayerNavigationHandler = DuckPlayerNavigationHandler(duckPlayer: duckPlayer,
+                                                                           appSettings: appSettings)
+        }
         self.privacyProDataReporter = privacyProDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -449,7 +439,7 @@ class TabViewController: UIViewController {
         super.init(coder: aDecoder)
         
         // Assign itself as tabNavigationHandler for DuckPlayer
-        duckPlayerNavigationHandler.tabNavigationHandler = self
+        duckPlayerNavigationHandler?.tabNavigationHandler = self
 
         // Assign itself as specialErrorPageNavigationDelegate for SpecialErrorPages
         specialErrorPageNavigationHandler.delegate  = self
@@ -477,25 +467,19 @@ class TabViewController: UIViewController {
         }
 
         observeNetPConnectionStatusChanges()
-        
-        // Link DuckPlayer to current Tab
-        duckPlayerNavigationHandler.setHostViewController(self)
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
+
         registerForResignActive()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
-
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -548,10 +532,9 @@ class TabViewController: UIViewController {
         resetNavigationBar()
         delegate?.tabDidRequestShowingMenuHighlighter(tab: self)
         tabModel.viewed = true
-
-        // Update DuckPlayer when WebView appears
-        duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
         
+        // Link DuckPlayer to current Tab
+        duckPlayerNavigationHandler?.setHostViewController(self)
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -651,8 +634,9 @@ class TabViewController: UIViewController {
         instrumentation.didPrepareWebView()
 
         // Initialize DuckPlayerNavigationHandler
-        if let webView = webView {
-            duckPlayerNavigationHandler.handleAttach(webView: webView)
+        if let handler = duckPlayerNavigationHandler,
+            let webView = webView {
+            handler.handleAttach(webView: webView)
         }
         
         if consumeCookies {
@@ -828,9 +812,8 @@ class TabViewController: UIViewController {
         // A short delay is required here, because the URL takes some time
         // to propagate to the webView.url property accessor and might not
         // be immediately available in the observer
-        let previousURL = self.url
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-            self?.webViewUrlHasChanged(previousURL: previousURL, newURL: self?.webView.url)
+            self?.webViewUrlHasChanged()
         }
             
         case #keyPath(WKWebView.canGoBack):
@@ -847,11 +830,12 @@ class TabViewController: UIViewController {
         }
     }
     
-    func webViewUrlHasChanged(previousURL: URL? = nil, newURL: URL? = nil) {
+    func webViewUrlHasChanged() {
         
         // Handle DuckPlayer Navigation URL changes
-        if let currentURL = newURL ?? webView.url {
-            _ = duckPlayerNavigationHandler.handleURLChange(webView: webView, previousURL: previousURL, newURL: currentURL)
+        if let handler = duckPlayerNavigationHandler,
+           let currentURL = webView.url {
+            _ = handler.handleURLChange(webView: webView)
         }
             
         if url == nil {
@@ -915,9 +899,13 @@ class TabViewController: UIViewController {
         wasLoadingStoppedExternally = false
         updateContentMode()
         cachedRuntimeConfigurationForDomain = [:]
-        duckPlayerNavigationHandler.handleReload(webView: webView)
+        if let handler = duckPlayerNavigationHandler {
+            duckPlayerNavigationHandler?.handleReload(webView: webView)
+        } else {
+            webView.reload()
+        }
         delegate?.tabLoadingStateDidChange(tab: self)
-
+        privacyDashboard?.dismiss(animated: true)
     }
     
     func updateContentMode() {
@@ -930,7 +918,7 @@ class TabViewController: UIViewController {
         if let url = url, url.isDuckPlayer {
             webView.stopLoading()
             if webView.canGoBack {
-                duckPlayerNavigationHandler.handleGoBack(webView: webView)
+                duckPlayerNavigationHandler?.handleGoBack(webView: webView)
                 chromeDelegate?.omniBar.resignFirstResponder()
                 return
             }
@@ -1330,7 +1318,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
 
         if let url = webView.url {
-            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+            let finalURL = duckPlayerNavigationHandler?.getDuckURLFor(url) ?? url
             historyCapture.webViewDidCommit(url: finalURL)
             instrumentation.willLoad(url: url)
         }
@@ -1365,7 +1353,7 @@ extension TabViewController: WKNavigationDelegate {
             appRatingPrompt.shown()
         }
         
-        duckPlayerNavigationHandler.handleDidStartLoading(webView: webView)
+        duckPlayerNavigationHandler?.handleDidStartLoading(webView: webView)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
@@ -1555,7 +1543,9 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         // DuckPlayer finish loading actions
-        duckPlayerNavigationHandler.handleDidFinishLoading(webView: webView)
+        if let handler = duckPlayerNavigationHandler {
+            handler.handleDidFinishLoading(webView: webView)
+        }
 
         Task { @MainActor in
             if await webView.isCurrentSiteReferredFromDuckDuckGo {
@@ -1569,7 +1559,7 @@ extension TabViewController: WKNavigationDelegate {
     func trackSecondSiteVisitIfNeeded(url: URL?) {
         // Track second non-SERP webpage visit
         guard url?.isDuckDuckGoSearch == false else { return }
-        onboardingPixelReporter.measureSecondSiteVisit()
+        onboardingPixelReporter.trackSecondSiteVisit()
     }
 
     func showDaxDialogOrStartTrackerNetworksAnimationIfNeeded() {
@@ -1775,9 +1765,13 @@ extension TabViewController: WKNavigationDelegate {
             }
         }
         
-        if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
-            decisionHandler(.cancel)
-            return
+        // Ask DuckPlayer to handle navigation if possible
+        if let handler = duckPlayerNavigationHandler {
+                                    
+            if handler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
+                decisionHandler(.cancel)
+                return
+            }
         }
         
         if let url = navigationAction.request.url,
@@ -1960,7 +1954,7 @@ extension TabViewController: WKNavigationDelegate {
         
         case .duck:
             if navigationAction.isTargetingMainFrame() {
-                duckPlayerNavigationHandler.handleDuckNavigation(navigationAction, webView: webView)
+                duckPlayerNavigationHandler?.handleDuckNavigation(navigationAction, webView: webView)
                 completion(.cancel)
                 return
             }
@@ -2597,12 +2591,10 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer Scripts if not using native UI
-        if (duckPlayer?.settings.nativeUI) != nil {
-            userScripts.duckPlayer = duckPlayerNavigationHandler.duckPlayer
-            userScripts.youtubeOverlayScript?.webView = webView
-            userScripts.youtubePlayerUserScript?.webView = webView
-        }
+        // Setup DuckPlayer
+        userScripts.duckPlayer = duckPlayerNavigationHandler?.duckPlayer
+        userScripts.youtubeOverlayScript?.webView = webView
+        userScripts.youtubePlayerUserScript?.webView = webView
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)

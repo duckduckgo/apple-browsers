@@ -27,19 +27,19 @@ OnboardingSearchSuggestionsPixelReporting
 & OnboardingAddressBarReporting
 
 protocol OnboardingAddressBarReporting: AnyObject {
-    func measureAddressBarTypedIn()
-    func measurePrivacyDashboardOpened()
-    func measureSiteVisited()
+    func trackAddressBarTypedIn()
+    func trackPrivacyDashboardOpened()
+    func trackSiteVisited()
 }
 
 protocol OnboardingDialogsReporting: AnyObject {
-    func measureFireButtonSkipped()
-    func measureLastDialogShown()
-    func measureFireButtonTryIt()
+    func trackFireButtonSkipped()
+    func trackLastDialogShown()
+    func trackFireButtonTryIt()
 }
 
 protocol OnboardingFireReporting: AnyObject {
-    func measureFireButtonPressed()
+    func trackFireButtonPressed()
 }
 
 final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, OnboardingSiteSuggestionsPixelReporting {
@@ -56,23 +56,23 @@ final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, 
         self.userDefaults = userDefaults
     }
 
-    func measureSiteSuggetionOptionTapped() {
+    func trackSiteSuggetionOptionTapped() {
         fire(ContextualOnboardingPixel.siteSuggetionOptionTapped, .uniqueByName)
     }
 
-    func measureSearchSuggetionOptionTapped() {
+    func trackSearchSuggetionOptionTapped() {
         fire(ContextualOnboardingPixel.searchSuggetionOptionTapped, .uniqueByName)
     }
 }
 
 extension OnboardingPixelReporter: OnboardingAddressBarReporting {
-    func measurePrivacyDashboardOpened() {
+    func trackPrivacyDashboardOpened() {
         if onboardingStateProvider.state != .onboardingCompleted {
             fire(ContextualOnboardingPixel.onboardingPrivacyDashboardOpened, .uniqueByName)
         }
     }
 
-    func measureAddressBarTypedIn() {
+    func trackAddressBarTypedIn() {
         if onboardingStateProvider.state == .showTryASearch {
             fire(ContextualOnboardingPixel.onboardingSearchCustom, .uniqueByName)
         }
@@ -81,7 +81,7 @@ extension OnboardingPixelReporter: OnboardingAddressBarReporting {
         }
     }
 
-    func measureSiteVisited() {
+    func trackSiteVisited() {
         let key = "onboarding.website-visited"
         let siteVisited = userDefaults.bool(forKey: key)
         if siteVisited {
@@ -93,7 +93,7 @@ extension OnboardingPixelReporter: OnboardingAddressBarReporting {
 }
 
 extension OnboardingPixelReporter: OnboardingFireReporting {
-    func measureFireButtonPressed() {
+    func trackFireButtonPressed() {
         if onboardingStateProvider.state != .onboardingCompleted {
             fire(ContextualOnboardingPixel.onboardingFireButtonPressed, .uniqueByName)
         }
@@ -101,15 +101,15 @@ extension OnboardingPixelReporter: OnboardingFireReporting {
 }
 
 extension OnboardingPixelReporter: OnboardingDialogsReporting {
-    func measureLastDialogShown() {
+    func trackLastDialogShown() {
         fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
     }
 
-    func measureFireButtonSkipped() {
+    func trackFireButtonSkipped() {
         fire(ContextualOnboardingPixel.onboardingFireButtonPromptSkipPressed, .uniqueByName)
     }
 
-    func measureFireButtonTryIt() {
+    func trackFireButtonTryIt() {
         fire(ContextualOnboardingPixel.onboardingFireButtonTryItPressed, .uniqueByName)
     }
 }

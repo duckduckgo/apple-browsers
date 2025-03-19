@@ -50,7 +50,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
-    private let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
     init() {
         super.init(title: "Personal Information Removal")
@@ -118,13 +118,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
                 customURLLabelMenuItem
             }
-
-            NSMenuItem.separator()
-
-            NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNBypass))
-                .targetting(self)
-            NSMenuItem(title: "Reset VPN Bypass Onboarding", action: #selector(DataBrokerProtectionDebugMenu.resetVPNBypassOnboarding))
-                .targetting(self)
 
             NSMenuItem.separator()
 
@@ -258,7 +251,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func runCustomJSON() {
-        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
         let viewController = DataBrokerRunCustomJSONViewController(authenticationManager: authenticationManager)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
@@ -288,17 +281,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
         let updater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         updater.updateBrokers()
-    }
-
-    @objc private func toggleVPNBypass() {
-        Task {
-            DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP)).vpnBypass.toggle()
-            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting()
-        }
-    }
-
-    @objc private func resetVPNBypassOnboarding() {
-        DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP)).vpnBypassOnboardingShown = false
     }
 
     @objc private func toggleShowStatusMenuItem() {

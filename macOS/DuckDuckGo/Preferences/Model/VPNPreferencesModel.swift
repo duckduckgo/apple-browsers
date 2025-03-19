@@ -108,7 +108,7 @@ final class VPNPreferencesModel: ObservableObject {
 
     private var onboardingStatus: OnboardingStatus {
         didSet {
-            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isInstalled
+            showUninstallVPN = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager).isInstalled
         }
     }
 
@@ -160,7 +160,9 @@ final class VPNPreferencesModel: ObservableObject {
         self.featureFlagger = featureFlagger
 
         connectOnLogin = settings.connectOnLogin
-        excludedAppsCount = proxySettings.excludedAppsMinusDBPAgent.count
+        excludedAppsCount = proxySettings.appRoutingRules.filter { (_, rule) in
+            rule == .exclude
+        }.count
         excludedDomainsCount = proxySettings.excludedDomains.count
         excludeLocalNetworks = settings.excludeLocalNetworks
         notifyStatusChanges = settings.notifyStatusChanges
@@ -188,8 +190,8 @@ final class VPNPreferencesModel: ObservableObject {
     private func subscribeToAppRoutingRulesChanges() {
         proxySettings.appRoutingRulesPublisher
             .map { rules in
-                rules.filter { (bundleId, rule) in
-                    rule == .exclude && !bundleId.isDBPBackgroundAgentBundleId
+                rules.filter { (_, rule) in
+                    rule == .exclude
                 }.count
             }
             .assign(to: \.excludedAppsCount, onWeaklyHeld: self)
@@ -364,17 +366,5 @@ extension NetworkProtectionDNSSettings {
         case .ddg: return ""
         case .custom(let servers): return servers.joined(separator: ", ")
         }
-    }
-}
-
-extension TransparentProxySettings {
-    var excludedAppsMinusDBPAgent: [String] {
-        excludedApps.filter { !$0.isDBPBackgroundAgentBundleId }
-    }
-}
-
-extension String {
-    fileprivate var isDBPBackgroundAgentBundleId: Bool {
-        self == Bundle.main.dbpBackgroundAgentBundleId
     }
 }

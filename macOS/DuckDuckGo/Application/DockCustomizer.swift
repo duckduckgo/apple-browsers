@@ -120,8 +120,6 @@ final class DockCustomizer: DockCustomization {
     @discardableResult
     func addToDock() -> Bool {
         PixelExperiment.fireOnboardingAddToDockRequestedPixel()
-        DefaultBrowserAndDockPromptCoordinator.fireSetAsDefaultAddToDockExperimentPixel()
-
         let appPath = Bundle.main.bundleURL.path
         guard !isAddedToDock,
               let bundleIdentifier = Bundle.main.bundleIdentifier,

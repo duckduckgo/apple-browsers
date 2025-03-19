@@ -20,8 +20,6 @@ import XCTest
 import Configuration
 import Persistence
 @testable import DataBrokerProtection
-import DataBrokerProtectionShared
-import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
@@ -32,7 +30,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockQueueManager: MockDataBrokerProtectionOperationQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
-    private var mockSharedPixelsHandler: DataBrokerProtectionSharedTestsUtils.MockPixelHandler!
     private var mockPixelHandler: MockPixelHandler!
     private var mockDependencies: DefaultDataBrokerOperationDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
@@ -44,7 +41,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
     override func setUpWithError() throws {
 
-        mockSharedPixelsHandler = DataBrokerProtectionSharedTestsUtils.MockPixelHandler()
         mockPixelHandler = MockPixelHandler()
         mockActivityScheduler = MockDataBrokerProtectionBackgroundActivityScheduler()
         mockNotificationService = MockUserNotificationService()
@@ -54,24 +50,25 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager()
 
         let mockDatabase = MockDatabase()
-        let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
+        let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockQueueManager = MockDataBrokerProtectionOperationQueueManager(
             operationQueue: MockDataBrokerProtectionOperationQueue(),
             operationsCreator: MockDataBrokerOperationsCreator(),
             mismatchCalculator: mockMismatchCalculator,
             brokerUpdater: MockDataBrokerProtectionBrokerUpdater(),
-            pixelHandler: mockSharedPixelsHandler)
+            pixelHandler: mockPixelHandler)
 
         mockIPCServer = MockIPCServer(machServiceName: "")
 
-        mockDataManager = MockDataBrokerProtectionDataManager(database: mockDatabase)
+        let fakeBroker = DataBrokerDebugFlagFakeBroker()
+        mockDataManager = MockDataBrokerProtectionDataManager(pixelHandler: mockPixelHandler, fakeBrokerFlag: fakeBroker)
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
                                                                   config: DataBrokerExecutionConfig(mode: .normal),
                                                                   runnerProvider: MockRunnerProvider(),
                                                                   notificationCenter: .default,
-                                                                  pixelHandler: mockSharedPixelsHandler,
-                                                                  userNotificationService: mockNotificationService, dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)))
+                                                                  pixelHandler: mockPixelHandler,
+                                                                  userNotificationService: mockNotificationService)
 
         mockProfile = DataBrokerProtectionProfile(
             names: [],
@@ -91,7 +88,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -135,7 +131,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -184,7 +179,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: agentStopper,
             configurationManager: mockConfigurationManager,
@@ -222,7 +216,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -264,7 +257,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -297,7 +289,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -329,7 +320,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -361,7 +351,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -393,7 +382,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -419,7 +407,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -445,7 +432,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -454,7 +440,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         mockNotificationService.reset()
-        mockQueueManager.startImmediateScanOperationsIfPermittedCompletionError = DataBrokerProtectionJobsErrorCollection(oneTimeError: NSError(domain: "test", code: 10))
+        mockQueueManager.startImmediateScanOperationsIfPermittedCompletionError = DataBrokerProtectionAgentErrorCollection(oneTimeError: NSError(domain: "test", code: 10))
 
         // When
         sut.profileSaved()
@@ -472,7 +458,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -499,7 +484,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -526,7 +510,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -558,7 +541,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -589,7 +571,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -604,7 +585,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         sut.fireMonitoringPixels()
 
         // Then
-        XCTAssertNotNil(mockSharedPixelsHandler.lastFiredEvent)
+        XCTAssertNotNil(mockPixelHandler.lastFiredEvent)
     }
 
     func testWhenFirePixelsCalled_andUserIsNotAuthenticated_thenPixelsAreNotFired() async throws {
@@ -616,7 +597,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
             operationDependencies: mockDependencies,
-            sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -631,7 +611,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         sut.fireMonitoringPixels()
 
         // Then
-        XCTAssertNil(mockSharedPixelsHandler.lastFiredEvent)
+        XCTAssertNil(mockPixelHandler.lastFiredEvent)
     }
 
 }

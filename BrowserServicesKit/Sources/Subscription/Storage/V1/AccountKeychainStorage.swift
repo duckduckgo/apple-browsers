@@ -30,7 +30,7 @@ public enum AccountKeychainAccessType: String {
     case clearAuthenticationData
 }
 
-public enum AccountKeychainAccessError: Error, LocalizedError {
+public enum AccountKeychainAccessError: Error, Equatable {
     case failedToDecodeKeychainData
     case failedToDecodeKeychainValueAsData
     case failedToDecodeKeychainDataAsString

@@ -39,17 +39,8 @@ final class BackForwardListItemViewModel {
     var title: String {
         switch backForwardListItem.kind {
         case .url(let url):
-            switch url {
-            case .newtab:
+            if url == .newtab {
                 return UserText.tabHomeTitle
-            case .settings:
-                return UserText.settings
-            case .bookmarks:
-                return UserText.bookmarks
-            case .history:
-                return UserText.mainMenuHistory
-            default:
-                break
             }
 
             var title = backForwardListItem.title
@@ -71,19 +62,12 @@ final class BackForwardListItemViewModel {
 
     @MainActor(unsafe)
     var image: NSImage? {
-        switch backForwardListItem.url {
-        case .newtab:
+        if backForwardListItem.url == .newtab {
             return .homeFavicon
-        case .settings:
-            return .settingsMulticolor16
-        case .bookmarks:
-            return .bookmarksFolder
-        case .history:
-            return .historyFavicon
-        case let url where url?.isDuckPlayer == true:
+        }
+
+        if backForwardListItem.url?.isDuckPlayer == true {
             return .duckPlayer
-        default:
-            break
         }
 
         if let url = backForwardListItem.url,

@@ -226,7 +226,7 @@ struct SubscriptionSettingsView: View {
     }
 
     @ViewBuilder var helpSection: some View {
-        if viewModel.enablesUnifiedFeedbackForm {
+        if viewModel.usesUnifiedFeedbackForm {
             Section {
                 faqButton
                 supportButton

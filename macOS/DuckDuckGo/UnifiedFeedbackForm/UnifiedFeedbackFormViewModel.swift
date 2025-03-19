@@ -149,29 +149,26 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     weak var delegate: UnifiedFeedbackFormViewModelDelegate?
 
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let accountManager: any AccountManager
     private let apiService: any Networking.APIService
     private let vpnMetadataCollector: any UnifiedMetadataCollector
-    private let dbpMetadataCollector: any UnifiedMetadataCollector
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
 
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+    init(subscriptionManager: any SubscriptionManager,
          apiService: any Networking.APIService,
          vpnMetadataCollector: any UnifiedMetadataCollector,
-         dbpMetadataCollector: any UnifiedMetadataCollector,
          defaultMetadataCollector: any UnifiedMetadataCollector = EmptyMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
          source: UnifiedFeedbackSource = .default) {
         self.viewState = .feedbackPending
 
-        self.subscriptionManager = subscriptionManager
+        self.accountManager = subscriptionManager.accountManager
         self.apiService = apiService
         self.vpnMetadataCollector = vpnMetadataCollector
-        self.dbpMetadataCollector = dbpMetadataCollector
         self.defaultMetadataCollector = defaultMetadataCollector
         self.feedbackSender = feedbackSender
         self.source = source
@@ -270,14 +267,6 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
                                                           subcategory: selectedSubcategory,
                                                           description: feedbackFormText,
                                                           metadata: metadata as? VPNMetadata)
-        case .pir:
-            let metadata = await dbpMetadataCollector.collectMetadata()
-            try await submitIssue(metadata: metadata)
-            try await feedbackSender.sendReportIssuePixel(source: source,
-                                                          category: selectedCategory,
-                                                          subcategory: selectedSubcategory,
-                                                          description: feedbackFormText,
-                                                          metadata: metadata as? DBPFeedbackMetadata)
         default:
             let metadata = await defaultMetadataCollector.collectMetadata()
             try await submitIssue(metadata: metadata)
@@ -292,7 +281,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private func submitIssue(metadata: UnifiedFeedbackMetadata?) async throws {
         guard !userEmail.isEmpty else { return }
 
-        guard let accessToken = try? await subscriptionManager.getAccessToken() else {
+        guard let accessToken = accountManager.accessToken else {
             throw Error.missingAccessToken
         }
 

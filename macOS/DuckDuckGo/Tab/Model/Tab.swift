@@ -90,8 +90,7 @@ protocol NewWindowPolicyDecisionMaker {
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
 
     @MainActor
-    convenience init(id: String? = nil,
-                     content: TabContent,
+    convenience init(content: TabContent,
                      faviconManagement: FaviconManagement? = nil,
                      webCacheManager: WebCacheManager = WebCacheManager.shared,
                      webViewConfiguration: WKWebViewConfiguration? = nil,
@@ -137,8 +136,7 @@ protocol NewWindowPolicyDecisionMaker {
             faviconManager = FaviconManager(cacheType: .inMemory)
         }
 
-        self.init(id: id,
-                  content: content,
+        self.init(content: content,
                   faviconManagement: faviconManager ?? FaviconManager.shared,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
@@ -175,8 +173,7 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     @MainActor
-    init(id: String? = nil,
-         content: TabContent,
+    init(content: TabContent,
          faviconManagement: FaviconManagement,
          webCacheManager: WebCacheManager,
          webViewConfiguration: WKWebViewConfiguration?,
@@ -211,7 +208,7 @@ protocol NewWindowPolicyDecisionMaker {
          onboardingPixelReporter: OnboardingAddressBarReporting,
          pageRefreshMonitor: PageRefreshMonitoring
     ) {
-        self._id = id
+
         self.content = content
         self.faviconManagement = faviconManagement
         self.pinnedTabsManager = pinnedTabsManager
@@ -643,11 +640,6 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     private let instrumentation = TabInstrumentation()
-
-    private let _id: String?
-    var id: String {
-        _id ?? String(instrumentation.currentTabIdentifier)
-    }
 
     @Published private(set) var canGoForward: Bool = false
     @Published private(set) var canGoBack: Bool = false
@@ -1278,7 +1270,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         invalidateInteractionStateData()
         statisticsLoader?.refreshRetentionAtb(isSearch: navigation.url.isDuckDuckGoSearch)
         if !navigation.url.isDuckDuckGoSearch {
-            onboardingPixelReporter.measureSiteVisited()
+            onboardingPixelReporter.trackSiteVisited()
         }
         navigationDidEndPublisher.send(self)
     }

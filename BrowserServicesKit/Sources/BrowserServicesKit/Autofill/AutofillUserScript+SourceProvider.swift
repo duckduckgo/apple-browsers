@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import AutofillResources
+import Autofill
 import Common
 import os.log
 
@@ -51,8 +51,8 @@ public class DefaultAutofillSourceProvider: AutofillUserScriptSourceProvider {
             sourceStr = ""
             return
         }
-        sourceStr = AutofillUserScript.loadJS(isDebug ? "autofill-debug" : "autofill",
-                                              from: AutofillResources.bundle,
+        sourceStr = AutofillUserScript.loadJS(isDebug ? "assets/autofill-debug" : "assets/autofill",
+                                              from: Autofill.bundle,
                                               withReplacements: replacements)
     }
 

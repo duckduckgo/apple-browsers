@@ -20,12 +20,10 @@ import Foundation
 import Suggestions
 
 struct BrowserTabMock: BrowserTab {
-    let tabId: String?
     let url: URL
     let title: String
 
-    init(tabId: String? = nil, url: String, title: String) {
-        self.tabId = tabId
+    init(url: String, title: String) {
         self.url = URL(string: url)!
         self.title = title
     }

@@ -73,7 +73,7 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         }
     }
 
-    let message: String
+    let entriesCountString: String
 
     var dataClearingExplanation: String {
         switch mode {
@@ -96,13 +96,7 @@ final class HistoryViewDeleteDialogModel: ObservableObject {
         mode: DeleteMode = .unspecified,
         settingsPersistor: HistoryViewDeleteDialogSettingsPersisting = UserDefaultsHistoryViewDeleteDialogSettingsPersistor()
     ) {
-        self.message = {
-            guard entriesCount > 1 else {
-                return UserText.delete1HistoryItemMessage
-            }
-            let entriesCount = Self.numberFormatter.string(from: .init(value: entriesCount)) ?? String(entriesCount)
-            return UserText.deleteHistoryMessage(items: entriesCount)
-        }()
+        self.entriesCountString = Self.numberFormatter.string(from: .init(value: entriesCount)) ?? String(entriesCount)
         self.mode = mode
         self.settingsPersistor = settingsPersistor
         shouldBurn = settingsPersistor.shouldBurnHistoryWhenDeleting

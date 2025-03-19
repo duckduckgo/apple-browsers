@@ -29,15 +29,14 @@ final class MaliciousSiteProtectionManager {
     private let dataFetcher: MaliciousSiteProtectionDatasetsFetching
     private let preferencesManager: MaliciousSiteProtectionPreferencesReading
     private let maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger
-    
+
     init(
         dataFetcher: MaliciousSiteProtectionDatasetsFetching,
         api: MaliciousSiteProtectionAPI,
         dataManager: MaliciousSiteProtection.DataManager,
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,
         preferencesManager: MaliciousSiteProtectionPreferencesReading,
-        maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger,
-        supportedThreatsProvider: @escaping SupportedThreatsProvider
+        maliciousSiteProtectionFeatureFlagger: MaliciousSiteProtectionFeatureFlagger
     ) {
         self.dataFetcher = dataFetcher
         self.preferencesManager = preferencesManager
@@ -46,8 +45,7 @@ final class MaliciousSiteProtectionManager {
             apiEnvironment: api.environment,
             service: api.service,
             dataManager: dataManager,
-            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
-            supportedThreatsProvider: supportedThreatsProvider
+            eventMapping: MaliciousSiteProtectionEventMapper.debugEvents
         )
     }
 }
@@ -93,8 +91,6 @@ extension MaliciousSiteProtectionManager {
         case (.filterSet, .phishing): "phishingFilterSet.json"
         case (.hashPrefixSet, .malware): "malwareHashPrefixes.json"
         case (.filterSet, .malware): "malwareFilterSet.json"
-        case (.hashPrefixSet, .scam): "scamHashPrefixes.json"
-        case (.filterSet, .scam): "scamFilterSet.json"
         }
     }
     

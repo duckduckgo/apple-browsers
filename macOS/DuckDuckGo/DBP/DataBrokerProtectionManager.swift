@@ -24,7 +24,6 @@ import PixelKit
 import LoginItems
 import Common
 import Freemium
-import NetworkProtectionIPC
 
 public final class DataBrokerProtectionManager {
 
@@ -36,8 +35,9 @@ public final class DataBrokerProtectionManager {
 
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
+        let accountManager = Application.appDelegate.subscriptionManager.accountManager
         let freemiumDBPFirstProfileSavedNotifier = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
-                                                                                        authenticationStateProvider: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+                                                                                        accountManager: accountManager)
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
@@ -57,9 +57,7 @@ public final class DataBrokerProtectionManager {
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
 
-        let dataManager = DataBrokerProtectionDataManager(database: database,
-                                                          profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
-
+        let dataManager = DataBrokerProtectionDataManager(database: database, profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
         dataManager.delegate = self
         return dataManager
     }()
@@ -76,8 +74,7 @@ public final class DataBrokerProtectionManager {
     }()
 
     private init() {
-        self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: Application.appDelegate.subscriptionManager)
     }
 
     public func isUserAuthenticated() -> Bool {
@@ -103,11 +100,6 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
 
     public func dataBrokerProtectionDataManagerWillOpenSendFeedbackForm() {
         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm, object: nil, userInfo: UnifiedFeedbackSource.userInfo(source: .pir))
-    }
-
-    public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting() async {
-        try? await Task.sleep(interval: 0.1)
-        try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }
 
     public func isAuthenticatedUser() -> Bool {

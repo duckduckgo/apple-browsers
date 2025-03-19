@@ -20,17 +20,12 @@ import BrowserServicesKit
 
 protocol HistoryViewOnboardingDeciding {
     var shouldPresentOnboarding: Bool { get }
-    func skipPresentingOnboarding()
 }
 
 final class HistoryViewOnboardingDecider: HistoryViewOnboardingDeciding {
 
     var shouldPresentOnboarding: Bool {
         featureFlagger.isFeatureOn(.historyView) && !isNewUser() && !settingsPersistor.didShowOnboardingView
-    }
-
-    func skipPresentingOnboarding() {
-        settingsPersistor.didShowOnboardingView = true
     }
 
     init(

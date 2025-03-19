@@ -31,7 +31,7 @@ final class FreemiumDBPFirstProfileSavedNotifierTests: XCTestCase {
         mockAccountManager = MockAccountManager()
         mockNotificationCenter = MockNotificationCenter()
         sut = FreemiumDBPFirstProfileSavedNotifier(freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                   authenticationStateProvider: mockAccountManager,
+                                                   accountManager: mockAccountManager,
                                                    notificationCenter: mockNotificationCenter)
     }
 

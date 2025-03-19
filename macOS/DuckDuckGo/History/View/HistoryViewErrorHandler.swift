@@ -25,8 +25,8 @@ final class HistoryViewErrorHandler: EventMapping<HistoryViewEvent> {
     init() {
         super.init { event, _, _, _ in
             switch event {
-            case .historyViewError:
-                PixelKit.fire(DebugEvent(HistoryViewPixel.historyPageExceptionReported), frequency: .dailyAndStandard)
+            case .historyViewError(let message):
+                PixelKit.fire(DebugEvent(HistoryViewPixel.historyPageExceptionReported(message: message)), frequency: .dailyAndStandard)
             }
         }
     }

@@ -119,8 +119,7 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       vpnOn: false,
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
-                                      variant: "",
-                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true))
+                                      variant: "")
 
         let reporter = BrokenSiteReporter(pixelHandler: { params in
             

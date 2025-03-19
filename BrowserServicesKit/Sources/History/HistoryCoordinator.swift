@@ -61,7 +61,6 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
 }
 
 extension HistoryCoordinating {
-    @discardableResult
     public func addVisit(of url: URL) -> Visit? {
         addVisit(of: url, at: Date())
     }
@@ -162,7 +161,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     public func markFailedToLoadUrl(_ url: URL) {
-        // historyEntry.failedToLoad = true
         mark(url: url, keyPath: \HistoryEntry.failedToLoad, value: true)
     }
 

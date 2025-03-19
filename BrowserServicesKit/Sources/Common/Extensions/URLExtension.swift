@@ -34,7 +34,7 @@ extension URL {
             == string2.droppingHashedSuffix().dropping(suffix: "/").appending(string2.hashedSuffix ?? "")
     }
 
-    /// URL without the scheme and the '/' suffix of the path.
+    /// URL without the scheme and the '/' suffix of the path.  
     /// Useful for finding duplicate URLs
     public var naked: URL? {
         guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return self }
@@ -242,8 +242,14 @@ extension URL {
 
         guard let (authData, urlPart, query) = Self.fixupAndSplitURLString(s) else { return nil }
 
+        if (authData?.contains(" ") == true) || urlPart.contains(" ") {
+            return nil
+        }
+
         let componentsWithoutQuery = urlPart.split(separator: "/").map(String.init)
-        guard !componentsWithoutQuery.isEmpty else { return nil }
+        guard !componentsWithoutQuery.isEmpty else {
+            return nil
+        }
 
         let host = componentsWithoutQuery[0].punycodeEncodedHostname
 
@@ -253,8 +259,7 @@ extension URL {
             .joined(separator: "/")
 
         let hostPathSeparator = !encodedPath.isEmpty || urlPart.hasSuffix("/") ? "/" : ""
-        let trailingPathSeparator = !encodedPath.isEmpty && urlPart.hasSuffix("/") ? "/" : ""
-        let url = scheme + (authData != nil ? String(authData!) + "@" : "") + host + hostPathSeparator + encodedPath + trailingPathSeparator + query
+        let url = scheme + (authData != nil ? String(authData!) + "@" : "") + host + hostPathSeparator + encodedPath + query
 
         self.init(string: url)
     }
@@ -267,19 +272,28 @@ extension URL {
         guard !authDataAndUrl.isEmpty else { return nil }
 
         let urlAndQuery = authDataAndUrl.last!.split(separator: "?", maxSplits: 1)
-
-        guard let host = urlAndQuery.first?.split(separator: "/", maxSplits: 1).first,
-              !host.contains(" ") else { return nil }
+        guard !urlAndQuery.isEmpty, !urlAndQuery[0].contains(" ") else {
+            return nil
+        }
 
         var query = ""
         if urlAndQuery.count > 1 {
             // escape invalid characters with %20 in query values
             // keep already encoded characters and + sign in place
-            query = "?" + urlAndQuery[1].split(separator: "&").map { component in
-                component.split(separator: "=", maxSplits: 1).map { component -> String in
-                    return component.percentEncoded(withAllowedCharacters: .urlQueryStringAllowed)
-                }.joined(separator: "=")
-            }.joined(separator: "&")
+            do {
+                struct Throwable: Error {}
+                query = try "?" + urlAndQuery[1].split(separator: "&").map { component in
+                    try component.split(separator: "=", maxSplits: 1).enumerated().map { idx, component -> String in
+                        // don't allow spaces in parameter names
+                        let isParameterName = (idx == 0)
+                        guard !(isParameterName && component.contains(" ")) else { throw Throwable() }
+
+                        return component.percentEncoded(withAllowedCharacters: .urlQueryStringAllowed)
+                    }.joined(separator: "=")
+                }.joined(separator: "&")
+            } catch {
+                return nil
+            }
         } else if urlAndFragment[0].hasSuffix("?") {
             query = "?"
         }
@@ -468,7 +482,7 @@ extension URL {
         return host == protectionSpace.host && (port ?? navigationalScheme?.defaultPort) == protectionSpace.port && scheme == protectionSpace.protocol
     }
 
-    // MARK: Canonicalization
+    // MARK: Canonicalization 
     public func canonicalHost() -> String? {
         // Step 1: Extract hostname portion from the URL
         guard var canonicalHost = self.host else {

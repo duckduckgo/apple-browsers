@@ -362,8 +362,7 @@ final class AutofillLoginListViewModel: ObservableObject {
                                       vpnOn: false,
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
-                                      variant: "",
-                                      cookieConsentInfo: nil)
+                                      variant: "")
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }
@@ -459,10 +458,10 @@ final class AutofillLoginListViewModel: ObservableObject {
     private func updateViewState() {
         var newViewState: AutofillLoginListViewModel.ViewState
         
-        if !authenticator.canAuthenticate() {
-            newViewState = .noAuthAvailable
-        } else if authenticator.state == .loggedOut && !authenticationNotRequired {
+        if authenticator.state == .loggedOut && !authenticationNotRequired {
             newViewState = .authLocked
+        } else if authenticator.state == .notAvailable {
+            newViewState = .noAuthAvailable
         } else if isSearching {
             if sections.count == 0 {
                 newViewState = .searchingNoResults

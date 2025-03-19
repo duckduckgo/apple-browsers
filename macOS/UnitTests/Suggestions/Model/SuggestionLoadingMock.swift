@@ -26,7 +26,7 @@ final class SuggestionLoadingMock: SuggestionLoading {
     weak var dataSource: SuggestionLoadingDataSource?
     var completion: ((SuggestionResult?, Error?) -> Void)?
 
-    func getSuggestions(query: String,
+    func getSuggestions(query: Query,
                         usingDataSource dataSource: SuggestionLoadingDataSource,
                         completion: @escaping (SuggestionResult?, Error?) -> Void) {
         getSuggestionsCalled = true

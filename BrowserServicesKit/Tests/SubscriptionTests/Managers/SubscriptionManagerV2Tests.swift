@@ -34,7 +34,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
     var mockSubscriptionEndpointService: SubscriptionEndpointServiceMockV2!
     var mockStorePurchaseManager: StorePurchaseManagerMockV2!
     var mockAppStoreRestoreFlowV2: AppStoreRestoreFlowMockV2!
-    var overrideTokenResponseInRecoveryHandler: Result<Networking.TokenContainer, Error>?
+    var overrideTokenResponse: Result<Networking.TokenContainer, Error>?
 
     override func setUp() {
         super.setUp()
@@ -49,15 +49,14 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: { _ in }
-        )
-
-        subscriptionManager.tokenRecoveryHandler = {
-            if let overrideTokenResponse = self.overrideTokenResponseInRecoveryHandler {
-                self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+            pixelHandler: { _ in },
+            autoRecoveryHandler: {
+                if let overrideTokenResponse = self.overrideTokenResponse {
+                    self.mockOAuthClient.getTokensResponse = overrideTokenResponse
+                }
+                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(endpointService: self.mockSubscriptionEndpointService, restoreFlow: self.mockAppStoreRestoreFlowV2)
             }
-            try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: self.subscriptionManager, restoreFlow: self.mockAppStoreRestoreFlowV2)
-        }
+        )
     }
 
     override func tearDown() {
@@ -138,7 +137,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
-            pixelHandler: { _ in }
+            pixelHandler: { _ in },
+            autoRecoveryHandler: {}
         )
 
         let helpURL = subscriptionManager.url(for: .purchase)
@@ -195,7 +195,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: { _ in },
+            autoRecoveryHandler: {}
         )
 
         // When
@@ -214,7 +215,8 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: { _ in },
+            autoRecoveryHandler: {}
         )
 
         // When
@@ -228,7 +230,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoverySuccess() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        overrideTokenResponseInRecoveryHandler = .success(OAuthTokensFactory.makeValidTokenContainer())
+        overrideTokenResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
@@ -237,15 +239,15 @@ class SubscriptionManagerV2Tests: XCTestCase {
 
     func testDeadTokenRecoveryFailure() async throws {
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.refreshTokenExpired)
-        mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenError = SubscriptionManagerError.tokenRefreshFailed(error: nil)
+        overrideTokenResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        mockSubscriptionEndpointService.getSubscriptionResult = .success(SubscriptionMockFactory.appleSubscription)
+        mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .failure(AppStoreRestoreFlowErrorV2.subscriptionExpired)
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenRefreshFailed {
-
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
         } catch {
-            XCTFail("Wrong error: \(error)")
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
         }
     }
 
@@ -256,16 +258,15 @@ class SubscriptionManagerV2Tests: XCTestCase {
         mockAppStoreRestoreFlowV2.restoreAccountFromPastPurchaseResult = .success("some")
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
         }
-
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
-            XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+            XCTFail("This should fail with error: SubscriptionManagerError.tokenUnRefreshable")
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
+            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenUnRefreshable)
         }
     }
 }

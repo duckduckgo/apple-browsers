@@ -94,8 +94,7 @@ final class BrokenSiteReportingReferenceTests: XCTestCase {
                                             openerContext: nil,
                                             vpnOn: false,
                                             jsPerformance: nil,
-                                            userRefreshCount: 0,
-                                            cookieConsentInfo: nil)
+                                            userRefreshCount: 0)
 
             let request = makeURLRequest(with: breakage.requestParameters)
 

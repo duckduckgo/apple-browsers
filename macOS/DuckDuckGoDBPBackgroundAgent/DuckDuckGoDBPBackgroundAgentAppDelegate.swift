@@ -31,8 +31,7 @@ import os.log
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
     private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate
-
-    private let isAuthV2Enabled = false
+    private let subscriptionManager: SubscriptionManager
 
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
@@ -70,25 +69,10 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
             exit(0)
         }
 
-        // MARK: - Configure Subscription
+        // Configure Subscription
+        subscriptionManager = DefaultSubscriptionManager()
 
-        if !isAuthV2Enabled {
-            // V1
-            let subscriptionManager = DefaultSubscriptionManager()
-            _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate(subscriptionManager: subscriptionManager)
-        } else {
-            // V2
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            let subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
-                                                                 environment: subscriptionEnvironment,
-                                                                 userDefaults: subscriptionUserDefaults,
-                                                                 canPerformAuthMigration: false,
-                                                                 canHandlePixels: false)
-            _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate(subscriptionManager: subscriptionManager)
-        }
-        // MARK: -
+        _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate(subscriptionManager: subscriptionManager)
 
         super.init()
         self.delegate = _delegate
@@ -102,13 +86,13 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
 @main
 final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDelegate {
-    private let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
-    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let subscriptionManager: SubscriptionManager
     private var manager: DataBrokerProtectionAgentManager?
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+    init(subscriptionManager: SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
     }
 
@@ -117,7 +101,8 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager)
+        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager,
+                                                                        accountManager: subscriptionManager.accountManager)
         manager?.agentFinishedLaunching()
 
         setupStatusBarMenu()

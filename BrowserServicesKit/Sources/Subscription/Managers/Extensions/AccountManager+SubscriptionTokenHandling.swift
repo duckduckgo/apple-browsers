@@ -24,30 +24,21 @@ import os.log
 extension DefaultAccountManager: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
-        Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Getting token")
-        guard let token = accessToken else {
+        guard let accessToken = accessToken else {
             throw SubscriptionManagerError.tokenUnavailable(error: nil)
         }
-        Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Token fetched")
-        return token
+        return accessToken
     }
 
     public func removeToken() async throws {
-        Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Removing token")
-        try removeAccessToken()
+        assertionFailure("Unsupported")
     }
 
     public func refreshToken() async throws {
-        Logger.subscription.fault("Unsupported refreshToken")
         assertionFailure("Unsupported")
     }
 
     public func adoptToken(_ someKindOfToken: Any) async throws {
-        Logger.subscription.log("[DefaultAccountManager+SubscriptionTokenHandling] Adopting token")
-        guard let token = someKindOfToken as? String else {
-            Logger.subscription.fault("Failed to adopt token: \(String(describing: someKindOfToken))")
-            return
-        }
-        self.storeAccessToken(token: token)
+        assertionFailure("Unsupported")
     }
 }

@@ -19,40 +19,8 @@
 import AppKit
 import History
 import HistoryView
-import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-
-private struct FirePixelCall: Equatable {
-    static func == (lhs: FirePixelCall, rhs: FirePixelCall) -> Bool {
-        guard lhs.pixel.name == rhs.pixel.name, lhs.pixel.parameters == rhs.pixel.parameters else {
-            return false
-        }
-
-        switch (lhs.frequency, rhs.frequency) {
-        case (.standard, .standard),
-            (.legacyInitial, .legacyInitial),
-            (.uniqueByName, .uniqueByName),
-            (.uniqueByNameAndParameters, .uniqueByNameAndParameters),
-            (.legacyDaily, .legacyDaily),
-            (.daily, .daily),
-            (.legacyDailyAndCount, .legacyDailyAndCount),
-            (.dailyAndCount, .dailyAndCount),
-            (.dailyAndStandard, .dailyAndStandard):
-            return true
-        default:
-            return false
-        }
-    }
-
-    let pixel: HistoryViewPixel
-    let frequency: PixelKit.Frequency
-
-    init(_ pixel: HistoryViewPixel, _ frequency: PixelKit.Frequency) {
-        self.pixel = pixel
-        self.frequency = frequency
-    }
-}
 
 final class HistoryViewActionsHandlerTests: XCTestCase {
 
@@ -62,7 +30,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
     var contextMenuPresenter: CapturingContextMenuPresenter!
     var tabOpener: CapturingHistoryViewTabOpener!
     var bookmarksHandler: CapturingHistoryViewBookmarksHandler!
-    fileprivate var firePixelCalls: [FirePixelCall] = []
 
     override func setUp() async throws {
         dataProvider = CapturingHistoryViewDataProvider()
@@ -70,13 +37,11 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         contextMenuPresenter = CapturingContextMenuPresenter()
         tabOpener = CapturingHistoryViewTabOpener()
         bookmarksHandler = CapturingHistoryViewBookmarksHandler()
-        firePixelCalls = []
         actionsHandler = HistoryViewActionsHandler(
             dataProvider: dataProvider,
             dialogPresenter: dialogPresenter,
             tabOpener: tabOpener,
-            bookmarksHandler: bookmarksHandler,
-            firePixel: { self.firePixelCalls.append(.init($0, $1)) }
+            bookmarksHandler: bookmarksHandler
         )
     }
 
@@ -122,11 +87,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls.count, 0)
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls.count, 1)
         XCTAssertEqual(dialogResponse, .delete)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.all, burn: true), .dailyAndStandard)
-        ])
     }
 
     func testWhenDeleteDialogIsAcceptedWithoutBurningThenShowDeleteDialogForQueryPerformsDeletionAndReturnsDeleteAction() async {
@@ -136,11 +96,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls.count, 1)
         XCTAssertEqual(dataProvider.burnVisitsMatchingQueryCalls.count, 0)
         XCTAssertEqual(dialogResponse, .delete)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.all, burn: false), .dailyAndStandard)
-        ])
     }
 
     func testThatShowDeleteDialogForNonRangeQueryNotMatchingAllVisitsDoesNotAdjustQueryToAllRange() async throws {
@@ -157,11 +112,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls.count, 1)
         let deleteVisitsCall = try XCTUnwrap(dataProvider.deleteVisitsMatchingQueryCalls.first)
         XCTAssertEqual(deleteVisitsCall, .searchTerm("hello"))
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.searchTerm, burn: false), .dailyAndStandard)
-        ])
     }
 
     func testThatShowDeleteDialogForNonRangeQueryMatchingAllVisitsAdjustsQueryToAllRange() async throws {
@@ -171,11 +121,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsMatchingQueryCalls.count, 1)
         let deleteVisitsCall = try XCTUnwrap(dataProvider.deleteVisitsMatchingQueryCalls.first)
         XCTAssertEqual(deleteVisitsCall, .rangeFilter(.all))
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.all, burn: false), .dailyAndStandard)
-        ])
     }
 
     // MARK: - showDeleteDialogForEntries
@@ -188,16 +133,12 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         ]
         let dialogResponse = await actionsHandler.showDeleteDialog(for: identifiers.map(\.description))
         XCTAssertEqual(dialogResponse, .noAction)
-
-        XCTAssertEqual(firePixelCalls, [])
     }
 
     func testWhenIdentifiersArrayIsEmptyNilThenShowDeleteDialogForEntriesReturnsNoAction() async {
         dataProvider = nil
         let dialogResponse = await actionsHandler.showDeleteDialog(for: [])
         XCTAssertEqual(dialogResponse, .noAction)
-
-        XCTAssertEqual(firePixelCalls, [])
     }
 
     func testWhenSingleIdentifierIsPassedThenShowDeleteDialogForQueryPerformsDeletionWithoutShowingDialogAndReturnsDeleteAction() async throws {
@@ -207,11 +148,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsForIdentifierCalls.count, 1)
         XCTAssertEqual(dataProvider.burnVisitsForIdentifiersCalls.count, 0)
         XCTAssertEqual(dialogResponse, .delete)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.singleItemDeleted, .dailyAndStandard)
-        ])
     }
 
     func testWhenMultipleIdentifiersArePassedAndDeleteDialogReturnsUnknownResponseThenShowDeleteDialogForQueryReturnsNoAction() async throws {
@@ -226,8 +162,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsForIdentifierCalls.count, 0)
         XCTAssertEqual(dataProvider.burnVisitsForIdentifiersCalls.count, 0)
         XCTAssertEqual(dialogResponse, .noAction)
-
-        XCTAssertEqual(firePixelCalls, [])
     }
 
     func testWhenMultipleIdentifiersArePassedAndDeleteDialogIsCancelledThenShowDeleteDialogForQueryReturnsNoAction() async throws {
@@ -241,8 +175,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsForIdentifierCalls.count, 0)
         XCTAssertEqual(dataProvider.burnVisitsForIdentifiersCalls.count, 0)
         XCTAssertEqual(dialogResponse, .noAction)
-
-        XCTAssertEqual(firePixelCalls, [])
     }
 
     func testWhenMultipleIdentifiersArePassedAndDeleteDialogIsAcceptedWithBurningThenShowDeleteDialogForQueryReturnsDeleteAction() async throws {
@@ -256,11 +188,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsForIdentifierCalls.count, 0)
         XCTAssertEqual(dataProvider.burnVisitsForIdentifiersCalls.count, 1)
         XCTAssertEqual(dialogResponse, .delete)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.multiSelect, burn: true), .dailyAndStandard)
-        ])
     }
 
     func testWhenMultipleIdentifiersArePassedAndDeleteDialogIsAcceptedWithoutBurningThenShowDeleteDialogForQueryReturnsDeleteAction() async throws {
@@ -274,11 +201,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dataProvider.deleteVisitsForIdentifierCalls.count, 1)
         XCTAssertEqual(dataProvider.burnVisitsForIdentifiersCalls.count, 0)
         XCTAssertEqual(dialogResponse, .delete)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.delete, .daily),
-            .init(.multipleItemsDeleted(.multiSelect, burn: false), .dailyAndStandard)
-        ])
     }
 
     // MARK: - showContextMenu
@@ -401,7 +323,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let url = try XCTUnwrap("https://example.com".url)
         await actionsHandler.open(url)
         XCTAssertEqual(tabOpener.openCalls, [url])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -418,7 +339,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewTabCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -435,7 +355,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewWindowCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
     }
 
     @MainActor
@@ -452,34 +371,6 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(tabOpener.openInNewFireWindowCalls, [[url]])
-        XCTAssertEqual(firePixelCalls, [.init(.itemOpened(.single), .dailyAndStandard)])
-    }
-
-    @MainActor
-    func testThatOpenActionsForMultipleItemsFirePixelForMultipleItems() async throws {
-        let identifiers: [VisitIdentifier] = [
-            .init(uuid: "abcd", url: try XCTUnwrap("https://example1.com".url), date: Date()),
-            .init(uuid: "efgh", url: try XCTUnwrap("https://example2.com".url), date: Date())
-        ]
-        _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
-        let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
-        menu.performActionForItem(at: 0) // items[0] is openInNewTab
-        // Wait for a short time to allow the async task to complete
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        menu.performActionForItem(at: 1) // items[1] is openInNewWindow
-        // Wait for a short time to allow the async task to complete
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        menu.performActionForItem(at: 2) // items[2] is openInNewFireWindow
-        // Wait for a short time to allow the async task to complete
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        XCTAssertEqual(firePixelCalls, [
-            .init(.itemOpened(.multiple), .dailyAndStandard),
-            .init(.itemOpened(.multiple), .dailyAndStandard),
-            .init(.itemOpened(.multiple), .dailyAndStandard)
-        ])
     }
 
     // MARK: - addBookmarks
@@ -572,6 +463,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         let identifiers: [VisitIdentifier] = [
             .init(uuid: "abcd", url: url, date: Date())
         ]
+//        dataProvider.titlesForURLs = { _ in [url: "a bookmark title"] }
 
         _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)
@@ -591,6 +483,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
             .init(uuid: "abcd", url: url1, date: Date()),
             .init(uuid: "efgh", url: url2, date: Date())
         ]
+//        dataProvider.titlesForURLs = { _ in [url: "a bookmark title"] }
 
         _ = await actionsHandler.showContextMenu(for: identifiers.map(\.description), using: contextMenuPresenter)
         let menu = try XCTUnwrap(contextMenuPresenter.showContextMenuCalls.first)

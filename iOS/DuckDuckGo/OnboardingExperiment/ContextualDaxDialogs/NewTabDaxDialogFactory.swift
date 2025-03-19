@@ -20,10 +20,6 @@
 import Foundation
 import SwiftUI
 import Onboarding
-import Subscription
-import Common
-
-typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & PrivacyProPromotionCoordinating
 
 protocol NewTabDaxDialogProvider {
     associatedtype DaxDialog: View
@@ -32,23 +28,20 @@ protocol NewTabDaxDialogProvider {
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
-    private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
+    private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let onboardingManager: OnboardingAddToDockManaging
-    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(
         delegate: OnboardingNavigationDelegate?,
-        daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
+        contextualOnboardingLogic: ContextualOnboardingLogic,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
-        onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
+        onboardingManager: OnboardingAddToDockManaging = OnboardingManager()
     ) {
         self.delegate = delegate
-        self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
+        self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingManager = onboardingManager
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     @ViewBuilder
@@ -62,8 +55,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createSubsequentDialog()
         case .final:
             createFinalDialog(onDismiss: onDismiss)
-        case .privacyProPromotion:
-            createPrivacyProPromoDialog(onDismiss: onDismiss)
         default:
             EmptyView()
         }
@@ -78,8 +69,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setTryAnonymousSearchMessageSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTrySearchUnique)
+            self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTrySearchUnique)
         }
     }
 
@@ -91,8 +81,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setTryVisitSiteMessageSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+            self?.onboardingPixelReporter.trackScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
         }
     }
 
@@ -121,16 +110,16 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
 
         let showAddToDockTutorialAction: () -> Void = { [weak self] in
-            self?.onboardingPixelReporter.measureAddToDockPromoShowTutorialCTAAction()
+            self?.onboardingPixelReporter.trackAddToDockPromoShowTutorialCTAAction()
         }
 
         let dismissAction = { [weak self] isDismissedFromAddToDockTutorial in
             if isDismissedFromAddToDockTutorial {
-                self?.onboardingPixelReporter.measureAddToDockTutorialDismissCTAAction()
+                self?.onboardingPixelReporter.trackAddToDockTutorialDismissCTAAction()
             } else {
-                self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                self?.onboardingPixelReporter.trackEndOfJourneyDialogCTAAction()
                 if shouldShowAddToDock {
-                    self?.onboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
+                    self?.onboardingPixelReporter.trackAddToDockPromoDismissCTAAction()
                 }
             }
             onDismiss()
@@ -148,42 +137,11 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
-            self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
+            self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
+            self?.onboardingPixelReporter.trackScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
             if shouldShowAddToDock {
-                self?.onboardingPixelReporter.measureAddToDockPromoImpression()
+                self?.onboardingPixelReporter.trackAddToDockPromoImpression()
             }
-        }
-    }
-}
-
-private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(onDismiss: @escaping () -> Void) -> some View {
-
-        return FadeInView {
-            PrivacyProPromotionView(title: UserText.PrivacyProPromotionOnboarding.Promo.title,
-                                    message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
-                                    proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
-                                    dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
-                                    proceedAction: { [weak self] in
-                self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
-                let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                    userInfo: nil
-                )
-                onDismiss()
-            },
-                                    dismissAction: { [weak self] in
-                self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
-                onDismiss()
-            })
-        }
-        .onboardingContextualBackgroundStyle(background: .illustratedGradient)
-        .onFirstAppear { [weak self] in
-            self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
-            self?.daxDialogsFlowCoordinator.privacyProPromotionDialogSeen = true
         }
     }
 }

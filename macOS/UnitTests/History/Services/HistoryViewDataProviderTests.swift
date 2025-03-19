@@ -82,21 +82,12 @@ final class CapturingHistoryDataSource: HistoryDataSource {
     var deleteCalls: [[Visit]] = []
 }
 
-final class CapturingHistoryViewDataProviderPixelHandler: HistoryViewDataProviderPixelFiring {
-    func fireFilterUpdatedPixel(_ query: DataModel.HistoryQueryKind) {
-        fireFilterUpdatedPixelCalls.append(query)
-    }
-
-    var fireFilterUpdatedPixelCalls: [DataModel.HistoryQueryKind] = []
-}
-
 final class HistoryViewDataProviderTests: XCTestCase {
     var provider: HistoryViewDataProvider!
     var dataSource: CapturingHistoryDataSource!
     var burner: CapturingHistoryBurner!
     var dateFormatter: MockHistoryViewDateFormatter!
     var featureFlagger: MockFeatureFlagger!
-    var pixelHandler: CapturingHistoryViewDataProviderPixelHandler!
 
     @MainActor
     override func setUp() async throws {
@@ -104,13 +95,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
         burner = CapturingHistoryBurner()
         dateFormatter = MockHistoryViewDateFormatter()
         featureFlagger = MockFeatureFlagger()
-        pixelHandler = CapturingHistoryViewDataProviderPixelHandler()
         provider = HistoryViewDataProvider(
             historyDataSource: dataSource,
             historyBurner: burner,
             dateFormatter: dateFormatter,
-            featureFlagger: featureFlagger,
-            pixelHandler: pixelHandler
+            featureFlagger: featureFlagger
         )
         await provider.refreshData()
     }
@@ -120,11 +109,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
     func testThatRangesReturnsAllWhenHistoryIsEmpty() async {
         dataSource.history = nil
         await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [.init(id: .all, count: 0)])
+        XCTAssertEqual(provider.ranges, [.all])
 
         dataSource.history = []
         await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [.init(id: .all, count: 0)])
+        XCTAssertEqual(provider.ranges, [.all])
     }
 
     func testThatRangesIncludesTodayWhenHistoryContainsEntriesFromToday() async throws {
@@ -137,7 +126,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             ])
         ]
         await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [.init(id: .all, count: 1), .init(id: .today, count: 1)])
+        XCTAssertEqual(provider.ranges, [.all, .today])
     }
 
     func testThatRangesIncludesYesterdayWhenHistoryContainsEntriesFromYesterday() async throws {
@@ -151,11 +140,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
             ])
         ]
         await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [.init(id: .all, count: 2), .init(id: .today, count: 1), .init(id: .yesterday, count: 1)])
+        XCTAssertEqual(provider.ranges, [.all, .today, .yesterday])
     }
 
-    func testThatRangesIncludesAllRangesUntilTheOldestRangeThatContainsEntries() async throws {
-        dateFormatter.date = try date(year: 2025, month: 2, day: 24) // Monday
+    func testThatRangesIncludesOlderWhenHistoryContainsEntriesOlderThan5Days() async throws {
+        dateFormatter.date = try date(year: 2025, month: 2, day: 24)
         let today = dateFormatter.currentDate().startOfDay
 
         dataSource.history = [
@@ -164,38 +153,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             ])
         ]
         await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 1),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .saturday, count: 0),
-            .init(id: .friday, count: 0),
-            .init(id: .thursday, count: 0),
-            .init(id: .wednesday, count: 1)
-        ])
-    }
-
-    func testThatRangesIncludesAllDaysAndOlderWhenHistoryContainsEntriesOlderThan7Days() async throws {
-        dateFormatter.date = try date(year: 2025, month: 2, day: 24) // Monday
-        let today = dateFormatter.currentDate().startOfDay
-
-        dataSource.history = [
-            .make(url: try XCTUnwrap("https://example.com".url), visits: [
-                .init(date: today.daysAgo(8))
-            ])
-        ]
-        await provider.refreshData()
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 1),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .saturday, count: 0),
-            .init(id: .friday, count: 0),
-            .init(id: .thursday, count: 0),
-            .init(id: .wednesday, count: 0),
-            .init(id: .tuesday, count: 0),
-            .init(id: .older, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .older])
     }
 
     func testThatRangesIncludesNamedWeekdaysWhenHistoryContainsEntriesFrom2To4DaysAgo() async throws {
@@ -212,74 +170,25 @@ final class HistoryViewDataProviderTests: XCTestCase {
         }
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 24)) // Monday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .saturday, count: 1),
-            .init(id: .friday, count: 1),
-            .init(id: .thursday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .saturday, .friday, .thursday])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 25)) // Tuesday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .sunday, count: 1),
-            .init(id: .saturday, count: 1),
-            .init(id: .friday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .sunday, .saturday, .friday])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 26)) // Wednesday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .monday, count: 1),
-            .init(id: .sunday, count: 1),
-            .init(id: .saturday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .monday, .sunday, .saturday])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 27)) // Thursday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .tuesday, count: 1),
-            .init(id: .monday, count: 1),
-            .init(id: .sunday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .tuesday, .monday, .sunday])
 
         try await populateHistory(for: date(year: 2025, month: 2, day: 28)) // Friday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .wednesday, count: 1),
-            .init(id: .tuesday, count: 1),
-            .init(id: .monday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .wednesday, .tuesday, .monday])
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 1)) // Saturday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .thursday, count: 1),
-            .init(id: .wednesday, count: 1),
-            .init(id: .tuesday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .thursday, .wednesday, .tuesday])
 
         try await populateHistory(for: date(year: 2025, month: 3, day: 2)) // Sunday
-        XCTAssertEqual(provider.ranges, [
-            .init(id: .all, count: 3),
-            .init(id: .today, count: 0),
-            .init(id: .yesterday, count: 0),
-            .init(id: .friday, count: 1),
-            .init(id: .thursday, count: 1),
-            .init(id: .wednesday, count: 1)
-        ])
+        XCTAssertEqual(provider.ranges, [.all, .friday, .thursday, .wednesday])
     }
 
     // MARK: - visitsBatch
@@ -295,11 +204,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example4.com".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        var batch = await provider.visitsBatch(for: .rangeFilter(.all), source: .auto, limit: 3, offset: 0)
+        var batch = await provider.visitsBatch(for: .rangeFilter(.all), limit: 3, offset: 0)
         XCTAssertEqual(batch.finished, false)
         XCTAssertEqual(batch.visits.count, 3)
 
-        batch = await provider.visitsBatch(for: .rangeFilter(.all), source: .auto, limit: 3, offset: 3)
+        batch = await provider.visitsBatch(for: .rangeFilter(.all), limit: 3, offset: 3)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 1)
     }
@@ -320,7 +229,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example4.com".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .rangeFilter(.all), source: .auto, limit: 6, offset: 0)
+        let batch = await provider.visitsBatch(for: .rangeFilter(.all), limit: 6, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 5)
     }
@@ -341,7 +250,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example4.com".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .rangeFilter(.yesterday), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .rangeFilter(.yesterday), limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(Set(batch.visits.map(\.url)), ["https://example1.com", "https://example3.com"])
     }
@@ -362,11 +271,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example4.com".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        var batch = await provider.visitsBatch(for: .searchTerm(""), source: .auto, limit: 6, offset: 0)
+        var batch = await provider.visitsBatch(for: .searchTerm(""), limit: 6, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 5)
 
-        batch = await provider.visitsBatch(for: .domainFilter(""), source: .auto, limit: 6, offset: 0)
+        batch = await provider.visitsBatch(for: .domainFilter(""), limit: 6, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 5)
     }
@@ -382,7 +291,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example4.com".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .searchTerm("2"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .searchTerm("2"), limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 3)
         XCTAssertEqual(Set(batch.visits.map(\.url)), ["https://example12.com", "https://example2.com", "https://example3.com"])
@@ -397,7 +306,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://example.com/abCDe".url), title: "foo", visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .searchTerm("bCd"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .searchTerm("bCd"), limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 2)
     }
@@ -413,7 +322,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://duckduckgo.com".url), title: "abcd.example.com", visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 2)
         XCTAssertEqual(Set(batch.visits.map(\.url)), ["https://abcd.example.com/foo", "https://example.com/bar"])
@@ -427,7 +336,7 @@ final class HistoryViewDataProviderTests: XCTestCase {
             .make(url: try XCTUnwrap("https://abcd.example.com/foo".url), visits: [.init(date: today)])
         ]
         await provider.refreshData()
-        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), source: .auto, limit: 4, offset: 0)
+        let batch = await provider.visitsBatch(for: .domainFilter("example.com"), limit: 4, offset: 0)
         XCTAssertEqual(batch.finished, true)
         XCTAssertEqual(batch.visits.count, 1)
     }
@@ -441,11 +350,9 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let saturday = today.daysAgo(2)
         let friday = today.daysAgo(3)
         let thursday = today.daysAgo(4)
-        let wednesday = today.daysAgo(5)
-        let tuesday = today.daysAgo(6)
-        let older1 = today.daysAgo(7)
-        let older2 = today.daysAgo(8)
-        let older3 = today.daysAgo(9)
+        let older1 = today.daysAgo(5)
+        let older2 = today.daysAgo(6)
+        let older3 = today.daysAgo(7)
 
         dataSource.history = [
             .make(url: try XCTUnwrap("https://example1.com".url), visits: [
@@ -455,8 +362,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
                 .init(date: saturday),
                 .init(date: saturday),
                 .init(date: thursday),
-                .init(date: wednesday),
-                .init(date: tuesday),
                 .init(date: older1),
                 .init(date: older2),
                 .init(date: older3)
@@ -465,13 +370,11 @@ final class HistoryViewDataProviderTests: XCTestCase {
                 .init(date: today),
                 .init(date: yesterday),
                 .init(date: friday),
-                .init(date: wednesday),
-                .init(date: older2)
+                .init(date: older1)
             ]),
             .make(url: try XCTUnwrap("https://example3.com".url), visits: [
                 .init(date: saturday),
                 .init(date: thursday),
-                .init(date: wednesday),
                 .init(date: older1),
                 .init(date: older3)
             ])
@@ -483,17 +386,13 @@ final class HistoryViewDataProviderTests: XCTestCase {
         let saturdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.saturday))
         let fridayCount = await provider.countVisibleVisits(matching: .rangeFilter(.friday))
         let thursdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.thursday))
-        let wednesdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.wednesday))
-        let tuesdayCount = await provider.countVisibleVisits(matching: .rangeFilter(.tuesday))
         let olderCount = await provider.countVisibleVisits(matching: .rangeFilter(.older))
-        XCTAssertEqual(allCount, 19)
+        XCTAssertEqual(allCount, 15)
         XCTAssertEqual(todayCount, 2)
         XCTAssertEqual(yesterdayCount, 2)
         XCTAssertEqual(saturdayCount, 2)
         XCTAssertEqual(fridayCount, 1)
         XCTAssertEqual(thursdayCount, 2)
-        XCTAssertEqual(wednesdayCount, 3)
-        XCTAssertEqual(tuesdayCount, 1)
         XCTAssertEqual(olderCount, 6)
     }
 
@@ -918,47 +817,6 @@ final class HistoryViewDataProviderTests: XCTestCase {
                 try XCTUnwrap("https://en.wikipedia.org".url): "English Wikipedia"
             ]
         )
-    }
-
-    // MARK: - pixels
-
-    func testWhenVisitsBatchIsCalledWithZeroOffsetAndUserSourceThenFilterUpdatedPixelIsFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .user, limit: 10, offset: 0)
-        _ = await provider.visitsBatch(for: .rangeFilter(.today), source: .user, limit: 10, offset: 0)
-        _ = await provider.visitsBatch(for: .searchTerm("foo"), source: .user, limit: 10, offset: 0)
-        _ = await provider.visitsBatch(for: .domainFilter("example.com"), source: .user, limit: 10, offset: 0)
-
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [
-            .rangeFilter(.all),
-            .rangeFilter(.today),
-            .searchTerm("foo"),
-            .domainFilter("example.com")
-        ])
-    }
-
-    func testWhenVisitsBatchIsCalledWithNonZeroOffsetAndUserSourceThenFilterUpdatedPixelIsNotFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .user, limit: 10, offset: 10)
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
-    }
-
-    func testWhenVisitsBatchIsCalledWithNonZeroOffsetAndAutoSourceThenFilterUpdatedPixelIsNotFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .auto, limit: 10, offset: 10)
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
-    }
-
-    func testWhenVisitsBatchIsCalledWithNonZeroOffsetAndInitialSourceThenFilterUpdatedPixelIsNotFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .initial, limit: 10, offset: 10)
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
-    }
-
-    func testWhenVisitsBatchIsCalledWithZeroOffsetAndAutoSourceThenFilterUpdatedPixelIsNotFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .auto, limit: 10, offset: 0)
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
-    }
-
-    func testWhenVisitsBatchIsCalledWithZeroOffsetAndInitialSourceThenFilterUpdatedPixelIsNotFired() async throws {
-        _ = await provider.visitsBatch(for: .rangeFilter(.all), source: .initial, limit: 10, offset: 0)
-        XCTAssertEqual(pixelHandler.fireFilterUpdatedPixelCalls, [])
     }
 
     // MARK: - helpers

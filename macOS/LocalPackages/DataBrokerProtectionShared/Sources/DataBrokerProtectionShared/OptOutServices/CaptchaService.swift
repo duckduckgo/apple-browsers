@@ -139,10 +139,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
     }
 
     public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
-                                         retries: Int = 5,
-                                         pollingInterval: TimeInterval = 1,
-                                         attemptId: UUID,
-                                         shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
+                                  retries: Int = 5,
+                                  pollingInterval: TimeInterval = 1,
+                                  attemptId: UUID,
+                                  shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
         guard let captchaSubmitResult = try? await submitCaptchaInformationRequest(captchaInfo, attemptId: attemptId) else {
             throw CaptchaServiceError.errorWhenSubmittingCaptcha
         }
@@ -187,7 +187,7 @@ public struct CaptchaService: CaptchaServiceProtocol {
         Logger.service.debug("Submitting captcha request ...")
         var request = URLRequest(url: url)
 
-        guard let authHeader = await authenticationManager.getAuthHeader() else {
+        guard let authHeader = authenticationManager.getAuthHeader() else {
             servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest)
             throw AuthenticationError.noAuthToken
         }
@@ -273,7 +273,7 @@ public struct CaptchaService: CaptchaServiceProtocol {
         }
 
         var request = URLRequest(url: url)
-        guard let authHeader = await authenticationManager.getAuthHeader() else {
+        guard let authHeader = authenticationManager.getAuthHeader() else {
             servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaToBeResolvedRequest)
             throw AuthenticationError.noAuthToken
         }

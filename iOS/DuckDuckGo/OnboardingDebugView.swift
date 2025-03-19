@@ -59,7 +59,7 @@ struct OnboardingDebugView: View {
                     Text(verbatim: "Reset Dax Dialogs State")
                 })
                 .alert(isPresented: $isShowingResetDaxDialogsAlert, content: {
-                    Alert(title: Text(verbatim: "Dax Dialogs reset"), dismissButton: .cancel(Text(verbatim: "Done")))
+                    Alert(title: Text(verbatim: "Dax Dialogs reset"), dismissButton: .cancel())
                 })
             }
 
@@ -97,20 +97,16 @@ final class OnboardingDebugViewModel: ObservableObject {
 
     func resetDaxDialogs() {
         settings.isDismissed = false
-        settings.tryAnonymousSearchShown = false
-        settings.tryVisitASiteShown = false
         settings.browsingAfterSearchShown = false
         settings.browsingWithTrackersShown = false
         settings.browsingWithoutTrackersShown = false
         settings.browsingMajorTrackingSiteShown = false
-        settings.fireButtonEducationShownOrExpired = false
         settings.fireMessageExperimentShown = false
         settings.fireButtonPulseDateShown = nil
         settings.privacyButtonPulseShown = false
         settings.browsingFinalDialogShown = false
         settings.lastVisitedOnboardingWebsiteURLPath = nil
         settings.lastShownContextualOnboardingDialogType = nil
-        settings.privacyProPromotionDialogShown = false
     }
 }
 

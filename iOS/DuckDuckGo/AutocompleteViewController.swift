@@ -312,7 +312,6 @@ extension HistoryEntry: HistorySuggestion {
 
 struct OpenTab: BrowserTab {
 
-    let tabId: String?
     let title: String
     let url: URL
 

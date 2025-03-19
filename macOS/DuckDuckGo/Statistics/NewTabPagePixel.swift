@@ -150,7 +150,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
      */
     case privacyStatsDatabaseError
 
-    case newTabPageExceptionReported
+    case newTabPageExceptionReported(message: String)
 
     var name: String {
         switch self {
@@ -181,6 +181,8 @@ enum NewTabPagePixel: PixelKitEventV2 {
                 parameters["blocked-tracking-attempts"] = String(privacyStats)
             }
             return parameters
+        case .newTabPageExceptionReported(let message):
+            return [PixelKit.Parameters.assertionMessage: message]
         case .favoriteSectionHidden,
                 .recentActivitySectionHidden,
                 .blockedTrackingAttemptsSectionHidden,
@@ -188,8 +190,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
                 .blockedTrackingAttemptsShowMore,
                 .privacyFeedHistoryLinkOpened,
                 .privacyStatsCouldNotLoadDatabase,
-                .privacyStatsDatabaseError,
-                .newTabPageExceptionReported:
+                .privacyStatsDatabaseError:
             return nil
         }
     }

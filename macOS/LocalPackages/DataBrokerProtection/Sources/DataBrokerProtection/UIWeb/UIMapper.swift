@@ -239,7 +239,6 @@ struct MapperToUI {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
-            encoder.outputFormatting = .sortedKeys
             let jsonData = try encoder.encode(metadataUI)
             if let jsonString = String(data: jsonData, encoding: .utf8) {
                 Logger.dataBrokerProtection.log("Metadata: \(jsonString, privacy: .public)")

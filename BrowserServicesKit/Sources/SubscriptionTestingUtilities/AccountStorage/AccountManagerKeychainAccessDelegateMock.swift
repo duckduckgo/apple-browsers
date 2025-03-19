@@ -21,13 +21,13 @@ import Subscription
 
 public final class AccountManagerKeychainAccessDelegateMock: AccountManagerKeychainAccessDelegate {
 
-    public var onAccountManagerKeychainAccessFailed: ((AccountKeychainAccessType, any Error) -> Void)?
+    public var onAccountManagerKeychainAccessFailed: ((AccountKeychainAccessType, AccountKeychainAccessError) -> Void)?
 
-    public init(onAccountManagerKeychainAccessFailed: ( (AccountKeychainAccessType, any Error) -> Void)? = nil) {
+    public init(onAccountManagerKeychainAccessFailed: ( (AccountKeychainAccessType, AccountKeychainAccessError) -> Void)? = nil) {
         self.onAccountManagerKeychainAccessFailed = onAccountManagerKeychainAccessFailed
     }
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
         onAccountManagerKeychainAccessFailed?(accessType, error)
     }
 }

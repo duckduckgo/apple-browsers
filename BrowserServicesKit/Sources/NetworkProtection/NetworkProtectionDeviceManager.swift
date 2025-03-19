@@ -131,28 +131,25 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
                                             excludeLocalNetworks: Bool,
                                             dnsSettings: NetworkProtectionDNSSettings,
                                             regenerateKey: Bool) async throws -> GenerateTunnelConfigurationResult {
-        Logger.networkProtection.debug("Generating tunnel configuration")
         var keyPair: KeyPair
 
         if regenerateKey {
-            Logger.networkProtection.debug("Regenerating key pair")
             keyPair = keyStore.newKeyPair()
         } else {
             // Temporary code added on 2024-03-12 to fix a previous issue where users had a really long
             // key expiration date.  We should remove this after a month or so.
             if let existingKeyPair = keyStore.currentKeyPair(),
                existingKeyPair.expirationDate > Date().addingTimeInterval(TimeInterval.day) {
-                Logger.networkProtection.debug("Regenerating key pair")
+
                 keyPair = keyStore.newKeyPair()
             } else {
                 // This is the regular code to restore when the above code is removed.
-                Logger.networkProtection.debug("Reusing current key pair")
                 keyPair = keyStore.currentKeyPair() ?? keyStore.newKeyPair()
             }
         }
 
         let (selectedServer, newExpiration) = try await register(keyPair: keyPair, selectionMethod: resolvedSelectionMethod)
-        Logger.networkProtection.debug("Server registration successul")
+        Logger.networkProtection.log("Server registration successul")
 
         keyStore.updateKeyPair(keyPair)
 
@@ -193,11 +190,8 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
                           selectionMethod: NetworkProtectionServerSelectionMethod) async throws -> (server: NetworkProtectionServer,
                                                                                                     newExpiration: Date?) {
         guard let token = try? await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler) else {
-            Logger.networkProtection.error("Missing auth token")
             throw NetworkProtectionError.noAuthTokenFound
         }
-
-        Logger.networkProtection.debug("Registering with server using method: \(selectionMethod.debugDescription)")
 
         let serverSelection: RegisterServerSelection
         let excludedServerName: String?
@@ -229,7 +223,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
 
         switch registeredServersResult {
         case .success(let registeredServers):
-            Logger.networkProtection.debug("Server registration successful")
             guard let registeredServer = registeredServers.first(where: { $0.serverName != excludedServerName }) else {
                 // If we're looking to exclude a server we should have a few other options available.  If we can't find any
                 // then it means theres an inconsistency in the server list that was returned.
@@ -240,7 +233,6 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
             selectedServer = registeredServer
             return (selectedServer, selectedServer.expirationDate)
         case .failure(let error):
-            Logger.networkProtection.error("Server registration failed: \(error, privacy: .public)")
             await handle(clientError: error)
             try handleAccessRevoked(error)
             throw error

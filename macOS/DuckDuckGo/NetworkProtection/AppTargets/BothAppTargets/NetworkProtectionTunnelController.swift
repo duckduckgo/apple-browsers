@@ -69,8 +69,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // MARK: - Subscriptions
 
     private let accessTokenStorage: SubscriptionTokenKeychainStorage
-    private let subscriptionManagerV2: any SubscriptionManagerV2
-    private let isAuthV2Enable: Bool
 
     // MARK: - Debug Options Support
 
@@ -160,9 +158,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          settings: VPNSettings,
          defaults: UserDefaults,
          notificationCenter: NotificationCenter = .default,
-         accessTokenStorage: SubscriptionTokenKeychainStorage,
-         subscriptionManagerV2: any SubscriptionManagerV2,
-         isAuthV2Enable: Bool) {
+         accessTokenStorage: SubscriptionTokenKeychainStorage) {
 
         self.featureFlagger = featureFlagger
         self.networkExtensionBundleID = networkExtensionBundleID
@@ -171,8 +167,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.settings = settings
         self.defaults = defaults
         self.accessTokenStorage = accessTokenStorage
-        self.subscriptionManagerV2 = subscriptionManagerV2
-        self.isAuthV2Enable = isAuthV2Enable
 
         subscribeToSettingsChanges()
         subscribeToStatusChanges()
@@ -190,7 +184,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func handleStatusChange(_ notification: Notification) {
-        Logger.networkProtection.log("VPN handle status change: \(notification.debugDescription, privacy: .public)")
         guard let session = (notification.object as? NETunnelProviderSession),
               session.status != previousStatus,
               let manager = session.manager as? NETunnelProviderManager else {
@@ -343,7 +336,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     private func setup(_ tunnelManager: NETunnelProviderManager) {
-        Logger.networkProtection.log("Setting up tunnel manager")
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
         }
@@ -615,17 +607,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
-
-        // AuthV1
-        if !isAuthV2Enable {
-            let authToken = try fetchAuthToken()
-            options[NetworkProtectionOptionKey.authToken] = authToken
-        } else {
-            // AuthV2
-            let tokenContainer = try await fetchTokenContainerAndRefresh()
-            options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
+        guard let authToken = try fetchAuthToken() else {
+            throw StartError.noAuthToken
         }
-
+        options[NetworkProtectionOptionKey.authToken] = authToken
         options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
         options[NetworkProtectionOptionKey.selectedServer] = settings.selectedServer.stringValue as? NSString
 
@@ -665,10 +650,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
 
         do {
-            Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
+            Logger.networkProtection.log("Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
             try tunnelManager.connection.startVPNTunnel(options: options)
         } catch {
-            Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
+            Logger.networkProtection.fault("Failed to start VPN tunnel: \(error, privacy: .public)")
             throw StartError.startTunnelFailure(error)
         }
 
@@ -698,7 +683,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     ///
     @MainActor
     func stop() async {
-        Logger.networkProtection.log("🛑 Stop VPN")
+        Logger.networkProtection.log("Stop VPN")
         await stop(disableOnDemand: true)
     }
 
@@ -820,28 +805,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         }
     }
 
-    private func fetchAuthToken() throws -> NSString {
+    private func fetchAuthToken() throws -> NSString? {
         if let accessToken = try? accessTokenStorage.getAccessToken() {
             Logger.networkProtection.log("🟢 TunnelController found token")
-            return Self.adaptAccessTokenForVPN(accessToken) as NSString
+            return Self.adaptAccessTokenForVPN(accessToken) as NSString?
         } else {
-            Logger.networkProtection.error("🔴 TunnelController found no token")
-            throw StartError.noAuthToken
-        }
-    }
-
-    private func fetchTokenContainerAndRefresh() async throws -> TokenContainer {
-        do {
-            let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
-            Logger.networkProtection.log("🟢 TunnelController found token container")
-
-            // refresh token in order to brach it from the one sent to VPN
-            try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
-
-            return tokenContainer
-        } catch {
-            Logger.networkProtection.fault("🔴 TunnelController found no token container")
-            throw StartError.noAuthToken
+            Logger.networkProtection.error("TunnelController found no token")
+            return nil
         }
     }
 

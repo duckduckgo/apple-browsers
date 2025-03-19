@@ -65,11 +65,11 @@ struct PreferencesSection: Hashable, Identifiable {
             .init(id: .about, panes: otherPanes)
         ]
 
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+        let subscriptionManager = Application.appDelegate.subscriptionManager
         let platform = subscriptionManager.currentEnvironment.purchasePlatform
         var shouldHidePrivacyProDueToNoProducts = platform == .appStore && subscriptionManager.canPurchase == false
 
-        if subscriptionManager.isUserAuthenticated {
+        if subscriptionManager.accountManager.isUserAuthenticated {
             shouldHidePrivacyProDueToNoProducts = false
         }
 

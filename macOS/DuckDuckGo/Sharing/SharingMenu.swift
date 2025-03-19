@@ -57,18 +57,14 @@ final class SharingMenu: NSMenu {
     }
 
     @objc func openSharingPreferences(_ sender: NSMenuItem) {
-        guard let url = if #available(macOS 15.0, *) {
-            URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.share-services")
-        } else if #available(macOS 13.0, *) {
-            URL(string: "x-apple.systempreferences:com.apple.preferences.extensions?Sharing")
-        } else {
-            URL(fileURLWithPath: "/System/Library/PreferencePanes/Extensions.prefPane")
-        } else { return }
-        if #available(macOS 13.0, *) {
-            NSWorkspace.shared.open(url)
+        if #available(macOS 13.0, *),
+           let preferencesLink = URL(string: "x-apple.systempreferences:com.apple.preferences.extensions?Sharing") {
+
+            NSWorkspace.shared.open(preferencesLink)
             return
         }
 
+        let url = URL(fileURLWithPath: "/System/Library/PreferencePanes/Extensions.prefPane")
         let plist = [
             "action": "revealExtensionPoint",
             "protocol": "com.apple.share-services"

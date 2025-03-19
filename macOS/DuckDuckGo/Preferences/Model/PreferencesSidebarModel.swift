@@ -44,7 +44,7 @@ final class PreferencesSidebarModel: ObservableObject {
         tabSwitcherTabs: [Tab.TabContent],
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
-        vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+        vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared
     ) {
         self.loadSections = loadSections

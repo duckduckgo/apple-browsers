@@ -82,10 +82,6 @@ extension URL {
         return host.contains("youtube.com") && path == "/watch"
     }
 
-    public var isYoutubeWatchMainPage: Bool {
-        return isYoutubeWatch && fragment == nil
-    }
-
     private var isYoutubeNoCookie: Bool {
         host == "www.youtube-nocookie.com" && pathComponents.count == 3 && pathComponents[safe: 1] == "embed"
     }

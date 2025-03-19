@@ -50,7 +50,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         try super.tearDownWithError()
     }
 
-    func testWhenMeasureOnboardingIntroImpressionThenOnboardingIntroShownEventFires() {
+    func testWhenTrackOnboardingIntroImpressionThenOnboardingIntroShownEventFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroShownUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -59,7 +59,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureOnboardingIntroImpression()
+        sut.trackOnboardingIntroImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -69,7 +69,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureBrowserComparisonImpressionThenOnboardingIntroComparisonChartShownEventFires() {
+    func testWhenTrackBrowserComparisonImpressionThenOnboardingIntroComparisonChartShownEventFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroComparisonChartShownUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -78,7 +78,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureBrowserComparisonImpression()
+        sut.trackBrowserComparisonImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -88,7 +88,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureChooseBrowserCTAActionThenOnboardingIntroChooseBrowserCTAPressedEventFires() {
+    func testWhenTrackChooseBrowserCTAActionThenOnboardingIntroChooseBrowserCTAPressedEventFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseBrowserCTAPressed
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -97,7 +97,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureChooseBrowserCTAAction()
+        sut.trackChooseBrowserCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -109,7 +109,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // MARK: - Custom Interactions
 
-    func testWhenMeasureCustomSearchIsCalledThenSearchCustomFires() {
+    func testWhenTrackCustomSearchIsCalledThenSearchCustomFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingContextualSearchCustomUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -118,7 +118,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureCustomSearch()
+        sut.trackCustomSearch()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -128,7 +128,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureCustomSiteIsCalledThenSiteCustomFires() {
+    func testWhenTrackCustomSiteIsCalledThenSiteCustomFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingContextualSiteCustomUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -137,7 +137,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureCustomSite()
+        sut.trackCustomSite()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -147,7 +147,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureSecondVisitIsCalledAndStoreDoesNotContainPixelThenPixelIsNotFired() {
+    func testWhenTrackSecondVisitIsCalledAndStoreDoesNotContainPixelThenPixelIsNotFired() {
         // GIVEN
         XCTAssertNil(userDefaultsMock.value(forKey: "com.duckduckgo.ios.site-visited"))
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -156,7 +156,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureSecondSiteVisit()
+        sut.trackSecondSiteVisit()
 
         // THEN
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -165,7 +165,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
     }
 
-    func testWhenMeasureSecondVisitIsCalledThenFiresOnlyOnSecondTime() {
+    func testWhenTrackSecondVisitIsCalledThenFiresOnlyOnSecondTime() {
         // GIVEN
         let key = "com.duckduckgo.ios.site-visited"
         userDefaultsMock.set(true, forKey: key)
@@ -177,7 +177,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureSecondSiteVisit()
+        sut.trackSecondSiteVisit()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -187,7 +187,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenPrivacyDashboardFirstTimeOpenedPixelFires() {
+    func testWhenTrackPrivacyDashboardOpenedForFirstTimeThenPrivacyDashboardFirstTimeOpenedPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.privacyDashboardFirstTimeOpenedUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -195,7 +195,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measurePrivacyDashboardOpenedForFirstTime()
+        sut.trackPrivacyDashboardOpenedForFirstTime()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -204,18 +204,18 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenFromOnboardingParameterIsSetToTrue() {
+    func testWhenTrackPrivacyDashboardOpenedForFirstTimeThenFromOnboardingParameterIsSetToTrue() {
         // GIVEN
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
 
         // WHEN
-        sut.measurePrivacyDashboardOpenedForFirstTime()
+        sut.trackPrivacyDashboardOpenedForFirstTime()
 
         // THEN
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams["from_onboarding"], "true")
     }
 
-    func testWhenMeasurePrivacyDashboardOpenedForFirstTimeThenDaysSinceInstallParameterIsSet() {
+    func testWhenTrackPrivacyDashboardOpenedForFirstTimeThenDaysSinceInstallParameterIsSet() {
         // GIVEN
         let installDate = Date(timeIntervalSince1970: 1722348000) // 30th July 2024 GMT
         now = Date(timeIntervalSince1970: 1722607200) // 1st August 2024 GMT
@@ -223,7 +223,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams, [:])
 
         // WHEN
-        sut.measurePrivacyDashboardOpenedForFirstTime()
+        sut.trackPrivacyDashboardOpenedForFirstTime()
 
         // THEN
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedParams["daysSinceInstall"], "3")
@@ -231,7 +231,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // MARK: - Dax Dialogs
 
-    func testWhenMeasureScreenImpressionIsCalledThenPixelFires() {
+    func testWhenTrackScreenImpressionIsCalledThenPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.daxDialogsSerpUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -239,7 +239,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureScreenImpression(event: expectedPixel)
+        sut.trackScreenImpression(event: expectedPixel)
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -248,7 +248,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenmeasureEndOfJourneyDialogCTAActionIsCalledThenDaxDialogsEndOfJourneyDismissedPixelFires() {
+    func testWhentrackEndOfJourneyDialogCTAActionIsCalledThenDaxDialogsEndOfJourneyDismissedPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.daxDialogsEndOfJourneyDismissed
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -256,7 +256,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureEndOfJourneyDialogCTAAction()
+        sut.trackEndOfJourneyDialogCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -277,7 +277,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(sut.enqueuedPixels.isEmpty)
 
         // WHEN
-        sut.measureOnboardingIntroImpression()
+        sut.trackOnboardingIntroImpression()
 
         // THEN
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -303,7 +303,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertTrue(sut.enqueuedPixels.isEmpty)
 
         // WHEN
-        sut.measurePrivacyDashboardOpenedForFirstTime()
+        sut.trackPrivacyDashboardOpenedForFirstTime()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -316,8 +316,8 @@ final class OnboardingPixelReporterTests: XCTestCase {
     func testWhenFireEnqueuedPixelIsCalledThenFireEnqueuedPixels() {
         // GIVEN
         statisticsStoreMock.atb = nil
-        sut.measureOnboardingIntroImpression()
-        sut.measureBrowserComparisonImpression()
+        sut.trackOnboardingIntroImpression()
+        sut.trackBrowserComparisonImpression()
         XCTAssertEqual(sut.enqueuedPixels.count, 2)
         XCTAssertTrue(OnboardingUniquePixelFireMock.capturedPixelEventHistory.isEmpty)
 
@@ -333,7 +333,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // MARK: - Onboarding Intro Highglights Experiment
 
-    func testWhenMeasureChooseAppIconImpressionIsCalledThenOnboardingIntroChooseIconImpressionUniquePixelFires() {
+    func testWhenTrackChooseAppIconImpressionIsCalledThenOnboardingIntroChooseIconImpressionUniquePixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseAppIconImpressionUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -341,7 +341,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureChooseAppIconImpression()
+        sut.trackChooseAppIconImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -350,7 +350,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasureChooseNonDefaultAppIconIsCalledThenOnboardingIntroChooseCustomIconColorPixelFires() {
+    func testWhenTrackChooseNonDefaultAppIconIsCalledThenOnboardingIntroChooseCustomIconColorPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseCustomAppIconColorCTAPressed
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -358,7 +358,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureChooseCustomAppIconColor()
+        sut.trackChooseCustomAppIconColor()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -367,7 +367,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasureAddressBarPositionSelectionImpressionIsCalledThenOnboardingIntroChooseAddressBarImpressionUniquePixelFires() {
+    func testWhenTrackAddressBarPositionSelectionImpressionIsCalledThenOnboardingIntroChooseAddressBarImpressionUniquePixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroChooseAddressBarImpressionUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -375,7 +375,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureAddressBarPositionSelectionImpression()
+        sut.trackAddressBarPositionSelectionImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -384,7 +384,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasureChooseBottomAddressBarPositionIsCalledThenOnboardingIntroBottomAddressBarSelectedFires() {
+    func testWhenTrackChooseBottomAddressBarPositionIsCalledThenOnboardingIntroBottomAddressBarSelectedFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroBottomAddressBarSelected
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -392,7 +392,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureChooseBottomAddressBarPosition()
+        sut.trackChooseBottomAddressBarPosition()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -403,7 +403,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // MARK: Add To Dock Experiment
 
-    func testWhenMeasureAddToDockPromoImpressionsIsCalledThenOnboardingAddToDockPromoImpressionsPixelFires() {
+    func testWhenTrackAddToDockPromoImpressionsIsCalledThenOnboardingAddToDockPromoImpressionsPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoImpressionsUnique
         XCTAssertFalse(OnboardingUniquePixelFireMock.didCallFire)
@@ -411,7 +411,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureAddToDockPromoImpression()
+        sut.trackAddToDockPromoImpression()
 
         // THEN
         XCTAssertTrue(OnboardingUniquePixelFireMock.didCallFire)
@@ -420,7 +420,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureAddToDockPromoShowTutorialCTAActionIsCalledThenOnboardingAddToDockPromoShowTutorialCTAPixelFires() {
+    func testWhenTrackAddToDockPromoShowTutorialCTAActionIsCalledThenOnboardingAddToDockPromoShowTutorialCTAPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoShowTutorialCTATapped
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -428,7 +428,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureAddToDockPromoShowTutorialCTAAction()
+        sut.trackAddToDockPromoShowTutorialCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -437,7 +437,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureAddToDockPromoDismissCTAActionThenOnboardingAddToDockPromoDismissCTAPixelFires() {
+    func testWhenTrackAddToDockPromoDismissCTAActionThenOnboardingAddToDockPromoDismissCTAPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockPromoDismissCTATapped
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -445,7 +445,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureAddToDockPromoDismissCTAAction()
+        sut.trackAddToDockPromoDismissCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
@@ -454,7 +454,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
     }
 
-    func testWhenMeasureAddToDockTutorialDismissCTAActionIsCalledThenonboardingAddToDockTutorialDismissCTAPixelFires() {
+    func testWhenTrackAddToDockTutorialDismissCTAActionIsCalledThenonboardingAddToDockTutorialDismissCTAPixelFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingAddToDockTutorialDismissCTATapped
         XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
@@ -462,7 +462,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
 
         // WHEN
-        sut.measureAddToDockTutorialDismissCTAAction()
+        sut.trackAddToDockTutorialDismissCTAAction()
 
         // THEN
         XCTAssertTrue(OnboardingPixelFireMock.didCallFire)

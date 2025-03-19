@@ -157,7 +157,3 @@ private extension UIScrollView {
         return zoomScale <= minimumZoomScale
     }
 }
-
-extension Notification.Name {
-    static let browserChromeVisibilityChanged = Notification.Name("com.duckduckgo.browserChrome.visibilityChanged")
-}

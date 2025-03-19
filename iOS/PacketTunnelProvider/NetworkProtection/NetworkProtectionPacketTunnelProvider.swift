@@ -37,7 +37,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
     private static var vpnLogger = VPNLogger()
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-    
+
+    static private let isAuthV2Enabled = false
     private var accountManager: AccountManager?
     private let subscriptionManager: (any SubscriptionManagerV2)?
 
@@ -435,7 +436,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // MARK: - Configure Subscription
+        // MARK: - Configure Subscription ------------------------------------------------------------------------------------------------------------
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
@@ -512,8 +513,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
                 switch type {
                 case .deadToken:
-                    // handled by the main app: Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                    break
+                    Pixel.fire(pixel: .privacyProDeadTokenDetected)
                 case .subscriptionIsActive, .v1MigrationFailed, .v1MigrationSuccessful: // handled by the main app only
                     break
                 }
@@ -523,28 +523,22 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
-                                                                   tokenRecoveryHandler: {
-                Logger.networkProtection.error("Expired refresh token detected")
-            },
-                                                                   initForPurchase: false)
+                                                                   autoRecoveryHandler: {
+                // TODO Implement
+            })
             self.subscriptionManager = subscriptionManager
             
             entitlementsCheck = {
                 Logger.networkProtection.log("Subscription Entitlements check...")
-                do {
-                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
-                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
-                    return .success(isNetworkProtectionEnabled)
-                } catch {
-                    Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
-                    return .failure(error)
-                }
+                let isNetworkProtectionEnabled = await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
+                Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                return .success(isNetworkProtectionEnabled)
             }
             tokenHandler = subscriptionManager
             self.accountManager = nil
         }
 
-        // MARK: -
+        // MARK: - -----------------------------------------------------------------------------------------------------------------------------------
 
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
@@ -670,10 +664,10 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 
 extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
         let parameters = [
             PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.localizedDescription,
+            PixelParameters.privacyProKeychainError: error.errorDescription,
             PixelParameters.source: "vpn"
         ]
 

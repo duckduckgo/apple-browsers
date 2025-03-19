@@ -355,8 +355,7 @@ extension PrivacyDashboardViewController {
                                 vpnOn: breakageAdditionalInfo.vpnOn,
                                 jsPerformance: webVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
-                                variant: PixelExperiment.cohort?.rawValue ?? "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged)
+                                variant: PixelExperiment.cohort?.rawValue ?? "")
     }
 
 }

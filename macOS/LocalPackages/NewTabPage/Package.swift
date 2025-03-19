@@ -43,7 +43,6 @@ let package = Package(
         .target(
             name: "NewTabPage",
             dependencies: [
-                .product(name: "Bookmarks", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "PrivacyStats", package: "BrowserServicesKit"),

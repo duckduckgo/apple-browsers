@@ -147,13 +147,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
     func testWhenDidAcknowledgeContextualOnboardingSearchIsCalledThenSetSearchMessageSeenOnLogic() {
         // GIVEN
-        XCTAssertFalse(onboardingLogicMock.didCallSetSearchMessageSeen)
+        XCTAssertFalse(onboardingLogicMock.didCallsetsetSearchMessageSeen)
 
         // WHEN
         sut.didAcknowledgeContextualOnboardingSearch()
 
         // THEN
-        XCTAssertTrue(onboardingLogicMock.didCallSetSearchMessageSeen)
+        XCTAssertTrue(onboardingLogicMock.didCallsetsetSearchMessageSeen)
     }
 
     func testWhenDidShowContextualOnboardingTrackersDialog_AndShouldShowPrivacyAnimation_ShieldIconAnimationActivated() {
@@ -200,13 +200,13 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
         let url = URL.ddg
         let webView = MockWebView()
         webView.setCurrentURL(url)
-        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
 
         // WHEN
         sut.webView(webView, didFinish: WKNavigation())
 
         // THEN
-        XCTAssertTrue(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
+        XCTAssertTrue(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
         WKNavigation.restoreDealloc()
     }
 
@@ -216,25 +216,23 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
         let url = try XCTUnwrap(URL.makeSearchURL(text: "test"))
         let webView = MockWebView()
         webView.setCurrentURL(url)
-        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
 
         // WHEN
         sut.webView(webView, didFinish: WKNavigation())
 
         // THEN
-        XCTAssertFalse(onboardingPixelReporterMock.didCallMeasureSecondSiteVisit)
+        XCTAssertFalse(onboardingPixelReporterMock.didCallTrackSecondSiteVisit)
         WKNavigation.restoreDealloc()
     }
 
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic {
     var expectation: XCTestExpectation?
-    private(set) var didCallSetTryAnonymousSearchMessageSeen = false
-    private(set) var didCallSetTryVisitSiteMessageSeen = false
     private(set) var didCallSetFireEducationMessageSeen = false
-    private(set) var didCallSetFinalOnboardingDialogSeen = false
-    private(set) var didCallSetSearchMessageSeen = false
+    private(set) var didCallsetFinalOnboardingDialogSeen = false
+    private(set) var didCallsetsetSearchMessageSeen = false
     private(set) var didCallEnableAddFavoriteFlow = false
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
@@ -247,25 +245,17 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     var isShowingSitesSuggestions: Bool = false
     var isShowingAddToDockDialog: Bool = false
 
-    func setTryAnonymousSearchMessageSeen() {
-        didCallSetTryAnonymousSearchMessageSeen = true
-    }
-
-    func setTryVisitSiteMessageSeen() {
-        didCallSetTryVisitSiteMessageSeen = true
-    }
-
     func setFireEducationMessageSeen() {
         didCallSetFireEducationMessageSeen = true
     }
 
     func setFinalOnboardingDialogSeen() {
-        didCallSetFinalOnboardingDialogSeen = true
+        didCallsetFinalOnboardingDialogSeen = true
         expectation?.fulfill()
     }
 
     func setSearchMessageSeen() {
-        didCallSetSearchMessageSeen = true
+        didCallsetsetSearchMessageSeen = true
     }
 
     func setPrivacyButtonPulseSeen() {
@@ -284,7 +274,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
         didCallClearedBrowserData = true
     }
 
-    var privacyProPromotionDialogSeen: Bool = false
 }
 
 extension WKNavigation {

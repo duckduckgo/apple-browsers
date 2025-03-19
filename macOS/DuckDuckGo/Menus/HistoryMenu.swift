@@ -37,12 +37,7 @@ final class HistoryMenu: NSMenu {
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
     private let reopenAllWindowsFromLastSessionMenuItem = NSMenuItem(title: UserText.mainMenuHistoryReopenAllWindowsFromLastSession,
                                                                      action: #selector(AppDelegate.reopenAllWindowsFromLastSession))
-    private lazy var showHistoryMenuItem = NSMenuItem(
-        title: UserText.mainMenuHistoryShowAllHistory,
-        action: #selector(MainViewController.showHistory),
-        keyEquivalent: "y",
-        representedObject: location
-    )
+    private let showHistoryMenuItem = NSMenuItem(title: "Show All History…", action: #selector(MainViewController.showHistory), keyEquivalent: "y")
     private let showHistorySeparator = NSMenuItem.separator()
     private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryClearAllHistory,
                                                      action: #selector(MainViewController.clearAllHistory),
@@ -312,7 +307,7 @@ extension HistoryMenu {
 
     /**
      * This class manages the shortcut assignment to either of the
-     * "Reopen Last Closed Tab" or "Reopen All Windows From Last Session"
+     * "Reopen Last Closed Tab" or "Reopen All Windows from Last Session"
      * menu items.
      */
     final class ReopenMenuItemKeyEquivalentManager {

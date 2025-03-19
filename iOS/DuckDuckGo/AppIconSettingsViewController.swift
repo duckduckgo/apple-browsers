@@ -23,20 +23,8 @@ import Core
 class AppIconSettingsViewController: UICollectionViewController {
     
     let dataSource = AppIconDataSource()
-    private let worker = AppIconWorker()
+    let worker = AppIconWorker()
 
-    let onChange: ((AppIcon) -> Void)?
-
-    init?(onChange: @escaping (AppIcon) -> Void, coder: NSCoder) {
-        self.onChange = onChange
-        super.init(coder: coder)
-    }
-    
-    required init?(coder: NSCoder) {
-        self.onChange = nil
-        super.init(coder: coder)
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -59,7 +47,6 @@ class AppIconSettingsViewController: UICollectionViewController {
         worker.changeAppIcon(appIcon) { success in
             if success {
                 self.initSelection()
-                self.onChange?(appIcon)
             }
         }
     }
@@ -88,13 +75,20 @@ class AppIconDataSource: NSObject, UICollectionViewDataSource {
     }
 }
 
-private class AppIconWorker {
-    
-    func changeAppIcon(_ appIcon: AppIcon,
-                       completion: @escaping (_ success: Bool) -> Void) {
+class AppIconWorker {
+        
+    public func changeAppIcon(_ appIcon: AppIcon,
+                              completion: @escaping (_ success: Bool) -> Void) {
         AppIconManager.shared.changeAppIcon(appIcon) { error in
+            guard error == nil else {
+                DispatchQueue.main.async {
+                    completion(true)
+                }
+                return
+            }
+
             DispatchQueue.main.async {
-                completion(error == nil)
+                completion(false)
             }
         }
     }

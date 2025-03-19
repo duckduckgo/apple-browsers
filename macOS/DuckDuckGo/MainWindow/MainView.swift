@@ -26,7 +26,6 @@ final class MainView: NSView {
     let webContainerView = NSView()
     let findInPageContainerView = NSView().hidden()
     let bookmarksBarContainerView = NSView()
-    let bannerContainerView = NSView()
     let fireContainerView = NSView()
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
 
@@ -35,7 +34,6 @@ final class MainView: NSView {
     private(set) var webContainerTopConstraint: NSLayoutConstraint!
     private(set) var webContainerTopConstraintToNavigation: NSLayoutConstraint!
     private(set) var tabBarHeightConstraint: NSLayoutConstraint!
-    private(set) var bannerHeightConstraint: NSLayoutConstraint!
 
     @Published var isMouseAboveWebView: Bool = false
 
@@ -48,9 +46,8 @@ final class MainView: NSView {
             bookmarksBarContainerView,
             navigationBarContainerView,
             webContainerView,
-            bannerContainerView,
             findInPageContainerView,
-            fireContainerView
+            fireContainerView,
         ] {
             subview.translatesAutoresizingMaskIntoConstraints = false
             addSubview(subview)
@@ -67,13 +64,11 @@ final class MainView: NSView {
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: 34)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: 38)
         navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: 38)
-        webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
+        webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 
         webContainerTopConstraint.priority = .defaultHigh
         webContainerTopConstraintToNavigation.priority = .defaultLow
-
-        bannerHeightConstraint = bannerContainerView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             tabBarContainerView.topAnchor.constraint(equalTo: topAnchor),
@@ -94,11 +89,6 @@ final class MainView: NSView {
             navigationBarTopConstraint,
             navigationBarContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             navigationBarContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-
-            bannerHeightConstraint,
-            bannerContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            bannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bannerContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor),
 
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,

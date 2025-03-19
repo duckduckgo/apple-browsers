@@ -26,8 +26,7 @@ let package = Package(
     products: [
         .library(
             name: "DataBrokerProtectionShared",
-            targets: ["DataBrokerProtectionShared"]),
-        .library(name: "DataBrokerProtectionSharedTestsUtils", targets: ["DataBrokerProtectionSharedTestsUtils"]),
+            targets: ["DataBrokerProtectionShared"])
     ],
     dependencies: [
         .package(path: "../../BrowserServicesKit"),
@@ -48,25 +47,10 @@ let package = Package(
                 .define("DEBUG", .when(configuration: .debug))
             ]
         ),
-        .target(
-            name: "DataBrokerProtectionSharedTestsUtils",
-            dependencies: [
-                "DataBrokerProtectionShared",
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Configuration", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "Freemium", package: "Freemium"),
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
         .testTarget(
             name: "DataBrokerProtectionSharedTests",
             dependencies: [
                 "DataBrokerProtectionShared",
-                "DataBrokerProtectionSharedTestsUtils",
                 "BrowserServicesKit",
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),

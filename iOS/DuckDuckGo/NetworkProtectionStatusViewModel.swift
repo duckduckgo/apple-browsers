@@ -171,7 +171,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @Published public var animationsOn: Bool = false
 
-    public let enablesUnifiedFeedbackForm: Bool
+    public let usesUnifiedFeedbackForm: Bool
 
     public init(tunnelController: (TunnelController & TunnelSessionProvider),
                 settings: VPNSettings,
@@ -179,13 +179,13 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 serverInfoObserver: ConnectionServerInfoObserver,
                 errorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession(),
                 locationListRepository: NetworkProtectionLocationListRepository,
-                enablesUnifiedFeedbackForm: Bool) {
+                usesUnifiedFeedbackForm: Bool) {
         self.tunnelController = tunnelController
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
-        self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
+        self.usesUnifiedFeedbackForm = usesUnifiedFeedbackForm
 
         statusMessage = Self.message(for: statusObserver.recentValue)
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)

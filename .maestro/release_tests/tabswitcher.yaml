@@ -37,7 +37,7 @@ tags:
 - assertVisible: Tab Switcher
 - tapOn: Tab Switcher
 - tapOn: "Add all tabs as bookmarks"
-- assertVisible: "Bookmark 2 tabs?"
+- assertVisible: "Bookmark All Tabs?"
 - tapOn: "Bookmark"
 
 # can't really tell if it works, but at least it won't crash

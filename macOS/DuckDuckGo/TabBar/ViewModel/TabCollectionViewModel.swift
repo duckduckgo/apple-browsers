@@ -128,7 +128,7 @@ final class TabCollectionViewModel: NSObject {
 
     init(
         tabCollection: TabCollection,
-        selectionIndex: TabIndex = .unpinned(0),
+        selectionIndex: Int = 0,
         pinnedTabsManager: PinnedTabsManager?,
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = StartupPreferences.shared,
@@ -148,11 +148,11 @@ final class TabCollectionViewModel: NSObject {
         if tabCollection.tabs.isEmpty {
             appendNewTab(with: homePage)
         }
-        self.selectionIndex = selectionIndex
+        self.selectionIndex = .unpinned(selectionIndex)
     }
 
     convenience init(tabCollection: TabCollection,
-                     selectionIndex: TabIndex = .unpinned(0),
+                     selectionIndex: Int = 0,
                      burnerMode: BurnerMode = .regular) {
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,

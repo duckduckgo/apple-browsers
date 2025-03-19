@@ -299,14 +299,14 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             )
             let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
             let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
-            XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+            XCTAssertFalse(pixelReporterMock.didCallTrackScreenImpressionCalled)
             XCTAssertNil(pixelReporterMock.capturedScreenImpression)
 
             // WHEN
             view.blockedTrackersCTAAction()
 
             // THEN
-            XCTAssertTrue(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+            XCTAssertTrue(pixelReporterMock.didCallTrackScreenImpressionCalled)
             XCTAssertEqual(pixelReporterMock.capturedScreenImpression, .daxDialogsFireEducationShownUnique)
         }
     }
@@ -316,14 +316,14 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFirstSearchDoneDialog.self, in: result))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(pixelReporterMock.didCallTrackScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
 
         // WHEN
         view.gotItAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertTrue(pixelReporterMock.didCallTrackScreenImpressionCalled)
         XCTAssertEqual(pixelReporterMock.capturedScreenImpression, .onboardingContextualTryVisitSiteUnique)
     }
 
@@ -332,13 +332,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let spec = DaxDialogs.BrowsingSpec.final
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
+        XCTAssertFalse(pixelReporterMock.didCallTrackEndOfJourneyDialogDismiss)
 
         // WHEN
         view.dismissAction(false)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
+        XCTAssertTrue(pixelReporterMock.didCallTrackEndOfJourneyDialogDismiss)
     }
 
     // MARK: - Add To Dock
@@ -379,7 +379,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let spec = DaxDialogs.BrowsingSpec.final
         // TEST
         waitForDialogDefinedBy(spec: spec) {
-            XCTAssertTrue(self.pixelReporterMock.didCallMeasureAddToDockPromoImpression)
+            XCTAssertTrue(self.pixelReporterMock.didCallTrackAddToDockPromoImpression)
         }
     }
 
@@ -389,13 +389,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = sut.makeView(for: spec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
 
         // WHEN
         view.showAddToDockTutorialAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
     }
 
     func testWhenEndOfJourneyAndAddToDockPromoDismissButtonActionThenFireExpectedPixel() throws {
@@ -404,13 +404,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = sut.makeView(for: spec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
 
         // WHEN
         view.dismissAction(false)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
     }
 
     func testWhenEndOfJourneyAndAddToDockTutorialDismissButtonActionThenFireExpectedPixel() throws {
@@ -419,13 +419,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = sut.makeView(for: spec, delegate: ContextualOnboardingDelegateMock(), onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
 
         // WHEN
         view.dismissAction(true)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
     }
 }
 
@@ -434,7 +434,7 @@ extension ContextualDaxDialogsFactoryTests {
     func testDialogDefinedBy(spec: DaxDialogs.BrowsingSpec, firesEvent event: Pixel.Event) {
         waitForDialogDefinedBy(spec: spec) {
             // THEN
-            XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
+            XCTAssertTrue(self.pixelReporterMock.didCallTrackScreenImpressionCalled)
             XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, event)
         }
     }
@@ -442,7 +442,7 @@ extension ContextualDaxDialogsFactoryTests {
     func waitForDialogDefinedBy(spec: DaxDialogs.BrowsingSpec, completionHandler: @escaping () -> Void) {
         // GIVEN
         let expectation = self.expectation(description: #function)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(pixelReporterMock.didCallTrackScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
 
         // WHEN
@@ -462,7 +462,6 @@ extension ContextualDaxDialogsFactoryTests {
 final class ContextualOnboardingSettingsMock: ContextualOnboardingSettings {
     var userHasSeenTrackersDialog: Bool = false
     var userHasSeenFireDialog: Bool = false
-    var userHasSeenTryVisitSiteDialog: Bool = false
 }
 
 

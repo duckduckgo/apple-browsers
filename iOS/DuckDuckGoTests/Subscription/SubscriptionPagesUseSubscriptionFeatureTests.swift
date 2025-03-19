@@ -315,7 +315,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     func testGetSubscriptionOptionsReturnsEmptyOptionsWhenPurchaseNotAllowed() async throws {
         // Given
         let subscriptionFeatureAvailabilityWithoutPurchaseAllowed = SubscriptionFeatureAvailabilityMock(
-            isSubscriptionPurchaseAllowed: false
+            isSubscriptionPurchaseAllowed: false,
+            usesUnifiedFeedbackForm: true
         )
         
         feature = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,

@@ -160,8 +160,7 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         Task {
-            if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: .networkProtection),
-               hasEntitlement {
+            if await subscriptionManager.isEnabled(feature: .networkProtection) {
                 controller.segueToVPN()
             } else {
                 controller.segueToPrivacyPro()
@@ -196,7 +195,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadUrlInNewTab(url, reuseExisting: true, inheritedAttribution: nil, fromExternalLink: true)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
@@ -221,7 +220,7 @@ extension MainCoordinator: URLHandling {
             controller.newTab(reuseExisting: true, allowingKeyboard: false)
         case .quickLink:
             let query = AppDeepLinkSchemes.query(fromQuickLink: url)
-            controller.loadQueryInNewTab(query, reuseExisting: .any)
+            controller.loadQueryInNewTab(query, reuseExisting: true)
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:

@@ -66,7 +66,6 @@ struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
             throw SystemDefaultBrowserProviderError.unableToSetDefaultURLHandler
         }
         PixelExperiment.fireOnboardingSetAsDefaultRequestedPixel()
-        DefaultBrowserAndDockPromptCoordinator.fireSetAsDefaultAddToDockExperimentPixel()
     }
 
     func openSystemPreferences() {

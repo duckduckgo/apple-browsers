@@ -84,7 +84,7 @@ final class VPNURLEventHandler {
     }
 
     func showPrivacyPro() {
-        let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .purchase)
+        let url = Application.appDelegate.subscriptionManager.url(for: .purchase)
         windowControllerManager.showTab(with: .subscription(url))
 
         PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)

@@ -20,7 +20,7 @@ import Foundation
 
 public protocol SuggestionLoading: AnyObject {
 
-    func getSuggestions(query: String,
+    func getSuggestions(query: Query,
                         usingDataSource dataSource: SuggestionLoadingDataSource,
                         completion: @escaping (SuggestionResult?, Error?) -> Void)
 
@@ -30,7 +30,6 @@ public class SuggestionLoader: SuggestionLoading {
 
     static let remoteSuggestionsUrl = URL(string: "https://duckduckgo.com/ac/")!
     static let searchParameter = "q"
-    static let isNavParameter = "is_nav"
 
     public enum SuggestionLoaderError: Error {
         case noDataSource
@@ -44,7 +43,7 @@ public class SuggestionLoader: SuggestionLoading {
         self.urlFactory = urlFactory
     }
 
-    public func getSuggestions(query: String,
+    public func getSuggestions(query: Query,
                                usingDataSource dataSource: SuggestionLoadingDataSource,
                                completion: @escaping (SuggestionResult?, Error?) -> Void) {
 
@@ -69,7 +68,7 @@ public class SuggestionLoader: SuggestionLoading {
             dataSource.suggestionLoading(self,
                                          suggestionDataFromUrl: Self.remoteSuggestionsUrl,
                                          withParameters: [ Self.searchParameter: query,
-                                                           Self.isNavParameter: "1", // Enables is_nav in the JSON response
+                                                           "is_nav": "1", // Enables is_nav in the JSON response
                                                          ]) { data, error in
                 defer { group.leave() }
                 guard let data = data else {
@@ -88,8 +87,8 @@ public class SuggestionLoader: SuggestionLoading {
 
         // 2) Processing it
         group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
-            guard let self else { return }
-            let processor = SuggestionProcessing(platform: dataSource.platform)
+            guard let self = self else { return }
+            let processor = SuggestionProcessing(platform: dataSource.platform, urlFactory: self.urlFactory)
             let result = processor.result(for: query,
                                           from: history,
                                           bookmarks: bookmarks,

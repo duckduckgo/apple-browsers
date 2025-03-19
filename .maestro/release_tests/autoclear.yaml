@@ -11,6 +11,7 @@ tags:
     clearState: true
     clearKeychain: true
     arguments:
+        isUITesting: true
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
 

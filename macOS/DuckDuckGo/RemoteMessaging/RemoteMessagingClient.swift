@@ -25,7 +25,6 @@ import BrowserServicesKit
 import Persistence
 import PixelKit
 import RemoteMessaging
-import Subscription
 
 protocol RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring
@@ -70,15 +69,13 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
-        remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
             pinnedTabsManager: pinnedTabsManager,
-            internalUserDecider: internalUserDecider,
-            subscriptionManager: subscriptionManager
+            internalUserDecider: internalUserDecider
         )
         self.init(
             database: database,

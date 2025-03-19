@@ -39,7 +39,5 @@ final class AddEditBookmarkDialogViewModelMock: BookmarkDialogEditing {
     func cancel(dismiss: () -> Void) {}
     func addOrSave(dismiss: () -> Void) {}
 
-    var foldersStore: BookmarkFoldersStore = BookmarkFolderStoreMock()
-
     var selectedFolderExpectation: XCTestExpectation?
 }

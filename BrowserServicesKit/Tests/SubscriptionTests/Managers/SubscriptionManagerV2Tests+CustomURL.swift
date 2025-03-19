@@ -38,6 +38,7 @@ extension SubscriptionManagerV2Tests {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
             pixelHandler: { _ in },
+            autoRecoveryHandler: { },
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -63,6 +64,7 @@ extension SubscriptionManagerV2Tests {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
             pixelHandler: { _ in },
+            autoRecoveryHandler: { },
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -86,6 +88,7 @@ extension SubscriptionManagerV2Tests {
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
             pixelHandler: { _ in },
+            autoRecoveryHandler: { },
             isInternalUserEnabled: isInternalUserEnabled
         )
 

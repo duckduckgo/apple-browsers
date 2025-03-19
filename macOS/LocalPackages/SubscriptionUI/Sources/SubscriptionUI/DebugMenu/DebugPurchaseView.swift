@@ -75,62 +75,6 @@ public struct DebugPurchaseView: View {
     }
 }
 
-@available(macOS 12.0, *)
-public struct DebugPurchaseViewV2: View {
-
-    @ObservedObject var model: DebugPurchaseModelV2
-    public let dismissAction: () -> Void
-
-    public var body: some View {
-        VStack {
-            if model.subscriptions.isEmpty {
-                loadingProductsView
-            } else {
-                purchaseSubscriptionSection
-            }
-
-            Divider()
-
-            HStack {
-                Spacer()
-                Button("Close") {
-                    dismissAction()
-                }
-            }
-        }
-        .padding(20)
-    }
-
-    private var loadingProductsView: some View {
-        VStack {
-            Text(verbatim: "Loading subscriptions...")
-                .font(.largeTitle)
-            ActivityIndicator(isAnimating: .constant(true), style: .spinning)
-        }
-        .padding(.all, 32)
-    }
-
-    private var purchaseSubscriptionSection: some View {
-        VStack {
-            Text(verbatim: "Purchase Subscription")
-                .font(.largeTitle)
-            Spacer(minLength: 16)
-            VStack {
-                ForEach(model.subscriptions, id: \.id) { rowModel in
-                    SubscriptionRow(product: rowModel.product,
-                                    isPurchased: rowModel.isPurchased,
-                                    isBeingPurchased: rowModel.isBeingPurchased,
-                                    buyButtonAction: { model.purchase(rowModel.product) })
-                    Divider()
-                }
-                .padding(10)
-            }
-            .roundedBorder()
-            Spacer(minLength: 16)
-        }
-    }
-}
-
 struct ActivityIndicator: NSViewRepresentable {
 
     @Binding var isAnimating: Bool

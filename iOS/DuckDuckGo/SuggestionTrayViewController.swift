@@ -229,6 +229,7 @@ class SuggestionTrayViewController: UIViewController {
         controller.delegate = favoritesOverlayDelegate
         install(controller: controller, completion: onInstall)
         favoritesOverlay = controller
+        applyContentInset(contentInsets)
     }
     
     private func canDisplayAutocompleteSuggestions(forQuery query: String) -> Bool {
@@ -256,6 +257,7 @@ class SuggestionTrayViewController: UIViewController {
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self
         autocompleteController = controller
+        applyContentInset(contentInsets)
     }
 
     private func removeAutocomplete() {
@@ -293,7 +295,13 @@ class SuggestionTrayViewController: UIViewController {
             completion()
         })
     }
-
+    
+    var contentInsets = UIEdgeInsets.zero
+    func applyContentInset(_ inset: UIEdgeInsets) {
+        self.contentInsets = inset
+        favoritesOverlay?.collectionView.contentInset = inset
+        favoritesOverlay?.collectionView.scrollIndicatorInsets = inset
+    }
 }
 
 extension SuggestionTrayViewController: AutocompleteViewControllerPresentationDelegate {

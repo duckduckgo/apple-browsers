@@ -40,7 +40,7 @@ protocol PinningManager {
 
 final class LocalPinningManager: PinningManager {
 
-    static let shared = LocalPinningManager()
+    static let shared = LocalPinningManager(networkProtectionFeatureActivation: NetworkProtectionKeychainTokenStore())
 
     static let pinnedViewChangedNotificationViewTypeKey = "pinning.pinnedViewChanged.viewType"
 
@@ -50,7 +50,11 @@ final class LocalPinningManager: PinningManager {
     @UserDefaultsWrapper(key: .manuallyToggledPinnedViews, defaultValue: [])
     private var manuallyToggledPinnedViewsStrings: [String]
 
-    init() {}
+    private let networkProtectionFeatureActivation: NetworkProtectionFeatureActivation
+
+    init(networkProtectionFeatureActivation: NetworkProtectionFeatureActivation) {
+        self.networkProtectionFeatureActivation = networkProtectionFeatureActivation
+    }
 
     func togglePinning(for view: PinnableView) {
         flagAsManuallyToggled(view)

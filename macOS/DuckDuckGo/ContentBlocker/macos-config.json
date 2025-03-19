@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1741602153096,
+    "version": 1740760942171,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -515,24 +515,6 @@
                     "domain": "xxlmag.com"
                 },
                 {
-                    "domain": "tfl.gov.uk"
-                },
-                {
-                    "domain": "jomajewellery.com"
-                },
-                {
-                    "domain": "stooq.pl"
-                },
-                {
-                    "domain": "schadefonds.nl"
-                },
-                {
-                    "domain": "boerse-aktuell.de"
-                },
-                {
-                    "domain": "bsrzepin.pl"
-                },
-                {
                     "domain": "marvel.com"
                 },
                 {
@@ -699,7 +681,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "a2fd7ef1ceff47fd666b92d12dfcb5ae"
+            "hash": "0858f85888af3f66176588ab73219232"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1782,14 +1764,6 @@
                     {
                         "domain": "maxcomply.app",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2759"
-                    },
-                    {
-                        "domain": "mercari.com",
-                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2825"
-                    },
-                    {
-                        "domain": "ichard26.github.io",
-                        "reason": "Next PR fetch errors on DDG user agent"
                     }
                 ],
                 "webViewDefault": [
@@ -1809,7 +1783,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "eba9fcc58fa3f78f5923ed5a58ab9495"
+            "hash": "3839de5466f267468137f84d6534e376"
         },
         "dbp": {
             "state": "enabled",
@@ -2454,10 +2428,6 @@
                     {
                         "domain": "pocketbook.digital",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/issues/1365"
-                    },
-                    {
-                        "domain": "bsrzepin.pl",
-                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2821"
                     }
                 ],
                 "hideTimeouts": [
@@ -2574,15 +2544,6 @@
                             },
                             {
                                 "selector": "#top-adhesion",
-                                "type": "hide-empty"
-                            }
-                        ]
-                    },
-                    {
-                        "domain": "aarp.org",
-                        "rules": [
-                            {
-                                "selector": "[class*='AdBlock__container___']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -3044,26 +3005,6 @@
                             {
                                 "selector": "[data-block-name='ads']",
                                 "type": "closest-empty"
-                            }
-                        ]
-                    },
-                    {
-                        "domain": "dailyboulder.com",
-                        "rules": [
-                            {
-                                "type": "disable-default"
-                            },
-                            {
-                                "selector": ".site-access-popup",
-                                "type": "hide-empty"
-                            },
-                            {
-                                "selector": ".site-access-inner",
-                                "type": "hide-empty"
-                            },
-                            {
-                                "selector": ".top-site-ad",
-                                "type": "hide-empty"
                             }
                         ]
                     },
@@ -3765,10 +3706,6 @@
                                 "type": "hide"
                             },
                             {
-                                "selector": "div:has(> iframe[src*='prid=19046509'])",
-                                "type": "hide"
-                            },
-                            {
                                 "selector": "[aria-labelledby='promo-header']",
                                 "type": "hide"
                             },
@@ -4062,19 +3999,6 @@
                             },
                             {
                                 "selector": "[class*='placeholder']",
-                                "type": "hide-empty"
-                            }
-                        ]
-                    },
-                    {
-                        "domain": "kutv.com",
-                        "rules": [
-                            {
-                                "selector": "[class*='DisplayAdvert']",
-                                "type": "hide-empty"
-                            },
-                            {
-                                "selector": "[class*='adBeforeContent']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5606,7 +5530,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "811151475e7895abdd79bad6d4be5c35"
+            "hash": "677529f00d4fe226ea5969a232c41d1d"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6181,15 +6105,9 @@
             "hash": "c292bb627849854515cebbded288ef5a"
         },
         "htmlHistoryPage": {
-            "state": "enabled",
+            "state": "disabled",
             "exceptions": [],
-            "features": {
-                "isLaunched": {
-                    "state": "enabled"
-                }
-            },
-            "minSupportedVersion": "1.130.0",
-            "hash": "a736ee38682b0ea92e083aa11d793410"
+            "hash": "c292bb627849854515cebbded288ef5a"
         },
         "htmlNewTabPage": {
             "state": "enabled",
@@ -7070,7 +6988,6 @@
                             {
                                 "rule": "alicdn.com/g/qwenweb/qwen-webui-fe/",
                                 "domains": [
-                                    "qwen.ai",
                                     "qwenlm.ai"
                                 ]
                             },
@@ -7706,7 +7623,6 @@
                                     "fincopilot.net",
                                     "goplay.be",
                                     "itsthevibe.com",
-                                    "kutv.com",
                                     "nytimes.com",
                                     "realmadrid.com",
                                     "repretel.com",
@@ -7738,7 +7654,6 @@
                                 "domains": [
                                     "applesfera.com",
                                     "itsthevibe.com",
-                                    "kutv.com",
                                     "triblive.com"
                                 ]
                             },
@@ -8361,7 +8276,6 @@
                                     "tradersync.com",
                                     "vanguardplan.com",
                                     "vizio.com",
-                                    "wps.com",
                                     "xpn.org"
                                 ]
                             }
@@ -8949,12 +8863,6 @@
                                 ]
                             },
                             {
-                                "rule": "cdn.medallia.com/react-surveys-next/",
-                                "domains": [
-                                    "dunkinrunsonyou.com"
-                                ]
-                            },
-                            {
                                 "rule": "digital-cloud-west.medallia.com/",
                                 "domains": [
                                     "walgreens.com"
@@ -9016,16 +8924,6 @@
                                 "rule": "memberful.com/embed.js",
                                 "domains": [
                                     "<all>"
-                                ]
-                            }
-                        ]
-                    },
-                    "moatads.com": {
-                        "rules": [
-                            {
-                                "rule": "z.moatads.com/weatherprebidheader",
-                                "domains": [
-                                    "wunderground.com"
                                 ]
                             }
                         ]
@@ -9502,7 +9400,6 @@
                                 "rule": "a.pub.network/core/prebid-universal-creative.js",
                                 "domains": [
                                     "boingboing.net",
-                                    "newrepublic.com",
                                     "signupgenius.com",
                                     "smithsonianmag.com",
                                     "stockcharts.com",
@@ -9513,12 +9410,6 @@
                                 "rule": "a.pub.network/virtualpiano-net/pubfig.min.js",
                                 "domains": [
                                     "virtualpiano.net"
-                                ]
-                            },
-                            {
-                                "rule": "a.pub.network/thenation-com/pubfig.min.js",
-                                "domains": [
-                                    "thenation.com"
                                 ]
                             }
                         ]
@@ -10388,7 +10279,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "d1dfbf3c1cf2786972c66c25e4638311"
+            "hash": "488745fd15d53beb1d89f5734ceb73af"
         },
         "trackingCookies1p": {
             "settings": {

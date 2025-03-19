@@ -50,17 +50,15 @@ public struct DefaultActionButtonStyle: ButtonStyle {
     public let enabled: Bool
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
-    public let shouldBeFixedVertical: Bool
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, shouldBeFixedVertical: Bool = true) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
-        self.shouldBeFixedVertical = shouldBeFixedVertical
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        ButtonContent(configuration: configuration, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding, shouldBeFixedVertical: shouldBeFixedVertical)
+        ButtonContent(configuration: configuration, enabled: enabled, topPadding: topPadding, bottomPadding: bottomPadding)
     }
 
     struct ButtonContent: View {
@@ -68,7 +66,6 @@ public struct DefaultActionButtonStyle: ButtonStyle {
         let enabled: Bool
         let topPadding: CGFloat
         let bottomPadding: CGFloat
-        let shouldBeFixedVertical: Bool
         @State private var isHovered: Bool = false
 
         var body: some View {
@@ -85,9 +82,7 @@ public struct DefaultActionButtonStyle: ButtonStyle {
             configuration.label
                 .font(.system(size: 13))
                 .multilineTextAlignment(.center)
-                .if(shouldBeFixedVertical) { view in
-                    view.fixedSize(horizontal: false, vertical: true)
-                }
+                .fixedSize(horizontal: false, vertical: true)
                 .frame(minWidth: 44)
                 .padding(.top, topPadding)
                 .padding(.bottom, bottomPadding)
@@ -186,7 +181,7 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
+        let enabledBackgroundColor = configuration.isPressed ? Color(.pwmButtonBackgroundPressed) : .red
         let disabledBackgroundColor = Color.gray.opacity(0.1)
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 

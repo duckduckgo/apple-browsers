@@ -22,33 +22,44 @@ import Common
 import AppKitExtensions
 
 public protocol DataBrokerProtectionSubscriptionManaging {
-    func accessToken() async -> String?
+    var isUserAuthenticated: Bool { get }
+    var accessToken: String? { get }
     func hasValidEntitlement() async throws -> Bool
 }
 
 public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtectionSubscriptionManaging {
 
-    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
-    let runTypeProvider: AppRunTypeProviding
+    let subscriptionManager: SubscriptionManager
+    let dbpSettings: DataBrokerProtectionSettings
 
-    public func accessToken() async -> String? {
+    public var isUserAuthenticated: Bool {
+        accessToken != nil
+    }
+
+    public var accessToken: String? {
         // We use a staging token for privacy pro supplied through a github secret/action
         // for PIR end to end tests. This is also stored in bitwarden if you want to run
         // the tests locally
-        if runTypeProvider.runType == .integrationTests,
-           let token = ProcessInfo.processInfo.environment["PRIVACYPRO_STAGING_TOKEN"] { // todo auth V1 token??
+        if dbpSettings.runType == .integrationTests,
+           let token = ProcessInfo.processInfo.environment["PRIVACYPRO_STAGING_TOKEN"] {
             return token
         }
-        return try? await subscriptionManager.getAccessToken()
+        return subscriptionManager.accountManager.accessToken
     }
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding) {
+    public init(subscriptionManager: SubscriptionManager, dbpSettings: DataBrokerProtectionSettings) {
         self.subscriptionManager = subscriptionManager
-        self.runTypeProvider = runTypeProvider
+        self.dbpSettings = dbpSettings
     }
 
     public func hasValidEntitlement() async throws -> Bool {
-        try await subscriptionManager.isEnabled(feature: .dataBrokerProtection)
+        switch await subscriptionManager.accountManager.hasEntitlement(forProductName: .dataBrokerProtection,
+                                                                       cachePolicy: .reloadIgnoringLocalCacheData) {
+        case let .success(result):
+            return result
+        case .failure(let error):
+            throw error
+        }
     }
 }
 
@@ -56,6 +67,6 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 
 /// This protocol exists only as a wrapper on top of the AccountManager since it is a concrete type on BSK
 public protocol DataBrokerProtectionAccountManaging {
-    func accessToken() async -> String?
+    var accessToken: String? { get }
     func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, Error>
 }

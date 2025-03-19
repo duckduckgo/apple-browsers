@@ -22,8 +22,7 @@ import NetworkProtection
 import PixelKit
 
 final class VPNLocationViewModel: ObservableObject {
-    private static var cachedLocations: [NetworkProtectionLocation]?
-    private static var cachedCountryItems: [VPNCountryItemModel]?
+    private static var cachedLocations: [VPNCountryItemModel]?
     private let locationListRepository: NetworkProtectionLocationListRepository
     private let settings: VPNSettings
     private var selectedLocation: VPNSettings.SelectedLocation
@@ -54,8 +53,8 @@ final class VPNLocationViewModel: ObservableObject {
         self.settings = settings
         selectedLocation = settings.selectedLocation
         self.isNearestSelected = selectedLocation == .nearest
-        if let cachedCountryItems = Self.cachedCountryItems {
-            state = .loaded(countryItems: cachedCountryItems)
+        if let cachedLocations = Self.cachedLocations {
+            state = .loaded(countryItems: cachedLocations)
         } else {
             state = .loading
         }
@@ -94,14 +93,10 @@ final class VPNLocationViewModel: ObservableObject {
 
     @MainActor
     private func reloadList() async {
-        guard let locations = (try? await locationListRepository.fetchLocationList().sortedByName()) ?? Self.cachedLocations else {
-            return
-        }
-
+        guard let locations = try? await locationListRepository.fetchLocationList().sortedByName() else { return }
         if locations.isEmpty {
             PixelKit.fire(GeneralPixel.networkProtectionGeoswitchingNoLocations, frequency: .legacyDailyAndCount)
         }
-
         let isNearestSelected = selectedLocation == .nearest
         self.isNearestSelected = isNearestSelected
         var countryItems = [VPNCountryItemModel]()
@@ -118,12 +113,7 @@ final class VPNLocationViewModel: ObservableObject {
                 cityPickerItems = currentLocation.cities.map { currentCity in
                     return VPNCityItemModel(cityName: currentCity.name)
                 }
-
-                if isCountrySelected {
-                    selectedCityItem = location.city.flatMap(VPNCityItemModel.init(cityName:)) ?? .nearest
-                } else {
-                    selectedCityItem = .nearest
-                }
+                selectedCityItem = location.city.flatMap(VPNCityItemModel.init(cityName:)) ?? .nearest
             case .nearest:
                 isCountrySelected = false
                 cityPickerItems = currentLocation.cities.map { currentCity in
@@ -143,9 +133,7 @@ final class VPNLocationViewModel: ObservableObject {
                 )
             )
         }
-
-        Self.cachedLocations = locations
-        Self.cachedCountryItems = countryItems
+        Self.cachedLocations = countryItems
         state = .loaded(countryItems: countryItems)
     }
 }

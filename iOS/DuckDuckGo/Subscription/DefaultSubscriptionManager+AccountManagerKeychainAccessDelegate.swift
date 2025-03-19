@@ -23,10 +23,10 @@ import Subscription
 
 extension DefaultSubscriptionManager: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
         let parameters = [
             PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.localizedDescription,
+            PixelParameters.privacyProKeychainError: error.errorDescription,
             PixelParameters.source: "browser"
         ]
 

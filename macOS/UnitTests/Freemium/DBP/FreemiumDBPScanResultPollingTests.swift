@@ -19,7 +19,6 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import DataBrokerProtection
-@testable import DataBrokerProtectionShared
 import Common
 import Freemium
 
@@ -281,19 +280,21 @@ private final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDat
     var cache = InMemoryDataCache()
     var delegate: DataBrokerProtection.DataBrokerProtectionDataManagerDelegate?
 
-    init(database: DataBrokerProtectionRepository,
-         profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
+    init(database: DataBrokerProtectionRepository? = nil,
+         profileSavedNotifier: DBPProfileSavedNotifier? = nil,
+         pixelHandler: EventMapping<DataBrokerProtection.DataBrokerProtectionPixels>,
+         fakeBrokerFlag: DataBrokerProtection.DataBrokerDebugFlag) {
     }
 
     init() {}
 
-    func saveProfile(_ profile: DataBrokerProtectionProfile) async throws { }
+    func saveProfile(_ profile: DataBrokerProtection.DataBrokerProtectionProfile) async throws { }
 
-    func fetchProfile() throws -> DataBrokerProtectionProfile? { nil }
+    func fetchProfile() throws -> DataBrokerProtection.DataBrokerProtectionProfile? { nil }
 
     func prepareProfileCache() throws { }
 
-    func fetchBrokerProfileQueryData(ignoresCache: Bool) throws -> [BrokerProfileQueryData] { [] }
+    func fetchBrokerProfileQueryData(ignoresCache: Bool) throws -> [DataBrokerProtection.BrokerProfileQueryData] { [] }
 
     func prepareBrokerProfileQueryDataCache() throws {}
 

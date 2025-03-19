@@ -18,13 +18,11 @@
 
 import Combine
 import Foundation
-import Persistence
 
 @MainActor
 final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private let bookmarkManager: BookmarkManager
-    var buttonClicked: (() -> Void)?
 
     @Published private(set) var bookmark: Bookmark
 
@@ -32,7 +30,7 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     @Published var selectedFolder: BookmarkFolder? {
         didSet {
-            if oldValue?.id != selectedFolder?.id, bookmark.parentFolderUUID != selectedFolder?.id {
+            if oldValue?.id != selectedFolder?.id {
                 bookmarkManager.add(bookmark: bookmark, to: selectedFolder) { _ in
                     // this is an invalid callback fired before bookmarks finish reloading
                 }
@@ -42,20 +40,15 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     @Published var isBookmarkFavorite: Bool {
         didSet {
-            if bookmark.isFavorite != isBookmarkFavorite {
-                bookmark.isFavorite = isBookmarkFavorite
-                bookmarkManager.update(bookmark: bookmark)
-            }
+            bookmark.isFavorite = isBookmarkFavorite
+            bookmarkManager.update(bookmark: bookmark)
         }
     }
 
     @Published var bookmarkTitle: String {
         didSet {
-            let updatedTitle = bookmarkTitle.trimmingWhitespace()
-            if updatedTitle != bookmark.title {
-                bookmark.title = updatedTitle
-                bookmarkManager.update(bookmark: bookmark)
-            }
+            bookmark.title = bookmarkTitle.trimmingWhitespace()
+            bookmarkManager.update(bookmark: bookmark)
         }
     }
 
@@ -65,7 +58,8 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
 
     private var bookmarkListCancellable: AnyCancellable?
 
-    init(bookmark: Bookmark, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmark: Bookmark,
+         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
         self.bookmarkManager = bookmarkManager
         self.bookmark = bookmark
         self.bookmarkTitle = bookmark.title
@@ -88,13 +82,13 @@ final class AddBookmarkPopoverViewModel: ObservableObject {
         selectedFolder = folders.first(where: { $0.id == bookmark.parentFolderUUID })?.entity
     }
 
-    func removeButtonAction() {
+    func removeButtonAction(dismiss: () -> Void) {
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
-        buttonClicked?()
+        dismiss()
     }
 
-    func doneButtonAction() {
-        buttonClicked?()
+    func doneButtonAction(dismiss: () -> Void) {
+        dismiss()
     }
 
     func addFolderButtonAction() {

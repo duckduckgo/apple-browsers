@@ -29,7 +29,6 @@ final class LocalBookmarkManagerTests: XCTestCase {
 
     var container: NSPersistentContainer!
     var context: NSManagedObjectContext!
-    var foldersStore: BookmarkFolderStoreMock!
 
     enum BookmarkManagerError: Error {
         case somethingReallyBad
@@ -58,16 +57,16 @@ final class LocalBookmarkManagerTests: XCTestCase {
     // MARK: - Tests
 
     @MainActor
-    func testWhenBookmarksAreNotLoadedYet_ThenManagerIgnoresBookmarkingRequests() async {
-        let (bookmarkManager, _) = await manager(loadBookmarks: false) {}
+    func testWhenBookmarksAreNotLoadedYet_ThenManagerIgnoresBookmarkingRequests() {
+        let (bookmarkManager, _) = manager(loadBookmarks: false) {}
 
         XCTAssertNil(bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Test", isFavorite: false))
         XCTAssertNil(bookmarkManager.updateUrl(of: Bookmark.aBookmark, to: URL.duckDuckGoAutocomplete))
     }
 
     @MainActor
-    func testWhenBookmarksAreLoaded_ThenTheManagerHoldsAllLoadedBookmarks() async {
-        let (bookmarkManager, bookmarkStoreMock) = await manager {
+    func testWhenBookmarksAreLoaded_ThenTheManagerHoldsAllLoadedBookmarks() {
+        let (bookmarkManager, bookmarkStoreMock) = manager {
             Bookmark.aBookmark
         }
 
@@ -90,18 +89,16 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssert(bookmarkStoreMock.loadAllCalled)
     }
 
-    @MainActor
-    func testWhenBookmarkIsCreated_ThenManagerSavesItToStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkIsCreated_ThenManagerSavesItToStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         XCTAssert(bookmarkManager.isUrlBookmarked(url: bookmark.urlObject!))
         XCTAssert(bookmarkStoreMock.saveBookmarkCalled)
     }
 
-    @MainActor
-    func testWhenBookmarkIsCreatedAndStoringFails_ThenManagerRemovesItFromList() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkIsCreatedAndStoringFails_ThenManagerRemovesItFromList() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
 
         bookmarkStoreMock.saveEntitiesError = BookmarkManagerError.somethingReallyBad
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
@@ -110,17 +107,16 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssert(bookmarkStoreMock.saveBookmarkCalled)
     }
 
-    @MainActor
-    func testWhenUrlIsAlreadyBookmarked_ThenManagerReturnsNil() async {
-        let (bookmarkManager, _) = await aManager()
+    func testWhenUrlIsAlreadyBookmarked_ThenManagerReturnsNil() {
+        let (bookmarkManager, _) = aManager
         _ = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         XCTAssertNil(bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false))
     }
 
     @MainActor
-    func testWhenBookmarkIsRemoved_ThenManagerRemovesItFromStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkIsRemoved_ThenManagerRemovesItFromStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         bookmarkManager.remove(bookmark: bookmark, undoManager: nil)
@@ -131,15 +127,15 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFolderIsRemoved_ThenManagerRemovesItFromStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenFolderIsRemoved_ThenManagerRemovesItFromStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         var folder: BookmarkFolder!
         let e = expectation(description: "Folder created")
         bookmarkManager.makeFolder(named: "Folder", parent: nil) { result in
             folder = try? result.get()
             e.fulfill()
         }
-        await fulfillment(of: [e], timeout: 1)
+        waitForExpectations(timeout: 1)
         guard let folder else { XCTFail("Folder not loaded"); return }
 
         let loadedFolder = bookmarkManager.getBookmarkFolder(withId: folder.id)
@@ -153,8 +149,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBookmarkAndFolderAreRemoved_ThenManagerRemovesThemFromStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkAndFolderAreRemoved_ThenManagerRemovesThemFromStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
         var folder: BookmarkFolder!
         let e = expectation(description: "Folder created")
@@ -162,7 +158,7 @@ final class LocalBookmarkManagerTests: XCTestCase {
             folder = try? result.get()
             e.fulfill()
         }
-        await fulfillment(of: [e], timeout: 1)
+        waitForExpectations(timeout: 1)
         guard let folder else { XCTFail("Folder not loaded"); return }
 
         bookmarkManager.remove(objectsWithUUIDs: [folder.id, bookmark.id], undoManager: nil)
@@ -171,8 +167,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRemovalFails_ThenManagerPutsBookmarkBackToList() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenRemovalFails_ThenManagerPutsBookmarkBackToList() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         bookmarkStoreMock.removeError = BookmarkManagerError.somethingReallyBad
@@ -484,8 +480,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBookmarkNoLongerExist_ThenManagerIgnoresAttemptToRemoval() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkNoLongerExist_ThenManagerIgnoresAttemptToRemoval() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
 
         bookmarkManager.remove(bookmark: Bookmark.aBookmark, undoManager: nil)
 
@@ -493,9 +489,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertFalse(bookmarkStoreMock.removeCalled)
     }
 
-    @MainActor
-    func testWhenBookmarkNoLongerExist_ThenManagerIgnoresAttemptToUpdate() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkNoLongerExist_ThenManagerIgnoresAttemptToUpdate() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
 
         bookmarkManager.update(bookmark: Bookmark.aBookmark)
         let updateUrlResult = bookmarkManager.updateUrl(of: Bookmark.aBookmark, to: URL.duckDuckGoAutocomplete)
@@ -505,9 +500,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertNil(updateUrlResult)
     }
 
-    @MainActor
-    func testWhenBookmarkIsUpdated_ThenManagerUpdatesItInStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkIsUpdated_ThenManagerUpdatesItInStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         bookmark.isFavorite = !bookmark.isFavorite
@@ -517,9 +511,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssert(bookmarkStoreMock.updateBookmarkCalled)
     }
 
-    @MainActor
-    func testWhenBookmarkUrlIsUpdated_ThenManagerUpdatesItAlsoInStore() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenBookmarkUrlIsUpdated_ThenManagerUpdatesItAlsoInStore() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false)!
 
         let newURL = URL.duckDuckGoAutocomplete
@@ -534,11 +527,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssert(bookmarkStoreMock.updateBookmarkCalled)
     }
 
-    @MainActor
-    func testWhenBookmarkFolderIsUpdatedAndMoved_ThenManagerUpdatesItAlsoInStore() async throws {
+    func testWhenBookmarkFolderIsUpdatedAndMoved_ThenManagerUpdatesItAlsoInStore() throws {
         let parent = BookmarkFolder(id: "1", title: "Parent")
         let folder = BookmarkFolder(id: "2", title: "Child")
-        let (bookmarkManager, bookmarkStoreMock) = await manager {
+        let (bookmarkManager, bookmarkStoreMock) = manager {
             parent
             folder
         }
@@ -553,19 +545,18 @@ final class LocalBookmarkManagerTests: XCTestCase {
 
         bookmarkManager.update(folder: folder, andMoveToParent: .parent(uuid: parent.id))
 
-        await fulfillment(of: [e], timeout: 5)
-        cancellable.cancel()
-
+        withExtendedLifetime(cancellable) {
+            wait(for: [e], timeout: 5)
+        }
         XCTAssertTrue(bookmarkStoreMock.updateFolderAndMoveToParentCalled)
         XCTAssertEqual(bookmarkStoreMock.capturedFolder, folder)
         XCTAssertEqual(bookmarkStoreMock.capturedParentFolderType, .parent(uuid: parent.id))
         XCTAssertNotNil(bookmarkList)
     }
 
-    @MainActor
-    func testWhenGetBookmarkFolderIsCalledThenAskBookmarkStoreToRetrieveFolder() async throws {
+    func testWhenGetBookmarkFolderIsCalledThenAskBookmarkStoreToRetrieveFolder() throws {
         // GIVEN
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         XCTAssertFalse(bookmarkStoreMock.bookmarkFolderWithIdCalled)
         XCTAssertNil(bookmarkStoreMock.capturedFolderId)
 
@@ -577,11 +568,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertEqual(bookmarkStoreMock.capturedFolderId, #function)
     }
 
-    @MainActor
-    func testWhenGetBookmarkFolderIsCalledAndFolderExistsInStoreThenBookmarkStoreReturnsFolder() async throws {
+    func testWhenGetBookmarkFolderIsCalledAndFolderExistsInStoreThenBookmarkStoreReturnsFolder() throws {
         // GIVEN
         let folder = BookmarkFolder(id: #function, title: "Test")
-        let (bookmarkManager, _) = await manager { folder }
+        let (bookmarkManager, _) = manager { folder }
 
         // WHEN
         let result = bookmarkManager.getBookmarkFolder(withId: #function)
@@ -590,10 +580,9 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertEqual(result, folder)
     }
 
-    @MainActor
-    func testWhenGetBookmarkFolderIsCalledAndFolderDoesNotExistInStoreThenBookmarkStoreReturnsNil() async throws {
+    func testWhenGetBookmarkFolderIsCalledAndFolderDoesNotExistInStoreThenBookmarkStoreReturnsNil() throws {
         // GIVEN
-        let (bookmarkManager, _) = await aManager()
+        let (bookmarkManager, _) = aManager
 
         // WHEN
         let result = bookmarkManager.getBookmarkFolder(withId: #function)
@@ -602,87 +591,12 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertNil(result)
     }
 
-    // MARK: - Folders Store
-
-    @MainActor
-    func testThatLastUsedFolderIsNilByDefault() async {
-        let (_, _) = await aManager()
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, nil)
-    }
-
-    @MainActor
-    func testWhenBookmarkIsAdded_ThenLastUsedFolderIsUpdated() async throws {
-        let (bookmarkManager, _) = await aManager()
-        let folder = try await bookmarkManager.makeFolder(named: "sample folder")
-
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder)
-        }
-
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder.id)
-    }
-
-    @MainActor
-    func testWhenBookmarkIsMoved_ThenLastUsedFolderIsUpdatedWithNewParentFolder() async throws {
-        let (bookmarkManager, _) = await aManager()
-        let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")
-        let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
-        var bookmark: Bookmark?
-
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1)
-        }
-
-        let id = try XCTUnwrap(bookmark?.id)
-        await withCheckedContinuation { continuation in
-            bookmarkManager.move(objectUUIDs: [id], toIndex: nil, withinParentFolder: .parent(uuid: folder2.id)) { _ in
-                continuation.resume()
-            }
-        }
-
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder2.id)
-    }
-
-    @MainActor
-    func testWhenBookmarkIsMovedUsingAddObjectsWithUUIDs_ThenLastUsedFolderIsUpdatedWithNewParentFolder() async throws {
-        let (bookmarkManager, _) = await aManager()
-        let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")
-        let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
-        var bookmark: Bookmark?
-
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1)
-        }
-
-        let id = try XCTUnwrap(bookmark?.id)
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.add(objectsWithUUIDs: [id], to: folder2, completion: { _ in })
-        }
-
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder2.id)
-    }
-
-    @MainActor
-    func testWhenFolderIsMoved_ThenLastUsedFolderIsUpdatedWithNewParentFolder() async throws {
-        let (bookmarkManager, _) = await aManager()
-        let folder1 = try await bookmarkManager.makeFolder(named: "sample folder")
-        let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
-
-        await withCheckedContinuation { continuation in
-            bookmarkManager.move(objectUUIDs: [folder2.id], toIndex: nil, withinParentFolder: .parent(uuid: folder1.id)) { _ in
-                continuation.resume()
-            }
-        }
-
-        XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder1.id)
-    }
-
     // MARK: - Save Multiple Bookmarks at once
 
     @MainActor
-    func testWhenMakeBookmarksForWebsitesInfoIsCalledThenBookmarkStoreIsAskedToCreateMultipleBookmarks() async {
+    func testWhenMakeBookmarksForWebsitesInfoIsCalledThenBookmarkStoreIsAskedToCreateMultipleBookmarks() {
         // GIVEN
-        let (sut, bookmarkStoreMock) = await aManager()
+        let (sut, bookmarkStoreMock) = aManager
         let newFolderName = #function
         let websitesInfo = [
             WebsiteInfo(url: URL.duckDuckGo, title: "Website 1"),
@@ -707,9 +621,9 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenMakeBookmarksForWebsiteInfoIsCalledThenReloadAllBookmarks() async {
+    func testWhenMakeBookmarksForWebsiteInfoIsCalledThenReloadAllBookmarks() {
         // GIVEN
-        let (sut, bookmarkStoreMock) = await aManager()
+        let (sut, bookmarkStoreMock) = aManager
         bookmarkStoreMock.loadAllCalled = false // Reset after load all bookmarks the first time
         XCTAssertFalse(bookmarkStoreMock.loadAllCalled)
         let websitesInfo = [WebsiteInfo(url: URL.duckDuckGo, title: "Website 1")].compactMap { $0 }
@@ -732,16 +646,16 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenQueryIsEmptyThenSearchResultsAreEmpty() async {
-        let (sut, _) = await manager(with: topLevelBookmarks)
+    func testWhenQueryIsEmptyThenSearchResultsAreEmpty() {
+        let (sut, _) = manager(with: topLevelBookmarks)
         let results = sut.search(by: "")
 
         XCTAssertTrue(results.isEmpty)
     }
 
     @MainActor
-    func testWhenQueryIsBlankThenSearchResultsAreEmpty() async {
-        let (sut, _) = await manager(with: topLevelBookmarks)
+    func testWhenQueryIsBlankThenSearchResultsAreEmpty() {
+        let (sut, _) = manager(with: topLevelBookmarks)
 
         let results = sut.search(by: "    ")
 
@@ -749,8 +663,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenASearchIsDoneThenCorrectResultsAreReturnedAndIntheRightOrder() async {
-        let (sut, _) = await manager(with: topLevelBookmarks)
+    func testWhenASearchIsDoneThenCorrectResultsAreReturnedAndIntheRightOrder() {
+        let (sut, _) = manager(with: topLevelBookmarks)
         let results = sut.search(by: "folder")
 
         XCTAssertEqual(results.count, 3)
@@ -760,8 +674,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenASearchIsDoneThenFoldersAndBookmarksAreReturned() async {
-        let (sut, _) = await manager(with: topLevelBookmarks)
+    func testWhenASearchIsDoneThenFoldersAndBookmarksAreReturned() {
+        let (sut, _) = manager(with: topLevelBookmarks)
         let results = sut.search(by: "favorite")
 
         XCTAssertEqual(results.count, 2)
@@ -772,8 +686,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenASearchIsDoneThenItMatchesWithLowercaseResults() async {
-        let (sut, _) = await manager {
+    func testWhenASearchIsDoneThenItMatchesWithLowercaseResults() {
+        let (sut, _) = manager {
             Bookmark(id: "1", url: "www.favorite.com", title: "Favorite bookmark", isFavorite: true)
             Bookmark(id: "2", url: "www.favoritetwo.com", title: "favorite bookmark", isFavorite: true)
         }
@@ -786,8 +700,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testSearchIgnoresAccents() async {
-        let (sut, _) = await manager {
+    func testSearchIgnoresAccents() {
+        let (sut, _) = manager {
             Bookmark(id: "1", url: "www.coffee.com", title: "Mi café favorito", isFavorite: true)
             Bookmark(id: "1", url: "www.coffee.com", title: "Mi cafe favorito", isFavorite: true)
         }
@@ -800,8 +714,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenASearchIsDoneWithoutAccenttsThenItMatchesBookmarksWithoutAccent() async {
-        let (sut, _) = await manager {
+    func testWhenASearchIsDoneWithoutAccenttsThenItMatchesBookmarksWithoutAccent() {
+        let (sut, _) = manager {
             Bookmark(id: "1", url: "www.coffee.com", title: "Mi café favorito", isFavorite: true)
         }
 
@@ -811,8 +725,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBookmarkHasASymbolThenItsIgnoredWhenSearching() async {
-        let (sut, _) = await manager {
+    func testWhenBookmarkHasASymbolThenItsIgnoredWhenSearching() {
+        let (sut, _) = manager {
             Bookmark(id: "1", url: "www.test.com", title: "Site • Login", isFavorite: true)
         }
 
@@ -822,8 +736,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testSearchQueryHasASymbolThenItsIgnoredWhenSearching() async {
-        let (sut, _) = await manager {
+    func testSearchQueryHasASymbolThenItsIgnoredWhenSearching() {
+        let (sut, _) = manager {
             Bookmark(id: "1", url: "www.test.com", title: "Site Login", isFavorite: true)
         }
 
@@ -859,9 +773,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssert(bookmarkStoreMock.loadAllCalled)
     }
 
-    @MainActor
-    func testWhenNoVariantUrlIsBookmarked_ThenGetBookmarkForVariantReturnsNil() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenNoVariantUrlIsBookmarked_ThenGetBookmarkForVariantReturnsNil() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let originalURL = URL(string: "http://example.com")!
 
         bookmarkStoreMock.bookmarks = []
@@ -886,9 +799,8 @@ final class LocalBookmarkManagerTests: XCTestCase {
         XCTAssertTrue(result)
     }
 
-    @MainActor
-    func testWhenNoVariantUrlIsBookmarked_ThenIsAnyUrlVariantBookmarkedReturnsFalse() async {
-        let (bookmarkManager, bookmarkStoreMock) = await aManager()
+    func testWhenNoVariantUrlIsBookmarked_ThenIsAnyUrlVariantBookmarkedReturnsFalse() {
+        let (bookmarkManager, bookmarkStoreMock) = aManager
         let originalURL = URL(string: "http://example.com")!
 
         bookmarkStoreMock.bookmarks = []
@@ -903,19 +815,27 @@ final class LocalBookmarkManagerTests: XCTestCase {
 
 fileprivate extension LocalBookmarkManagerTests {
 
-    @MainActor
-    func aManager() async -> (LocalBookmarkManager, BookmarkStoreMock) {
-        await manager(with: {})
+    var aManager: (LocalBookmarkManager, BookmarkStoreMock) {
+        manager(with: {})
     }
 
-    @MainActor
     private func makeManager(@BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
         let bookmarkStoreMock = BookmarkStoreMock(contextProvider: context.map { context in { context } }, bookmarks: bookmarks().build())
-        let faviconManagerMock = FaviconManagerMock()
-        foldersStore = BookmarkFolderStoreMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock, foldersStore: foldersStore)
+        let faviconManagerMock = MainActor.assumeIsolated { FaviconManagerMock() }
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
         Logger.tests.debug("LocalBookmarkManagerTests.\(self.name).makeManager \(String(describing: bookmarkManager)) with \(bookmarkStoreMock.debugDescription, privacy: .public)")
 
+        return (bookmarkManager, bookmarkStoreMock)
+    }
+
+    func manager(loadBookmarks: Bool = true, @BookmarksBuilder with bookmarks: () -> [BookmarksBuilderItem]) -> (LocalBookmarkManager, BookmarkStoreMock) {
+        let (bookmarkManager, bookmarkStoreMock) = makeManager(with: bookmarks)
+        if loadBookmarks {
+            bookmarkManager.loadBookmarks()
+            while bookmarkManager.list == nil {
+                RunLoop.main.run(until: Date() + 0.001)
+            }
+        }
         return (bookmarkManager, bookmarkStoreMock)
     }
 
@@ -931,31 +851,6 @@ fileprivate extension LocalBookmarkManagerTests {
         return (bookmarkManager, bookmarkStoreMock)
     }
 
-    func performAndAwaitListPublisher(of bookmarkManager: LocalBookmarkManager, block: (LocalBookmarkManager) -> Void) async {
-        var cancellable: AnyCancellable?
-        await withCheckedContinuation { continuation in
-            block(bookmarkManager)
-            cancellable = bookmarkManager.listPublisher.dropFirst().sink { _ in continuation.resume() }
-        }
-        cancellable?.cancel()
-    }
-}
-
-fileprivate extension BookmarkManager {
-
-    @MainActor
-    func makeFolder(named name: String, parent: BookmarkFolder? = nil) async throws -> BookmarkFolder {
-        try await withCheckedThrowingContinuation { continuation in
-            makeFolder(named: "sample folder", parent: parent) { result in
-                switch result {
-                case .success(let folder):
-                    continuation.resume(returning: folder)
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-        }
-    }
 }
 
 fileprivate extension Bookmark {

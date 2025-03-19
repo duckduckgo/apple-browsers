@@ -43,35 +43,35 @@ extension UniquePixel: OnboardingPixelFiring {
 // MARK: - OnboardingPixelReporter
 
 protocol OnboardingIntroImpressionReporting {
-    func measureOnboardingIntroImpression()
+    func trackOnboardingIntroImpression()
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
-    func measureBrowserComparisonImpression()
-    func measureChooseBrowserCTAAction()
-    func measureChooseAppIconImpression()
-    func measureChooseCustomAppIconColor()
-    func measureAddressBarPositionSelectionImpression()
-    func measureChooseBottomAddressBarPosition()
+    func trackBrowserComparisonImpression()
+    func trackChooseBrowserCTAAction()
+    func trackChooseAppIconImpression()
+    func trackChooseCustomAppIconColor()
+    func trackAddressBarPositionSelectionImpression()
+    func trackChooseBottomAddressBarPosition()
 }
 
 protocol OnboardingCustomInteractionPixelReporting {
-    func measureCustomSearch()
-    func measureCustomSite()
-    func measureSecondSiteVisit()
-    func measurePrivacyDashboardOpenedForFirstTime()
+    func trackCustomSearch()
+    func trackCustomSite()
+    func trackSecondSiteVisit()
+    func trackPrivacyDashboardOpenedForFirstTime()
 }
 
 protocol OnboardingDaxDialogsReporting {
-    func measureScreenImpression(event: Pixel.Event)
-    func measureEndOfJourneyDialogCTAAction()
+    func trackScreenImpression(event: Pixel.Event)
+    func trackEndOfJourneyDialogCTAAction()
 }
 
 protocol OnboardingAddToDockReporting {
-    func measureAddToDockPromoImpression()
-    func measureAddToDockPromoShowTutorialCTAAction()
-    func measureAddToDockPromoDismissCTAAction()
-    func measureAddToDockTutorialDismissCTAAction()
+    func trackAddToDockPromoImpression()
+    func trackAddToDockPromoShowTutorialCTAAction()
+    func trackAddToDockPromoDismissCTAAction()
+    func trackAddToDockTutorialDismissCTAAction()
 }
 
 typealias OnboardingPixelReporting = OnboardingIntroImpressionReporting & OnboardingIntroPixelReporting & OnboardingSearchSuggestionsPixelReporting & OnboardingSiteSuggestionsPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting & OnboardingAddToDockReporting
@@ -146,31 +146,31 @@ extension OnboardingPixelReporter {
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
-    func measureOnboardingIntroImpression() {
+    func trackOnboardingIntroImpression() {
         fire(event: .onboardingIntroShownUnique, unique: true)
     }
 
-    func measureBrowserComparisonImpression() {
+    func trackBrowserComparisonImpression() {
         fire(event: .onboardingIntroComparisonChartShownUnique, unique: true)
     }
 
-    func measureChooseBrowserCTAAction() {
+    func trackChooseBrowserCTAAction() {
         fire(event: .onboardingIntroChooseBrowserCTAPressed, unique: false)
     }
 
-    func measureChooseAppIconImpression() {
+    func trackChooseAppIconImpression() {
         fire(event: .onboardingIntroChooseAppIconImpressionUnique, unique: true, includedParameters: [.appVersion])
     }
 
-    func measureChooseCustomAppIconColor() {
+    func trackChooseCustomAppIconColor() {
         fire(event: .onboardingIntroChooseCustomAppIconColorCTAPressed, unique: false, includedParameters: [.appVersion])
     }
 
-    func measureAddressBarPositionSelectionImpression() {
+    func trackAddressBarPositionSelectionImpression() {
         fire(event: .onboardingIntroChooseAddressBarImpressionUnique, unique: true, includedParameters: [.appVersion])
     }
 
-    func measureChooseBottomAddressBarPosition() {
+    func trackChooseBottomAddressBarPosition() {
         fire(event: .onboardingIntroBottomAddressBarSelected, unique: false, includedParameters: [.appVersion])
     }
 
@@ -180,7 +180,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
     
-    func measureSearchSuggetionOptionTapped() {
+    func trackSearchSuggetionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
@@ -188,7 +188,7 @@ extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
     
-    func measureSiteSuggetionOptionTapped() {
+    func trackSiteSuggetionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
@@ -198,15 +198,15 @@ extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 
-    func measureCustomSearch() {
+    func trackCustomSearch() {
         fire(event: .onboardingContextualSearchCustomUnique, unique: true)
     }
     
-    func measureCustomSite() {
+    func trackCustomSite() {
         fire(event: .onboardingContextualSiteCustomUnique, unique: true)
     }
     
-    func measureSecondSiteVisit() {
+    func trackSecondSiteVisit() {
         if userDefaults.bool(forKey: siteVisitedUserDefaultsKey) {
             fire(event: .onboardingContextualSecondSiteVisitUnique, unique: true)
         } else {
@@ -214,7 +214,7 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
         }
     }
 
-    func measurePrivacyDashboardOpenedForFirstTime() {
+    func trackPrivacyDashboardOpenedForFirstTime() {
         let daysSinceInstall = statisticsStore.installDate.flatMap { calendar.numberOfDaysBetween($0, and: dateProvider()) }
         let additionalParameters = [
             PixelParameters.fromOnboarding: "true",
@@ -229,11 +229,11 @@ extension OnboardingPixelReporter: OnboardingCustomInteractionPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     
-    func measureScreenImpression(event: Pixel.Event) {
+    func trackScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
     }
 
-    func measureEndOfJourneyDialogCTAAction() {
+    func trackEndOfJourneyDialogCTAAction() {
         fire(event: .daxDialogsEndOfJourneyDismissed, unique: false)
     }
 
@@ -243,19 +243,19 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
 extension OnboardingPixelReporter: OnboardingAddToDockReporting {
    
-    func measureAddToDockPromoImpression() {
+    func trackAddToDockPromoImpression() {
         fire(event: .onboardingAddToDockPromoImpressionsUnique, unique: true)
     }
     
-    func measureAddToDockPromoShowTutorialCTAAction() {
+    func trackAddToDockPromoShowTutorialCTAAction() {
         fire(event: .onboardingAddToDockPromoShowTutorialCTATapped, unique: false)
     }
     
-    func measureAddToDockPromoDismissCTAAction() {
+    func trackAddToDockPromoDismissCTAAction() {
         fire(event: .onboardingAddToDockPromoDismissCTATapped, unique: false)
     }
     
-    func measureAddToDockTutorialDismissCTAAction() {
+    func trackAddToDockTutorialDismissCTAAction() {
         fire(event: .onboardingAddToDockTutorialDismissCTATapped, unique: false)
     }
 

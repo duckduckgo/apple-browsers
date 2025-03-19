@@ -23,7 +23,6 @@ import NetworkProtection
 import NetworkProtectionProxy
 import SwiftUI
 import os.log
-import Subscription
 
 /// Controller for the VPN debug menu.
 ///
@@ -52,8 +51,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     private let excludeLocalNetworksMenuItem = NSMenuItem(title: "excludeLocalNetworks", action: #selector(NetworkProtectionDebugMenu.toggleShouldExcludeLocalRoutes))
 
-    private let networkProtectionDeviceManager: NetworkProtectionDeviceManager
-
     init() {
         preferredServerMenu = NSMenu { [preferredServerAutomaticItem] in
             preferredServerAutomaticItem
@@ -61,22 +58,6 @@ final class NetworkProtectionDebugMenu: NSMenu {
         registrationKeyValidityMenu = NSMenu { [registrationKeyValidityAutomaticItem] in
             registrationKeyValidityAutomaticItem
         }
-
-        let settings = Application.appDelegate.vpnSettings
-        let keyStore = NetworkProtectionKeychainKeyStore(keychainType: .default,
-                                                         errorEvents: .networkProtectionAppDebugEvents)
-        var tokenHandler: any SubscriptionTokenHandling
-        if !Application.appDelegate.isAuthV2Enabled {
-            tokenHandler = NetworkProtectionKeychainTokenStore()
-        } else {
-            // swiftlint:disable:next force_cast
-            tokenHandler = Application.appDelegate.subscriptionManagerV2 as! DefaultSubscriptionManagerV2
-        }
-        networkProtectionDeviceManager = NetworkProtectionDeviceManager(environment: settings.selectedEnvironment,
-                                                                        tokenHandler: tokenHandler,
-                                                                        keyStore: keyStore,
-                                                                        errorEvents: .networkProtectionAppDebugEvents)
-
         super.init(title: "VPN")
 
         buildItems {
@@ -283,7 +264,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
     ///
     @objc func logFeedbackMetadataToConsole(_ sender: Any?) {
         Task { @MainActor in
-            let collector = DefaultVPNMetadataCollector(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+            let collector = DefaultVPNMetadataCollector(accountManager: Application.appDelegate.subscriptionManager.accountManager)
             let metadata = await collector.collectMetadata()
 
             print(metadata.toPrettyPrintedJSON()!)
@@ -375,7 +356,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     @MainActor
     private func populateNetworkProtectionServerListMenuItems() async throws {
-        let servers = try await networkProtectionDeviceManager.refreshServerList()
+        let servers = try await NetworkProtectionDeviceManager.create().refreshServerList()
 
         preferredServerAutomaticItem.target = self
         if servers.isEmpty {
@@ -542,7 +523,7 @@ final class NetworkProtectionDebugMenu: NSMenu {
         settings.selectedEnvironment = selectedEnvironment
 
         Task {
-            _ = try await networkProtectionDeviceManager.refreshServerList()
+            _ = try await NetworkProtectionDeviceManager.create().refreshServerList()
             try? await populateNetworkProtectionServerListMenuItems()
 
             settings.selectedServer = .automatic

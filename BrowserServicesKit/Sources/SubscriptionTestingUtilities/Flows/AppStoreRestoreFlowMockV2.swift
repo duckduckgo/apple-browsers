@@ -20,23 +20,13 @@ import Foundation
 import Subscription
 
 public final class AppStoreRestoreFlowMockV2: AppStoreRestoreFlowV2 {
-
-    public var restoreAccountFromPastPurchaseResult: Result<String, AppStoreRestoreFlowErrorV2>!
+    public var restoreAccountFromPastPurchaseResult: Result<String, AppStoreRestoreFlowErrorV2>?
     public var restoreAccountFromPastPurchaseCalled: Bool = false
 
     public init() { }
 
     @discardableResult public func restoreAccountFromPastPurchase() async -> Result<String, AppStoreRestoreFlowErrorV2> {
         restoreAccountFromPastPurchaseCalled = true
-        return restoreAccountFromPastPurchaseResult
-    }
-
-    public var restoreSubscriptionAfterExpiredRefreshTokenError: Error?
-    public var restoreSubscriptionAfterExpiredRefreshTokenCalled: Bool = false
-    public func restoreSubscriptionAfterExpiredRefreshToken() async throws {
-        restoreSubscriptionAfterExpiredRefreshTokenCalled = true
-        if let restoreSubscriptionAfterExpiredRefreshTokenError {
-            throw restoreSubscriptionAfterExpiredRefreshTokenError
-        }
+        return restoreAccountFromPastPurchaseResult!
     }
 }

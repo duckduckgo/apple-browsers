@@ -116,8 +116,8 @@ public final class NetworkProtectionKeychainStore {
     }
 
     public func deleteAll() throws {
+        Logger.networkProtectionKeyManagement.debug("Deleting all keys from keychain")
         var query = defaultAttributes()
-        Logger.networkProtectionKeyManagement.debug("Deleting all keys from keychain: \(query, privacy: .public)")
 #if os(macOS)
         // This line causes the delete to error with status -50 on iOS. Needs investigation but, for now, just delete the first item
         // https://app.asana.com/0/1203512625915051/1205009181378521

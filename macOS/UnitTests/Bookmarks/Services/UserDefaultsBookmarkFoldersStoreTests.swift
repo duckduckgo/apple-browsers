@@ -27,7 +27,7 @@ final class UserDefaultsBookmarkFoldersStoreTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         userDefaults = UserDefaults(suiteName: Self.suiteName)
-        sut = UserDefaultsBookmarkFoldersStore(keyValueStore: userDefaults)
+        sut = UserDefaultsBookmarkFoldersStore(userDefaults: userDefaults)
     }
 
     override func tearDownWithError() throws {
@@ -55,29 +55,6 @@ final class UserDefaultsBookmarkFoldersStoreTests: XCTestCase {
 
         // WHEN
         let result = sut.lastBookmarkAllTabsFolderIdUsed
-
-        // THEN
-        XCTAssertNil(result)
-    }
-
-    func testReturnBookmarkSingleTabLastFolderIdUsedWhenUserDefaultsContainsValue() {
-        // GIVEN
-        let value = "12345"
-        userDefaults.set(value, forKey: UserDefaultsBookmarkFoldersStore.Keys.bookmarkSingleTabFolderUsedKey)
-
-        // WHEN
-        let result = sut.lastBookmarkSingleTabFolderIdUsed
-
-        // THEN
-        XCTAssertEqual(result, value)
-    }
-
-    func testReturnNilForBookmarkSingleTabLastFolderIdUsedWhenUserDefaultsDoesNotContainValue() {
-        // GIVEN
-        userDefaults.set(nil, forKey: UserDefaultsBookmarkFoldersStore.Keys.bookmarkSingleTabFolderUsedKey)
-
-        // WHEN
-        let result = sut.lastBookmarkSingleTabFolderIdUsed
 
         // THEN
         XCTAssertNil(result)

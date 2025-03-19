@@ -41,7 +41,6 @@ class TabSwitcherBarsStateHandler {
     var selectedTabsCount: Int = 0
     var totalTabsCount: Int = 0
     var containsWebPages = false
-    var canShowSelectionMenu = false
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
@@ -168,5 +167,9 @@ class TabSwitcherBarsStateHandler {
             ]
 
         }
+    }
+    
+    func menuButtonHasChildren() -> Bool {
+        return menuButton.menu?.children.contains { ($0 as? UIMenu)?.children.isEmpty == false } ?? false
     }
 }

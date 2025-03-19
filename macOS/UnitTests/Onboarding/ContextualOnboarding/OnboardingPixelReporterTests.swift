@@ -47,23 +47,23 @@ final class OnboardingPixelReporterTests: XCTestCase {
     }
 
     func test_WhenTrackSiteSuggestionOptionTapped_ThenSiteSuggetionOptionTappedEventSent() throws {
-        reporter.measureSiteSuggetionOptionTapped()
+        reporter.trackSiteSuggetionOptionTapped()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.siteSuggetionOptionTapped.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureSearchSuggetionOptionTapped_ThenSearchSuggetionOptionTappedEventSent() throws {
-        reporter.measureSearchSuggetionOptionTapped()
+    func test_WhenTrackSearchSuggetionOptionTapped_ThenSearchSuggetionOptionTappedEventSent() throws {
+        reporter.trackSearchSuggetionOptionTapped()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.searchSuggetionOptionTapped.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
+    func test_WhenTrackAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
         for state in ContextualOnboardingState.allCases {
             eventSent = nil
             frequency = nil
             onboardingState.state = state
-            reporter.measureAddressBarTypedIn()
+            reporter.trackAddressBarTypedIn()
             if state == .showTryASearch {
                 XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingSearchCustom.name)
                 XCTAssertEqual(frequency, .uniqueByName)
@@ -77,58 +77,58 @@ final class OnboardingPixelReporterTests: XCTestCase {
         }
     }
 
-    func test_WhenmeasureFireButtonSkipped_ThenOnboardingFireButtonPromptSkipPressedSent() {
-        reporter.measureFireButtonSkipped()
+    func test_WhenTrackFireButtonSkipped_ThenOnboardingFireButtonPromptSkipPressedSent() {
+        reporter.trackFireButtonSkipped()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFireButtonPromptSkipPressed.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureFireButtonTryIt_ThenOnboardingFireButtonTryItPressedSent() {
-        reporter.measureFireButtonTryIt()
+    func test_WhenTrackFireButtonTryIt_ThenOnboardingFireButtonTryItPressedSent() {
+        reporter.trackFireButtonTryIt()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFireButtonTryItPressed.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureLastDialogShown_ThenOnboardingFinishedSent() {
-        reporter.measureLastDialogShown()
+    func test_WhenTrackLastDialogShown_ThenOnboardingFinishedSent() {
+        reporter.trackLastDialogShown()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFinished.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureFireButtonPressed_AndOnboardingNotCompleted_ThenOnboardingFireButtonPressedSent() {
+    func test_WhenTrackFireButtonPressed_AndOnboardingNotCompleted_ThenOnboardingFireButtonPressedSent() {
         onboardingState.state = .showFireButton
-        reporter.measureFireButtonPressed()
+        reporter.trackFireButtonPressed()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFireButtonPressed.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasureFireButtonPressed_AndOnboardingCompleted_ThenNoPixelSent() {
+    func test_WhenTrackFireButtonPressed_AndOnboardingCompleted_ThenNoPixelSent() {
         onboardingState.state = .onboardingCompleted
-        reporter.measureFireButtonPressed()
+        reporter.trackFireButtonPressed()
         XCTAssertNil(eventSent)
         XCTAssertNil(frequency)
     }
 
-    func test_WhenmeasurePrivacyDashboardOpened_AndOnboardingNotCompleted_ThenOnboardingFireButtonPressedSent() {
+    func test_WhenTrackPrivacyDashboardOpened_AndOnboardingNotCompleted_ThenOnboardingFireButtonPressedSent() {
         onboardingState.state = .showBlockedTrackers
-        reporter.measurePrivacyDashboardOpened()
+        reporter.trackPrivacyDashboardOpened()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingPrivacyDashboardOpened.name)
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-    func test_WhenmeasurePrivacyDashboardOpened_AndOnboardingCompleted_ThenNoPixelSent() {
+    func test_WhenTrackPrivacyDashboardOpened_AndOnboardingCompleted_ThenNoPixelSent() {
         onboardingState.state = .onboardingCompleted
-        reporter.measurePrivacyDashboardOpened()
+        reporter.trackPrivacyDashboardOpened()
         XCTAssertNil(eventSent)
         XCTAssertNil(frequency)
     }
 
-    func test_WhenmeasureSiteVisited_ThenSecondSiteVisitedSentOnlyTheSecondTime() {
-        reporter.measureSiteVisited()
+    func test_WhenTrackSiteVisited_ThenSecondSiteVisitedSentOnlyTheSecondTime() {
+        reporter.trackSiteVisited()
         XCTAssertNil(eventSent)
         XCTAssertNil(frequency)
 
-        reporter.measureSiteVisited()
+        reporter.trackSiteVisited()
         XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.secondSiteVisited.name)
         XCTAssertEqual(frequency, .uniqueByName)
         eventSent = nil
@@ -137,13 +137,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     // Tab Onboarding Pixel test
     @MainActor
-    func test_WhenNavigationDidFinish_ThenReportermeasureSiteVisitedCalled() {
+    func test_WhenNavigationDidFinish_ThenReporterTrackSiteVisitedCalled() {
         let capturingReporter = CapturingOnboardingPixelReporter()
         let tab = Tab(content: .newtab, onboardingPixelReporter: capturingReporter)
 
         tab.navigationDidFinish(Navigation(identity: .expected, responders: .init(), state: .approved, isCurrent: true))
 
-        XCTAssertTrue(capturingReporter.measureSiteVisitedCalled)
+        XCTAssertTrue(capturingReporter.trackSiteVisitedCalled)
     }
 
 }

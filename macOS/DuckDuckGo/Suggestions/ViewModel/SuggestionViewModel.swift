@@ -96,7 +96,7 @@ struct SuggestionViewModel: Equatable {
             }
         case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
              .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _, _):
+             .openTab(title: let title, url: _):
             return title
         case .unknown(value: let value):
             return value
@@ -117,7 +117,7 @@ struct SuggestionViewModel: Equatable {
             }
         case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
              .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _, _):
+             .openTab(title: let title, url: _):
             return title
         }
     }
@@ -142,28 +142,30 @@ struct SuggestionViewModel: Equatable {
         }
     }
 
-    var suffix: String? {
+    var suffix: String {
         switch suggestion {
         // for punycoded urls display real url as a suffix
         case .website(url: let url) where url.toString(forUserInput: userStringValue, decodePunycode: false) != self.string:
-            return url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
+            return " – " + url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
 
         case .phrase, .unknown, .website:
-            return nil
-        case .openTab(title: _, url: let url, _) where url.isDuckURLScheme:
-            return UserText.duckDuckGo
-        case .openTab(title: _, url: let url, _) where url.isDuckDuckGoSearch:
-            return UserText.duckDuckGoSearchSuffix
+            return ""
+        case .openTab(title: _, url: let url) where url.isDuckURLScheme:
+            return " – " + UserText.duckDuckGo
+        case .openTab(title: _, url: let url) where url.isDuckDuckGoSearch:
+            return " – " + UserText.duckDuckGoSearchSuffix
         case .historyEntry(title: _, url: let url, allowedInTopHits: _),
              .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-             .openTab(title: _, url: let url, _):
+             .openTab(title: _, url: let url):
             if url.isDuckDuckGoSearch {
-                return UserText.searchDuckDuckGoSuffix
+                return " – \(UserText.searchDuckDuckGoSuffix)"
             } else {
-                return url.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
+                return " – " + url.toString(decodePunycode: true,
+                                              dropScheme: true,
+                                              dropTrailingSlash: true)
             }
         case .internalPage:
-            return UserText.duckDuckGo
+            return " – " + UserText.duckDuckGo
         }
     }
 
@@ -184,10 +186,10 @@ struct SuggestionViewModel: Equatable {
         case .unknown:
             return .web
         case .internalPage(title: _, url: let url) where url == .bookmarks,
-             .openTab(title: _, url: let url, _) where url == .bookmarks:
+             .openTab(title: _, url: let url) where url == .bookmarks:
             return .bookmarksFolder
         case .internalPage(title: _, url: let url) where url.isSettingsURL,
-             .openTab(title: _, url: let url, _) where url.isSettingsURL:
+             .openTab(title: _, url: let url) where url.isSettingsURL:
             return .settingsMulticolor16
         case .internalPage(title: _, url: let url):
             guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }

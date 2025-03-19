@@ -50,11 +50,11 @@ struct AddBookmarkPopoverView: View {
             addFolderAction: model.addFolderButtonAction,
             otherActionTitle: UserText.delete,
             isOtherActionDisabled: false,
-            otherAction: { _ in model.removeButtonAction() },
+            otherAction: model.removeButtonAction,
             isOtherActionTriggeredByEscKey: false,
             defaultActionTitle: UserText.done,
             isDefaultActionDisabled: model.isDefaultActionButtonDisabled,
-            defaultAction: { _ in model.doneButtonAction() }
+            defaultAction: model.doneButtonAction
         )
         .font(.system(size: 13))
         .frame(width: 320)

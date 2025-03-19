@@ -43,7 +43,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         pixelReporterMock = OnboardingPixelReporterMock()
         factory = NewTabDaxDialogFactory(
             delegate: mockDelegate,
-            daxDialogsFlowCoordinator: contextualOnboardingLogicMock,
+            contextualOnboardingLogic: contextualOnboardingLogicMock,
             onboardingPixelReporter: pixelReporterMock,
             onboardingManager: onboardingManagerMock
         )
@@ -113,7 +113,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         finalDialog?.dismissAction(false)
         XCTAssertTrue(onDismissedRun)
         wait(for: [expectation], timeout: 5.0)
-        XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFinalOnboardingDialogSeen)
+        XCTAssertTrue(contextualOnboardingLogicMock.didCallsetFinalOnboardingDialogSeen)
     }
 
     func testCreateAddFavoriteDialogCreatesAContextualDaxDialog() {
@@ -163,13 +163,13 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
         let finalDialog = try XCTUnwrap(find(OnboardingFinalDialog.self, in: host))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
+        XCTAssertFalse(pixelReporterMock.didCallTrackEndOfJourneyDialogDismiss)
 
         // WHEN
         finalDialog.dismissAction(false)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureEndOfJourneyDialogDismiss)
+        XCTAssertTrue(pixelReporterMock.didCallTrackEndOfJourneyDialogDismiss)
     }
 
     // MARK: - Add To Dock
@@ -210,7 +210,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let spec = DaxDialogs.HomeScreenSpec.final
         // TEST
         waitForDialogDefinedBy(spec: spec) {
-            XCTAssertTrue(self.pixelReporterMock.didCallMeasureAddToDockPromoImpression)
+            XCTAssertTrue(self.pixelReporterMock.didCallTrackAddToDockPromoImpression)
         }
     }
 
@@ -220,13 +220,13 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
 
         // WHEN
         view.showAddToDockTutorialAction()
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoShowTutorialCTAAction)
     }
 
     func testWhenEndOfJourneyAndAddToDockPromoDismissButtonActionThenFireExpectedPixel() throws {
@@ -235,13 +235,13 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
 
         // WHEN
         view.dismissAction(false)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockPromoDismissCTAAction)
     }
 
     func testWhenEndOfJourneyAndAddToDockTutorialDismissButtonActionThenFireExpectedPixel() throws {
@@ -250,13 +250,13 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         onboardingManagerMock.addToDockEnabledState = .contextual
         let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
-        XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
+        XCTAssertFalse(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
 
         // WHEN
         view.dismissAction(true)
 
         // THEN
-        XCTAssertTrue(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
+        XCTAssertTrue(pixelReporterMock.didCallTrackAddToDockTutorialDismissCTAAction)
     }
 
 }
@@ -266,7 +266,7 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
     func testDialogDefinedBy(spec: DaxDialogs.HomeScreenSpec, firesEvent event: Pixel.Event) {
         waitForDialogDefinedBy(spec: spec) {
             // THEN
-            XCTAssertTrue(self.pixelReporterMock.didCallMeasureScreenImpressionCalled)
+            XCTAssertTrue(self.pixelReporterMock.didCallTrackScreenImpressionCalled)
             XCTAssertEqual(self.pixelReporterMock.capturedScreenImpression, event)
         }
     }
@@ -274,7 +274,7 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
     func waitForDialogDefinedBy(spec: DaxDialogs.HomeScreenSpec, completionHandler: @escaping () -> Void) {
         // GIVEN
         let expectation = self.expectation(description: #function)
-        XCTAssertFalse(pixelReporterMock.didCallMeasureScreenImpressionCalled)
+        XCTAssertFalse(pixelReporterMock.didCallTrackScreenImpressionCalled)
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
 
         // WHEN

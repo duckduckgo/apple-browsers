@@ -21,6 +21,7 @@ import Subscription
 
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
+    var usesUnifiedFeedbackForm: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -45,6 +46,10 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         }
 
         return isPurchaseAllowed || isInternalUser
+    }
+
+    public var usesUnifiedFeedbackForm: Bool {
+        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback)
     }
 
 // MARK: - Conditions

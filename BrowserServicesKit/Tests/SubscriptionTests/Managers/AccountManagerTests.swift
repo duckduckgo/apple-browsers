@@ -95,7 +95,7 @@ final class AccountManagerTests: XCTestCase {
         let keychainAccessDelegateMock = AccountManagerKeychainAccessDelegateMock { type, error in
             delegateCalled.fulfill()
             XCTAssertEqual(type, .storeAuthToken)
-            XCTAssertEqual(error.localizedDescription, Constants.keychainError.localizedDescription)
+            XCTAssertEqual(error, Constants.keychainError)
         }
 
         accountStorage.mockedAccessError = Constants.keychainError

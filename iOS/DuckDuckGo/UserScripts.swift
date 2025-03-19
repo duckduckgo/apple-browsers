@@ -106,14 +106,10 @@ final class UserScripts: UserScriptsProvider {
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
         if let duckPlayer {
-            
-            // Initialize scripts if nativeUI is disabled
-            if !duckPlayer.settings.nativeUI {
-                youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
-                youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
-                youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
-                youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
-            }
+            youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
+            youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+            youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
         }
     }
     

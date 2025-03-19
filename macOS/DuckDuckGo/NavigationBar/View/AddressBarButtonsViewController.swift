@@ -833,12 +833,12 @@ final class AddressBarButtonsViewController: NSViewController {
             guard let host = url.host else { break }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
-            let isCertificateValid = tabViewModel.tab.isCertificateValid ?? true
+            let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
             let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
-            let isShieldDotVisible = isNotSecure || isUnprotected || !isCertificateValid
+            let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid
 
             if isFlaggedAsMalicious {
                 privacyEntryPointButton.isAnimationEnabled = false

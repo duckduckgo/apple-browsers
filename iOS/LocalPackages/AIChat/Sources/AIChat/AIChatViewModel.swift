@@ -41,10 +41,14 @@ protocol AIChatViewModeling {
 
     /// Path for AI Chat downloads, like exported chat
     var downloadsPath: URL { get }
+
+    /// User Agent to be used on AI Chat
+    var userAgent: String { get }
 }
 
 final class AIChatViewModel: AIChatViewModeling {
     private let settings: AIChatSettingsProvider
+    private let userAgentManager: AIChatUserAgentProviding
     let webViewConfiguration: WKWebViewConfiguration
     let requestAuthHandler: AIChatRequestAuthorizationHandling
     let inspectableWebView: Bool
@@ -54,12 +58,14 @@ final class AIChatViewModel: AIChatViewModeling {
          settings: AIChatSettingsProvider,
          requestAuthHandler: AIChatRequestAuthorizationHandling,
          inspectableWebView: Bool,
-         downloadsPath: URL) {
+         downloadsPath: URL,
+         userAgentManager: AIChatUserAgentProviding) {
         self.webViewConfiguration = webViewConfiguration
         self.settings = settings
         self.requestAuthHandler = requestAuthHandler
         self.inspectableWebView = inspectableWebView
         self.downloadsPath = downloadsPath
+        self.userAgentManager = userAgentManager
     }
 
     var aiChatURL: URL {
@@ -69,5 +75,9 @@ final class AIChatViewModel: AIChatViewModeling {
     @MainActor
     func shouldAllowRequestWithNavigationAction(_ navigationAction: WKNavigationAction) -> Bool {
         requestAuthHandler.shouldAllowRequestWithNavigationAction(navigationAction)
+    }
+
+    var userAgent: String {
+        userAgentManager.userAgent(url: aiChatURL)
     }
 }

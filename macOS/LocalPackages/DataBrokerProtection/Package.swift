@@ -68,9 +68,6 @@ let package = Package(
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-            ],
-            resources: [
-                .copy("Resources")
             ]
         )
     ]

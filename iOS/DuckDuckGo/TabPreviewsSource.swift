@@ -20,8 +20,20 @@
 import UIKit
 import Core
 
-class TabPreviewsSource {
-    
+protocol TabPreviewsSource: AnyObject {
+
+    func prepare()
+    func update(preview: UIImage, forTab tab: Tab)
+    func removePreview(forTab tab: Tab)
+    func removeAllPreviews()
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) async
+    func totalStoredPreviews() -> Int?
+    func preview(for tab: Tab) -> UIImage?
+
+}
+
+class DefaultTabPreviewsSource: TabPreviewsSource {
+
     struct Constants {
         static let previewsDirectoryName = "Previews"
     }
@@ -33,8 +45,8 @@ class TabPreviewsSource {
     fileprivate var previewStoreDir: URL?
     private var legacyPreviewStoreDir: URL?
     
-    init(storeDir: URL? = TabPreviewsSource.previewStoreDir,
-         legacyDir: URL? = TabPreviewsSource.legacyPreviewStoreDir) {
+    init(storeDir: URL? = DefaultTabPreviewsSource.previewStoreDir,
+         legacyDir: URL? = DefaultTabPreviewsSource.legacyPreviewStoreDir) {
         previewStoreDir = storeDir
         legacyPreviewStoreDir = legacyDir
     }
@@ -177,17 +189,15 @@ class TabPreviewsSource {
         return UIImage(data: data)
     }
 
-    func removePreviewsWithIdNotIn(_ ids: Set<String>) {
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
         guard let directory = previewStoreDir else { return }
-        Task {
-            let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
-            contents?.forEach {
-                let id = $0.dropping(suffix: ".png")
-                if !ids.contains(id) {
-                    cache[id] = nil
-                    let previewUrl = directory.appending($0)
-                    try? FileManager.default.removeItem(at: previewUrl)
-                }
+        let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
+        contents?.forEach {
+            let id = $0.dropping(suffix: ".png")
+            if !ids.contains(id) {
+                cache[id] = nil
+                let previewUrl = directory.appending($0)
+                try? FileManager.default.removeItem(at: previewUrl)
             }
         }
     }

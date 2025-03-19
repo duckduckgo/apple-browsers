@@ -198,10 +198,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
                 NENetworkRule(destinationHost: NWHostEndpoint(hostname: "duckduckgo.com", port: "443"), protocol: .any))
         }
 
-        networkSettings.excludedNetworkRules = [
-            NENetworkRule(destinationHost: NWHostEndpoint(hostname: "push.apple.com", port: ""), protocol: .any),
-        ]
-
         return networkSettings
     }
 

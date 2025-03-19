@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import AppKitExtensions
+import Common
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -271,10 +272,10 @@ public struct UserDefaultsWrapper<T> {
 
     static var sharedDefaults: UserDefaults {
 #if DEBUG && !(NETP_SYSTEM_EXTENSION && NETWORK_EXTENSION) // Avoid looking up special user defaults when running inside the system extension
-        if case .normal = NSApplication.runType {
+        if case .normal = AppVersion.runType {
             return .standard
         } else {
-            return UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+            return UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
         }
 #else
         return .standard

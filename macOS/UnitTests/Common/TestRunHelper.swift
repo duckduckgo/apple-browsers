@@ -18,6 +18,7 @@
 
 import Foundation
 import XCTest
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 @objc(TestRunHelper)
@@ -51,7 +52,7 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testBundleDidFinish(_ testBundle: Bundle) {
-        if case .integrationTests = NSApp.runType {
+        if case .integrationTests = AppVersion.runType {
             FileManager.default.cleanupTemporaryDirectory(excluding: ["Database.sqlite",
                                                                       "Database.sqlite-wal",
                                                                       "Database.sqlite-shm"])
@@ -67,7 +68,7 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseWillStart(_ testCase: XCTestCase) {
-        if case .unitTests = NSApp.runType {
+        if case .unitTests = AppVersion.runType {
             // cleanup dedicated temporary directory before each test run
             FileManager.default.cleanupTemporaryDirectory()
             NSAnimationContext.current.duration = 0
@@ -76,7 +77,7 @@ extension TestRunHelper: XCTestObservation {
     }
 
     func testCaseDidFinish(_ testCase: XCTestCase) {
-        if case .unitTests = NSApp.runType {
+        if case .unitTests = AppVersion.runType {
             // cleanup dedicated temporary directory after each test run
             FileManager.default.cleanupTemporaryDirectory()
         }

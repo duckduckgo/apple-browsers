@@ -84,6 +84,7 @@ final class AIChatWebViewController: UIViewController {
 
     private func setupWebView() {
         view.addSubview(webView)
+        webView.customUserAgent = chatModel.userAgent
 
         if #available(iOS 16.4, *) {
             webView.isInspectable = chatModel.inspectableWebView

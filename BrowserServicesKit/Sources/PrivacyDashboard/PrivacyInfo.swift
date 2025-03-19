@@ -24,6 +24,16 @@ import TrackerRadarKit
 public protocol SecurityTrust { }
 extension SecTrust: SecurityTrust {}
 
+public struct ServerTrustEvaluation {
+    let securityTrust: SecurityTrust?
+    public let isCertificateInvalid: Bool?
+
+    public init(securityTrust: SecurityTrust?, isCertificateInvalid: Bool?) {
+        self.securityTrust = securityTrust
+        self.isCertificateInvalid = isCertificateInvalid
+    }
+}
+
 public final class PrivacyInfo {
 
     public private(set) var url: URL
@@ -31,7 +41,7 @@ public final class PrivacyInfo {
 
     @Published public var trackerInfo: TrackerInfo
     @Published private(set) var protectionStatus: ProtectionStatus
-    @Published public var serverTrust: SecurityTrust?
+    @Published public var serverTrustEvaluation: ServerTrustEvaluation?
     @Published public var connectionUpgradedTo: URL?
     @Published public var cookieConsentManaged: CookieConsentInfo?
     @Published public var malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind?

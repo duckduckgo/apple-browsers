@@ -26,21 +26,6 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .httpError(let error, _, _),
-                    .actionFailedError(let error, _, _, _),
-                    .otherError(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
-            case .databaseError(error: let error, functionOccurredIn: _),
-                    .cocoaError(error: let error, functionOccurredIn: _),
-                    .miscError(error: let error, functionOccurredIn: _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount)
-            case .secureVaultInitError(let error),
-                    .secureVaultError(let error),
-                    .secureVaultKeyStoreReadError(let error),
-                    .secureVaultKeyStoreUpdateError(let error),
-                    .errorLoadingCachedConfig(let error),
-                    .failedToParsePrivacyConfig(let error):
-                PixelKit.fire(DebugEvent(event, error: error))
             case .ipcServerProfileSavedXPCError(error: let error),
                     .ipcServerImmediateScansFinishedWithError(error: let error),
                     .ipcServerAppLaunchedXPCError(error: let error),
@@ -56,26 +41,8 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
                     .ipcServerAppLaunchedScheduledScansInterrupted,
                     .ipcServerAppLaunchedScheduledScansFinishedWithoutError:
                 PixelKit.fire(event, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
-            case .parentChildMatches,
-                    .optOutStart,
-                    .optOutEmailGenerate,
-                    .optOutCaptchaParse,
-                    .optOutCaptchaSend,
-                    .optOutCaptchaSolve,
-                    .optOutSubmit,
-                    .optOutEmailReceive,
-                    .optOutEmailConfirm,
-                    .optOutValidate,
-                    .optOutFinish,
-                    .optOutSubmitSuccess,
-                    .optOutFillForm,
-                    .optOutSuccess,
-                    .optOutFailure,
-                    .backgroundAgentStarted,
+            case .backgroundAgentStarted,
                     .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
-                    .scanSuccess,
-                    .scanFailed,
-                    .scanError,
                     .dataBrokerProtectionNotificationSentFirstScanComplete,
                     .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                     .dataBrokerProtectionNotificationSentFirstRemoval,
@@ -84,36 +51,9 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
                     .dataBrokerProtectionNotificationOpened2WeeksCheckIn,
                     .dataBrokerProtectionNotificationSentAllRecordsRemoved,
                     .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
-                    .dailyActiveUser,
-                    .weeklyActiveUser,
-                    .monthlyActiveUser,
-                    .weeklyReportScanning,
-                    .weeklyReportRemovals,
-                    .optOutJobAt7DaysConfirmed,
-                    .optOutJobAt7DaysUnconfirmed,
-                    .optOutJobAt14DaysConfirmed,
-                    .optOutJobAt14DaysUnconfirmed,
-                    .optOutJobAt21DaysConfirmed,
-                    .optOutJobAt21DaysUnconfirmed,
-                    .scanningEventNewMatch,
-                    .scanningEventReAppearance,
                     .webUILoadingFailed,
                     .webUILoadingStarted,
-                    .webUILoadingSuccess,
-                    .emptyAccessTokenDaily,
-                    .generateEmailHTTPErrorDaily,
-                    .initialScanTotalDuration,
-                    .initialScanSiteLoadDuration,
-                    .initialScanPostLoadingDuration,
-                    .initialScanPreStartDuration,
-                    .globalMetricsWeeklyStats,
-                    .globalMetricsMonthlyStats,
-                    .dataBrokerMetricsWeeklyStats,
-                    .dataBrokerMetricsMonthlyStats,
-                    .invalidPayload,
-                    .customDataBrokerStatsOptoutSubmit,
-                    .customGlobalStatsOptoutSubmit,
-                    .weeklyChildBrokerOrphanedOptOuts:
+                    .webUILoadingSuccess:
 
                 PixelKit.fire(event)
 

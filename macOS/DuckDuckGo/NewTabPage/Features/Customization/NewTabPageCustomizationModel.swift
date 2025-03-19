@@ -17,6 +17,7 @@
 //
 
 import Combine
+import Common
 import Foundation
 import NewTabPage
 import os.log
@@ -113,7 +114,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     private func subscribeToCustomBackground() {
         let customBackgroundPublisher: AnyPublisher<CustomBackground?, Never> = {
-            if NSApp.runType == .unitTests {
+            if AppVersion.runType == .unitTests {
                 return $customBackground.dropFirst().eraseToAnyPublisher()
             }
             return $customBackground.dropFirst()

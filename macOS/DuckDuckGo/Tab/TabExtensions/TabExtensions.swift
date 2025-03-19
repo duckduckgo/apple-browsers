@@ -23,6 +23,7 @@ import Foundation
 import History
 import MaliciousSiteProtection
 import PrivacyDashboard
+import SpecialErrorPages
 
 /**
  Tab Extensions should conform to TabExtension protocol

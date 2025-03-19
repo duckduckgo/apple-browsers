@@ -86,7 +86,7 @@ final class MainViewController: NSViewController {
 
         let networkProtectionPopoverManager: NetPPopoverManager = { @MainActor in
 #if DEBUG
-            guard case .normal = NSApp.runType else {
+            guard case .normal = AppVersion.runType else {
                 return NetPPopoverManagerMock()
             }
 #endif
@@ -106,7 +106,7 @@ final class MainViewController: NSViewController {
             var connectivityIssuesObserver: ConnectivityIssueObserver!
             var controllerErrorMessageObserver: ControllerErrorMesssageObserver!
 #if DEBUG
-            if ![.normal, .integrationTests].contains(NSApp.runType) {
+            if ![.normal, .integrationTests].contains(AppVersion.runType) {
                 connectivityIssuesObserver = ConnectivityIssueObserverMock()
                 controllerErrorMessageObserver = ControllerErrorMesssageObserverMock()
             }

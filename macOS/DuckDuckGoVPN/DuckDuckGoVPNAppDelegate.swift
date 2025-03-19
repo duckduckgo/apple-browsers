@@ -350,6 +350,37 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         makeStatusBarMenu()
     }()
 
+    // MARK: - VPN Update offering
+
+    private func updateExtensionUpdateOffered() {
+        updateExtensionUpdateOffered(isUsingSystemExtension: vpnAppState.isUsingSystemExtension)
+    }
+
+    private func updateExtensionUpdateOffered(isUsingSystemExtension: Bool) {
+        let newValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !isUsingSystemExtension
+
+        isExtensionUpdateOfferedSubject.send(newValue)
+    }
+
+    private lazy var isExtensionUpdateOfferedSubject: CurrentValueSubject<Bool, Never> = {
+#if APPSTORE
+        let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
+            && !vpnAppState.isUsingSystemExtension
+
+        let isExtensionUpdateOfferedSubject = CurrentValueSubject<Bool, Never>(initialValue)
+
+        vpnAppState.isUsingSystemExtensionPublisher
+            .sink { [weak self] value in
+                self?.updateExtensionUpdateOffered(isUsingSystemExtension: value)
+            }
+            .store(in: &cancellables)
+
+        return isExtensionUpdateOfferedSubject
+#else
+        return CurrentValueSubject(initialValue: false)
+#endif
+    }()
+
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
         let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
         let proxySettings = TransparentProxySettings(defaults: .netP)
@@ -444,23 +475,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             return statusViewSubmenu()
         }
 
-#if APPSTORE
-        let vpnAppState = VPNAppState(defaults: .netP)
-
-        let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never> = {
-            let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
-                && !vpnAppState.isUsingSystemExtension
-
-            let publisher = vpnAppState.isUsingSystemExtensionPublisher
-                .map { [featureFlagger] value in
-                    featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
-                }.eraseToAnyPublisher()
-
-            return CurrentValuePublisher(initialValue: initialValue, publisher: publisher)
-        }()
-#else
-        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
-#endif
+        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher<Bool, Never>(
+            initialValue: isExtensionUpdateOfferedSubject.value,
+            publisher: isExtensionUpdateOfferedSubject.eraseToAnyPublisher())
 
         return StatusBarMenu(
             model: model,

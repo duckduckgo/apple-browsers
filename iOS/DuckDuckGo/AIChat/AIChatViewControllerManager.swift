@@ -38,11 +38,14 @@ final class AIChatViewControllerManager {
     private weak var userContentController: UserContentController?
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private weak var chatViewController: AIChatViewController?
+    private let userAgentManager: AIChatUserAgentProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
+         downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
+         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
+        self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
     }
 
     @MainActor
@@ -72,11 +75,13 @@ final class AIChatViewControllerManager {
 
         webviewConfiguration.userContentController = userContentController
         self.userContentController = userContentController
+
         let aiChatViewController = AIChatViewController(settings: settings,
                                                         webViewConfiguration: webviewConfiguration,
                                                         requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
                                                         inspectableWebView: inspectableWebView,
-                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory)
+                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
+                                                        userAgentManager: userAgentManager)
         aiChatViewController.delegate = self
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
@@ -162,5 +167,15 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         default:
             break
         }
+    }
+}
+
+// MARK: - AIChatUserAgentHandler
+
+private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
+    let userAgentManager: UserAgentManager
+
+    func userAgent(url: URL?) -> String {
+        userAgentManager.userAgent(isDesktop: false, url: url)
     }
 }

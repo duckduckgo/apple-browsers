@@ -46,13 +46,12 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     vpnBypassService: VPNBypassServiceMock(),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, vpnBypassService: VPNBypassServiceMock(), webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 
@@ -441,22 +440,6 @@ private extension DBPEndToEndTests {
                      addresses: [.init(city: "Dallas", state: "TX")],
                      phones: [],
                      birthYear: birthYear)
-    }
-
-    final class VPNBypassServiceMock: VPNBypassServiceProvider {
-        var isSupported: Bool
-        var isEnabled: Bool
-        var bypassStatus: VPNBypassStatus
-        var isOnboardingShown: Bool
-
-        init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
-            self.isSupported = vpnBypassSupport
-            self.isEnabled = vpnBypassEnabled
-            self.bypassStatus = vpnBypassStatus
-            self.isOnboardingShown = vpnBypassOnboardingShown
-        }
-
-        func applyVPNBypass(_ bypass: Bool) {}
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {

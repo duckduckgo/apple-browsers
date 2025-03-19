@@ -29,7 +29,7 @@ public protocol DataBrokerOperationDependencies {
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var userNotificationService: DataBrokerProtectionUserNotificationService { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var vpnBypassService: VPNBypassServiceProvider { get }
+    var vpnBypassService: VPNBypassServiceProvider? { get }
 }
 
 public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
@@ -40,7 +40,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let userNotificationService: DataBrokerProtectionUserNotificationService
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let vpnBypassService: VPNBypassServiceProvider
+    public let vpnBypassService: VPNBypassServiceProvider?
 
     public init(database: any DataBrokerProtectionRepository,
                 config: DataBrokerExecutionConfig,
@@ -49,7 +49,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 userNotificationService: any DataBrokerProtectionUserNotificationService,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                vpnBypassService: VPNBypassServiceProvider) {
+                vpnBypassService: VPNBypassServiceProvider? = nil) {
         self.database = database
         self.config = config
         self.runnerProvider = runnerProvider

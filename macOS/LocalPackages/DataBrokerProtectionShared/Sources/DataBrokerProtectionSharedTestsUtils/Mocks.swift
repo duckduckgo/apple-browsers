@@ -167,22 +167,6 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
-public final class VPNBypassServiceMock: VPNBypassServiceProvider {
-    public var isSupported: Bool
-    public var isEnabled: Bool
-    public var bypassStatus: VPNBypassStatus
-    public var isOnboardingShown: Bool
-
-    public init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
-        self.isSupported = vpnBypassSupport
-        self.isEnabled = vpnBypassEnabled
-        self.bypassStatus = vpnBypassStatus
-        self.isOnboardingShown = vpnBypassOnboardingShown
-    }
-
-    public func applyVPNBypass(_ bypass: Bool) {}
-}
-
 public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {
     public var currentConfig: Data = Data()
 
@@ -1443,8 +1427,7 @@ public extension DefaultDataBrokerOperationDependencies {
                                                runnerProvider: MockRunnerProvider(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
-                                               userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                               vpnBypassService: VPNBypassServiceMock())
+                                               userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 }
 

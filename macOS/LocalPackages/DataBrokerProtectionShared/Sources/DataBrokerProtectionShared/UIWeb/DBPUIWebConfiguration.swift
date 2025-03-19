@@ -31,7 +31,7 @@ public final class DBPUIUserContentController: WKUserContentController {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider) {
+         vpnBypassService: VPNBypassServiceProvider?) {
 
         dbpUIUserScripts = DBPUIUserScript(privacyConfig: privacyConfigurationManager,
                                            prefs: prefs,
@@ -70,7 +70,7 @@ public final class DBPUIUserScript: UserScriptsProvider {
          prefs: ContentScopeProperties,
          delegate: DBPUICommunicationDelegate,
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-         vpnBypassService: VPNBypassServiceProvider) {
+         vpnBypassService: VPNBypassServiceProvider?) {
         self.webUISettings = webUISettings
         contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
@@ -107,7 +107,7 @@ extension WKWebViewConfiguration {
                                         prefs: ContentScopeProperties,
                                         delegate: DBPUICommunicationDelegate,
                                         webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                                        vpnBypassService: VPNBypassServiceProvider) {
+                                        vpnBypassService: VPNBypassServiceProvider?) {
         preferences.isFraudulentWebsiteWarningEnabled = false
         let userContentController = DBPUIUserContentController(with: privacyConfig,
                                                                prefs: prefs,

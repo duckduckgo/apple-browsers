@@ -63,6 +63,41 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
+        // MARK: Tabswitcher improvements
+        case tabSwitcherEditMenuClicked
+        case tabSwitcherEditMenuSelectTabs
+        case tabSwitcherEditMenuSelectTabsDaily
+        case tabSwitcherEditMenuCloseAllTabs
+        case tabSwitcherEditMenuCloseAllTabsDaily
+        case tabSwitcherTabSelected
+        case tabSwitcherTabDeselected
+        case tabSwitcherSelectAll
+        case tabSwitcherSelectAllDaily
+        case tabSwitcherDeselectAll
+        case tabSwitcherDeselectAllDaily
+        case tabSwitcherCloseAll
+        case tabSwitcherCloseAllDaily
+        case tabSwitcherConfirmCloseTabs
+        case tabSwitcherConfirmCloseTabsDaily
+        case tabSwitcherSelectModeMenuClicked
+        case tabSwitcherSelectModeMenuShareLinks
+        case tabSwitcherSelectModeMenuShareLinksDaily
+        case tabSwitcherSelectModeMenuBookmarkTabs
+        case tabSwitcherSelectModeMenuBookmarkTabsDaily
+        case tabSwitcherSelectModeMenuBookmarkAllTabs
+        case tabSwitcherSelectModeMenuBookmarkAllTabsDaily
+        case tabSwitcherSelectModeMenuCloseOtherTabs
+        case tabSwitcherSelectModeMenuCloseOtherTabsDaily
+        case tabSwitcherLongPress
+        case tabSwitcherLongPressDaily
+        case tabSwitcherLongPressShare
+        case tabSwitcherLongPressBookmarkTabs
+        case tabSwitcherLongPressBookmarkTabsDaily
+        case tabSwitcherLongPressSelectTabs
+        case tabSwitcherLongPressCloseTab
+        case tabSwitcherLongPressCloseOtherTabs
+        case tabSwitcherLongPressCloseOtherTabsDaily
+
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
@@ -204,7 +239,8 @@ extension Pixel {
         case emailUserCreatedAlias
         case emailTooltipDismissed
         
-        case voiceSearchDone
+        case voiceSearchSERPDone
+        case voiceSearchAIChatDone
         case openVoiceSearch
         case voiceSearchCancelled
 
@@ -443,8 +479,6 @@ extension Pixel {
         case networkProtectionLatencyError
         
         case networkProtectionEnabledOnSearch
-        
-        case networkProtectionBreakageReport
 
         case networkProtectionRekeyAttempt
         case networkProtectionRekeyFailure
@@ -1222,7 +1256,8 @@ extension Pixel.Event {
         case .emailUserCreatedAlias: return "email_generated_button"
         case .emailTooltipDismissed: return "email_tooltip_dismissed"
             
-        case .voiceSearchDone: return "m_voice_search_done"
+        case .voiceSearchSERPDone: return "m_voice_search_serp_done"
+        case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
             
@@ -1459,7 +1494,6 @@ extension Pixel.Event {
         case .networkProtectionRekeyCompleted: return "m_netp_rekey_completed"
         case .networkProtectionRekeyFailure: return "m_netp_rekey_failure"
         case .networkProtectionEnabledOnSearch: return "m_netp_ev_enabled_on_search"
-        case .networkProtectionBreakageReport: return "m_vpn_breakage_report"
         case .networkProtectionTunnelConfigurationNoServerRegistrationInfo: return "m_netp_tunnel_config_error_no_server_registration_info"
         case .networkProtectionTunnelConfigurationCouldNotSelectClosestServer: return "m_netp_tunnel_config_error_could_not_select_closest_server"
         case .networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey: return "m_netp_tunnel_config_error_could_not_get_peer_public_key"
@@ -1792,14 +1826,14 @@ extension Pixel.Event {
         case .historyInsertVisitFailed: return "m_debug_history-insert-visit-failed"
         case .historyRemoveVisitsFailed: return "m_debug_history-remove-visits-failed"
 
-        // MARK: Privacy pro
+        // MARK: Privacy Pro
         case .privacyProSubscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
         case .privacyProPurchaseFailure: return "m_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
-        case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_backend"
-        case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
+        case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
         case .privacyProPurchaseSuccess: return "m_privacy-pro_app_subscription-purchase_success"
         case .privacyProRestorePurchaseOfferPageEntry: return "m_privacy-pro_offer_restore-purchase_click"
         case .privacyProRestorePurchaseClick: return "m_privacy-pro_app-settings_restore-purchase_click"
@@ -2034,6 +2068,41 @@ extension Pixel.Event {
 
         // MARK: Malicious Site Protection
         case .maliciousSiteProtection(let event): return "m_\(event.name)"
+
+        // MARK: Tab switcher improvements
+        case .tabSwitcherEditMenuClicked: return "m_tab_manager_edit_menu_clicked"
+        case .tabSwitcherEditMenuSelectTabs: return "m_tab_manager_edit_menu_select_tabs"
+        case .tabSwitcherEditMenuSelectTabsDaily: return "m_tab_manager_edit_menu_select_tabs_daily"
+        case .tabSwitcherEditMenuCloseAllTabs: return "m_tab_manager_edit_menu_close_all_tabs"
+        case .tabSwitcherEditMenuCloseAllTabsDaily: return "m_tab_manager_edit_menu_close_all_tabs_daily"
+        case .tabSwitcherTabSelected: return "m_tab_manager_tab_selected"
+        case .tabSwitcherTabDeselected: return "m_tab_manager_tab_deselected"
+        case .tabSwitcherSelectAll: return "m_tab_manager_select_all"
+        case .tabSwitcherSelectAllDaily: return "m_tab_manager_select_all_daily"
+        case .tabSwitcherDeselectAll: return "m_tab_manager_deselect_all"
+        case .tabSwitcherDeselectAllDaily: return "m_tab_manager_deselect_all_daily"
+        case .tabSwitcherCloseAll: return "m_tab_manager_close_all"
+        case .tabSwitcherCloseAllDaily: return "m_tab_manager_close_all_daily"
+        case .tabSwitcherConfirmCloseTabs: return "m_tab_manager_confirm_close_tabs"
+        case .tabSwitcherConfirmCloseTabsDaily: return "m_tab_manager_confirm_close_tabs_daily"
+        case .tabSwitcherSelectModeMenuClicked: return "m_tab_manager_select_mode_menu_clicked"
+        case .tabSwitcherSelectModeMenuShareLinks: return "m_tab_manager_select_mode_menu_share_links"
+        case .tabSwitcherSelectModeMenuShareLinksDaily: return "m_tab_manager_select_mode_menu_share_links_daily"
+        case .tabSwitcherSelectModeMenuBookmarkTabs: return "m_tab_manager_select_mode_menu_bookmark_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_tabs_daily"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabs: return "m_tab_manager_select_mode_menu_bookmark_all_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_all_tabs_daily"
+        case .tabSwitcherSelectModeMenuCloseOtherTabs: return "m_tab_manager_select_mode_menu_close_other_tabs"
+        case .tabSwitcherSelectModeMenuCloseOtherTabsDaily: return "m_tab_manager_select_mode_menu_close_other_tabs_daily"
+        case .tabSwitcherLongPress: return "m_tab_manager_long_press"
+        case .tabSwitcherLongPressDaily: return "m_tab_manager_long_press_daily"
+        case .tabSwitcherLongPressShare: return "m_tab_manager_long_press_share"
+        case .tabSwitcherLongPressBookmarkTabs: return "m_tab_manager_long_press_bookmark_tabs"
+        case .tabSwitcherLongPressBookmarkTabsDaily: return "m_tab_manager_long_press_bookmark_tabs_daily"
+        case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
+        case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
+        case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
+        case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
         }
     }
 }

@@ -32,15 +32,16 @@ import DataBrokerProtectionShared
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                                    accountManager: AccountManager) -> DataBrokerProtectionAgentManager {
+    private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
         let pixelHandler = DataBrokerProtectionPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
-        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
         let executionConfig = DataBrokerExecutionConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: executionConfig)
 
@@ -96,7 +97,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
-        let emailService = EmailService(authenticationManager:authenticationManager,
+        let emailService = EmailService(authenticationManager: authenticationManager,
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
@@ -119,7 +120,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             runnerProvider: runnerProvider,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
-            userNotificationService: notificationService)
+            userNotificationService: notificationService,
+            dataBrokerProtectionSettings: dbpSettings)
 
         return DataBrokerProtectionAgentManager(
             userNotificationService: notificationService,
@@ -139,8 +141,6 @@ public class DataBrokerProtectionAgentManagerProvider {
 }
 
 public final class DataBrokerProtectionAgentManager {
-
-    let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
     private let userNotificationService: DataBrokerProtectionUserNotificationService
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler

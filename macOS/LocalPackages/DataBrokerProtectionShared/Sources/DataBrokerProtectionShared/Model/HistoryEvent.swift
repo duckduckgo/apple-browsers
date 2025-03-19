@@ -40,11 +40,11 @@ public struct HistoryEvent: Identifiable, Sendable {
         return "\(extractedProfileId ?? 0)-\(brokerId)-\(profileQueryId)-\(date)"
     }
 
-    init(extractedProfileId: Int64? = nil,
-         brokerId: Int64,
-         profileQueryId: Int64,
-         type: EventType,
-         date: Date = Date()) {
+    public init(extractedProfileId: Int64? = nil,
+                brokerId: Int64,
+                profileQueryId: Int64,
+                type: EventType,
+                date: Date = Date()) {
         self.extractedProfileId = extractedProfileId
         self.brokerId = brokerId
         self.profileQueryId = profileQueryId

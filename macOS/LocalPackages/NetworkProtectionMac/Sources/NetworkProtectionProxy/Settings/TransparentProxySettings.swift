@@ -81,6 +81,20 @@ public final class TransparentProxySettings {
         }
     }
 
+    public subscript(bundleId bundleID: String) -> VPNRoutingRule? {
+        get {
+            appRoutingRules[bundleID]
+        }
+
+        set {
+            if let newValue {
+                appRoutingRules[bundleID] = newValue
+            } else {
+                appRoutingRules.removeValue(forKey: bundleID)
+            }
+        }
+    }
+
     public var excludedDomains: [String] {
         get {
             defaults.vpnProxyExcludedDomains

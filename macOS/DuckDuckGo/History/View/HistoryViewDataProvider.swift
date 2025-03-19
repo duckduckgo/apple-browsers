@@ -74,30 +74,36 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         historyBurner: HistoryBurning = FireHistoryBurner(),
         dateFormatter: HistoryViewDateFormatting = DefaultHistoryViewDateFormatter(),
         featureFlagger: FeatureFlagger? = nil,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
+        pixelHandler: HistoryViewDataProviderPixelFiring = HistoryViewDataProviderPixelHandler()
     ) {
         self.dateFormatter = dateFormatter
         self.historyDataSource = historyDataSource
         self.historyBurner = historyBurner
-        self.fireDailyPixel = fireDailyPixel
+        self.pixelHandler = pixelHandler
         historyGroupingProvider = { @MainActor in
             HistoryGroupingProvider(dataSource: historyDataSource, featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
         }
     }
 
-    var ranges: [DataModel.HistoryRange] {
-        var ranges: [DataModel.HistoryRange] = [.all]
-        ranges.append(contentsOf: groupings.map(\.range))
-        return ranges
+    var ranges: [DataModel.HistoryRangeWithCount] {
+        let ranges = DataModel.HistoryRange.displayedRanges(for: dateFormatter.currentDate())
+        let rangesWithCounts = ranges.map { DataModel.HistoryRangeWithCount(id: $0, count: groupingsByRange[$0]?.items.count ?? 0) }
+
+        // Remove all empty ranges from the end of the array
+        var filteredRanges = Array(rangesWithCounts.reversed().drop(while: { visitsByRange[$0.id]?.isEmpty != false }).reversed())
+        filteredRanges.insert(.init(id: .all, count: groupingsByRange.values.map(\.items.count).reduce(0, +)), at: 0)
+        return filteredRanges
     }
 
     func refreshData() async {
         lastQuery = nil
         await populateVisits()
-        fireDailyPixel(HistoryViewPixel.historyPageShown)
     }
 
-    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> HistoryView.DataModel.HistoryItemsBatch {
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
+        if source == .user && offset == 0 {
+            pixelHandler.fireFilterUpdatedPixel(query)
+        }
         let items = await perform(query)
         let visits = items.chunk(with: limit, offset: offset)
         let finished = offset + limit >= items.count
@@ -164,30 +170,33 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
         var olderHistoryItems = [DataModel.HistoryItem]()
         var olderVisits = [Visit]()
 
+        visitsByRange.removeAll()
+        historyItems.removeAll()
+
         // generate groupings by day and set aside "older" days.
-        groupings = await historyGroupingProvider().getVisitGroupings()
-            .compactMap { historyGrouping -> HistoryViewGrouping? in
+        groupingsByRange = await historyGroupingProvider().getVisitGroupings()
+            .reduce(into: [DataModel.HistoryRange: HistoryViewGrouping]()) { partialResult, historyGrouping in
                 guard let grouping = HistoryViewGrouping(historyGrouping, dateFormatter: dateFormatter) else {
-                    return nil
+                    return
                 }
                 guard grouping.range != .older else {
                     olderHistoryItems.append(contentsOf: grouping.items)
                     olderVisits.append(contentsOf: historyGrouping.visits)
-                    return nil
+                    return
                 }
                 visitsByRange[grouping.range] = historyGrouping.visits
-                return grouping
+                partialResult[grouping.range] = grouping
+                historyItems.append(contentsOf: grouping.items)
             }
 
         // collect all "older" days into a single grouping
         if !olderHistoryItems.isEmpty {
-            groupings.append(.init(range: .older, visits: olderHistoryItems))
+            groupingsByRange[.older] = .init(range: .older, visits: olderHistoryItems)
+            historyItems.append(contentsOf: olderHistoryItems)
         }
         if !olderVisits.isEmpty {
             visitsByRange[.older] = olderVisits
         }
-
-        self.historyItems = groupings.flatMap(\.items)
     }
 
     private func allVisits(matching query: DataModel.HistoryQueryKind) async -> [Visit] {
@@ -285,7 +294,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
             case .rangeFilter(.all), .searchTerm(""), .domainFilter(""):
                 return historyItems
             case .rangeFilter(let range):
-                return groupings.first(where: { $0.range == range })?.items ?? []
+                return groupingsByRange[range]?.items ?? []
             case .searchTerm(let term):
                 return historyItems.filter { $0.matches(term) }
             case .domainFilter(let domain):
@@ -304,7 +313,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
     private let dateFormatter: HistoryViewDateFormatting
     private let historyBurner: HistoryBurning
 
-    private var groupings: [HistoryViewGrouping] = []
+    private var groupingsByRange: [DataModel.HistoryRange: HistoryViewGrouping] = [:]
     private var historyItems: [DataModel.HistoryItem] = []
 
     private var visitsByRange: [DataModel.HistoryRange: [Visit]] = [:]
@@ -320,7 +329,7 @@ final class HistoryViewDataProvider: HistoryViewDataProviding {
 
     /// The last query from the FE, i.e. filtered items list.
     private var lastQuery: QueryInfo?
-    private var fireDailyPixel: (PixelKitEvent) -> Void
+    private let pixelHandler: HistoryViewDataProviderPixelFiring
 }
 
 protocol SearchableHistoryEntry {

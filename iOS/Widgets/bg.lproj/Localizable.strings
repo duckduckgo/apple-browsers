@@ -61,17 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN е включена";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Изберете преки пътища към любимите си действия.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Персонализирани преки пътища";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Изберете своите бързи връзки";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Ляв пряк път";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Десен пряк път";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Конфигуриране на преките пътища";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Бързо търсене на запазените пароли за DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Търсене на пароли";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Търсете, разговаряйте в Duck.ai или прегледайте паролите си.";
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Преки пътища към любимите действия.";
 
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Бързи Връзки";
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Бързи Връзки";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Насладете се на поверително търсене и сърфиране в любимите си сайтове само с едно докосване.";

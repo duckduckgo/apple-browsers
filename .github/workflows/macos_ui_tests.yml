@@ -10,8 +10,8 @@ on:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   pull_request:
     branches:
-      - hotfix/*
-      - release/*
+      - hotfix/**
+      - release/**
 
 jobs:
   create-notarized-app:

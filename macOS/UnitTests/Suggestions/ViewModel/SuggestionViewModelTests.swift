@@ -146,7 +146,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let suggestion = Suggestion.historyEntry(title: title, url: searchUrl, allowedInTopHits: true)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
-        XCTAssert(suggestionViewModel.suffix.hasSuffix(UserText.searchDuckDuckGoSuffix))
+        XCTAssert((suggestionViewModel.suffix ?? "").hasSuffix(UserText.searchDuckDuckGoSuffix))
     }
 
     func testWhenSuggestionIsHistoryEntryOfDuckDuckGoSearch_ThenTitleIsSearchQuery() {
@@ -162,45 +162,45 @@ final class SuggestionViewModelTests: XCTestCase {
     func testWhenSuggestionIsOpenTabWebsite_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL(string: "https://spreadprivacy.com")!
         let title = "Open Tab Title"
-        let suggestion = Suggestion.openTab(title: title, url: url)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
         XCTAssertEqual(suggestionViewModel.title, title)
-        XCTAssertEqual(suggestionViewModel.suffix, " – spreadprivacy.com")
+        XCTAssertEqual(suggestionViewModel.suffix, "spreadprivacy.com")
     }
 
     func testWhenSuggestionIsOpenTabSERP_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.makeSearchUrl(from: "Test search")!
         let title = "SERP Title"
-        let suggestion = Suggestion.openTab(title: title, url: url)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
         XCTAssertEqual(suggestionViewModel.title, title)
-        XCTAssertEqual(suggestionViewModel.suffix, " – \(UserText.duckDuckGoSearchSuffix)")
+        XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGoSearchSuffix)
     }
 
     func testWhenSuggestionIsOpenTabSettings_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.settings
         let title = "Settings"
-        let suggestion = Suggestion.openTab(title: title, url: url)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
         XCTAssertEqual(suggestionViewModel.title, title)
-        XCTAssertEqual(suggestionViewModel.suffix, " – \(UserText.duckDuckGo)")
+        XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
     }
 
     func testWhenSuggestionIsOpenTabBookmarks_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.bookmarks
         let title = "Bookmarks"
-        let suggestion = Suggestion.openTab(title: title, url: url)
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
         XCTAssertEqual(suggestionViewModel.string, title)
         XCTAssertEqual(suggestionViewModel.title, title)
-        XCTAssertEqual(suggestionViewModel.suffix, " – \(UserText.duckDuckGo)")
+        XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
     }
 
 }

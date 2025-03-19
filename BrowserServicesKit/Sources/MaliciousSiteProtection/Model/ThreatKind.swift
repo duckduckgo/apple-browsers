@@ -23,5 +23,6 @@ public enum ThreatKind: String, CaseIterable, Codable, CustomStringConvertible {
 
     case phishing
     case malware
+    case scam
 
 }

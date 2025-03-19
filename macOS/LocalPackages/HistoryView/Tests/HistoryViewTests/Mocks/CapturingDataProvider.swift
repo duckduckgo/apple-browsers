@@ -20,7 +20,7 @@ import HistoryView
 
 final class CapturingDataProvider: DataProviding {
 
-    var ranges: [DataModel.HistoryRange] {
+    var ranges: [DataModel.HistoryRangeWithCount] {
         rangesCallCount += 1
         return _ranges
     }
@@ -29,9 +29,9 @@ final class CapturingDataProvider: DataProviding {
         refreshDataCallCount += 1
     }
 
-    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
-        visitsBatchCalls.append(.init(query: query, limit: limit, offset: offset))
-        return await visitsBatch(query, limit, offset)
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
+        visitsBatchCalls.append(.init(query: query, source: source, limit: limit, offset: offset))
+        return await visitsBatch(query, source, limit, offset)
     }
 
     func countVisibleVisits(for range: DataModel.HistoryRange) async -> Int {
@@ -48,7 +48,7 @@ final class CapturingDataProvider: DataProviding {
     }
 
     // swiftlint:disable:next identifier_name
-    var _ranges: [DataModel.HistoryRange] = []
+    var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var refreshDataCallCount: Int = 0
 
@@ -59,10 +59,11 @@ final class CapturingDataProvider: DataProviding {
     var burnVisitsCalls: [DataModel.HistoryQueryKind] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
-    var visitsBatch: (DataModel.HistoryQueryKind, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _ in .init(finished: true, visits: []) }
+    var visitsBatch: (DataModel.HistoryQueryKind, DataModel.HistoryQuerySource, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _, _ in .init(finished: true, visits: []) }
 
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind
+        let source: DataModel.HistoryQuerySource
         let limit: Int
         let offset: Int
     }

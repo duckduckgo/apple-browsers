@@ -98,8 +98,8 @@ public final class DataBrokerProtectionEngagementPixels {
     private let handler: EventMapping<DataBrokerProtectionSharedPixels>
 
     public init(database: DataBrokerProtectionRepository,
-         handler: EventMapping<DataBrokerProtectionSharedPixels>,
-         repository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults()) {
+                handler: EventMapping<DataBrokerProtectionSharedPixels>,
+                repository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults()) {
         self.database = database
         self.handler = handler
         self.repository = repository

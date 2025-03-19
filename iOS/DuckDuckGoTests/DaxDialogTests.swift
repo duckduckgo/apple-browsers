@@ -528,7 +528,7 @@ final class DaxDialog: XCTestCase {
         XCTAssertNil(result2)
     }
 
-    func testWhenVisitWebsiteSeen_OnReload_VisitWebsiteReturned() {
+    func testWhenVisitWebsiteSeen_OnReload_VisitWebsiteNotReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
@@ -542,11 +542,11 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .afterSearch)
-        XCTAssertEqual(result2?.type, .visitWebsite)
-        XCTAssertEqual(result2, result3)
+        XCTAssertNil(result2)
+        XCTAssertNil(result3)
     }
 
-    func testWhenVisitWebsiteSeen_OnLoadingAnotherSearch_NilIseturned() {
+    func testWhenVisitWebsiteSeen_OnLoadingAnotherSearch_NilIsReturned() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         let sut = makeSUT(settings: settings)
@@ -560,7 +560,7 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result1?.type, .afterSearch)
-        XCTAssertEqual(result2?.type, .visitWebsite)
+        XCTAssertNil(result2)
         XCTAssertNil(result3)
     }
 
@@ -944,6 +944,92 @@ final class DaxDialog: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testWhenUserIsInTreatmentCohortAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingFinalDialogShown = true
+        settings.privacyProPromotionDialogShown = false
+        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+
+        // WHEN
+        let result = sut.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertEqual(result, .privacyProPromotion)
+    }
+
+    func testWhenUserIsInControlCohort_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingFinalDialogShown = true
+        settings.privacyProPromotionDialogShown = false
+        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+
+        // WHEN
+        let result = sut.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertNotEqual(result, .privacyProPromotion)
+    }
+
+    func testWhenUserHasSeenPromotion_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingFinalDialogShown = true
+        settings.privacyProPromotionDialogShown = true
+        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+
+        // WHEN
+        let result = sut.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertNotEqual(result, .privacyProPromotion)
+    }
+
+    func testWhenFinalDialogNotSeen_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingFinalDialogShown = false
+        settings.privacyProPromotionDialogShown = false
+        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+
+        // WHEN
+        let result = sut.nextHomeScreenMessageNew()
+
+        // THEN
+        XCTAssertNotEqual(result, .privacyProPromotion)
+    }
+
+    func testWhenPrivacyProPromotionDialogSeenIsSet_ThenSettingsValueIsUpdated() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        let sut = makeSUT(settings: settings)
+        XCTAssertFalse(settings.privacyProPromotionDialogShown)
+
+        // WHEN
+        sut.privacyProPromotionDialogSeen = true
+
+        // THEN
+        XCTAssertTrue(settings.privacyProPromotionDialogShown)
+    }
+
+    func testWhenPrivacyProPromotionDialogSeenIsGet_ThenSettingsValueIsReturned() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.privacyProPromotionDialogShown = true
+        let sut = makeSUT(settings: settings)
+
+        // WHEN
+        let result = sut.privacyProPromotionDialogSeen
+
+        // THEN
+        XCTAssertTrue(result)
+    }
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,
@@ -967,7 +1053,46 @@ final class DaxDialog: XCTestCase {
                            protectionStatus: protectionStatus)
     }
 
-    private func makeSUT(settings: DaxDialogsSettings, onboardingManager: OnboardingAddToDockManaging = OnboardingManagerMock()) -> DaxDialogs {
-        DaxDialogs(settings: settings, entityProviding: entityProvider, variantManager: MockVariantManager(), onboardingManager: onboardingManager)
+    private func makeSUT(settings: DaxDialogsSettings, onboardingManager: OnboardingAddToDockManaging = OnboardingManagerMock(), onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
+        DaxDialogs(settings: settings,
+                   entityProviding: entityProvider,
+                   variantManager: MockVariantManager(),
+                   onboardingManager: onboardingManager,
+                   onboardingPrivacyProPromoExperiment: onboardingPrivacyProPromoExperiment)
+    }
+}
+
+class MockOnboardingPrivacyProPromoExperimenting: OnboardingPrivacyProPromoExperimenting {
+    private let cohort: PrivacyProOnboardingCTAMarch25Cohort?
+    private(set) var fireSubscriptionStartedMonthlyPixelCalled = false
+    private(set) var fireSubscriptionStartedYearlyPixelCalled = false
+
+    init(cohort: PrivacyProOnboardingCTAMarch25Cohort?) {
+        self.cohort = cohort
+    }
+
+    func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
+        return cohort
+    }
+
+    func redirectURLComponents() -> URLComponents? {
+        return nil
+    }
+
+    func fireImpressionPixel() {
+    }
+
+    func fireTapPixel() {
+    }
+
+    func fireDismissPixel() {
+    }
+
+    func fireSubscriptionStartedMonthlyPixel() {
+        fireSubscriptionStartedMonthlyPixelCalled = true
+    }
+
+    func fireSubscriptionStartedYearlyPixel() {
+        fireSubscriptionStartedYearlyPixelCalled = true
     }
 }

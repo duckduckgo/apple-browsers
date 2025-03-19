@@ -30,7 +30,7 @@ public final class SubscriptionCookieManagerMock: SubscriptionCookieManaging {
     public func resetLastRefreshDate() { }
 }
 
-public final class SubscriptionCookieManagerMockV2: SubscriptionCookieManagingV2 {
+public final class SubscriptionCookieManagerMockV2: SubscriptionCookieManaging {
 
     public var lastRefreshDate: Date?
     public init() {}

@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import DataBrokerProtectionShared
 
 protocol DateProtocol {
     var now: Date { get }

@@ -67,4 +67,10 @@ final class HistoryViewOnboardingDeciderTests: XCTestCase {
         settingsPersistor.didShowOnboardingView = false
         XCTAssertTrue(decider.shouldPresentOnboarding)
     }
+
+    func testWhenOnboardingWasNotShownAndItIsSkippedThenOnboardingShouldNotBePresented() {
+        settingsPersistor.didShowOnboardingView = false
+        decider.skipPresentingOnboarding()
+        XCTAssertFalse(decider.shouldPresentOnboarding)
+    }
 }

@@ -67,8 +67,8 @@ public extension DataManager {
             }.flatMap { $0 }
         }
 
-        static func dataTypes(for kind: DataManager.StoredDataType.Kind) -> [DataManager.StoredDataType] {
-            ThreatKind.allCases.map { threatKind in
+        static func dataTypes(for kind: DataManager.StoredDataType.Kind, supportedThreats: [ThreatKind]) -> [DataManager.StoredDataType] {
+            supportedThreats.map { threatKind in
                 switch kind {
                 case .hashPrefixSet: .hashPrefixSet(.init(threatKind: threatKind))
                 case .filterSet: .filterSet(.init(threatKind: threatKind))

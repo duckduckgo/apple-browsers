@@ -288,24 +288,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled },
-            set: { newValue in
-                self.aiChatSettings.enableAIChatBrowsingMenuUserSettings(enable: newValue)
-            }
-        )
-    }
-
-    var aiChatAddressBarEnabledBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
-            set: { newValue in
-                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
-            }
-        )
-    }
-
     var textZoomLevelBinding: Binding<TextZoomLevel> {
         Binding<TextZoomLevel>(
             get: { self.state.textZoom.level },
@@ -378,6 +360,28 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var duckPlayerNativeUISERPEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.duckPlayerNativeUISERPEnabled },
+            set: {
+                self.appSettings.duckPlayerNativeUISERPEnabled = $0
+                self.state.duckPlayerNativeUISERPEnabled = $0
+            }
+        )
+    }
+
+      var duckPlayerNativeYoutubeModeBinding: Binding<NativeDuckPlayerYoutubeMode> {
+        Binding<NativeDuckPlayerYoutubeMode>(
+            get: {
+                return self.state.duckPlayerNativeYoutubeMode
+            },
+            set: {
+                self.appSettings.duckPlayerNativeYoutubeMode = $0
+                self.state.duckPlayerNativeYoutubeMode = $0
+            }
+        )
+    }
+
     func setVoiceSearchEnabled(to value: Bool) {
         if value {
             enableVoiceSearch { [weak self] result in
@@ -442,8 +446,8 @@ final class SettingsViewModel: ObservableObject {
         legacyViewProvider.syncService.authState != .inactive ? .on : .off
     }
 
-    var usesUnifiedFeedbackForm: Bool {
-        subscriptionAuthV1toV2Bridge.isUserAuthenticated && subscriptionFeatureAvailability.usesUnifiedFeedbackForm
+    var enablesUnifiedFeedbackForm: Bool {
+        subscriptionAuthV1toV2Bridge.isUserAuthenticated
     }
 
     // MARK: Default Init
@@ -533,11 +537,14 @@ extension SettingsViewModel {
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
             duckPlayerNativeUI: appSettings.duckPlayerNativeUI,
             duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
+            duckPlayerNativeUISERPEnabled: appSettings.duckPlayerNativeUISERPEnabled,
+            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode,
             aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
                                          isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
-                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled)
+                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
+                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
         )
-        
+
         updateRecentlyVisitedSitesVisibility()
         setupSubscribers()
         Task { await setupSubscriptionEnvironment() }
@@ -657,7 +664,7 @@ extension SettingsViewModel {
     }
 
     func openOtherPlatforms() {
-        UIApplication.shared.open(URL.apps)
+        UIApplication.shared.open(URL.otherDevices)
     }
 
     func openMoreSearchSettings() {
@@ -699,7 +706,9 @@ extension SettingsViewModel {
             presentViewController(legacyViewProvider.addToDock, modal: true)
         case .sync:
             pushViewController(legacyViewProvider.syncSettings(source: state.syncSource))
-        case .appIcon: pushViewController(legacyViewProvider.appIcon)
+        case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
+            self?.state.appIcon = appIcon
+        }))
         case .unprotectedSites: pushViewController(legacyViewProvider.unprotectedSites)
         case .fireproofSites: pushViewController(legacyViewProvider.fireproofSites)
         case .autoclearData:
@@ -841,8 +850,11 @@ extension SettingsViewModel {
             var currentEntitlements: [Entitlement.ProductName] = []
             let entitlementsToCheck: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
 
-            for entitlement in entitlementsToCheck where await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement) {
-                currentEntitlements.append(entitlement)
+            for entitlement in entitlementsToCheck {
+                if let hasEntitlement = try? await subscriptionAuthV1toV2Bridge.isEnabled(feature: entitlement),
+                    hasEntitlement {
+                    currentEntitlements.append(entitlement)
+                }
             }
 
             self.state.subscription.entitlements = currentEntitlements
@@ -979,4 +991,36 @@ extension SettingsViewModel {
 // Deeplink notification handling
 extension NSNotification.Name {
     static let settingsDeepLinkNotification: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.settingsDeepLink")
+}
+
+// MARK: - AI Chat
+extension SettingsViewModel {
+
+    var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatBrowsingMenuUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatAddressBarEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatAddressBarUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatAddressBarUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatVoiceSearchEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
+            }
+        )
+    }
+
 }

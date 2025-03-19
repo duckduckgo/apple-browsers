@@ -20,9 +20,22 @@ import Foundation
 import Combine
 import Common
 import BrowserServicesKit
+import AppKitExtensions
+import NetworkProtectionProxy
 
-public class DataBrokerProtectionSettings {
+public protocol VPNBypassSettingsProviding: AnyObject {
+    var vpnBypassSupport: Bool { get }
+    var vpnBypass: Bool { get set }
+    var vpnBypassOnboardingShown: Bool { get set }
+}
+
+public protocol AppRunTypeProviding: AnyObject {
+    var runType: AppVersion.AppRunType { get }
+}
+
+public final class DataBrokerProtectionSettings: VPNBypassSettingsProviding {
     public let defaults: UserDefaults
+    public let proxySettings: TransparentProxySettings
 
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
@@ -44,12 +57,9 @@ public class DataBrokerProtectionSettings {
         }
     }
 
-    public var runType: AppVersion.AppRunType? {
-        return AppVersion.runType
-    }
-
-    public init(defaults: UserDefaults) {
+    public init(defaults: UserDefaults, proxySettings: TransparentProxySettings) {
         self.defaults = defaults
+        self.proxySettings = proxySettings
     }
 
     // MARK: - Environment
@@ -63,11 +73,64 @@ public class DataBrokerProtectionSettings {
             defaults.dataBrokerProtectionSelectedEnvironment = newValue
         }
     }
+
+    // MARK: - VPN exclusion
+
+    public var vpnBypass: Bool {
+        get {
+            proxySettings[bundleId: "DBP_BACKGROUND_AGENT_BUNDLE_ID"] == .exclude
+        }
+        set {
+            proxySettings[bundleId: "DBP_BACKGROUND_AGENT_BUNDLE_ID"] = newValue ? .exclude : nil
+        }
+    }
+
+    /// This requires VPN system extension, so App Store version is not currently supported
+    public var vpnBypassSupport: Bool {
+#if APPSTORE
+#if NETP_SYSTEM_EXTENSION
+        return true
+#else
+        return false
+#endif
+#else
+        return true
+#endif
+    }
+
+    public var vpnBypassStatus: VPNBypassStatus {
+        guard vpnBypassSupport else { return .unsupported }
+        return vpnBypass ? .on : .off
+    }
+
+    public var vpnBypassOnboardingShownPublisher: AnyPublisher<Bool, Never> {
+        defaults.dataBrokerProtectionVPNBypassOnboardingShownPublisher
+    }
+
+    public var vpnBypassOnboardingShown: Bool {
+        get {
+            defaults.dataBrokerProtectionVPNBypassOnboardingShown
+        }
+
+        set {
+            defaults.dataBrokerProtectionVPNBypassOnboardingShown = newValue
+        }
+    }
 }
 
 extension UserDefaults {
     private var selectedEnvironmentKey: String {
         "dataBrokerProtectionSelectedEnvironmentRawValue"
+    }
+
+    static let showMenuBarIconDefaultValue = false
+    private var showMenuBarIconKey: String {
+        "dataBrokerProtectionShowMenuBarIcon"
+    }
+
+    static let bypassOnboardingShownDefaultValue = false
+    private var bypassOnboardingShownKey: String {
+        "hasShownBypassOnboarding"
     }
 
     // MARK: - Environment
@@ -91,5 +154,26 @@ extension UserDefaults {
         set {
             dataBrokerProtectionSelectedEnvironmentRawValue = newValue.rawValue
         }
+    }
+
+    // MARK: - VPN exclusion
+
+    @objc
+    dynamic var dataBrokerProtectionVPNBypassOnboardingShown: Bool {
+        get {
+            value(forKey: bypassOnboardingShownKey) as? Bool ?? Self.bypassOnboardingShownDefaultValue
+        }
+
+        set {
+            guard newValue != dataBrokerProtectionVPNBypassOnboardingShown else {
+                return
+            }
+
+            set(newValue, forKey: bypassOnboardingShownKey)
+        }
+    }
+
+    var dataBrokerProtectionVPNBypassOnboardingShownPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.dataBrokerProtectionVPNBypassOnboardingShown).eraseToAnyPublisher()
     }
 }

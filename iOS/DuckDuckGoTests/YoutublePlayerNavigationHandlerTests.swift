@@ -34,8 +34,9 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
     var playerSettings: MockDuckPlayerSettings!
     var player: MockDuckPlayer!
     var featureFlagger: MockDuckPlayerFeatureFlagger!
-    var handler: DuckPlayerNavigationHandler!
+    var handler: WebDuckPlayerNavigationHandler!
     var tabNavigator: MockDuckPlayerTabNavigator!
+    var nativeUIPresenter: MockDuckPlayerNativeUIPresenting!
 
     override func setUp() {
         super.setUp()
@@ -52,7 +53,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Create and assign the mock tab navigator
         tabNavigator = MockDuckPlayerTabNavigator()
 
-        handler = DuckPlayerNavigationHandler(duckPlayer: player,
+        handler = WebDuckPlayerNavigationHandler(duckPlayer: player,
                                               featureFlagger: featureFlagger,
                                               appSettings: mockAppSettings,
                                               pixelFiring: PixelFiringMock.self,
@@ -294,12 +295,12 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         // Act
-        let result1 = handler.handleURLChange(webView: mockWebView)
+        let result1 = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
         
         // Wait less than one second before calling again
         try? await Task.sleep(nanoseconds: 500_000_000)
         
-        let result2 = handler.handleURLChange(webView: mockWebView)
+        let result2 = handler.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURL)
 
         // Assert
         if case .handled(.duckPlayerEnabled) = result1 {
@@ -324,7 +325,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         // Act
-        let result = handler.handleURLChange(webView: mockWebView)
+        let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: duckPlayerURL)
 
         if case .notHandled(.isNotYoutubeWatch) = result {
             // Success
@@ -342,7 +343,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         // Act
-        let result = handler.handleURLChange(webView: mockWebView)
+        let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: nonYouTubeURL)
 
         // Assert
         if case .notHandled(.invalidURL) = result {
@@ -361,7 +362,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         // Act
-        let result = handler.handleURLChange(webView: mockWebView)
+        let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
 
         // Assert
         if case .notHandled(.duckPlayerDisabled) = result {
@@ -380,7 +381,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = []  // Feature is disabled
 
         // Act
-        let result = handler.handleURLChange(webView: mockWebView)
+        let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
 
         // Assert
         if case .notHandled(.featureOff) = result {
@@ -399,7 +400,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         // Act
-        let result = handler.handleURLChange(webView: mockWebView)
+        let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
         
         // Assert
         if case .handled(.allowFirstVideo) = result {

@@ -61,10 +61,11 @@ public final class DBPUIViewModel {
         guard let prefs = prefs else { return nil }
 
         let configuration = WKWebViewConfiguration()
+        let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
                                               delegate: dataManager.cache,
-                                              webUISettings: webUISettings)
+                                              webUISettings: webUISettings, dataBrokerProtectionSettings: settings)
         dataManager.cache.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

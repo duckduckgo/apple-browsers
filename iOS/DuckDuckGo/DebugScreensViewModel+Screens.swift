@@ -100,6 +100,9 @@ extension DebugScreensViewModel {
             .view(title: "Alert Playground", { _ in
                 AlertPlaygroundView()
             }),
+            .view(title: "Tab Generator", { d in
+                BulkGeneratorView(factory: BulkTabFactory(tabManager: d.tabManager))
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in

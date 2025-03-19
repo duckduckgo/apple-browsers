@@ -191,6 +191,7 @@ public struct UserDefaultsWrapper<T> {
         // Updates
         case automaticUpdates = "updates.automatic"
         case pendingUpdateShown = "pending.update.shown"
+        case pendingUpdateSince = "pending.update.since"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"

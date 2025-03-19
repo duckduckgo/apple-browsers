@@ -166,7 +166,7 @@ public struct DefaultCustomStatsPixelsTrigger: CustomStatsPixelsTrigger {
     }
 }
 
-extension Date {
+public extension Date {
 
     /// Returns the current date minus the specified number of hours
     /// If the date calculate fails, returns the current date
@@ -191,10 +191,10 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     private let calendar = Calendar.current
 
     public init(database: DataBrokerProtectionRepository,
-         handler: EventMapping<DataBrokerProtectionSharedPixels>,
-         repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
-         customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
-         customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
+                handler: EventMapping<DataBrokerProtectionSharedPixels>,
+                repository: DataBrokerProtectionStatsPixelsRepository = DataBrokerProtectionStatsPixelsUserDefaults(),
+                customStatsPixelsTrigger: CustomStatsPixelsTrigger = DefaultCustomStatsPixelsTrigger(),
+                customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider = DefaultDataBrokerProtectionCustomOptOutStatsProvider()) {
         self.database = database
         self.handler = handler
         self.repository = repository

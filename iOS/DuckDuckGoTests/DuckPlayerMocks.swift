@@ -22,6 +22,7 @@ import WebKit
 import ContentScopeScripts
 import Combine
 import BrowserServicesKit
+import SwiftUI
 
 @testable import DuckDuckGo
 
@@ -29,15 +30,15 @@ class MockWKNavigationDelegate: NSObject, WKNavigationDelegate {
     var didFinishNavigation: ((WKWebView, WKNavigation?) -> Void)?
     var didFailNavigation: ((WKWebView, WKNavigation?, Error) -> Void)?
     var decidePolicyForNavigationAction: ((WKWebView, WKNavigationAction, @escaping (WKNavigationActionPolicy) -> Void) -> Void)?
-    
+
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         didFinishNavigation?(webView, navigation)
     }
-    
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         didFailNavigation?(webView, navigation, error)
     }
-    
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         decidePolicyForNavigationAction?(webView, navigationAction, decisionHandler) ?? decisionHandler(.allow)
     }
@@ -45,11 +46,10 @@ class MockWKNavigationDelegate: NSObject, WKNavigationDelegate {
 
 class MockWebView: WKWebView {
 
-    
     var lastLoadedRequest: URLRequest?
     var loadedRequests: [URLRequest] = []
     var loadCallCount = 0
-    
+
     var loadCompletionHandler: (() -> Void)?
 
     /// The current URL of the web view.
@@ -160,12 +160,12 @@ class MockFrameInfo: WKFrameInfo {
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
-    
+        
     private let duckPlayerSettingsSubject = PassthroughSubject<Void, Never>()
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> {
         duckPlayerSettingsSubject.eraseToAnyPublisher()
     }
-    
+
     var mode: DuckPlayerMode = .disabled
     var askModeOverlayHidden: Bool = false
     var allowFirstVideo: Bool = false
@@ -174,84 +174,116 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var autoplay: Bool = false
     var customError: Bool = false
     var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
+    var nativeUISERPEnabled: Bool = true
+    var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
 
-    
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
-    
+
     func triggerNotification() {}
-    
+
     func setMode(_ mode: DuckPlayerMode) {
         self.mode = mode
     }
-    
+
     func setAskModeOverlayHidden(_ overlayHidden: Bool) {
         self.askModeOverlayHidden = overlayHidden
     }
-    
+
 }
 
 final class MockDuckPlayer: DuckPlayerControlling {
-    
-    func telemetryEvent(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    
+
+    // MARK: - Required Properties
+    var settings: DuckPlayerSettings
     var hostView: TabViewController?
-    
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
-    
-    func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    func openDuckPlayerInfo(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    func setHostViewController(_ vc: TabViewController) {}
-    func removeHostView() {}
-    
-    func initialSetupPlayer(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
-        nil
-    }
-    
-    func loadNativeDuckPlayerVideo(videoID: String) {
-        return
-    }
-    
-    var settings: any DuckPlayerSettings
+    var playerDismissedPublisher: PassthroughSubject<Void, Never>
+
+    // MARK: - Private Properties
     private var featureFlagger: FeatureFlagger
-    
-    init(settings: any DuckDuckGo.DuckPlayerSettings, featureFlagger: any BrowserServicesKit.FeatureFlagger) {
+    private var nativeUIPresenter: DuckPlayerNativeUIPresenting
+
+    // MARK: - Initialization
+    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
+        self.nativeUIPresenter = nativeUIPresenter
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
+        self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
     }
-    
+
+    // MARK: - User Values Methods
     func setUserValues(params: Any, message: WKScriptMessage) -> (any Encodable)? {
         nil
     }
-    
+
     func getUserValues(params: Any, message: WKScriptMessage) -> (any Encodable)? {
         nil
     }
-    
+
+    // MARK: - Video Handling Methods
+    @MainActor
     func openVideoInDuckPlayer(url: URL, webView: WKWebView) {
-        
+        // Mock implementation
     }
-    
-    func initialSetup(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+
+    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource, timestamp: TimeInterval?) {
+        // Mock implementation
+    }
+
+    // MARK: - Setup Methods
+    func initialSetupPlayer(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
         nil
     }
 
+    func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+
+    func setHostViewController(_ vc: TabViewController) {
+        self.hostView = vc
+    }
+
+    // MARK: - Settings Methods
+    func openDuckPlayerSettings() {
+        // Mock implementation
+    }
+
+    func openDuckPlayerSettings(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+
+    func openDuckPlayerInfo(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+
+    // MARK: - Error Handling
     func handleYoutubeError(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
         nil
     }
+
+    // MARK: - Telemetry
+    func telemetryEvent(params: Any, message: WKScriptMessage) async -> (any Encodable)? {
+        nil
+    }
+
+    // MARK: - Pill UI Methods
+    func presentPill(for videoID: String, timestamp: TimeInterval?) {
+        // Mock implementation
+    }
+
+    func dismissPill(reset: Bool, animated: Bool) {
+        // Mock implementation
+    }
+
+    func hidePillForHiddenChrome() {
+        // Mock implementation
+    }
+
+    func showPillForVisibleChrome() {
+        // Mock implementation
+    }
+    
 }
 
 enum MockFeatureFlag: Hashable {
@@ -317,5 +349,38 @@ final class MockDuckPlayerInternalUserDecider: InternalUserDecider {
     @discardableResult
     func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
         return mockIsInternalUser
+    }
+}
+
+final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
+    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
+
+    init() {
+        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
+    }
+
+    @MainActor
+    func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
+        // Mock implementation
+    }
+    
+    @MainActor
+    func dismissPill(reset: Bool, animated: Bool) {
+        // Mock implementation
+    }
+    
+    @MainActor
+    func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+        return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
+    }
+    
+    @MainActor
+    func showBottomSheetForVisibleChrome() {
+        // Mock implementation
+    }
+    
+    @MainActor
+    func hideBottomSheetForHiddenChrome() {
+        // Mock implementation
     }
 }

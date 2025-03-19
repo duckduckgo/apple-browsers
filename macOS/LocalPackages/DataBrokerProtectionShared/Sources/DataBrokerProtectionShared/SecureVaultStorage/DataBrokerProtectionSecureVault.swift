@@ -260,16 +260,16 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     }
 
     public func save(brokerId: Int64,
-              profileQueryId: Int64,
-              extractedProfile: ExtractedProfile,
-              createdDate: Date,
-              lastRunDate: Date?,
-              preferredRunDate: Date?,
-              attemptCount: Int64,
-              submittedSuccessfullyDate: Date?,
-              sevenDaysConfirmationPixelFired: Bool,
-              fourteenDaysConfirmationPixelFired: Bool,
-              twentyOneDaysConfirmationPixelFired: Bool) throws {
+                     profileQueryId: Int64,
+                     extractedProfile: ExtractedProfile,
+                     createdDate: Date,
+                     lastRunDate: Date?,
+                     preferredRunDate: Date?,
+                     attemptCount: Int64,
+                     submittedSuccessfullyDate: Date?,
+                     sevenDaysConfirmationPixelFired: Bool,
+                     fourteenDaysConfirmationPixelFired: Bool,
+                     twentyOneDaysConfirmationPixelFired: Bool) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         let extractedProfileDB = try mapper.mapToDB(extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId)
         try self.providers.database.save(
@@ -304,16 +304,16 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     }
 
     public func updateSubmittedSuccessfullyDate(_ date: Date?,
-                                         forBrokerId brokerId: Int64,
-                                         profileQueryId: Int64,
-                                         extractedProfileId: Int64) throws {
+                                                forBrokerId brokerId: Int64,
+                                                profileQueryId: Int64,
+                                                extractedProfileId: Int64) throws {
         try self.providers.database.updateSubmittedSuccessfullyDate(date, forBrokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
     public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                               forBrokerId brokerId: Int64,
-                                               profileQueryId: Int64,
-                                               extractedProfileId: Int64) throws {
+                                                      forBrokerId brokerId: Int64,
+                                                      profileQueryId: Int64,
+                                                      extractedProfileId: Int64) throws {
         try self.providers.database.updateSevenDaysConfirmationPixelFired(pixelFired,
                                                                           forBrokerId: brokerId,
                                                                           profileQueryId: profileQueryId,
@@ -321,9 +321,9 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     }
 
     public func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                  forBrokerId brokerId: Int64,
-                                                  profileQueryId: Int64,
-                                                  extractedProfileId: Int64) throws {
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
         try self.providers.database.updateFourteenDaysConfirmationPixelFired(pixelFired,
                                                                              forBrokerId: brokerId,
                                                                              profileQueryId: profileQueryId,
@@ -331,9 +331,9 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     }
 
     public func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                   forBrokerId brokerId: Int64,
-                                                   profileQueryId: Int64,
-                                                   extractedProfileId: Int64) throws {
+                                                          forBrokerId brokerId: Int64,
+                                                          profileQueryId: Int64,
+                                                          extractedProfileId: Int64) throws {
         try self.providers.database.updateTwentyOneDaysConfirmationPixelFired(pixelFired,
                                                                               forBrokerId: brokerId,
                                                                               profileQueryId: profileQueryId,

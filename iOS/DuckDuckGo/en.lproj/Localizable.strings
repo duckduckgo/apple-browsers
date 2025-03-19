@@ -794,6 +794,9 @@
 /* Message that appears after submitting report */
 "broken.site.report.success.toast" = "Your report helps make DuckDuckGo better for everyone!";
 
+/* Close All Tabs */
+"close.all.tabs" = "Close All Tabs";
+
 /* Button to continue the onboarding process */
 "contextual.onboarding.addToDock.buttons.skip" = "Skip";
 
@@ -1163,6 +1166,15 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player Unavailable";
 
+/* Text for the toggle to autoplay videos */
+"duck-player.native-autoplay-videos" = "Autoplay Videos";
+
+/* Text for the button to watch a video on DuckPlayer */
+"duck-player.native-open-in-duckplayer" = "Duck Player";
+
+/* Text for the button to watch a video on YouTube */
+"duck-player.native-watch-on-youtube" = "Watch in Youtube";
+
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Learn More";
 
@@ -1179,6 +1191,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Show Duck.ai in Browser Menu";
 
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "Show Duck.ai in Voice Search";
+
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
 
@@ -1190,6 +1205,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Never";
+
+/* Caption for Duck Player entry point */
+"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player lets you watch YouTube without targeted ads in DuckDuckGo and what you watch won’t influence your recommendations.";
@@ -1220,6 +1238,27 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Let me choose";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Automatically";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Don't Show";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.serp.footer" = "YouTube videos on DuckDuckGo search results will open in Duck Player.";
+
+/* Label for the use DuckPlayer on SERP toggle */
+"duckPlayerNative.use.on.serp.label" = "Use on Search Results";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.youtube.footer" = "Makes Duck Player available on Youtube video pages.";
+
+/* Label for the use DuckPlayer on Youtube toggle */
+"duckPlayerNative.use.on.youtube.label" = "Use on Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Email Protection";
@@ -2080,16 +2119,16 @@ https://duckduckgo.com/mac";
 "onboarding.highlights.appIconSelection.title" = "Which color looks best on me?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie requests & popups";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Block cookie pop-ups";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Block targeted ads";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Block tracking ads";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Erase browsing data swiftly";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Delete browsing data with one button";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd party trackers";
+"onboarding.highlights.browsers.features.trackerBlocker.title" = "Block 3rd-party trackers";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Protections activated!";
@@ -2102,6 +2141,24 @@ https://duckduckgo.com/mac";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Let’s do it!";
+
+/* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
+"onboarding.privacypro.promo.buttons.learnMore" = "Learn More";
+
+/* Button to continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.skip" = "Skip";
+
+/* The title of the onboarding dialog that promotes Privacy Pro */
+"onboarding.privacypro.promo.title" = "Oh, before I forget...";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
+"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo also has a built-in %1$@!\n\nActivate it with a %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "paid Privacy Pro subscription";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Add Widget";
@@ -2921,8 +2978,17 @@ Take back control of your personal information with the browser designed for dat
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "Open \"%1$@\" at %2$@";
 
+/* Select all tabs */
+"tab.select.all" = "Select All";
+
+/* Deselect all tabs */
+"tab.select.none" = "Deselect All";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Tab Switcher";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Bookmark All Tabs";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Increase or decrease text size across all sites.";
@@ -2956,6 +3022,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Confirmation of an action - populated with a domain name */
 "toast.protection.enabled" = "Privacy Protection enabled for %@";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "Search";
 
 /* Autocomplete selected suggestion into the Address Bar button accessibility label */
 "voiceover.action.suggestion.autocomplete" = "Autocomplete suggestion";

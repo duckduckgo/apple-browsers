@@ -244,5 +244,309 @@ Ich habe sie blockiert!
 			<string>%1$d Passwörter gelöscht</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab schließen</string>
+			<key>other</key>
+			<string>Tabs schließen</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab schließen</string>
+			<key>other</key>
+			<string>Alle %1$d Tabs schließen</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab schließen?</string>
+			<key>other</key>
+			<string>%1$d Tabs schließen?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Anderen Tab schließen?</string>
+			<key>other</key>
+			<string>%1$d andere Tabs schließen?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bist du sicher, dass du den Tab schließen möchtest?</string>
+			<key>other</key>
+			<string>Bist du sicher, dass du diese Tabs schließen möchtest?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab schließen?</string>
+			<key>other</key>
+			<string>%1$d Tabs schließen?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bist du sicher, dass du diesen Tab schließen möchtest?</string>
+			<key>other</key>
+			<string>Bist du sicher, dass du diese Tabs schließen möchtest?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab schließen?</string>
+			<key>other</key>
+			<string>Alle %1$d Tabs schließen?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bist du sicher, dass du diesen Tab schließen möchtest?</string>
+			<key>other</key>
+			<string>Bist du sicher, dass du alle Tabs schließen möchtest?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab auswählen</string>
+			<key>other</key>
+			<string>Tabs auswählen</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Anderen Tab schließen</string>
+			<key>other</key>
+			<string>Andere Tabs schließen</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Link teilen</string>
+			<key>other</key>
+			<string>%1$d Links teilen</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ausgewählten Tab teilen</string>
+			<key>other</key>
+			<string>Ausgewählte Tabs teilen</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Tab mit Lesezeichen versehen</string>
+			<key>other</key>
+			<string>%1$d Tabs mit Lesezeichen versehen</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Lesezeichen hinzugefügt</string>
+			<key>other</key>
+			<string>%1$d Lesezeichen hinzugefügt</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ausgewählten Tab mit Lesezeichen versehen?</string>
+			<key>other</key>
+			<string>%1$d Tabs mit Lesezeichen versehen?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ausgewählten Tab mit Lesezeichen versehen?</string>
+			<key>other</key>
+			<string>%1$d Tabs mit Lesezeichen versehen?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ausgewählt</string>
+			<key>other</key>
+			<string>%1$d ausgewählt</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ausgewählter Tab</string>
+			<key>other</key>
+			<string>%1$d ausgewählte Tabs</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

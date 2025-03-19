@@ -49,6 +49,8 @@ public enum FeatureFlag: String {
     case textZoom
     case adAttributionReporting
     case aiChat
+    case aiChatBrowsingToolbarShortcut
+    case aiChatAddressBarShortcut
     case aiChatDeepLink
     case tabManagerMultiSelection
     
@@ -67,9 +69,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204167627774280/1209205869217377
     case aiChatNewTabPage
 
+    /// https://app.asana.com/0/1204167627774280/1209370532515589
+    case aiChatVoiceSearch
+
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
+
+    /// https://app.asana.com/0/1204186595873227/1209164066387913
+    case scamSiteProtection
 
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
@@ -82,6 +90,10 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1206488453854252/1208706841336530
     case privacyProOnboardingCTAMarch25
+
+    /// https://app.asana.com/0/1206329551987282/1209130794450271
+    case onboardingSetAsDefaultBrowser
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -91,6 +103,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             PrivacyProFreeTrialExperimentCohort.self
         case .privacyProOnboardingCTAMarch25:
             PrivacyProOnboardingCTAMarch25Cohort.self
+        case .onboardingSetAsDefaultBrowser:
+            OnboardingSetAsDefaultBrowserCohort.self
         default:
             nil
         }
@@ -100,10 +114,16 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25:
+        case .textZoom, .alternativeColorScheme, .experimentalBrowserTheming, .privacyProOnboardingCTAMarch25, .scamSiteProtection, .maliciousSiteProtection:
             return true
         case .networkProtectionRiskyDomainsProtection:
             return true
+        case .onboardingSetAsDefaultBrowser:
+            if #available(iOS 18.3, *) {
+                return true
+            } else {
+                return false
+            }
         default:
             return false
         }
@@ -174,15 +194,23 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatDeepLink:
             return .remoteReleasable(.subfeature(AIChatSubfeature.deepLink))
         case .tabManagerMultiSelection:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .aiChatNewTabPage:
             return .enabled
+        case .aiChatVoiceSearch:
+            return .enabled
+        case .aiChatBrowsingToolbarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
+        case .aiChatAddressBarShortcut:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .scamSiteProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
@@ -191,6 +219,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
+        case .onboardingSetAsDefaultBrowser:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         }
     }
 }
@@ -210,6 +240,13 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
 }
 
 public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
+    case control
+    /// Treatment cohort where the experiment modifications are applied.
+    case treatment
+}
+
+public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

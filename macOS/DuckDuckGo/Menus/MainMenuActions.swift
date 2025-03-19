@@ -186,7 +186,11 @@ extension AppDelegate {
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
-            FeedbackPresenter.presentFeedbackForm()
+            if self.internalUserDecider.isInternalUser {
+                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            } else {
+                FeedbackPresenter.presentFeedbackForm()
+            }
         }
     }
 
@@ -335,7 +339,7 @@ extension AppDelegate {
         DispatchQueue.main.async {
             FireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.trackFireButtonPressed()
+            pixelReporter.measureFireButtonPressed()
         }
     }
 
@@ -711,6 +715,13 @@ extension MainViewController {
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .history)
+        if let menuItem = sender as? NSMenuItem {
+            if menuItem.representedObject as? HistoryMenu.Location == .moreOptionsMenu {
+                PixelKit.fire(HistoryViewPixel.historyPageShown(.sideMenu), frequency: .dailyAndStandard)
+            } else {
+                PixelKit.fire(HistoryViewPixel.historyPageShown(.topMenu), frequency: .dailyAndStandard)
+            }
+        }
     }
 
     // MARK: - Window
@@ -1245,7 +1256,7 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return RecentlyClosedCoordinator.shared.canReopenRecentlyClosedTab == true
 
-        // Reopen All Windows from Last Session
+        // Reopen All Windows From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
             return stateRestorationManager.canRestoreLastSessionState
 

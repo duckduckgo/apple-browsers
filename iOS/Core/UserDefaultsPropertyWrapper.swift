@@ -43,6 +43,8 @@ public struct UserDefaultsWrapper<T> {
 
         case daxIsDismissed = "com.duckduckgo.ios.daxOnboardingIsDismissed"
         case daxHomeScreenMessagesSeen = "com.duckduckgo.ios.daxOnboardingHomeScreenMessagesSeen"
+        case daxTryAnonymousSearchShown = "com.duckduckgo.ios.daxOnboardingTryAnonymousSearchShown"
+        case daxTryVisitSiteShown = "com.duckduckgo.ios.daxOnboardingTryVisitSiteShown"
         case daxBrowsingAfterSearchShown = "com.duckduckgo.ios.daxOnboardingBrowsingAfterSearchShown"
         case daxBrowsingWithTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithTrackersShown"
         case daxBrowsingWithoutTrackersShown = "com.duckduckgo.ios.daxOnboardingBrowsingWithoutTrackersShown"
@@ -55,6 +57,7 @@ public struct UserDefaultsWrapper<T> {
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
         case daxLastVisitedOnboardingWebsite = "com.duckduckgo.ios.daxOnboardingLastVisitedWebsite"
         case daxLastShownContextualOnboardingDialogType = "com.duckduckgo.ios.daxLastShownContextualOnboardingDialogType"
+        case daxPrivacyProPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
 
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
         case faviconTabsCacheNeedsCleanup = "com.duckduckgo.ios.favicons.tabsCacheNeedsCleanup"
@@ -156,12 +159,16 @@ public struct UserDefaultsWrapper<T> {
         case historyMessageDisplayCount = "com.duckduckgo.ios.historyMessage.displayCount"
         case historyMessageDismissed = "com.duckduckgo.ios.historyMessage.dismissed"
         
+        // Legacy DuckPlayer
         case duckPlayerMode = "com.duckduckgo.ios.duckPlayerMode"
         case duckPlayerAskModeOverlayHidden = "com.duckduckgo.ios.duckPlayerAskModeOverlayHidden"
         case userInteractedWithDuckPlayer = "com.duckduckgo.ios.userInteractedWithDuckPlayer"
         case duckPlayerOpenInNewTab = "com.duckduckgo.ios.duckPlayerOpenInNewTab"
+        
+        // Native DuckPlayer
         case duckPlayerNativeUI = "com.duckduckgo.ios.duckPlayerNativeUI"
         case duckPlayerAutoplay = "com.duckduckgo.ios.duckPlayerAutoplay"
+        case duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"
@@ -181,6 +188,10 @@ public struct UserDefaultsWrapper<T> {
 
         // Malicious Site Protection
         case maliciousSiteProtectionEnabled = "com.duckduckgo.ios.maliciousSiteProtection.enabled"
+        case voiceSearchTargetPreferences = "voiceSearchTargetPreferences"
+
+        // Check Default Browser
+        case defaultBrowserInfo = "com.duckduckgo.ios.defaultBrowserInfo"
 
         // Debug screen
         case debugPinnedScreens = "debugPinnedScreens"

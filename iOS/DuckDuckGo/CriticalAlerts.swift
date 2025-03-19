@@ -82,5 +82,4 @@ struct CriticalAlerts {
         alertController.preferredAction = subscribeButton
         return alertController
     }
-
 }

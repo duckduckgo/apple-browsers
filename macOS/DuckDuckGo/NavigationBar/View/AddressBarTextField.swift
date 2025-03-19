@@ -371,9 +371,9 @@ final class AddressBarTextField: NSTextField {
         if case .internalPage(title: let title, url: let url) = suggestion,
            url == .bookmarks || url.isSettingsURL {
             // when choosing an internal page suggestion prefer already open tab
-            switchTo(OpenTab(title: title, url: url))
-        } else if case .openTab(let title, url: let url) = suggestion {
-            switchTo(OpenTab(title: title, url: url))
+            switchTo(OpenTab(tabId: nil, title: title, url: url))
+        } else if case .openTab(let title, url: let url, tabId: let tabId) = suggestion {
+            switchTo(OpenTab(tabId: tabId, title: title, url: url))
         } else if NSApp.isCommandPressed {
             openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
         } else {
@@ -426,8 +426,8 @@ final class AddressBarTextField: NSTextField {
 #endif
 
         // Prevent typing in subscription URLs directly in the address bar
-        let baseURL = Application.appDelegate.subscriptionManager.url(for: .baseURL)
-        let identityTheftRestorationURL = Application.appDelegate.subscriptionManager.url(for: .identityTheftRestoration)
+        let baseURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .baseURL)
+        let identityTheftRestorationURL = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .identityTheftRestoration)
         if providedUrl.isChild(of: baseURL) || providedUrl.isChild(of: identityTheftRestorationURL) {
             self.updateValue(selectedTabViewModel: nil, addressBarString: nil) // reset
             self.window?.makeFirstResponder(nil)
@@ -492,7 +492,7 @@ final class AddressBarTextField: NSTextField {
     private func switchTo(_ tab: OpenTab) {
         // reset value so it‘s not restored next time we come back to the tab
         value = .text("", userTyped: false)
-        WindowControllersManager.shared.show(url: tab.url, source: .switchToOpenTab, newTab: true /* in case not found */)
+        WindowControllersManager.shared.show(url: tab.url, tabId: tab.tabId, source: .switchToOpenTab, newTab: true /* in case not found */)
     }
 
     private func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -503,7 +503,7 @@ final class AddressBarTextField: NSTextField {
              .historyEntry(title: _, url: let url, allowedInTopHits: _),
              .website(url: let url),
              .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url):
+             .openTab(title: _, url: let url, _):
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
@@ -909,7 +909,7 @@ extension AddressBarTextField {
                 } else {
                     self = .url(url)
                 }
-            case .openTab(title: _, url: let url):
+            case .openTab(title: _, url: let url, _):
                 self = .openTab(url)
             case .unknown:
                 self = Suffix.search
@@ -975,7 +975,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
     func controlTextDidChange(_ obj: Notification) {
         handleTextDidChange()
-        onboardingDelegate?.trackAddressBarTypedIn()
+        onboardingDelegate?.measureAddressBarTypedIn()
     }
 
     private func handleTextDidChange() {

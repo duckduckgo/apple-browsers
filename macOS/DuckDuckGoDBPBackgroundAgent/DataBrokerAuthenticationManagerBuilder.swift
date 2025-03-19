@@ -23,16 +23,9 @@ import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
-    static func buildAuthenticationManager(subscriptionManager: SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
-        let settings = DataBrokerProtectionSettings(defaults: .dbp)
-        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, dbpSettings: settings)
+    static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
+        let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
+        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
-
-    }
-}
-
-extension DefaultAccountManager: @retroactive DataBrokerProtectionAccountManaging {
-    public func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, any Error> {
-        await hasEntitlement(forProductName: .dataBrokerProtection, cachePolicy: .reloadIgnoringLocalCacheData)
     }
 }

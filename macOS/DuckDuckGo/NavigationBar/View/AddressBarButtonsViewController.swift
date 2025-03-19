@@ -277,7 +277,7 @@ final class AddressBarButtonsViewController: NSViewController {
         popupBlockedPopover?.close()
 
         popovers?.togglePrivacyDashboardPopover(for: tabViewModel, from: privacyEntryPointButton, entryPoint: entryPoint)
-        onboardingPixelReporter.trackPrivacyDashboardOpened()
+        onboardingPixelReporter.measurePrivacyDashboardOpened()
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -338,11 +338,11 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if !popovers.isEditBookmarkPopoverShown {
-            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
-        } else {
+        if popovers.isEditBookmarkPopoverShown {
             updateBookmarkButtonVisibility()
             popovers.closeEditBookmarkPopover()
+        } else {
+            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
         }
     }
 
@@ -992,9 +992,12 @@ final class AddressBarButtonsViewController: NSViewController {
             return (bookmark, false)
         }
 
+        let lastUsedFolder = UserDefaultsBookmarkFoldersStore().lastBookmarkSingleTabFolderIdUsed.flatMap(bookmarkManager.getBookmarkFolder)
         let bookmark = bookmarkManager.makeBookmark(for: url,
                                                     title: tabViewModel.title,
-                                                    isFavorite: setFavorite)
+                                                    isFavorite: setFavorite,
+                                                    index: nil,
+                                                    parent: lastUsedFolder)
         updateBookmarkButtonImage(isUrlBookmarked: bookmark != nil)
 
         return (bookmark, true)

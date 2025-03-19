@@ -427,9 +427,9 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     }
 
     public func updateSubmittedSuccessfullyDate(_ date: Date?,
-                                         forBrokerId brokerId: Int64,
-                                         profileQueryId: Int64,
-                                         extractedProfileId: Int64) throws {
+                                                forBrokerId brokerId: Int64,
+                                                profileQueryId: Int64,
+                                                extractedProfileId: Int64) throws {
         try updateOptOutField({ $0.submittedSuccessfullyDate = $1 },
                               value: date, forBrokerId: brokerId,
                               profileQueryId: profileQueryId,
@@ -437,9 +437,9 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     }
 
     public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                               forBrokerId brokerId: Int64,
-                                               profileQueryId: Int64,
-                                               extractedProfileId: Int64) throws {
+                                                      forBrokerId brokerId: Int64,
+                                                      profileQueryId: Int64,
+                                                      extractedProfileId: Int64) throws {
         try updateOptOutField({ $0.sevenDaysConfirmationPixelFired = $1 },
                               value: pixelFired, forBrokerId: brokerId,
                               profileQueryId: profileQueryId,
@@ -447,9 +447,9 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     }
 
     public func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                  forBrokerId brokerId: Int64,
-                                                  profileQueryId: Int64,
-                                                  extractedProfileId: Int64) throws {
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
         try updateOptOutField({ $0.fourteenDaysConfirmationPixelFired = $1 },
                               value: pixelFired, forBrokerId: brokerId,
                               profileQueryId: profileQueryId,
@@ -457,9 +457,9 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     }
 
     public func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                   forBrokerId brokerId: Int64,
-                                                   profileQueryId: Int64,
-                                                   extractedProfileId: Int64) throws {
+                                                          forBrokerId brokerId: Int64,
+                                                          profileQueryId: Int64,
+                                                          extractedProfileId: Int64) throws {
         try updateOptOutField({ $0.twentyOneDaysConfirmationPixelFired = $1 },
                               value: pixelFired, forBrokerId: brokerId,
                               profileQueryId: profileQueryId,

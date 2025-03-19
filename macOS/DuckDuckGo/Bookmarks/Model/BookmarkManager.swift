@@ -221,6 +221,7 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.save(bookmark: bookmark, index: index) { [weak self] error in
             if error != nil {
                 self?.list?.remove(bookmark)
+                completion(error)
                 return
             }
 

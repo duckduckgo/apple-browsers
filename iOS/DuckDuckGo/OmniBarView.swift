@@ -35,11 +35,6 @@ public enum OmniBarIcon: String {
 
 class OmniBarView: UIView {
 
-    enum AccessoryType {
-         case share
-         case chat
-     }
-
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
     @IBOutlet weak var searchLoupe: UIView!
@@ -84,7 +79,7 @@ class OmniBarView: UIView {
 
     weak var omniDelegate: OmniBarDelegate?
     fileprivate var state: OmniBarState!
-    private(set) var accessoryType: AccessoryType = .share {
+    private(set) var accessoryType: OmniBarAccessoryType = .share {
         didSet {
             switch accessoryType {
             case .chat:
@@ -285,7 +280,7 @@ class OmniBarView: UIView {
         textField.selectedTextRange = nil
     }
 
-    func updateAccessoryType(_ type: AccessoryType) {
+    func updateAccessoryType(_ type: OmniBarAccessoryType) {
         DispatchQueue.main.async { self.accessoryType = type }
     }
 
@@ -742,4 +737,8 @@ extension OmniBarView {
 
         dismissButtonAnimator?.startAnimation()
     }
+}
+
+extension OmniBarView: OmniBar, OmniBarViewProtocol {
+
 }

@@ -2177,7 +2177,7 @@ extension MainViewController: OmniBarDelegate {
         hideNotificationBarIfBrokenSitePromptShown(afterRefresh: true)
     }
 
-    func onAccessoryPressed(accessoryType: OmniBarView.AccessoryType) {
+    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
         hideSuggestionTray()
 
         switch accessoryType {
@@ -2219,7 +2219,7 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .openAIChatFromAddressBar)
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBarView.AccessoryType) {
+    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {

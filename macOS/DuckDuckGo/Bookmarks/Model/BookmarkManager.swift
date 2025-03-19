@@ -203,7 +203,7 @@ final class LocalBookmarkManager: BookmarkManager {
     }
 
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool) -> Bookmark? {
-        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil, completion: { _ in })
+        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil)
     }
 
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int? = nil, parent: BookmarkFolder? = nil, completion: @escaping (Error?) -> Void) -> Bookmark? {
@@ -218,7 +218,7 @@ final class LocalBookmarkManager: BookmarkManager {
         let bookmark = Bookmark(id: id, url: url.absoluteString, title: title, isFavorite: isFavorite, parentFolderUUID: parent?.id)
 
         list?.insert(bookmark)
-        bookmarkStore.save(bookmark: bookmark, index: index) { [weak self] error  in
+        bookmarkStore.save(bookmark: bookmark, index: index) { [weak self] error in
             if error != nil {
                 self?.list?.remove(bookmark)
                 return

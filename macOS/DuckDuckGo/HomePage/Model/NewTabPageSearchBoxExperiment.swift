@@ -19,6 +19,7 @@
 import Foundation
 import os.log
 import PixelKit
+import Common
 
 protocol NewTabPageSearchBoxExperimentDataStoring: AnyObject {
     var enrollmentDate: Date? { get set }
@@ -75,7 +76,7 @@ protocol NewTabPageSearchBoxExperimentCohortDeciding {
 
 struct DefaultNewTabPageSearchBoxExperimentCohortDecider: NewTabPageSearchBoxExperimentCohortDeciding {
     var cohort: NewTabPageSearchBoxExperiment.Cohort? {
-        if NSApp.runType == .uiTests {
+        if AppVersion.runType == .uiTests {
             return nil
         }
 

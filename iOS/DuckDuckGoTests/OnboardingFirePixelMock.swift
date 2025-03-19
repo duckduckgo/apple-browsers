@@ -19,6 +19,8 @@
 
 import Foundation
 import Core
+import BrowserServicesKit
+import PixelExperimentKit
 @testable import DuckDuckGo
 
 final class OnboardingPixelFireMock: OnboardingPixelFiring {
@@ -64,5 +66,31 @@ final class OnboardingUniquePixelFireMock: OnboardingPixelFiring {
         capturedParams = [:]
         capturedIncludeParameters = []
         capturedPixelEventHistory = []
+    }
+}
+
+final class OnboardingExperimentPixelFireMock: ExperimentPixelFiring {
+    struct FiredPixel {
+        let subfeatureID: SubfeatureID
+        let metric: String
+        let conversionWindow: ConversionWindow
+        let value: String
+    }
+
+    static private(set) var firedMetrics: [FiredPixel] = []
+
+    static func fireExperimentPixel(for subfeatureID: SubfeatureID, metric: String, conversionWindowDays: ConversionWindow, value: String) {
+
+        let firedPixel = FiredPixel(
+            subfeatureID: subfeatureID,
+            metric: metric,
+            conversionWindow: conversionWindowDays,
+            value: value
+        )
+        firedMetrics.append(firedPixel)
+    }
+
+    static func tearDown() {
+        firedMetrics.removeAll()
     }
 }

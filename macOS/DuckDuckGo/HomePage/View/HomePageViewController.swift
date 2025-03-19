@@ -24,6 +24,7 @@ import History
 import PixelKit
 import RemoteMessaging
 import Freemium
+import Common
 
 @MainActor
 final class HomePageViewController: NSViewController {
@@ -152,7 +153,7 @@ final class HomePageViewController: NSViewController {
     }
 
     func refreshModels() {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
 
         refreshFavoritesModel()
         refreshRecentlyVisitedModel()

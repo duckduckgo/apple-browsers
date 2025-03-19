@@ -35,13 +35,14 @@ final class OnboardingPixelReporterTests: XCTestCase {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = try XCTUnwrap(TimeZone(secondsFromGMT: 0))
         userDefaultsMock = UserDefaults(suiteName: Self.suiteName)
-        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock)
+        sut = OnboardingPixelReporter(pixel: OnboardingPixelFireMock.self, uniquePixel: OnboardingUniquePixelFireMock.self, experimentPixel: OnboardingExperimentPixelFireMock.self, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock)
         try super.setUpWithError()
     }
 
     override func tearDownWithError() throws {
         OnboardingPixelFireMock.tearDown()
         OnboardingUniquePixelFireMock.tearDown()
+        OnboardingExperimentPixelFireMock.tearDown()
         statisticsStoreMock = nil
         now = nil
         userDefaultsMock.removePersistentDomain(forName: Self.suiteName)
@@ -469,6 +470,40 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
         XCTAssertEqual(expectedPixel.name, expectedPixel.name)
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion, .atb])
+    }
+
+    // MARK: - Set as Default Experiment
+
+    func testWhenMeasureDidSetDDGAsDefaultBrowserThenOnboardingDidSetDDGAsDefaultBrowserPixelFires() throws {
+        // GIVEN
+        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
+
+        // WHEN
+        sut.measureDidSetDDGAsDefaultBrowser()
+
+        // THEN
+        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
+        let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
+        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
+        XCTAssertEqual(firedPixel.metric, "setAsDefaultBrowser")
+        XCTAssertEqual(firedPixel.conversionWindow, 0...0)
+        XCTAssertEqual(firedPixel.value, "1")
+    }
+
+    func testWhenMeasureDidNotSetDDGAsDefaultBrowserThenOnboardingDidNotSetDDGAsDefaultBrowserPixelFires() throws {
+        // GIVEN
+        XCTAssertTrue(OnboardingExperimentPixelFireMock.firedMetrics.isEmpty)
+
+        // WHEN
+        sut.measureDidNotSetDDGAsDefaultBrowser()
+
+        // THEN
+        XCTAssertEqual(OnboardingExperimentPixelFireMock.firedMetrics.count, 1)
+        let firedPixel = try XCTUnwrap(OnboardingExperimentPixelFireMock.firedMetrics.first)
+        XCTAssertEqual(firedPixel.subfeatureID, OnboardingPixelReporter.SetAsDefaultExperimentMetrics.subfeatureIdentifier)
+        XCTAssertEqual(firedPixel.metric, "rejectSetAsDefaultBrowser")
+        XCTAssertEqual(firedPixel.conversionWindow, 0...0)
+        XCTAssertEqual(firedPixel.value, "1")
     }
 
 }

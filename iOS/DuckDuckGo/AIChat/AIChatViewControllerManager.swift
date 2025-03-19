@@ -27,6 +27,7 @@ import Core
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
+    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
 }
 
 final class AIChatViewControllerManager {
@@ -36,11 +37,15 @@ final class AIChatViewControllerManager {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private weak var userContentController: UserContentController?
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
+    private weak var chatViewController: AIChatViewController?
+    private let userAgentManager: AIChatUserAgentProviding
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
+         downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
+         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
+        self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
     }
 
     @MainActor
@@ -62,11 +67,13 @@ final class AIChatViewControllerManager {
 
         webviewConfiguration.userContentController = userContentController
         self.userContentController = userContentController
+
         let aiChatViewController = AIChatViewController(settings: settings,
                                                         webViewConfiguration: webviewConfiguration,
                                                         requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
                                                         inspectableWebView: inspectableWebView,
-                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory)
+                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
+                                                        userAgentManager: userAgentManager)
         aiChatViewController.delegate = self
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
@@ -85,6 +92,7 @@ final class AIChatViewControllerManager {
             aiChatViewController.reload()
         }
         viewController.present(roundedPageSheet, animated: true, completion: nil)
+        chatViewController = aiChatViewController
     }
 
     private func cleanUpUserContent() {
@@ -104,6 +112,7 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
         self.aiChatUserScript = userScripts.aiChatUserScript
+        self.aiChatUserScript?.delegate = self
         self.aiChatUserScript?.setPayloadHandler(self.payloadHandler)
     }
 }
@@ -131,5 +140,34 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
 extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDelegate {
     func roundedPageSheetContainerViewControllerDidDisappear(_ controller: RoundedPageSheetContainerViewController) {
         cleanUpUserContent()
+    }
+}
+
+// MARK: AIChatUserScriptDelegate
+
+extension AIChatViewControllerManager: AIChatUserScriptDelegate {
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName) {
+        switch message {
+        case .openAIChatSettings:
+            chatViewController?.dismiss(animated: true) { [weak self] in
+                guard let self = self else { return }
+                self.delegate?.aiChatViewControllerManagerDidReceiveOpenSettingsRequest(self)
+            }
+        case .closeAIChat:
+            chatViewController?.dismiss(animated: true)
+        default:
+            break
+        }
+    }
+}
+
+// MARK: - AIChatUserAgentHandler
+
+private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
+    let userAgentManager: UserAgentManager
+
+    func userAgent(url: URL?) -> String {
+        userAgentManager.userAgent(isDesktop: false, url: url)
     }
 }

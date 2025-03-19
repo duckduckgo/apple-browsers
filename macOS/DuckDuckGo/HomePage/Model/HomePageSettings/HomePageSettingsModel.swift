@@ -23,6 +23,7 @@ import os.log
 import PixelKit
 import SwiftUI
 import SwiftUIExtensions
+import Common
 
 protocol SettingsVisibilityModelPersistor {
     var didShowSettingsOnboarding: Bool { get set }
@@ -178,7 +179,7 @@ extension HomePage.Models {
 
         private func subscribeToCustomBackground() {
             let customBackgroundPublisher: AnyPublisher<CustomBackground?, Never> = {
-                if NSApp.runType == .unitTests {
+                if AppVersion.runType == .unitTests {
                     return $customBackground.dropFirst().eraseToAnyPublisher()
                 }
                 return $customBackground.dropFirst()

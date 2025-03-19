@@ -31,6 +31,7 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
+import DataBrokerProtection
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
@@ -652,7 +653,7 @@ final class BrowserTabViewController: NSViewController {
             self?.scheduleHoverLabelUpdatesForUrl($0)
         }.store(in: &tabViewModelCancellables)
 #if DEBUG
-        if case .xcPreviews = NSApp.runType {
+        if case .xcPreviews = AppVersion.runType {
             self.scheduleHoverLabelUpdatesForUrl(.duckDuckGo)
         }
 #endif
@@ -955,7 +956,11 @@ final class BrowserTabViewController: NSViewController {
     private func dataBrokerProtectionHomeViewControllerCreatingIfNeeded() -> DBPHomeViewController {
         return dataBrokerProtectionHomeViewController ?? {
             let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
-            let dataBrokerProtectionHomeViewController = DBPHomeViewController(dataBrokerProtectionManager: DataBrokerProtectionManager.shared, freemiumDBPFeature: freemiumDBPFeature)
+            let dataBrokerProtectionHomeViewController = DBPHomeViewController(
+                dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
+                vpnBypassService: VPNBypassService(),
+                freemiumDBPFeature: freemiumDBPFeature
+            )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController
             return dataBrokerProtectionHomeViewController
         }()

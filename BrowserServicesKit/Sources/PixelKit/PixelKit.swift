@@ -187,6 +187,7 @@ public final class PixelKit {
                       withHeaders headers: [String: String]?,
                       withAdditionalParameters params: [String: String]?,
                       withError error: Error?,
+                      withNamePrefix namePrefix: String?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
                       onComplete: @escaping CompletionBlock) {
@@ -216,28 +217,30 @@ public final class PixelKit {
             }
         }
 
+        let pixelNameWithPrefix = (namePrefix ?? "") + pixelName
+
         // The event name can't contain `.`
-        reportErrorIf(pixel: pixelName, contains: ".")
+        reportErrorIf(pixel: pixelNameWithPrefix, contains: ".")
 
         switch frequency {
         case .standard:
-            handleStandardFrequency(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleStandardFrequency(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyInitial:
-            handleLegacyInitial(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyInitial(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByName:
-            handleUnique(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleUnique(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByNameAndParameters:
-            handleUniqueByNameAndParameters(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleUniqueByNameAndParameters(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyDaily:
-            handleLegacyDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyDaily(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .daily:
-            handleDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDaily(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyDailyAndCount:
-            handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyDailyAndCount(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndCount:
-            handleDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDailyAndCount(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndStandard:
-            handleDailyAndStandard(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDailyAndStandard(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
         }
     }
 
@@ -462,6 +465,7 @@ public final class PixelKit {
                      withHeaders headers: [String: String]? = nil,
                      withAdditionalParameters params: [String: String]? = nil,
                      withError error: Error? = nil,
+                     withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
@@ -517,6 +521,7 @@ public final class PixelKit {
              withHeaders: headers,
              withAdditionalParameters: newParams,
              withError: newError,
+             withNamePrefix: namePrefix,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
              onComplete: onComplete)
@@ -527,6 +532,7 @@ public final class PixelKit {
                             withHeaders headers: [String: String] = [:],
                             withAdditionalParameters parameters: [String: String]? = nil,
                             withError error: Error? = nil,
+                            withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
@@ -536,6 +542,7 @@ public final class PixelKit {
                           withHeaders: headers,
                           withAdditionalParameters: parameters,
                           withError: error,
+                          withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
                           onComplete: onComplete)

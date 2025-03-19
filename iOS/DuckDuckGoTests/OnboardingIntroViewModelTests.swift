@@ -512,6 +512,86 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertFalse(defaultBrowserManagerMock.didCallDefaultBrowserInfo)
     }
 
+    func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsTrue_ThenFireDidSetDefaultBrowserPixel() {
+        // GIVEN
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: true)
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
+    func testWhenDefaultBrowserInfoIsSuccessfulResult_AndIsDefaultBrowserIsFalse_ThenFireDidNotSetDefaultBrowserPixel() {
+        // GIVEN
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        defaultBrowserManagerMock.resultToReturn = .successful(isDefaultBrowser: false)
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertTrue(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
+    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsRateLimited_ThenDoNotFireSetDefaultBrowserPixels() {
+        // GIVEN
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        defaultBrowserManagerMock.resultToReturn = .failed(reason: .rateLimitReached(updatedStoredInfo: nil))
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
+    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsUnkownError_ThenDoNotFireSetDefaultBrowserPixels() {
+        // GIVEN
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        defaultBrowserManagerMock.resultToReturn = .failed(reason: .unknownError(NSError(domain: #function, code: 0)))
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
+    func testWhenDefaultBrowserInfoIsFailureResult_AndFailureIsNotSupportedOnCurrentOSVersion_ThenDoNotFireSetDefaultBrowserPixels() {
+        // GIVEN
+        onboardingManagerMock.isEnrolledInSetAsDefaultBrowserExperiment = true
+        defaultBrowserManagerMock.resultToReturn = .failed(reason: .notSupportedOnCurrentOSVersion)
+        let sut = makeSUT()
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+
+        // WHEN
+        sut.appIconPickerContinueAction()
+
+        // THEN
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidSetDDGAsDefaultBrowser)
+        XCTAssertFalse(pixelReporterMock.didCallMeasureDidNotSetDDGAsDefaultBrowser)
+    }
+
 }
 
 extension OnboardingIntroViewModelTests {

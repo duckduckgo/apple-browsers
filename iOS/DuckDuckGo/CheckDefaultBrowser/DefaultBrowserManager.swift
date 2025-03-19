@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Common
 import class UIKit.UIApplication
 
 // MARK: - Model
@@ -76,15 +77,18 @@ extension DefaultBrowserInfoResult {
 final class DefaultBrowserManager: DefaultBrowserManaging {
     private let defaultBrowserChecker: CheckDefaultBrowserService
     private let defaultBrowserInfoStore: DefaultBrowserInfoStorage
+    private let defaultBrowserEventMapper: EventMapping<DebugEvent>
     private let dateProvider: () -> Date
 
     init(
         defaultBrowserChecker: CheckDefaultBrowserService = SystemCheckDefaultBrowserService(),
         defaultBrowserInfoStore: DefaultBrowserInfoStorage = DefaultBrowserInfoStore(),
+        defaultBrowserEventMapper: EventMapping<DebugEvent> = DefaultBrowserManagerEventMapper.debugEvents,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.defaultBrowserChecker = defaultBrowserChecker
         self.defaultBrowserInfoStore = defaultBrowserInfoStore
+        self.defaultBrowserEventMapper = defaultBrowserEventMapper
         self.dateProvider = dateProvider
     }
 
@@ -95,10 +99,12 @@ final class DefaultBrowserManager: DefaultBrowserManaging {
         case let .success(value):
             let defaultBrowserInfo = makeDefaultBrowserInfo(isDefaultBrowser: value)
             saveDefaultBrowserInfo(defaultBrowserInfo)
+            defaultBrowserEventMapper.fire(.successfulResult)
             return .success(newInfo: defaultBrowserInfo)
         case let .failure(.maxNumberOfAttemptsExceeded(nextRetryDate)):
             // If there's no previous information saved exit early. This should not happen.
             guard let storedDefaultBrowserInfo = defaultBrowserInfoStore.defaultBrowserInfo else {
+                defaultBrowserEventMapper.fire(.rateLimitReachedNoExistingResultPersisted)
                 return .failure(.rateLimitReached(updatedStoredInfo: nil))
             }
             // Update the current info and save them
@@ -108,8 +114,10 @@ final class DefaultBrowserManager: DefaultBrowserManaging {
                 nextRetryAvailableDate: nextRetryDate
             )
             saveDefaultBrowserInfo(defaultBrowserInfo)
+            defaultBrowserEventMapper.fire(.rateLimitReached)
             return .failure(.rateLimitReached(updatedStoredInfo: defaultBrowserInfo))
         case let .failure(.unknownError(error)):
+            defaultBrowserEventMapper.fire(.unknownError)
             return .failure(.unknownError(error))
         case .failure(.notSupportedOnThisOSVersion):
             return .failure(.notSupportedOnCurrentOSVersion)
@@ -134,4 +142,17 @@ final class DefaultBrowserManager: DefaultBrowserManaging {
     private func saveDefaultBrowserInfo(_ defaultBrowserInfo: DefaultBrowserInfo) {
         defaultBrowserInfoStore.defaultBrowserInfo = defaultBrowserInfo
     }
+}
+
+// MARK: - Debug Events
+
+extension DefaultBrowserManager {
+
+    enum DebugEvent {
+        case successfulResult
+        case rateLimitReached
+        case rateLimitReachedNoExistingResultPersisted
+        case unknownError
+    }
+    
 }

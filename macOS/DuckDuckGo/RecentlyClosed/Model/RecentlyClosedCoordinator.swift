@@ -40,7 +40,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     init(windowControllerManager: WindowControllersManagerProtocol) {
         self.windowControllerManager = windowControllerManager
 
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
     }
 

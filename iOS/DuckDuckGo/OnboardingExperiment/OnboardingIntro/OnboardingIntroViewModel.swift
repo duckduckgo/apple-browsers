@@ -31,14 +31,14 @@ final class OnboardingIntroViewModel: ObservableObject {
     private var introSteps: [OnboardingIntroStep]
 
     private let defaultBrowserManager: DefaultBrowserManaging
-    private let pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting
+    private let pixelReporter: LinearOnboardingPixelReporting
     private let onboardingManager: OnboardingManaging
     private let isIpad: Bool
     private let urlOpener: URLOpener
     private let appIconProvider: () -> AppIcon
     private let addressBarPositionProvider: () -> AddressBarPosition
 
-    convenience init(pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting) {
+    convenience init(pixelReporter: LinearOnboardingPixelReporting) {
         self.init(
             defaultBrowserManager: DefaultBrowserManager(),
             pixelReporter: pixelReporter,
@@ -52,7 +52,7 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     init(
         defaultBrowserManager: DefaultBrowserManaging,
-        pixelReporter: OnboardingIntroPixelReporting & OnboardingAddToDockReporting,
+        pixelReporter: LinearOnboardingPixelReporting,
         onboardingManager: OnboardingManaging,
         isIpad: Bool,
         urlOpener: URLOpener,
@@ -190,11 +190,11 @@ private extension OnboardingIntroViewModel {
 
         defaultBrowserManager.defaultBrowserInfo()
             .onNewValue { newInfo in
-                // Send experimental pixel
-                Logger.onboarding.debug("Succesfully received default browser result: \(newInfo.isDefaultBrowser)")
-            }
-            .onFailure { _ in
-                // Send Debug pixel
+                if newInfo.isDefaultBrowser {
+                    pixelReporter.measureDidSetDDGAsDefaultBrowser()
+                } else {
+                    pixelReporter.measureDidNotSetDDGAsDefaultBrowser()
+                }
             }
     }
 

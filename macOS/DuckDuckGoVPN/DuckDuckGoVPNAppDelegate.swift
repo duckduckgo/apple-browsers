@@ -371,7 +371,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         return isExtensionUpdateOfferedSubject
 #else
-        return CurrentValueSubject(initialValue: false)
+        return CurrentValueSubject(false)
 #endif
     }()
 

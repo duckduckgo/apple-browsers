@@ -63,6 +63,9 @@ struct Favicon {
             }
         }
 
+        /**
+         * Returns the next smaller size cattegory, or nil in case of `.noImage`.
+         */
         var smaller: SizeCategory? {
             switch self {
             case .noImage:

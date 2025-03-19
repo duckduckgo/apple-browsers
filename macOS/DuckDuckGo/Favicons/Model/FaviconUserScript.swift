@@ -38,6 +38,14 @@ final class FaviconUserScript: NSObject, Subfeature {
         let href: URL
         let rel: String
 
+        /**
+         * Returns a new `FaviconLink` with `href` upgraded to HTTPS, or nil if upgrading failed.
+         *
+         * Given that we use `URLSession` for fetching favicons, we can't fetch HTTP URLs, hence
+         * upgrading to HTTPS.
+         *
+         * > `toHttps()` is safe for `data:` URLs.
+         */
         func upgradedToHTTPS() -> Self? {
             guard let httpsHref = href.toHttps() else {
                 return nil

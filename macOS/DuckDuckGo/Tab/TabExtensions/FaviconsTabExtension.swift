@@ -26,6 +26,13 @@ protocol FaviconUserScriptProvider {
 }
 extension UserScripts: FaviconUserScriptProvider {}
 
+/**
+ * This Tab Extension is responsible for updating the Tab instance with the most recent favicon.
+ *
+ * It manages a `FaviconUserScript` instance, connects `FaviconManager` to it to handle favicon
+ * updates, and emits updated favicon via a published variable. The respective `Tab` instance
+ * listens to that publisher updates and sets the favicon for the tab.
+ */
 final class FaviconsTabExtension {
     let faviconManagement: FaviconManagement
     private var cancellables = Set<AnyCancellable>()

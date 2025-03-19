@@ -54,6 +54,11 @@ protocol FaviconManagement: AnyObject {
 
 }
 
+/**
+ * This extension provides convenience functions for fetching favicons at a specific size category.
+ *
+ * All functions in this extension call their more verbose equivalents with `fallBackToSmaller = false`.
+ */
 extension FaviconManagement {
     func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> URL? {
         getCachedFaviconURL(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: false)

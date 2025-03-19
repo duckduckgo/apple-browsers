@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Kingfisher
 import Common
+import DesignResourcesKit
 
 struct FaviconsHelper {
     
@@ -101,7 +102,7 @@ struct FaviconsHelper {
 
     static func createFakeFavicon(forDomain domain: String,
                                   size: CGFloat = 192,
-                                  backgroundColor: UIColor = UIColor.greyishBrown2,
+                                  backgroundColor: UIColor = UIColor(baseColor: .gray70),
                                   bold: Bool = true,
                                   preferredFakeFaviconLetters: String? = nil,
                                   letterCount: Int = 2) -> UIImage? {

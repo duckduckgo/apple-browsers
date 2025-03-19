@@ -340,7 +340,8 @@ final class AutofillLoginListViewModel: ObservableObject {
                                       vpnOn: false,
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
-                                      variant: "")
+                                      variant: "",
+                                      cookieConsentInfo: nil)
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }

@@ -335,8 +335,8 @@ struct AutofillLoginDetailsView: View {
                 Text("Duck Address").label4Style()
                 Text(viewModel.privateEmailMessage)
                     .font(.footnote)
-                    .label4Style(design: .default, foregroundColorLight: .gray50, foregroundColorDark: .gray30)
-                
+                    .label4Style(design: .default, foregroundColorLight: Color(baseColor: .gray50), foregroundColorDark: Color(baseColor: .gray30))
+
             }
             Spacer(minLength: Constants.textFieldImageSize)
             if viewModel.privateEmailStatus == .active || viewModel.privateEmailStatus == .inactive {
@@ -443,14 +443,14 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: .gray30)
+                                             foregroundColorDark: Color(baseColor: .gray30))
                                 .truncationMode(truncationMode)
                                 .frame(maxHeight: .greatestFiniteMagnitude)
                         } else {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: .gray30)
+                                             foregroundColorDark: Color(baseColor: .gray30))
                                 .truncationMode(truncationMode)
                         }
                     }
@@ -620,9 +620,9 @@ private struct ForegroundColor {
 
     var color: Color {
         if isSelected {
-            return .gray90
+            return Color(baseColor: .gray90)
         } else {
-            return .gray50
+            return Color(baseColor: .gray50)
         }
     }
 }

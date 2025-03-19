@@ -58,7 +58,11 @@ final class VPNProxyLauncher {
 
     private func statusChanged(notification: Notification) {
         Task { @MainActor in
-            let isProxyConnectionStatusChange = await proxyController.connection == notification.object as? NEVPNConnection
+            guard let connection = notification.object as? NEVPNConnection else {
+                return
+            }
+
+            let isProxyConnectionStatusChange = proxyController.isUsingConnection(connection)
 
             try await startOrStopProxyIfNeeded(isProxyConnectionStatusChange: isProxyConnectionStatusChange)
         }
@@ -127,6 +131,10 @@ final class VPNProxyLauncher {
 
     private var shouldStartProxy: Bool {
         get async {
+            guard proxyController.isRequiredForActiveFeatures else {
+                return false
+            }
+
             let proxyIsDisconnected = await proxyController.status == .disconnected
             let tunnelIsConnected = await tunnelController.status == .connected
 

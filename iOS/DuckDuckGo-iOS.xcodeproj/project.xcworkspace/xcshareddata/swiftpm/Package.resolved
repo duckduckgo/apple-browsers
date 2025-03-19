@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "a35414a0b07da7fb79255370edfe845b7a22558c",
-        "version" : "3.3.1"
+        "revision" : "30bbec9210d88411fc19ab8bd6e593a33548cf06",
+        "version" : "4.0.0"
       }
     },
     {
@@ -123,7 +123,7 @@
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
         "revision" : "fd0a479bdc9db4a9d4ae3fb691e9057f7a67c578",
-        "version" : "8.6.0"
+        "version" : "9.0.0"
       }
     },
     {

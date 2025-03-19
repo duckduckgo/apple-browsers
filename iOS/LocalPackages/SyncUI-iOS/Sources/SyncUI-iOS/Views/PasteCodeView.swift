@@ -150,7 +150,7 @@ private extension String {
 struct PasteButtonStyle: ButtonStyle {
 
     private var backgroundColor: Color {
-        .blue30
+        Color(baseColor: .blue30)
     }
 
     private var foregroundColor: Color {

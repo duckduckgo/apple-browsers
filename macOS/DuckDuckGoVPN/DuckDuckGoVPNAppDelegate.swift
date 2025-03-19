@@ -352,11 +352,11 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - VPN Update offering
 
-    private func updateExtensionUpdateOffered() {
-        updateExtensionUpdateOffered(isUsingSystemExtension: vpnAppState.isUsingSystemExtension)
+    private func refreshVPNUpdateOffered() {
+        refreshVPNUpdateOffered(isUsingSystemExtension: vpnAppState.isUsingSystemExtension)
     }
 
-    private func updateExtensionUpdateOffered(isUsingSystemExtension: Bool) {
+    private func refreshVPNUpdateOffered(isUsingSystemExtension: Bool) {
         let newValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !isUsingSystemExtension
 
         isExtensionUpdateOfferedSubject.send(newValue)
@@ -368,12 +368,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             && !vpnAppState.isUsingSystemExtension
 
         let isExtensionUpdateOfferedSubject = CurrentValueSubject<Bool, Never>(initialValue)
-
-        vpnAppState.isUsingSystemExtensionPublisher
-            .sink { [weak self] value in
-                self?.updateExtensionUpdateOffered(isUsingSystemExtension: value)
-            }
-            .store(in: &cancellables)
 
         return isExtensionUpdateOfferedSubject
 #else
@@ -479,6 +473,14 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             initialValue: isExtensionUpdateOfferedSubject.value,
             publisher: isExtensionUpdateOfferedSubject.eraseToAnyPublisher())
 
+        // Make sure that if the user switches to sysex or vice-versa, we update
+        // the offering message.
+        vpnAppState.isUsingSystemExtensionPublisher
+            .sink { [weak self] value in
+                self?.refreshVPNUpdateOffered(isUsingSystemExtension: value)
+            }
+            .store(in: &cancellables)
+
         return StatusBarMenu(
             model: model,
             onboardingStatusPublisher: onboardingStatusPublisher,
@@ -552,6 +554,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupMenuVisibility() {
         if tunnelSettings.showInMenuBar {
+            refreshVPNUpdateOffered()
             networkProtectionMenu.show()
         } else {
             networkProtectionMenu.hide()

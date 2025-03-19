@@ -355,13 +355,21 @@ final class TabTests: XCTestCase {
 
     @MainActor
     func testIfTabIsBurner_ThenFaviconManagerIsInMemory() throws {
+        let builder = TestTabExtensionsBuilder.shared
+        builder.shouldCaptureBuildCalls = true
+        defer {
+            builder.shouldCaptureBuildCalls = false
+            builder.buildCalls = []
+        }
+        builder.buildCalls = []
+
         let tab = Tab(content: .newtab)
-        let faviconsExtension: FaviconsTabExtension = try XCTUnwrap(tab.favicons as? FaviconsTabExtension)
-        XCTAssertTrue(faviconsExtension === FaviconManager.shared)
+        let faviconManagement = try XCTUnwrap(builder.buildCalls[safe: 0]?.1.faviconManagement)
+        XCTAssertTrue(faviconManagement === FaviconManager.shared)
 
         let burnerTab = Tab(content: .newtab, burnerMode: BurnerMode(isBurner: true))
-        let burnerFaviconsExtension: FaviconsTabExtension = try XCTUnwrap(burnerTab.favicons as? FaviconsTabExtension)
-        XCTAssertTrue(burnerFaviconsExtension !== FaviconManager.shared)
+        let burnerFaviconManagement = try XCTUnwrap(builder.buildCalls[safe: 1]?.1.faviconManagement)
+        XCTAssertTrue(burnerFaviconManagement !== FaviconManager.shared)
     }
 
     // MARK: - Control Center Media Session enabled

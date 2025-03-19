@@ -1,7 +1,7 @@
 //
-//  DataBrokerAuthenticationManagerBuilder.swift
+//  VPNBypassServiceExtensions.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -19,13 +19,12 @@
 import Foundation
 import DataBrokerProtection
 import DataBrokerProtectionShared
-import Subscription
+import NetworkProtectionProxy
 
-final public class DataBrokerAuthenticationManagerBuilder {
-
-    static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
-        let settings = DataBrokerProtectionSettings(defaults: .dbp)
-        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings)
-        return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
+extension VPNBypassService {
+    public convenience init() {
+        self.init(dbpSettings: DataBrokerProtectionSettings(defaults: .dbp),
+                  backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
+                  proxySettings: TransparentProxySettings(defaults: .netP))
     }
 }

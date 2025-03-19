@@ -32,6 +32,7 @@ protocol DBPUIScanOps: AnyObject {
 public final class DBPUIViewModel {
     private let dataManager: DataBrokerProtectionDataManaging
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
+    private let vpnBypassService: VPNBypassServiceProvider?
 
     private let privacyConfig: PrivacyConfigurationManaging?
     private let prefs: ContentScopeProperties?
@@ -42,6 +43,7 @@ public final class DBPUIViewModel {
 
     public init(dataManager: DataBrokerProtectionDataManaging,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
+                vpnBypassService: VPNBypassServiceProvider? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
@@ -49,6 +51,7 @@ public final class DBPUIViewModel {
                 webView: WKWebView? = nil) {
         self.dataManager = dataManager
         self.agentInterface = agentInterface
+        self.vpnBypassService = vpnBypassService
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
         self.privacyConfig = privacyConfig
@@ -61,11 +64,11 @@ public final class DBPUIViewModel {
         guard let prefs = prefs else { return nil }
 
         let configuration = WKWebViewConfiguration()
-        let settings = DataBrokerProtectionSettings(defaults: .dbp, proxySettings: .init(defaults: .netP))
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
                                               delegate: dataManager.cache,
-                                              webUISettings: webUISettings, dataBrokerProtectionSettings: settings)
+                                              webUISettings: webUISettings,
+                                              vpnBypassService: vpnBypassService)
         dataManager.cache.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

@@ -41,12 +41,6 @@ public enum ErrorCategory: Equatable {
     }
 }
 
-public enum VPNBypassStatus: String {
-    case on
-    case off
-    case unsupported
-}
-
 public enum DataBrokerProtectionSharedPixels {
 
     public struct Consts {

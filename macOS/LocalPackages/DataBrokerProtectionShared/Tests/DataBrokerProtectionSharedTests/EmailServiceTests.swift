@@ -45,7 +45,7 @@ final class EmailServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append({ _ in throw MockError.someError })
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -69,7 +69,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -91,7 +91,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -110,7 +110,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -140,7 +140,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -173,7 +173,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -197,7 +197,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -224,7 +224,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -251,7 +251,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -272,7 +272,7 @@ final class EmailServiceTests: XCTestCase {
         mockAuthenticationManager.authHeaderValue = nil
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {
@@ -293,7 +293,7 @@ final class EmailServiceTests: XCTestCase {
 
         let sut = EmailService(urlSession: mockURLSession,
                                authenticationManager: mockAuthenticationManager,
-                               settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)),
+                               settings: DataBrokerProtectionSettings(defaults: .standard),
                                servicePixel: servicePixel)
 
         do {

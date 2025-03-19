@@ -120,7 +120,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
             .textWithDetail(
                 icon: Image(.window16),
                 title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
-                detail: "(\(proxySettings.excludedApps.count))",
+                detail: "(\(proxySettings.excludedAppsMinusDBPAgent.count))",
                 action: { [weak self] in
                     self?.manageExcludedApps()
             }),

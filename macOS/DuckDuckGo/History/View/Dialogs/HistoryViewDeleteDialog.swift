@@ -33,7 +33,7 @@ struct HistoryViewDeleteDialog: ModalView {
                     .fixMultilineScrollableText()
                     .font(.system(size: 15).weight(.semibold))
 
-                Text(.init(UserText.deleteHistoryMessage(items: model.entriesCountString)))
+                Text(.init(model.message))
                     .multilineTextAlignment(.center)
                     .fixMultilineScrollableText()
                     .font(.system(size: 13))
@@ -66,6 +66,7 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(height: 28)
                 }
                 .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0))
+                .accessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
 
                 Button {
                     model.delete()
@@ -77,6 +78,7 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(height: 28)
                 }
                 .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0))
+                .accessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
 
             }
         }

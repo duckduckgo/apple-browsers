@@ -17,26 +17,76 @@
 //
 
 import Foundation
+import Common
+import Networking
 
 /// Temporary bridge between auth v1 and v2, this is implemented by SubscriptionManager V1 and V2
 public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider {
-    func isEnabled(feature: Entitlement.ProductName) async -> Bool
+
+    func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool
     func currentSubscriptionFeatures() async -> [Entitlement.ProductName]
     func signOut(notifyUI: Bool) async
     var canPurchase: Bool { get }
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
     func url(for type: SubscriptionURL) -> URL
     var email: String? { get }
+    var currentEnvironment: SubscriptionEnvironment { get }
+    func urlForPurchaseFromRedirect(redirectURLComponents: URLComponents, tld: TLD) -> URL
+}
+
+extension SubscriptionAuthV1toV2Bridge {
+
+    public func isEnabled(feature: Entitlement.ProductName) async throws -> Bool {
+        try await isEnabled(feature: feature, cachePolicy: .returnCacheDataElseLoad)
+    }
+}
+
+extension Entitlement.ProductName {
+
+    public var subscriptionEntitlement: SubscriptionEntitlement {
+        switch self {
+        case .networkProtection:
+            return .networkProtection
+        case .dataBrokerProtection:
+            return .dataBrokerProtection
+        case .identityTheftRestoration:
+            return .identityTheftRestoration
+        case .identityTheftRestorationGlobal:
+            return .identityTheftRestorationGlobal
+        case .unknown:
+            return .unknown
+        }
+    }
+}
+
+extension SubscriptionEntitlement {
+
+    public var product: Entitlement.ProductName {
+        switch self {
+        case .networkProtection:
+            return .networkProtection
+        case .dataBrokerProtection:
+            return .dataBrokerProtection
+        case .identityTheftRestoration:
+            return .identityTheftRestoration
+        case .identityTheftRestorationGlobal:
+            return .identityTheftRestorationGlobal
+        case .unknown:
+            return .unknown
+        }
+    }
 }
 
 extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
-    public func isEnabled(feature: Entitlement.ProductName) async -> Bool {
-        if case .success(let hasEntitlements) = await accountManager.hasEntitlement(forProductName: .networkProtection,
-                                                                                    cachePolicy: .reloadIgnoringLocalCacheData), hasEntitlements {
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+
+        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+        switch result {
+        case .success(let hasEntitlements):
             return hasEntitlements
-        } else {
-            return false
+        case .failure(let error):
+            throw error
         }
     }
 
@@ -64,36 +114,15 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
 extension DefaultSubscriptionManagerV2: SubscriptionAuthV1toV2Bridge {
 
-    public func isEnabled(feature: Entitlement.ProductName) async -> Bool {
-        switch feature {
-        case .networkProtection:
-            return await isFeatureAvailableForUser(.networkProtection)
-        case .dataBrokerProtection:
-            return await isFeatureAvailableForUser(.dataBrokerProtection)
-        case .identityTheftRestoration:
-            return await isFeatureAvailableForUser(.identityTheftRestoration)
-        case .identityTheftRestorationGlobal:
-            return await isFeatureAvailableForUser(.identityTheftRestorationGlobal)
-        case .unknown:
-            return false
-        }
+    public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
+        return try await isFeatureAvailableForUser(feature.subscriptionEntitlement)
     }
 
     public func currentSubscriptionFeatures() async -> [Entitlement.ProductName] {
-        await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
-            switch subscriptionFeatureV2.entitlement {
-            case .networkProtection:
-                return .networkProtection
-            case .dataBrokerProtection:
-                return .dataBrokerProtection
-            case .identityTheftRestoration:
-                return .identityTheftRestoration
-            case .identityTheftRestorationGlobal:
-                return .identityTheftRestorationGlobal
-            case .unknown:
-                return nil
-            }
+        let result = try? await currentSubscriptionFeatures(forceRefresh: false).compactMap { subscriptionFeatureV2 in
+            subscriptionFeatureV2.entitlement.product
         }
+        return result ?? []
     }
 
     public var email: String? { userEmail }

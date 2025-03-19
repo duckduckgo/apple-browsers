@@ -149,6 +149,10 @@ public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStri
     public var debugDescription: String {
         return self.rawValue
     }
+
+    public static func areEntitlementsEqual(_ lhs: [SubscriptionEntitlement]?, _ rhs: [SubscriptionEntitlement]?) -> Bool {
+        return Set(lhs ?? []) == Set(rhs ?? [])
+    }
 }
 
 public struct EntitlementPayload: Codable, Equatable {

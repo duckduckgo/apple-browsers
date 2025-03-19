@@ -20,8 +20,13 @@ import Foundation
 import Combine
 import Common
 import BrowserServicesKit
+import AppKitExtensions
 
-public class DataBrokerProtectionSettings {
+public protocol AppRunTypeProviding: AnyObject {
+    var runType: AppVersion.AppRunType { get }
+}
+
+public final class DataBrokerProtectionSettings {
     public let defaults: UserDefaults
 
     public enum Keys {
@@ -44,10 +49,6 @@ public class DataBrokerProtectionSettings {
         }
     }
 
-    public var runType: AppVersion.AppRunType? {
-        return AppVersion.runType
-    }
-
     public init(defaults: UserDefaults) {
         self.defaults = defaults
     }
@@ -68,6 +69,11 @@ public class DataBrokerProtectionSettings {
 extension UserDefaults {
     private var selectedEnvironmentKey: String {
         "dataBrokerProtectionSelectedEnvironmentRawValue"
+    }
+
+    static let showMenuBarIconDefaultValue = false
+    private var showMenuBarIconKey: String {
+        "dataBrokerProtectionShowMenuBarIcon"
     }
 
     // MARK: - Environment

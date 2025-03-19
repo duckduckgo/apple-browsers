@@ -26,7 +26,12 @@ import Bookmarks
 // TODO fire pixels from the source specific action implementations
 extension TabSwitcherViewController {
 
-    func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String) {
+    func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String,
+                      pixel: Pixel.Event, dailyPixel: Pixel.Event) {
+
+        Pixel.fire(pixel: pixel)
+        DailyPixel.fire(pixel: dailyPixel)
+
         func tabsToBookmarks(_ controller: TabSwitcherViewController) {
             let model = MenuBookmarksViewModel(bookmarksDatabase: controller.bookmarksDatabase, syncService: controller.syncService)
             model.favoritesDisplayMode = AppDependencyProvider.shared.appSettings.favoritesDisplayMode
@@ -137,6 +142,9 @@ extension TabSwitcherViewController {
     }
 
     func closeAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherCloseAll)
+        DailyPixel.fire(pixel: .tabSwitcherCloseAllDaily)
+
         let alert = UIAlertController(
             title: UserText.alertTitleCloseAllTabs(withCount: tabsModel.count),
             message: UserText.alertMessageCloseAllTabs(withCount: tabsModel.count),
@@ -145,6 +153,7 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: tabsModel.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
+            self.fireConfirmCloseTabsPixel()
             self.delegate?.tabSwitcherDidRequestCloseAll(tabSwitcher: self)
         })
 
@@ -173,10 +182,16 @@ extension TabSwitcherViewController {
         alert.addAction(UIAlertAction(title: UserText.closeTabs(withCount: indexPaths.count),
                                       style: .destructive) { [weak self] _ in
             guard let self else { return }
+            self.fireConfirmCloseTabsPixel()
             self.deleteTabsAtIndexPaths(indexPaths)
         })
 
         present(alert, animated: true)
+    }
+
+    func fireConfirmCloseTabsPixel() {
+        Pixel.fire(pixel: .tabSwitcherConfirmCloseTabs)
+        DailyPixel.fire(pixel: .tabSwitcherConfirmCloseTabsDaily)
     }
 
     func deselectAllTabs() {
@@ -193,6 +208,9 @@ extension TabSwitcherViewController {
     }
 
     func shareTabs(_ tabs: [Tab]) {
+        Pixel.fire(pixel: .tabSwitcherSelectModeMenuShareLinks)
+        DailyPixel.fire(pixel: .tabSwitcherSelectModeMenuShareLinksDaily)
+
         let sharingItems = tabs.compactMap { $0.link?.url }
         let controller = UIActivityViewController(activityItems: sharingItems, applicationActivities: nil)
 
@@ -210,7 +228,10 @@ extension TabSwitcherViewController {
         present(controller, animated: true)
     }
 
-    func closeOtherTabs(retainingIndexPaths indexPaths: [IndexPath]) {
+    func closeOtherTabs(retainingIndexPaths indexPaths: [IndexPath], pixel: Pixel.Event, dailyPixel: Pixel.Event) {
+        Pixel.fire(pixel: pixel)
+        DailyPixel.fire(pixel: dailyPixel)
+
         let otherIndexPaths = Set<IndexPath>(tabsModel.tabs.indices.map {
             IndexPath(row: $0, section: 0)
         }).subtracting(indexPaths)
@@ -249,13 +270,15 @@ extension TabSwitcherViewController {
         topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
         toolbar.items = barsHandler.bottomBarItems
         toolbar.isHidden = barsHandler.isBottomBarHidden
+        collectionView.contentInset.bottom = barsHandler.isBottomBarHidden ? 0 : toolbar.frame.height
 
         refreshBarButtons()
     }
     
     func createMultiSelectionMenu() -> UIMenu {
+
         let otherTabCount = max(0, tabsModel.count - selectedTabs.count)
-        let selectedTabs = selectedTabs.map { tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
+        let selectedTabs = selectedTabs.map { self.tabsModel.safeGetTabAt($0.row) }.compactMap { $0 }
         let selectedTabsContainsWebPages = selectedTabs.contains(where: { $0.link != nil })
         let canShare = selectedTabsContainsWebPages
         let canAddBookmarks = selectedTabsContainsWebPages
@@ -265,8 +288,8 @@ extension TabSwitcherViewController {
         let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
         let canClose = interfaceMode.isLarge && selectedTabs.count > 0
 
-        return UIMenu(title: "", children: [
-            
+        let items = [
+
             UIMenu(title: "", options: .displayInline, children: [
                 canShowDeselectAll ? action(UserText.deselectAllTabs, "Check-Circle-16", { [weak self] in
                     self?.deselectAllTabs()
@@ -275,7 +298,7 @@ extension TabSwitcherViewController {
                     self?.selectAllTabs()
                 }) : nil,
             ].compactMap { $0 }),
-            
+
             UIMenu(title: "", options: .displayInline, children: [
                 canShare ? action(UserText.shareLinks(withCount: selectedTabs.count), "Share-Apple-16", { [weak self] in
                     self?.selectModeShareLinks()
@@ -284,7 +307,7 @@ extension TabSwitcherViewController {
                     self?.selectModeBookmarkSelected()
                 }) : nil,
             ].compactMap { $0 }),
-                        
+
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
                 canCloseOther ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), "Tab-Close-16", { [weak self] in
@@ -303,22 +326,41 @@ extension TabSwitcherViewController {
                     self?.selectModeBookmarkAll()
                 }) : nil,
             ].compactMap { $0 })
+        ]
+
+        barsHandler.canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
+
+        let deferredElement = UIDeferredMenuElement.uncached { completion in
+            Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
+            completion(items)
+        }
+
+        return UIMenu(title: "", children: [
+            deferredElement
         ])
     }
     
     func createEditMenu() -> UIMenu {
-        return UIMenu(children: [
+        let items = [
             // Force plural version for the menu - this really means "switch to select tabs mode"
             action(UserText.tabSwitcherSelectTabs(withCount: 2), "Check-Circle-16", { [weak self] in
-                self?.editMenuSelectAll()
+                self?.editMenuEnterSelectMode()
             }),
 
             UIMenu(title: "", options: [.displayInline], children: [
-                // Zero forces the 'generic' close all tabs string
-                destructive(UserText.closeAllTabs(withCount: 0), "Tab-Close-16", { [weak self] in
+                destructive(UserText.closeAllTabs, "Tab-Close-16", { [weak self] in
                     self?.editMenuCloseAllTabs()
                 })
             ]),
+        ]
+
+        let deferredElement = UIDeferredMenuElement.uncached { completion in
+            Pixel.fire(pixel: .tabSwitcherEditMenuClicked)
+            completion(items)
+        }
+
+        return UIMenu(children: [
+            deferredElement
         ])
     }
 
@@ -389,7 +431,9 @@ extension TabSwitcherViewController {
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
             self?.bookmarkTabs(withIndexPaths: self!.tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
                                title: UserText.alertTitleBookmarkAll(withCount: self!.tabsModel.count),
-                               message: UserText.alertBookmarkAllMessage)
+                               message: UserText.alertBookmarkAllMessage,
+                               pixel: .tabSwitcherSelectModeMenuBookmarkAllTabs,
+                               dailyPixel: .tabSwitcherSelectModeMenuBookmarkAllTabsDaily)
         }
 
         barsHandler.plusButton.accessibilityLabel = UserText.keyCommandNewTab
@@ -419,7 +463,7 @@ extension TabSwitcherViewController {
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
-        barsHandler.menuButton.isEnabled = barsHandler.menuButtonHasChildren()
+        barsHandler.menuButton.isEnabled = barsHandler.canShowSelectionMenu
 
         barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
@@ -432,11 +476,15 @@ extension TabSwitcherViewController {
 // MARK: Edit menu actions
 extension TabSwitcherViewController {
 
-    func editMenuSelectAll() {
+    func editMenuEnterSelectMode() {
+        Pixel.fire(pixel: .tabSwitcherEditMenuSelectTabs)
+        DailyPixel.fire(pixel: .tabSwitcherEditMenuSelectTabsDaily)
         transitionToMultiSelect()
     }
 
     func editMenuCloseAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherEditMenuCloseAllTabs)
+        DailyPixel.fire(pixel: .tabSwitcherEditMenuCloseAllTabsDaily)
         closeAllTabs()
     }
 
@@ -452,19 +500,25 @@ extension TabSwitcherViewController {
     }
 
     func selectModeCloseOtherTabs() {
-        closeOtherTabs(retainingIndexPaths: selectedTabs)
+        closeOtherTabs(retainingIndexPaths: selectedTabs,
+                       pixel: .tabSwitcherSelectModeMenuCloseOtherTabs,
+                       dailyPixel: .tabSwitcherSelectModeMenuCloseOtherTabsDaily)
     }
 
     func selectModeBookmarkAll() {
         bookmarkTabs(withIndexPaths: tabsModel.tabs.indices.map { IndexPath(row: $0, section: 0) },
                      title: UserText.alertTitleBookmarkAll(withCount: tabsModel.count),
-                     message: UserText.alertBookmarkAllMessage)
+                     message: UserText.alertBookmarkAllMessage,
+                     pixel: .tabSwitcherSelectModeMenuBookmarkAllTabs,
+                     dailyPixel: .tabSwitcherSelectModeMenuBookmarkAllTabsDaily)
     }
 
     func selectModeBookmarkSelected() {
         bookmarkTabs(withIndexPaths: selectedTabs,
                      title: UserText.alertTitleBookmarkSelectedTabs(withCount: selectedTabs.count),
-                     message: UserText.alertBookmarkAllMessage)
+                     message: UserText.alertBookmarkAllMessage,
+                     pixel: .tabSwitcherSelectModeMenuBookmarkTabs,
+                     dailyPixel: .tabSwitcherSelectModeMenuBookmarkTabsDaily)
     }
 
     func selectModeShareLinks() {
@@ -472,10 +526,14 @@ extension TabSwitcherViewController {
     }
 
     func selectModeDeselectAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherDeselectAll)
+        DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
         deselectAllTabs()
     }
 
     func selectModeSelectAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherSelectAll)
+        DailyPixel.fire(pixel: .tabSwitcherSelectAllDaily)
         selectAllTabs()
     }
 
@@ -495,22 +553,19 @@ extension TabSwitcherViewController {
     func longPressMenuBookmarkTabs(indexPaths: [IndexPath]) {
         bookmarkTabs(withIndexPaths: indexPaths,
                      title: UserText.bookmarkSelectedTabs(withCount: selectedTabs.count),
-                     message: UserText.alertBookmarkAllMessage)
-    }
-
-    func longPressMenuCloseUnselectedTabs() {
-        closeOtherTabs(retainingIndexPaths: selectedTabs)
+                     message: UserText.alertBookmarkAllMessage,
+                     pixel: .tabSwitcherLongPressBookmarkTabs,
+                     dailyPixel: .tabSwitcherLongPressBookmarkTabsDaily)
     }
 
     func longPressMenuShareLinks(tabs: [Tab]) {
+        Pixel.fire(pixel: .tabSwitcherLongPressShare)
         shareTabs(tabs)
     }
 
-    func longPressMenuBookmarkThisPage(indexPath: IndexPath) {
-        bookmarkTabAt(indexPath)
-    }
-
     func longPressMenuSelectTabs(indexPaths: [IndexPath]) {
+        Pixel.fire(pixel: .tabSwitcherLongPressSelectTabs)
+
         if !isEditing {
             transitionToMultiSelect()
         }
@@ -523,6 +578,8 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuCloseTabs(indexPaths: [IndexPath]) {
+        Pixel.fire(pixel: .tabSwitcherLongPressCloseTab)
+
         if indexPaths.count == 1 {
             // No confirmation for a single tab
             self.deleteTabsAtIndexPaths(indexPaths)
@@ -541,7 +598,9 @@ extension TabSwitcherViewController {
     }
 
     func longPressMenuCloseOtherTabs(retainingIndexPaths indexPaths: [IndexPath]) {
-        closeOtherTabs(retainingIndexPaths: indexPaths)
+        closeOtherTabs(retainingIndexPaths: indexPaths,
+                       pixel: .tabSwitcherLongPressCloseOtherTabs,
+                       dailyPixel: .tabSwitcherLongPressCloseOtherTabsDaily)
     }
 
 }

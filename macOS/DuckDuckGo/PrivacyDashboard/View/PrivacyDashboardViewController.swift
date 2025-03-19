@@ -256,7 +256,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController) {
         dismiss()
-        FeedbackPresenter.presentFeedbackForm()
+        NSApp.delegateTyped.openFeedback(nil)
     }
 
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,
@@ -363,7 +363,8 @@ extension PrivacyDashboardViewController {
                                                openerContext: currentTab.brokenSiteInfo?.inferredOpenerContext,
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
                                                jsPerformance: webVitals,
-                                               userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1)
+                                               userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
+                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged)
         return websiteBreakage
     }
 }

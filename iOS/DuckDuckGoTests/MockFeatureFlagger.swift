@@ -21,6 +21,8 @@ import BrowserServicesKit
 import Core
 
 final class MockFeatureFlagger: FeatureFlagger {
+    private(set) var didCallResolveCohort: Bool = false
+
     var internalUserDecider: InternalUserDecider
     var localOverrides: FeatureFlagLocalOverriding?
 
@@ -51,6 +53,7 @@ final class MockFeatureFlagger: FeatureFlagger {
     }
 
     func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        didCallResolveCohort = true
         return cohortToReturn
     }
 

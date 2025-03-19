@@ -19,7 +19,6 @@
 import Foundation
 import Common
 import os.log
-import DataBrokerProtectionShared
 
 enum OperationPreferredDateUpdaterOrigin {
     case optOut

@@ -219,7 +219,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertTrue(onFireButtonRun)
     }
 
-    func testWhenMakeViewForTryFireButtonAndSkipButtonIsPressedThenTrackFireButtonSkippedCalled() throws {
+    func testWhenMakeViewForTryFireButtonAndSkipButtonIsPressedThenmeasureFireButtonSkippedCalled() throws {
         // GIVEN
         let dialogType = ContextualDialogType.highFive
 
@@ -227,42 +227,42 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
-        XCTAssertTrue(reporter.trackLastDialogShownCalled)
+        XCTAssertTrue(reporter.measureLastDialogShownCalled)
     }
 
 }
 
 class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
-    var trackFireButtonSkippedCalled = false
-    var trackFireButtonTryItCalled = false
-    var trackLastDialogShownCalled = false
-    var trackSiteVisitedCalled = false
+    var measureFireButtonSkippedCalled = false
+    var measureFireButtonTryItCalled = false
+    var measureLastDialogShownCalled = false
+    var measureSiteVisitedCalled = false
 
-    func trackFireButtonSkipped() {
-        trackFireButtonSkippedCalled = true
+    func measureFireButtonSkipped() {
+        measureFireButtonSkippedCalled = true
     }
 
-    func trackLastDialogShown() {
-        trackLastDialogShownCalled = true
+    func measureLastDialogShown() {
+        measureLastDialogShownCalled = true
     }
 
-    func trackSearchSuggetionOptionTapped() {
+    func measureSearchSuggetionOptionTapped() {
     }
 
-    func trackSiteSuggetionOptionTapped() {
+    func measureSiteSuggetionOptionTapped() {
     }
 
-    func trackFireButtonTryIt() {
-        trackFireButtonTryItCalled = true
+    func measureFireButtonTryIt() {
+        measureFireButtonTryItCalled = true
     }
 
-    func trackAddressBarTypedIn() {
+    func measureAddressBarTypedIn() {
     }
 
-    func trackPrivacyDashboardOpened() {
+    func measurePrivacyDashboardOpened() {
     }
 
-    func trackSiteVisited() {
-        trackSiteVisitedCalled = true
+    func measureSiteVisited() {
+        measureSiteVisitedCalled = true
     }
 }

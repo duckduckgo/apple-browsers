@@ -34,6 +34,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     var clock: TestClock<Duration>!
     var willSleep: ((TimeInterval) -> Void)?
     var updateTask: Task<Void, Error>?
+    private var isScamProtectionSupported = false
     private var mockEventMapping: MockEventMapping!
 
     override func setUp() async throws {
@@ -49,7 +50,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
             try await clockSleeper.sleep(for: $0)
         }
 
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, sleeper: reportingSleeper, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, sleeper: reportingSleeper, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
     }
 
     override func tearDown() async throws {
@@ -74,9 +75,46 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         ]))
     }
 
+    func testUpdateHashPrefixesForScamWhenFlagOff() async throws {
+        isScamProtectionSupported = false
+        try await updateManager.updateData(for: .hashPrefixes(threatKind: .scam))
+        let dataSet = await dataManager.dataSet(for: .hashPrefixes(threatKind: .scam))
+        XCTAssertEqual(dataSet, HashPrefixSet(revision: 0, items: []))
+    }
+
+    func testUpdateHashPrefixesForScamWhenFlagOn() async throws {
+        isScamProtectionSupported = true
+        try await updateManager.updateData(for: .hashPrefixes(threatKind: .scam))
+        let dataSet = await dataManager.dataSet(for: .hashPrefixes(threatKind: .scam))
+        XCTAssertEqual(dataSet, HashPrefixSet(revision: 1, items: [
+            "aa00bb11",
+            "bb00cc11",
+            "cc00dd11",
+            "dd00ee11",
+            "a379a6f6"
+        ]))
+    }
+
     func testUpdateFilterSet() async throws {
         try await updateManager.updateData(for: .filterSet(threatKind: .phishing))
         let dataSet = await dataManager.dataSet(for: .filterSet(threatKind: .phishing))
+        XCTAssertEqual(dataSet, FilterDictionary(revision: 1, items: [
+            Filter(hash: "testhash1", regex: ".*example.*"),
+            Filter(hash: "testhash2", regex: ".*test.*")
+        ]))
+    }
+
+    func testUpdateFilterSetForScamWhenFlagIsOff() async throws {
+        isScamProtectionSupported = false
+        try await updateManager.updateData(for: .filterSet(threatKind: .scam))
+        let dataSet = await dataManager.dataSet(for: .filterSet(threatKind: .scam))
+        XCTAssertEqual(dataSet, FilterDictionary(revision: 0, items: []))
+    }
+
+    func testUpdateFilterSetForScamWhenFlagIsOn() async throws {
+        isScamProtectionSupported = true
+        try await updateManager.updateData(for: .filterSet(threatKind: .scam))
+        let dataSet = await dataManager.dataSet(for: .filterSet(threatKind: .scam))
         XCTAssertEqual(dataSet, FilterDictionary(revision: 1, items: [
             Filter(hash: "testhash1", regex: ".*example.*"),
             Filter(hash: "testhash2", regex: ".*test.*")
@@ -239,6 +277,59 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
         // expect initial update run instantly
         await fulfillment(of: [eHashPrefixesUpdated, eFilterSetUpdated], timeout: 1)
+
+        withExtendedLifetime((c1, c2)) {}
+    }
+
+    func testWhenPeriodicUpdatesStart_forScam_andFlagOn_dataSetsAreUpdated() async throws {
+        isScamProtectionSupported = true
+        self.updateIntervalProvider = { _ in 0.9 }
+
+        let eHashPrefixesUpdated = expectation(description: "Hash prefixes updated")
+        let c1 = await dataManager.publisher(for: .hashPrefixes(threatKind: .scam)).dropFirst().sink { data in
+            eHashPrefixesUpdated.fulfill()
+        }
+        let eFilterSetUpdated = expectation(description: "Filter set updated")
+        let c2 = await dataManager.publisher(for: .filterSet(threatKind: .scam)).dropFirst().sink { data in
+            eFilterSetUpdated.fulfill()
+        }
+
+        updateTask = updateManager.startPeriodicUpdates()
+        await Task.megaYield(count: 10)
+
+        // expect initial update run instantly
+        await fulfillment(of: [eHashPrefixesUpdated, eFilterSetUpdated], timeout: 1)
+
+        withExtendedLifetime((c1, c2)) {}
+    }
+
+    func testWhenPeriodicUpdatesStart_forScam_andFlagOff_dataSetsAreNotUpdated() async throws {
+        isScamProtectionSupported = false
+        self.updateIntervalProvider = { _ in 0.9 }
+
+        let eHashPrefixesNotUpdated = expectation(description: "Hash prefixes for scam should not be updated")
+        eHashPrefixesNotUpdated.isInverted = true
+
+        let c1 = await dataManager.publisher(for: .hashPrefixes(threatKind: .scam))
+            .dropFirst()
+            .sink { _ in
+                eHashPrefixesNotUpdated.fulfill()
+            }
+
+        let eFilterSetNotUpdated = expectation(description: "Filter set for scam should not be updated")
+        eFilterSetNotUpdated.isInverted = true
+
+        let c2 = await dataManager.publisher(for: .filterSet(threatKind: .scam))
+            .dropFirst()
+            .sink { _ in
+                eFilterSetNotUpdated.fulfill()
+            }
+
+        updateTask = updateManager.startPeriodicUpdates()
+
+        try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+
+        await fulfillment(of: [eHashPrefixesNotUpdated, eFilterSetNotUpdated], timeout: 1, enforceOrder: false)
 
         withExtendedLifetime((c1, c2)) {}
     }
@@ -481,7 +572,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     func testWhenUpdateDataApiFails_AndInitialLocalDatasetIsEmpty_AndErrorIsNoInternetConnection_ThenSendFailedToFetchDatasetsPixel() async {
         // GIVEN
         apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 
         // WHEN
@@ -501,7 +592,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         // GIVEN
         try await dataManager.store(HashPrefixSet(revision: 3, items: []), for: .hashPrefixes(threatKind: .phishing))
         apiClient.loadRequestError = APIRequestV2.Error.urlSession(URLError(.notConnectedToInternet))
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
         XCTAssertTrue(mockEventMapping.events.isEmpty)
 
         // WHEN

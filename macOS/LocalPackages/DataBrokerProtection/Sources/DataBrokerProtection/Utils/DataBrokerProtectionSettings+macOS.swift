@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionSettings.swift
+//  DataBrokerProtectionSettings+macOS.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import AppKitExtensions
 import BrowserServicesKit
 import DataBrokerProtectionShared
 
-extension DataBrokerProtectionSettings {
+extension DataBrokerProtectionSettings: @retroactive AppRunTypeProviding {
 
     public func updateStoredRunType() {
         storedRunType = AppVersion.runType
@@ -41,8 +41,8 @@ extension DataBrokerProtectionSettings {
         }
     }
 
-    public var runType: AppVersion.AppRunType? {
-        return storedRunType
+    public var runType: AppVersion.AppRunType {
+        return storedRunType ?? AppVersion.runType
     }
 
     // MARK: - Show in Menu Bar
@@ -63,7 +63,7 @@ extension DataBrokerProtectionSettings {
 }
 
 extension UserDefaults {
-    
+
     static let showMenuBarIconDefaultValue = false
     private var showMenuBarIconKey: String {
         "dataBrokerProtectionShowMenuBarIcon"

@@ -78,8 +78,8 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let vault: (any DataBrokerProtectionSecureVault)
 
     public init(fakeBrokerFlag: DataBrokerDebugFlag,
-         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         vault: (any DataBrokerProtectionSecureVault)) {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                vault: (any DataBrokerProtectionSecureVault)) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
@@ -241,9 +241,9 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func updateSubmittedSuccessfullyDate(_ date: Date?,
-                                         forBrokerId brokerId: Int64,
-                                         profileQueryId: Int64,
-                                         extractedProfileId: Int64) throws {
+                                                forBrokerId brokerId: Int64,
+                                                profileQueryId: Int64,
+                                                extractedProfileId: Int64) throws {
         do {
             try vault.updateSubmittedSuccessfullyDate(
                 date,
@@ -258,9 +258,9 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func updateSevenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                               forBrokerId brokerId: Int64,
-                                               profileQueryId: Int64,
-                                               extractedProfileId: Int64) throws {
+                                                      forBrokerId brokerId: Int64,
+                                                      profileQueryId: Int64,
+                                                      extractedProfileId: Int64) throws {
         do {
             try vault.updateSevenDaysConfirmationPixelFired(
                 pixelFired,
@@ -275,9 +275,9 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func updateFourteenDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                  forBrokerId brokerId: Int64,
-                                                  profileQueryId: Int64,
-                                                  extractedProfileId: Int64) throws {
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
         do {
             try vault.updateFourteenDaysConfirmationPixelFired(
                 pixelFired,
@@ -292,9 +292,9 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     }
 
     public func updateTwentyOneDaysConfirmationPixelFired(_ pixelFired: Bool,
-                                                   forBrokerId brokerId: Int64,
-                                                   profileQueryId: Int64,
-                                                   extractedProfileId: Int64) throws {
+                                                          forBrokerId brokerId: Int64,
+                                                          profileQueryId: Int64,
+                                                          extractedProfileId: Int64) throws {
         do {
             try vault.updateTwentyOneDaysConfirmationPixelFired(
                 pixelFired,

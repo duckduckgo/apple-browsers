@@ -55,8 +55,8 @@ public struct DefaultDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerPr
     }
 
     public func customOptOutStats(startDate: Date?,
-                           endDate: Date,
-                           andQueryData queryData: [BrokerProfileQueryData]) -> CustomOptOutStats {
+                                  endDate: Date,
+                                  andQueryData queryData: [BrokerProfileQueryData]) -> CustomOptOutStats {
 
         var customIndividualDataBrokerStats: [CustomIndividualDataBrokerStat] = []
         var totalGlobalOptOuts: Int = 0

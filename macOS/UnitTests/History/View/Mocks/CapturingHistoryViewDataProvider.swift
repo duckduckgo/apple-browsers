@@ -21,7 +21,7 @@ import HistoryView
 
 final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
 
-    var ranges: [DataModel.HistoryRange] {
+    var ranges: [DataModel.HistoryRangeWithCount] {
         rangesCallCount += 1
         return _ranges
     }
@@ -30,9 +30,9 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
         resetCacheCallCount += 1
     }
 
-    func visitsBatch(for query: DataModel.HistoryQueryKind, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
-        visitsBatchCalls.append(.init(query: query, limit: limit, offset: offset))
-        return await visitsBatch(query, limit, offset)
+    func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch {
+        visitsBatchCalls.append(.init(query: query, source: source, limit: limit, offset: offset))
+        return await visitsBatch(query, source, limit, offset)
     }
 
     func deleteVisits(for identifiers: [VisitIdentifier]) async {
@@ -62,7 +62,7 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     }
 
     // swiftlint:disable:next identifier_name
-    var _ranges: [DataModel.HistoryRange] = []
+    var _ranges: [DataModel.HistoryRangeWithCount] = []
     var rangesCallCount: Int = 0
     var resetCacheCallCount: Int = 0
 
@@ -76,13 +76,14 @@ final class CapturingHistoryViewDataProvider: HistoryViewDataProviding {
     var burnVisitsForIdentifiersCalls: [[VisitIdentifier]] = []
 
     var visitsBatchCalls: [VisitsBatchCall] = []
-    var visitsBatch: (DataModel.HistoryQueryKind, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _ in .init(finished: true, visits: []) }
+    var visitsBatch: (DataModel.HistoryQueryKind, DataModel.HistoryQuerySource, Int, Int) async -> DataModel.HistoryItemsBatch = { _, _, _, _ in .init(finished: true, visits: []) }
 
     var titlesForURLsCalls: [[URL]] = []
     var titlesForURLs: ([URL]) -> [URL: String] = { _ in [:] }
 
     struct VisitsBatchCall: Equatable {
         let query: DataModel.HistoryQueryKind
+        let source: DataModel.HistoryQuerySource
         let limit: Int
         let offset: Int
     }

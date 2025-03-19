@@ -19,7 +19,12 @@
 import Combine
 import Foundation
 
-public final class TransparentProxySettings {
+public protocol TransparentProxySettingsProviding: AnyObject {
+    func isExcluding(appIdentifier: String) -> Bool
+    subscript(bundleId bundleID: String) -> VPNRoutingRule? { get set }
+}
+
+public final class TransparentProxySettings: TransparentProxySettingsProviding {
     public enum Change: Codable {
         case appRoutingRules(_ routingRules: VPNAppRoutingRules)
         case excludedDomains(_ excludedDomains: [String])
@@ -78,6 +83,20 @@ public final class TransparentProxySettings {
             }
 
             return bundleID
+        }
+    }
+
+    public subscript(bundleId bundleID: String) -> VPNRoutingRule? {
+        get {
+            appRoutingRules[bundleID]
+        }
+
+        set {
+            if let newValue {
+                appRoutingRules[bundleID] = newValue
+            } else {
+                appRoutingRules.removeValue(forKey: bundleID)
+            }
         }
     }
 

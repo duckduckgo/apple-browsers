@@ -20,6 +20,7 @@ import XCTest
 import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionProxy
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 import Combine
 

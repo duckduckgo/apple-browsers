@@ -32,8 +32,9 @@ import DataBrokerProtectionShared
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                                    accountManager: AccountManager) -> DataBrokerProtectionAgentManager {
+    private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassServiceProvider) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
@@ -96,7 +97,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
-        let emailService = EmailService(authenticationManager:authenticationManager,
+        let emailService = EmailService(authenticationManager: authenticationManager,
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
@@ -119,7 +120,9 @@ public class DataBrokerProtectionAgentManagerProvider {
             runnerProvider: runnerProvider,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
-            userNotificationService: notificationService)
+            userNotificationService: notificationService,
+            dataBrokerProtectionSettings: dbpSettings,
+            vpnBypassService: vpnBypassService)
 
         return DataBrokerProtectionAgentManager(
             userNotificationService: notificationService,
@@ -139,8 +142,6 @@ public class DataBrokerProtectionAgentManagerProvider {
 }
 
 public final class DataBrokerProtectionAgentManager {
-
-    let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
     private let userNotificationService: DataBrokerProtectionUserNotificationService
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler

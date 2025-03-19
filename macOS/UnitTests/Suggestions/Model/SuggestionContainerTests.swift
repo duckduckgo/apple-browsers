@@ -17,6 +17,11 @@
 //
 
 import Combine
+import Common
+import History
+import NetworkingTestingUtils
+import os.log
+import SnapshotTesting
 import Suggestions
 import XCTest
 
@@ -26,11 +31,11 @@ final class SuggestionContainerTests: XCTestCase {
 
     func testWhenGetSuggestionsIsCalled_ThenContainerAsksAndHoldsSuggestionsFromLoader() {
         let suggestionLoadingMock = SuggestionLoadingMock()
-        let historyCoordinatingMock = HistoryCoordinatingMock()
+        let historyCoordinatingMock = HistoryProviderMock()
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
-                                                      historyCoordinating: historyCoordinatingMock,
-                                                      bookmarkManager: LocalBookmarkManager.shared,
+                                                      historyProvider: historyCoordinatingMock,
+                                                      bookmarkProvider: LocalBookmarkManager.shared,
                                                       burnerMode: .regular)
 
         let e = expectation(description: "Suggestions updated")
@@ -53,11 +58,11 @@ final class SuggestionContainerTests: XCTestCase {
 
     func testWhenStopGettingSuggestionsIsCalled_ThenNoSuggestionsArePublished() {
         let suggestionLoadingMock = SuggestionLoadingMock()
-        let historyCoordinatingMock = HistoryCoordinatingMock()
+        let historyCoordinatingMock = HistoryProviderMock()
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
-                                                      historyCoordinating: historyCoordinatingMock,
-                                                      bookmarkManager: LocalBookmarkManager.shared,
+                                                      historyProvider: historyCoordinatingMock,
+                                                      bookmarkProvider: LocalBookmarkManager.shared,
                                                       burnerMode: .regular)
 
         suggestionContainer.getSuggestions(for: "test")
@@ -70,11 +75,11 @@ final class SuggestionContainerTests: XCTestCase {
 
     func testSuggestionLoadingCacheClearing() {
         let suggestionLoadingMock = SuggestionLoadingMock()
-        let historyCoordinatingMock = HistoryCoordinatingMock()
+        let historyCoordinatingMock = HistoryProviderMock()
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
-                                                      historyCoordinating: historyCoordinatingMock,
-                                                      bookmarkManager: LocalBookmarkManager.shared,
+                                                      historyProvider: historyCoordinatingMock,
+                                                      bookmarkProvider: LocalBookmarkManager.shared,
                                                       burnerMode: .regular)
 
         XCTAssertNil(suggestionContainer.suggestionDataCache)
@@ -101,136 +106,9 @@ final class SuggestionContainerTests: XCTestCase {
         waitForExpectations(timeout: 1)
     }
 
-    @MainActor
-    func testStandardOpenTabProviderReturnsOpenTabsWithoutCurrentAndBurnerTabs() {
-        let openTabs: [[OpenTab]] = [
-            [
-                OpenTab(title: "Example", url: URL(string: "https://example.com")!),
-                OpenTab(title: "Selected Tab", url: URL(string: "https://another-example.com")!),
-                OpenTab(title: "New Tab", url: URL.newtab),
-                OpenTab(title: "Bookmarks", url: URL.bookmarks),
-                OpenTab(title: "Settings", url: URL.settings),
-                OpenTab(title: "Last Tab", url: URL(string: "https://last.com")!),
-            ],
-            [
-                OpenTab(title: "Yet Another Example", url: URL(string: "https://yet-another-example.com")!),
-                OpenTab(title: "Yet Another Example", url: URL(string: "https://yet-another-example.com")!), // duplicate
-                OpenTab(title: "Duplicate to Selected Tab", url: URL(string: "https://another-example.com")!),
-            ]
-        ]
-        let pinnedTabs = [
-            OpenTab(title: "Pinned tab 1", url: URL(string: "https://pinned-example.com")!),
-            OpenTab(title: "Pinned tab 2", url: URL(string: "https://pinned-example-2.com")!),
-        ]
-        let burnerTabs: [[OpenTab]] = [
-            [
-                OpenTab(title: "Burner example", url: URL(string: "https://burner-example.com")!),
-                OpenTab(title: "Burner example 2", url: URL(string: "https://burner-example-1.com")!),
-            ],
-            [
-                OpenTab(title: "Burner example 3", url: URL(string: "https://burner-example-2.com")!),
-            ]
-        ]
-
-        let suggestionLoadingMock = SuggestionLoadingMock()
-
-        let burnerMode = BurnerMode(isBurner: true)
-        // Create tab collection view models for open and burner tabs
-        let tabCollectionViewModels = openTabs.map {
-            TabCollectionViewModel(tabCollection: tabCollection($0), burnerMode: .regular)
-        } + burnerTabs.map {
-            TabCollectionViewModel(tabCollection: tabCollection($0, burnerMode: burnerMode), burnerMode: burnerMode)
-        }
-
-        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManager: pinnedTabsManager(tabs: pinnedTabs),
-                                                                        tabCollectionViewModels: tabCollectionViewModels)
-
-        // Set the selected tab to the first open tab
-        windowControllersManagerMock.selectedTab = tabCollectionViewModels.first!.tabCollection.tabs[1]
-
-        // Create a suggestion container with the mock open tabs provider
-        let suggestionContainer = SuggestionContainer(burnerMode: .regular,
-                                                      windowControllersManager: windowControllersManagerMock)
-
-        // Get the standard open tabs
-        let openTabSuggestions = Set(suggestionContainer.openTabs(for: suggestionLoadingMock) as! [OpenTab])
-
-        // Verify that the standard tab provider returns the expected open tabs
-        let expectedOpenTabs = Set((openTabs.flatMap { $0 } + pinnedTabs).filter {
-            $0.url != windowControllersManagerMock.selectedTab?.content.userEditableUrl
-            && $0.title != "Duplicate Example"
-            && $0.url != .newtab
-        })
-        XCTAssertEqual(openTabSuggestions, expectedOpenTabs)
-    }
-
-    @MainActor
-    func testStandardBurnerTabProviderReturnsCurrentSessionBurnerTabs() {
-        let openTabs: [[OpenTab]] = [
-            [
-                OpenTab(title: "Example", url: URL(string: "https://example.com")!),
-                OpenTab(title: "Selected Tab", url: URL(string: "https://another-example.com")!),
-            ],
-            [
-                OpenTab(title: "Yet Another Example", url: URL(string: "https://yet-another-example.com")!),
-                OpenTab(title: "Duplicate Example", url: URL(string: "https://yet-another-example.com")!),
-            ]
-        ]
-
-        let pinnedTabs = [
-            OpenTab(title: "Pinned tab 1", url: URL(string: "https://pinned-example.com")!),
-            OpenTab(title: "Pinned tab 2", url: URL(string: "https://pinned-example-2.com")!),
-        ]
-
-        let burnerTabs: [[OpenTab]] = [
-            [
-                OpenTab(title: "Burner example", url: URL(string: "https://burner-example.com")!),
-                OpenTab(title: "Burner example 2", url: URL(string: "https://burner-example-1.com")!),
-            ],
-            [
-                OpenTab(title: "Burner example 3", url: URL(string: "https://burner-example-2.com")!),
-                OpenTab(title: "Burner example 4", url: URL(string: "https://burner-example-3.com")!),
-                OpenTab(title: "Burner example 5", url: URL(string: "https://burner-example-4.com")!),
-            ]
-        ]
-
-        let suggestionLoadingMock = SuggestionLoadingMock()
-        let burnerModes = [
-            BurnerMode(isBurner: true),
-            BurnerMode(isBurner: true),
-        ]
-
-        // Create tab collection view models for open and burner tabs
-        let tabCollectionViewModels = openTabs.map {
-            TabCollectionViewModel(tabCollection: tabCollection($0), burnerMode: .regular)
-        } + burnerTabs.enumerated().map { (index, tabs) in
-            TabCollectionViewModel(tabCollection: tabCollection(tabs, burnerMode: burnerModes[index]), burnerMode: burnerModes[index])
-        }
-
-        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManager: pinnedTabsManager(tabs: pinnedTabs),
-                                                                        tabCollectionViewModels: tabCollectionViewModels)
-
-        // Set the selected tab to the first open tab
-        windowControllersManagerMock.selectedTab = tabCollectionViewModels.last!.tabCollection.tabs.first!
-
-        // Create a suggestion container with the mock open tabs provider in burner mode
-        let suggestionContainer = SuggestionContainer(burnerMode: burnerModes[1],
-                                                      windowControllersManager: windowControllersManagerMock)
-
-        // Get the open tabs for the container with burner mode
-        let openTabSuggestions = Set(suggestionContainer.openTabs(for: suggestionLoadingMock) as! [OpenTab])
-
-        // Verify that only the burner tabs from the current burner session are returned
-        let expectedBurnerTabs = Set(burnerTabs.flatMap { $0 })
-        let filteredExpectedBurnerTabs = expectedBurnerTabs.filter { tab in
-            // Ensure that we only include tabs from the current burner session
-            ["Burner example 4", "Burner example 5"].contains(tab.title)
-        }
-        XCTAssertEqual(openTabSuggestions, filteredExpectedBurnerTabs)
-    }
 }
 
-private extension SuggestionContainerTests {
+extension SuggestionContainerTests {
 
     class WindowControllersManagerMock: WindowControllersManagerProtocol {
         var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
@@ -249,7 +127,7 @@ private extension SuggestionContainerTests {
         func unregister(_ windowController: DuckDuckGo_Privacy_Browser.MainWindowController) {
         }
 
-        func show(url: URL?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool) {
+        func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool) {
         }
 
         func showBookmarksTab() {
@@ -284,4 +162,73 @@ private extension SuggestionContainerTests {
         PinnedTabsManager(tabCollection: tabCollection(tabs))
     }
 
+    struct Bookmark: Decodable, Suggestions.Bookmark {
+        enum CodingKeys: String, CodingKey {
+            case title
+            case url="uri"
+            case isFavorite
+        }
+        let title: String
+        var url: String
+        let isFavorite: Bool
+    }
+
+    struct HistoryEntry: Decodable, Hashable, Suggestions.HistorySuggestion {
+        enum CodingKeys: String, CodingKey {
+            case title
+            case url = "uri"
+            case numberOfVisits = "visitCount"
+            case _lastVisit = "lastVisit"
+            case _failedToLoad = "failedToLoad"
+        }
+        let title: String?
+        let url: URL
+        let numberOfVisits: Int
+        let _lastVisit: Date?
+        var lastVisit: Date { _lastVisit ?? .distantPast }
+        let _failedToLoad: Bool?
+        var failedToLoad: Bool { _failedToLoad ?? false }
+
+        var identifier: UUID { Self.uuidFromHash(self.hashValue) }
+
+        private static func uuidFromHash(_ hash: Int) -> UUID {
+            // Convert the integer hash to a string
+            let hashString = String(hash)
+
+            // Create a UUID from the hash string by padding/truncating to fit UUID format
+            let paddedHashString = hashString.padding(toLength: 32, withPad: "0", startingAt: 0)
+
+            // Format the string to match UUID format (8-4-4-4-12)
+            let uuidString = "\(paddedHashString.prefix(8))-\(paddedHashString.dropFirst(8).prefix(4))-\(paddedHashString.dropFirst(12).prefix(4))-\(paddedHashString.dropFirst(16).prefix(4))-\(paddedHashString.dropFirst(20).prefix(12))"
+
+            // Create and return a UUID from the formatted string
+            return UUID(uuidString: uuidString)!
+        }
+
+    }
+
+}
+
+class HistoryProviderMock: SuggestionContainer.HistoryProvider {
+    let history: [SuggestionContainerTests.HistoryEntry]
+
+    func history(for suggestionLoading: any Suggestions.SuggestionLoading) -> [any Suggestions.HistorySuggestion] {
+        history
+    }
+
+    init(history: [SuggestionContainerTests.HistoryEntry] = []) {
+        self.history = history
+    }
+}
+
+private class BookmarkProviderMock: SuggestionContainer.BookmarkProvider {
+    let bookmarks: [SuggestionContainerTests.Bookmark]
+
+    func bookmarks(for suggestionLoading: any Suggestions.SuggestionLoading) -> [any Suggestions.Bookmark] {
+        bookmarks
+    }
+
+    init(bookmarks: [SuggestionContainerTests.Bookmark]) {
+        self.bookmarks = bookmarks
+    }
 }

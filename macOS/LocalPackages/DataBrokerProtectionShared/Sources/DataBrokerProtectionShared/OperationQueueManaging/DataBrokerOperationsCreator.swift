@@ -33,10 +33,10 @@ public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreat
     }
 
     public func operations(forOperationType operationType: OperationType,
-                    withPriorityDate priorityDate: Date?,
-                    showWebView: Bool,
-                    errorDelegate: DataBrokerOperationErrorDelegate,
-                    operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
+                           withPriorityDate priorityDate: Date?,
+                           showWebView: Bool,
+                           errorDelegate: DataBrokerOperationErrorDelegate,
+                           operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
 
         let brokerProfileQueryData = try operationDependencies.database.fetchAllBrokerProfileQueryData()
         var operations: [DataBrokerOperation] = []

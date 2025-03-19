@@ -37,7 +37,7 @@ public final class DefaultDataBrokerProtectionBackendServicePixels: DataBrokerPr
     private let settings: DataBrokerProtectionSettings
 
     public init(pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         settings: DataBrokerProtectionSettings) {
+                settings: DataBrokerProtectionSettings) {
         self.pixelHandler = pixelHandler
         self.settings = settings
     }

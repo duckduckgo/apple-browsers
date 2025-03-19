@@ -73,13 +73,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var actionID: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
+    let vpnConnectionState: String
+    let vpnBypassStatus: String
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
          dataBroker: String,
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
-         isImmediateOperation: Bool = false) {
+         isImmediateOperation: Bool = false,
+         vpnConnectionState: String,
+         vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
@@ -87,6 +91,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.dataBrokerVersion = dataBrokerVersion
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
+        self.vpnConnectionState = vpnConnectionState
+        self.vpnBypassStatus = vpnBypassStatus
     }
 
     /// Returned in milliseconds
@@ -148,7 +154,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                           attemptId: attemptId,
                                           duration: durationSinceStartTime(),
                                           tries: tries,
-                                          emailPattern: emailPattern))
+                                          emailPattern: emailPattern,
+                                          vpnConnectionState: vpnConnectionState,
+                                          vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutFillForm() {
@@ -163,15 +171,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
-                                    actionID: actionID))
+                                    actionID: actionID,
+                                    vpnConnectionState: vpnConnectionState,
+                                    vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation))
+        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBroker, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation))
+        handler.fire(.scanFailed(dataBroker: dataBroker, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireScanError(error: Error) {
@@ -210,7 +220,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 duration: durationSinceStartTime(),
                 category: errorCategory.toString,
                 details: error.localizedDescription,
-                isImmediateOperation: isImmediateOperation
+                isImmediateOperation: isImmediateOperation,
+                vpnConnectionState: vpnConnectionState,
+                vpnBypassStatus: vpnBypassStatus
             )
         )
     }

@@ -18,6 +18,7 @@
 
 import Foundation
 import XCTest
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 @objc(TestRunHelper)

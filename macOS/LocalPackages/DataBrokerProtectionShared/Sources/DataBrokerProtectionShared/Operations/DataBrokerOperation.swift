@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import NetworkProtectionIPC
 
 public protocol DataBrokerOperationDependencies {
     var database: DataBrokerProtectionRepository { get }
@@ -27,6 +28,8 @@ public protocol DataBrokerOperationDependencies {
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var userNotificationService: DataBrokerProtectionUserNotificationService { get }
+    var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
+    var vpnBypassService: VPNBypassServiceProvider? { get }
 }
 
 public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
@@ -36,19 +39,25 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let userNotificationService: DataBrokerProtectionUserNotificationService
+    public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
+    public let vpnBypassService: VPNBypassServiceProvider?
 
     public init(database: any DataBrokerProtectionRepository,
                 config: DataBrokerExecutionConfig,
                 runnerProvider: any JobRunnerProvider,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                userNotificationService: any DataBrokerProtectionUserNotificationService) {
+                userNotificationService: any DataBrokerProtectionUserNotificationService,
+                dataBrokerProtectionSettings: DataBrokerProtectionSettings,
+                vpnBypassService: VPNBypassServiceProvider? = nil) {
         self.database = database
         self.config = config
         self.runnerProvider = runnerProvider
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.userNotificationService = userNotificationService
+        self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
+        self.vpnBypassService = vpnBypassService
     }
 }
 
@@ -78,7 +87,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
     private var _isFinished = false
 
     deinit {
-        Logger.dataBrokerProtection.log("Deinit operation: \(String(describing: self.id.uuidString), privacy: .public)")
+        Logger.dataBrokerProtection.log("Deinit DataBrokerOperation: \(String(describing: self.id.uuidString), privacy: .public)")
     }
 
     init(dataBrokerID: Int64,
@@ -188,7 +197,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
             do {
                 Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
 
-                try await DataBrokerProfileQueryOperationManager().runOperation(operationData: operationData,
+                try await DataBrokerProfileQueryOperationManager(vpnIPCClient: VPNControllerXPCClient.shared, vpnBypassService: operationDependencies.vpnBypassService).runOperation(operationData: operationData,
                                                                                 brokerProfileQueryData: brokerProfileData,
                                                                                 database: operationDependencies.database,
                                                                                 notificationCenter: operationDependencies.notificationCenter,

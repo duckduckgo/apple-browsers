@@ -51,13 +51,18 @@ final class MaliciousSiteProtectionService {
             case .filterSet: .minutes(maliciousSiteProtectionFeatureFlagger.filterSetUpdateFrequency)
             }
         }
+        let supportedThreatsProvider = {
+            let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
+            return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
+        }
 
         let updateManager = MaliciousSiteProtection.UpdateManager(
             apiEnvironment: maliciousSiteProtectionAPI.environment,
             service: maliciousSiteProtectionAPI.service,
             dataManager: maliciousSiteProtectionDataManager,
             eventMapping: MaliciousSiteProtectionEventMapper.debugEvents,
-            updateIntervalProvider: remoteIntervalProvider
+            updateIntervalProvider: remoteIntervalProvider,
+            supportedThreatsProvider: supportedThreatsProvider
         )
 
         let maliciousSiteProtectionDatasetsFetcher = MaliciousSiteProtectionDatasetsFetcher(
@@ -71,7 +76,8 @@ final class MaliciousSiteProtectionService {
             api: maliciousSiteProtectionAPI,
             dataManager: maliciousSiteProtectionDataManager,
             preferencesManager: preferencesManager,
-            maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger
+            maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger,
+            supportedThreatsProvider: supportedThreatsProvider
         )
 
         // Register Malicious Site Protection background tasks to fetch datasets

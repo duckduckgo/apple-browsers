@@ -392,6 +392,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if isEditing {
+            Pixel.fire(pixel: .tabSwitcherTabSelected)
             (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
             updateUIForSelectionMode()
             refreshTitle()
@@ -406,6 +407,7 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         (collectionView.cellForItem(at: indexPath) as? TabViewCell)?.refreshSelectionAppearance()
         updateUIForSelectionMode()
         refreshTitle()
+        Pixel.fire(pixel: .tabSwitcherTabDeselected)
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
@@ -429,6 +431,8 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
         guard !indexPaths.isEmpty else { return nil }
         
         let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            Pixel.fire(pixel: .tabSwitcherLongPress)
+            DailyPixel.fire(pixel: .tabSwitcherLongPressDaily)
             return self.createLongPressMenuForTabs(atIndexPaths: indexPaths)
         }
 

@@ -20,7 +20,6 @@ import Foundation
 import BrowserServicesKit
 import os.log
 import Common
-import DataBrokerProtectionShared
 
 enum MismatchValues: Int {
     case parentSiteHasMoreMatches
@@ -44,7 +43,7 @@ public protocol MismatchCalculator {
 }
 
 public struct DefaultMismatchCalculator: MismatchCalculator {
-    
+
     let database: DataBrokerProtectionRepository
     let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 

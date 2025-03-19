@@ -42,9 +42,9 @@ public struct BrokerProfileQueryData: Sendable {
     }
 
     public init(dataBroker: DataBroker,
-         profileQuery: ProfileQuery,
-         scanJobData: ScanJobData,
-         optOutJobData: [OptOutJobData] = [OptOutJobData]()) {
+                profileQuery: ProfileQuery,
+                scanJobData: ScanJobData,
+                optOutJobData: [OptOutJobData] = [OptOutJobData]()) {
         self.profileQuery = profileQuery
         self.dataBroker = dataBroker
         self.scanJobData = scanJobData

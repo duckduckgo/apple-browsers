@@ -140,3 +140,11 @@ final class PinnedTabsManager {
         }
     }
 }
+
+extension PinnedTabsManager {
+
+    var isEmpty: Bool {
+        tabCollection.tabs.count == 0
+    }
+
+}

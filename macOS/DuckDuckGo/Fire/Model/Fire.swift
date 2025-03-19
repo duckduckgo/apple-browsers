@@ -322,12 +322,12 @@ final class Fire {
                 closeWindow(of: tabCollectionViewModel)
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
-            if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.count == 0 {
+            if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 closeWindow(of: tabCollectionViewModel)
             }
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
             mainWindowControllers.forEach {
-                if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.count == 0 {
+                if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                     $0.close()
                 }
             }

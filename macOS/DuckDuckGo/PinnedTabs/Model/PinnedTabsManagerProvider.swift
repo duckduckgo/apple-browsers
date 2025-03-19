@@ -20,21 +20,36 @@ import Combine
 
 protocol PinnedTabsManagerProviding {
 
+    /// True if per-window pinned tabs are enabled in Settings
     var arePerWindowPinnedTabsEnabled: Bool { get }
+
+    /// True if there are no pinned tabs in the whole application
     var arePinnedTabsEmpty: Bool { get }
+
+    /// Returns all currently used pinned tabs managers
     var currentPinnedTabManagers: [PinnedTabsManager] { get }
+
+    /// True if per-window pinned tabs are enabled and there are different sets of pinnned tabs present in current windows
     var areDifferentPinnedTabsPresent: Bool { get }
 
+    /// Returns a PinnedTabsManager for each window depending on the current setting
+    /// It also encapsulates a logic to migrate, in case the setting have been switched and windows are asking for a new PinnedTabsManager
     func getNewPinnedTabsManager(shouldMigrate: Bool,
                                  tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager
+
+    /// Returns a current PinnedTabsManager for a specific tab
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager?
 
+    /// Caches a set of pinned tabs
+    /// Used to restore a set of pinned tabs of the last closed window when per-window pinned tabs are used
     func cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: PinnedTabsManager?)
 
+    /// Publishes an event when the pinned tabs setting is switched
     var settingChangedPublisher: AnyPublisher<Void, Never> { get }
 
 }
 
+/// Encapsulates logic to manage per-window pinned tabs or shared pinned tabs
 final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProviding {
 
     private let tabsPreferences: TabsPreferences

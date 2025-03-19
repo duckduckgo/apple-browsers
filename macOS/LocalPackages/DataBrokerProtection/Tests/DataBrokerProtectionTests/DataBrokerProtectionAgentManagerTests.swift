@@ -71,7 +71,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
                                                                   runnerProvider: MockRunnerProvider(),
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockSharedPixelsHandler,
-                                                                  userNotificationService: mockNotificationService, dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: .standard)))
+                                                                  userNotificationService: mockNotificationService, dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
 
         mockProfile = DataBrokerProtectionProfile(
             names: [],

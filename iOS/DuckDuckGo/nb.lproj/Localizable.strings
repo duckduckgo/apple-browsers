@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Slå av";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Finn ut mer";
+"autofill.learn.more.link.title" = "[Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Vis";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Søk i passord";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Passord krypteres. Ingen andre enn du kan se dem, ikke engang vi.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Passord krypteres. Ingen andre enn du kan se dem, ikke engang vi. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Passord krypteres. Ingen andre enn du kan se dem, ikke engang vi.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Forslag";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Lagre passordet";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Be om å lagre og fylle ut automatisk";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importer passord";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Alternativer";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Rapporter et problem med Autofyll";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Fungerer ikke autofyll?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Vis";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Vis passord";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "La DuckDuckGo administrere popup-vinduer om samtykke til informasjonskapsler";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Passord";
+"settings.logins" = "Passord og autofyll";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Hovedinnstillinger";

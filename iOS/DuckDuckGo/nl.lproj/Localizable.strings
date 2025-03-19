@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Uitschakelen";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Meer informatie";
+"autofill.learn.more.link.title" = "[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Weergeven";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Wachtwoorden zoeken";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Wachtwoorden worden versleuteld. Niemand anders dan jij kunt ze zien, zelfs wij niet. [Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Wachtwoorden worden versleuteld. Niemand anders kan ze zien, zelfs wij niet.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Aanbevolen";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Wachtwoord opslaan";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Vragen om op te slaan en automatisch in te vullen";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Wachtwoorden importeren";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Opties";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Meld een probleem met automatisch invullen";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Automatisch invullen werkt niet?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Weergeven";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Wachtwoord weergeven";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Laat DuckDuckGo pop-ups voor cookietoestemming beheren";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Wachtwoorden";
+"settings.logins" = "Wachtwoorden en automatisch invullen";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Hoofdinstellingen";

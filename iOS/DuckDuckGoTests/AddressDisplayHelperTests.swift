@@ -23,7 +23,7 @@ import XCTest
 
 class AddressDisplayHelperTests: XCTestCase {
 
-    private typealias AddressHelper = OmniBar.AddressDisplayHelper
+    private typealias AddressHelper = OmniBarView.AddressDisplayHelper
 
     func testDeemphasisePathDoesNotCrash() {
         

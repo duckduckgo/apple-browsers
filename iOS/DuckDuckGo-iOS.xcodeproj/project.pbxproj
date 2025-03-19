@@ -1355,7 +1355,7 @@
 		F1BDDBFF2C340D9C00459306 /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BDDBFB2C340D9C00459306 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */; };
 		F1BDDC022C340DDF00459306 /* SyncManagementViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BDDC002C340DDF00459306 /* SyncManagementViewModelTests.swift */; };
 		F1BE54581E69DE1000FCF649 /* TutorialSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1BE54571E69DE1000FCF649 /* TutorialSettings.swift */; };
-		F1C4A70E1E57725800A6CA1B /* OmniBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C4A70D1E57725800A6CA1B /* OmniBar.swift */; };
+		F1C4A70E1E57725800A6CA1B /* OmniBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C4A70D1E57725800A6CA1B /* OmniBarView.swift */; };
 		F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CA3C361F045878005FADB3 /* PrivacyStore.swift */; };
 		F1CA3C391F045885005FADB3 /* PrivacyUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CA3C381F045885005FADB3 /* PrivacyUserDefaults.swift */; };
 		F1CA3C3B1F045B65005FADB3 /* Authenticator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1CA3C3A1F045B65005FADB3 /* Authenticator.swift */; };
@@ -3459,7 +3459,7 @@
 		F1BDDBFB2C340D9C00459306 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureTests.swift; sourceTree = "<group>"; };
 		F1BDDC002C340DDF00459306 /* SyncManagementViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SyncManagementViewModelTests.swift; sourceTree = "<group>"; };
 		F1BE54571E69DE1000FCF649 /* TutorialSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TutorialSettings.swift; sourceTree = "<group>"; };
-		F1C4A70D1E57725800A6CA1B /* OmniBar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmniBar.swift; sourceTree = "<group>"; };
+		F1C4A70D1E57725800A6CA1B /* OmniBarView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OmniBarView.swift; sourceTree = "<group>"; };
 		F1CA3C361F045878005FADB3 /* PrivacyStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyStore.swift; sourceTree = "<group>"; };
 		F1CA3C381F045885005FADB3 /* PrivacyUserDefaults.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrivacyUserDefaults.swift; sourceTree = "<group>"; };
 		F1CA3C3A1F045B65005FADB3 /* Authenticator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Authenticator.swift; sourceTree = "<group>"; };
@@ -7365,7 +7365,7 @@
 			children = (
 				31CE145B2D5505520027F11D /* OmnibarDependencyProvider.swift */,
 				F114C55A1E66EB020018F95F /* NibLoading.swift */,
-				F1C4A70D1E57725800A6CA1B /* OmniBar.swift */,
+				F1C4A70D1E57725800A6CA1B /* OmniBarView.swift */,
 				6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */,
 				98D16975250CE707009513CC /* OmniBar.xib */,
 				F130D7391E5776C500C45811 /* OmniBarDelegate.swift */,
@@ -9121,7 +9121,7 @@
 				9F254AB12CF48A6B0063B308 /* SpecialErrorPageNavigationHandler+SSL.swift in Sources */,
 				1DDF402D2BA09482006850D9 /* SettingsMainSettingsView.swift in Sources */,
 				85010502292FB1000033978F /* FireproofFaviconUpdater.swift in Sources */,
-				F1C4A70E1E57725800A6CA1B /* OmniBar.swift in Sources */,
+				F1C4A70E1E57725800A6CA1B /* OmniBarView.swift in Sources */,
 				981CA7EA2617797500E119D5 /* MainViewController+AddFavoriteFlow.swift in Sources */,
 				CBF259BD2D4E56E900AC63E4 /* ReportingService.swift in Sources */,
 				373608902ABB1E6C00629E7F /* FavoritesDisplayModeStorage.swift in Sources */,

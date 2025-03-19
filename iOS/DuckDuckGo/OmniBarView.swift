@@ -26,14 +26,14 @@ import DuckPlayer
 import os.log
 import BrowserServicesKit
 
-extension OmniBar: NibLoading {}
+extension OmniBarView: NibLoading {}
 
 public enum OmniBarIcon: String {
     case duckPlayer = "DuckPlayerURLIcon"
     case specialError = "Globe-24"
 }
 
-class OmniBar: UIView {
+class OmniBarView: UIView {
 
     enum AccessoryType {
          case share
@@ -103,8 +103,8 @@ class OmniBar: UIView {
     // Set up a view to add a custom icon to the Omnibar
     private var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
-    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> OmniBar {
-        let omniBar = OmniBar.load(nibName: "OmniBar")
+    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> OmniBarView {
+        let omniBar = OmniBarView.load(nibName: "OmniBar")
         omniBar.state = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
         omniBar.refreshState(omniBar.state)
         return omniBar
@@ -599,11 +599,11 @@ class OmniBar: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: OmniBar.didLayoutNotification, object: self)
+        NotificationCenter.default.post(name: OmniBarView.didLayoutNotification, object: self)
     }
 }
 
-extension OmniBar: UITextFieldDelegate {
+extension OmniBarView: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         self.refreshState(self.state.onEditingStartedState)
         return true
@@ -642,7 +642,7 @@ extension OmniBar: UITextFieldDelegate {
     }
 }
 
-extension OmniBar {
+extension OmniBarView {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
@@ -681,7 +681,7 @@ extension OmniBar {
     }
 }
 
-extension OmniBar {
+extension OmniBarView {
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
         if state.dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) {

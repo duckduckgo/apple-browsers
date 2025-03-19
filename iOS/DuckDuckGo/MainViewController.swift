@@ -1826,7 +1826,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.tabBarContainer
     }
 
-    var omniBar: OmniBar {
+    var omniBar: OmniBarView {
         viewCoordinator.omniBar
     }
 
@@ -2135,7 +2135,7 @@ extension MainViewController: OmniBarDelegate {
         return tabURL.isDuckDuckGoSearch
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
 
@@ -2156,7 +2156,7 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
         skipSERPFlow = false
@@ -2177,7 +2177,7 @@ extension MainViewController: OmniBarDelegate {
         hideNotificationBarIfBrokenSitePromptShown(afterRefresh: true)
     }
 
-    func onAccessoryPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryPressed(accessoryType: OmniBarView.AccessoryType) {
         hideSuggestionTray()
 
         switch accessoryType {
@@ -2219,7 +2219,7 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .openAIChatFromAddressBar)
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryLongPressed(accessoryType: OmniBarView.AccessoryType) {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {

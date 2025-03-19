@@ -31,7 +31,7 @@ class MainViewCoordinator {
     var navigationBarContainer: UIView!
     var navigationBarCollectionView: MainViewFactory.NavigationBarCollectionView!
     var notificationBarContainer: UIView!
-    var omniBar: OmniBar!
+    var omniBar: OmniBarView!
     var progress: ProgressView!
     var statusBackground: UIView!
     var suggestionTrayContainer: UIView!

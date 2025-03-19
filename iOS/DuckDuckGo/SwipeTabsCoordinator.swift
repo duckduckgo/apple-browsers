@@ -326,7 +326,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let omniBar = OmniBar.loadFromXib(dependencies: omnibarDependencies)
+            let omniBar = OmniBarView.loadFromXib(dependencies: omnibarDependencies)
 
             cell.omniBar = omniBar
             cell.omniBar?.translatesAutoresizingMaskIntoConstraints = false
@@ -356,7 +356,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
 class OmniBarCell: UICollectionViewCell {
     
-    weak var omniBar: OmniBar? {
+    weak var omniBar: OmniBarView? {
         didSet {
             subviews.forEach { $0.removeFromSuperview() }
             if let omniBar {

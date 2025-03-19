@@ -82,7 +82,7 @@ extension MainViewFactory {
     }
 
     private func createOmniBar() {
-        coordinator.omniBar = OmniBar.loadFromXib(dependencies: omnibarDependencies)
+        coordinator.omniBar = OmniBarView.loadFromXib(dependencies: omnibarDependencies)
         coordinator.omniBar.translatesAutoresizingMaskIntoConstraints = false
     }
     

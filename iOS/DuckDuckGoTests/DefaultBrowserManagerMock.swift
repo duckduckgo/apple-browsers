@@ -23,7 +23,7 @@ import Foundation
 final class DefaultBrowserManagerMock: DefaultBrowserManaging {
     private(set) var didCallDefaultBrowserInfo: Bool = false
 
-    var resultToReturn: DefaultBrowserInfoResult = .success(newInfo: .stub)
+    var resultToReturn: DefaultBrowserInfoResult = .successful(isDefaultBrowser: true)
 
     func defaultBrowserInfo() -> DefaultBrowserInfoResult {
         didCallDefaultBrowserInfo = true
@@ -31,12 +31,22 @@ final class DefaultBrowserManagerMock: DefaultBrowserManaging {
     }
 }
 
-extension DefaultBrowserInfo {
-    static let stub = DefaultBrowserInfo(
-        isDefaultBrowser: true,
-        lastSuccessfulCheckDate: 1741586108000,
-        lastAttemptedCheckDate: 1741586108000,
-        numberOfTimesChecked: 1,
-        nextRetryAvailableDate: nil
-    )
+extension DefaultBrowserInfoResult {
+
+    static func successful(isDefaultBrowser: Bool) -> DefaultBrowserInfoResult {
+        .success(
+            newInfo:
+                DefaultBrowserInfo(
+                    isDefaultBrowser: isDefaultBrowser,
+                    lastSuccessfulCheckDate: 1741586108000,
+                    lastAttemptedCheckDate: 1741586108000,
+                    numberOfTimesChecked: 1,
+                    nextRetryAvailableDate: nil
+                )
+        )
+    }
+
+    static func failed(reason: Failure) -> DefaultBrowserInfoResult {
+        .failure(reason)
+    }
 }

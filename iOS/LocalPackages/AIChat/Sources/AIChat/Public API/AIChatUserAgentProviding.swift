@@ -1,5 +1,6 @@
 //
-//  CertificateTrustEvaluator.swift
+//  AIChatUserAgentProviding.swift
+//  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -18,15 +19,13 @@
 
 import Foundation
 
-protocol CertificateTrustEvaluating {
-    func evaluateCertificateTrust(trust: SecTrust?) async -> Bool?
-}
+/// A protocol for generating a user agent string based on a given URL.
+public protocol AIChatUserAgentProviding {
 
-struct CertificateTrustEvaluator: CertificateTrustEvaluating {
-    func evaluateCertificateTrust(trust: SecTrust?) async -> Bool? {
-        var error: CFError?
-        guard let trust = trust else { return nil }
-        let result = SecTrustEvaluateWithError(trust, &error)
-        return result
-    }
+    /// Returns a user agent string for the specified URL.
+    ///
+    /// - Parameter url: An optional URL to customize the user agent. If `nil`, a default
+    ///                  user agent should be returned.
+    /// - Returns: A `String` representing the user agent for the given URL.
+    func userAgent(url: URL?) -> String
 }

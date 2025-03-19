@@ -31,7 +31,7 @@ public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
     }
 
     // This requires VPN system extension, so App Store version is not currently supported
-    public var vpnBypassSupport: Bool {
+    public var isSupported: Bool {
 #if APPSTORE
 #if NETP_SYSTEM_EXTENSION
         return true
@@ -43,11 +43,11 @@ public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
 #endif
     }
 
-    public var vpnBypassEnabled: Bool {
+    public var isEnabled: Bool {
         proxySettings.isExcluding(appIdentifier: backgroundAgentBundleId)
     }
 
-    public var vpnBypassOnboardingShown: Bool {
+    public var isOnboardingShown: Bool {
         get {
             DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown
         }
@@ -57,8 +57,8 @@ public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
         }
     }
 
-    public var vpnBypassStatus: VPNBypassStatus {
-        guard vpnBypassSupport else { return .unsupported }
+    public var bypassStatus: VPNBypassStatus {
+        guard isSupported else { return .unsupported }
         return proxySettings.isExcluding(appIdentifier: backgroundAgentBundleId) ? .on : .off
     }
 

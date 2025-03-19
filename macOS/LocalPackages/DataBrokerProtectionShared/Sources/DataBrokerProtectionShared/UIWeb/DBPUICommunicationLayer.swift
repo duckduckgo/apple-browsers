@@ -35,10 +35,10 @@ public enum VPNBypassStatus: String {
 }
 
 public protocol VPNBypassFeatureProviding: AnyObject {
-    var vpnBypassSupport: Bool { get }
-    var vpnBypassEnabled: Bool { get }
-    var vpnBypassStatus: VPNBypassStatus { get }
-    var vpnBypassOnboardingShown: Bool { get set }
+    var isSupported: Bool { get }
+    var isEnabled: Bool { get }
+    var bypassStatus: VPNBypassStatus { get }
+    var isOnboardingShown: Bool { get set }
 
     func applyVPNBypass(_ bypass: Bool)
 }
@@ -334,7 +334,7 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnBypassFeatureProvider.vpnBypassSupport]
+                DBPDeviceCapability.excludeVpnTraffic: vpnBypassFeatureProvider.isSupported]
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -343,7 +343,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getVPNBypassSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNBypassConfigSetting(enabled: vpnBypassFeatureProvider.vpnBypassOnboardingShown ? vpnBypassFeatureProvider.vpnBypassEnabled : nil)
+        DBPUIVPNBypassConfigSetting(enabled: vpnBypassFeatureProvider.isOnboardingShown ? vpnBypassFeatureProvider.isEnabled : nil)
     }
 
     func setVPNBypassSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -353,7 +353,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             throw DBPUIError.malformedRequest
         }
 
-        vpnBypassFeatureProvider.vpnBypassOnboardingShown = true
+        vpnBypassFeatureProvider.isOnboardingShown = true
 
         await delegate?.applyVPNBypassSetting(result.enabled)
 

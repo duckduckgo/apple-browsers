@@ -444,16 +444,16 @@ private extension DBPEndToEndTests {
     }
 
     final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
-        var vpnBypassSupport: Bool
-        var vpnBypassEnabled: Bool
-        var vpnBypassStatus: VPNBypassStatus
-        var vpnBypassOnboardingShown: Bool
+        var isSupported: Bool
+        var isEnabled: Bool
+        var bypassStatus: VPNBypassStatus
+        var isOnboardingShown: Bool
 
         init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
-            self.vpnBypassSupport = vpnBypassSupport
-            self.vpnBypassEnabled = vpnBypassEnabled
-            self.vpnBypassStatus = vpnBypassStatus
-            self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
+            self.isSupported = vpnBypassSupport
+            self.isEnabled = vpnBypassEnabled
+            self.bypassStatus = vpnBypassStatus
+            self.isOnboardingShown = vpnBypassOnboardingShown
         }
 
         func applyVPNBypass(_ bypass: Bool) {}

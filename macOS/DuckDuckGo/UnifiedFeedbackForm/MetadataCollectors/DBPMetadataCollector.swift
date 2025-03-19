@@ -45,7 +45,7 @@ final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
     func collectMetadata() async -> DBPFeedbackMetadata {
         DBPFeedbackMetadata(
             vpnConnectionState: vpnIPCClient.connectionStatusObserver.recentValue.description,
-            vpnBypassStatus: VPNBypassFeatureProvider().vpnBypassStatus.rawValue
+            vpnBypassStatus: VPNBypassFeatureProvider().bypassStatus.rawValue
         )
     }
 }

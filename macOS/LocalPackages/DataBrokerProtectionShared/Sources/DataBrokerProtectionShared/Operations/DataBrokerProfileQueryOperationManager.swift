@@ -82,7 +82,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
 
     private var vpnBypassStatus: String {
-        vpnBypassFeatureProvider?.vpnBypassStatus.rawValue ?? "unknown"
+        vpnBypassFeatureProvider?.bypassStatus.rawValue ?? "unknown"
     }
 
     internal func runOperation(operationData: BrokerJobData,

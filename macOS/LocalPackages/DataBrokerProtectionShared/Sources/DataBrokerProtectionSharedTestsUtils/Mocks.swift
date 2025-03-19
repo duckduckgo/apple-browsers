@@ -168,16 +168,16 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
 }
 
 public final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
-    public var vpnBypassSupport: Bool
-    public var vpnBypassEnabled: Bool
-    public var vpnBypassStatus: VPNBypassStatus
-    public var vpnBypassOnboardingShown: Bool
+    public var isSupported: Bool
+    public var isEnabled: Bool
+    public var bypassStatus: VPNBypassStatus
+    public var isOnboardingShown: Bool
 
     public init(vpnBypassSupport: Bool = false, vpnBypassEnabled: Bool = false, vpnBypassStatus: VPNBypassStatus = .unsupported, vpnBypassOnboardingShown: Bool = false) {
-        self.vpnBypassSupport = vpnBypassSupport
-        self.vpnBypassEnabled = vpnBypassEnabled
-        self.vpnBypassStatus = vpnBypassStatus
-        self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
+        self.isSupported = vpnBypassSupport
+        self.isEnabled = vpnBypassEnabled
+        self.bypassStatus = vpnBypassStatus
+        self.isOnboardingShown = vpnBypassOnboardingShown
     }
 
     public func applyVPNBypass(_ bypass: Bool) {}

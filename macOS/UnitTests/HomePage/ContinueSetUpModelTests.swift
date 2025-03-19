@@ -33,7 +33,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var coookiePopupProtectionPreferences: MockCookiePopupProtectionPreferencesPersistor!
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()

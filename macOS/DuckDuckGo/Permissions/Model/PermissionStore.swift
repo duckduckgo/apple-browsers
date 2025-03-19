@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 protocol PermissionStore: AnyObject {
     func loadPermissions() throws -> [PermissionEntity]
@@ -44,7 +45,7 @@ final class LocalPermissionStore: PermissionStore {
     private var context: NSManagedObjectContext? {
         if case .none = _context {
 #if DEBUG
-            guard NSApp.runType.requiresEnvironment else {
+            guard AppVersion.runType.requiresEnvironment else {
                 _context = .some(.none)
                 return .none
             }

@@ -63,6 +63,7 @@ final class GenericAttributionPixelHandler: AttributionPixelHandler {
             self.parameters(additionalParameters, withOrigin: origin, locale: locale.identifier),
             nil,
             nil,
+            nil,
             true, { _, _ in }
         )
     }
@@ -90,6 +91,7 @@ extension GenericAttributionPixelHandler {
         _ headers: [String: String],
         _ parameters: [String: String]?,
         _ error: Error?,
+        _ namePrefix: String?,
         _ allowedQueryReservedCharacters: CharacterSet?,
         _ includeAppVersionParameter: Bool,
         _ onComplete: @escaping (Bool, Error?) -> Void

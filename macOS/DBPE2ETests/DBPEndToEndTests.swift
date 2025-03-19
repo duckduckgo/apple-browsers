@@ -17,6 +17,7 @@
 //
 
 @testable import DataBrokerProtection
+@testable import DataBrokerProtectionShared
 import BrowserServicesKit
 import LoginItems
 import XCTest
@@ -45,13 +46,12 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     vpnBypassSettings: VPNBypassSettingsProvidingMock(),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 
@@ -440,18 +440,6 @@ private extension DBPEndToEndTests {
                      addresses: [.init(city: "Dallas", state: "TX")],
                      phones: [],
                      birthYear: birthYear)
-    }
-
-    final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
-        var vpnBypassSupport: Bool
-        var vpnBypass: Bool
-        var vpnBypassOnboardingShown: Bool
-
-        init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
-            self.vpnBypassSupport = vpnBypassSupport
-            self.vpnBypass = vpnBypass
-            self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
-        }
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {

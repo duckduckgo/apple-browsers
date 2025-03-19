@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import Subscription
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import PixelKit
 import Common
 import Networking

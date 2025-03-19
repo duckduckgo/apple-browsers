@@ -27,6 +27,7 @@ import UserScript
 import PixelKitTestingUtilities
 import os.log
 import DataBrokerProtection
+import DataBrokerProtectionShared
 
 @available(macOS 12.0, *)
 final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {

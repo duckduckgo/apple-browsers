@@ -82,11 +82,11 @@ final class MainWindowController: NSWindowController {
 #if DEBUG
         return false
 #elseif REVIEW
-        if Application.runType == .uiTests {
+        if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             return false
         } else {
-            if Application.runType == .uiTestsOnboarding {
+            if AppVersion.runType == .uiTestsOnboarding {
                 Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             }
             let onboardingIsComplete = OnboardingViewModel.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked

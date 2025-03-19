@@ -33,7 +33,7 @@ protocol BookmarkManager: AnyObject {
     func getBookmark(forUrl url: String) -> Bookmark?
     func getBookmark(forVariantUrl variantURL: URL) -> Bookmark?
     func getBookmarkFolder(withId id: String) -> BookmarkFolder?
-    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?) -> Bookmark?
+    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?, completion: @escaping (Error?) -> Void) -> Bookmark?
     func makeBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType)
     func makeFolder(named title: String, parent: BookmarkFolder?, completion: @escaping (Result<BookmarkFolder, Error>) -> Void)
     func remove(bookmark: Bookmark, undoManager: UndoManager?)
@@ -71,11 +71,11 @@ protocol BookmarkManager: AnyObject {
     func requestSync()
 }
 extension BookmarkManager {
-    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool) -> Bookmark? {
-        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil)
+    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, completion: @escaping (Error?) -> Void = { _ in }) -> Bookmark? {
+        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil, completion: completion)
     }
-    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?) -> Bookmark? {
-        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: index, parent: parent)
+    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int?, parent: BookmarkFolder?, completion: @escaping (Error?) -> Void = { _ in }) -> Bookmark? {
+        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: index, parent: parent, completion: completion)
     }
     func move(objectUUIDs: [String], toIndex index: Int?, withinParentFolder parent: ParentFolderType) {
         move(objectUUIDs: objectUUIDs, toIndex: index, withinParentFolder: parent) { _ in }
@@ -203,10 +203,10 @@ final class LocalBookmarkManager: BookmarkManager {
     }
 
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool) -> Bookmark? {
-        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil)
+        makeBookmark(for: url, title: title, isFavorite: isFavorite, index: nil, parent: nil, completion: { _ in })
     }
 
-    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int? = nil, parent: BookmarkFolder? = nil) -> Bookmark? {
+    @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, index: Int? = nil, parent: BookmarkFolder? = nil, completion: @escaping (Error?) -> Void) -> Bookmark? {
         guard list != nil else { return nil }
 
         guard !isUrlBookmarked(url: url) else {
@@ -227,6 +227,7 @@ final class LocalBookmarkManager: BookmarkManager {
             self?.foldersStore.lastBookmarkSingleTabFolderIdUsed = parent?.id
             self?.loadBookmarks()
             self?.requestSync()
+            completion(error)
         }
 
         return bookmark

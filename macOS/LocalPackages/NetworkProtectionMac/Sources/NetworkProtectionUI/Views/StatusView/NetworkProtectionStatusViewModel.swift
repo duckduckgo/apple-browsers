@@ -354,48 +354,66 @@ extension NetworkProtectionStatusView {
         var shouldShowSubscriptionExpired: Bool = false
 
         var promptActionViewModel: PromptActionView.Model? {
-#if !DEBUG
+#if !APPSTORE && !DEBUG
             guard Bundle.main.isInApplicationDirectory else {
-                return PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
-                    self?.tunnelControllerViewModel.moveToApplications()
-                }
+                return moveToApplicationsActionPromptModel
             }
 #endif
 
             guard !loginItemNeedsApproval else {
-                return PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in
-                    self?.openLoginItemSettings()
-                }
+                return loginItemsActionPromptModel
             }
 
             switch onboardingStatus {
             case .isOnboarding(let step):
                 switch step {
                 case .userNeedsToAllowExtension, .userNeedsToAllowVPNConfiguration:
-                    return PromptActionView.Model(onboardingStep: step, isMenuBar: self.isMenuBarStatusView) { [weak self] in
-                        self?.tunnelControllerViewModel.startNetworkProtection()
-                    }
+                    return onboardingActionPromptModel(forStep: step)
                 }
             case .completed:
                 if isExtensionUpdateOffered {
-                    return PromptActionView.Model(
-                        icon: .giftNew96,
-                        title: UserText.vpnAppStoreSysexUpdatePromptTitle,
-                        description: [
-                            .init(text: UserText.vpnAppStoreSysexUpdatePromptMessage)
-                        ],
-                        actionTitle: UserText.vpnAppStoreSysexUpdatePromptActionButtonTitle,
-                        actionScreenshot: nil) { [weak self] in
-                            guard let strongSelf = self else { return }
-
-                            Task {
-                                await strongSelf.uninstallHandler(.update)
-                            }
-                        }
+                    return updateVPNActionPromptModel
                 }
 
                 return nil
             }
+        }
+
+#if !APPSTORE && !DEBUG
+        private var moveToApplicationsActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
+                self?.tunnelControllerViewModel.moveToApplications()
+            }
+        }
+#endif
+
+        private var loginItemsActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in
+                self?.openLoginItemSettings()
+            }
+        }
+
+        private func onboardingActionPromptModel(forStep step: OnboardingStep) -> PromptActionView.Model {
+            PromptActionView.Model(onboardingStep: step, isMenuBar: self.isMenuBarStatusView) { [weak self] in
+                self?.tunnelControllerViewModel.startNetworkProtection()
+            }
+        }
+
+        private var updateVPNActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(
+                icon: .giftNew96,
+                title: UserText.vpnAppStoreSysexUpdatePromptTitle,
+                description: [
+                    .init(text: UserText.vpnAppStoreSysexUpdatePromptMessage)
+                ],
+                actionTitle: UserText.vpnAppStoreSysexUpdatePromptActionButtonTitle,
+                actionScreenshot: nil) { [weak self] in
+                    guard let strongSelf = self else { return }
+
+                    Task {
+                        await strongSelf.uninstallHandler(.update)
+                    }
+                }
         }
 
         @Published

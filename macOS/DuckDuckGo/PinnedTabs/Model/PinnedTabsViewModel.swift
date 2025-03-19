@@ -100,7 +100,7 @@ final class PinnedTabsViewModel: ObservableObject {
 
     private let tabsDidReorderSubject = PassthroughSubject<[Tab], Never>()
     private let contextMenuActionSubject = PassthroughSubject<ContextMenuAction, Never>()
-    private(set) var tabsCancellable: AnyCancellable?
+    private var tabsCancellable: AnyCancellable?
     private var dragMovesWindowCancellable: AnyCancellable?
     private var fireproofDomains: FireproofDomains
     private var bookmarkManager: BookmarkManager

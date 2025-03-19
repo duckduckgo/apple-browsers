@@ -155,6 +155,7 @@ extension ExcludedDomainsViewController: NSTableViewDataSource, NSTableViewDeleg
 
         cell.textField?.stringValue = domain
         cell.imageView?.image = faviconManagement.getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: .small)?.image
+        cell.imageView?.applyFaviconStyle()
 
         return cell
     }

@@ -111,6 +111,7 @@ extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDele
             let domain = fireproofDomains[row]
             cell.textField?.stringValue = domain
             cell.imageView?.image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
+            cell.imageView?.applyFaviconStyle()
 
             return cell
         }

@@ -42,7 +42,14 @@ class BookmarkFoldersViewController: UITableViewController {
         guard let viewModel = viewModel else { return 0 }
         return viewModel.locations.count
     }
-    
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        self.tableView.sectionIndexBackgroundColor = UIColor(designSystemColor: .background)
+        self.tableView.separatorColor = ThemeManager.shared.currentTheme.tableCellSeparatorColor
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         tableView.backgroundColor = UIColor(designSystemColor: .background)
@@ -273,6 +280,40 @@ class FavoriteCell: UITableViewCell {
 
     static let reuseIdentifier = "FavoriteCell"
 
+    @IBOutlet weak var iconImageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
     @IBOutlet var favoriteToggle: UISwitch!
 
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+    }
+}
+
+class BookmarksDeleteButtonCell: UITableViewCell {
+ 
+    @IBOutlet weak var deleteButton: UILabel!
+    static let reuseIdentifier = "BookmarksDeleteButtonCell"
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+        deleteButton.textColor = UIColor(designSystemColor: .buttonsDeleteGhostText)
+    }
+}
+
+class AddFolderCell: UITableViewCell {
+    
+    @IBOutlet weak var iconImageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
+    static let reuseIdentifier = "AddFolderCell"
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.tintColor = UIColor(designSystemColor: .icons)
+        label.textColor = UIColor(designSystemColor: .textPrimary)
+    }
 }

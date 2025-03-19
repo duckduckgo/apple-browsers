@@ -422,6 +422,7 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
 
     func refreshBarButtons() {
+        barsHandler.tabSwitcherStyleButton.accessibilityLabel = tabsStyle.accessibilityLabel
         barsHandler.tabSwitcherStyleButton.primaryAction = action(image: tabsStyle.rawValue, { [weak self] in
             guard let self else { return }
             self.onTabStyleChange()
@@ -441,6 +442,7 @@ extension TabSwitcherViewController {
             self?.addNewTab()
         })
 
+        barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
         barsHandler.fireButton.primaryAction = action(image: "FireLeftPadded") { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
@@ -460,6 +462,7 @@ extension TabSwitcherViewController {
             self?.deselectAllTabs()
         }
 
+        barsHandler.menuButton.accessibilityLabel = "More Menu"
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()

@@ -19,6 +19,8 @@
 import XCTest
 import WebKit
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 
@@ -27,7 +29,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: true)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
@@ -52,7 +54,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
         let mockDelegate = MockDelegate()
         let handshakeUserData = DBPUIHandshakeUserData(isAuthenticatedUser: false)
         mockDelegate.handshakeUserDataToReturn = handshakeUserData
-        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        var sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         sut.delegate = mockDelegate
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
@@ -74,7 +76,7 @@ final class DBPUICommunicationLayerTests: XCTestCase {
 
     func testWhenHandshakeCalled_andDelegateIsNil_thenHandshakeUserDataIsDefaultTrue() async throws {
         // Given
-        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), vpnBypassSettings: VPNBypassSettingsProvidingMock(), privacyConfig: PrivacyConfigurationManagingMock())
+        let sut = DBPUICommunicationLayer(webURLSettings: MockWebSettings(), privacyConfig: PrivacyConfigurationManagingMock())
         let handshakeParams: [String: Any] = ["version": 4]
         let scriptMessage = await WKScriptMessage()
 
@@ -107,19 +109,19 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     func getUserProfile() -> DBPUIUserProfile? { nil }
     func deleteProfileData() throws {}
     func addNameToCurrentUserProfile(_ name: DBPUIUserProfileName) -> Bool { false }
-    func setNameAtIndexInCurrentUserProfile(_ payload: DataBrokerProtection.DBPUINameAtIndex) -> Bool { false }
-    func removeNameAtIndexFromUserProfile(_ index: DataBrokerProtection.DBPUIIndex) -> Bool { false }
-    func setBirthYearForCurrentUserProfile(_ year: DataBrokerProtection.DBPUIBirthYear) -> Bool { false }
-    func addAddressToCurrentUserProfile(_ address: DataBrokerProtection.DBPUIUserProfileAddress) -> Bool { false }
-    func setAddressAtIndexInCurrentUserProfile(_ payload: DataBrokerProtection.DBPUIAddressAtIndex) -> Bool { false }
-    func removeAddressAtIndexFromUserProfile(_ index: DataBrokerProtection.DBPUIIndex) -> Bool { false }
+    func setNameAtIndexInCurrentUserProfile(_ payload: DBPUINameAtIndex) -> Bool { false }
+    func removeNameAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool { false }
+    func setBirthYearForCurrentUserProfile(_ year: DBPUIBirthYear) -> Bool { false }
+    func addAddressToCurrentUserProfile(_ address: DBPUIUserProfileAddress) -> Bool { false }
+    func setAddressAtIndexInCurrentUserProfile(_ payload: DBPUIAddressAtIndex) -> Bool { false }
+    func removeAddressAtIndexFromUserProfile(_ index: DBPUIIndex) -> Bool { false }
     func startScanAndOptOut() -> Bool { false }
 
-    func getInitialScanState() async -> DataBrokerProtection.DBPUIInitialScanState {
+    func getInitialScanState() async -> DBPUIInitialScanState {
         DBPUIInitialScanState(resultsFound: [], scanProgress: .init(currentScans: 0, totalScans: 0, scannedBrokers: []))
     }
 
-    func getMaintananceScanState() async -> DataBrokerProtection.DBPUIScanAndOptOutMaintenanceState {
+    func getMaintananceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         DBPUIScanAndOptOutMaintenanceState(
             inProgressOptOuts: [],
             completedOptOuts: [],
@@ -128,26 +130,26 @@ private final class MockDelegate: DBPUICommunicationDelegate {
         )
     }
 
-    func getDataBrokers() async -> [DataBrokerProtection.DBPUIDataBroker] {
+    func getDataBrokers() async -> [DBPUIDataBroker] {
         []
     }
 
-    func getBackgroundAgentMetadata() async -> DataBrokerProtection.DBPUIDebugMetadata {
+    func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata {
         DBPUIDebugMetadata(lastRunAppVersion: "")
     }
 
     func openSendFeedbackModal() async {}
 
-    func applyVPNBypassSetting() async {}
+    func applyVPNBypassSetting(_ bypass: Bool) async {}
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {
     var customURL: String?
     var productionURL: String = ""
     var selectedURL: String = ""
-    var selectedURLType: DataBrokerProtection.DataBrokerProtectionWebUIURLType = .production
+    var selectedURLType: DataBrokerProtectionWebUIURLType = .production
     var selectedURLHostname: String = ""
 
     func setCustomURL(_ url: String) {}
-    func setURLType(_ type: DataBrokerProtection.DataBrokerProtectionWebUIURLType) {}
+    func setURLType(_ type: DataBrokerProtectionWebUIURLType) {}
 }

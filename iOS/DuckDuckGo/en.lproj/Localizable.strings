@@ -1245,6 +1245,9 @@
 /* Text displayed when DuckPlayer is automatically enabled for Youtube */
 "duckPlayerNative.auto.label" = "Automatically";
 
+/* Label for the automatic youtun */
+"duckPlayerNative.auto.open.label" = "Auto-open Duck Player on Youtube";
+
 /* Text displayed when DuckPlayer is in off for youtube. */
 "duckPlayerNative.never.label" = "Don't Show";
 
@@ -1781,6 +1784,9 @@ https://duckduckgo.com/mac";
 
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo App for Mac";
+
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "Warn me on sites flagged for scams, phishing, or malware";
 
 /* Button that redirect the user to a web page explaining what Malicious Site Protection is */
 "malicious-site-protection.settings.footer.button.learn-more" = "Learn More";

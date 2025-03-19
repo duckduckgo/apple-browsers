@@ -415,7 +415,7 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func test_WithoutPinnedTabsManager_WhenChildTabIsInsertedAndRemoved_ThenParentIsSelectedBack() {
+    func test_WithoutPinnedTabsManager_WhenChildTabIsInsertedAndRemoved_ThenOtherChildIsSelectedBackIfPresent() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
         let childTab1 = Tab(parentTab: parentTab)
@@ -425,7 +425,7 @@ extension TabCollectionViewModelTests {
 
         tabCollectionViewModel.remove(at: .unpinned(2))
 
-        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, parentTab)
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
 
     @MainActor

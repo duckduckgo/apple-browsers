@@ -21,6 +21,7 @@ import Combine
 import Common
 import ServiceManagement
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import BrowserServicesKit
 import PixelKit
 import Networking
@@ -101,7 +102,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
 
 @main
 final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDelegate {
-    private let settings = DataBrokerProtectionSettings()
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
     private var cancellables = Set<AnyCancellable>()
     private var statusBarMenu: StatusBarMenu?
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -116,7 +117,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager)
+        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager, vpnBypassService: VPNBypassService())
         manager?.agentFinishedLaunching()
 
         setupStatusBarMenu()

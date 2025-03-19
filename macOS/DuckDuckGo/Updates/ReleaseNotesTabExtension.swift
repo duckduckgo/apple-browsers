@@ -90,7 +90,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
 
     @MainActor
     private func setUpScript(for url: URL?) {
-        guard NSApp.runType != .uiTests else {
+        guard AppVersion.runType != .uiTests else {
             return
         }
         let updateController = Application.appDelegate.updateController!
@@ -105,7 +105,7 @@ final class ReleaseNotesTabExtension: NavigationResponder {
 
     @MainActor
     func navigationDidFinish(_ navigation: Navigation) {
-        guard NSApp.runType != .uiTests, navigation.url == .releaseNotes else { return }
+        guard AppVersion.runType != .uiTests, navigation.url == .releaseNotes else { return }
         let updateController = Application.appDelegate.updateController!
         if updateController.latestUpdate?.needsLatestReleaseNote == true {
             updateController.checkForUpdateSkippingRollout()

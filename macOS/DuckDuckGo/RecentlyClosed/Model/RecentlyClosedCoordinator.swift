@@ -43,7 +43,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         self.windowControllerManager = windowControllerManager
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
 
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
         subscribeToPinnedTabsSettingChanged()
     }

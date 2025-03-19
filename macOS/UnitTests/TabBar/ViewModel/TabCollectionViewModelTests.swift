@@ -475,7 +475,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenChildTabIsInsertedAndRemoved_ThenParentIsSelectedBack() {
+    func testWhenChildTabIsInsertedAndRemovedAndThereIsAChildTabClose_ThenChildTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
         let childTab1 = Tab(parentTab: parentTab)
@@ -485,7 +485,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.remove(at: .unpinned(2))
 
-        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, parentTab)
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
 
     @MainActor

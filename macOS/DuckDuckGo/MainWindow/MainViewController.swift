@@ -86,7 +86,7 @@ final class MainViewController: NSViewController {
 
         let networkProtectionPopoverManager: NetPPopoverManager = { @MainActor in
 #if DEBUG
-            guard case .normal = NSApp.runType else {
+            guard case .normal = AppVersion.runType else {
                 return NetPPopoverManagerMock()
             }
 #endif
@@ -106,7 +106,7 @@ final class MainViewController: NSViewController {
             var connectivityIssuesObserver: ConnectivityIssueObserver!
             var controllerErrorMessageObserver: ControllerErrorMesssageObserver!
 #if DEBUG
-            if ![.normal, .integrationTests].contains(NSApp.runType) {
+            if ![.normal, .integrationTests].contains(AppVersion.runType) {
                 connectivityIssuesObserver = ConnectivityIssueObserverMock()
                 controllerErrorMessageObserver = ControllerErrorMesssageObserverMock()
             }
@@ -388,31 +388,13 @@ final class MainViewController: NSViewController {
                 defer { lastTabContent = content }
 
                 if content == .newtab {
-                    if browserTabViewController.homePageViewController?.addressBarModel.shouldShowAddressBar == true {
-                        subscribeToNTPAddressBarVisibility(of: selectedTabViewModel)
-                    } else {
-                        ntpAddressBarVisibilityCancellable?.cancel()
-                        resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
-                    }
+                    resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
                 } else {
-                    ntpAddressBarVisibilityCancellable?.cancel()
                     resizeNavigationBar(isHomePage: false, animated: false)
                 }
                 adjustFirstResponder(selectedTabViewModel: selectedTabViewModel, tabContent: content)
             }
             .store(in: &self.tabViewModelCancellables)
-    }
-
-    private var ntpAddressBarVisibilityCancellable: AnyCancellable?
-
-    private func subscribeToNTPAddressBarVisibility(of selectedTabViewModel: TabViewModel) {
-        ntpAddressBarVisibilityCancellable = browserTabViewController.homePageViewController?.appearancePreferences.$isSearchBarVisible
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isAddressBarVisible in
-                guard let self else { return }
-                resizeNavigationBar(isHomePage: !isAddressBarVisible, animated: true)
-                adjustFirstResponder(selectedTabViewModel: selectedTabViewModel, tabContent: .newtab)
-            }
     }
 
     private func subscribeToFirstResponder() {
@@ -641,9 +623,6 @@ extension MainViewController {
             }
             if let addressBarVC = navigationBarViewController.addressBarViewController {
                 isHandled = isHandled || addressBarVC.escapeKeyDown()
-            }
-            if let homePageAddressBarModel = browserTabViewController.homePageViewController?.addressBarModel {
-                isHandled = isHandled || homePageAddressBarModel.escapeKeyDown()
             }
             return isHandled
 

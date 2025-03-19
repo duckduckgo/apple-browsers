@@ -403,7 +403,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             return
         }
 
-        guard [NSApplication.RunType.normal, .uiTests].contains(NSApp.runType) else {
+        guard [AppVersion.AppRunType.normal, .uiTests].contains(AppVersion.runType) else {
             return
         }
 

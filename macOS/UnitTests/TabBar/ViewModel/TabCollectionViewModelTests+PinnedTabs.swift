@@ -216,12 +216,13 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func test_WithPinnedTabs_WhenSelectedPinnedTabIsRemovedThenNextPinnedTabWithHigherIndexIsSelected() {
+    func test_WithPinnedTabs_WhenSelectedPinnedTabIsRemovedThenLastSelectedPinnedTabIsSelected() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
         let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[2]
 
+        tabCollectionViewModel.select(at: .pinned(2))
         tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .pinned(1))
 
@@ -248,6 +249,7 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.appendPinnedTab()
         let lastPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs[1]
 
+        tabCollectionViewModel.select(at: .pinned(1))
         tabCollectionViewModel.remove(at: .unpinned(0))
 
         XCTAssertIdentical(lastPinnedTab, tabCollectionViewModel.selectedTabViewModel?.tab)
@@ -269,7 +271,7 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemoved_ThenPinnedParentIsSelectedBack() {
+    func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemoved_ThenChildTabIsSelectedBackIfPresent() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         tabCollectionViewModel.appendPinnedTab()
         let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
@@ -278,6 +280,23 @@ extension TabCollectionViewModelTests {
         tabCollectionViewModel.append(tab: childTab1, selected: false)
         let childTab2 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab2, selected: true)
+
+        tabCollectionViewModel.remove(at: .unpinned(2))
+
+        XCTAssertIdentical(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(1))
+    }
+
+    @MainActor
+    func test_WithPinnedTabs_WhenChildTabIsInsertedAndRemovedAndNoChildIsNear_ThenParentIsSelectedBack() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
+        let parentTab = tabCollectionViewModel.pinnedTabsCollection!.tabs[0]
+
+        // Append two tabs that are not parent related
+        tabCollectionViewModel.append(tab: Tab(), selected: true)
+
+        let childTab1 = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childTab1, selected: false)
 
         tabCollectionViewModel.remove(at: .unpinned(2))
 

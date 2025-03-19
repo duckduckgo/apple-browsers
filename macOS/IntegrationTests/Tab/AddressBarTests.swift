@@ -24,6 +24,8 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 import Suggestions
 import XCTest
+import SpecialErrorPages
+import PrivacyDashboard
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -921,7 +923,7 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
-        _=try await tabLoadedPromise.value
+        _ = try await tabLoadedPromise.value
 
         // THEN
         let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
@@ -1014,7 +1016,7 @@ extension NSImage {
 }
 
 class MockCertificateEvaluator: CertificateTrustEvaluating {
-    var isValidCertificate: Bool?
+    var isValidCertificate: Bool? = true
 
     func evaluateCertificateTrust(trust: SecTrust?) -> Bool? {
         return isValidCertificate

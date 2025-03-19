@@ -18,11 +18,13 @@
 
 import Foundation
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import NetworkProtectionProxy
 
 extension VPNBypassFeatureProvider {
     public convenience init() {
-        self.init(backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
+        self.init(dbpSettings: DataBrokerProtectionSettings(defaults: .dbp),
+                  backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
                   proxySettings: TransparentProxySettings(defaults: .netP))
     }
 }

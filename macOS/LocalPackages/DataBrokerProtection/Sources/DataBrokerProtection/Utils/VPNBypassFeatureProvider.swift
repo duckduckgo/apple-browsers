@@ -22,10 +22,12 @@ import Combine
 import DataBrokerProtectionShared
 
 public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
+    private let dbpSettings: DataBrokerProtectionSettings
     private let backgroundAgentBundleId: String
     private let proxySettings: TransparentProxySettingsProviding
 
-    public init(backgroundAgentBundleId: String, proxySettings: TransparentProxySettingsProviding) {
+    public init(dbpSettings: DataBrokerProtectionSettings, backgroundAgentBundleId: String, proxySettings: TransparentProxySettingsProviding) {
+        self.dbpSettings = dbpSettings
         self.backgroundAgentBundleId = backgroundAgentBundleId
         self.proxySettings = proxySettings
     }
@@ -49,11 +51,11 @@ public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
 
     public var isOnboardingShown: Bool {
         get {
-            DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown
+            dbpSettings.vpnBypassOnboardingShown
         }
 
         set {
-            DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown = newValue
+            dbpSettings.vpnBypassOnboardingShown = newValue
         }
     }
 

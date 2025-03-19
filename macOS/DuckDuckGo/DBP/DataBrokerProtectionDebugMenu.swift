@@ -292,7 +292,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func toggleVPNBypass() {
         Task {
-            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(!VPNBypassFeatureProvider().isEnabled)
+            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(!VPNBypassService().isEnabled)
         }
     }
 

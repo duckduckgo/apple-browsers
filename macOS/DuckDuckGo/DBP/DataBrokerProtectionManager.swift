@@ -33,7 +33,7 @@ public final class DataBrokerProtectionManager {
     private let pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler()
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let fakeBrokerFlag: DataBrokerDebugFlag = DataBrokerDebugFlagFakeBroker()
-    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding
+    private let vpnBypassService: VPNBypassServiceProvider
 
     private lazy var freemiumDBPFirstProfileSavedNotifier: FreemiumDBPFirstProfileSavedNotifier = {
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
@@ -79,7 +79,7 @@ public final class DataBrokerProtectionManager {
     private init() {
         self.authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
             subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
-        self.vpnBypassFeatureProvider = VPNBypassFeatureProvider()
+        self.vpnBypassService = VPNBypassService()
     }
 
     public func isUserAuthenticated() -> Bool {
@@ -108,7 +108,7 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     }
 
     public func dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(_ bypass: Bool) async {
-        vpnBypassFeatureProvider.applyVPNBypass(bypass)
+        vpnBypassService.applyVPNBypass(bypass)
         try? await Task.sleep(interval: 0.1)
         try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }

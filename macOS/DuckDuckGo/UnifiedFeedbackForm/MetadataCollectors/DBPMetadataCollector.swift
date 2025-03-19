@@ -34,18 +34,20 @@ struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
 
 final class DefaultDBPMetadataCollector: UnifiedMetadataCollector {
     private let vpnIPCClient: VPNControllerXPCClient
+    private let vpnBypassService: VPNBypassServiceProvider
 
     init() {
         let ipcClient = VPNControllerXPCClient.shared
         ipcClient.register { _ in }
 
         self.vpnIPCClient = ipcClient
+        self.vpnBypassService = VPNBypassService()
     }
 
     func collectMetadata() async -> DBPFeedbackMetadata {
         DBPFeedbackMetadata(
             vpnConnectionState: vpnIPCClient.connectionStatusObserver.recentValue.description,
-            vpnBypassStatus: VPNBypassFeatureProvider().bypassStatus.rawValue
+            vpnBypassStatus: vpnBypassService.bypassStatus.rawValue
         )
     }
 }

@@ -117,7 +117,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager, vpnBypassFeatureProvider: VPNBypassFeatureProvider())
+        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager, vpnBypassService: VPNBypassService())
         manager?.agentFinishedLaunching()
 
         setupStatusBarMenu()

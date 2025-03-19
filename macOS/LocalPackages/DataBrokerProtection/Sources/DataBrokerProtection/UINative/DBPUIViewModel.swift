@@ -32,7 +32,7 @@ protocol DBPUIScanOps: AnyObject {
 public final class DBPUIViewModel {
     private let dataManager: DataBrokerProtectionDataManaging
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
-    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding
+    private let vpnBypassService: VPNBypassServiceProvider
 
     private let privacyConfig: PrivacyConfigurationManaging?
     private let prefs: ContentScopeProperties?
@@ -43,7 +43,7 @@ public final class DBPUIViewModel {
 
     public init(dataManager: DataBrokerProtectionDataManaging,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
-                vpnBypassFeatureProvider: VPNBypassFeatureProviding,
+                vpnBypassService: VPNBypassServiceProvider,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
@@ -51,7 +51,7 @@ public final class DBPUIViewModel {
                 webView: WKWebView? = nil) {
         self.dataManager = dataManager
         self.agentInterface = agentInterface
-        self.vpnBypassFeatureProvider = vpnBypassFeatureProvider
+        self.vpnBypassService = vpnBypassService
         self.webUISettings = webUISettings
         self.pixelHandler = pixelHandler
         self.privacyConfig = privacyConfig
@@ -69,7 +69,7 @@ public final class DBPUIViewModel {
                                               prefs: prefs,
                                               delegate: dataManager.cache,
                                               webUISettings: webUISettings,
-                                              vpnBypassFeatureProvider: vpnBypassFeatureProvider)
+                                              vpnBypassService: vpnBypassService)
         dataManager.cache.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 

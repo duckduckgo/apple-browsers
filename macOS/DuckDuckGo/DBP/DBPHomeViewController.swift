@@ -32,7 +32,7 @@ public extension Notification.Name {
 final class DBPHomeViewController: NSViewController {
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
-    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding
+    private let vpnBypassService: VPNBypassServiceProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler()
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
@@ -67,7 +67,7 @@ final class DBPHomeViewController: NSViewController {
 
         return DataBrokerProtectionViewController(
             agentInterface: dataBrokerProtectionManager.loginItemInterface,
-            vpnBypassFeatureProvider: vpnBypassFeatureProvider,
+            vpnBypassService: vpnBypassService,
             dataManager: dataBrokerProtectionManager.dataManager,
             privacyConfig: privacyConfigurationManager,
             prefs: prefs,
@@ -78,11 +78,11 @@ final class DBPHomeViewController: NSViewController {
     }()
 
     init(dataBrokerProtectionManager: DataBrokerProtectionManager,
-         vpnBypassFeatureProvider: VPNBypassFeatureProviding,
+         vpnBypassService: VPNBypassServiceProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager
-        self.vpnBypassFeatureProvider = vpnBypassFeatureProvider
+        self.vpnBypassService = vpnBypassService
         self.prerequisiteVerifier = prerequisiteVerifier
         self.freemiumDBPFeature = freemiumDBPFeature
         super.init(nibName: nil, bundle: nil)

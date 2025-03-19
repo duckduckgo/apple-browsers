@@ -1,5 +1,5 @@
 //
-//  VPNBypassFeatureProviderExtensions.swift
+//  VPNBypassServiceExtensions.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DataBrokerProtection
 import DataBrokerProtectionShared
 import NetworkProtectionProxy
 
-extension VPNBypassFeatureProvider {
+extension VPNBypassService {
     public convenience init() {
         self.init(dbpSettings: DataBrokerProtectionSettings(defaults: .dbp),
                   backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,

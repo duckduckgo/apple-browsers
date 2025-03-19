@@ -46,13 +46,13 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(),
+                                                     vpnBypassService: VPNBypassServiceMock(),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, vpnBypassFeatureProvider: VPNBypassFeatureProviderMock(), webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, vpnBypassService: VPNBypassServiceMock(), webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 
@@ -443,7 +443,7 @@ private extension DBPEndToEndTests {
                      birthYear: birthYear)
     }
 
-    final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
+    final class VPNBypassServiceMock: VPNBypassServiceProvider {
         var isSupported: Bool
         var isEnabled: Bool
         var bypassStatus: VPNBypassStatus

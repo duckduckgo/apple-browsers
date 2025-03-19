@@ -958,7 +958,7 @@ final class BrowserTabViewController: NSViewController {
             let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
             let dataBrokerProtectionHomeViewController = DBPHomeViewController(
                 dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
-                vpnBypassFeatureProvider: VPNBypassFeatureProvider(),
+                vpnBypassService: VPNBypassService(),
                 freemiumDBPFeature: freemiumDBPFeature
             )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController

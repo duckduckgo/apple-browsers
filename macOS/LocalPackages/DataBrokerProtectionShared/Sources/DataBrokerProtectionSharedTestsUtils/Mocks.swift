@@ -167,7 +167,7 @@ public final class InternalUserDeciderStoreMock: InternalUserStoring {
     public var isInternalUser: Bool = false
 }
 
-public final class VPNBypassFeatureProviderMock: VPNBypassFeatureProviding {
+public final class VPNBypassServiceMock: VPNBypassServiceProvider {
     public var isSupported: Bool
     public var isEnabled: Bool
     public var bypassStatus: VPNBypassStatus
@@ -1444,7 +1444,7 @@ public extension DefaultDataBrokerOperationDependencies {
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
                                                userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                               vpnBypassFeatureProvider: VPNBypassFeatureProviderMock())
+                                               vpnBypassService: VPNBypassServiceMock())
     }
 }
 

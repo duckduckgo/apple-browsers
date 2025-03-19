@@ -1,5 +1,5 @@
 //
-//  VPNBypassFeatureProvider.swift
+//  VPNBypassService.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import NetworkProtectionProxy
 import Combine
 import DataBrokerProtectionShared
 
-public final class VPNBypassFeatureProvider: VPNBypassFeatureProviding {
+public final class VPNBypassService: VPNBypassServiceProvider {
     private let dbpSettings: DataBrokerProtectionSettings
     private let backgroundAgentBundleId: String
     private let proxySettings: TransparentProxySettingsProviding

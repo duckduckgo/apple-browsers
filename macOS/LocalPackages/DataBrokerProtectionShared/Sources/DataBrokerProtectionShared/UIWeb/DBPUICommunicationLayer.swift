@@ -34,7 +34,7 @@ public enum VPNBypassStatus: String {
     case unsupported
 }
 
-public protocol VPNBypassFeatureProviding: AnyObject {
+public protocol VPNBypassServiceProvider: AnyObject {
     var isSupported: Bool { get }
     var isEnabled: Bool { get }
     var bypassStatus: VPNBypassStatus { get }
@@ -93,7 +93,7 @@ public enum DBPUISendableMethodName: String {
 
 public struct DBPUICommunicationLayer: Subfeature {
     private let webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable
-    private let vpnBypassFeatureProvider: VPNBypassFeatureProviding
+    private let vpnBypassService: VPNBypassServiceProvider
     private let privacyConfig: PrivacyConfigurationManaging
 
     public var messageOriginPolicy: MessageOriginPolicy
@@ -107,10 +107,10 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                vpnBypassFeatureProvider: VPNBypassFeatureProviding,
+                vpnBypassService: VPNBypassServiceProvider,
                 privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
-        self.vpnBypassFeatureProvider = vpnBypassFeatureProvider
+        self.vpnBypassService = vpnBypassService
         self.privacyConfig = privacyConfig
         self.messageOriginPolicy = .only(rules: [
             .exact(hostname: webURLSettings.selectedURLHostname)
@@ -334,7 +334,7 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return [DBPDeviceCapability.useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
-                DBPDeviceCapability.excludeVpnTraffic: vpnBypassFeatureProvider.isSupported]
+                DBPDeviceCapability.excludeVpnTraffic: vpnBypassService.isSupported]
     }
 
     func openSendFeedbackModal(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -343,7 +343,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     func getVPNBypassSetting(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        DBPUIVPNBypassConfigSetting(enabled: vpnBypassFeatureProvider.isOnboardingShown ? vpnBypassFeatureProvider.isEnabled : nil)
+        DBPUIVPNBypassConfigSetting(enabled: vpnBypassService.isOnboardingShown ? vpnBypassService.isEnabled : nil)
     }
 
     func setVPNBypassSetting(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -353,7 +353,7 @@ public struct DBPUICommunicationLayer: Subfeature {
             throw DBPUIError.malformedRequest
         }
 
-        vpnBypassFeatureProvider.isOnboardingShown = true
+        vpnBypassService.isOnboardingShown = true
 
         await delegate?.applyVPNBypassSetting(result.enabled)
 

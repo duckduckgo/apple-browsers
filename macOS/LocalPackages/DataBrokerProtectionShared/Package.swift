@@ -32,6 +32,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../BrowserServicesKit"),
         .package(path: "../Freemium"),
+        .package(path: "../NetworkProtectionMac"),
     ],
     targets: [
         .target(
@@ -42,6 +43,7 @@ let package = Package(
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "Freemium", package: "Freemium"),
+                .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
             ],
             resources: [.copy("Resources")],
             swiftSettings: [

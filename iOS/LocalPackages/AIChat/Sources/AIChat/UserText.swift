@@ -21,4 +21,8 @@ import Foundation
 
 public struct UserText {
     public static let aiChatTitle = NSLocalizedString("aichat.title", value: "Duck.ai", comment: "Title for DuckDuckGo AI Chat. Should not be translated")
+    public static let downloadComplete = NSLocalizedString("aichat.download.complete", value: "Download complete for %@", comment: "Download complete for duck.ai")
+    public static let downloadToastShow = NSLocalizedString("aichat.download.show", value: "Show", comment: "Show button for downloads")
+    public static let downloadFailed = NSLocalizedString("aichat.download.failed", value: "Download failed", comment: "Download failed message")
+
 }

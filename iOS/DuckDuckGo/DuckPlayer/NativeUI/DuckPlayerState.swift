@@ -1,4 +1,3 @@
-//
 //  DuckPlayerState.swift
 //  DuckDuckGo
 //

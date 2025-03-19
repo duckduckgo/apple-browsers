@@ -4,6 +4,9 @@
 /* Bundle name */
 "CFBundleName" = "DuckDuckGo";
 
+/* (No Comment) */
+"Duck.ai" = "Duck.ai";
+
 /* Privacy - Camera Usage Description */
 "NSCameraUsageDescription" = "Позволява качване на снимки и видео";
 
@@ -30,4 +33,7 @@
 
 /* (No Comment) */
 "Search Passwords" = "Търсене на пароли";
+
+/* (No Comment) */
+"Voice Search" = "Гласово търсене";
 

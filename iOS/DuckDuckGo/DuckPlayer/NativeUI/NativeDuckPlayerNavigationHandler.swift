@@ -57,6 +57,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Cancellable for observing DuckPlayer dismissal
     @MainActor private var duckPlayerDismissalCancellable: AnyCancellable?
 
+    /// isLinkPreview is true when the DuckPlayer is opened from a link preview
+    var isLinkPreview = false
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -248,6 +251,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
 
+        // If we are in link preview mode, we don't need to show the DuckPlayer Pill
+        if isLinkPreview {
+            return .notHandled(.isLinkPreview)
+        }
+
         // Check if DuckPlayer feature is enabled
         guard featureFlagger.isFeatureOn(.duckPlayer) else {
             return .notHandled(.featureOff)
@@ -428,6 +436,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
+        isLinkPreview = hostViewController.isLinkPreview
         duckPlayer.setHostViewController(hostViewController)
     }
 
@@ -437,7 +446,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
         setHostViewController(hostViewController)
         if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
-            if !disableDuckPlayerForNextVideo {
+            if !disableDuckPlayerForNextVideo && !isLinkPreview {
                 self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
             }
         }

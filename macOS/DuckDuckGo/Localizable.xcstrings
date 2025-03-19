@@ -57115,13 +57115,13 @@
       }
     },
     "preferences-pinned-tabs-warning" : {
-      "comment" : "Warning before switching from per window pinned tabs to shared pinned tabs",
+      "comment" : "Content of warning before switching from per window pinned tabs to shared pinned tabs\nTitle of warning before switching from per window pinned tabs to shared pinned tabs",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Are you sure you want to share pinned tabs across all windows? This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again."
+            "value" : "Are you sure you want to share pinned tabs across all windows?"
           }
         }
       }

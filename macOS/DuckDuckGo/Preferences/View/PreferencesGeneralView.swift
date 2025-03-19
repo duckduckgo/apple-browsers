@@ -149,7 +149,8 @@ extension Preferences {
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(
-                                title: Text(UserText.pinnedTabsWarning),
+                                title: Text(UserText.pinnedTabsWarningTitle),
+                                message: Text(UserText.pinnedTabsWarningMessage),
                                 primaryButton: .default(Text(UserText.ok)) {
                                     // Apply the change only if confirmed
                                     if let selection = pendingSelection {

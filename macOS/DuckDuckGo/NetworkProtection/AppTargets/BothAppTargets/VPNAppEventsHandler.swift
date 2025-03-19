@@ -63,7 +63,7 @@ final class VPNAppEventsHandler {
         self.uninstaller = uninstaller
         self.featureGatekeeper = featureGatekeeper
 
-        subscribeToFeatureFlagChanges(featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler)
+        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler)
     }
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
@@ -100,7 +100,7 @@ final class VPNAppEventsHandler {
 
     // MARK: - Feature Flag Overriding
 
-    private func subscribeToFeatureFlagChanges(
+    private func subscribeToFeatureFlagOverrideChanges(
         featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>) {
 
             featureFlagOverridesPublishingHandler.flagDidChangePublisher

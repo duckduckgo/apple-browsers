@@ -38,11 +38,6 @@ final class FaviconUserScript: NSObject, Subfeature {
         let href: URL
         let rel: String
 
-        init(href: URL, rel: String) {
-            self.href = href
-            self.rel = rel
-        }
-
         func upgradedToHTTPS() -> Self? {
             guard let httpsHref = href.toHttps() else {
                 return nil

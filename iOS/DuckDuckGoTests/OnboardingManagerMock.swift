@@ -21,7 +21,7 @@ import Foundation
 import Core
 @testable import DuckDuckGo
 
-final class OnboardingManagerMock: OnboardingAddToDockManaging, OnboardingSetAsDefaultExperimentManaging, OnboardingSettingsURLProvider {
+final class OnboardingManagerMock: OnboardingSetAsDefaultExperimentManaging, OnboardingSettingsURLProvider {
     private(set) var didCallSettingsURLPath = false
 
     var isEnrolledInSetAsDefaultBrowserExperiment: Bool = false
@@ -36,8 +36,6 @@ final class OnboardingManagerMock: OnboardingAddToDockManaging, OnboardingSetAsD
             settingsURLPathToReturn = newValue
         }
     }
-
-    var addToDockEnabledState: OnboardingAddToDockState = .disabled
 
     func resolveSetAsDefaultBrowserExperimentCohort() -> OnboardingSetAsDefaultBrowserCohort? {
         nil

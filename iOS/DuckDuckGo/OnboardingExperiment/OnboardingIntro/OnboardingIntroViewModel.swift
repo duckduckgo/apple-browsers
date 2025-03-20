@@ -67,13 +67,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         self.appIconProvider = appIconProvider
         self.addressBarPositionProvider = addressBarPositionProvider
 
-        // Add to Dock experiment assigned only to iPhone users
-        introSteps = if onboardingManager.addToDockEnabledState == .intro {
-            OnboardingIntroStep.addToDockIphoneFlow
-        } else {
-            isIpad ? OnboardingIntroStep.defaultIPadFlow : OnboardingIntroStep.defaultIPhoneFlow
-        }
-
+        introSteps = isIpad ? OnboardingIntroStep.defaultIPadFlow : OnboardingIntroStep.defaultIPhoneFlow
         copy = .default
     }
 
@@ -176,7 +170,7 @@ private extension OnboardingIntroViewModel {
     }
 
     func handleSetDefaultBrowserAction() {
-        if onboardingManager.addToDockEnabledState == .intro {
+        if introSteps.contains(.addToDockPromo) {
             state = makeViewState(for: .addToDockPromo)
             pixelReporter.measureAddToDockPromoImpression()
         } else {
@@ -209,7 +203,6 @@ private enum OnboardingIntroStep {
     case addressBarPositionSelection
     case addToDockPromo
 
-    static let defaultIPhoneFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .appIconSelection, .addressBarPositionSelection]
+    static let defaultIPhoneFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
     static let defaultIPadFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .appIconSelection]
-    static let addToDockIphoneFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
 }

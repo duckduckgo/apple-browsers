@@ -2946,7 +2946,7 @@ extension MainViewController: AutoClearWorker {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if KeyboardSettings().onNewTab && !self.contextualOnboardingLogic.isShowingAddToDockDialog { // If we're showing the Add to Dock dialog prevent address bar to become first responder. We want to make sure the user focues on the Add to Dock instructions.
+            } else if KeyboardSettings().onNewTab { 
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     self.enterSearch()
                 }

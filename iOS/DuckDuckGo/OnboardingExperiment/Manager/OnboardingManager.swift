@@ -37,11 +37,10 @@ enum OnboardingAddToDockState: String, Equatable, CaseIterable, CustomStringConv
     }
 }
 
-typealias OnboardingIntroExperimentManaging = OnboardingAddToDockManaging & OnboardingSetAsDefaultExperimentManaging
+typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultExperimentManaging
 typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingIntroExperimentManaging
 
 final class OnboardingManager {
-    private var appDefaults: AppDebugSettings
     private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
@@ -61,12 +60,10 @@ final class OnboardingManager {
     }
 
     init(
-        appDefaults: AppDebugSettings = AppDependencyProvider.shared.appSettings,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
     ) {
-        self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
@@ -135,49 +132,6 @@ extension OnboardingSettingsURLProvider where Self: OnboardingSetAsDefaultExperi
             Logger.onboarding.debug("User running an iOS version lower than iOS 18.3. Returning DDG’s custom settings url in the Settings app.")
             return UIApplication.openSettingsURLString
         }
-    }
-
-}
-
-
-// MARK: - Add to Dock Experiment
-
-protocol OnboardingAddToDockManaging: AnyObject {
-    var addToDockEnabledState: OnboardingAddToDockState { get }
-}
-
-protocol OnboardingAddToDockDebugging: AnyObject {
-    var addToDockLocalFlagState: OnboardingAddToDockState { get set }
-    var isAddToDockFeatureFlagEnabled: Bool { get }
-}
-
-extension OnboardingManager: OnboardingAddToDockManaging, OnboardingAddToDockDebugging {
-
-    var addToDockEnabledState: OnboardingAddToDockState {
-        // Check if the variant supports Add to Dock
-        if variantManager.isSupported(feature: .addToDockIntro) {
-            return .intro
-        } else if variantManager.isSupported(feature: .addToDockContextual) {
-            return .contextual
-        }
-
-        // If the variant does not support Add to Dock check if it's enabled for internal users.
-        guard isAddToDockFeatureFlagEnabled && isIphone else { return .disabled }
-
-        return addToDockLocalFlagState
-    }
-
-    var addToDockLocalFlagState: OnboardingAddToDockState {
-        get {
-            appDefaults.onboardingAddToDockState
-        }
-        set {
-            appDefaults.onboardingAddToDockState = newValue
-        }
-    }
-
-    var isAddToDockFeatureFlagEnabled: Bool {
-        featureFlagger.isFeatureOn(.onboardingAddToDock)
     }
 
 }

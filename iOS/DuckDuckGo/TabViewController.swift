@@ -52,7 +52,6 @@ class TabViewController: UIViewController {
         static let navigationExpectationInterval = 3.0
     }
     
-    @IBOutlet weak var scrollView: UIScrollView!
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -1093,7 +1092,7 @@ class TabViewController: UIViewController {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
             pullToRefreshLogic?.setRefreshControlEnabled(isEnabled)
         } else {
-            scrollView.refreshControl = isEnabled ? refreshControl : nil
+            webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
         }
     }
 

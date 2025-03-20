@@ -19,6 +19,25 @@
 
 import UIKit
 
+/**
+ * PullToRefreshLogic
+ *
+ * A custom implementation of pull-to-refresh functionality that works with any UIView.
+ * This class creates a transparent background UIScrollView to display the native
+ * UIRefreshControl while transforming a target view in response to pull gestures.
+ *
+ * ## How it works:
+ * 1. A transparent "fake" scroll view is placed behind the target view to host the
+ *    standard UIRefreshControl
+ * 2. A pan gesture recognizer tracks vertical pulls on the content
+ * 3. When pulled down, the target view moves with the gesture while the refresh
+ *    control appears in the background
+ * 4. When pulled past the threshold, a refresh is triggered
+ *
+ * This approach allows for pull-to-refresh functionality in contexts where a standard
+ * UIScrollView implementation isn't possible or desirable, such as with WKWebViews.
+ *
+ */
 final class PullToRefreshLogic: NSObject {
 
     private enum Constant {
@@ -62,6 +81,19 @@ final class PullToRefreshLogic: NSObject {
     private weak var pullableView: UIView?
     private let onRefresh: () -> Void
 
+    /**
+     * Initializes the pull-to-refresh logic with the necessary components.
+     *
+     * @param scrollView The scroll view that will be monitored for scroll position.
+     *                   This is typically the main content scroll view (e.g., a WKWebView's scrollView)
+     *                   that will determine when pulling should begin.
+     *
+     * @param pullableView The view that will be transformed/moved during the pull gesture.
+     *                     This is the main content container that visually responds to the pull.
+     *
+     * @param onRefresh A closure that will be called when a refresh is triggered.
+     *                  Implement your data reloading logic in this closure.
+     */
     init(with scrollView: UIScrollView,
          pullableView: UIView,
          onRefresh: @escaping () -> Void) {
@@ -202,6 +234,10 @@ final class PullToRefreshLogic: NSObject {
         onRefresh()
     }
 
+    /**
+     * Ends the refreshing state and resets the UI.
+     * Call this method when your data reload operation completes.
+     */
     func endRefreshing() {
         didEndRefreshing = true
         if !isPulling {
@@ -210,6 +246,12 @@ final class PullToRefreshLogic: NSObject {
         }
     }
 
+    /**
+     * Enables or disables the refresh control.
+     * Use this to temporarily disable pull-to-refresh functionality.
+     *
+     * @param isEnabled Whether the refresh control should be enabled.
+     */
     func setRefreshControlEnabled(_ isEnabled: Bool) {
         if !isPulling {
             fakeScrollView.refreshControl = isEnabled ? refreshControl : nil

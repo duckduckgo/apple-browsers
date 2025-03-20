@@ -4616,7 +4616,7 @@
 		6FACA6792D8AEFF100019C87 /* Refactoring */ = {
 			isa = PBXGroup;
 			children = (
-				6FACA6822D8B062000019C87 /* OriginalImplementation */,
+				6FACA6822D8B062000019C87 /* Original */,
 				6FACA67A2D8AEFFE00019C87 /* OmniBarViewController.swift */,
 				6FACA67E2D8AFF7800019C87 /* OmniBar.swift */,
 				6FACA6802D8B02DF00019C87 /* OmniBarViewProtocol.swift */,
@@ -4624,12 +4624,15 @@
 			path = Refactoring;
 			sourceTree = "<group>";
 		};
-		6FACA6822D8B062000019C87 /* OriginalImplementation */ = {
+		6FACA6822D8B062000019C87 /* Original */ = {
 			isa = PBXGroup;
 			children = (
 				6FACA6832D8B062B00019C87 /* OriginalOmniBarViewController.swift */,
+				F1C4A70D1E57725800A6CA1B /* OmniBarView.swift */,
+				98D16975250CE707009513CC /* OmniBar.xib */,
+				F114C55A1E66EB020018F95F /* NibLoading.swift */,
 			);
-			path = OriginalImplementation;
+			path = Original;
 			sourceTree = "<group>";
 		};
 		6FB1FE9C2C24D4060075B68B /* NewTabPageSectionsDebugView */ = {
@@ -7392,10 +7395,7 @@
 			children = (
 				6FACA6792D8AEFF100019C87 /* Refactoring */,
 				31CE145B2D5505520027F11D /* OmnibarDependencyProvider.swift */,
-				F114C55A1E66EB020018F95F /* NibLoading.swift */,
-				F1C4A70D1E57725800A6CA1B /* OmniBarView.swift */,
 				6FDA1FB22B59584400AC962A /* AddressDisplayHelper.swift */,
-				98D16975250CE707009513CC /* OmniBar.xib */,
 				F130D7391E5776C500C45811 /* OmniBarDelegate.swift */,
 				F1D477C51F2126CC0031ED49 /* OmniBarState.swift */,
 				6FE095D72BD90AFB00490FF8 /* UniversalOmniBarState.swift */,

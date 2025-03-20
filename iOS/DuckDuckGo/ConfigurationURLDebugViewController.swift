@@ -52,8 +52,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     private var customURLProvider = CustomConfigurationURLProvider()
 
-    @UserDefaultsWrapper(key: .lastConfigurationRefreshDate, defaultValue: .distantPast)
-    private var lastConfigurationRefreshDate: Date
 
     @UserDefaultsWrapper(key: .lastConfigurationUpdateDate, defaultValue: nil)
     private var lastConfigurationUpdateDate: Date?
@@ -63,7 +61,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         didSet {
             customURLProvider.customPrivacyConfigurationURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
             Configuration.setURLProvider(customURLProvider)
-            lastConfigurationRefreshDate = Date.distantPast
             fetchAssets()
         }
     }
@@ -137,7 +134,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }
 
     private lazy var refreshAction = UIAction { [weak self] _ in
-        self?.lastConfigurationRefreshDate = Date.distantPast
         // Enables refreshing debug config
         self?.fetchAssets()
         self?.tableView.reloadData()

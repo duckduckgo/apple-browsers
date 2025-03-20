@@ -615,8 +615,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         let (bookmarkManager, _) = await aManager()
         let folder = try await bookmarkManager.makeFolder(named: "sample folder")
 
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder)
+        await withCheckedContinuation { continuation in
+            bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder) { _ in
+                continuation.resume()
+            }
         }
 
         XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder.id)
@@ -629,8 +631,10 @@ final class LocalBookmarkManagerTests: XCTestCase {
         let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
         var bookmark: Bookmark?
 
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1)
+        await withCheckedContinuation { continuation in
+            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1) { _ in
+                continuation.resume()
+            }
         }
 
         let id = try XCTUnwrap(bookmark?.id)
@@ -650,13 +654,17 @@ final class LocalBookmarkManagerTests: XCTestCase {
         let folder2 = try await bookmarkManager.makeFolder(named: "other sample folder")
         var bookmark: Bookmark?
 
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1)
+        await withCheckedContinuation { continuation in
+            bookmark = bookmarkManager.makeBookmark(for: URL.duckDuckGo, title: "Title", isFavorite: false, parent: folder1) { _ in
+                continuation.resume()
+            }
         }
 
         let id = try XCTUnwrap(bookmark?.id)
-        await performAndAwaitListPublisher(of: bookmarkManager) { bookmarkManager in
-            bookmarkManager.add(objectsWithUUIDs: [id], to: folder2, completion: { _ in })
+        await withCheckedContinuation { continuation in
+            bookmarkManager.add(objectsWithUUIDs: [id], to: folder2) { _ in
+                continuation.resume()
+            }
         }
 
         XCTAssertEqual(foldersStore.lastBookmarkSingleTabFolderIdUsed, folder2.id)
@@ -929,15 +937,6 @@ fileprivate extension LocalBookmarkManagerTests {
             }
         }
         return (bookmarkManager, bookmarkStoreMock)
-    }
-
-    func performAndAwaitListPublisher(of bookmarkManager: LocalBookmarkManager, block: (LocalBookmarkManager) -> Void) async {
-        var cancellable: AnyCancellable?
-        await withCheckedContinuation { continuation in
-            block(bookmarkManager)
-            cancellable = bookmarkManager.listPublisher.dropFirst().sink { _ in continuation.resume() }
-        }
-        cancellable?.cancel()
     }
 }
 

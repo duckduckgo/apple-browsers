@@ -307,23 +307,30 @@ final class Fire {
     @MainActor
     private func closeWindows(entity: BurningEntity) {
 
-        func closeWindow(of tabCollectionViewModel: TabCollectionViewModel) {
+        /// This function returns the dropping point of the closed window,
+        /// useful for opening a new window after burning in the exact same place.
+        func closeWindow(of tabCollectionViewModel: TabCollectionViewModel) -> NSPoint? {
             guard let windowController = windowControllerManager.windowController(for: tabCollectionViewModel) else {
-                return
+                return nil
             }
+            let droppingPoint = windowController.window?.frame.droppingPoint
             windowController.close()
+            return droppingPoint
         }
+
+        var newWindowDroppingPoint: NSPoint?
 
         switch entity {
         case .none:
             return
         case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel):
             if tabCollectionViewModel.tabs.count == 0 {
-                closeWindow(of: tabCollectionViewModel)
+                newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
-            closeWindow(of: tabCollectionViewModel)
+            newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
+            newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
                 $0.close()
             }
@@ -337,9 +344,9 @@ final class Fire {
             guard let self else { return }
             if self.windowControllerManager.mainWindowControllers.count == 0 {
                 if case let .allWindows(_, _, customURL) = entity, let customURL {
-                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false)
+                    WindowsManager.openNewWindow(with: customURL, source: .ui, isBurner: false, droppingPoint: newWindowDroppingPoint)
                 } else {
-                    WindowsManager.openNewWindow()
+                    WindowsManager.openNewWindow(droppingPoint: newWindowDroppingPoint)
                 }
             }
         }

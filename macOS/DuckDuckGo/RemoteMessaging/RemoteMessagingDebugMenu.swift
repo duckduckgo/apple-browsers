@@ -20,6 +20,7 @@ import AppKit
 import RemoteMessaging
 import AppKitExtensions
 import BrowserServicesKit
+import Common
 
 final class RemoteMessagingDebugMenu: NSMenu {
 
@@ -79,7 +80,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
             removeItem(at: 3)
         }
 
-        guard NSApplication.runType.requiresEnvironment, NSApp.delegateTyped.remoteMessagingClient.isRemoteMessagingDatabaseLoaded else {
+        guard AppVersion.runType.requiresEnvironment, NSApp.delegateTyped.remoteMessagingClient.isRemoteMessagingDatabaseLoaded else {
             return
         }
 

@@ -22,7 +22,7 @@ import Foundation
 
 final class CapturingUserBackgroundImagesManager: UserBackgroundImagesManaging {
 
-    init(storageLocation: URL, maximumNumberOfImages: Int = HomePage.Models.SettingsModel.Const.maximumNumberOfUserImages) {
+    init(storageLocation: URL, maximumNumberOfImages: Int = NewTabPageCustomizationModel.Const.maximumNumberOfUserImages) {
         self.storageLocation = storageLocation
         self.maximumNumberOfImages = maximumNumberOfImages
     }

@@ -242,6 +242,14 @@ extension MainViewController {
         }
     }
 
+    func segueToSettingsAIChat() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .aiChat)
+        }
+    }
+
     func segueToSettingsSync(with source: String? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

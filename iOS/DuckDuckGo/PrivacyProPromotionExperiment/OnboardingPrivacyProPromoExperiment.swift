@@ -75,19 +75,14 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
     /// A type responsible for firing experiment-related analytics pixels.
     private let experimentPixelFirer: ExperimentPixelFiring.Type
 
-    /// A manager for handling subscriptions.
-    private let subscriptionManager: SubscriptionManager?
-
     /// A manager for handling variant assignments.
     private let variantManager: VariantManager
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          experimentPixelFirer: ExperimentPixelFiring.Type = PixelKit.self,
-         subscriptionManager: SubscriptionManager? = AppDependencyProvider.shared.subscriptionManager,
          variantManager: VariantManager = DefaultVariantManager()) {
         self.featureFlagger = featureFlagger
         self.experimentPixelFirer = experimentPixelFirer
-        self.subscriptionManager = subscriptionManager
         self.variantManager = variantManager
     }
 
@@ -96,9 +91,6 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
 
         // Exclude returning users from experiment enrollment
         guard variantManager.isNewUser else { return nil }
-
-        // Exclude Privacy Pro ineligible users from experiment enrollment
-        guard subscriptionManager?.canPurchase ?? false else { return nil }
 
         return featureFlagger.resolveCohort(for: FeatureFlag.privacyProOnboardingCTAMarch25)
                 as? PrivacyProOnboardingCTAMarch25Cohort

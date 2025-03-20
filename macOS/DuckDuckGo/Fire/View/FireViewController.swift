@@ -19,6 +19,7 @@
 import Cocoa
 import Lottie
 import Combine
+import Common
 
 @MainActor
 final class FireViewController: NSViewController {
@@ -69,7 +70,7 @@ final class FireViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
-        if case .normal = NSApp.runType {
+        if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
                 await self.setupFireAnimationView()
             }

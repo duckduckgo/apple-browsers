@@ -60,7 +60,7 @@ final class FaviconManager: FaviconManagement {
     nonisolated static let shared: FaviconManager = {
         MainActor.assumeIsolated {
 #if DEBUG
-            return FaviconManager(cacheType: NSApp.runType == .normal ? .standard : .inMemory)
+            return FaviconManager(cacheType: AppVersion.runType == .normal ? .standard : .inMemory)
 #else
             return FaviconManager(cacheType: .standard)
 #endif

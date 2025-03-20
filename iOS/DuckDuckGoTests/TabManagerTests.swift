@@ -26,14 +26,14 @@ import SubscriptionTestingUtilities
 final class TabManagerTests: XCTestCase {
 
     func testWhenAppBecomesActiveAndExcessPreviewsThenCleanUpHappens() async throws {
-        let mock = MockTabPreviewsSource(_totalStoredPreviews: 4)
+        let mock = MockTabPreviewsSource(totalStoredPreviews: 4)
         let tabsModel = TabsModel(desktop: false)
         tabsModel.add(tab: Tab())
         tabsModel.add(tab: Tab())
         let manager = makeManager(tabsModel, previewsSource: mock)
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         try await Task.sleep(interval: 0.5)
-        XCTAssertEqual(1, mock._removePreviewsWithIdNotInCalls.count)
+        XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
 
         // This is just to keep a reference to the manager to supress the unused warning and keep it from being deinit
         manager.removeAll()
@@ -43,7 +43,7 @@ final class TabManagerTests: XCTestCase {
         return TabManager(model: model,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),
-                          bookmarksDatabase:  MockBookmarksDatabase.make(prepareFolderStructure: false),
+                          bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),
                           privacyProDataReporter: MockPrivacyProDataReporter(),

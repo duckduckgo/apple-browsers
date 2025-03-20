@@ -21,14 +21,13 @@ import Foundation
 import UIKit
 @testable import DuckDuckGo
 
-// Can be moved to mocks if needs to be used elsewhere (unlikely so just keep it close for now).
 class MockTabPreviewsSource: TabPreviewsSource {
 
-    var _removePreviewsWithIdNotInCalls = [Set<String>]()
-    var _totalStoredPreviews: Int?
+    var removePreviewsWithIdNotInCalls = [Set<String>]()
+    var totalStoredPreviewsReturnValue: Int?
 
-    init(_totalStoredPreviews: Int? = nil) {
-        self._totalStoredPreviews = _totalStoredPreviews
+    init(totalStoredPreviews: Int? = nil) {
+        self.totalStoredPreviewsReturnValue = totalStoredPreviews
     }
 
     func prepare() {
@@ -44,11 +43,11 @@ class MockTabPreviewsSource: TabPreviewsSource {
     }
 
     func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
-        _removePreviewsWithIdNotInCalls.append(ids)
+        removePreviewsWithIdNotInCalls.append(ids)
     }
 
     func totalStoredPreviews() -> Int? {
-        return _totalStoredPreviews
+        return totalStoredPreviewsReturnValue
     }
 
     func preview(for tab: DuckDuckGo.Tab) -> UIImage? {

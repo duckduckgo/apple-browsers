@@ -1423,7 +1423,7 @@ public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErro
 public extension DefaultDataBrokerOperationDependencies {
     static var mock: DefaultDataBrokerOperationDependencies {
         DefaultDataBrokerOperationDependencies(database: MockDatabase(),
-                                               config: DataBrokerExecutionConfig(mode: .normal),
+                                               config: DataBrokerExecutionConfig(),
                                                runnerProvider: MockRunnerProvider(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),

@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "branch" : "sam/fix-drk-alert-color",
-        "revision" : "aa2d249e9ce3aa7780f7f1b1a6a875a37e320942"
+        "revision" : "493a824c8abaf54064d8551d67c72e5ec59d2bf9",
+        "version" : "4.0.1"
       }
     },
     {

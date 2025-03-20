@@ -12791,8 +12791,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
 			requirement = {
-				branch = "sam/fix-drk-alert-color";
-				kind = branch;
+				kind = exactVersion;
+				version = 4.0.1;
 			};
 		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

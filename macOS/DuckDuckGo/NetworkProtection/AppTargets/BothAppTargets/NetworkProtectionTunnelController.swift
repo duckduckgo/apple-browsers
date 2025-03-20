@@ -625,9 +625,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         switch tunnelManager.connection.status {
         case .invalid:
+            // This means the VPN isn't configured, so let's drop our cached
+            // manager and try again
+
             guard isFirstAttempt else {
-                // This means the VPN isn't configured, so let's drop our cached
-                // manager and try again
                 throw StartError.connectionStatusInvalid
             }
 

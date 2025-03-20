@@ -1389,9 +1389,12 @@ public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
     public var allProfilesRemovedFired = false
 
     public init() {
-        super.init { event, _, _, _ in
-                //self.handle(event: event)
-            // TODO ask sam
+        super.init { _, _, _, _ in
+        }
+
+        // A workaround to be able to reference self in the eventMapper
+        self.eventMapper = { event, _, _, _ in
+            self.handle(event: event)
         }
     }
 

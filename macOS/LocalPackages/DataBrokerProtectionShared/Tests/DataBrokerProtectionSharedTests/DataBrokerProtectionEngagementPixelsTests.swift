@@ -25,7 +25,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
 
     private let database = MockDatabase()
     private let repository = MockDataBrokerProtectionEngagementPixelsRepository()
-    private let handler = MockDataBrokerProtectionPixelsHandler()
+    private let handler = MockDataBrokerProtectionMacOSPixelsHandler()
 
     private var fakeProfile: DataBrokerProtectionProfile {
         let name = DataBrokerProtectionProfile.Name(firstName: "John", lastName: "Doe")
@@ -55,7 +55,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
         XCTAssertFalse(repository.wasMonthlyPixelSent)
 
         // The pixel should not be fired
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.isEmpty)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.isEmpty)
     }
 
     func testWhenLatestDailyPixelIsNil_thenWeFireDailyPixel() {
@@ -157,8 +157,8 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
         XCTAssertFalse(repository.wasMonthlyPixelSent)
     }
 
-    private func wasPixelFired(_ pixel: DataBrokerProtectionPixels) -> Bool {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains(where: { $0.name == pixel.name })
+    private func wasPixelFired(_ pixel: DataBrokerProtectionMacOSPixels) -> Bool {
+        MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.contains(where: { $0.name == pixel.name })
     }
 
     private func dateFromString(_ string: String) -> Date {

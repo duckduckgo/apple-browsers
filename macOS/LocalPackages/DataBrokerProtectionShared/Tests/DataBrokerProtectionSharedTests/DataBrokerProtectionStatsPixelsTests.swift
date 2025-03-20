@@ -24,7 +24,7 @@ import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
-    private let handler = MockDataBrokerProtectionPixelsHandler()
+    private let handler = MockDataBrokerProtectionMacOSPixelsHandler()
 
     override func tearDown() {
         handler.clear()
@@ -435,12 +435,12 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
             }
 
             // Then
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.sort { $0.params!["optout_submit_success_rate"]! <  $1.params!["optout_submit_success_rate"]! }
-            let pixel1 = MockDataBrokerProtectionPixelsHandler.lastPixelsFired[0]
-            let pixel2 = MockDataBrokerProtectionPixelsHandler.lastPixelsFired[1]
-            let pixel3 = MockDataBrokerProtectionPixelsHandler.lastPixelsFired[2]
-            let pixel4 = MockDataBrokerProtectionPixelsHandler.lastPixelsFired[3]
-            XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 4)
+            MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.sort { $0.params!["optout_submit_success_rate"]! <  $1.params!["optout_submit_success_rate"]! }
+            let pixel1 = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired[0]
+            let pixel2 = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired[1]
+            let pixel3 = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired[2]
+            let pixel4 = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired[3]
+            XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 4)
             XCTAssertEqual(pixel1.params!["optout_submit_success_rate"], "0.5")
             XCTAssertEqual(pixel2.params!["optout_submit_success_rate"], "0.71")
             XCTAssertEqual(pixel3.params!["optout_submit_success_rate"], "0.75")
@@ -453,15 +453,15 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
     // MARK: - opt out confirmed/unconfirmed pixel tests
 
     private static let dataBroker = "Test broker"
-    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionMacOSPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBroker)
 
-    private func validatePixelsFired(_ pixels: [DataBrokerProtectionPixels]) {
-        let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+    private func validatePixelsFired(_ pixels: [DataBrokerProtectionMacOSPixels]) {
+        let pixelsFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         for pixel in pixels {
             let matchingPixelsFired = pixelsFired.filter { $0.name == pixel.name }
             XCTAssertEqual(matchingPixelsFired.count, 1)
@@ -471,8 +471,8 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         }
     }
 
-    private func validatePixelsNotFired(_ pixels: [DataBrokerProtectionPixels]) {
-        let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+    private func validatePixelsNotFired(_ pixels: [DataBrokerProtectionMacOSPixels]) {
+        let pixelsFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         for pixel in pixels {
             let matchingPixelsFired = pixelsFired.filter { $0.name == pixel.name }
             XCTAssertEqual(matchingPixelsFired.count, 0)
@@ -500,7 +500,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then
@@ -537,7 +537,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then
@@ -574,7 +574,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then
@@ -611,7 +611,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then
@@ -648,7 +648,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then
@@ -686,7 +686,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // When
         sut.fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: [brokerProfileQueryData])
-        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
         print(pixels)
 
         // Then

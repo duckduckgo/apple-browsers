@@ -72,7 +72,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: mockUserNotificationService,
                 shouldRunNextStep: { true }
             )
@@ -123,7 +123,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: mockUserNotificationService,
                 shouldRunNextStep: { true }
             )
@@ -174,7 +174,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: mockUserNotificationService,
                 shouldRunNextStep: { true }
             )
@@ -198,7 +198,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -220,7 +220,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -241,7 +241,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -262,7 +262,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -286,7 +286,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -312,7 +312,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -336,7 +336,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -360,7 +360,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -383,7 +383,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -408,7 +408,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -434,7 +434,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -463,7 +463,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -487,7 +487,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -511,7 +511,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -535,7 +535,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -559,7 +559,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -583,7 +583,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -606,7 +606,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -630,7 +630,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
@@ -656,12 +656,12 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
 
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
+            if let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
                 case .optOutSuccess(_, _, _, let type, _, _):
                     XCTAssertEqual(type, .child)
@@ -689,12 +689,12 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
                 ),
                 database: mockDatabase,
                 notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
                 userNotificationService: MockUserNotificationService(),
                 shouldRunNextStep: { true }
             )
 
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
+            if let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
                 case .optOutSuccess(_, _, _, let type, _, _):
                     XCTAssertEqual(type, .parent)
@@ -721,7 +721,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
             ),
             database: mockDatabase,
             notificationCenter: .default,
-            pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+            pixelHandler: MockDataBrokerProtectionMacOSPixelsHandler(),
             userNotificationService: MockUserNotificationService(),
             shouldRunNextStep: { true }
         )
@@ -732,7 +732,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
         try? await runOptOutOperation(shouldThrow: true)
         try? await runOptOutOperation()
 
-        if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
+        if let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last {
             switch lastPixelFired {
             case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
                 XCTAssertEqual(tries, 3)
@@ -750,7 +750,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
             try await runOptOutOperation(shouldThrow: true)
             XCTFail("The code above should throw")
         } catch {
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
+            if let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last {
                 switch lastPixelFired {
                 case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
                     XCTAssertEqual(tries, 3)

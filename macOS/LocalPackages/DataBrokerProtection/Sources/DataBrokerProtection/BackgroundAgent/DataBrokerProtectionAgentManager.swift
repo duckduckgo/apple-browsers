@@ -38,7 +38,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let pixelHandler = DataBrokerProtectionPixelsHandler()
+        let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
@@ -150,7 +150,7 @@ public final class DataBrokerProtectionAgentManager {
     private let dataManager: DataBrokerProtectionDataManaging
     private let operationDependencies: DataBrokerOperationDependencies
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
     private let privacyConfigurationManager: DBPPrivacyConfigurationManager
@@ -169,7 +169,7 @@ public final class DataBrokerProtectionAgentManager {
          dataManager: DataBrokerProtectionDataManaging,
          operationDependencies: DataBrokerOperationDependencies,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
          privacyConfigurationManager: DBPPrivacyConfigurationManager,

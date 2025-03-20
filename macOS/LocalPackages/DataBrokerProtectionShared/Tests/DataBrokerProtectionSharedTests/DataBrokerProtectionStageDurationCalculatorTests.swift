@@ -25,7 +25,7 @@ import XCTest
 import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
-    let handler = MockDataBrokerProtectionPixelsHandler()
+    let handler = MockDataBrokerProtectionMacOSPixelsHandler()
 
     override func tearDown() {
         handler.clear()
@@ -36,9 +36,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 404))
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanFailed(let broker, let brokerVersion, _, _, _, _, _):
                 XCTAssertEqual(broker, "broker")
@@ -55,9 +55,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 403))
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.clientError(httpCode: 403).toString)
@@ -73,9 +73,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: DataBrokerProtectionError.httpError(code: 500))
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.serverError(httpCode: 500).toString)
@@ -91,9 +91,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: DataBrokerProtectionError.actionFailed(actionID: "Action-ID", message: "Some message"))
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.validationError.toString)
@@ -110,9 +110,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: nsURLError)
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.networkError.toString)
@@ -129,9 +129,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: error)
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, "database-error-SecureVaultError-13")
@@ -148,9 +148,9 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         sut.fireScanError(error: error)
 
-        XCTAssertTrue(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count == 1)
+        XCTAssertTrue(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count == 1)
 
-        if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
+        if let failurePixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
             case .scanError(_, _, _, let category, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.unclassified.toString)

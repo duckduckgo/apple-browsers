@@ -21,7 +21,7 @@ import XCTest
 import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
-    let mockHandler = MockDataBrokerProtectionPixelsHandler()
+    let mockHandler = MockDataBrokerProtectionMacOSPixelsHandler()
     var settings: DataBrokerProtectionSettings!
 
     override func setUpWithError() throws {
@@ -42,12 +42,12 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
                                                                            settings: settings)
 
         backendPixel.fireGenerateEmailHTTPError(statusCode: 200)
-        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.httpCode], "200", "Incorrect statusCode")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.wasOnWaitlist], "false", "should be true")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.httpCode], "200", "Incorrect statusCode")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.environmentKey], "staging", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.wasOnWaitlist], "false", "should be true")
     }
 
     func testSendHTTPErrorOnProductionAndWaitlist_thenValidatePixelSent() {
@@ -56,11 +56,11 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
                                                                            settings: settings)
 
         backendPixel.fireGenerateEmailHTTPError(statusCode: 123)
-        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.httpCode], "123", "Incorrect statusCode")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "production", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.httpCode], "123", "Incorrect statusCode")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.environmentKey], "production", "Incorrect environment")
     }
 
     func testSendEmptyAccessTokenOnProductionAndWaitlistFromEmailCallsite_thenValidatePixelSent() {
@@ -70,11 +70,11 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
 
         backendPixel.fireEmptyAccessToken(callSite: .getEmail)
 
-        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "production", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.backendServiceCallSite], "getEmail", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.environmentKey], "production", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.backendServiceCallSite], "getEmail", "Should be getEmail")
 
     }
 
@@ -86,12 +86,12 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
 
         backendPixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest)
 
-        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.wasOnWaitlist], "false", "should be false")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.backendServiceCallSite], "submitCaptchaInformationRequest", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.environmentKey], "staging", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.wasOnWaitlist], "false", "should be false")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionMacOSPixels.Consts.backendServiceCallSite], "submitCaptchaInformationRequest", "Should be getEmail")
 
     }
 

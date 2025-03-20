@@ -28,8 +28,8 @@ final class DataBrokerOperationActionTests: XCTestCase {
     let webViewHandler = WebViewHandlerMock()
     let emailService = EmailServiceMock()
     let captchaService = CaptchaServiceMock()
-    let pixelHandler = MockDataBrokerProtectionPixelsHandler()
-    let stageCalulator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionPixelsHandler(), vpnConnectionState: "disconnected", vpnBypassStatus: "off")
+    let pixelHandler = MockDataBrokerProtectionMacOSPixelsHandler()
+    let stageCalulator = DataBrokerProtectionStageDurationCalculator(dataBroker: "broker", dataBrokerVersion: "1.1.1", handler: MockDataBrokerProtectionMacOSPixelsHandler(), vpnConnectionState: "disconnected", vpnBypassStatus: "off")
 
     override func tearDown() async throws {
         webViewHandler.reset()

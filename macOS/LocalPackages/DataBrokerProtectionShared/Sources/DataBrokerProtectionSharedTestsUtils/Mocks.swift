@@ -724,13 +724,13 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
     }
 }
 
-public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
+public class MockDataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
     public static var lastPixelsFired = [DataBrokerProtectionSharedPixels]()
 
     public init() {
         super.init { event, _, _, _ in
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
+            MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.append(event)
         }
     }
 
@@ -739,7 +739,7 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
     }
 
     public func clear() {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.removeAll()
     }
 }
 

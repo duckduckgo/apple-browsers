@@ -34,7 +34,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassServiceProvider) -> DataBrokerProtectionAgentManager {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }

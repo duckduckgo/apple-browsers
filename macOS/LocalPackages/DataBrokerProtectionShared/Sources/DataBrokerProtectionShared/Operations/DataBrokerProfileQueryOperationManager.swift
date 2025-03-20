@@ -18,8 +18,6 @@
 
 import Foundation
 import Common
-import NetworkProtection
-import NetworkProtectionIPC
 import os.log
 
 enum OperationsError: Error {
@@ -67,18 +65,21 @@ extension OperationsManager {
     }
 }
 
-struct DataBrokerProfileQueryOperationManager: OperationsManager {
-    private let vpnIPCClient: VPNControllerXPCClient?
-    private let vpnBypassService: VPNBypassServiceProvider?
+public protocol VPNConnectionStatusThroughIPCProvider {
+    func setUp()
+    var connectionStatus: String { get }
+}
 
-    init(vpnIPCClient: VPNControllerXPCClient?, vpnBypassService: VPNBypassServiceProvider?) {
-        vpnIPCClient?.register { _ in }
-        self.vpnIPCClient = vpnIPCClient
+struct DataBrokerProfileQueryOperationManager: OperationsManager {
+    private let vpnBypassService: VPNBypassFeatureProvider?
+
+    init(vpnBypassService: VPNBypassFeatureProvider?) {
+        vpnBypassService?.setUp()
         self.vpnBypassService = vpnBypassService
     }
 
     private var vpnConnectionState: String {
-        vpnIPCClient?.connectionStatusObserver.recentValue.description ?? "unknown"
+        vpnBypassService?.connectionStatus ?? "unknown"
     }
 
     private var vpnBypassStatus: String {
@@ -614,13 +615,5 @@ extension Bundle {
             fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
         }
         return bundleID
-    }
-}
-
-public extension VPNControllerXPCClient {
-    static let shared = VPNControllerXPCClient()
-
-    convenience init() {
-        self.init(machServiceName: Bundle.main.vpnMenuAgentBundleId)
     }
 }

@@ -20,11 +20,30 @@ import Foundation
 import DataBrokerProtection
 import DataBrokerProtectionShared
 import NetworkProtectionProxy
+import NetworkProtectionIPC
 
 extension VPNBypassService {
     public convenience init() {
         self.init(dbpSettings: DataBrokerProtectionSettings(defaults: .dbp),
                   backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
                   proxySettings: TransparentProxySettings(defaults: .netP))
+    }
+}
+
+extension VPNBypassService: @retroactive VPNConnectionStatusThroughIPCProvider {
+    public func setUp() {
+        VPNControllerXPCClient.shared.register { _ in }
+    }
+
+    public var connectionStatus: String {
+        VPNControllerXPCClient.shared.connectionStatusObserver.recentValue.description
+    }
+}
+
+public extension VPNControllerXPCClient {
+    static let shared = VPNControllerXPCClient()
+
+    convenience init() {
+        self.init(machServiceName: Bundle.main.vpnMenuAgentBundleId)
     }
 }

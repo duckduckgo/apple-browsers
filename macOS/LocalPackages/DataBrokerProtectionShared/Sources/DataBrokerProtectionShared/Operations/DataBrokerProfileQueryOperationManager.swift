@@ -65,11 +65,6 @@ extension OperationsManager {
     }
 }
 
-public protocol VPNConnectionStatusThroughIPCProvider {
-    func setUp()
-    var connectionStatus: String { get }
-}
-
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
     private let vpnBypassService: VPNBypassFeatureProvider?
 

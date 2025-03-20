@@ -28,21 +28,6 @@ enum DBPDeviceCapability: String, Codable {
     case excludeVpnTraffic
 }
 
-public enum VPNBypassStatus: String {
-    case on
-    case off
-    case unsupported
-}
-
-public protocol VPNBypassServiceProvider: AnyObject {
-    var isSupported: Bool { get }
-    var isEnabled: Bool { get }
-    var bypassStatus: VPNBypassStatus { get }
-    var isOnboardingShown: Bool { get set }
-
-    func applyVPNBypass(_ bypass: Bool)
-}
-
 public protocol DBPUICommunicationDelegate: AnyObject {
     func getHandshakeUserData() -> DBPUIHandshakeUserData?
     func saveProfile() async throws

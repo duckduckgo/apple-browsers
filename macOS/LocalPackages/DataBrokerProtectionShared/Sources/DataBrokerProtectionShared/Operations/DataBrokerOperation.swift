@@ -20,8 +20,6 @@ import Foundation
 import Common
 import os.log
 
-public typealias VPNBypassFeatureProvider = VPNConnectionStatusThroughIPCProvider & VPNBypassServiceProvider
-
 public protocol DataBrokerOperationDependencies {
     var database: DataBrokerProtectionRepository { get }
     var config: DataBrokerExecutionConfig { get }

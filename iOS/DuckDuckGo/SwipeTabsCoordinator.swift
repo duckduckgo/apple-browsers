@@ -246,6 +246,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
         preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            preview?.clipsToBounds = true
+            preview?.layer.cornerRadius = 12
+        }
     }
     
     private func createPreviewFromImage(_ image: UIImage) {

@@ -1121,6 +1121,7 @@ class MainViewController: UIViewController {
         addChild(controller)
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
+
         controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         controller.view.frame = viewCoordinator.contentContainer.bounds
         controller.didMove(toParent: self)

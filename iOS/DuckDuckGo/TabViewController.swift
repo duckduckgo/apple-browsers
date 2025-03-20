@@ -43,7 +43,6 @@ import os.log
 import Navigation
 import Subscription
 
-
 class TabViewController: UIViewController {
 
     private struct Constants {
@@ -209,6 +208,8 @@ class TabViewController: UIViewController {
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
                                                       favicons: Favicons.shared)
+
+    private let refreshControl = UIRefreshControl()
 
     private let certificateTrustEvaluator: CertificateTrustEvaluating
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
@@ -544,6 +545,8 @@ class TabViewController: UIViewController {
         
         // Link DuckPlayer to current Tab
         duckPlayerNavigationHandler?.setHostViewController(self)
+
+        updateRoundedCorners()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -586,10 +589,10 @@ class TabViewController: UIViewController {
     }
 
     @objc func updateRoundedCorners() {
-//        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            webView.layer.cornerRadius = isPortrait ? 12 : 0
-            webViewContainer.backgroundColor = .clear
-//        }
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            webViewContainer.clipsToBounds = true
+            webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
+        }
     }
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
@@ -624,9 +627,6 @@ class TabViewController: UIViewController {
         webView.uiDelegate = self
 
         webViewContainer.addSubview(webView)
-        webView.clipsToBounds = true
-        updateRoundedCorners()
-
         webView.translatesAutoresizingMaskIntoConstraints = false
         webViewBottomAnchorConstraint = webView.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
         NSLayoutConstraint.activate([
@@ -636,12 +636,18 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        pullToRefreshLogic = PullToRefreshLogic(with: webView, webViewContainer: webViewContainerView, scrollView: scrollView, onRefresh: refreshWebView)
-//        scrollView.refreshControl = refreshControl
-        // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
-        // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
-        // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
-//        configureRefreshControl(refreshControl)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            pullToRefreshLogic = PullToRefreshLogic(with: webView,
+                                                    webViewContainer: webViewContainerView,
+                                                    scrollView: scrollView,
+                                                    onRefresh: handlePullToRefresh)
+        } else {
+            webView.scrollView.refreshControl = refreshControl
+            // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
+            // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
+            // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
+            configureRefreshControl(refreshControl)
+        }
 
         updateContentMode()
 
@@ -692,6 +698,8 @@ class TabViewController: UIViewController {
             userContentController?.assertObjectDeallocated(after: 1.0)
         }
 #endif
+
+        updateRoundedCorners()
     }
 
     private func addObservers() {
@@ -703,17 +711,10 @@ class TabViewController: UIViewController {
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
-//        refreshControl.addAction(UIAction { [weak self] _ in
-//            guard let self else { return }
-//            reload()
-//            delegate?.tabDidRequestRefresh(tab: self)
-//            Pixel.fire(pixel: .pullToRefresh)
-//            if let url = webView.url {
-//                AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
-//            }
-//        }, for: .valueChanged)
-//
-//        refreshControl.tintColor = .label
+        refreshControl.addAction(UIAction { [weak self] _ in
+            self?.handlePullToRefresh()
+        }, for: .valueChanged)
+        refreshControl.tintColor = .label
     }
 
     private func consumeCookiesThenLoadRequest(_ request: URLRequest?) {
@@ -910,7 +911,7 @@ class TabViewController: UIViewController {
         progressWorker.didStartLoading()
     }
 
-    private func refreshWebView() {
+    private func handlePullToRefresh() {
         reload()
         delegate?.tabDidRequestRefresh(tab: self)
         Pixel.fire(pixel: .pullToRefresh)
@@ -921,6 +922,7 @@ class TabViewController: UIViewController {
 
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
+        webView.scrollView.refreshControl?.endRefreshing()
         pullToRefreshLogic?.endRefreshing()
     }
 
@@ -1089,7 +1091,11 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        pullToRefreshLogic?.setRefreshControlEnabled(isEnabled)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            pullToRefreshLogic?.setRefreshControlEnabled(isEnabled)
+        } else {
+            scrollView.refreshControl = isEnabled ? refreshControl : nil
+        }
     }
 
     private var didGoBackForward: Bool = false {
@@ -2773,8 +2779,8 @@ extension TabViewController {
         errorMessage.textColor = theme.barTintColor
         
         if let webView {
-            scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
-            scrollView.refreshControl?.tintColor = .secondaryLabel
+            webView.scrollView.refreshControl?.backgroundColor = theme.mainViewBackgroundColor
+            webView.scrollView.refreshControl?.tintColor = .secondaryLabel
         }
     }
     

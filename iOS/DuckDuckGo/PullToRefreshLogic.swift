@@ -29,11 +29,11 @@ final class PullToRefreshLogic: NSObject {
 
     }
 
-    private var panGestureRecognizer: UIPanGestureRecognizer?
     private let refreshControl = UIRefreshControl()
+    private var panGestureRecognizer: UIPanGestureRecognizer?
 
     private var isPulling = false
-    private var didTriggerRefresh: Bool = false
+    private var didTriggerRefresh = false
     private var didEndRefreshing = false
 
     private weak var webView: WKWebView?
@@ -51,8 +51,8 @@ final class PullToRefreshLogic: NSObject {
         self.onRefresh = onRefresh
 
         super.init()
-        setupPanGestureRecognizer()
         scrollView.refreshControl = refreshControl
+        setupPanGestureRecognizer()
         refreshControl.tintColor = .label
     }
 
@@ -63,17 +63,15 @@ final class PullToRefreshLogic: NSObject {
         webView?.addGestureRecognizer(panGestureRecognizer)
     }
 
+    private var initialTranslationY: CGFloat = 0
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
-        guard let webView, let webViewContainer else { return }
-        let translation = gesture.translation(in: webView.superview)
+        guard let webView else { return }
         switch gesture.state {
+        case .began:
+            initialTranslationY = 0
         case .changed:
-            startPullingIfAtTop(of: webView.scrollView)
-            if isPulling {
-                let pullDistance = calculatePullDistance(translation: translation)
-                handlePullEffect(pullDistance: pullDistance)
-                triggerRefreshIfNeeded(pullDistance: pullDistance)
-            }
+            let translation = gesture.translation(in: webView.superview)
+            handleVerticalChange(translationY: translation.y)
         case .ended, .cancelled:
             resetPullState()
             animateCardToOriginalPosition()
@@ -82,26 +80,39 @@ final class PullToRefreshLogic: NSObject {
         }
     }
 
+    private func handleVerticalChange(translationY: CGFloat) {
+        guard let webView else { return }
+
+        let wasNotPulling = !isPulling
+        startPullingIfAtTop(of: webView.scrollView)
+        if isPulling {
+            if wasNotPulling {
+                initialTranslationY = translationY
+            }
+            let pullDistance = calculatePullDistance(translationY: translationY)
+            handlePullEffect(pullDistance: pullDistance)
+            triggerRefreshIfNeeded(pullDistance: pullDistance)
+        }
+    }
+
     private func startPullingIfAtTop(of scrollView: UIScrollView) {
         if scrollView.contentOffset.y < 0 {
+            webView?.scrollView.bounces = false
             isPulling = true
         }
     }
 
-    private func calculatePullDistance(translation: CGPoint) -> CGFloat {
-        // Limit the pull distance to the defined maximum
-        return max(0, min(translation.y, Constant.pullLimit))
+    private func calculatePullDistance(translationY: CGFloat) -> CGFloat {
+        let adjustedTranslation = max(0, translationY - initialTranslationY)
+        return min(adjustedTranslation, Constant.pullLimit)
     }
 
     private func handlePullEffect(pullDistance: CGFloat) {
-        if pullDistance > 0 {
-            // Keep the webView at the top while pulling
-            webView?.scrollView.setContentOffset(CGPoint(x: 0, y: 0), animated: false)
-        }
         // Move the webView container down based on pull distance
         webViewContainer?.transform = CGAffineTransform(translationX: webView?.frame.origin.x ?? 0, y: pullDistance)
 
         // Update the background scroll view's content offset to match the pull
+        // We only adjust the content offset if not refreshing to avoid hiding the refresh spinner
         if !refreshControl.isRefreshing {
             scrollView.contentOffset.y = -pullDistance
         }
@@ -116,6 +127,7 @@ final class PullToRefreshLogic: NSObject {
 
     private func resetPullState() {
         isPulling = false
+        webView?.scrollView.bounces = true
         didTriggerRefresh = false
         if didEndRefreshing {
             refreshControl.endRefreshing()
@@ -124,20 +136,18 @@ final class PullToRefreshLogic: NSObject {
     }
 
     private func animateCardToOriginalPosition() {
-        UIView.animate(withDuration: 0.5,
-                       delay: 0,
-                       usingSpringWithDamping: 0.7,
-                       initialSpringVelocity: 0.7,
-                       options: .curveEaseOut,
-                       animations: {
+        UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseInOut) {
             self.webViewContainer?.transform = .identity
-            self.scrollView.contentOffset.y = 0
-        }, completion: nil)
+            if !self.refreshControl.isRefreshing {
+                self.scrollView.contentOffset.y = 0
+            }
+        }
     }
 
     private func beginRefreshing() {
         didEndRefreshing = false
         refreshControl.beginRefreshing()
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         didTriggerRefresh = true
         onRefresh()
     }

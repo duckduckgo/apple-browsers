@@ -87,7 +87,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }
 
     private func fetchAssets() {
-        AppConfigurationFetch().start(isDebug: true) { [weak tableView] result in
+        AppConfigurationFetch().start(isDebug: true, forceRefresh: true) { [weak tableView] result in
             switch result {
             case .assetsUpdated(let protectionsUpdated):
                 if protectionsUpdated {
@@ -138,6 +138,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     private lazy var refreshAction = UIAction { [weak self] _ in
         self?.lastConfigurationRefreshDate = Date.distantPast
+        // Enables refreshing debug config
         self?.fetchAssets()
         self?.tableView.reloadData()
     }

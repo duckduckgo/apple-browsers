@@ -46,19 +46,16 @@ enum Preferences {
 
         @ObservedObject var model: PreferencesSidebarModel
 
-        let addressBarModel: HomePage.Models.AddressBarModel
         var subscriptionModel: PreferencesSubscriptionModel?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
 
         init(
             model: PreferencesSidebarModel,
-            addressBarModel: HomePage.Models.AddressBarModel,
             subscriptionManager: SubscriptionManager,
             subscriptionUIHandler: SubscriptionUIHandling
         ) {
             self.model = model
-            self.addressBarModel = addressBarModel
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.subscriptionModel = makeSubscriptionViewModel()
@@ -107,7 +104,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared, addressBarModel: addressBarModel)
+                    AppearanceView(model: .shared)
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
                 case .vpn:
@@ -211,19 +208,16 @@ enum Preferences {
 
         @ObservedObject var model: PreferencesSidebarModel
 
-        let addressBarModel: HomePage.Models.AddressBarModel
         var subscriptionModel: PreferencesSubscriptionModelV2?
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
 
         init(
             model: PreferencesSidebarModel,
-            addressBarModel: HomePage.Models.AddressBarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling
         ) {
             self.model = model
-            self.addressBarModel = addressBarModel
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.subscriptionModel = makeSubscriptionViewModel()
@@ -272,7 +266,7 @@ enum Preferences {
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared, addressBarModel: addressBarModel)
+                    AppearanceView(model: .shared)
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
                 case .vpn:

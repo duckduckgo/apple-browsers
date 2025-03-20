@@ -53,7 +53,7 @@ struct SyncPromoView: View {
         HStack {
             Spacer()
             VStack {
-                HomePage.Views.CloseButton(icon: .close, size: 16) {
+                CloseButton(icon: .close, size: 16) {
                     dismissAction()
                 }
                 .padding(6)

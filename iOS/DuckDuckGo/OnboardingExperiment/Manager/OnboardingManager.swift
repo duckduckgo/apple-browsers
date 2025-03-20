@@ -38,7 +38,7 @@ enum OnboardingAddToDockState: String, Equatable, CaseIterable, CustomStringConv
 }
 
 typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultExperimentManaging
-typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingIntroExperimentManaging
+typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingStepsProvider & OnboardingIntroExperimentManaging
 
 final class OnboardingManager {
     private let featureFlagger: FeatureFlagger
@@ -85,6 +85,36 @@ extension OnboardingSettingsURLProvider {
 }
 
 extension OnboardingManager: OnboardingSettingsURLProvider {}
+
+
+// MARK: - Onboarding Steps Provider
+
+enum OnboardingIntroStep {
+    case introDialog
+    case browserComparison
+    case appIconSelection
+    case addressBarPositionSelection
+    case addToDockPromo
+
+    static let defaultIPhoneFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
+    static let defaultIPadFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .appIconSelection]
+}
+
+protocol OnboardingStepsProvider: AnyObject {
+    var onboardingSteps: [OnboardingIntroStep] { get }
+}
+
+extension OnboardingManager: OnboardingStepsProvider {
+
+    var onboardingSteps: [OnboardingIntroStep] {
+        isIphone ? OnboardingIntroStep.defaultIPhoneFlow : OnboardingIntroStep.defaultIPadFlow
+    }
+
+    var userHasSeenAddToDockPromoDuringOnboarding: Bool {
+        onboardingSteps.contains(.addToDockPromo)
+    }
+
+}
 
 // MARK: - Set Default Browser Experiment
 

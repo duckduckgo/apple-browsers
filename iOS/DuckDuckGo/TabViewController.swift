@@ -638,7 +638,9 @@ class TabViewController: UIViewController {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
             pullToRefreshLogic = PullToRefreshLogic(with: webView.scrollView,
                                                     pullableView: webViewContainerView,
-                                                    onRefresh: handlePullToRefresh)
+                                                    onRefresh: { [weak self] in
+                self?.handlePullToRefresh()
+            })
         } else {
             webView.scrollView.refreshControl = refreshControl
             // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.

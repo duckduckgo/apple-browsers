@@ -24,6 +24,14 @@ import os.log
 import PixelKit
 import DataBrokerProtectionShared
 
+public protocol DataBrokerProtectionUserNotificationService {
+    func requestNotificationPermission()
+    func sendFirstScanCompletedNotification()
+    func sendFirstRemovedNotificationIfPossible()
+    func sendAllInfoRemovedNotificationIfPossible()
+    func scheduleCheckInNotificationIfPossible()
+}
+
 public enum DataBrokerProtectionNotificationCommand: String {
     case showDashboard = "databrokerprotection://show_dashboard"
 
@@ -43,7 +51,7 @@ public protocol DBPUserNotificationCenter {
 // Conform system `UNUserNotificationCenter` to `DBPUserNotificationCenter` protocol
 extension UNUserNotificationCenter: DBPUserNotificationCenter {}
 
-public class DataBrokerProtectionUserNotificationService: NSObject {
+public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataBrokerProtectionUserNotificationService {
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private var userNotificationCenter: DBPUserNotificationCenter
@@ -167,7 +175,7 @@ public class DataBrokerProtectionUserNotificationService: NSObject {
 
 }
 
-extension DataBrokerProtectionUserNotificationService: UNUserNotificationCenterDelegate {
+extension DefaultDataBrokerProtectionUserNotificationService: UNUserNotificationCenterDelegate {
 
     public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return .banner

@@ -45,7 +45,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
 
-        let notificationService = DataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
+        let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
         let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
 
         Configuration.setURLProvider(DBPAgentConfigurationURLProvider())

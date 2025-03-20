@@ -18,25 +18,22 @@
 
 import Foundation
 
-extension HomePage.Models {
+/// Model for a `PromotionView` type
+final class PromotionViewModel: ObservableObject {
 
-    /// Model for a `PromotionView` type
-    final class PromotionViewModel: ObservableObject {
+    let image: ImageResource
+    let title: String?
+    let description: String
+    let proceedButtonText: String
+    let proceedAction: () async -> Void
+    let closeAction: () -> Void
 
-        let image: ImageResource
-        let title: String?
-        let description: String
-        let proceedButtonText: String
-        let proceedAction: () async -> Void
-        let closeAction: () -> Void
-
-        init(image: ImageResource, title: String? = nil, description: String, proceedButtonText: String, proceedAction: @escaping () async -> Void, closeAction: @escaping () -> Void) {
-            self.image = image
-            self.title = title
-            self.description = description
-            self.proceedButtonText = proceedButtonText
-            self.proceedAction = proceedAction
-            self.closeAction = closeAction
-        }
+    init(image: ImageResource, title: String? = nil, description: String, proceedButtonText: String, proceedAction: @escaping () async -> Void, closeAction: @escaping () -> Void) {
+        self.image = image
+        self.title = title
+        self.description = description
+        self.proceedButtonText = proceedButtonText
+        self.proceedAction = proceedAction
+        self.closeAction = closeAction
     }
 }

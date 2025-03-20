@@ -127,9 +127,9 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
 
         let duckPlayer = duckPlayer
-            ?? (NSApp.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
+            ?? (AppVersion.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
         let statisticsLoader = statisticsLoader
-            ?? (NSApp.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
+            ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? PrivacyFeatures
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         var faviconManager = faviconManagement
@@ -221,6 +221,7 @@ protocol NewWindowPolicyDecisionMaker {
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
+        self.parentTabID = parentTab?.id
         self.securityOrigin = securityOrigin ?? .empty
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
@@ -374,7 +375,7 @@ protocol NewWindowPolicyDecisionMaker {
 
             userContentController?.cleanUpBeforeClosing()
 #if DEBUG
-            if case .normal = NSApp.runType {
+            if case .normal = AppVersion.runType {
                 webView.assertObjectDeallocated(after: 4.0)
             }
 #endif
@@ -597,6 +598,7 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     weak private(set) var parentTab: Tab?
+    private(set) var parentTabID: String?
     private var _canBeClosedWithBack: Bool
     var canBeClosedWithBack: Bool {
         // Reset canBeClosedWithBack on any WebView navigation
@@ -823,7 +825,7 @@ protocol NewWindowPolicyDecisionMaker {
         userInteractionDialog = nil
 
 #if DEBUG || REVIEW
-        if Application.runType == .uiTestsOnboarding {
+        if AppVersion.runType == .uiTestsOnboarding {
             setContent(.onboarding)
             return
         }

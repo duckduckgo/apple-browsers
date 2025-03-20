@@ -18,6 +18,7 @@
 
 import Foundation
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import Subscription
 
 public extension DataBrokerProtectionSettings {

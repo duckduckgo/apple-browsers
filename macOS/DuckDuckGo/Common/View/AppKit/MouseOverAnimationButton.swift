@@ -20,6 +20,7 @@ import AppKit
 import Combine
 import Foundation
 import Lottie
+import Common
 
 final class MouseOverAnimationButton: AddressBarButton {
 
@@ -107,7 +108,7 @@ final class MouseOverAnimationButton: AddressBarButton {
         let isAquaMode = NSApp.effectiveAppearance.name == .aqua
         let newAnimationView: LottieAnimationView
         // Animation view causes problems in tests
-        if case .normal = NSApp.runType {
+        if case .normal = AppVersion.runType {
             newAnimationView = isAquaMode ? animationViewCache.aqua : animationViewCache.dark
         } else {
             newAnimationView = LottieAnimationView()

@@ -22,6 +22,7 @@ import CoreData
 import Foundation
 import Persistence
 import PixelKit
+import Common
 
 final class Database {
 
@@ -61,14 +62,14 @@ final class Database {
                                      model: .init(byMerging: [mainModel, httpsUpgradeModel])!), nil)
         }
 #if DEBUG
-        assert(![.unitTests, .xcPreviews].contains(NSApp.runType), {
+        assert(![.unitTests, .xcPreviews].contains(AppVersion.runType), {
             "Use CoreData.---Container() methods for testing purposes:\n" + Thread.callStackSymbols.description
         }())
 #endif
 
         let keyStore: EncryptionKeyStoring = {
 #if DEBUG
-            guard case .normal = NSApp.runType else {
+            guard case .normal = AppVersion.runType else {
                 return (NSClassFromString("MockEncryptionKeyStore") as? EncryptionKeyStoring.Type)!.init()
             }
 #endif
@@ -77,7 +78,7 @@ final class Database {
 
         let containerLocation: URL = {
 #if DEBUG
-            guard case .normal = NSApp.runType else {
+            guard case .normal = AppVersion.runType else {
                 return FileManager.default.temporaryDirectory
             }
 #endif

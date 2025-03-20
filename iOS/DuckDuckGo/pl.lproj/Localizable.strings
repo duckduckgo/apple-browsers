@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Wyłącz";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Dowiedz się więcej";
+"autofill.learn.more.link.title" = "[Więcej informacji] (DDGQuickLink: //duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Wyświetl";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Wyszukaj hasła";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my. [Więcej informacji] (DDGQuickLink: //duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Hasła są szyfrowane. Nikt poza Tobą ich nie widzi, nawet my.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Sugerowane";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Zapisz hasło";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Poproś o zapisywanie i autouzupełnianie";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importuj hasła";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Opcje";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Zgłoś problem z autouzupełnianiem";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Autouzupełnianie nie działa?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Wyświetl";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Pokaż hasło";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Pozwól DuckDuckGo zarządzać wyskakującymi okienkami ze zgodą na używanie plików cookie";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Hasła";
+"settings.logins" = "Hasła i autouzupełnianie";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Ustawienia główne";

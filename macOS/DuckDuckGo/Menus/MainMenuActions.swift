@@ -361,7 +361,7 @@ extension AppDelegate {
     }
 
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
-        homePageSettingsModel.resetAllCustomizations()
+        newTabPageCustomizationModel.resetAllCustomizations()
     }
 }
 
@@ -1229,7 +1229,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = featureFlagger.isFeatureOn(.htmlNewTabPage) && activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 

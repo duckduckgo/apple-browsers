@@ -23,7 +23,6 @@ import Configuration
 import Foundation
 import GRDB
 import SecureStorage
-import Freemium
 
 @testable import DataBrokerProtectionShared
 
@@ -1861,20 +1860,6 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
         didCallV5Migrations = true
         return { _ in }
     }
-}
-
-public final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager {
-    public var didActivate = false
-    public var didPostFirstProfileSavedNotification = false
-    public var didPostResultsNotification = false
-    public var didDismissHomePagePromotion = false
-    public var firstProfileSavedTimestamp: Date?
-    public var upgradeToSubscriptionTimestamp: Date?
-    public var firstScanResults: FreemiumDBPMatchResults?
-
-    public init() {}
-
-    public func resetAllState() {}
 }
 
 public final class MockWebJobRunner: WebJobRunner {

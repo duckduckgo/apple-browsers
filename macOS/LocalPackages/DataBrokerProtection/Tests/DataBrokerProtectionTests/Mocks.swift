@@ -253,3 +253,17 @@ final class MockDBPProfileSavedNotifier: DBPProfileSavedNotifier {
         didCallPostProfileSavedNotificationIfPermitted = true
     }
 }
+
+public final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager {
+    public var didActivate = false
+    public var didPostFirstProfileSavedNotification = false
+    public var didPostResultsNotification = false
+    public var didDismissHomePagePromotion = false
+    public var firstProfileSavedTimestamp: Date?
+    public var upgradeToSubscriptionTimestamp: Date?
+    public var firstScanResults: FreemiumDBPMatchResults?
+
+    public init() {}
+
+    public func resetAllState() {}
+}

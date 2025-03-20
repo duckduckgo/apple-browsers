@@ -470,9 +470,3 @@ fileprivate extension BrokerJobData {
         }
     }
 }
-
-fileprivate extension Array where Element == HistoryEvent {
-    var closestHistoryEvent: HistoryEvent? {
-        self.sorted(by: { $0.date > $1.date }).first
-    }
-}

@@ -47,6 +47,7 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func getBackgroundAgentMetadata() async -> DBPUIDebugMetadata
     func openSendFeedbackModal() async
     func applyVPNBypassSetting(_ bypass: Bool) async
+    func removeOptOutFromDashboard(_ id: Int64) async
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -70,6 +71,7 @@ public enum DBPUIReceivedMethodName: String {
     case openSendFeedbackModal
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
+    case removeOptOutFromDashboard
 }
 
 public enum DBPUISendableMethodName: String {
@@ -129,6 +131,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .openSendFeedbackModal: return openSendFeedbackModal
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
+        case .removeOptOutFromDashboard: return removeOptOutFromDashboard
         }
 
     }
@@ -348,5 +351,17 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.applyVPNBypassSetting(result.enabled)
 
         return DBPUIVPNBypassSettingUpdateResult(success: true, version: Constants.version)
+    }
+
+    func removeOptOutFromDashboard(_ params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let result = try? JSONDecoder().decode(DBPUIRemoveOptOutFromDashboardRequest.self, from: data) else {
+            Logger.dataBrokerProtection.log("Failed to parse removeOptOutFromDashboard message")
+            throw DBPUIError.malformedRequest
+        }
+
+        await delegate?.removeOptOutFromDashboard(result.request)
+
+        return result
     }
 }

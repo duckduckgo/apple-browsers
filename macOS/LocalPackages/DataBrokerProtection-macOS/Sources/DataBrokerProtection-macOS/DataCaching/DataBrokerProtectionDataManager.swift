@@ -215,6 +215,16 @@ extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
     public func isAuthenticatedUser() -> Bool {
         delegate?.isAuthenticatedUser() ?? true
     }
+
+    public func willRemoveOptOutFromDashboard(_ id: Int64) {
+        if let extractedProfile = try? database.fetchExtractedProfile(with: id) {
+            let event = HistoryEvent(extractedProfileId: id,
+                                     brokerId: extractedProfile.brokerId,
+                                     profileQueryId: extractedProfile.profileQueryId,
+                                     type: .matchRemovedByUser)
+            try? database.add(event)
+        }
+    }
 }
 
 public protocol InMemoryDataCacheDelegate: AnyObject {
@@ -223,6 +233,7 @@ public protocol InMemoryDataCacheDelegate: AnyObject {
     func willOpenSendFeedbackForm()
     func willApplyVPNBypassSetting(_ bypass: Bool) async
     func isAuthenticatedUser() -> Bool
+    func willRemoveOptOutFromDashboard(_ id: Int64)
 }
 
 public final class InMemoryDataCache {
@@ -439,5 +450,9 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         await delegate?.willApplyVPNBypassSetting(bypass)
+    }
+
+    public func removeOptOutFromDashboard(_ id: Int64) async {
+        delegate?.willRemoveOptOutFromDashboard(id)
     }
 }

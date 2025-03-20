@@ -28,6 +28,7 @@ public struct HistoryEvent: Identifiable, Sendable {
         case optOutConfirmed
         case scanStarted
         case reAppearence
+        case matchRemovedByUser
     }
 
     public let extractedProfileId: Int64?
@@ -97,5 +98,11 @@ public extension HistoryEvent {
             return error.name
         default: return nil
         }
+    }
+}
+
+public extension Array where Element == HistoryEvent {
+    var closestHistoryEvent: HistoryEvent? {
+        self.sorted(by: { $0.date > $1.date }).first
     }
 }

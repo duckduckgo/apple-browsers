@@ -689,7 +689,7 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
         return 1
     }
 
-    public func fetchExtractedProfile(with id: Int64) throws -> ExtractedProfile? {
+    public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
         return nil
     }
 
@@ -968,7 +968,11 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         return childBrokers
     }
 
-    public func clear() {
+    public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
+        nil
+    }
+
+    func clear() {
         wasSaveProfileCalled = false
         wasFetchProfileCalled = false
         wasSaveOptOutOperationCalled = false

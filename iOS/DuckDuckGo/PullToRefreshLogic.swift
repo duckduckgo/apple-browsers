@@ -1,5 +1,5 @@
 //
-//  PullToRefreshLogic.swift
+//  PullToRefreshViewAdapter.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,7 +20,6 @@
 import UIKit
 
 /**
- * PullToRefreshLogic
  *
  * A custom implementation of pull-to-refresh functionality that works with any UIView.
  * This class creates a transparent background UIScrollView to display the native
@@ -38,7 +37,7 @@ import UIKit
  * UIScrollView implementation isn't possible or desirable, such as with WKWebViews.
  *
  */
-final class PullToRefreshLogic: NSObject {
+final class PullToRefreshViewAdapter: NSObject {
 
     private enum Constant {
 
@@ -260,7 +259,7 @@ final class PullToRefreshLogic: NSObject {
 
 }
 
-extension PullToRefreshLogic: UIGestureRecognizerDelegate {
+extension PullToRefreshViewAdapter: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool { true }

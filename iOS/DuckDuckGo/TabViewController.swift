@@ -215,7 +215,7 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
-    private var pullToRefreshLogic: PullToRefreshLogic?
+    private var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     public var url: URL? {
         willSet {
@@ -652,9 +652,9 @@ class TabViewController: UIViewController {
         ])
 
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            pullToRefreshLogic = PullToRefreshLogic(with: webView.scrollView,
-                                                    pullableView: webViewContainerView,
-                                                    onRefresh: { [weak self] in
+            pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                                                pullableView: webViewContainerView,
+                                                                onRefresh: { [weak self] in
                 self?.handlePullToRefresh()
             })
         } else {
@@ -937,7 +937,7 @@ class TabViewController: UIViewController {
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
         webView.scrollView.refreshControl?.endRefreshing()
-        pullToRefreshLogic?.endRefreshing()
+        pullToRefreshViewAdapter?.endRefreshing()
     }
 
     public func reload() {
@@ -1102,7 +1102,7 @@ class TabViewController: UIViewController {
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            pullToRefreshLogic?.setRefreshControlEnabled(isEnabled)
+            pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
         } else {
             webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
         }

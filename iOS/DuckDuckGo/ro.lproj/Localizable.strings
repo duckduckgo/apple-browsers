@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Dezactivează";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Află mai multe";
+"autofill.learn.more.link.title" = "[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Vezi";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Caută parole";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Parolele sunt criptate. Nimeni în afară de tine nu le poate vedea, nici măcar noi.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Parolele sunt criptate. Nimeni în afară de tine nu le poate vedea, nici măcar noi. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Parolele sunt criptate. Nimeni în afară de tine nu le poate vedea, nici măcar noi.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Sugerat";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Salvează parola";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Solicită salvarea și completarea automată";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importă parolele";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Opțiuni";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Raportează o problemă cu completarea automată";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Completarea automată nu funcționează?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Vezi";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Arată parola";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasă DuckDuckGo să gestioneze ferestrele pop-up de solicitare a consimțământului cu privire la modulele cookie";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Parole";
+"settings.logins" = "Parole și completare automată";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Setări principale";

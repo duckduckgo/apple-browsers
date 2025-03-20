@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Vypnout";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Více informací";
+"autofill.learn.more.link.title" = "[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Zobrazit";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Prohledat hesla";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Hesla jsou šifrovaná. Nikdo kromě tebe je nevidí, dokonce ani my.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Hesla jsou šifrovaná. Nikdo kromě tebe je nevidí, dokonce ani my. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Hesla jsou šifrovaná. Nikdo kromě tebe je nevidí, dokonce ani my.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Navrhované";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Uložit heslo";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Žádat o uložení a automatické vyplnění";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importovat hesla";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Možnosti";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Nahlásit problém s automatickým vyplňováním";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Automatické vyplňování nefunguje?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Zobrazit";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Zobrazit heslo";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Nechat správu oken pro souhlas s cookies na DuckDuckGo";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Hesla";
+"settings.logins" = "Hesla a automatické vyplňování";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Hlavní nastavení";

@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Απενεργοποίηση";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Μάθετε περισσότερα";
+"autofill.learn.more.link.title" = "[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Προβολή";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Αναζήτηση κωδικών πρόσβασης";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Οι κωδικοί πρόσβασης είναι κρυπτογραφημένοι. Κανείς άλλος εκτός από εσάς δεν μπορεί να τους βλέπει, ούτε καν εμείς.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Οι κωδικοί πρόσβασης είναι κρυπτογραφημένοι. Κανείς άλλος εκτός από εσάς δεν μπορεί να τους βλέπει, ούτε καν εμείς. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Οι κωδικοί πρόσβασης είναι κρυπτογραφημένοι. Κανείς άλλος εκτός από εσάς δεν μπορεί να τους βλέπει, ούτε καν εμείς.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Προτεινόμενο";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Αποθήκευση κωδικού πρόσβασης";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Ζητήστε αποθήκευση και αυτόματη συμπλήρωση";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Εισαγωγή κωδικών πρόσβασης";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Επιλογές";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Αναφέρετε ένα πρόβλημα με την Αυτόματη συμπλήρωση";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Δεν λειτουργεί η αυτόματη συμπλήρωση;";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Προβολή";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Εμφάνιση κωδικού πρόσβασης";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Επιτρέψτε στο DuckDuckGo να διαχειρίζεται τα αναδυόμενα παράθυρα συναίνεσης για cookies";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Κωδικός πρόσβασης";
+"settings.logins" = "Κωδικοί πρόσβασης και Αυτόματη συμπλήρωση";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Κύριες ρυθμίσεις";

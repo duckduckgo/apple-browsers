@@ -79,16 +79,34 @@ struct AIChatSettings: AIChatSettingsProvider {
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
         userDefaults.showAIChatBrowsingMenu = enable
         triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOff)
+        }
     }
 
     func enableAIChatAddressBarUserSettings(enable: Bool) {
         userDefaults.showAIChatAddressBar = enable
         triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOff)
+        }
     }
 
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
         userDefaults.showAIChatVoiceSearch = enable
         triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOff)
+        }
     }
 
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {

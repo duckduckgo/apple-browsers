@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Poista Käytöstä";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Lue lisää";
+"autofill.learn.more.link.title" = "[Lisätietoja](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Näytä";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Etsi salasanoja";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Salasanat salataan. Kukaan muu kuin sinä ei näe niitä, emme edes me.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Salasanat salataan. Kukaan muu kuin sinä ei näe niitä, emme edes me. [Lisätietoja](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Salasanat salataan. Kukaan muu kuin sinä ei näe niitä, emme edes me.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Ehdotettu";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Tallenna salasana";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Pyydä tallentamaan ja täyttämään automaattisesti";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Tuo salasanat";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Valinnat";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Ilmoita automaattisen täytön ongelmasta";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Eikö automaattinen täyttö toimi?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Näytä";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Näytä salasana";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Anna DuckDuckGon hallinnoida evästeiden hallinnan ponnahdusikkunoita";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Salasanat";
+"settings.logins" = "Salasanat ja automaattinen täyttö";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Pääasetukset";

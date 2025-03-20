@@ -32,7 +32,7 @@ protocol DBPUIScanOps: AnyObject {
 public final class DBPUIViewModel {
     private let dataManager: DataBrokerProtectionDataManaging
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
-    private let vpnBypassService: VPNBypassFeatureProvider?
+    private let vpnBypassService: VPNBypassServiceProvider?
 
     private let privacyConfig: PrivacyConfigurationManaging?
     private let prefs: ContentScopeProperties?
@@ -43,7 +43,7 @@ public final class DBPUIViewModel {
 
     public init(dataManager: DataBrokerProtectionDataManaging,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
-                vpnBypassService: VPNBypassFeatureProvider? = nil,
+                vpnBypassService: VPNBypassServiceProvider? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfig: PrivacyConfigurationManaging? = nil,

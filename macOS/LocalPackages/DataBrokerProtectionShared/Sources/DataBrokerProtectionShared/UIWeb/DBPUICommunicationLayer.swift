@@ -78,7 +78,7 @@ public enum DBPUISendableMethodName: String {
 
 public struct DBPUICommunicationLayer: Subfeature {
     private let webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable
-    private let vpnBypassService: VPNBypassFeatureProvider?
+    private let vpnBypassService: VPNBypassServiceProvider?
     private let privacyConfig: PrivacyConfigurationManaging
 
     public var messageOriginPolicy: MessageOriginPolicy
@@ -92,7 +92,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
-                vpnBypassService: VPNBypassFeatureProvider? = nil,
+                vpnBypassService: VPNBypassServiceProvider? = nil,
                 privacyConfig: PrivacyConfigurationManaging) {
         self.webURLSettings = webURLSettings
         self.vpnBypassService = vpnBypassService

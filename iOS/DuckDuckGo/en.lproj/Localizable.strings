@@ -359,7 +359,7 @@
 "autofill.keep-enabled.alert.disable" = "Disable";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Learn More";
+"autofill.learn.more.link.title" = "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "View";
@@ -503,10 +503,7 @@
 "autofill.logins.list.search-placeholder" = "Search passwords";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Passwords are encrypted. Nobody but you can see them, not even us.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Passwords are encrypted. Nobody but you can see them, not even us. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Passwords are encrypted. Nobody but you can see them, not even us.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Suggested";
@@ -641,6 +638,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Save Password";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Ask to save and autofill";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Import Passwords";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Options";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Report a problem with autofill";
 
@@ -661,6 +667,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Autofill not working?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "View";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Show Password";
@@ -2504,7 +2513,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Let DuckDuckGo manage cookie consent pop-ups";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Passwords";
+"settings.logins" = "Passwords & Autofill";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Main Settings";

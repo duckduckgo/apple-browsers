@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Выключить";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Узнать больше";
+"autofill.learn.more.link.title" = "[Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Просмотр";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Найти пароль";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Рекомендации";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Сохранить пароль";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Предлагать сохранение и автозаполнение данных";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Импорт паролей";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Параметры";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Сообщить о сбое автозаполнения";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Не работает автозаполнение?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Просмотр";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показать пароль";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Разрешить DuckDuckGo управлять окнами выбора куки-файлов";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Пароли";
+"settings.logins" = "Пароли и автозаполнение";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Основные настройки";

@@ -31,7 +31,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             // Given
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .migratedDataFound
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             _ = try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)
@@ -50,7 +50,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             // Given
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .legacyDataFound
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             _ = try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)
@@ -72,7 +72,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             // Given
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .nothingFound
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             let result = try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)
@@ -96,7 +96,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             let encodedString = data.base64EncodedString()
             let mockData = encodedString.data(using: .utf8)!
             let mockKeychainService = MockDBPKeychainService()
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             _ = try sut.writeData(mockData, named: entry.rawValue, serviceName: sut.keychainServiceName)
@@ -114,7 +114,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .readError
             let expectedError = SecureStorageError.keystoreReadError(status: mockKeychainService.mode.statusCode!)
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             XCTAssertThrowsError(try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)) { error in
@@ -132,7 +132,7 @@ final class DataBrokerProtectionKeyStoreProviderTests: XCTestCase {
             let mockKeychainService = MockDBPKeychainService()
             mockKeychainService.mode = .updateError
             let expectedError = SecureStorageError.keystoreUpdateError(status: mockKeychainService.mode.statusCode!)
-            let sut = DataBrokerProtectionKeyStoreProvider(keychainService: mockKeychainService, groupNameProvider: mockGroupNameProvider)
+            let sut = DataBrokerProtectionKeyStoreProvider(appGroupName: mockGroupNameProvider.appGroupName, keychainService: mockKeychainService)
 
             // When
             XCTAssertThrowsError(try sut.readData(named: entry.rawValue, serviceName: sut.keychainServiceName)) { error in

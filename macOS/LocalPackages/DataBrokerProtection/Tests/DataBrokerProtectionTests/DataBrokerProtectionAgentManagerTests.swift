@@ -28,6 +28,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var sut: DataBrokerProtectionAgentManager!
 
     private var mockActivityScheduler: MockDataBrokerProtectionBackgroundActivityScheduler!
+    private var mockEventsHandler: MockOperationEventsHandler!
     private var mockNotificationService: MockUserNotificationService!
     private var mockQueueManager: MockDataBrokerProtectionOperationQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
@@ -47,6 +48,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockSharedPixelsHandler = DataBrokerProtectionSharedTestsUtils.MockPixelHandler()
         mockPixelHandler = MockPixelHandler()
         mockActivityScheduler = MockDataBrokerProtectionBackgroundActivityScheduler()
+        mockEventsHandler = MockOperationEventsHandler()
         mockNotificationService = MockUserNotificationService()
         mockAuthenticationManager = MockAuthenticationManager()
         mockAgentStopper = MockAgentStopper()
@@ -71,7 +73,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
                                                                   runnerProvider: MockRunnerProvider(),
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockSharedPixelsHandler,
-                                                                  userNotificationService: mockNotificationService, dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+                                                                  eventsHandler: mockEventsHandler,
+                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
 
         mockProfile = DataBrokerProtectionProfile(
             names: [],
@@ -85,7 +88,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenAgentStart_andProfileExists_andUserIsNotFreemium_thenActivityIsScheduled_andScheduledAllOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -129,7 +132,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenAgentStart_andProfileExists_andUserIsFreemium_thenActivityIsScheduled_andScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -178,7 +181,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
                                                                    pixelHandler: mockPixelHandler,
                                                                    stopAction: mockStopAction, freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager())
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -216,7 +219,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         let mockAgentStopper = MockAgentStopper()
 
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -258,7 +261,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenActivitySchedulerTriggers_andUserIsNotFreemium_thenScheduledAllOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -291,7 +294,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenActivitySchedulerTriggers_andUserIsFreemium_thenScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -323,7 +326,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andUserIsNotFreemium_thenImmediateOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -355,7 +358,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andUserIsFreemium_thenImmediateOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -387,7 +390,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_thenUserNotificationPermissionAsked() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -413,7 +416,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andScansCompleted_andNoScanError_thenUserNotificationSent() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -439,7 +442,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andScansCompleted_andScanError_thenUserNotificationNotSent() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -466,7 +469,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andScansCompleted_andHasMatches_thenCheckInNotificationScheduled() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -493,7 +496,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenProfileSaved_andScansCompleted_andHasNoMatches_thenCheckInNotificationNotScheduled() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -520,7 +523,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenAppLaunched_andUserIsNotFreemium_thenScheduledAllOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -552,7 +555,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenAppLaunched_andUserIsFreemium_thenScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -583,7 +586,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenFirePixelsCalled_andUserIsAuthenticated_thenPixelsAreFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
@@ -610,7 +613,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     func testWhenFirePixelsCalled_andUserIsNotAuthenticated_thenPixelsAreNotFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
-            userNotificationService: mockNotificationService,
+            eventsHandler: mockEventsHandler,
             activityScheduler: mockActivityScheduler,
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,

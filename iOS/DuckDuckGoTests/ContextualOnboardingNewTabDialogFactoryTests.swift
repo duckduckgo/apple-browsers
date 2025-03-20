@@ -99,7 +99,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         contextualOnboardingLogicMock.expectation = expectation
         var onDismissedRun = false
         let homeDialog = DaxDialogs.HomeScreenSpec.final
-        let onDimsiss: (Bool) -> Void = {  _ in onDismissedRun = true }
+        let onDimsiss: (Bool) -> Void = { _ in onDismissedRun = true }
 
         // When
         let view = factory.createDaxDialog(for: homeDialog, onDismiss: onDimsiss)

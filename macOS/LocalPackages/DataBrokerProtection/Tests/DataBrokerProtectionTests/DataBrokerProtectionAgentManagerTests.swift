@@ -387,7 +387,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertTrue(startImmediateScansCalled)
     }
 
-    func testWhenProfileSaved_thenUserNotificationPermissionAsked() async throws {
+    func testWhenProfileSaved_thenEventFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
             eventsHandler: mockEventsHandler,
@@ -404,16 +404,16 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
-        mockNotificationService.reset()
+        mockEventsHandler.reset()
 
         // When
         sut.profileSaved()
 
         // Then
-        XCTAssertTrue(mockNotificationService.requestPermissionWasAsked)
+        XCTAssertTrue(mockEventsHandler.profileSavedFired)
     }
 
-    func testWhenProfileSaved_andScansCompleted_andNoScanError_thenUserNotificationSent() async throws {
+    func testWhenProfileSaved_andScansCompleted_andNoScanError_thenEventFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
             eventsHandler: mockEventsHandler,
@@ -430,16 +430,16 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
-        mockNotificationService.reset()
+        mockEventsHandler.reset()
 
         // When
         sut.profileSaved()
 
         // Then
-        XCTAssertTrue(mockNotificationService.firstScanNotificationWasSent)
+        XCTAssertTrue(mockEventsHandler.firstScanCompletedFired)
     }
 
-    func testWhenProfileSaved_andScansCompleted_andScanError_thenUserNotificationNotSent() async throws {
+    func testWhenProfileSaved_andScansCompleted_andScanError_thenEventNotFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
             eventsHandler: mockEventsHandler,
@@ -456,17 +456,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
-        mockNotificationService.reset()
+        mockEventsHandler.reset()
         mockQueueManager.startImmediateScanOperationsIfPermittedCompletionError = DataBrokerProtectionJobsErrorCollection(oneTimeError: NSError(domain: "test", code: 10))
 
         // When
         sut.profileSaved()
 
         // Then
-        XCTAssertFalse(mockNotificationService.firstScanNotificationWasSent)
+        XCTAssertFalse(mockEventsHandler.firstScanCompletedFired)
     }
 
-    func testWhenProfileSaved_andScansCompleted_andHasMatches_thenCheckInNotificationScheduled() async throws {
+    func testWhenProfileSaved_andScansCompleted_andHasMatches_thenEventFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
             eventsHandler: mockEventsHandler,
@@ -483,17 +483,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
-        mockNotificationService.reset()
+        mockEventsHandler.reset()
         mockDataManager.shouldReturnHasMatches = true
 
         // When
         sut.profileSaved()
 
         // Then
-        XCTAssertTrue(mockNotificationService.checkInNotificationWasScheduled)
+        XCTAssertTrue(mockEventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
-    func testWhenProfileSaved_andScansCompleted_andHasNoMatches_thenCheckInNotificationNotScheduled() async throws {
+    func testWhenProfileSaved_andScansCompleted_andHasNoMatches_thenEventNotFired() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(
             eventsHandler: mockEventsHandler,
@@ -510,14 +510,14 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
-        mockNotificationService.reset()
+        mockEventsHandler.reset()
         mockDataManager.shouldReturnHasMatches = false
 
         // When
         sut.profileSaved()
 
         // Then
-        XCTAssertFalse(mockNotificationService.checkInNotificationWasScheduled)
+        XCTAssertFalse(mockEventsHandler.firstScanCompletedAndMatchesFoundFired)
     }
 
     func testWhenAppLaunched_andUserIsNotFreemium_thenScheduledAllOperationsRun() async throws {

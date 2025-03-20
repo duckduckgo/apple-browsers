@@ -25,22 +25,22 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
     init() {}
 
     init(faviconStoring: any FaviconStoring) {}
-    
+
     var loaded: Bool = false
 
     func load() async throws {
         loadCallsCount += 1
     }
-    
+
     func insert(_ favicons: [Favicon]) {
         insertCalls.append(favicons)
     }
-    
+
     func get(faviconUrl: URL) -> Favicon? {
         getFaviconWithURLCalls.append(faviconUrl)
         return getFaviconWithURL(faviconUrl)
     }
-    
+
     func getFavicons(with urls: some Sequence<URL>) -> [Favicon]? {
         getFaviconsWithURLsCalls.append(Array(urls))
         return getFaviconsWithURLs(urls)

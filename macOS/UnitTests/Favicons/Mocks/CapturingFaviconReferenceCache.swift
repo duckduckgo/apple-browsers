@@ -32,27 +32,27 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
         loadCallsCount += 1
     }
 
-    var hostReferences: [String : FaviconHostReference] = [:]
-    var urlReferences: [URL : FaviconUrlReference] = [:]
+    var hostReferences: [String: FaviconHostReference] = [:]
+    var urlReferences: [URL: FaviconUrlReference] = [:]
 
     func insert(faviconUrls: (smallFaviconUrl: URL?, mediumFaviconUrl: URL?), documentUrl: URL) {
         insertCalls.append(.init(faviconUrls.smallFaviconUrl, faviconUrls.mediumFaviconUrl, documentUrl))
     }
-    
+
     func getFaviconUrl(for documentURL: URL, sizeCategory: Favicon.SizeCategory) -> URL? {
         getFaviconURLForDocumentURLCalls.append(.init(documentURL, sizeCategory))
         return getFaviconURLForDocumentURL(documentURL, sizeCategory)
     }
-    
+
     func getFaviconUrl(for host: String, sizeCategory: Favicon.SizeCategory) -> URL? {
         getFaviconURLForHostCalls.append(.init(host, sizeCategory))
         return getFaviconURLForHost(host, sizeCategory)
     }
-    
+
     func cleanOld(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager) async {
         cleanCallsCount += 1
     }
-    
+
     func burn(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, savedLogins: Set<String>) async {
         burnCallsCount += 1
     }
@@ -60,7 +60,6 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
     func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: TLD) async {
         burnDomainsCallsCount += 1
     }
-
 
     struct Insert: Equatable {
         let smallURL: URL?
@@ -103,6 +102,6 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
     var burnCallsCount: Int = 0
     var burnDomainsCallsCount: Int = 0
 
-    var getFaviconURLForDocumentURL: (URL, Favicon.SizeCategory) -> URL? = { _,_ in nil }
-    var getFaviconURLForHost: (String, Favicon.SizeCategory) -> URL? = { _,_ in nil }
+    var getFaviconURLForDocumentURL: (URL, Favicon.SizeCategory) -> URL? = { _, _ in nil }
+    var getFaviconURLForHost: (String, Favicon.SizeCategory) -> URL? = { _, _ in nil }
 }

@@ -249,7 +249,7 @@ final class FaviconManager: FaviconManagement {
     }
 
     func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
-        if let favicon = getCachedFavicon(for: domain, sizeCategory: sizeCategory) {
+        if let favicon = getCachedFavicon(for: domain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
             return favicon
         }
 

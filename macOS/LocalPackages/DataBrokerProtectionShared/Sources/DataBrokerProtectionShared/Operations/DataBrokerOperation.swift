@@ -27,7 +27,7 @@ public protocol DataBrokerOperationDependencies {
     var runnerProvider: JobRunnerProvider { get }
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var userNotificationService: DataBrokerProtectionUserNotificationService { get }
+    var eventsHandler: EventMapping<OperationEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
     var vpnBypassService: VPNBypassServiceProvider? { get }
 }
@@ -38,7 +38,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
     public let runnerProvider: JobRunnerProvider
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public let userNotificationService: DataBrokerProtectionUserNotificationService
+    public let eventsHandler: EventMapping<OperationEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
     public let vpnBypassService: VPNBypassServiceProvider?
 
@@ -47,7 +47,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
                 runnerProvider: any JobRunnerProvider,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                userNotificationService: any DataBrokerProtectionUserNotificationService,
+                eventsHandler: EventMapping<OperationEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 vpnBypassService: VPNBypassServiceProvider? = nil) {
         self.database = database
@@ -55,7 +55,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
         self.runnerProvider = runnerProvider
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
-        self.userNotificationService = userNotificationService
+        self.eventsHandler = eventsHandler
         self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
         self.vpnBypassService = vpnBypassService
     }
@@ -205,7 +205,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                                                                                 pixelHandler: operationDependencies.pixelHandler,
                                                                                 showWebView: showWebView,
                                                                                 isImmediateOperation: operationType == .manualScan,
-                                                                                userNotificationService: operationDependencies.userNotificationService,
+                                                                                                                                                                                     eventsHandler: operationDependencies.eventsHandler,
                                                                                 shouldRunNextStep: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled

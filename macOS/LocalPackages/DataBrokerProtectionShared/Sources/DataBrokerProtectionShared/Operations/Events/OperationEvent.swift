@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionUserNotificationService.swift
+//  OperationEvent.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,10 +18,11 @@
 
 import Foundation
 
-public protocol DataBrokerProtectionUserNotificationService {
-    func requestNotificationPermission()
-    func sendFirstScanCompletedNotification()
-    func sendFirstRemovedNotificationIfPossible()
-    func sendAllInfoRemovedNotificationIfPossible()
-    func scheduleCheckInNotificationIfPossible()
+public enum OperationEvent {
+    case profileSaved
+    case firstScanCompleted
+    case firstScanCompletedAndMatchesFound
+    case firstProfileRemoved
+    case allProfilesRemoved
 }
+

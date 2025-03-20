@@ -43,7 +43,7 @@ public protocol DBPUserNotificationCenter {
 // Conform system `UNUserNotificationCenter` to `DBPUserNotificationCenter` protocol
 extension UNUserNotificationCenter: DBPUserNotificationCenter {}
 
-public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataBrokerProtectionUserNotificationService {
+public class DataBrokerProtectionUserNotificationService: NSObject {
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private var userNotificationCenter: DBPUserNotificationCenter
@@ -167,7 +167,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
 
 }
 
-extension DefaultDataBrokerProtectionUserNotificationService: UNUserNotificationCenterDelegate {
+extension DataBrokerProtectionUserNotificationService: UNUserNotificationCenterDelegate {
 
     public func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
         return .banner

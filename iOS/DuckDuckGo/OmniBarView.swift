@@ -739,6 +739,55 @@ extension OmniBarView {
     }
 }
 
-extension OmniBarView: OmniBar, OmniBarViewProtocol {
+extension OmniBarView: OmniBarViewProtocol {
+    var text: String? {
+        get {
+            textField.text
+        }
+        set {
+            textField.text = newValue
+        }
+    }
+    
+    var backButtonMenu: UIMenu? {
+        get {
+            backButton.menu
+        }
+        set {
+            backButton.menu = newValue
+        }
+    }
+    
+    var forwardButtonMenu: UIMenu? {
+        get {
+            forwardButton.menu
+        }
+        set {
+            forwardButton.menu = newValue
+        }
+    }
+    
+    var menuButtonView: UIButton {
+        menuButton
+    }
 
+    var bookmarksButtonView: UIButton {
+        bookmarksButton
+    }
+    
+    var accessoryButtonView: UIButton {
+        accessoryButton
+    }
+    
+    var searchContainerWidth: CGFloat {
+        searchStackContainer.frame.width
+    }
+
+    var searchContainerView: UIView {
+        searchContainer
+    }
+
+    var privacyIconView: UIView? {
+        privacyInfoContainer.privacyIcon
+    }
 }

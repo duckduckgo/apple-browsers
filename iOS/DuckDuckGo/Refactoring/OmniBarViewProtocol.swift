@@ -20,4 +20,24 @@
 import UIKit
 
 protocol OmniBarViewProtocol: UIView {
+
+    var text: String? { get set }
+
+    var searchContainerView: UIView { get }
+    var bookmarksButtonView: UIButton { get }
+    var accessoryButtonView: UIButton { get }
+    var menuButtonView: UIButton { get }
+
+    var privacyIconView: UIView? { get }
+
+    var backButtonMenu: UIMenu? { get set }
+    var forwardButtonMenu: UIMenu? { get set }
+
+    var searchContainerWidth: CGFloat { get }
+
+    // TODO: Refactor to hide view details
+    var menuButtonContent: MenuButton { get }
+
+    func updateOmniBarPadding(left: CGFloat, right: CGFloat)
+    func refreshOmnibarPaddingConstraintsForAccessoryButton()
 }

@@ -141,10 +141,10 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func onVoiceSearchPressed() {
     }
 
-    func onTextFieldWillBeginEditing(_ omniBar: DuckDuckGo.OmniBarView, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: DuckDuckGo.OmniBar, tapped: Bool) {
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: DuckDuckGo.OmniBarView) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: DuckDuckGo.OmniBar) -> Bool {
         return false
     }
     func onBackPressed() {

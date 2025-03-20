@@ -33,7 +33,7 @@ class BarsAnimator {
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
     private var combinedBarsHeight: CGFloat {
         guard let delegate = delegate else { return 0 }
-        return delegate.toolbarHeight + delegate.omniBar.frame.height
+        return delegate.toolbarHeight + delegate.omniBar.barView.frame.height
     }
 
     enum State: String {

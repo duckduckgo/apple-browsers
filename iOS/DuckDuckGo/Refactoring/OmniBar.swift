@@ -25,13 +25,31 @@ enum OmniBarAccessoryType {
      case chat
  }
 
-protocol OmniBar {
+protocol OmniBar: AnyObject {
+    var barView: OmniBarViewProtocol { get }
+
+    var isBackButtonEnabled: Bool { get set }
+    var isForwardButtonEnabled: Bool { get set }
+
     var omniDelegate: OmniBarDelegate? { get set }
+
+    var isTextFieldEditing: Bool { get }
+    var text: String? { get set }
+
+    // Updates text and calls a query update function
+    func updateQuery(_ query: String?)
+    func refreshText(forUrl url: URL?, forceFullURL: Bool)
+
+    func beginEditing()
+    func endEditing()
 
     func showSeparator()
     func hideSeparator()
     func moveSeparatorToTop()
     func moveSeparatorToBottom()
+
+    func enterPhoneState()
+    func enterPadState()
 
     func startBrowsing()
     func stopBrowsing()
@@ -39,19 +57,25 @@ protocol OmniBar {
     func stopLoading()
     func cancel()
 
-//    func removeTextSelection()
-//    func selectTextToEnd(_ offset: Int)
+    func removeTextSelection()
+    func selectTextToEnd(_ offset: Int)
 
 //    func showCustomIcon(icon: OmniBarIcon)
-//    func updateAccessoryType(_ type: OmniBarAccessoryType)
+    func updateAccessoryType(_ type: OmniBarAccessoryType)
 
-//    func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool)
-//    func updatePrivacyIcon(for privacyInfo: PrivacyInfo?)
-//    func resetPrivacyIcon(for url: URL?)
+    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
+
+    func showOrScheduleOnboardingPrivacyIconAnimation()
+    func dismissOnboardingPrivacyIconAnimation()
+
+    func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool)
+    func updatePrivacyIcon(for privacyInfo: PrivacyInfo?)
+    func hidePrivacyIcon()
+    func resetPrivacyIcon(for url: URL?)
 
     // TODO: Move to view protocol?
-//    func cancelAllAnimations()
-//    func completeAnimationForDaxDialog()
+    func cancelAllAnimations()
+    func completeAnimationForDaxDialog()
     // ------------------------------
 
 

@@ -19,8 +19,8 @@
 
 import UIKit
 
-protocol OmniBarViewController: UIViewController, OmniBar {
-    associatedtype OmniBarViewType: OmniBarViewProtocol
-
-    var omniBarView: OmniBarViewType { get }
-}
+//protocol OmniBarViewController: UIViewController, OmniBar {
+//    associatedtype OmniBarViewType: OmniBarViewProtocol
+//
+//    var barView: OmniBarViewType { get }
+//}

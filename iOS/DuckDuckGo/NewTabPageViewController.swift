@@ -210,7 +210,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     weak var shortcutsDelegate: NewTabPageControllerShortcutsDelegate?
 
     func launchNewSearch() {
-        chromeDelegate?.omniBar.becomeFirstResponder()
+        chromeDelegate?.omniBar.beginEditing()
     }
 
     func openedAsNewTab(allowingKeyboard: Bool) {

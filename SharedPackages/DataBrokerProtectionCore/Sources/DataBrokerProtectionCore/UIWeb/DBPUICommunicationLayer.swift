@@ -357,11 +357,11 @@ public struct DBPUICommunicationLayer: Subfeature {
         guard let data = try? JSONSerialization.data(withJSONObject: params),
               let result = try? JSONDecoder().decode(DBPUIRemoveOptOutFromDashboardRequest.self, from: data) else {
             Logger.dataBrokerProtection.log("Failed to parse removeOptOutFromDashboard message")
-            throw DBPUIError.malformedRequest
+            return DBPUIRemoveOptOutFromDashboardResult(success: false, error: DBPUIError.malformedRequest.errorDescription)
         }
 
-        await delegate?.removeOptOutFromDashboard(result.request)
+        await delegate?.removeOptOutFromDashboard(result.recordId)
 
-        return result
+        return DBPUIRemoveOptOutFromDashboardResult(success: true)
     }
 }

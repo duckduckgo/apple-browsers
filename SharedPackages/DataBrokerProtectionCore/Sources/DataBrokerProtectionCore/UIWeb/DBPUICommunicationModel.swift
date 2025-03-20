@@ -538,5 +538,15 @@ struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
 /// This isn't me
 
 struct DBPUIRemoveOptOutFromDashboardRequest: DBPUISendableMessage {
-    let request: Int64
+    let recordId: Int64
+}
+
+struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
 }

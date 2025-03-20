@@ -47,12 +47,18 @@ extension HomePage.Models {
     static let newHomePageTabOpen = Notification.Name("newHomePageAppOpen")
 
     final class ContinueSetUpModel: ObservableObject {
+
+        enum Const {
+            static let featuresPerRow = 2
+            static let featureRowCountWhenCollapsed = 1
+        }
+
         let itemWidth = FeaturesGridDimensions.itemWidth
         let itemHeight = FeaturesGridDimensions.itemHeight
         let horizontalSpacing = FeaturesGridDimensions.horizontalSpacing
         let verticalSpacing = FeaturesGridDimensions.verticalSpacing
-        let itemsPerRow = HomePage.featuresPerRow
-        let itemsRowCountWhenCollapsed = HomePage.featureRowCountWhenCollapsed
+        let itemsPerRow = Const.featuresPerRow
+        let itemsRowCountWhenCollapsed = Const.featureRowCountWhenCollapsed
         let gridWidth = FeaturesGridDimensions.width
         let deleteActionTitle = UserText.newTabSetUpRemoveItemAction
         let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -426,7 +432,7 @@ extension HomePage.Models {
         static let verticalSpacing: CGFloat = 16
         static let horizontalSpacing: CGFloat = 24
 
-        static let width: CGFloat = (itemWidth + horizontalSpacing) * CGFloat(HomePage.featuresPerRow) - horizontalSpacing
+        static let width: CGFloat = (itemWidth + horizontalSpacing) * CGFloat(ContinueSetUpModel.Const.featuresPerRow) - horizontalSpacing
 
         static func height(for rowCount: Int) -> CGFloat {
             (itemHeight + verticalSpacing) * CGFloat(rowCount) - verticalSpacing

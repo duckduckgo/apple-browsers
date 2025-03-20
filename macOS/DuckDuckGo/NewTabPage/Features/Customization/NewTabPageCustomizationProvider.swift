@@ -21,38 +21,38 @@ import NewTabPage
 import SwiftUI
 
 final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding {
-    let homePageSettingsModel: HomePage.Models.SettingsModel
+    let customizationModel: NewTabPageCustomizationModel
     let appearancePreferences: AppearancePreferences
 
-    init(homePageSettingsModel: HomePage.Models.SettingsModel, appearancePreferences: AppearancePreferences = .shared) {
-        self.homePageSettingsModel = homePageSettingsModel
+    init(customizationModel: NewTabPageCustomizationModel, appearancePreferences: AppearancePreferences = .shared) {
+        self.customizationModel = customizationModel
         self.appearancePreferences = appearancePreferences
     }
 
     var customizerOpener: NewTabPageCustomizerOpener {
-        homePageSettingsModel.customizerOpener
+        customizationModel.customizerOpener
     }
 
     var customizerData: NewTabPageDataModel.CustomizerData {
         .init(
-            background: .init(homePageSettingsModel.customBackground),
+            background: .init(customizationModel.customBackground),
             theme: .init(appearancePreferences.currentThemeName),
-            userColor: homePageSettingsModel.lastPickedCustomColor,
-            userImages: homePageSettingsModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init)
+            userColor: customizationModel.lastPickedCustomColor,
+            userImages: customizationModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init)
         )
     }
 
     var background: NewTabPageDataModel.Background {
         get {
-            .init(homePageSettingsModel.customBackground)
+            .init(customizationModel.customBackground)
         }
         set {
-            homePageSettingsModel.customBackground = .init(newValue)
+            customizationModel.customBackground = .init(newValue)
         }
     }
 
     var backgroundPublisher: AnyPublisher<NewTabPageDataModel.Background, Never> {
-        homePageSettingsModel.$customBackground.dropFirst().removeDuplicates()
+        customizationModel.$customBackground.dropFirst().removeDuplicates()
             .map(NewTabPageDataModel.Background.init)
             .eraseToAnyPublisher()
     }
@@ -73,21 +73,21 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     }
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> {
-        homePageSettingsModel.$availableUserBackgroundImages.dropFirst().removeDuplicates()
+        customizationModel.$availableUserBackgroundImages.dropFirst().removeDuplicates()
             .map { $0.map(NewTabPageDataModel.UserImage.init) }
             .eraseToAnyPublisher()
     }
 
     @MainActor
     func presentUploadDialog() async {
-        await homePageSettingsModel.addNewImage()
+        await customizationModel.addNewImage()
     }
 
     func deleteImage(with imageID: String) async {
-        guard let image = homePageSettingsModel.availableUserBackgroundImages.first(where: { $0.id == imageID }) else {
+        guard let image = customizationModel.availableUserBackgroundImages.first(where: { $0.id == imageID }) else {
             return
         }
-        homePageSettingsModel.customImagesManager?.deleteImage(image)
+        customizationModel.customImagesManager?.deleteImage(image)
     }
 
     @MainActor

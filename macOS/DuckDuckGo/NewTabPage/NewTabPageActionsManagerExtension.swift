@@ -25,7 +25,7 @@ extension NewTabPageActionsManager {
 
     convenience init(
         appearancePreferences: AppearancePreferences,
-        settingsModel: HomePage.Models.SettingsModel,
+        customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol = ContentBlocking.shared,
@@ -41,7 +41,7 @@ extension NewTabPageActionsManager {
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
 
-        let customizationProvider = NewTabPageCustomizationProvider(homePageSettingsModel: settingsModel)
+        let customizationProvider = NewTabPageCustomizationProvider(customizationModel: customizationModel)
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
 
         let privacyStatsModel = NewTabPagePrivacyStatsModel(
@@ -68,7 +68,7 @@ extension NewTabPageActionsManager {
                 sectionsAvailabilityProvider: NewTabPageModeDecider(),
                 sectionsVisibilityProvider: appearancePreferences,
                 customBackgroundProvider: customizationProvider,
-                linkOpener: DefaultHomePageSettingsModelNavigator(),
+                linkOpener: NewTabPageLinkOpener(),
                 eventMapper: NewTabPageConfigurationErrorHandler()
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),

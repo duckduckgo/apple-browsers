@@ -102,7 +102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
-        settingsModel: homePageSettingsModel,
+        customizationModel: newTabPageCustomizationModel,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: HistoryCoordinator.shared,
         privacyStats: privacyStats,
@@ -110,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
-    let homePageSettingsModel = HomePage.Models.SettingsModel()
+    let newTabPageCustomizationModel = NewTabPageCustomizationModel()
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter

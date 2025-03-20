@@ -1,5 +1,5 @@
 //
-//  HomePageSettingsModelNavigator.swift
+//  Logger+NewTabPageCustomization.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -17,16 +17,8 @@
 //
 
 import Foundation
+import os.log
 
-protocol HomePageSettingsModelNavigator {
-    func openAppearanceSettings()
-}
-
-struct DefaultHomePageSettingsModelNavigator: HomePageSettingsModelNavigator {
-
-    func openAppearanceSettings() {
-        Task.detached { @MainActor in
-            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .appearance)
-        }
-    }
+public extension Logger {
+    static var newTabPageCustomization = { Logger(subsystem: "NewTabPageCustomization", category: "") }()
 }

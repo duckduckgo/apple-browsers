@@ -28,6 +28,18 @@ extension VPNBypassService {
                   backgroundAgentBundleId: Bundle.main.dbpBackgroundAgentBundleId,
                   proxySettings: TransparentProxySettings(defaults: .netP))
     }
+
+    public var isSupported: Bool {
+#if APPSTORE
+#if NETP_SYSTEM_EXTENSION
+        return true
+#else
+        return false
+#endif
+#else
+        return true
+#endif
+    }
 }
 
 extension VPNBypassService: @retroactive VPNConnectionStatusThroughIPCProvider {

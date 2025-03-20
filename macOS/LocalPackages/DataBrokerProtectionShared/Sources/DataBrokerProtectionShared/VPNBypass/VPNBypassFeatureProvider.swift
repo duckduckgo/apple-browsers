@@ -35,23 +35,11 @@ public protocol VPNBypassServiceProvider: AnyObject {
     func applyVPNBypass(_ bypass: Bool)
 }
 
+public extension VPNBypassServiceProvider {
+    var isSupported: Bool { false }
+}
+
 public protocol VPNConnectionStatusThroughIPCProvider {
     func setUp()
     var connectionStatus: String { get }
-}
-
-public extension VPNBypassServiceProvider {
-
-    var isSupported: Bool {
-#if APPSTORE
-#if NETP_SYSTEM_EXTENSION
-        return true
-#else
-        return false
-#endif
-#else
-        return true
-#endif
-    }
-
 }

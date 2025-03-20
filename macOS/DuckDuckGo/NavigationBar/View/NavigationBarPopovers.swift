@@ -25,6 +25,7 @@ import NetworkProtectionUI
 import NetworkProtectionIPC
 import PixelKit
 import PrivacyDashboard
+import Common
 
 protocol PopoverPresenter {
     func show(_ popover: NSPopover, positionedBelow view: NSView)
@@ -359,7 +360,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private func subscribePrivacyDashboardPendingUpdates(for privacyDashboardPopover: PrivacyDashboardPopover) {
         privacyDashboadPendingUpdatesCancellable?.cancel()
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         let privacyDashboardViewController = privacyDashboardPopover.viewController
 
         privacyDashboadPendingUpdatesCancellable = privacyDashboardViewController.rulesUpdateObserver

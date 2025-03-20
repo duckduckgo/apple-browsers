@@ -71,12 +71,14 @@ public final class AIChatViewController: UIViewController {
                             webViewConfiguration: WKWebViewConfiguration,
                             requestAuthHandler: AIChatRequestAuthorizationHandling,
                             inspectableWebView: Bool,
-                            downloadsPath: URL) {
+                            downloadsPath: URL,
+                            userAgentManager: AIChatUserAgentProviding) {
         let chatModel = AIChatViewModel(webViewConfiguration: webViewConfiguration,
                                         settings: settings,
                                         requestAuthHandler: requestAuthHandler,
                                         inspectableWebView: inspectableWebView,
-                                        downloadsPath: downloadsPath)
+                                        downloadsPath: downloadsPath,
+                                        userAgentManager: userAgentManager)
         self.init(chatModel: chatModel)
     }
 

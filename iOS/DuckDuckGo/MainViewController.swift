@@ -3167,4 +3167,8 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
         segueToDownloads()
     }
+
+    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
+        segueToSettingsAIChat()
+    }
 }

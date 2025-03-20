@@ -19,6 +19,7 @@
 import XCTest
 import DDGSync
 import Combine
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SyncErrorHandlerTests: XCTestCase {
@@ -26,7 +27,7 @@ final class SyncErrorHandlerTests: XCTestCase {
     var cancellables: Set<AnyCancellable>!
     var handler: SyncErrorHandler!
     var alertPresenter: CapturingAlertPresenter!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
 
     override func setUpWithError() throws {
         UserDefaultsWrapper<Any>.clearAll()

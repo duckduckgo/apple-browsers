@@ -736,7 +736,7 @@ extension DataImportViewModel {
 
         Logger.dataImportExport.debug("dismiss")
         dismiss()
-        if case .xcPreviews = NSApp.runType {
+        if case .xcPreviews = AppVersion.runType {
             self.update(with: importSource) // reset
         }
     }

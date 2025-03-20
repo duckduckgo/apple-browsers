@@ -106,8 +106,6 @@ final class TabCollectionViewModel: NSObject {
     }
     private weak var previouslySelectedTabViewModel: TabViewModel?
 
-    // In a special occasion, we want to select the "parent" tab after closing the currently selected tab
-    private var selectParentOnRemoval = false
     private var tabLazyLoader: TabLazyLoader<TabCollectionViewModel>?
     private var isTabLazyLoadingRequested: Bool = false
 
@@ -304,7 +302,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .unpinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -319,7 +316,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .pinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -345,10 +341,6 @@ final class TabCollectionViewModel: NSObject {
             delegate?.tabCollectionViewModelDidAppend(self, selected: true)
         } else {
             delegate?.tabCollectionViewModelDidAppend(self, selected: false)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -381,10 +373,6 @@ final class TabCollectionViewModel: NSObject {
         }
         if index.isUnpinnedTab {
             delegate?.tabCollectionViewModelDidInsert(self, at: index.item, selected: selected)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -459,10 +447,12 @@ final class TabCollectionViewModel: NSObject {
     private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
-        let parentTab = tabCollection.tabs[safe: index]?.parentTab
+        let removedTab = tabCollection.tabs[safe: index]
+        let parentTab = removedTab?.parentTab
         guard tabCollection.removeTab(at: index, published: published, forced: forceChange) else { return }
 
-        didRemoveTab(at: .unpinned(index),
+        didRemoveTab(tab: removedTab!,
+                     at: .unpinned(index),
                      withParent: parentTab,
                      forced: forceChange)
     }
@@ -473,12 +463,12 @@ final class TabCollectionViewModel: NSObject {
         defer {
             shouldBlockPinnedTabsManagerUpdates = false
         }
-        guard pinnedTabsManager?.unpinTab(at: index, published: published) != nil else { return }
+        guard let removedTab = pinnedTabsManager?.unpinTab(at: index, published: published) else { return }
 
-        didRemoveTab(at: .pinned(index), withParent: nil)
+        didRemoveTab(tab: removedTab, at: .pinned(index), withParent: nil)
     }
 
-    private func didRemoveTab(at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
+    private func didRemoveTab(tab: Tab, at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
 
         func notifyDelegate() {
             if index.isUnpinnedTab {
@@ -500,21 +490,9 @@ final class TabCollectionViewModel: NSObject {
         }
 
         let newSelectionIndex: TabIndex
-        if selectionIndex == index,
-           selectParentOnRemoval,
-           let parentTab = parentTab,
-           let parentTabIndex = indexInAllTabs(of: parentTab) {
-            // Select parent tab
-            newSelectionIndex = parentTabIndex
-        } else if selectionIndex == index,
-                  let parentTab = parentTab,
-                  let leftTab = tab(at: index.previous(in: self)),
-                  let rightTab = tab(at: index),
-                  rightTab.parentTab !== parentTab && (leftTab.parentTab === parentTab || leftTab === parentTab) {
-            // Select parent tab on left or another child tab on left instead of the tab on right
-            newSelectionIndex = .unpinned(max(0, selectionIndex.item - 1))
-        } else if selectionIndex > index, selectionIndex.isInSameSection(as: index) {
-            newSelectionIndex = selectionIndex.previous(in: self)
+
+        if let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: tab) {
+            newSelectionIndex = calculatedIndex
         } else {
             newSelectionIndex = selectionIndex.sanitized(for: self)
         }
@@ -523,19 +501,38 @@ final class TabCollectionViewModel: NSObject {
         select(at: newSelectionIndex, forceChange: forced)
     }
 
+    func getLastSelectedTab() -> TabIndex? {
+        let recentlyOpenedPinnedTab = pinnedTabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+        let recentlyOpenedNormalTab = tabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+
+        if let pinnedTab = recentlyOpenedPinnedTab, let normalTab = recentlyOpenedNormalTab {
+            if pinnedTab.lastSelectedAt ?? Date.distantPast > normalTab.lastSelectedAt ?? Date.distantPast {
+                return indexInAllTabs(of: pinnedTab)
+            } else {
+                return indexInAllTabs(of: normalTab)
+            }
+        } else if let pinnedTab = recentlyOpenedPinnedTab {
+            return indexInAllTabs(of: pinnedTab)
+        } else if let normalTab = recentlyOpenedNormalTab {
+            return indexInAllTabs(of: normalTab)
+        } else {
+            return nil
+        }
+    }
+
     func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int) {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
-        let parentTab = tabCollection.tabs[safe: fromIndex]?.parentTab
+        let movedTab = tabCollection.tabs[safe: fromIndex]
+        let parentTab = movedTab?.parentTab
 
         guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else { return }
 
-        didRemoveTab(at: .unpinned(fromIndex), withParent: parentTab)
+        didRemoveTab(tab: movedTab!, at: .unpinned(fromIndex), withParent: parentTab)
 
         otherViewModel.selectUnpinnedTab(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
-        otherViewModel.selectParentOnRemoval = true
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
@@ -685,8 +682,8 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func handleTabUnpinnedInAnotherTabCollectionViewModel(at index: Int) {
-        if selectionIndex == .pinned(index) {
-            didRemoveTab(at: .pinned(index), withParent: nil)
+        if selectionIndex == .pinned(index), let tab = tab(at: .pinned(index)) {
+            didRemoveTab(tab: tab, at: .pinned(index), withParent: nil)
         }
     }
 

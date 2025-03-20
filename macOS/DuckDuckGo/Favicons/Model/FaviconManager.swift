@@ -97,8 +97,8 @@ final class FaviconManager: FaviconManagement {
 
     init(
         cacheType: CacheType,
-        imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
-        referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
+        imageCache: (@MainActor (FaviconStoring) -> FaviconImageCaching)? = nil,
+        referenceCache: (@MainActor (FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
         switch cacheType {
         case .standard:

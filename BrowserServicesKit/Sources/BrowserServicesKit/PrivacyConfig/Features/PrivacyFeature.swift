@@ -117,27 +117,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemium
 }
 
-public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .aiChat
-    }
-
-    /// Displays the settings item for showing a shortcut in the macOS application menu.
-    case applicationMenuShortcut
-
-    /// Displays the settings item for showing a shortcut in the macOS toolbar.
-    case toolbarShortcut
-
-    /// Displays the AI Chat icon in the iOS browsing menu toolbar.
-    case browsingToolbarShortcut
-
-    /// Displays the AI Chat icon in the iOS address bar while on a SERP.
-    case addressBarShortcut
-
-    /// Web and native integration for opening AI Chat in a custom webview.
-    case deepLink
-}
-
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .networkProtection

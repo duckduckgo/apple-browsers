@@ -28,22 +28,7 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
-
-    /// The remote feature flag state for AI Chat.
-    var isAIChatFeatureEnabled: Bool { get }
-
-    /// The remote feature flag for the AI Chat shortcut in the browsing menu.
-    var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool { get }
-
-    /// The remote feature flag for the AI Chat shortcut in the address bar.
-    var isAIChatAddressBarShortcutFeatureEnabled: Bool { get }
-
-    /// The local feature flag for the AI Chat shortcut in voice search.
-    var isAIChatVoiceSearchFeatureEnabled: Bool { get }
-
-    /// The local feature flag for the AI Chat shortcut in tab switcher..
-    var isAIChatTabSwitcherFeatureEnabled: Bool { get }
-
+    
     /// The user settings state for the AI Chat voice search
     var isAIChatVoiceSearchUserSettingsEnabled: Bool { get }
 

@@ -50,14 +50,6 @@ struct SettingsState {
         var isActiveTrialOffer: Bool
     }
 
-    struct AIChat: Codable {
-        var enabled: Bool
-        var isAIChatBrowsingMenuFeatureFlagEnabled: Bool
-        var isAIChatAddressBarFeatureFlagEnabled: Bool
-        var isAIChatVoiceSearchFeatureFlagEnabled: Bool
-        var isAIChatTabSwitcherFeatureFlagEnabled: Bool
-    }
-
     struct SyncSettings {
         var enabled: Bool
         var title: String
@@ -120,9 +112,6 @@ struct SettingsState {
     var duckPlayerNativeUISERPEnabled: Bool
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
 
-    // AI Chat
-    var aiChat: AIChat
-
     static var defaults: SettingsState {
         return SettingsState(
             appTheme: .systemDefault,
@@ -169,12 +158,7 @@ struct SettingsState {
             duckPlayerNativeUI: false,
             duckPlayerAutoplay: true,
             duckPlayerNativeUISERPEnabled: true,
-            duckPlayerNativeYoutubeMode: .ask,
-            aiChat: AIChat(enabled: false,
-                           isAIChatBrowsingMenuFeatureFlagEnabled: false,
-                           isAIChatAddressBarFeatureFlagEnabled: false,
-                           isAIChatVoiceSearchFeatureFlagEnabled: false,
-                           isAIChatTabSwitcherFeatureFlagEnabled: false)
+            duckPlayerNativeYoutubeMode: .ask
         )
     }
 }

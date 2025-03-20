@@ -148,29 +148,24 @@ extension TabViewController {
         var entries = [BrowsingMenuEntry]()
 
         if state == .newTab {
-            if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-                entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
-                                                         image: UIImage(named: "Add-16")!,
+            entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
+                                                     image: UIImage(named: "Add-16")!,
+                                                     action: { [weak self] in
+                self?.onNewTabAction()
+            }))
+
+            if shouldShowAIChatInMenu {
+                entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
+                                                         image: UIImage(named: "AIChat-16")!,
                                                          action: { [weak self] in
-                    self?.onNewTabAction()
+                    self?.openAIChat()
                 }))
-
-                if featureFlagger.isFeatureOn(.aiChat) && shouldShowAIChatInMenu {
-                    entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
-                                                             image: UIImage(named: "AIChat-16")!,
-                                                             action: { [weak self] in
-                        self?.openAIChat()
-                    }))
-                }
-
-
             }
+
             entries.append(.separator)
         }
 
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            entries.append(buildOpenBookmarksEntry())
-        }
+        entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
@@ -205,10 +200,6 @@ extension TabViewController {
         entries.append(bookmarkEntries.bookmark)
         assert(self.favoriteEntryIndex == entries.count, "Entry index should be in sync with entry placement")
         entries.append(bookmarkEntries.favorite)
-
-        if !featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            entries.append(buildOpenBookmarksEntry())
-        }
 
         entries.append(.separator)
 

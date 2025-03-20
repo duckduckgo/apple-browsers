@@ -538,12 +538,7 @@ extension SettingsViewModel {
             duckPlayerNativeUI: appSettings.duckPlayerNativeUI,
             duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
             duckPlayerNativeUISERPEnabled: appSettings.duckPlayerNativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode,
-            aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
-                                         isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
-                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
-                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled,
-                                         isAIChatTabSwitcherFeatureFlagEnabled: aiChatSettings.isAIChatTabSwitcherFeatureEnabled)
+            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode
         )
 
         updateRecentlyVisitedSitesVisibility()

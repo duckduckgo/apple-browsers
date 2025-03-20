@@ -639,7 +639,6 @@ class TabViewController: UIViewController {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
             pullToRefreshLogic = PullToRefreshLogic(with: webView.scrollView,
                                                     pullableView: webViewContainerView,
-                                                    fakeScrollView: scrollView,
                                                     onRefresh: handlePullToRefresh)
         } else {
             webView.scrollView.refreshControl = refreshControl

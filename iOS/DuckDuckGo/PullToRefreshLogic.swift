@@ -23,12 +23,33 @@ final class PullToRefreshLogic: NSObject {
 
     private enum Constant {
 
-        static let pullLimit: CGFloat = 200
-        static let refreshTriggerThreshold: CGFloat = 160
+        // Base values for portrait orientation on standard devices
+        static let pullLimitRatio: CGFloat = 0.25 // 25% of container height
+        static let refreshTriggerRatio: CGFloat = 0.2 // 20% of container height
+
+        // Minimum values to ensure usability on very small screens
+        static let minimumPullLimit: CGFloat = 120
+        static let minimumTriggerThreshold: CGFloat = 80
+
+        // Maximum values to prevent excessive pulling on large screens
+        static let maximumPullLimit: CGFloat = 250
+        static let maximumTriggerThreshold: CGFloat = 200
 
     }
 
-    private let fakeScrollView: UIScrollView
+    private var pullLimit: CGFloat {
+        let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
+        let calculatedLimit = containerHeight * Constant.pullLimitRatio
+        return min(max(calculatedLimit, Constant.minimumPullLimit), Constant.maximumPullLimit)
+    }
+
+    private var refreshTriggerThreshold: CGFloat {
+        let containerHeight = pullableView?.bounds.height ?? UIScreen.main.bounds.height
+        let calculatedThreshold = containerHeight * Constant.refreshTriggerRatio
+        return min(max(calculatedThreshold, Constant.minimumTriggerThreshold), Constant.maximumTriggerThreshold)
+    }
+
+    private var fakeScrollView: UIScrollView!
     private let refreshControl = UIRefreshControl()
     private var panGestureRecognizer: UIPanGestureRecognizer?
 
@@ -43,17 +64,47 @@ final class PullToRefreshLogic: NSObject {
 
     init(with scrollView: UIScrollView,
          pullableView: UIView,
-         fakeScrollView: UIScrollView,
          onRefresh: @escaping () -> Void) {
         self.scrollView = scrollView
         self.pullableView = pullableView
-        self.fakeScrollView = fakeScrollView
         self.onRefresh = onRefresh
 
         super.init()
+        setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
         refreshControl.tintColor = .label
+    }
+
+    private func setupBackgroundScrollView(basedOn view: UIView) {
+        // Create the background scroll view that will be visible when pulling down
+        fakeScrollView = UIScrollView()
+        fakeScrollView.translatesAutoresizingMaskIntoConstraints = false
+        fakeScrollView.isScrollEnabled = true // Enable scrolling for refresh control
+
+        view.superview?.addSubview(fakeScrollView)
+        view.superview?.sendSubviewToBack(fakeScrollView)
+
+        NSLayoutConstraint.activate([
+            fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            fakeScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            fakeScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            fakeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
+
+        let fakeContentView = UIView()
+        fakeContentView.translatesAutoresizingMaskIntoConstraints = false
+        fakeScrollView.addSubview(fakeContentView)
+
+        // Make the content view much taller than the scroll view to allow scrolling
+        NSLayoutConstraint.activate([
+            fakeContentView.topAnchor.constraint(equalTo: fakeScrollView.topAnchor),
+            fakeContentView.leadingAnchor.constraint(equalTo: fakeScrollView.leadingAnchor),
+            fakeContentView.trailingAnchor.constraint(equalTo: fakeScrollView.trailingAnchor),
+            fakeContentView.widthAnchor.constraint(equalTo: fakeScrollView.widthAnchor),
+            fakeContentView.bottomAnchor.constraint(equalTo: fakeScrollView.bottomAnchor),
+            fakeContentView.heightAnchor.constraint(equalToConstant: 1500) // Tall enough to scroll
+        ])
     }
 
     private func setupPanGestureRecognizer() {
@@ -72,7 +123,7 @@ final class PullToRefreshLogic: NSObject {
             handleVerticalChange(translationY: translation.y)
         case .ended, .cancelled:
             resetPullState()
-            animateCardToOriginalPosition()
+            animatePullableViewToOriginalPosition()
         default:
             break
         }
@@ -102,13 +153,13 @@ final class PullToRefreshLogic: NSObject {
 
     private func calculatePullDistance(translationY: CGFloat) -> CGFloat {
         let adjustedTranslation = max(0, translationY - initialTranslationY)
-        return min(adjustedTranslation, Constant.pullLimit)
+        return min(adjustedTranslation, pullLimit)
     }
 
     private func handlePullEffect(pullDistance: CGFloat) {
-        // Move the webView container down based on pull distance
+        // Move the pullable view down based on pull distance
         pullableView?.transform = CGAffineTransform(translationX: pullableView?.frame.origin.x ?? 0,
-                                                        y: pullDistance)
+                                                    y: pullDistance)
 
         // Update the background scroll view's content offset to match the pull
         // We only adjust the content offset if not refreshing to avoid hiding the refresh spinner
@@ -119,7 +170,7 @@ final class PullToRefreshLogic: NSObject {
 
     private func triggerRefreshIfNeeded(pullDistance: CGFloat) {
         // Trigger refresh if pulled past threshold and not already triggered
-        if pullDistance > Constant.refreshTriggerThreshold, !didTriggerRefresh {
+        if pullDistance > refreshTriggerThreshold, !didTriggerRefresh {
             beginRefreshing()
         }
     }
@@ -134,7 +185,7 @@ final class PullToRefreshLogic: NSObject {
         }
     }
 
-    private func animateCardToOriginalPosition() {
+    private func animatePullableViewToOriginalPosition() {
         UIView.animate(withDuration: 0.2, delay: 0.0, options: .curveEaseInOut) {
             self.pullableView?.transform = .identity
             if !self.refreshControl.isRefreshing {
@@ -155,7 +206,7 @@ final class PullToRefreshLogic: NSObject {
         didEndRefreshing = true
         if !isPulling {
             refreshControl.endRefreshing()
-            animateCardToOriginalPosition()
+            animatePullableViewToOriginalPosition()
         }
     }
 

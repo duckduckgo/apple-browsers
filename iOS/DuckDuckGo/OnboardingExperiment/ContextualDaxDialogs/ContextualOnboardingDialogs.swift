@@ -255,6 +255,55 @@ struct OnboardingFinalDialog: View {
     }
 }
 
+struct PrivacyProPromotionView: View {
+
+    let title: String
+    let message: NSAttributedString
+    let proceedText: String
+    let dismissText: String
+    let proceedAction: () -> Void
+    let dismissAction: () -> Void
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: .top) {
+                ContextualDaxDialogContent(
+                    title: title,
+                    titleFont: Font(UIFont.daxTitle3()),
+                    message: message,
+                    messageFont: Font.system(size: 16),
+                    customView: nil,
+                    customActionView: AnyView(customActionView)
+                )
+
+            }
+            .padding()
+        }
+    }
+
+    @ViewBuilder
+    private var customActionView: some View {
+        VStack {
+            Image(.onboardingPrivacyProPromo)
+                .padding([.top, .bottom], 16)
+            OnboardingCTAButton(
+                title: proceedText,
+                buttonStyle: .primary,
+                action: {
+                    proceedAction()
+                }
+            )
+            OnboardingCTAButton(
+                title: dismissText,
+                buttonStyle: .ghost,
+                action: {
+                    dismissAction()
+                }
+            )
+        }
+    }
+}
+
 struct OnboardingCTAButton: View {
     enum ButtonStyle {
         case primary

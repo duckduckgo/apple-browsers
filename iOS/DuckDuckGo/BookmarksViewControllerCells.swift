@@ -30,7 +30,6 @@ class BookmarkCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var favoriteImageViewContainer: UIView!
     @IBOutlet weak var favoriteImageView: UIImageView!
-    
 }
 
 class FolderCell: UITableViewCell {
@@ -39,7 +38,8 @@ class FolderCell: UITableViewCell {
 
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var childrenCountLabel: UILabel!
-
+    @IBOutlet weak var iconImageView: UIImageView!
+    
     override func setEditing(_ editing: Bool, animated: Bool) {
         super.setEditing(editing, animated: animated)
         childrenCountLabel.isHidden = editing
@@ -77,6 +77,7 @@ class BookmarksViewControllerCellFactory {
         cell.backgroundColor = theme.tableCellBackgroundColor
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.favoriteImageView.tintColor = UIColor(designSystemColor: .icons)
+        cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
         cell.editingAccessoryType = .disclosureIndicator
         return cell
     }
@@ -91,6 +92,7 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.childrenCountLabel.textColor = theme.tableCellTextColor
         cell.editingAccessoryType = .disclosureIndicator
+        cell.iconImageView.tintColor = UIColor(designSystemColor: .icons)
         return cell
     }
 

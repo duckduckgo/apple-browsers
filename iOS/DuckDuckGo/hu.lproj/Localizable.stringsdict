@@ -244,5 +244,309 @@ Blokkoltam őket!
 			<string>%1$d jelszó törölve</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Lap bezárása</string>
+			<key>other</key>
+			<string>Lapok bezárása</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Lap bezárása</string>
+			<key>other</key>
+			<string>Mind a(z) %1$d lap bezárása</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bezárod a lapot?</string>
+			<key>other</key>
+			<string>Bezársz %1$d lapot?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bezárod a másik lapot?</string>
+			<key>other</key>
+			<string>Bezársz %1$d másik lapot?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Biztosan be akarod zárni a lapot?</string>
+			<key>other</key>
+			<string>Biztosan be akarod zárni ezeket a lapokat?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bezárod a lapot?</string>
+			<key>other</key>
+			<string>Bezársz %1$d lapot?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Biztosan be akarod zárni ezt a lapot?</string>
+			<key>other</key>
+			<string>Biztosan be akarod zárni ezeket a lapokat?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bezárod a lapot?</string>
+			<key>other</key>
+			<string>Bezárod mind a(z) %1$d lapot?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Biztosan bezárod ezt a lapot?</string>
+			<key>other</key>
+			<string>Biztosan bezárod az összes lapot?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Válassz ki egy lapot</string>
+			<key>other</key>
+			<string>Válaszd ki a lapokat</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Másik lap bezárása</string>
+			<key>other</key>
+			<string>Többi lap bezárása</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Link megosztása</string>
+			<key>other</key>
+			<string>%1$d link megosztása</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Kiválasztott lap megosztása</string>
+			<key>other</key>
+			<string>Kiválasztott lapok megosztása</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Lap hozzáadása a könyvjelzőkhöz</string>
+			<key>other</key>
+			<string>%1$d lap hozzáadása a könyvjelzőkhöz</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Könyvjelző hozzáadva</string>
+			<key>other</key>
+			<string>%1$d könyvjelző hozzáadva</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hozzáadod a könyvjelzőkhöz a kiválasztott lapot?</string>
+			<key>other</key>
+			<string>Hozzáadsz a könyvjelzőkhöz %1$d lapot?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Hozzáadod a könyvjelzőkhöz a kiválasztott lapot?</string>
+			<key>other</key>
+			<string>Hozzáadsz a könyvjelzőkhöz %1$d lapot?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d kiválasztva</string>
+			<key>other</key>
+			<string>%1$d kiválasztva</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d kiválasztott lap</string>
+			<key>other</key>
+			<string>%1$d kiválasztott lap</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

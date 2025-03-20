@@ -23,6 +23,7 @@ public enum FeatureFlag: String, CaseIterable {
     case debugMenu
     case sslCertificatesBypass
     case maliciousSiteProtection
+    case scamSiteProtection
 
     /// Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
     /// https://app.asana.com/0/1199230911884351/1205979030848528/f
@@ -44,9 +45,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// https://app.asana.com/0/72649045549333/1208241266421040/f
-    case htmlNewTabPage
-
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
@@ -56,19 +54,29 @@ public enum FeatureFlag: String, CaseIterable {
     case autcompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
+    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
+    case popoverVsBannerExperiment
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .popoverVsBannerExperiment:
+            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
 
+    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case popover
+        case banner
+     }
+
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG:
+        case .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -102,8 +110,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
-        case .htmlNewTabPage:
-            return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
@@ -116,8 +122,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
+        case .scamSiteProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .popoverVsBannerExperiment:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         }
     }
 }

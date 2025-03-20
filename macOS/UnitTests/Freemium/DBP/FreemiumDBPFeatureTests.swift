@@ -70,7 +70,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -89,7 +88,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -107,7 +105,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -125,7 +122,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -143,7 +139,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -162,7 +157,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -181,7 +175,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
         // When
@@ -202,7 +195,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -220,7 +212,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -243,7 +234,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -267,7 +257,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -287,7 +276,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -308,7 +296,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -344,7 +331,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -380,7 +366,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -416,7 +401,6 @@ final class FreemiumDBPFeatureTests: XCTestCase {
         sut = DefaultFreemiumDBPFeature(privacyConfigurationManager: mockPrivacyConfigurationManager,
                                         experimentManager: mockFreemiumDBPExperimentManager,
                                         subscriptionManager: mockSubscriptionManager,
-                                        accountManager: mockAccountManager,
                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManagerManager,
                                         featureDisabler: mockFeatureDisabler)
 
@@ -459,4 +443,6 @@ final class MockFreemiumDBPExperimentManager: FreemiumDBPPixelExperimentManaging
     var pixelParameters: [String: String]?
 
     func assignUserToCohort() {}
+
+    func sendOneTimeCohortSubscriptionStatusPixel() {}
 }

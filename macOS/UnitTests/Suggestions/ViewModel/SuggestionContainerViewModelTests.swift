@@ -24,7 +24,7 @@ import Suggestions
 final class SuggestionContainerViewModelTests: XCTestCase {
 
     var suggestionLoadingMock: SuggestionLoadingMock!
-    var historyCoordinatingMock: HistoryCoordinatingMock!
+    var historyProviderMock: HistoryProviderMock!
     var suggestionContainer: SuggestionContainer!
     var suggestionContainerViewModel: SuggestionContainerViewModel!
 
@@ -33,18 +33,18 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     override func setUp() {
         SearchPreferences.shared.showAutocompleteSuggestions = true
         suggestionLoadingMock = SuggestionLoadingMock()
-        historyCoordinatingMock = HistoryCoordinatingMock()
+        historyProviderMock = HistoryProviderMock()
         suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                   suggestionLoading: suggestionLoadingMock,
-                                                  historyCoordinating: historyCoordinatingMock,
-                                                  bookmarkManager: LocalBookmarkManager.shared,
+                                                  historyProvider: historyProviderMock,
+                                                  bookmarkProvider: LocalBookmarkManager.shared,
                                                   burnerMode: .regular)
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
     }
 
     override func tearDown() {
         suggestionLoadingMock = nil
-        historyCoordinatingMock = nil
+        historyProviderMock = nil
         suggestionContainer = nil
         suggestionContainerViewModel = nil
         cancellables.removeAll()
@@ -304,15 +304,15 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     func testWhenSuggestionLoadingDataSourceOpenTabsRequested_ThenOpenTabsProviderIsCalled() {
         // Setup open tabs with matching URLs and titles
         let openTabs = [
-            OpenTab(title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
-            OpenTab(title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
+            OpenTab(tabId: "1", title: "DuckDuckGo", url: URL(string: "http://duckduckgo.com")!),
+            OpenTab(tabId: "2", title: "Duck Tales", url: URL(string: "http://ducktales.com")!),
         ]
 
         // Mock the open tabs provider to return the defined open tabs
         suggestionContainer = SuggestionContainer(openTabsProvider: { openTabs },
                                                   suggestionLoading: suggestionLoadingMock,
-                                                  historyCoordinating: historyCoordinatingMock,
-                                                  bookmarkManager: LocalBookmarkManager.shared,
+                                                  historyProvider: historyProviderMock,
+                                                  bookmarkProvider: LocalBookmarkManager.shared,
                                                   burnerMode: .regular)
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 

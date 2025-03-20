@@ -277,7 +277,7 @@ final class AddressBarButtonsViewController: NSViewController {
         popupBlockedPopover?.close()
 
         popovers?.togglePrivacyDashboardPopover(for: tabViewModel, from: privacyEntryPointButton, entryPoint: entryPoint)
-        onboardingPixelReporter.trackPrivacyDashboardOpened()
+        onboardingPixelReporter.measurePrivacyDashboardOpened()
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -338,11 +338,11 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if !popovers.isEditBookmarkPopoverShown {
-            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
-        } else {
+        if popovers.isEditBookmarkPopoverShown {
             updateBookmarkButtonVisibility()
             popovers.closeEditBookmarkPopover()
+        } else {
+            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
         }
     }
 
@@ -604,7 +604,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             let newAnimationView: LottieAnimationView
             // For unknown reason, this caused infinite execution of various unit tests.
-            if NSApp.runType.requiresEnvironment {
+            if AppVersion.runType.requiresEnvironment {
                 newAnimationView = getAnimationView(for: animationName) ?? LottieAnimationView()
             } else {
                 newAnimationView = LottieAnimationView()
@@ -822,7 +822,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePrivacyEntryPointIcon() {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         privacyEntryPointButton.image = nil
 
         guard let tabViewModel else { return }
@@ -833,12 +833,12 @@ final class AddressBarButtonsViewController: NSViewController {
             guard let host = url.host else { break }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
-            let isCertificateValid = tabViewModel.tab.isCertificateValid ?? true
+            let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
             let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
-            let isShieldDotVisible = isNotSecure || isUnprotected || !isCertificateValid
+            let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid
 
             if isFlaggedAsMalicious {
                 privacyEntryPointButton.isAnimationEnabled = false
@@ -992,9 +992,12 @@ final class AddressBarButtonsViewController: NSViewController {
             return (bookmark, false)
         }
 
+        let lastUsedFolder = UserDefaultsBookmarkFoldersStore().lastBookmarkSingleTabFolderIdUsed.flatMap(bookmarkManager.getBookmarkFolder)
         let bookmark = bookmarkManager.makeBookmark(for: url,
                                                     title: tabViewModel.title,
-                                                    isFavorite: setFavorite)
+                                                    isFavorite: setFavorite,
+                                                    index: nil,
+                                                    parent: lastUsedFolder)
         updateBookmarkButtonImage(isUrlBookmarked: bookmark != nil)
 
         return (bookmark, true)

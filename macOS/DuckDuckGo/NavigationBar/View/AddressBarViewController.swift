@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Lottie
+import Common
 
 final class AddressBarViewController: NSViewController, ObservableObject {
 
@@ -457,7 +458,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         self.updateMode()
         self.addressBarButtonsViewController?.updateButtons()
 
-        guard let window = view.window, NSApp.runType != .unitTests else { return }
+        guard let window = view.window, AppVersion.runType != .unitTests else { return }
 
         if isSearchBox {
             let appearance = addressBarTextField.homePagePreferredAppearance ?? NSApp.effectiveAppearance

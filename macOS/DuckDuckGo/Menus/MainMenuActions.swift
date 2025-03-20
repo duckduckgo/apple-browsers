@@ -186,7 +186,11 @@ extension AppDelegate {
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
-            FeedbackPresenter.presentFeedbackForm()
+            if self.internalUserDecider.isInternalUser {
+                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            } else {
+                FeedbackPresenter.presentFeedbackForm()
+            }
         }
     }
 
@@ -335,7 +339,7 @@ extension AppDelegate {
         DispatchQueue.main.async {
             FireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.trackFireButtonPressed()
+            pixelReporter.measureFireButtonPressed()
         }
     }
 
@@ -357,7 +361,7 @@ extension AppDelegate {
     }
 
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
-        homePageSettingsModel.resetAllCustomizations()
+        newTabPageCustomizationModel.resetAllCustomizations()
     }
 }
 
@@ -1225,7 +1229,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = featureFlagger.isFeatureOn(.htmlNewTabPage) && activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 

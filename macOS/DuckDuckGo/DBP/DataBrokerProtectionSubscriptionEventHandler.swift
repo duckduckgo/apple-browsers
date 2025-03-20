@@ -20,8 +20,10 @@ import Combine
 import Foundation
 import Subscription
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import PixelKit
 import Common
+import Networking
 
 final class DataBrokerProtectionSubscriptionEventHandler {
 
@@ -59,7 +61,6 @@ final class DataBrokerProtectionSubscriptionEventHandler {
 
     private func entitlementsDidChange(_ notification: Notification) {
         guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-
             assertionFailure("Missing entitlements are truly unexpected")
             return
         }

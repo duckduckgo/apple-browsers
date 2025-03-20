@@ -20,6 +20,10 @@ import SwiftUIExtensions
 
 struct HistoryViewOnboardingView: View {
 
+    enum Const {
+        static let width: CGFloat = 384
+    }
+
     @ObservedObject var model: HistoryViewOnboardingViewModel
 
     var body: some View {
@@ -32,7 +36,12 @@ struct HistoryViewOnboardingView: View {
                 .font(.system(size: 15).weight(.semibold))
                 .padding(.bottom, 12)
 
-            Text(.init(UserText.historyViewOnboardingMessage))
+            Text(.init(UserText.historyViewOnboardingMessage(shortcut: "⌘Y")))
+                .fixMultilineScrollableText()
+                .font(.system(size: 13))
+                .padding(.bottom, 8)
+
+            Text(.init(UserText.historyViewOnboardingLocalStorageExplanation))
                 .fixMultilineScrollableText()
                 .font(.system(size: 13))
                 .padding(.bottom, 20)
@@ -41,7 +50,7 @@ struct HistoryViewOnboardingView: View {
                 Button {
                     model.notNow()
                 } label: {
-                    Text(UserText.notNow)
+                    Text(UserText.close)
                         .frame(maxWidth: .infinity)
                         .frame(height: 28)
                 }
@@ -61,11 +70,11 @@ struct HistoryViewOnboardingView: View {
         .padding(.horizontal, 16)
         .padding(.top, 20)
         .padding(.bottom, 16)
-        .frame(width: 384)
+        .frame(width: Const.width)
     }
 }
 
 #Preview {
     HistoryViewOnboardingView(model: .init(ctaCallback: { _ in }))
-        .frame(width: 384)
+        .frame(width: HistoryViewOnboardingView.Const.width)
 }

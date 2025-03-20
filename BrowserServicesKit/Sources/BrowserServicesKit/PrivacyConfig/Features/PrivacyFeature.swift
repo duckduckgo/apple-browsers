@@ -64,11 +64,12 @@ public enum PrivacyFeature: String {
     case textZoom
     case adAttributionReporting
     case forceOldAppDelegate
-    case htmlNewTabPage
     case htmlHistoryPage
     case tabManager
     case webViewStateRestoration
     case experimentalBrowserTheming
+    case setAsDefaultAndAddToDock
+    case extendedOnboarding
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -210,11 +211,6 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     case passwords
 }
 
-public enum HTMLNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
-    public var parent: PrivacyFeature { .htmlNewTabPage }
-    case isLaunched
-}
-
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature { .htmlHistoryPage }
     case isLaunched
@@ -239,4 +235,16 @@ public enum ContentBlockingSubfeature: String, Equatable, PrivacySubfeature {
 public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
+    case scamProtection
+}
+
+public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
+     case popoverVsBannerExperiment
+ }
+
+public enum OnboardingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extendedOnboarding }
+
+    case setAsDefaultBrowserExperiment
 }

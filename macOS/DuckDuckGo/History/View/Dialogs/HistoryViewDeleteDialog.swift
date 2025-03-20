@@ -66,6 +66,8 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(height: 28)
                 }
                 .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0))
+                .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
 
                 Button {
                     model.delete()
@@ -77,6 +79,8 @@ struct HistoryViewDeleteDialog: ModalView {
                         .frame(height: 28)
                 }
                 .buttonStyle(DestructiveActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0))
+                .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
 
             }
         }

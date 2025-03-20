@@ -152,13 +152,13 @@ private struct Header: View {
             VStack(alignment: .leading, spacing: Constants.verticalStackSpacing) {
                 Text(viewModel.title)
                     .font(.callout)
-                    .foregroundColor(colorScheme == .light ? .gray90 : .white)
+                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray90) : .white)
                     .truncationMode(.middle)
                     .lineLimit(1)
 
                 Text(viewModel.subtitle)
                     .font(.footnote)
-                    .foregroundColor(colorScheme == .light ? .gray50 : .gray20)
+                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray50) : Color(baseColor: .gray20))
             }
 
             Spacer()
@@ -201,7 +201,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: .gray30)
+                                             foregroundColorDark: Color(baseColor: .gray30))
                                 .truncationMode(truncationMode)
                                 .frame(maxHeight: .greatestFiniteMagnitude)
                                 .textSelection(.enabled)
@@ -209,7 +209,7 @@ private struct CopyableCell: View {
                             Text(subtitle)
                                 .label4Style(design: isMonospaced ? .monospaced : .default,
                                              foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: .gray30)
+                                             foregroundColorDark: Color(baseColor: .gray30))
                                 .truncationMode(truncationMode)
                         }
                     }
@@ -330,9 +330,9 @@ private struct ForegroundColor {
 
     var color: Color {
         if isSelected {
-            return .gray90
+            return Color(baseColor: .gray90)
         } else {
-            return .gray50
+            return Color(baseColor: .gray50)
         }
     }
 }

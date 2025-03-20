@@ -25,10 +25,9 @@ import XCTest
 final class NewTabPageCustomizationProviderTests: XCTestCase {
     var storageLocation: URL!
     var appearancePreferences: AppearancePreferences!
-    var userColorProvider: MockUserColorProvider!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
     var openFilePanelCalls: Int = 0
-    private var settingsModel: HomePage.Models.SettingsModel!
+    private var customizationModel: NewTabPageCustomizationModel!
     private var provider: NewTabPageCustomizationProvider!
 
     @MainActor
@@ -37,10 +36,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor())
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
-        userColorProvider = MockUserColorProvider()
         openFilePanelCalls = 0
 
-        settingsModel = HomePage.Models.SettingsModel(
+        customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: userBackgroundImagesManager,
             sendPixel: { _ in },
@@ -48,12 +46,10 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 self.openFilePanelCalls += 1
                 return nil
             },
-            userColorProvider: self.userColorProvider,
-            showAddImageFailedAlert: {},
-            navigator: MockHomePageSettingsModelNavigator()
+            showAddImageFailedAlert: {}
         )
 
-        provider = NewTabPageCustomizationProvider(homePageSettingsModel: settingsModel, appearancePreferences: appearancePreferences)
+        provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
     }
 
     override func tearDown() async throws {
@@ -61,45 +57,45 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {
-        XCTAssertIdentical(provider.customizerOpener, settingsModel.customizerOpener)
+        XCTAssertIdentical(provider.customizerOpener, customizationModel.customizerOpener)
     }
 
     func testThatBackgroundGetterReturnsSettingsModelBackground() throws {
-        settingsModel.customBackground = .gradient(.gradient01)
+        customizationModel.customBackground = .gradient(.gradient01)
         XCTAssertEqual(provider.background, .gradient("gradient01"))
 
-        settingsModel.customBackground = .solidColor(.color02)
+        customizationModel.customBackground = .solidColor(.color02)
         XCTAssertEqual(provider.background, .solidColor("color02"))
 
         let hexColor = try XCTUnwrap(SolidColorBackground("#abcdef"))
-        settingsModel.customBackground = .solidColor(hexColor)
+        customizationModel.customBackground = .solidColor(hexColor)
         XCTAssertEqual(provider.background, .hexColor("#abcdef"))
 
         let userImage = UserBackgroundImage(fileName: "abc.jpg", colorScheme: .light)
-        settingsModel.customBackground = .userImage(userImage)
+        customizationModel.customBackground = .userImage(userImage)
         XCTAssertEqual(provider.background, .userImage(.init(userImage)))
 
-        settingsModel.customBackground = nil
+        customizationModel.customBackground = nil
         XCTAssertEqual(provider.background, .default)
     }
 
     func testThatBackgroundSetterSetsCorrectBackgroundInSettingsModel() throws {
         provider.background = .gradient("gradient02.01")
-        XCTAssertEqual(settingsModel.customBackground, .gradient(.gradient0201))
+        XCTAssertEqual(customizationModel.customBackground, .gradient(.gradient0201))
 
         provider.background = .solidColor("color02")
-        XCTAssertEqual(settingsModel.customBackground, .solidColor(.color02))
+        XCTAssertEqual(customizationModel.customBackground, .solidColor(.color02))
 
         provider.background = .hexColor("#ABCDEF")
         let hexColor = try XCTUnwrap(SolidColorBackground("#abcdef"))
-        XCTAssertEqual(settingsModel.customBackground, .solidColor(hexColor))
+        XCTAssertEqual(customizationModel.customBackground, .solidColor(hexColor))
 
         let userImage = UserBackgroundImage(fileName: "abc.jpg", colorScheme: .light)
         provider.background = .userImage(.init(userImage))
-        XCTAssertEqual(settingsModel.customBackground, .userImage(userImage))
+        XCTAssertEqual(customizationModel.customBackground, .userImage(userImage))
 
         provider.background = .default
-        XCTAssertEqual(settingsModel.customBackground, nil)
+        XCTAssertEqual(customizationModel.customBackground, nil)
     }
 
     @MainActor
@@ -112,8 +108,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         }
 
         // this sets lastPickedCustomColor
-        settingsModel.customBackground = .solidColor(try XCTUnwrap(.init("#123abc")))
-        settingsModel.customBackground = .solidColor(.color05)
+        customizationModel.customBackground = .solidColor(try XCTUnwrap(.init("#123abc")))
+        customizationModel.customBackground = .solidColor(.color05)
         appearancePreferences.currentThemeName = .light
 
         XCTAssertEqual(
@@ -131,14 +127,14 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         var events: [NewTabPageDataModel.Background] = []
         let cancellable = provider.backgroundPublisher.sink { events.append($0) }
 
-        settingsModel.customBackground = .gradient(.gradient04)
-        settingsModel.customBackground = .solidColor(.color13)
-        settingsModel.customBackground = .solidColor(.color13)
-        settingsModel.customBackground = .solidColor(.color13)
-        settingsModel.customBackground = .solidColor(.color13)
-        settingsModel.customBackground = .solidColor(try XCTUnwrap(.init("#123abc")))
-        settingsModel.customBackground = nil
-        settingsModel.customBackground = .userImage(.init(fileName: "1.jpg", colorScheme: .light))
+        customizationModel.customBackground = .gradient(.gradient04)
+        customizationModel.customBackground = .solidColor(.color13)
+        customizationModel.customBackground = .solidColor(.color13)
+        customizationModel.customBackground = .solidColor(.color13)
+        customizationModel.customBackground = .solidColor(.color13)
+        customizationModel.customBackground = .solidColor(try XCTUnwrap(.init("#123abc")))
+        customizationModel.customBackground = nil
+        customizationModel.customBackground = .userImage(.init(fileName: "1.jpg", colorScheme: .light))
 
         cancellable.cancel()
 
@@ -278,7 +274,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     private func waitForAvailableUserBackgroundImages(for duration: TimeInterval = 1, inverted: Bool = false, _ block: () async -> Void = {}) async throws {
         let expectation = self.expectation(description: "viewModelUpdate")
         expectation.isInverted = inverted
-        let cancellable = settingsModel.$availableUserBackgroundImages.dropFirst().prefix(1).sink { _ in expectation.fulfill() }
+        let cancellable = customizationModel.$availableUserBackgroundImages.dropFirst().prefix(1).sink { _ in expectation.fulfill() }
 
         await block()
 

@@ -28,14 +28,13 @@ import Common
 
 struct DefaultNetworkProtectionVisibility: NetworkProtectionFeatureVisibility {
 
-    private let tokenHandler: any SubscriptionTokenHandling
+    private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
 
-    init(tokenHandler: any SubscriptionTokenHandling) {
-        self.tokenHandler = tokenHandler
+    init(authenticationStateProvider: any SubscriptionAuthenticationStateProvider) {
+        self.authenticationStateProvider = authenticationStateProvider
     }
 
     func shouldShowVPNShortcut() async -> Bool {
-        let token = try? await tokenHandler.getToken()
-        return token != nil
+        return authenticationStateProvider.isUserAuthenticated
     }
 }

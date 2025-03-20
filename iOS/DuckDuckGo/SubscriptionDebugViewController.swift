@@ -326,14 +326,16 @@ final class SubscriptionDebugViewController: UITableViewController {
                                                 message: message,
                                                 preferredStyle: .actionSheet)
         alertController.addAction(UIAlertAction(title: "Yes", style: .destructive) { [weak self] _ in
-            switch envRows {
-            case .staging:
-                self?.setEnvironment(.staging)
-            case .production:
-                self?.setEnvironment(.production)
+            Task {
+                switch envRows {
+                case .staging:
+                    await self?.setEnvironment(.staging)
+                case .production:
+                    await self?.setEnvironment(.production)
+                }
+                // Close the app
+                exit(0)
             }
-            // Close the app
-            exit(0)
         })
         let okAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
         alertController.addAction(okAction)
@@ -605,7 +607,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         }
     }
 
-    private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) {
+    private func setEnvironment(_ environment: SubscriptionEnvironment.ServiceEnvironment) async {
 
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let currentSubscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
@@ -613,22 +615,20 @@ final class SubscriptionDebugViewController: UITableViewController {
         newSubscriptionEnvironment.serviceEnvironment = environment
 
         if newSubscriptionEnvironment.serviceEnvironment != currentSubscriptionEnvironment.serviceEnvironment {
-            Task {
-                await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+            await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
 
-                // Save Subscription environment
-                DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
+            // Save Subscription environment
+            DefaultSubscriptionManager.save(subscriptionEnvironment: newSubscriptionEnvironment, userDefaults: subscriptionUserDefaults)
 
-                // The VPN environment is forced to match the subscription environment
-                let settings = AppDependencyProvider.shared.vpnSettings
-                switch newSubscriptionEnvironment.serviceEnvironment {
-                case .production:
-                    settings.selectedEnvironment = .production
-                case .staging:
-                    settings.selectedEnvironment = .staging
-                }
-                NetworkProtectionLocationListCompositeRepository.clearCache()
+            // The VPN environment is forced to match the subscription environment
+            let settings = AppDependencyProvider.shared.vpnSettings
+            switch newSubscriptionEnvironment.serviceEnvironment {
+            case .production:
+                settings.selectedEnvironment = .production
+            case .staging:
+                settings.selectedEnvironment = .staging
             }
+            NetworkProtectionLocationListCompositeRepository.clearCache()
         }
     }
 

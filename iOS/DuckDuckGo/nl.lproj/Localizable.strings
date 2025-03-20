@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -256,6 +259,9 @@
 /* Shown on authentication screen */
 "app.authentication.unlock" = "DuckDuckGo ontgrendelen.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete all bookmarks? This action cannot be undone." = "Weet je zeker dat je alle bladwijzers wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Aanmelden";
 
@@ -324,6 +330,42 @@
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Wachtwoord verbergen";
+
+/* Button label to get link to download the desktop browser */
+"autofill.import.passwords.via.sync.get-browser-button" = "Download de desktopbrowser";
+
+/* Step 1 for instructions to import passwords */
+"autofill.import.passwords.via.sync.instructions.step1" = "Open DuckDuckGo op Mac of Windows";
+
+/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
+"autofill.import.passwords.via.sync.instructions.step2" = "Ga naar '%1$@' > '%2$@'";
+
+/* second parameter for autofill.import.passwords.instructions.step2 */
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "Wachtwoorden";
+
+/* first parameter for autofill.import.passwords.instructions.step2 */
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "Instellingen";
+
+/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
+"autofill.import.passwords.via.sync.instructions.step3" = "Selecteer '%@' en volg de stappen om gegevens te importeren";
+
+/* Parameter for autofill.import.passwords.instructions.step3 */
+"autofill.import.passwords.via.sync.instructions.step3.import" = "Wachtwoorden importeren";
+
+/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
+"autofill.import.passwords.via.sync.instructions.step4" = "Na het importeren op uw computer, kunt u synchronisatie instellen op deze '%@'";
+
+/* Title for section with instructions to import passwords */
+"autofill.import.passwords.via.sync.instructions.title" = "Importeren vanuit de desktopbrowser:";
+
+/* Subtitle for screen to import passwords */
+"autofill.import.passwords.via.sync.subtitle" = "Importeer wachtwoorden in de desktopversie van de DuckDuckGo-browser en synchroniseer ze vervolgens tussen apparaten.";
+
+/* Button label to sync passwords with desktop browser */
+"autofill.import.passwords.via.sync.sync-button" = "Synchroniseren met de desktop";
+
+/* Title for screen to import passwords */
+"autofill.import.passwords.via.sync.title" = "Wachtwoorden importeren";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Uitschakelen";
@@ -423,6 +465,9 @@
 
 /* Title for button to Import Passwords when autofill has no items */
 "autofill.logins.empty-view.button.title" = "Wachtwoorden importeren";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "Wachtwoorden bureaublad synchroniseren";
 
 /* Subtitle for view displayed when no autofill passwords have been saved */
 "autofill.logins.empty-view.subtitle.first.paragraph" = "Je kunt opgeslagen wachtwoorden uit een andere browser importeren in DuckDuckGo.";
@@ -725,11 +770,26 @@
 /* Confirmation message that bookmarks have been shared successfully to another app */
 "bookmarks.export.share.success.message" = "Je bladwijzers zijn gedeeld.";
 
+/* Title of option to export HTML */
+"bookmarks.exportAction.html.title" = "HTML-bestand exporteren";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "Bladwijzers exporteren";
+
 /* Failure message when bookmarks failed to import */
 "bookmarks.import.failed.message" = "Sorry, we kunnen dit bestand niet importeren.";
 
 /* Confirmation message that bookmarks have been imported */
 "bookmarks.import.success.message" = "Je bladwijzers zijn geïmporteerd.";
+
+/* Title of option to import HTML */
+"bookmarks.importAction.html.title" = "HTML-bestand importeren";
+
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "Bladwijzers importeren";
+
+/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
+"bookmarks.importExport.title" = "Importeer bladwijzers van andere populaire browsers.";
 
 /* Button to open report form */
 "broken.site.report.menu.title" = "Een probleem melden met deze site";
@@ -748,6 +808,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annuleren is niet meer dan één keer toegestaan";
+
+/* Close All Tabs */
+"close.all.tabs" = "Alle tabbladen sluiten";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bevestigen";
@@ -863,6 +926,108 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "Bladwijzerbestand importeren...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Hoe bladwijzers exporteren uit Safari";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "Selecteer het bestand met bladwijzers. Dit is meestal een ZIP- of HTML-bestand.";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "Bladwijzers importeren in DuckDuckGo";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "Geen ondersteunde gegevens gevonden in het zipbestand. Controleer de exporteerinstructies van Safari en probeer het opnieuw.";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "Het geselecteerde bestand wordt niet ondersteund. Selecteer een ander bestand en probeer het opnieuw.";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "Het %@-bestand kon niet worden gelezen. Mogelijk is er een probleem met de gegevens in het bestand.";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "Selecteer **Exporteren** en kies in het volgende scherm **Bladwijzers** en **Opslaan naar Downloads**.";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "Selecteer **Exporteren** en selecteer op het volgende scherm **Wachtwoorden** en **Opslaan naar Downloads**.";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.file-button" = "Wachtwoordbestand importeren...";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "Ga in Chrome naar **Google wachtwoordbeheer** en dan naar **Instellingen**.";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "Selecteer **Wachtwoorden exporteren**, vervolgens **Opslaan naar bestanden** en sla het bestand op in een map die je kunt onthouden.";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "Wachtwoorden exporteren";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "Open ⚙️ Instellingen, typ “Exporteren” in de zoekbalk en kies het resultaat **Exporteren** voor Safari om direct naar de optie te gaan (of ga naar Apps > Safari in Instellingen).";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "Exporteren vanuit";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Wachtwoorden exporteren vanuit Safari:";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "Selecteer het bestand met wachtwoorden die zijn geëxporteerd uit Safari of Chrome. Dit is meestal een ZIP- of CSV-bestand.";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "Wachtwoorden importeren naar DuckDuckGo";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "Bladwijzers";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "Klaar";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "Synchronisatie en back-up van %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "Bladwijzers";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "Gegevens";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "Wachtwoorden";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "Importeren voltooid!";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "Overgeslagen duplicaten";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "Importeren mislukt";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "Je kunt het wachtwoordbestand nu verwijderen.";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "Wachtwoorden";
+
 /* Title for a section containing only items from past month */
 "date.range.past-month" = "Afgelopen maand";
 
@@ -947,6 +1112,9 @@
 /* No comment provided by engineer. */
 "Debug" = "Fouten opsporen";
 
+/* No comment provided by engineer. */
+"Delete All" = "Alles verwijderen";
+
 /* Default string used if users device is not iPhone or iPad */
 "device.type.default" = "apparaat";
 
@@ -1025,6 +1193,15 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player is niet beschikbaar";
 
+/* Text for the toggle to autoplay videos */
+"duck-player.native-autoplay-videos" = "Autoplay Videos";
+
+/* Text for the button to watch a video on DuckPlayer */
+"duck-player.native-open-in-duckplayer" = "Duck Player";
+
+/* Text for the button to watch a video on YouTube */
+"duck-player.native-watch-on-youtube" = "Watch in Youtube";
+
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Meer informatie";
 
@@ -1057,6 +1234,9 @@
 
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nooit";
+
+/* Caption for Duck Player entry point */
+"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Met Duck Player kun je YouTube bekijken in DuckDuckGo, zonder gerichte advertenties. Wat je bekijkt heeft geen invloed op je aanbevelingen.";
@@ -1156,6 +1336,9 @@
 
 /* Empty list state placeholder title */
 "empty.bookmarks" = "Nog geen bladwijzers toegevoegd";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "Als je bladwijzers in een andere browser zijn opgeslagen,\nkun je ze in DuckDuckGo importeren.";
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Geen overeenkomsten gevonden";
@@ -1610,6 +1793,9 @@
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo-app voor Mac";
 
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "Waarschuw me op websites die zijn aangeduid als oplichting, phishing of malware";
+
 /* Button that redirect the user to a web page explaining what Malicious Site Protection is */
 "malicious-site-protection.settings.footer.button.learn-more" = "Meer informatie";
 
@@ -1953,13 +2139,13 @@
 "onboarding.highlights.appIconSelection.title" = "Welke kleur staat mij het beste?";
 
 /* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokkeer cookieverzoeken en pop-ups";
+"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokkeer cookiepop-ups";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokkeer gerichte advertenties";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokkeer trackingadvertenties";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Wis browsegegevens snel";
+"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Verwijder browsegegevens met één knop";
 
 /* Message to highlight browser capability ofblocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokkeer trackers van derden";
@@ -1975,6 +2161,24 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Laten we het doen!";
+
+/* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
+"onboarding.privacypro.promo.buttons.learnMore" = "Meer informatie";
+
+/* Button to continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.skip" = "Overslaan";
+
+/* The title of the onboarding dialog that promotes Privacy Pro */
+"onboarding.privacypro.promo.title" = "Oh, voordat ik het vergeet...";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with 'paid Privacy Pro subscription' (bold). */
+"onboarding.privacypro.promo.vpn.message" = "DuckDuckGo heeft ook een ingebouwde %1$@!\n\nActiveer deze met een %2$@.";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.privacy-pro-bold" = "betaald Privacy Pro-abonnement";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
+"onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Widget toevoegen";
@@ -2193,6 +2397,12 @@
 
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Over";
+
+/* about tagline */
+"settings.about.tagline" = "Bescherming. Privacy.Gemoedsrust.";
+
+/* about page */
+"settings.about.text.new" = "DuckDuckGo is the independent online protection company for anyone who wants to take back control of their personal information.\n\nWe believe the best way to protect your personal information from hackers, scammers, and privacy-invasive companies is to stop it from being collected at all. That's why millions of people [choose DuckDuckGo over Chrome and other browsers](ddgQuickLink://duckduckgo.com/compare-privacy) to search and browse online. Our built-in search engine is like Google but never tracks your searches. And our browsing protections, such as ad tracker blocking and cookie blocking, help stop other companies from collecting your data. Oh, and our browser is free — we make money from [privacy-respecting search ads](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/), not by exploiting your data. \n\nIn addition, we also offer [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), a three-in-one subscription service, integrated into our browser. Subscribers to Privacy Pro get even more privacy protection with a fast and simple [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/) that helps secure your online activity, a service that finds and removes your personal information from people-finder sites, and a service that restores your identity should it be stolen.\n\nTake back control of your personal information with the browser designed for data protection, not data collection.";
 
 /* Settings screen accessibility section title */
 "settings.accessibility" = "Toegankelijkheid";
@@ -2800,8 +3010,17 @@
 /* Accesibility label: first string is website title, second is address */
 "tab.open.with.title.and.address" = "'%1$@' op %2$@ openen";
 
+/* Select all tabs */
+"tab.select.all" = "Alles selecteren";
+
+/* Deselect all tabs */
+"tab.select.none" = "Alles deselecteren";
+
 /* Tab Switcher Accessibility Label */
 "tab.switcher.accessibility.label" = "Wisselen tussen tabbladen";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "Alle tabbladen toevoegen als bladwijzer?";
 
 /* Description text for the text size adjustment setting */
 "textSize.description" = "Vergroot of verklein de tekstgrootte op alle sites.";
@@ -3073,9 +3292,6 @@
 /* Title for the share sheet entry */
 "waitlist.share-sheet.title" = "Je bent uitgenodigd!";
 
-/* No comment provided by engineer. */
-"Watch this video on YouTube" = "Bekijk deze video op YouTube";
-
 /* Confirmation message */
 "web.url.remove.favorite.done" = "Favoriet verwijderd";
 
@@ -3117,4 +3333,16 @@
 
 /* Title for the Windows browser download link page */
 "windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "Download DuckDuckGo voor Windows!";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "Bladwijzers";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "Doorgaan";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "Wachtwoorden";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "Wat wil je importeren?";
 

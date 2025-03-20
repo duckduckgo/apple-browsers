@@ -26,21 +26,18 @@ import os.log
 
 final class NetworkProtectionSubscriptionEventHandler {
 
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let tunnelController: TunnelController
-    private let networkProtectionTokenStorage: NetworkProtectionTokenStore
     private let vpnUninstaller: VPNUninstalling
     private let userDefaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
 
-    init(subscriptionManager: SubscriptionManager,
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          tunnelController: TunnelController,
-         networkProtectionTokenStorage: NetworkProtectionTokenStore = NetworkProtectionKeychainTokenStore(),
          vpnUninstaller: VPNUninstalling,
          userDefaults: UserDefaults = .netP) {
         self.subscriptionManager = subscriptionManager
         self.tunnelController = tunnelController
-        self.networkProtectionTokenStorage = networkProtectionTokenStorage
         self.vpnUninstaller = vpnUninstaller
         self.userDefaults = userDefaults
 
@@ -49,25 +46,24 @@ final class NetworkProtectionSubscriptionEventHandler {
 
     private func subscribeToEntitlementChanges() {
         Task {
-            switch await subscriptionManager.accountManager.hasEntitlement(forProductName: .networkProtection) {
-            case .success(let hasEntitlements):
+
+            if let hasEntitlements = try? await subscriptionManager.isEnabled(feature: .networkProtection) {
                 Task {
                     await handleEntitlementsChange(hasEntitlements: hasEntitlements)
                 }
-            case .failure:
-                break
             }
 
             NotificationCenter.default
                 .publisher(for: .entitlementsDidChange)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] notification in
+                    Logger.networkProtection.log("Entitlements did change notification received")
                     guard let self else {
                         return
                     }
 
                     guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-                        Logger.networkProtection.error("Missing entitlements are truly unexpected")
+                        assertionFailure("Missing entitlements are truly unexpected")
                         return
                     }
 
@@ -98,7 +94,7 @@ final class NetworkProtectionSubscriptionEventHandler {
     }
 
     @objc private func handleAccountDidSignIn() {
-        guard subscriptionManager.accountManager.accessToken != nil else {
+        guard subscriptionManager.isUserAuthenticated else {
             assertionFailure("[NetP Subscription] AccountManager signed in but token could not be retrieved")
             return
         }

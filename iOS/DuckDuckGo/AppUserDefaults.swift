@@ -80,6 +80,9 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerMode = "com.duckduckgo.ios.duckPlayerMode"
         static let duckPlayerAskModeOverlayHidden = "com.duckduckgo.ios.duckPlayerAskModeOverlayHidden"
         static let duckPlayerOpenInNewTab = "com.duckduckgo.ios.duckPlayerOpenInNewTab"
+
+        static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
+        static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
     }
 
     private struct DebugKeys {
@@ -446,12 +449,44 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerOpenInNewTab, defaultValue: true)
     var duckPlayerOpenInNewTab: Bool
-    
+
+    // Duck player native UI    
     @UserDefaultsWrapper(key: .duckPlayerNativeUI, defaultValue: false)
     var duckPlayerNativeUI: Bool
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
+
+    var duckPlayerNativeUISERPEnabled: Bool {
+        get {
+            if userDefaults?.object(forKey: Keys.duckPlayerNativeUISERPEnabled) == nil {
+                return true
+            }
+            return userDefaults?.bool(forKey: Keys.duckPlayerNativeUISERPEnabled) ?? true
+        }
+        set {
+            userDefaults?.set(newValue, forKey: Keys.duckPlayerNativeUISERPEnabled)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
+
+
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode {
+        get {
+            if let value = userDefaults?.string(forKey: Keys.duckPlayerNativeYoutubeMode),
+               let mode = NativeDuckPlayerYoutubeMode(stringValue: value) {
+                return mode
+            }
+            return .ask
+        }
+        set {
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
+            userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: duckPlayerNativeYoutubeMode)
+        }
+    }
 
     @UserDefaultsWrapper(key: .debugOnboardingHighlightsEnabledKey, defaultValue: false)
     var onboardingHighlightsEnabled: Bool

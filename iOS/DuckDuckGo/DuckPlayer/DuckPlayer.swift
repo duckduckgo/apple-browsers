@@ -171,7 +171,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - url: The URL of the video.
     ///   - webView: The web view to load the video in.
-    func openVideoInDuckPlayer(url: URL, webView: WKWebView)
+    @MainActor func openVideoInDuckPlayer(url: URL, webView: WKWebView)
 
     /// Opens DuckPlayer Settings
     func openDuckPlayerSettings()
@@ -232,30 +232,33 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - videoID: The ID of the video to load
     ///   - source: The source of the video navigation.
-    func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource)
+    @MainActor func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource, timestamp: TimeInterval?)
 
     /// Presents a bottom sheet asking the user how they want to open the video
     ///
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
-    ///   - timestamp: The timestamp of the video
-    func presentPill(for videoID: String, timestamp: String?)
+    ///   - timestamp: The current timestamp of the video
+    @MainActor func presentPill(for videoID: String, timestamp: TimeInterval?)
 
     /// Dismisses the bottom sheet
-    func dismissPill()
+    /// - Parameters:
+    ///   - reset: Whether to reset the pill state
+    ///   - animated: Whether to animate the dismissal
+    @MainActor func dismissPill(reset: Bool, animated: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
-    func hidePillForHiddenChrome()
+    @MainActor func hidePillForHiddenChrome()
 
     /// Shows the bottom sheet when browser chrome is visible
-    func showPillForVisibleChrome()
+    @MainActor func showPillForVisibleChrome()
 }
 
 extension DuckPlayerControlling {
 
-    // Convenience method to load a native DuckPlayerView - Default to other
+    // Convenience method to load a native DuckPlayerView - Default to other and nil timestamp
     func loadNativeDuckPlayerVideo(videoID: String) {
-        loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other)
+        Task { await loadNativeDuckPlayerVideo(videoID: videoID, source: DuckPlayer.VideoNavigationSource.other, timestamp: nil) }
     }
 }
 
@@ -317,6 +320,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Publisher to notify when DuckPlayer is dismissed
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
 
+    /// Native UI Presenter
     private let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
@@ -325,9 +329,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
+    ///   - nativeUIPresenter: The native UI presenter.
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         nativeUIPresenter: DuckPlayerNativeUIPresenting = DuckPlayerNativeUIPresenter()) {
+         nativeUIPresenter: DuckPlayerNativeUIPresenting) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
@@ -342,13 +347,32 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                                              object: nil)
     }
 
+    // Add a convenience initializer that creates a new presenter
+    convenience init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+                     featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+        self.init(settings: settings,
+                  featureFlagger: featureFlagger,
+                  nativeUIPresenter: DuckPlayerNativeUIPresenter())
+    }
+
     deinit {
-        // Only remove our specific tap gesture recognizer
+        // Remove tap gesture recognizer
         if let tapGestureRecognizer = tapGestureRecognizer {
             hostView?.view.removeGestureRecognizer(tapGestureRecognizer)
         }
-        hostView = nil
+
+        // Remove notification observers
+        NotificationCenter.default.removeObserver(self)
+
+        // Cancel timer
+        hideBrowserChromeTimer?.invalidate()
+        hideBrowserChromeTimer = nil
+
+        // Clear cancellables
         nativePlayerCancellables.removeAll()
+        nativeUIPresenterCancellables.removeAll()
+
+        hostView = nil
     }
 
     /// Sets the host view controller for presenting modals.
@@ -385,32 +409,31 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             let orientation = UIDevice.current.orientation
             if orientation.isLandscape {
                 hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
-                showPillForVisibleChrome()
+                Task { await showPillForVisibleChrome() }
             }
         }
     }
 
     /// Sets up a hide timer for the navigation and toolbars when the user is in landscape mode
     private func setupHideBrowserChromeTimer() {
-        // Invalidate existing timer if any
         hideBrowserChromeTimer?.invalidate()
 
-        // Create new timer
+        weak var weakHostView = hostView
         hideBrowserChromeTimer = Timer.scheduledTimer(withTimeInterval: Constants.landscapeUIAutohideDelay, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    self?.hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                    weakHostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
                 }
             }
         }
     }
-
-    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other) {
+    // Loads a native DuckPlayerView
+    func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
         guard let hostView = hostView else { return }
 
         Task { @MainActor in
-            let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: nil)
+            let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: timestamp)
 
             publishers.navigation
                 .sink { [weak self] url in
@@ -695,8 +718,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             assertionFailure("DuckPlayer: expected JSON representation of Message")
             return
         }
-        guard let feature = messageData.featureName else { return }
-
         // Get the webView URL
         guard let webView = message.webView, let url = webView.url else {
             return
@@ -729,13 +750,15 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     /// Hides the bottom sheet when browser chrome is hidden
+    @MainActor
     func hidePillForHiddenChrome() {
-        Task { await nativeUIPresenter.hideBottomSheetForHiddenChrome() }
+        nativeUIPresenter.hideBottomSheetForHiddenChrome()
     }
 
     /// Shows the bottom sheet when browser chrome is visible
+    @MainActor
     func showPillForVisibleChrome() {
-        Task { await nativeUIPresenter.showBottomSheetForVisibleChrome() }
+        nativeUIPresenter.showBottomSheetForVisibleChrome()
     }
 
     /// Presents a bottom sheet asking the user how they want to open the video
@@ -743,25 +766,28 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video    
-    func presentPill(for videoID: String, timestamp: String?) {
+    func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
 
-        Task {
-            await nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+        Task { @MainActor in
+            nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
         }
 
         nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoID in
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            .sink { [weak self] videoDetails in
+                let (videoID, timestamp) = videoDetails
+                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
     }
 
-    /// Add cleanup method to remove the sheet    
-    func dismissPill() {
-        Task {
-            await nativeUIPresenter.dismissPill(reset: true)
-        }
+    /// Dismisses the bottom sheet
+    /// - Parameters:
+    ///   - reset: Whether to reset the pill state
+    ///   - animated: Whether to animate the dismissal
+    @MainActor
+    func dismissPill(reset: Bool, animated: Bool) {
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated)
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {
@@ -770,9 +796,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             let isHidden = notification.userInfo?["isHidden"] as? Bool {
 
             if isHidden {
-                hidePillForHiddenChrome()
+                Task { await hidePillForHiddenChrome() }
             } else {
-                showPillForVisibleChrome()
+                Task { await showPillForVisibleChrome() }
             }
         }
     }
@@ -780,11 +806,15 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     private func setupSubscriptions() {
         // Set up the subscription once and keep it alive
         nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoID in
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube)
+            .sink { [weak self] videoDetails in
+                let (videoID, timestamp) = videoDetails
+                Task { await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
             }
             .store(in: &nativeUIPresenterCancellables)
+
+        registerOrientationSubscriber()
     }
+
     /// Returns tuple of Pixels for firing when a YouTube Error occurs
     private func getPixelsForYouTubeErrorParams(_ params: Any) -> (Pixel.Event, Pixel.Event) {
         if let paramsDict = params as? [String: Any],

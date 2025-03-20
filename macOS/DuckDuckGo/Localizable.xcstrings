@@ -107,6 +107,7 @@
     },
     "**%lld** tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -323,6 +324,7 @@
     },
     "%lld tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -998,7 +1000,7 @@
     },
     "add.favorite" : {
       "comment" : "Button for adding a favorite bookmark",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1642,66 +1644,6 @@
         }
       }
     },
-    "ai-chat.menu.new" : {
-      "comment" : "Menu item to launch AI Chat",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neuer AI Chat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "New AI Chat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nuevo AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nouvel AI Chat"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nuova AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nieuwe AI Chat"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nowy AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Novo AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запустить AI Chat"
-          }
-        }
-      }
-    },
     "ai-chat.onboarding.popover.accept" : {
       "comment" : "AI Chat onboarding CTA for approval",
       "extractionState" : "extracted_with_value",
@@ -1758,66 +1700,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить ярлык"
-          }
-        }
-      }
-    },
-    "ai-chat.onboarding.popover.confirmation" : {
-      "comment" : "Confirmation for accepting the AI Chat onboarding popover",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Shortcut hinzugefügt!"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat shortcut added!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Se ha añadido un acceso directo a AI Chat!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raccourci AI Chat ajouté !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scorciatoia per AI Chat aggiunta!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling naar AI Chat toegevoegd!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dodano skrót do AI Chat!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atalho do AI Chat adicionado!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ярлык AI Chat добавлен!"
           }
         }
       }
@@ -1882,66 +1764,6 @@
         }
       }
     },
-    "ai-chat.onboarding.popover.message-markdown" : {
-      "comment" : "AI Chat onboarding popover message, make sure to keep Settings and AI Chat inside ** **",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du kannst diese und andere AI Chat-Funktionen in **Einstellungen** > **AI Chat** anpassen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "You can adjust this and other AI Chat features in **Settings** > **AI Chat**."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puedes ajustar esta y otras funciones de AI Chat en **Ajustes** > **AI Chat**."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous pouvez ajuster cela et d'autres fonctionnalités d'AI Chat dans **Réglages** > **AI Chat**."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Puoi regolare questa e altre funzionalità di AI Chat in **Impostazioni** > **AI Chat**."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je kunt deze en andere AI Chat-functies aanpassen in **Instellingen** > **AI Chat**."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Możesz dostosować tę i inne funkcje AI Chat, wybierając kolejno **Ustawienia** > **AI Chat**."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Podes ajustar esta e outras funcionalidades do AI Chat em **Definições** > **AI Chat**."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Эту и другие функции AI Chat можно отрегулировать в разделе **Настройки > AI Chat**."
-          }
-        }
-      }
-    },
     "ai-chat.onboarding.popover.reject" : {
       "comment" : "AI Chat onboarding CTA for rejection",
       "extractionState" : "extracted_with_value",
@@ -2002,246 +1824,6 @@
         }
       }
     },
-    "ai-chat.onboarding.popover.title" : {
-      "comment" : "AI Chat onboarding popover title",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starte AI Chat direkt von deiner Symbolleiste"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Launch AI Chat directly from your toolbar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia AI Chat directamente desde la barra de herramientas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lancez AI Chat directement depuis votre barre d'outils"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvia AI Chat direttamente dalla barra degli strumenti"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start AI Chat rechtstreeks vanuit je werkbalk"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uruchom AI Chat bezpośrednio z paska narzędzi"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia o AI Chat diretamente a partir da tua barra de ferramentas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Запуск AI Chat прямо с панели инструментов"
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption" : {
-      "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Starte den AI Chat schneller, indem du Verknüpfungen zur Symbolleiste oder zum Menü deines Browsers hinzufügst"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Launch AI Chat faster by adding shortcuts to your browser toolbar or menu"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abre AI Chat más rápido añadiendo accesos directos a la barra de herramientas o al menú de tu navegador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accélérez le lancement d'AI Chat en ajoutant des raccourcis à la barre d'outils ou au menu de votre navigateur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avvia AI Chat più velocemente aggiungendo scorciatoie alla barra degli strumenti o al menu del browser"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start AI Chat sneller door snelkoppelingen toe te voegen aan de werkbalk of het menu van je browser"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Szybciej uruchamiaj AI Chat, dodając skróty do paska narzędzi lub menu przeglądarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia o AI Chat mais rapidamente ao adicionar atalhos à barra de ferramentas ou ao menu do navegador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы быстрее запускать функцию AI Chat, добавьте ее ярлык на панель инструментов или в меню браузера."
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption.link.fallback" : {
-      "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat ist eine optionale Funktion, die unter duck.ai verfügbar ist und es dir ermöglicht, private Unterhaltungen mit beliebten KI-Chatmodellen von Drittanbietern zu führen. Deine Chats werden nicht zum Trainieren von Chatmodellen verwendet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat is an optional feature available at duck.ai that lets you have private conversations with popular 3rd-party AI chat models. Your chats are not used to train chat models."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat es una función opcional disponible en duck.ai que te permite tener conversaciones privadas con populares modelos de chat de IA de terceros. Tus chats no se utilizan para entrenar modelos de chat."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat est une fonctionnalité optionnelle disponible sur duck.ai qui vous permet d'avoir des conversations privées avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner des modèles de discussion."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat è una funzionalità opzionale disponibile su duck.ai che consente di intrattenere conversazioni private con i più diffusi modelli di chat AI di terze parti. Le tue chat non vengono usate per addestrare modelli di chat."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat is een optionele functie die beschikbaar is op duck.ai en waarmee je privégesprekken kunt voeren met populaire AI-chatmodellen van derden. Je chats worden niet gebruikt om chatmodellen te trainen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat to opcjonalna funkcja dostępna pod adresem duck.ai, która umożliwia prowadzenie prywatnych rozmów z popularnymi modelami czatu AI innych firm. Twoje czaty nie są używane do trenowania modeli czatu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O AI Chat é uma funcionalidade opcional disponível no duck.ai que te permite ter conversas privadas com modelos de AI chat populares de terceiros. As tuas conversas não são utilizadas para treinar modelos de chat."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat — это дополнительная функция duck.ai, которая позволяет вести приватные беседы с популярными сторонними чат-моделями на базе ИИ. Содержимое чатов не применяется для обучения чат-ботов."
-          }
-        }
-      }
-    },
-    "ai-chat.preferences.caption.link.markdown" : {
-      "comment" : "Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and ()",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat ist eine optionale Funktion, die unter [duck.ai](https://duck.ai) verfügbar ist und es dir ermöglicht, private Unterhaltungen mit beliebten KI-Chatmodellen von Drittanbietern zu führen. Deine Chats werden nicht zum Trainieren von Chatmodellen verwendet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat is an optional feature available at [duck.ai](https://duck.ai) that lets you have private conversations with popular 3rd-party AI chat models. Your chats are not used to train chat models."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat es una función opcional disponible en [duck.ai](https://duck.ai) que te permite mantener conversaciones privadas con modelos populares de chat de IA de terceros. Tus chats no se utilizan para entrenar modelos de chat."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat est une fonctionnalité optionnelle disponible sur [duck.ai](https://duck.ai) qui vous permet d'avoir des conversations privées avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner des modèles de discussion."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat è una funzionalità opzionale disponibile su [duck.ai](https://duck.ai) che consente di intrattenere conversazioni private con i più comuni modelli di chat AI di terze parti. Le tue chat non vengono usate per addestrare modelli di chat."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat is een optionele functie die beschikbaar is op [duck.ai](https://duck.ai) waarmee je privégesprekken kunt voeren met populaire AI-chatmodellen van derden. Je chats worden niet gebruikt om chatmodellen te trainen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat to opcjonalna funkcja dostępna pod adresem [duck.ai] (https://duck.ai), która umożliwia prowadzenie prywatnych rozmów z popularnymi modelami czatu AI innych firm. Twoje czaty nie są używane do trenowania modeli czatu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O AI Chat é uma funcionalidade opcional disponível no [duck.ai](https://duck.ai) que te permite ter conversas privadas com modelos de AI chat populares de terceiros. As tuas conversas não são utilizadas para treinar modelos de chat."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat — это дополнительная функция [duck.ai](https://duck.ai), которая позволяет вести приватные беседы с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения чат-ботов."
-          }
-        }
-      }
-    },
     "ai-chat.preferences.learn-more" : {
       "comment" : "AI Chat preferences button to learn more about it",
       "extractionState" : "extracted_with_value",
@@ -2298,126 +1880,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Узнать больше"
-          }
-        }
-      }
-    },
-    "ai-chat.show-in-application-menu.toggle" : {
-      "comment" : "Show AI Chat in application menus",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "„Neuer AI Chat“ in den Datei- und Anwendungsmenüs anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show “New AI Chat” in File and application menus"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar «Nuevo AI Chat» en los menús Archivo y Aplicación"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher « Nouvel AI Chat » dans les menus Fichier et Application"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra \"AI Chat\" nel menu File e in quello delle applicazioni"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "'Nieuwe AI Chat' toevoegen aan de menu's 'Bestand' en 'Toepassing'"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż „Nowy AI Chat” w menu plików i aplikacji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar “Novo AI Chat” nos menus de ficheiro e aplicação"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать опцию «Запустить AI Chat» в меню «Файл» и меню приложения"
-          }
-        }
-      }
-    },
-    "ai-chat.show-in-toolbar.toggle" : {
-      "comment" : "Show AI Chat in toolbar",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI Chat in der Browser-Symbolleiste anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show AI Chat shortcut in browser toolbar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar el acceso directo a AI Chat en la barra de herramientas del navegador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher le raccourci AI Chat dans la barre d'outils du navigateur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra la scorciatoia AI Chat nella barra degli strumenti del browser"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling naar AI Chat weergeven op browserwerkbalk"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż skrót AI Chat na pasku narzędzi przeglądarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar atalho do AI Chat na barra de ferramentas do navegador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать ярлык функции AI Chat на панели инструментов браузера"
           }
         }
       }
@@ -27963,10 +27425,58 @@
       "comment" : "Explanation of what deleting site data means.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch wirst du von diesen Websites abgemeldet, die Website-Einstellungen werden zurückgesetzt und gespeicherte Sitzungen werden entfernt. Cookies und Daten einer „Fireproof“-Website werden nicht gelöscht."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "This will log you out of these sites, reset site preferences, and remove saved sessions. Fireproof site cookies and data won’t be deleted."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto cerrará tu sesión en estos sitios, restablecerá las preferencias del sitio y eliminará las sesiones guardadas. Las cookies y los datos del sitio Fireproof no se eliminarán."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ceci vous déconnectera de ces sites, réinitialisera les préférences des sites et supprimera les sessions enregistrées. Les cookies et les données Fireproof des sites ne seront pas supprimés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In questo modo potrai uscire da questi siti, reimpostare le preferenze del sito e rimuovere le sessioni salvate. I cookie e i dati del sito Fireproof non saranno eliminati."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je wordt nu afgemeld bij deze sites, je sitevoorkeuren worden opnieuw ingesteld en opgeslagen sessies worden verwijderd. Fireproof site-cookies en -gegevens worden niet verwijderd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spowoduje to wylogowanie z tych witryn, zresetowanie preferencji dotyczących witryn i usunięcie zapisanych sesji. Pliki cookie i dane witryn oznaczonych jako Fireproof nie zostaną usunięte."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta ação termina a tua sessão nestes sites, repõe as preferências dos sites e remove as sessões guardadas. Os cookies e dados dos sites Fireproof não serão eliminados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы выйдете из учетных записей на этих сайтах, настройки сайтов будут сброшены, а сохраненные сеансы — удалены. Куки-файлы и данные «огнеупорных» сайтов не удаляются."
           }
         }
       }
@@ -28215,10 +27725,58 @@
       "comment" : "Title of a dialog asking the user to confirm deleting history",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verlauf löschen?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Delete history?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Borrar historial?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'historique ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancellare la cronologia?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geschiedenis verwijderen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usunąć historię?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apagar histórico?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить историю?"
           }
         }
       }
@@ -29070,115 +28628,175 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verlaufsseite anzeigen"
+            "value" : "Verlauf anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "View History Page"
+            "value" : "View History"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ver tu página de historial"
+            "value" : "Ver historial"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Voir la page d'historique"
+            "value" : "Voir l'historique"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visualizza la pagina Cronologia"
+            "value" : "Visualizza cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bekijk de geschiedenispagina"
+            "value" : "Geschiedenis weergeven"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "View History Page"
+            "value" : "Wyświetl historię"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ver página de histórico"
+            "value" : "Ver histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просмотреть страницу истории"
+            "value" : "Просмотреть историю"
           }
         }
       }
     },
-    "history.view.onboarding.message" : {
-      "comment" : "Message for the history view onboarding popover",
+    "history.view.onboarding.local.storage.explanation" : {
+      "comment" : "Message for the history view onboarding popover explaining that history is kept locally.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wir haben eine spezielle Verlaufsseite hinzugefügt, die es dir erleichtert, die von dir besuchten Seiten anzuzeigen, erneut zu besuchen und zu löschen."
+            "value" : "Der Verlauf wird nur auf deinem Gerät gespeichert und kann jederzeit mit dem Fire Button gelöscht werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+            "value" : "History is only stored on your device and can be deleted at any time using the Fire Button."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hemos añadido una página de historial exclusiva, para que puedas ver, volver a abrir y borrar los sitios que has visitado anteriormente de forma más sencilla."
+            "value" : "El historial solo se almacena en tu dispositivo y se puede eliminar en cualquier momento usando el Fire Button."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nous avons ajouté une page d’historique dédiée, ce qui vous permet de voir, de revisiter et d’effacer plus facilement les sites que vous avez déjà consultés."
+            "value" : "L'historique est uniquement stocké sur votre appareil et peut être supprimé à tout moment à l'aide du Fire Button."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abbiamo aggiunto una pagina dedicata alla cronologia che ti consente di visualizzare, rivisitare e cancellare i siti che hai visitato in precedenza."
+            "value" : "La cronologia è memorizzata solo sul tuo dispositivo e può essere cancellata in qualsiasi momento usando il Fire Button."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We hebben een speciale geschiedenispagina toegevoegd. Zo kun je makkelijker de sites die je eerder hebt bezocht bekijken, opnieuw bezoeken en wissen."
+            "value" : "Je geschiedenis wordt alleen op je apparaat opgeslagen en kan op elk moment worden gewist met de Fire Button."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We’ve added a dedicated History page, making it easier for you to see, revisit, and clear the sites you’ve previously visited."
+            "value" : "Historia jest przechowywana tylko na Twoim urządzeniu i można ją usunąć w dowolnym momencie za pomocą przycisku Fire Button."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionámos uma página de histórico dedicada para ser mais fácil ver, revisitar e limpar os sites que visitaste anteriormente."
+            "value" : "O histórico é guardado apenas no teu dispositivo e pode ser apagado em qualquer altura com o Fire Button."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Мы добавили отдельную страницу «История», где можно легко просмотреть, заново открыть и удалить ранее посещенные сайты."
+            "value" : "История хранится только на вашем устройстве, и ее можно в любой момент стереть с помощью кнопки Fire Button."
+          }
+        }
+      }
+    },
+    "history.view.onboarding.message" : {
+      "comment" : "Message for the history view onboarding popover. Please make sure to keep ••• intact. %@ will be replaced with a keyboard shortcut for accessing history (e.g. '⌘Y').",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir haben eine neue Verlaufsseite hinzugefügt, um die Suche im Verlauf und seine Verwaltung zu vereinfachen. Greife jederzeit über das Menü ••• oder das „Verlauf“-Menü oder durch Drücken von %@ darauf zu."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We added a new History page for easier history searching and management. Access it at any time from the ••• or History menu, or by pressing %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemos añadido una nueva página de historial para facilitar la búsqueda y gestión del historial. Accede a él en cualquier momento desde el menú ••• o el menú Historial, o pulsando %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous avons ajouté une nouvelle page Historique pour faciliter la recherche et la gestion de l'historique. Vous pouvez y accéder à tout moment à partir du menu ••• ou Historique, ou en appuyant sur %@."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbiamo aggiunto una nuova pagina Cronologia per facilitare la ricerca e la gestione della cronologia. Accedi in qualsiasi momento dal menu ••• o Cronologia, oppure premendo %@."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We hebben een nieuwe pagina Geschiedenis toegevoegd om je geschiedenis gemakkelijker te doorzoeken en beheren. Open hem via het menu ••• of het menu Geschiedenis, of door op %@ te drukken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaliśmy nową stronę Historia, aby ułatwić jej przeszukiwanie i zarządzanie historią. Możesz uzyskać do niej dostęp w dowolnym momencie z menu ••• lub Historia, albo naciskając %@."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionámos uma nova página de Histórico para facilitar a pesquisa e gestão do histórico. Acede a qualquer momento a partir do atalho ••• ou do menu Histórico, ou prime %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для удобства поиска и управления журналом посещений мы добавили новую страницу \"История\". Ее всегда можно открыть из меню \"История\" (•••) или с помощью сочетания клавиш %@."
           }
         }
       }
@@ -29190,55 +28808,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verwalte deinen Verlauf"
+            "value" : "Einfacheres Verlaufsmanagement"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Your History"
+            "value" : "Easier History Management"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestiona tu historial"
+            "value" : "Gestión de historial más sencilla"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gérer votre historique"
+            "value" : "Gestion simplifiée de l'historique"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestisci la cronologia"
+            "value" : "Gestione più semplice della cronologia"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beheer je geschiedenis"
+            "value" : "Eenvoudiger beheer van Geschiedenis"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zarządzanie historią"
+            "value" : "Łatwiejsze zarządzanie historią"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gere o teu histórico"
+            "value" : "Gestão mais fácil do histórico"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Управление историей"
+            "value" : "Упрощенное управление историей"
           }
         }
       }
@@ -29951,7 +29569,7 @@
     },
     "home.page.settings.background" : {
       "comment" : "Section title in Home Page Settings to customization Home Page background",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -30011,7 +29629,7 @@
     },
     "home.page.settings.browser.theme" : {
       "comment" : "Section title in Home Page Settings to adjust browser theme",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -30611,7 +30229,7 @@
     },
     "home.page.settings.sections" : {
       "comment" : "Section title in Home Page Settings to adjust Home Page sections visibility",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38526,62 +38144,62 @@
         }
       }
     },
-    "malware.error.page.tab.title" : {
-      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malware.",
+    "malicious.site.error.page.tab.title" : {
+      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malicious.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warnung: Website ist möglicherweise bösartig"
+            "value" : "Warnung: Sicherheitsrisiko"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warning: Site May Be Malicious"
+            "value" : "Warning: Security Risk"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advertencia: el sitio puede ser malicioso"
+            "value" : "Advertencia: riesgo de seguridad"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avertissement : le site est peut-être malveillant"
+            "value" : "Avertissement : risque de sécurité"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attenzione: il sito potrebbe essere dannoso"
+            "value" : "Attenzione: rischio per la sicurezza"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opgelet: Deze website kan schadelijk zijn"
+            "value" : "Waarschuwing: veiligheidsrisico"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ostrzeżenie: witryna może być złośliwa"
+            "value" : "Ostrzeżenie: Zagrożenie bezpieczeństwa"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aviso: o site pode ser malicioso"
+            "value" : "Aviso: Risco para a segurança"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Внимание! Потенциально вредоносный сайт"
+            "value" : "Предупреждение: угроза безопасности"
           }
         }
       }
@@ -41199,7 +40817,7 @@
     },
     "newTab.search.bar.section.title" : {
       "comment" : "Setting to show or hide the search box (search field) in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -42279,7 +41897,7 @@
     },
     "newTab.setup.section.title" : {
       "comment" : "Title of the setup section in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -44014,10 +43632,58 @@
       "comment" : "Menu item that opens all the bookmarks in a folder in new tabs in the current window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle im aktuellen Fenster öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open All in Current Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir todo en la ventana actual"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ouvrir dans la fenêtre actuelle"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutto nella finestra corrente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles openen in het huidige venster"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz wszystko w bieżącym oknie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir tudo na janela atual"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть все в текущем окне"
           }
         }
       }
@@ -44026,10 +43692,58 @@
       "comment" : "Menu item that opens all URLs in a new Fire Window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle in neuem Fire Window öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open All in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir todo en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout ouvrir dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutto in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz wszystko w nowym oknie Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir tudo numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть все в новом окне Fire Window"
           }
         }
       }
@@ -44077,7 +43791,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open All in New Fire Window"
+            "value" : "Otwórz wszystko w nowym oknie Fire Window"
           }
         },
         "pt" : {
@@ -44137,7 +43851,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open All in Current Window"
+            "value" : "Otwórz wszystko w bieżącym oknie"
           }
         },
         "pt" : {
@@ -49046,6 +48760,66 @@
         }
       }
     },
+    "phishing-detection.deprecated.enabled.checkbox" : {
+      "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me on sites flagged for phishing or malware."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme sobre sitios marcados como estafas, phishing o malware"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez-moi en garde contre les sites signalés pour escroqueries, pour hameçonnage ou comme étant des logiciels malveillants"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisami sui siti contrassegnati per truffe, phishing o malware"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me op websites die zijn aangeduid als oplichting, phishing of malware"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj mnie przed witrynami oznaczonymi jako oszustwa, wyłudzanie informacji lub złośliwe oprogramowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me sobre sites sinalizados como fraudes, phishing ou malware"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о мошеннических, фишинговых и вредоносных сайтах"
+          }
+        }
+      }
+    },
     "phishing-detection.enabled.checkbox" : {
       "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
       "extractionState" : "extracted_with_value",
@@ -49059,7 +48833,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me on sites flagged for phishing or malware."
+            "value" : "Warn me on sites flagged for scams, phishing, or malware."
           }
         },
         "es" : {
@@ -49226,66 +49000,6 @@
         }
       }
     },
-    "phishing.error.page.tab.title" : {
-      "comment" : "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Phishing.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Warnung: Es könnte sich um eine betrügerische Website handeln"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Warning: Site May Be Deceptive"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Advertencia: el sitio puede ser engañoso"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avertissement : le site est peut-être trompeur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attenzione: il sito potrebbe essere ingannevole"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Waarschuwing: website is mogelijk misleidend"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ostrzeżenie: witryna może być złośliwa"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aviso: o site pode ser enganador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Внимание! Потенциально мошеннический сайт"
-          }
-        }
-      }
-    },
     "pin.tab" : {
       "comment" : "Menu item. Pin as a verb",
       "extractionState" : "extracted_with_value",
@@ -49342,66 +49056,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепить вкладку"
-          }
-        }
-      }
-    },
-    "pinning.hide-aichat-shortcut" : {
-      "comment" : "Menu item for hiding the AI Chat shortcut",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Verknüpfung ausblenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hide AI Chat Shortcut"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar acceso directo a AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer le raccourci de chat IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nascondi scorciatoia AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling voor AI-chat verbergen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ukryj skrót do AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar atalho do AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть ярлык AI Chat"
           }
         }
       }
@@ -49702,66 +49356,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Скрыть ярлык для VPN"
-          }
-        }
-      }
-    },
-    "pinning.show-aichat-shortcut" : {
-      "comment" : "Menu item for showing the AI Chat shortcut",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-Chat-Verknüpfung anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Show AI Chat Shortcut"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar acceso directo a AI Chat"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher le raccourci AI Chat"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra scorciatoia AI Chat"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snelkoppeling voor AI Chat weergeven"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pokaż skrót do AI Chat"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar atalho do AI Chat"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Показывать ярлык AI Chat"
           }
         }
       }
@@ -57798,66 +57392,6 @@
         }
       }
     },
-    "preferences.about.duckduckgo-tagline" : {
-      "comment" : "About screen",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Schutz, unsere Priorität."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your protection, our priority."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu protección, nuestra prioridad."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre protection, notre priorité."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La tua protezione, la nostra priorità."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jouw bescherming, onze prioriteit."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoje bezpieczeństwo jest naszym priorytetem."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tua proteção, a nossa prioridade."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваша защита — наш приоритет."
-          }
-        }
-      }
-    },
     "preferences.about.duckduckgo-tagline-new" : {
       "comment" : "About screen",
       "extractionState" : "extracted_with_value",
@@ -58334,66 +57868,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить DuckDuckGo на док-панель…"
-          }
-        }
-      }
-    },
-    "preferences.ai-chat" : {
-      "comment" : "Title of the option to show AI Chat in preferences",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KI-Chat"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "AI Chat"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat de IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat IA"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI-chat"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Czat AI"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat com IA"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чат с ИИ"
           }
         }
       }
@@ -62156,60 +61630,6 @@
         }
       }
     },
-    "Reopen All Windows from Last Session" : {
-      "comment" : "Main Menu History item",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle vensters van de laatste sessie opnieuw openen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
-          }
-        }
-      }
-    },
     "Reopen All Windows From Last Session" : {
       "comment" : "Main Menu History item",
       "localizations" : {
@@ -62619,6 +62039,666 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Приложение Bitwarden не отвечает. Перезапустите его, чтобы возобновить связь."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.message" : {
+      "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock\nBody of the popover that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wenn du DuckDuckGo zu deinem Dock hinzufügst, hast du schnellen Zugang zum geschützten Browsen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing when you add DuckDuckGo to your Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accede rápidamente a una navegación protegida añadiendo DuckDuckGo a tu Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtenez un accès rapide à la navigation protégée quand vous ajoutez DuckDuckGo à votre Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ottieni accesso rapido alla navigazione protetta aggiungendo DuckDuckGo al tuo dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg snel toegang tot beschermd browsen wanneer je DuckDuckGo toevoegt aan je dock."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj szybki dostęp do chronionego przeglądania stron internetowych dzięki dodaniu przeglądarki DuckDuckGo do Docka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso rápido à navegação protegida ao adicionares o DuckDuckGo à tua Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте браузер DuckDuckGo на док-панель, чтобы открывать его еще быстрее."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.primary" : {
+      "comment" : "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Dock"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi al dock"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan Dock"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do Docka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить на док-панель"
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.popover.title" : {
+      "comment" : "Title of a popover that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo zum Dock hinzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to Your Dock."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir DuckDuckGo a tu Dock."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al tuo dock."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo toevoegen aan je dock."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo на вашей док-панели"
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.message" : {
+      "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu und wähle es als Standardbrowser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock y configúralo como tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock et définissez-le comme navigateur par défaut pour protéger davantage ce que vous faites en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al dock e impostalo come browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock en stel het in als je standaardbrowser om je online activiteiten beter te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka i ustaw jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock e define-o como navegador predefinido para protegeres a tua navegação online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для обеспечения дополнительной защиты онлайн добавьте DuckDuckGo на панель Dock и назначьте его браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.primary" : {
+      "comment" : "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als primären Browser festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Primary Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como navegador principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir comme navigateur principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come browser principale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instellen als primaire browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako główną przeglądarkę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como navegador principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать основным браузером"
+          }
+        }
+      }
+    },
+    "sad.att.both.popover.title" : {
+      "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mache DuckDuckGo zu deinem Hauptbrowser"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo Your Primary Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hacer de DuckDuckGo tu navegador principal"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur principal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta DuckDuckGo come browser principale"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo instellen als je primaire browser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako główną przeglądarkę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faz do DuckDuckGo o teu navegador principal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo как основной браузер"
+          }
+        }
+      }
+    },
+    "sad.att.default.popover.title" : {
+      "comment" : "Title of the popover that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelle DuckDuckGo als Standard-Browser ein"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo Your Default Browser"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establece DuckDuckGo como tu navegador predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta DuckDuckGo come browser predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo instellen als standaardbrowser"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faz do DuckDuckGo o teu navegador predefinido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите DuckGo браузером по умолчанию"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.banner.message" : {
+      "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo ist nicht dein Standard-Browser. Hol dir mehr Schutz"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo isn't your default browser. Get more protection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo no es tu navegador predeterminado. Obtén más protección"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo n'est pas votre navigateur par défaut. Obtenez plus de protection"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo non è il tuo browser predefinito. Ottieni più protezione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo is niet je standaardbrowser. Krijg meer bescherming"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo nie jest Twoją domyślną przeglądarką. Zapewnij sobie lepszą ochronę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O DuckDuckGo não é o teu navegador predefinido. Obtém mais proteção"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo не назначен вашим браузером по умолчанию. Почему бы не поднять уровень защиты?"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.popover.message" : {
+      "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne alle Website-Links in DuckDuckGo, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open all site links in DuckDuckGo to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre todos los enlaces a sitios web en DuckDuckGo para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez tous les liens du site dans DuckDuckGo pour protéger davantage ce que vous faites en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri tutti i link del sito in DuckDuckGo per proteggere meglio ciò che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open alle sitelinks in DuckDuckGo om je online activiteiten te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwieraj wszystkie linki do witryn w DuckDuckGo, aby w większym stopniu chronić swoją aktywność online."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre todos os links de sites no DuckDuckGo para protegeres melhor a tua navegação online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для дополнительной защиты в Сети рекомендуем открывать все ссылки на сайты в браузере DuckDuckGo."
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.prompt.primaary" : {
+      "comment" : "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako domyślną"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать браузером по умолчанию"
+          }
+        }
+      }
+    },
+    "sat.att.add-to-dock.banner.message" : {
+      "comment" : "Body of the banner view that invites users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erhalte schnellen Zugang zum geschützten Browsen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get quick access to protected browsing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén acceso rápido a la navegación protegida"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bénéficiez d’un accès rapide à la navigation protégée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accedi rapidamente alla navigazione protetta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Krijg snel toegang tot beschermd browsen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzyskaj szybki dostęp do chronionego przeglądania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém acesso rápido à navegação protegida"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защищенный браузер всегда под рукой"
           }
         }
       }

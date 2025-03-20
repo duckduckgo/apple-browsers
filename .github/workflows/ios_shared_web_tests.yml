@@ -1,0 +1,76 @@
+name: iOS - Shared Web Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # Run at 2 AM UTC
+  workflow_call:
+    secrets:
+      APPLE_API_KEY_BASE64:
+        required: true
+      APPLE_API_KEY_ID:
+        required: true
+      APPLE_API_KEY_ISSUER:
+        required: true
+      ASANA_ACCESS_TOKEN:
+        required: true
+      MATCH_PASSWORD:
+        required: true
+      SSH_PRIVATE_KEY_FASTLANE_MATCH:
+        required: true
+
+jobs:
+  shared-web-tests:
+    name: Shared web tests
+
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+    - name: Check out the code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+
+    - name: Checkout shared web tests
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        repository: duckduckgo/shared-web-tests
+        path: tmp/shared-web-tests
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and run tests
+      run: |
+        PROJECT_ROOT="$(pwd)"
+        . iOS/scripts/shared_web_tests.sh
+
+    - name: Upload logs when workflow failed
+      uses: actions/upload-artifact@v4
+      if: failure() || cancelled()
+      with:
+        name: BuildLogs
+        path: |
+            tmp/test_out_*.log
+        retention-days: 7
+
+  create-asana-task:
+    name: Create Asana Task
+    needs: [shared-web-tests]
+
+    if: failure()
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Create Asana Task
+        uses: ./.github/actions/asana-failed-pr-checks
+        with:
+          action: create-task
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-section-id: 1209511873385229
+          commit-author: ${{ needs.unit-tests.outputs.commit_author }}

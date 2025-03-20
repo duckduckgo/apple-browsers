@@ -25,8 +25,8 @@ final class NewTabPageConfigurationErrorHandler: EventMapping<NewTabPageConfigur
     init() {
         super.init { event, _, _, _ in
             switch event {
-            case .newTabPageError(let message):
-                PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported(message: message)), frequency: .dailyAndStandard)
+            case .newTabPageError:
+                PixelKit.fire(DebugEvent(NewTabPagePixel.newTabPageExceptionReported), frequency: .dailyAndStandard)
             }
         }
     }

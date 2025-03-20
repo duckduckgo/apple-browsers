@@ -36,7 +36,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
         faviconManager: FaviconManagement = FaviconManager.shared,
         isNTPSpecialPageSupported: Bool = false,
         isHistorySpecialPageSupported: Bool = false,
-        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.homePageSettingsModel.customImagesManager
+        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
     ) {
         self.featureFlagger = featureFlagger
         self.faviconManager = faviconManager
@@ -59,7 +59,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             handleDuckPlayer(requestURL: webViewURL, urlSchemeTask: urlSchemeTask, webView: webView)
         case .error:
             handleErrorPage(urlSchemeTask: urlSchemeTask)
-        case .newTab where isNTPSpecialPageSupported && featureFlagger.isFeatureOn(.htmlNewTabPage):
+        case .newTab where isNTPSpecialPageSupported:
             switch requestURL.type {
             case .favicon:
                 handleFavicon(urlSchemeTask: urlSchemeTask)
@@ -347,6 +347,7 @@ private extension DuckURLSchemeHandler {
         let threatKind: MaliciousSiteProtection.ThreatKind = switch reason {
         case .malware: .malware
         case .phishing: .phishing
+        case .scam: .scam
         case .ssl: {
             assertionFailure("SSL error page is handled with NSURLError: NSURLErrorServerCertificateUntrusted error")
             return .phishing

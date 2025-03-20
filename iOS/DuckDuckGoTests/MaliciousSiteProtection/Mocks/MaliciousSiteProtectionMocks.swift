@@ -59,6 +59,9 @@ final class MockMaliciousSiteProtectionPreferencesManager: MaliciousSiteProtecti
 }
 
 final class MockMaliciousSiteProtectionFeatureFlags: MaliciousSiteProtectionFeatureFlagger, MaliciousSiteProtectionFeatureFlagsSettingsProvider {
+
+    var isScamProtectionEnabled = false
+
     var shouldDetectMaliciousThreatForDomainResult = false
 
     var isMaliciousSiteProtectionEnabled = false
@@ -170,6 +173,8 @@ final class MockMaliciousSiteDetector: MaliciousSiteProtection.MaliciousSiteDete
             .phishing
         } else if url.absoluteString.contains("malware") {
             .malware
+        } else if url.absoluteString.contains("scam") {
+            .scam
         } else {
             nil
         }

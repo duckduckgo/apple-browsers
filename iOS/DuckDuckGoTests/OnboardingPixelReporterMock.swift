@@ -22,108 +22,119 @@ import Core
 import Onboarding
 @testable import DuckDuckGo
 
-final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingSiteSuggestionsPixelReporting, OnboardingSearchSuggestionsPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting {
-    private(set) var didCallTrackOnboardingIntroImpression = false
-    private(set) var didCallTrackBrowserComparisonImpression = false
-    private(set) var didCallTrackChooseBrowserCTAAction = false
-    private(set) var didCallTrackChooseAppIconImpression = false
-    private(set) var didCallTrackChooseCustomAppIconColor = false
-    private(set) var didCallTrackAddressBarPositionSelectionImpression = false
-    private(set) var didCallTrackChooseBottomAddressBarPosition = false
-    private(set) var didCallTrackSearchOptionTapped = false
-    private(set) var didCallTrackSiteOptionTapped = false
-    private(set) var didCallTrackCustomSearch = false
-    private(set) var didCallTrackCustomSite = false
-    private(set) var didCallTrackSecondSiteVisit = false {
+final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingSiteSuggestionsPixelReporting, OnboardingSearchSuggestionsPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingSetAsDefaultBrowserExperimentReporting {
+    private(set) var didCallMeasureOnboardingIntroImpression = false
+    private(set) var didCallMeasureBrowserComparisonImpression = false
+    private(set) var didCallMeasureChooseBrowserCTAAction = false
+    private(set) var didCallMeasureChooseAppIconImpression = false
+    private(set) var didCallMeasureChooseCustomAppIconColor = false
+    private(set) var didCallMeasureAddressBarPositionSelectionImpression = false
+    private(set) var didCallMeasureChooseBottomAddressBarPosition = false
+    private(set) var didCallMeasureSearchOptionTapped = false
+    private(set) var didCallMeasureSiteOptionTapped = false
+    private(set) var didCallMeasureCustomSearch = false
+    private(set) var didCallMeasureCustomSite = false
+    private(set) var didCallMeasureSecondSiteVisit = false {
         didSet {
             secondSiteVisitCounter += 1
         }
     }
     private(set) var secondSiteVisitCounter = 0
-    private(set) var didCallTrackScreenImpressionCalled = false
+    private(set) var didCallMeasureScreenImpressionCalled = false
     private(set) var capturedScreenImpression: Pixel.Event?
-    private(set) var didCallTrackPrivacyDashboardOpenedForFirstTime = false
-    private(set) var didCallTrackEndOfJourneyDialogDismiss = false
+    private(set) var didCallMeasurePrivacyDashboardOpenedForFirstTime = false
+    private(set) var didCallMeasureEndOfJourneyDialogDismiss = false
 
-    private(set) var didCallTrackAddToDockPromoImpression = false
-    private(set) var didCallTrackAddToDockPromoShowTutorialCTAAction = false
-    private(set) var didCallTrackAddToDockPromoDismissCTAAction = false
-    private(set) var didCallTrackAddToDockTutorialDismissCTAAction = false
+    private(set) var didCallMeasureAddToDockPromoImpression = false
+    private(set) var didCallMeasureAddToDockPromoShowTutorialCTAAction = false
+    private(set) var didCallMeasureAddToDockPromoDismissCTAAction = false
+    private(set) var didCallMeasureAddToDockTutorialDismissCTAAction = false
 
-    func trackOnboardingIntroImpression() {
-        didCallTrackOnboardingIntroImpression = true
+    private(set) var didCallMeasureDidSetDDGAsDefaultBrowser = false
+    private(set) var didCallMeasureDidNotSetDDGAsDefaultBrowser = false
+
+    func measureOnboardingIntroImpression() {
+        didCallMeasureOnboardingIntroImpression = true
     }
 
-    func trackBrowserComparisonImpression() {
-        didCallTrackBrowserComparisonImpression = true
+    func measureBrowserComparisonImpression() {
+        didCallMeasureBrowserComparisonImpression = true
     }
 
-    func trackChooseBrowserCTAAction() {
-        didCallTrackChooseBrowserCTAAction = true
+    func measureChooseBrowserCTAAction() {
+        didCallMeasureChooseBrowserCTAAction = true
     }
 
-    func trackChooseAppIconImpression() {
-        didCallTrackChooseAppIconImpression = true
+    func measureChooseAppIconImpression() {
+        didCallMeasureChooseAppIconImpression = true
     }
 
-    func trackChooseCustomAppIconColor() {
-        didCallTrackChooseCustomAppIconColor = true
+    func measureChooseCustomAppIconColor() {
+        didCallMeasureChooseCustomAppIconColor = true
     }
 
-    func trackAddressBarPositionSelectionImpression() {
-        didCallTrackAddressBarPositionSelectionImpression = true
+    func measureAddressBarPositionSelectionImpression() {
+        didCallMeasureAddressBarPositionSelectionImpression = true
     }
 
-    func trackChooseBottomAddressBarPosition() {
-        didCallTrackChooseBottomAddressBarPosition = true
+    func measureChooseBottomAddressBarPosition() {
+        didCallMeasureChooseBottomAddressBarPosition = true
     }
 
-    func trackEndOfJourneyDialogCTAAction() {
-        didCallTrackEndOfJourneyDialogDismiss = true
+    func measureEndOfJourneyDialogCTAAction() {
+        didCallMeasureEndOfJourneyDialogDismiss = true
     }
 
-    func trackSiteSuggetionOptionTapped() {
-        didCallTrackSiteOptionTapped = true
+    func measureSiteSuggetionOptionTapped() {
+        didCallMeasureSiteOptionTapped = true
     }
 
-    func trackSearchSuggetionOptionTapped() {
-        didCallTrackSearchOptionTapped = true
+    func measureSearchSuggetionOptionTapped() {
+        didCallMeasureSearchOptionTapped = true
     }
 
-    func trackCustomSearch() {
-        didCallTrackCustomSearch = true
+    func measureCustomSearch() {
+        didCallMeasureCustomSearch = true
     }
 
-    func trackCustomSite() {
-        didCallTrackCustomSite = true
+    func measureCustomSite() {
+        didCallMeasureCustomSite = true
     }
 
-    func trackSecondSiteVisit() {
-        didCallTrackSecondSiteVisit = true
+    func measureSecondSiteVisit() {
+        didCallMeasureSecondSiteVisit = true
     }
 
-    func trackScreenImpression(event: Pixel.Event) {
-        didCallTrackScreenImpressionCalled = true
+    func measureScreenImpression(event: Pixel.Event) {
+        didCallMeasureScreenImpressionCalled = true
         capturedScreenImpression = event
     }
 
-    func trackPrivacyDashboardOpenedForFirstTime() {
-        didCallTrackPrivacyDashboardOpenedForFirstTime = true
+    func measurePrivacyDashboardOpenedForFirstTime() {
+        didCallMeasurePrivacyDashboardOpenedForFirstTime = true
     }
 
-    func trackAddToDockPromoImpression() {
-        didCallTrackAddToDockPromoImpression = true
+    func measureAddToDockPromoImpression() {
+        didCallMeasureAddToDockPromoImpression = true
     }
 
-    func trackAddToDockPromoShowTutorialCTAAction() {
-        didCallTrackAddToDockPromoShowTutorialCTAAction = true
+    func measureAddToDockPromoShowTutorialCTAAction() {
+        didCallMeasureAddToDockPromoShowTutorialCTAAction = true
     }
 
-    func trackAddToDockPromoDismissCTAAction() {
-        didCallTrackAddToDockPromoDismissCTAAction = true
+    func measureAddToDockPromoDismissCTAAction() {
+        didCallMeasureAddToDockPromoDismissCTAAction = true
     }
 
-    func trackAddToDockTutorialDismissCTAAction() {
-        didCallTrackAddToDockTutorialDismissCTAAction = true
+    func measureAddToDockTutorialDismissCTAAction() {
+        didCallMeasureAddToDockTutorialDismissCTAAction = true
+    }
+
+    func measureDidSetDDGAsDefaultBrowser() {
+        didCallMeasureDidSetDDGAsDefaultBrowser = true
+    }
+
+    func measureDidNotSetDDGAsDefaultBrowser() {
+        didCallMeasureDidNotSetDDGAsDefaultBrowser = true
     }
 }

@@ -63,6 +63,41 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
+        // MARK: Tabswitcher improvements
+        case tabSwitcherEditMenuClicked
+        case tabSwitcherEditMenuSelectTabs
+        case tabSwitcherEditMenuSelectTabsDaily
+        case tabSwitcherEditMenuCloseAllTabs
+        case tabSwitcherEditMenuCloseAllTabsDaily
+        case tabSwitcherTabSelected
+        case tabSwitcherTabDeselected
+        case tabSwitcherSelectAll
+        case tabSwitcherSelectAllDaily
+        case tabSwitcherDeselectAll
+        case tabSwitcherDeselectAllDaily
+        case tabSwitcherCloseAll
+        case tabSwitcherCloseAllDaily
+        case tabSwitcherConfirmCloseTabs
+        case tabSwitcherConfirmCloseTabsDaily
+        case tabSwitcherSelectModeMenuClicked
+        case tabSwitcherSelectModeMenuShareLinks
+        case tabSwitcherSelectModeMenuShareLinksDaily
+        case tabSwitcherSelectModeMenuBookmarkTabs
+        case tabSwitcherSelectModeMenuBookmarkTabsDaily
+        case tabSwitcherSelectModeMenuBookmarkAllTabs
+        case tabSwitcherSelectModeMenuBookmarkAllTabsDaily
+        case tabSwitcherSelectModeMenuCloseOtherTabs
+        case tabSwitcherSelectModeMenuCloseOtherTabsDaily
+        case tabSwitcherLongPress
+        case tabSwitcherLongPressDaily
+        case tabSwitcherLongPressShare
+        case tabSwitcherLongPressBookmarkTabs
+        case tabSwitcherLongPressBookmarkTabsDaily
+        case tabSwitcherLongPressSelectTabs
+        case tabSwitcherLongPressCloseTab
+        case tabSwitcherLongPressCloseOtherTabs
+        case tabSwitcherLongPressCloseOtherTabsDaily
+
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
@@ -783,6 +818,22 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // Set As Default Browser Debug Pixels
+        // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
+
+        /// Fired when a successful result (either true or false) is returned from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserSuccessfulResult
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method
+        /// and we don’t have a persisted version of the previous result.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure
+
+        /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserUnknownFailure
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -1003,6 +1054,14 @@ extension Pixel {
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
         case openAIChatFromIconShortcut
+
+        case aiChatSettingsVoiceTurnedOff
+        case aiChatSettingsVoiceTurnedOn
+        case aiChatSettingsAddressBarTurnedOff
+        case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsBrowserMenuTurnedOff
+        case aiChatSettingsBrowserMenuTurnedOn
+        case aiChatSettingsDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1646,6 +1705,11 @@ extension Pixel.Event {
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
+        case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
+        case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
+
             // MARK: Ad Attribution
 
         case .adAttributionGlobalAttributedRulesDoNotExist: return "m_attribution_global_attributed_rules_do_not_exist"
@@ -2024,7 +2088,13 @@ extension Pixel.Event {
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
-
+        case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
+        case .aiChatSettingsVoiceTurnedOn: return "m_aichat_settings_voice_turned_on"
+        case .aiChatSettingsAddressBarTurnedOff: return "m_aichat_settings_address_bar_turned_off"
+        case .aiChatSettingsAddressBarTurnedOn: return "m_aichat_settings_address_bar_turned_on"
+        case .aiChatSettingsBrowserMenuTurnedOff: return "m_aichat_settings_browser_menu_turned_off"
+        case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
+        case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2033,6 +2103,41 @@ extension Pixel.Event {
 
         // MARK: Malicious Site Protection
         case .maliciousSiteProtection(let event): return "m_\(event.name)"
+
+        // MARK: Tab switcher improvements
+        case .tabSwitcherEditMenuClicked: return "m_tab_manager_edit_menu_clicked"
+        case .tabSwitcherEditMenuSelectTabs: return "m_tab_manager_edit_menu_select_tabs"
+        case .tabSwitcherEditMenuSelectTabsDaily: return "m_tab_manager_edit_menu_select_tabs_daily"
+        case .tabSwitcherEditMenuCloseAllTabs: return "m_tab_manager_edit_menu_close_all_tabs"
+        case .tabSwitcherEditMenuCloseAllTabsDaily: return "m_tab_manager_edit_menu_close_all_tabs_daily"
+        case .tabSwitcherTabSelected: return "m_tab_manager_tab_selected"
+        case .tabSwitcherTabDeselected: return "m_tab_manager_tab_deselected"
+        case .tabSwitcherSelectAll: return "m_tab_manager_select_all"
+        case .tabSwitcherSelectAllDaily: return "m_tab_manager_select_all_daily"
+        case .tabSwitcherDeselectAll: return "m_tab_manager_deselect_all"
+        case .tabSwitcherDeselectAllDaily: return "m_tab_manager_deselect_all_daily"
+        case .tabSwitcherCloseAll: return "m_tab_manager_close_all"
+        case .tabSwitcherCloseAllDaily: return "m_tab_manager_close_all_daily"
+        case .tabSwitcherConfirmCloseTabs: return "m_tab_manager_confirm_close_tabs"
+        case .tabSwitcherConfirmCloseTabsDaily: return "m_tab_manager_confirm_close_tabs_daily"
+        case .tabSwitcherSelectModeMenuClicked: return "m_tab_manager_select_mode_menu_clicked"
+        case .tabSwitcherSelectModeMenuShareLinks: return "m_tab_manager_select_mode_menu_share_links"
+        case .tabSwitcherSelectModeMenuShareLinksDaily: return "m_tab_manager_select_mode_menu_share_links_daily"
+        case .tabSwitcherSelectModeMenuBookmarkTabs: return "m_tab_manager_select_mode_menu_bookmark_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_tabs_daily"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabs: return "m_tab_manager_select_mode_menu_bookmark_all_tabs"
+        case .tabSwitcherSelectModeMenuBookmarkAllTabsDaily: return "m_tab_manager_select_mode_menu_bookmark_all_tabs_daily"
+        case .tabSwitcherSelectModeMenuCloseOtherTabs: return "m_tab_manager_select_mode_menu_close_other_tabs"
+        case .tabSwitcherSelectModeMenuCloseOtherTabsDaily: return "m_tab_manager_select_mode_menu_close_other_tabs_daily"
+        case .tabSwitcherLongPress: return "m_tab_manager_long_press"
+        case .tabSwitcherLongPressDaily: return "m_tab_manager_long_press_daily"
+        case .tabSwitcherLongPressShare: return "m_tab_manager_long_press_share"
+        case .tabSwitcherLongPressBookmarkTabs: return "m_tab_manager_long_press_bookmark_tabs"
+        case .tabSwitcherLongPressBookmarkTabsDaily: return "m_tab_manager_long_press_bookmark_tabs_daily"
+        case .tabSwitcherLongPressSelectTabs: return "m_tab_manager_long_press_select_tabs"
+        case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
+        case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
+        case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
         }
     }
 }

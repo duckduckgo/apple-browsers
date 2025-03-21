@@ -509,7 +509,7 @@ extension DataBrokerProtectionStatsPixels {
          */
 
         let allOptOuts = brokerProfileQueryData.flatMap { $0.optOutJobData }
-        let successfullySubmittedOptOuts = allOptOuts.filter { $0.submittedSuccessfullyDate != nil }
+        let successfullySubmittedOptOuts = allOptOuts.filter { $0.submittedSuccessfullyDate != nil && !$0.isRemovedByUser }
 
         let sevenDayOldPlusOptOutsThatHaveNotFiredPixel = successfullySubmittedOptOuts.filter { optOutJob in
             guard let submittedSuccessfullyDate = optOutJob.submittedSuccessfullyDate else { return false }

@@ -52,7 +52,7 @@ class ThemeManager {
         if !ExperimentalThemingManager().isExperimentalThemingEnabled {
             DesignSystemPalette.current = .default
         } else {
-            DesignSystemPalette.current = .warm
+            DesignSystemPalette.current = .experimental
         }
     }
 

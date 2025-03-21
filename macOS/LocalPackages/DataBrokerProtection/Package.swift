@@ -29,7 +29,7 @@ let package = Package(
             targets: ["DataBrokerProtection"])
     ],
     dependencies: [
-        .package(path: "../../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
         .package(path: "../DataBrokerProtectionShared"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),

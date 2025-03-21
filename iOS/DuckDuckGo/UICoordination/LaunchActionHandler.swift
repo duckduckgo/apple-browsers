@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import enum Core.AppDeepLinkSchemes
 
 enum LaunchAction {
 
@@ -73,6 +74,7 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.absoluteString)")
+        fireAppLaunchedWithExternalLinkPixel(url: url)
         guard urlHandler.shouldProcessDeepLink(url) else { return }
         NotificationCenter.default.post(name: AutofillLoginListAuthenticator.Notifications.invalidateContext, object: nil)
         urlHandler.handleURL(url)
@@ -81,6 +83,17 @@ final class LaunchActionHandler: LaunchActionHandling {
     private func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) {
         Logger.general.debug("Handling shortcut item: \(shortcutItem.type)")
         shortcutItemHandler.handleShortcutItem(shortcutItem)
+    }
+
+    private func fireAppLaunchedWithExternalLinkPixel(url: URL) {
+        // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
+        // If scheme is either `http` or `https` we know the app has been opened by clicking on an external link and the browser is the default one.
+        guard url.scheme == "http" || url.scheme == "https" else {
+            Logger(subsystem: "REPORTING", category: "REPORTING").debug("~~~THIRD PARTY EXTERNAL LAUNCH: \(false)")
+            return
+        }
+
+        Logger(subsystem: "REPORTING", category: "REPORTING").debug("~~~THIRD PARTY EXTERNAL LAUNCH: \(true)")
     }
 
 }

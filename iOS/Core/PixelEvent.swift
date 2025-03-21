@@ -31,6 +31,7 @@ extension Pixel {
 
         case appInstall
         case appLaunch
+        case appLaunchFromExternalLink
         case refreshPressed
         case pullToRefresh
 
@@ -1089,6 +1090,7 @@ extension Pixel.Event {
         switch self {
         case .appInstall: return "m_install"
         case .appLaunch: return "ml"
+        case .appLaunchFromExternalLink: return "m_third-party_launch"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
 

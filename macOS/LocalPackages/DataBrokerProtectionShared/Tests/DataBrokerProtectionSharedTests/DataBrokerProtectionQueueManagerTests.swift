@@ -51,7 +51,8 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                                   runnerProvider: mockRunnerProvider,
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
-                                                                  userNotificationService: mockUserNotification)
+                                                                  userNotificationService: mockUserNotification,
+                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {

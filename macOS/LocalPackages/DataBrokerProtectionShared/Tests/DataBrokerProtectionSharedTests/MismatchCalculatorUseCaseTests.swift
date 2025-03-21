@@ -49,7 +49,7 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
         sut.calculateMismatches()
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
-        let pixelName = DataBrokerProtectionPixels.parentChildMatches(parent: "", child: "", value: 0).name
+        let pixelName = DataBrokerProtectionSharedPixels.parentChildMatches(parent: "", child: "", value: 0).name
         XCTAssertEqual(lastPixel.name, pixelName)
         XCTAssertEqual(Int((lastPixel.params?["value"])!),
                        MismatchValues.parentSiteHasMoreMatches.rawValue)
@@ -74,7 +74,7 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
         sut.calculateMismatches()
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
-        let pixelName = DataBrokerProtectionPixels.parentChildMatches(parent: "", child: "", value: 0).name
+        let pixelName = DataBrokerProtectionSharedPixels.parentChildMatches(parent: "", child: "", value: 0).name
         XCTAssertEqual(lastPixel.name, pixelName)
         XCTAssertEqual(Int((lastPixel.params?["value"])!),
                        MismatchValues.childSiteHasMoreMatches.rawValue)
@@ -99,7 +99,7 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
         sut.calculateMismatches()
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
-        let pixelName = DataBrokerProtectionPixels.parentChildMatches(parent: "", child: "", value: 0).name
+        let pixelName = DataBrokerProtectionSharedPixels.parentChildMatches(parent: "", child: "", value: 0).name
         XCTAssertEqual(lastPixel.name, pixelName)
         XCTAssertEqual(Int((lastPixel.params?["value"])!),
                        MismatchValues.noMismatch.rawValue)
@@ -124,7 +124,7 @@ final class MismatchCalculatorUseCaseTests: XCTestCase {
         sut.calculateMismatches()
 
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
-        let pixelName = DataBrokerProtectionPixels.parentChildMatches(parent: "", child: "", value: 0).name
+        let pixelName = DataBrokerProtectionSharedPixels.parentChildMatches(parent: "", child: "", value: 0).name
         XCTAssertEqual(lastPixel.name, pixelName)
         XCTAssertEqual(Int((lastPixel.params?["value"])!),
                        MismatchValues.noMismatch.rawValue)

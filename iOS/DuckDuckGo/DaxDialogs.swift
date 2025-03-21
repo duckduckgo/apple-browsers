@@ -55,6 +55,10 @@ protocol ContextualOnboardingLogic {
 }
 
 protocol PrivacyProPromotionCoordinating {
+    /// Indicates whether the Privacy Pro promotion dialog is currently being displayed
+    var isShowingPrivacyProPromotion: Bool { get }
+    
+    /// Indicates whether the user has seen the Privacy Pro promotion dialog
     var privacyProPromotionDialogSeen: Bool { get set }
 }
 
@@ -665,6 +669,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 }
 
 extension DaxDialogs: PrivacyProPromotionCoordinating {
+    
+    var isShowingPrivacyProPromotion: Bool {
+        currentHomeSpec == .privacyProPromotion
+    }
+
     var privacyProPromotionDialogSeen: Bool {
         get {
             settings.privacyProPromotionDialogShown

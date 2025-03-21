@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Onemogući";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Saznajte više";
+"autofill.learn.more.link.title" = "[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Pregled";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Pretraživanje lozinki";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Lozinke su šifrirane. Nitko osim tebe ne može ih vidjeti, čak ni mi.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Lozinke su šifrirane. Nitko osim tebe ne može ih vidjeti, čak ni mi. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Lozinke su šifrirane. Nitko osim tebe ne može ih vidjeti, čak ni mi.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Predloženo";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Spremi lozinku";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Zatraži spremanje i automatsko popunjavanje";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Uvezi lozinke";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Opcije";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavi problem s automatskim popunjavanjem";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Automatsko popunjavanje ne radi?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Pregled";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Pokaži lozinku";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Neka DuckDuckGo upravlja skočnim prozorima za pristanak na kolačiće";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Lozinke";
+"settings.logins" = "Lozinke i automatsko popunjavanje";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Glavne postavke";
@@ -3115,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Pronađi i odaberi **DuckDuckGo**, zatim prijeđi prstom do **VPN-a** i odaberi **Dodaj widget**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN je povezan";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "Veza s DuckDuckGo VPN-om je prekinuta";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri prečaci omogućuju ti povezivanje s VPN-om brzom glasovnom naredbom, poput „Siri, uključi DuckDuckGo VPN“. To je brz način korištenja VPN-a bez upotrebe ruku.";

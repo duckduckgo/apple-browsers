@@ -416,28 +416,31 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
     public init(pixelKit: PixelKit, platform: Platform) {
         self.pixelKit = pixelKit
         self.platform = platform
-        super.init { event, _, _, _ in
+        super.init { _, _, _, _ in
+        }
+
+        self.eventMapper = { event, _, _, _ in
             switch event {
             case .generateEmailHTTPErrorDaily:
-                PixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
-                PixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
             case .httpError(let error, _, _),
                     .actionFailedError(let error, _, _, _),
                     .otherError(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),
                     .miscError(let error, _):
-                PixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .errorLoadingCachedConfig(let error):
-                PixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error),
                     .secureVaultKeyStoreUpdateError(let error),
                     .failedToParsePrivacyConfig(let error):
-                PixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,
@@ -482,7 +485,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts:
 
-                PixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
+                self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
 
             }
         }

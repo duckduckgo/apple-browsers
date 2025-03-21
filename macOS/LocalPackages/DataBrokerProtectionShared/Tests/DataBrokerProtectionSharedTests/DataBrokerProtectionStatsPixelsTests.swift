@@ -453,14 +453,14 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
     // MARK: - opt out confirmed/unconfirmed pixel tests
 
     private static let dataBroker = "Test broker"
-    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBroker)
-    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt7DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt7DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt7DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt14DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt14DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt14DaysUnconfirmed(dataBroker: dataBroker)
+    private let optOutJobAt21DaysConfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysConfirmed(dataBroker: dataBroker)
+    private let optOutJobAt21DaysUnconfirmedPixel = DataBrokerProtectionSharedPixels.optOutJobAt21DaysUnconfirmed(dataBroker: dataBroker)
 
-    private func validatePixelsFired(_ pixels: [DataBrokerProtectionPixels]) {
+    private func validatePixelsFired(_ pixels: [DataBrokerProtectionSharedPixels]) {
         let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         for pixel in pixels {
             let matchingPixelsFired = pixelsFired.filter { $0.name == pixel.name }
@@ -471,7 +471,7 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
         }
     }
 
-    private func validatePixelsNotFired(_ pixels: [DataBrokerProtectionPixels]) {
+    private func validatePixelsNotFired(_ pixels: [DataBrokerProtectionSharedPixels]) {
         let pixelsFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         for pixel in pixels {
             let matchingPixelsFired = pixelsFired.filter { $0.name == pixel.name }

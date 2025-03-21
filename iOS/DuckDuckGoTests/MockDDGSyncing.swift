@@ -57,6 +57,10 @@ final class MockDDGSyncing: DDGSyncing {
         $isSyncInProgress.eraseToAnyPublisher()
     }
 
+    convenience init() {
+        self.init(authState: .active, isSyncInProgress: false)
+    }
+
     init(dataProvidersSource: DataProvidersSource? = nil, authState: SyncAuthState, account: SyncAccount? = nil, scheduler: Scheduling = CapturingScheduler(), isSyncInProgress: Bool) {
         self.dataProvidersSource = dataProvidersSource
         self.authState = authState

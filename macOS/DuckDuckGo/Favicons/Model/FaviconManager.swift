@@ -22,6 +22,7 @@ import Combine
 import BrowserServicesKit
 import Common
 import History
+import CoreImage
 
 @MainActor
 protocol FaviconManagement: AnyObject {
@@ -352,7 +353,7 @@ final class FaviconManager: FaviconManagement {
 
                     let favicon = Favicon(identifier: UUID(),
                                           url: faviconUrl,
-                                          image: NSImage(data: data),
+                                          image: NSImage(dataUsingCIImage: data),
                                           relationString: faviconLink.rel,
                                           documentUrl: documentUrl,
                                           dateCreated: Date())
@@ -416,5 +417,23 @@ extension FaviconManager: Bookmarks.FaviconStoring {
 
             self.cacheFavicons([favicon], faviconURLs: [faviconURL], for: documentURL)
         }
+    }
+}
+
+fileprivate extension NSImage {
+    /**
+     * This function attempts to initialize `NSImage` from `CIImage`.
+     *
+     * This helps to preserve transparency on some PNG images, and fixes
+     * storing `NSImage` initialized with `ico` files in NSKeyedArchiver.
+     */
+    convenience init?(dataUsingCIImage data: Data) {
+        guard let ciImage = CIImage(data: data) else {
+            self.init(data: data)
+            return
+        }
+        let rep = NSCIImageRep(ciImage: ciImage)
+        self.init(size: rep.size)
+        addRepresentation(rep)
     }
 }

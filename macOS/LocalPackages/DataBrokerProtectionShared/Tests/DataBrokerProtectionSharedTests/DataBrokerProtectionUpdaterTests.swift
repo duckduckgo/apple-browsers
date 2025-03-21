@@ -26,6 +26,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()
+    let pixelHandler = MockDataBrokerProtectionPixelsHandler()
     let vault: DataBrokerProtectionSecureVaultMock? = try? DataBrokerProtectionSecureVaultMock(providers:
                                                         SecureStorageProviders(
                                                             crypto: EmptySecureStorageCryptoProviderMock(),
@@ -40,7 +41,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenNoVersionIsStored_thenWeTryToUpdateBrokers() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault)
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
 
             sut.checkForUpdatesInBrokerJSONFiles()
@@ -54,7 +55,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenVersionIsStoredAndPatchIsLessThanCurrentOne_thenWeTryToUpdateBrokers() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"))
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.1"), pixelHandler: pixelHandler)
             repository.lastCheckedVersion = "1.74.0"
 
             sut.checkForUpdatesInBrokerJSONFiles()
@@ -68,7 +69,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMinorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
             repository.lastCheckedVersion = "1.73.0"
 
             sut.checkForUpdatesInBrokerJSONFiles()
@@ -82,7 +83,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenVersionIsStoredAndMajorIsLessThanCurrentOne_thenWeTryToUpdateBrokers() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
             repository.lastCheckedVersion = "0.74.0"
 
             sut.checkForUpdatesInBrokerJSONFiles()
@@ -96,7 +97,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenVersionIsStoredAndIsEqualOrGreaterThanCurrentOne_thenCheckingUpdatesIsSkipped() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"))
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, appVersion: MockAppVersion(versionNumber: "1.74.0"), pixelHandler: pixelHandler)
             repository.lastCheckedVersion = "1.74.0"
 
             sut.checkForUpdatesInBrokerJSONFiles()
@@ -110,7 +111,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnAnOldVersion_thenWeUpdateIt() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault)
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
             resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "")]
             vault.shouldReturnOldVersionBroker = true
@@ -128,7 +129,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenSavedBrokerIsOnTheCurrentVersion_thenWeDoNotUpdateIt() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault)
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
             resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "")]
             vault.shouldReturnNewVersionBroker = true
@@ -145,7 +146,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
 
     func testWhenFileBrokerIsNotStored_thenWeAddTheBrokerAndScanOperations() {
         if let vault = self.vault {
-            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault)
+            let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
             resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "")]
             vault.profileQueries = [.mock]

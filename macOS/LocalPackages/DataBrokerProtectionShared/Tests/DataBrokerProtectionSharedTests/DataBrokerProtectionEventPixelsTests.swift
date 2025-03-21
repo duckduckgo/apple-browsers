@@ -25,7 +25,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
     let database = MockDatabase()
     let repository = MockDataBrokerProtectionEventPixelsRepository()
-    let handler = MockDataBrokerProtectionMacOSPixelsHandler()
+    let handler = MockDataBrokerProtectionPixelsHandler()
     let calendar = Calendar.current
     let eightDaysSinceToday = Calendar.current.date(byAdding: .day, value: -8, to: Date())!
 
@@ -40,8 +40,8 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         sut.fireNewMatchEventPixel()
 
         XCTAssertEqual(
-            MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last!.name,
-            DataBrokerProtectionMacOSPixels.scanningEventNewMatch.name
+            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!.name,
+            DataBrokerProtectionSharedPixels.scanningEventNewMatch.name
         )
     }
 
@@ -51,8 +51,8 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         sut.fireReappeareanceEventPixel()
 
         XCTAssertEqual(
-            MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last!.name,
-            DataBrokerProtectionMacOSPixels.scanningEventReAppearance.name
+            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!.name,
+            DataBrokerProtectionSharedPixels.scanningEventReAppearance.name
         )
     }
 
@@ -106,7 +106,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let hadReAppereance = weeklyReportScanningPixel.params!["had_re-appearance"]!
 
         XCTAssertEqual(hadReAppereance, "1")
@@ -130,7 +130,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let hadReAppereance = weeklyReportScanningPixel.params!["had_re-appearance"]!
 
         XCTAssertEqual(hadReAppereance, "0")
@@ -154,7 +154,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let hadNewMatch = weeklyReportScanningPixel.params!["had_new_match"]!
 
         XCTAssertEqual(hadNewMatch, "0")
@@ -178,7 +178,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let hadNewMatch = weeklyReportScanningPixel.params!["had_new_match"]!
 
         XCTAssertEqual(hadNewMatch, "1")
@@ -202,7 +202,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
         let removals = weeklyReportScanningPixel.params!["removals"]!
 
         XCTAssertEqual("0", removals)
@@ -227,7 +227,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last!
         let removals = weeklyReportScanningPixel.params!["removals"]!
 
         XCTAssertEqual("2", removals)
@@ -254,7 +254,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let scanCoverage = weeklyReportScanningPixel.params!["scan_coverage"]!
 
         XCTAssertEqual("0-25", scanCoverage)
@@ -293,7 +293,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let scanCoverage = weeklyReportScanningPixel.params!["scan_coverage"]!
 
         XCTAssertEqual("25-50", scanCoverage)
@@ -332,7 +332,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let scanCoverage = weeklyReportScanningPixel.params!["scan_coverage"]!
 
         XCTAssertEqual("50-75", scanCoverage)
@@ -371,7 +371,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         sut.tryToFireWeeklyPixels()
 
-        let weeklyReportScanningPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
+        let weeklyReportScanningPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
         let scanCoverage = weeklyReportScanningPixel.params!["scan_coverage"]!
 
         XCTAssertEqual("75-100", scanCoverage)
@@ -537,9 +537,9 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
      - Does fire for every child broker once (and _only_ child brokers)
      */
 
-    let pixelName = DataBrokerProtectionMacOSPixels.weeklyChildBrokerOrphanedOptOuts(dataBrokerName: "",
-                                                                                childParentRecordDifference: 0,
-                                                                                calculatedOrphanedRecords: 0).name
+    let pixelName = DataBrokerProtectionSharedPixels.weeklyChildBrokerOrphanedOptOuts(dataBrokerName: "",
+                                                                                      childParentRecordDifference: 0,
+                                                                                      calculatedOrphanedRecords: 0).name
 
     func testFireWeeklyChildBrokerOrphanedOptOutsPixels_whenChildAndParentHaveSameProfiles_thenDoesNotFire() {
         // Given
@@ -572,7 +572,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         sut.tryToFireWeeklyPixels()
 
         // Then
-        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         XCTAssertFalse(pixels.contains { $0.name == pixelName })
     }
 
@@ -610,12 +610,12 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         sut.tryToFireWeeklyPixels()
 
         // Then
-        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let firedPixel = pixels.first { $0.name == pixelName }!
         let parameters = firedPixel.params
-        XCTAssertEqual(parameters, [DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey: childName,
-                                    DataBrokerProtectionMacOSPixels.Consts.calculatedOrphanedRecords: "3",
-                                    DataBrokerProtectionMacOSPixels.Consts.childParentRecordDifference: "0"])
+        XCTAssertEqual(parameters, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName,
+                                    DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "3",
+                                    DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "0"])
     }
 
     func testFireWeeklyChildBrokerOrphanedOptOutsPixels_whenThereAreMultipleChildBrokers_thenFiresOnceForEach() {
@@ -660,25 +660,25 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         sut.tryToFireWeeklyPixels()
 
         // Then
-        let pixels = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired
+        let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
         let firedPixels = pixels.filter { $0.name == pixelName }
 
         XCTAssertEqual(firedPixels.count, 3)
 
-        let child1Pixel = firedPixels.filter { $0.params![DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey] == childName1 }.first!
-        XCTAssertEqual(child1Pixel.params, [DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey: childName1,
-                                            DataBrokerProtectionMacOSPixels.Consts.calculatedOrphanedRecords: "1",
-                                            DataBrokerProtectionMacOSPixels.Consts.childParentRecordDifference: "1"])
+        let child1Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName1 }.first!
+        XCTAssertEqual(child1Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName1,
+                                            DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
 
-        let child2Pixel = firedPixels.filter { $0.params![DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey] == childName2 }.first!
-        XCTAssertEqual(child2Pixel.params, [DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey: childName2,
-                                            DataBrokerProtectionMacOSPixels.Consts.calculatedOrphanedRecords: "2",
-                                            DataBrokerProtectionMacOSPixels.Consts.childParentRecordDifference: "1"])
+        let child2Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName2 }.first!
+        XCTAssertEqual(child2Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName2,
+                                            DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "2",
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
 
-        let child3Pixel = firedPixels.filter { $0.params![DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey] == childName3 }.first!
-        XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionMacOSPixels.Consts.dataBrokerParamKey: childName3,
-                                            DataBrokerProtectionMacOSPixels.Consts.calculatedOrphanedRecords: "1",
-                                            DataBrokerProtectionMacOSPixels.Consts.childParentRecordDifference: "-1"])
+        let child3Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childName3 }.first!
+        XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childName3,
+                                            DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1"])
     }
 }
 

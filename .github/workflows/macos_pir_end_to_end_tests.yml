@@ -57,6 +57,9 @@ jobs:
         ref: main
         path: macOS/pir-fake-broker
 
+    - name: Update Homebrew
+      run: brew update
+
     - name: Start PIR Fake Broker
       run: |
         cd pir-fake-broker

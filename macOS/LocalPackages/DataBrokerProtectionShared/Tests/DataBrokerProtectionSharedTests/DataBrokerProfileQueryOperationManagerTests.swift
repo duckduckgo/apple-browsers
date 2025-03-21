@@ -24,7 +24,7 @@ import PixelKit
 import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
-    let sut = DataBrokerProfileQueryOperationManager(vpnIPCClient: nil, dbpSettings: nil)
+    let sut = DataBrokerProfileQueryOperationManager(vpnIPCClient: nil, vpnBypassService: nil)
     let mockWebOperationRunner = MockWebJobRunner()
     let mockDatabase = MockDatabase()
     let mockUserNotificationService = MockUserNotificationService()

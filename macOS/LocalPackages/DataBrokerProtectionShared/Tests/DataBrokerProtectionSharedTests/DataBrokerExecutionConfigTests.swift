@@ -23,7 +23,7 @@ import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerExecutionConfigTests: XCTestCase {
 
-    private let sut = DataBrokerExecutionConfig(mode: .normal)
+    private let sut = DataBrokerExecutionConfig()
 
     func testWhenOperationIsManualScans_thenConcurrentOperationsBetweenBrokersIsSix() {
         let value = sut.concurrentOperationsFor(.manualScan)

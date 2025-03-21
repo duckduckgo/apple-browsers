@@ -163,7 +163,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
                                                                 database: SecureStorageDatabaseProviderMock(),
                                                                 keystore: EmptySecureStorageKeyStoreProviderMock()))
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(), pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                                     vault: vault)
 
         let profile = DataBrokerProtectionProfile(

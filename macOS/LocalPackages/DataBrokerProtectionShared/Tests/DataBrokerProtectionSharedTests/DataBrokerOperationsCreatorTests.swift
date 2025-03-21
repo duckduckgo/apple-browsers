@@ -26,7 +26,7 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
 
     // Dependencies
     private var mockDatabase: MockDatabase!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig(mode: .normal)
+    private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockPixelHandler: MockPixelHandler!
     private var mockUserNotificationService: MockUserNotificationService!

@@ -96,13 +96,13 @@ final class DuckPlayerNativeUIPresenter {
     private func setupNotificationObservers() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(handleOmnibarDidLayout),
-                                               name: OmniBarView.didLayoutNotification,
+                                               name: DefaultOmniBarView.didLayoutNotification,
                                                object: nil)
     }
 
     /// Updates the UI based on Ombibar Notification
     @objc private func handleOmnibarDidLayout(_ notification: Notification) {
-        guard let omniBar = notification.object as? OmniBarView else { return }
+        guard let omniBar = notification.object as? DefaultOmniBarView else { return }
         omniBarHeight = omniBar.frame.height
         guard let bottomConstraint = bottomConstraint else { return }
         bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -omniBarHeight : 0

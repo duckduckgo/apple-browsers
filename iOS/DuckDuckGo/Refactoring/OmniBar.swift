@@ -26,7 +26,7 @@ enum OmniBarAccessoryType {
  }
 
 protocol OmniBar: AnyObject {
-    var barView: OmniBarViewProtocol { get }
+    var barView: OmniBarView { get }
 
     var isBackButtonEnabled: Bool { get set }
     var isForwardButtonEnabled: Bool { get set }

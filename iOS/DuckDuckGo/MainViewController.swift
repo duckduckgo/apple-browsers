@@ -2135,7 +2135,7 @@ extension MainViewController: OmniBarDelegate {
         return tabURL.isDuckDuckGoSearch
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBarViewProtocol, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
 
@@ -2156,7 +2156,7 @@ extension MainViewController: OmniBarDelegate {
         }
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBarViewProtocol) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
         skipSERPFlow = false

@@ -19,7 +19,7 @@
 
 import UIKit
 
-protocol OmniBarViewProtocol: UIView {
+protocol OmniBarView: UIView {
 
     var text: String? { get set }
 
@@ -35,7 +35,6 @@ protocol OmniBarViewProtocol: UIView {
 
     var searchContainerWidth: CGFloat { get }
 
-    // TODO: Refactor to hide view details
     var menuButtonContent: MenuButton { get }
 
     func updateOmniBarPadding(left: CGFloat, right: CGFloat)

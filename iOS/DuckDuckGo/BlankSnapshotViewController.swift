@@ -201,11 +201,11 @@ extension BlankSnapshotViewController: OmniBarDelegate {
         userInteractionDetected()
     }
 
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBarViewProtocol, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // No-op
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBarViewProtocol) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
         DispatchQueue.main.async {
             self.viewCoordinator.omniBar.endEditing()
             self.userInteractionDetected()

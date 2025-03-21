@@ -63,10 +63,10 @@ protocol OmniBarDelegate: AnyObject {
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType)
 
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBarViewProtocol, tapped: Bool)
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
     // Returns whether field should select the text or not
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBarViewProtocol) -> Bool
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool
 
     func selectedSuggestion() -> Suggestion?
     
@@ -116,11 +116,11 @@ extension OmniBarDelegate {
         
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView) {
+    func onTextFieldWillBeginEditing(_ omniBar: DefaultOmniBarView) {
         
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) {
+    func onTextFieldDidBeginEditing(_ omniBar: DefaultOmniBarView) {
         
     }
     

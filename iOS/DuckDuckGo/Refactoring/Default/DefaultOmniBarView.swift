@@ -26,14 +26,14 @@ import DuckPlayer
 import os.log
 import BrowserServicesKit
 
-extension OmniBarView: NibLoading {}
+extension DefaultOmniBarView: NibLoading {}
 
 public enum OmniBarIcon: String {
     case duckPlayer = "DuckPlayerURLIcon"
     case specialError = "Globe-24"
 }
 
-class OmniBarView: UIView {
+class DefaultOmniBarView: UIView {
 
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
@@ -98,8 +98,8 @@ class OmniBarView: UIView {
     // Set up a view to add a custom icon to the Omnibar
     private var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
-    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> OmniBarView {
-        let omniBar = OmniBarView.load(nibName: "OmniBar")
+    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> DefaultOmniBarView {
+        let omniBar = DefaultOmniBarView.load(nibName: "OmniBar")
         omniBar.state = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
         omniBar.refreshState(omniBar.state)
         return omniBar
@@ -594,11 +594,11 @@ class OmniBarView: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: OmniBarView.didLayoutNotification, object: self)
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
     }
 }
 
-extension OmniBarView: UITextFieldDelegate {
+extension DefaultOmniBarView: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         self.refreshState(self.state.onEditingStartedState)
         return true
@@ -637,7 +637,7 @@ extension OmniBarView: UITextFieldDelegate {
     }
 }
 
-extension OmniBarView {
+extension DefaultOmniBarView {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
@@ -676,7 +676,7 @@ extension OmniBarView {
     }
 }
 
-extension OmniBarView {
+extension DefaultOmniBarView {
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
         if state.dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) {
@@ -739,7 +739,7 @@ extension OmniBarView {
     }
 }
 
-extension OmniBarView: OmniBarViewProtocol {
+extension DefaultOmniBarView: OmniBarView {
     var text: String? {
         get {
             textField.text

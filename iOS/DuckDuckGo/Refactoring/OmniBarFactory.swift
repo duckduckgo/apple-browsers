@@ -1,5 +1,5 @@
 //
-//  OmniBarViewController.swift
+//  OmniBarFactory.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,8 +19,8 @@
 
 import UIKit
 
-//protocol OmniBarViewController: UIViewController, OmniBar {
-//    associatedtype OmniBarViewType: OmniBarViewProtocol
-//
-//    var barView: OmniBarViewType { get }
-//}
+final class OmniBarFactory {
+    static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider) -> UIViewController & OmniBar {
+        DefaultOmniBarViewController(dependencies: dependencies)
+    }
+}

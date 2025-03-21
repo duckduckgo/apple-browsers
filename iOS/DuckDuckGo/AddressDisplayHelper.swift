@@ -20,7 +20,7 @@
 import Foundation
 import DuckPlayer
 
-extension OmniBarView {
+extension DefaultOmniBarView {
 
     struct AddressDisplayHelper {
 

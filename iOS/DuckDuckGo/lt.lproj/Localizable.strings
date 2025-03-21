@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Raskite ir pasirinkite **DuckDuckGo**, tada perbraukite iki **VPN** ir pasirinkite **Pridėti valdiklį**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "„DuckDuckGo“ VPN prijungtas";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "„DuckDuckGo“ VPN atjungtas.";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "„Siri“ spartieji klavišai leidžia prisijungti prie VPN naudojant greitą balso komandą, pvz., „Siri“, įjunk „DuckDuckGo“ VPN. Tai greitas ir patogus būdas naudotis savo VPN be rankų.";

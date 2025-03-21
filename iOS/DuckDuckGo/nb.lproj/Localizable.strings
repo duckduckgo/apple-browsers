@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Finn og velg **DuckDuckGo**, sveip til **VPN** og velg **Legg til widget**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGos VPN er koblet til";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo-VPN er frakoblet";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Du kan bruke Siri-snarveier til å koble til VPN-et med en kjapp talekommando, for eksempel «Siri, slå på DuckDuckGo VPN». Det er en rask, håndfri måte å bruke VPN på.";

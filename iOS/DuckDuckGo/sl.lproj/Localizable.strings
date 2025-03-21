@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Poiščite in izberite **DuckDuckGo**, nato povlecite do **VPN** in izberite **Dodaj pripomoček**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "Omrežje VPN DuckDuckGo je povezano";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "Omrežje VPN DuckDuckGo ni povezano";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Z bližnjicami Siri lahko vzpostavite povezavo z omrežjem VPN s hitrim glasovnim ukazom, kot je »Siri, vklopi DuckDuckGo VPN«. To je hiter in prostoročen način za uporabo omrežja VPN.";

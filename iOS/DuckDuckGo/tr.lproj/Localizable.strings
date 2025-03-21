@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "**DuckDuckGo**'yu bulup seçin, ardından **VPN**'e kaydırın ve **Widget Ekle**'yi seçin";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN bağlı";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN bağlantısı kesildi";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri Kısayolları, \"Siri, DuckDuckGo VPN'i aç\" gibi hızlı bir sesli komutla VPN'e bağlanmanızı sağlar. Bu VPN kullanmanın hızlı ve eller serbest bir yoludur.";

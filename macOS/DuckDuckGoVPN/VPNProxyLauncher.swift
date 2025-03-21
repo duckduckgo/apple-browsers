@@ -47,24 +47,35 @@ final class VPNProxyLauncher {
 
     // MARK: - Status Changes
 
+    private struct ProxyStatusUpdate: Equatable {
+        let newStatus: NEVPNStatus
+        let isProxyStatusChange: Bool
+    }
+
     private func subscribeToStatusChanges() {
         notificationCenter.publisher(for: .NEVPNStatusDidChange)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                self?.statusChanged(notification: notification)
+            .compactMap { [proxyController] notification in
+                guard let connection = notification.object as? NEVPNConnection else {
+                    return nil
+                }
+
+                return ProxyStatusUpdate(
+                    newStatus: connection.status,
+                    isProxyStatusChange: proxyController.isUsingConnection(connection))
+            }
+            .removeDuplicates()
+            .sink { [weak self] (proxyStatusUpdate: ProxyStatusUpdate) in
+                self?.statusChanged(
+                    newStatus: proxyStatusUpdate.newStatus,
+                    isProxyStatusChange: proxyStatusUpdate.isProxyStatusChange)
             }
             .store(in: &cancellables)
     }
 
-    private func statusChanged(notification: Notification) {
+    private func statusChanged(newStatus: NEVPNStatus, isProxyStatusChange: Bool) {
         Task { @MainActor in
-            guard let connection = notification.object as? NEVPNConnection else {
-                return
-            }
-
-            let isProxyConnectionStatusChange = proxyController.isUsingConnection(connection)
-
-            try await startOrStopProxyIfNeeded(isProxyConnectionStatusChange: isProxyConnectionStatusChange)
+            try await startOrStopProxyIfNeeded(isProxyStatusChange: isProxyStatusChange)
         }
     }
 
@@ -88,7 +99,7 @@ final class VPNProxyLauncher {
 
     private var isControllingProxy = false
 
-    private func startOrStopProxyIfNeeded(isProxyConnectionStatusChange: Bool = false) async throws {
+    private func startOrStopProxyIfNeeded(isProxyStatusChange: Bool = false) async throws {
         if await shouldStartProxy {
             guard !isControllingProxy else {
                 return
@@ -103,7 +114,7 @@ final class VPNProxyLauncher {
             // When we're auto-starting the proxy because its own status changed to
             // disconnected, we want to give it a pause because if it fails to connect again
             // we risk the proxy entering a frenetic connect / disconnect loop
-            if isProxyConnectionStatusChange {
+            if isProxyStatusChange {
                 // If the proxy connection was stopped, let's wait a bit before trying to enable it again
                 try await Task.sleep(interval: .seconds(1))
 

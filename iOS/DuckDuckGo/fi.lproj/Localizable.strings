@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Etsi ja valitse **DuckDuckGo**, pyyhkäise sitten kohtaan **VPN** ja valitse **Lisää widget**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN on yhdistetty.";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN ‑yhteys on katkennut";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri-pikakomentojen avulla voit muodostaa yhteyden VPN:ään nopealla äänikomennolla, kuten \"Siri, ota DuckDuckGo VPN käyttöön\". Se on nopea ja kätevä tapa käyttää VPN:ää ilman käsiä.";

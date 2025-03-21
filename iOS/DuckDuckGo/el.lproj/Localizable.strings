@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Βρείτε και επιλέξτε το **DuckDuckGo**, έπειτα σύρετε προς το **VPN** και επιλέξτε **Προσθήκη μικροεφαρμογής**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "Το DuckDuckGo VPN είναι συνδεδεμένο";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "Το DuckDuckGo VPN είναι αποσυνδεδεμένο";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Οι συντομεύσεις Siri σάς επιτρέπουν να συνδεθείτε στο VPN με μια γρήγορη φωνητική εντολή, όπως «Siri, ενεργοποίησε το DuckDuckGo VPN». Είναι ένας γρήγορος τρόπος, χωρίς χρήση χεριών, για να χρησιμοποιείτε το VPN.";

@@ -260,8 +260,8 @@
 		315AA07028CA5CC800200030 /* YoutubePlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */; };
 		3168506D2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */; };
 		3168506E2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */; };
-		316913232BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913222BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift */; };
-		316913242BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913222BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift */; };
+		316913232BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */; };
+		316913242BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */; };
 		316913262BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913252BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift */; };
 		316913272BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913252BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift */; };
 		316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */; };
@@ -3732,7 +3732,7 @@
 		315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubePlayerNavigationHandler.swift; sourceTree = "<group>"; };
 		3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WaitlistViewControllerPresenter.swift; sourceTree = "<group>"; };
 		316850712AF3AD58009A2828 /* DataBrokerProtectionDebugMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionDebugMenu.swift; sourceTree = "<group>"; };
-		316913222BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionPixelsHandler.swift; sourceTree = "<group>"; };
+		316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionMacOSPixelsHandler.swift; sourceTree = "<group>"; };
 		316913252BD2B76F0051B46D /* DataBrokerPrerequisitesStatusVerifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerPrerequisitesStatusVerifier.swift; sourceTree = "<group>"; };
 		316913282BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionErrorViewController.swift; sourceTree = "<group>"; };
 		316C48EE2CC2B231000B08C1 /* AIChatPreferencesStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPreferencesStorage.swift; sourceTree = "<group>"; };
@@ -5912,7 +5912,7 @@
 				F1C70D782BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift */,
 				31AA6B962B960B870025014E /* DataBrokerProtectionLoginItemPixels.swift */,
 				3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */,
-				316913222BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift */,
+				316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */,
 				BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */,
 				3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */,
 				3169132B2BD2C7960051B46D /* ErrorView */,
@@ -12599,7 +12599,7 @@
 				BB9BA22A2D10C0A5009229F3 /* TabBarActiveRemoteMessage.swift in Sources */,
 				9FDA6C222B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */,
 				C1372EF52BBC5BAD003F8793 /* SecureTextField.swift in Sources */,
-				316913242BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift in Sources */,
+				316913242BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */,
 				317307302CD2493900C492AB /* AutofillToolbarOnboardingViewModel.swift in Sources */,
 				843D73BC2C786E5400E4F9DC /* BookmarkListPopover.swift in Sources */,
 				3706FC77293F65D500E42796 /* PageObserverUserScript.swift in Sources */,
@@ -13463,7 +13463,7 @@
 				AAC30A2E268F1EE300D2D9CD /* CrashReportPromptPresenter.swift in Sources */,
 				1D2DC00629016798008083A1 /* BWCredential.swift in Sources */,
 				EEA3EEB12B24EBD000E8333A /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */,
-				316913232BD2B6250051B46D /* DataBrokerProtectionPixelsHandler.swift in Sources */,
+				316913232BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */,
 				37AFCE8727DA334800471A10 /* PreferencesRootView.swift in Sources */,
 				B684590825C9027900DC17B6 /* AppStateChangedPublisher.swift in Sources */,
 				4B92928F26670D1700AD2C21 /* BookmarkTableCellView.swift in Sources */,

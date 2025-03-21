@@ -44,7 +44,7 @@ public protocol DBPUserNotificationCenter {
 extension UNUserNotificationCenter: DBPUserNotificationCenter {}
 
 public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataBrokerProtectionUserNotificationService {
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private var userNotificationCenter: DBPUserNotificationCenter
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -53,7 +53,7 @@ public class DefaultDataBrokerProtectionUserNotificationService: NSObject, DataB
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
 
-    public init(pixelHandler: EventMapping<DataBrokerProtectionPixels>,
+    public init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
                 userDefaults: UserDefaults = .standard,
                 userNotificationCenter: DBPUserNotificationCenter,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
@@ -176,7 +176,7 @@ extension DefaultDataBrokerProtectionUserNotificationService: UNUserNotification
     public func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         guard let identifier = UNNotificationRequest.Identifier(rawValue: response.notification.request.identifier) else { return }
 
-        let pixelMapper: [UNNotificationRequest.Identifier: DataBrokerProtectionPixels] = [.firstScanComplete: .dataBrokerProtectionNotificationOpenedFirstScanComplete,
+        let pixelMapper: [UNNotificationRequest.Identifier: DataBrokerProtectionMacOSPixels] = [.firstScanComplete: .dataBrokerProtectionNotificationOpenedFirstScanComplete,
                                                                                            .firstProfileRemoved: .dataBrokerProtectionNotificationOpenedFirstRemoval,
                                                                                            .allInfoRemoved: .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
                                                                                            .twoWeeksCheckIn: .dataBrokerProtectionNotificationOpened2WeeksCheckIn]

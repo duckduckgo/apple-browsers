@@ -148,7 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
-                                                            pixelHandler: DataBrokerProtectionPixelsHandler())
+                                                            pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
     private var didFinishLaunching = false

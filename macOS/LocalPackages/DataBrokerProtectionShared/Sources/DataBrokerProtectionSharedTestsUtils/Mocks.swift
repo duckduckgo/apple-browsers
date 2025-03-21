@@ -23,7 +23,6 @@ import Configuration
 import Foundation
 import GRDB
 import SecureStorage
-import Freemium
 
 @testable import DataBrokerProtectionShared
 
@@ -1441,7 +1440,7 @@ public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErro
 public extension DefaultDataBrokerOperationDependencies {
     static var mock: DefaultDataBrokerOperationDependencies {
         DefaultDataBrokerOperationDependencies(database: MockDatabase(),
-                                               config: DataBrokerExecutionConfig(mode: .normal),
+                                               config: DataBrokerExecutionConfig(),
                                                runnerProvider: MockRunnerProvider(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
@@ -1883,20 +1882,6 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
         didCallV5Migrations = true
         return { _ in }
     }
-}
-
-public final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager {
-    public var didActivate = false
-    public var didPostFirstProfileSavedNotification = false
-    public var didPostResultsNotification = false
-    public var didDismissHomePagePromotion = false
-    public var firstProfileSavedTimestamp: Date?
-    public var upgradeToSubscriptionTimestamp: Date?
-    public var firstScanResults: FreemiumDBPMatchResults?
-
-    public init() {}
-
-    public func resetAllState() {}
 }
 
 public final class MockWebJobRunner: WebJobRunner {

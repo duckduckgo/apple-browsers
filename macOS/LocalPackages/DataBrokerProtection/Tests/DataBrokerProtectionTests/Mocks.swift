@@ -28,28 +28,28 @@ import DataBrokerProtectionShared
 
 @testable import DataBrokerProtection
 
-public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionPixels> {
+public class MockDataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 
-    static var lastPixelsFired = [DataBrokerProtectionPixels]()
+    static var lastPixelsFired = [DataBrokerProtectionMacOSPixels]()
 
     public init() {
         super.init { event, _, _, _ in
-            MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
+            MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.append(event)
         }
     }
 
-    override init(mapping: @escaping EventMapping<DataBrokerProtectionPixels>.Mapping) {
+    override init(mapping: @escaping EventMapping<DataBrokerProtectionMacOSPixels>.Mapping) {
         fatalError("Use init()")
     }
 
     func clear() {
-        MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.removeAll()
     }
 }
 
-final class MockPixelHandler: EventMapping<DataBrokerProtectionPixels> {
+final class MockPixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 
-    var lastFiredEvent: DataBrokerProtectionPixels?
+    var lastFiredEvent: DataBrokerProtectionMacOSPixels?
     var lastPassedParameters: [String: String]?
 
     init() {
@@ -252,4 +252,18 @@ final class MockDBPProfileSavedNotifier: DBPProfileSavedNotifier {
     func postProfileSavedNotificationIfPermitted() {
         didCallPostProfileSavedNotificationIfPermitted = true
     }
+}
+
+public final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManager {
+    public var didActivate = false
+    public var didPostFirstProfileSavedNotification = false
+    public var didPostResultsNotification = false
+    public var didDismissHomePagePromotion = false
+    public var firstProfileSavedTimestamp: Date?
+    public var upgradeToSubscriptionTimestamp: Date?
+    public var firstScanResults: FreemiumDBPMatchResults?
+
+    public init() {}
+
+    public func resetAllState() {}
 }

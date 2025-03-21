@@ -21,12 +21,18 @@ import UIKit
 import PrivacyDashboard
 
 final class DefaultOmniBarViewController: UIViewController, OmniBar {
-    private var omniBarView: DefaultOmniBarView!
+    private(set) lazy var omniBarView: DefaultOmniBarView = {
+        DefaultOmniBarView.loadFromXib(dependencies: dependencies)
+    }()
+
     private let dependencies: OmnibarDependencyProvider
 
     // MARK: - OmniBar conformance
 
-    var barView: OmniBarView { omniBarView }
+    var barView: OmniBarView {
+        omniBarView
+    }
+
     var omniDelegate: OmniBarDelegate? {
         get { omniBarView.omniDelegate }
         set { omniBarView.omniDelegate = newValue }
@@ -61,8 +67,6 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
     }
     
     override func loadView() {
-        omniBarView = DefaultOmniBarView.loadFromXib(dependencies: dependencies)
-
         view = omniBarView
     }
 

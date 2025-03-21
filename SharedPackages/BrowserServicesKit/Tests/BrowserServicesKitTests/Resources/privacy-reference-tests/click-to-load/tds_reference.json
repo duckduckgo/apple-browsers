@@ -1,0 +1,97 @@
+{
+    "trackers": {
+        "facebook.com": {
+            "domain": "facebook.com",
+            "default": "block",
+            "owner": {
+                "name": "Facebook, Inc.",
+                "displayName": "Facebook"
+            }
+        },
+        "facebook.net": {
+            "domain": "facebook.net",
+            "default": "ignore",
+            "owner": {
+                "name": "Facebook, Inc.",
+                "displayName": "Facebook"
+            },
+            "rules": [
+                {
+                    "rule": "facebook\\.net/first-tracker",
+                    "action": "block-ctl-fb"
+                },
+                {
+                    "rule": "facebook\\.net/different-tracker",
+                    "action": "block-ctl-fb2"
+                },
+                {
+                    "rule": "facebook\\.net/unknown-tracker",
+                    "action": "block-ctl-unknown"
+                },
+                {
+                    "rule": "facebook\\.net/script\\.js",
+                    "surrogate": "sdk.js",
+                    "action": "block-ctl-fb"
+                }
+            ]
+        },
+        "second.example": {
+            "domain": "second.example",
+            "default": "ignore",
+            "owner": {
+                "name": "Second Entity",
+                "displayName": "Second Entity."
+            },
+            "rules": [
+                {
+                    "rule": "second\\.example/tracker",
+                    "action": "block-ctl-second"
+                }
+            ]
+        },
+        "third.example": {
+            "domain": "third.example",
+            "default": "ignore",
+            "owner": {
+                "name": "Third Entity",
+                "displayName": "Third Entity."
+            },
+            "rules": [
+                {
+                    "rule": "third\\.example/tracker",
+                    "action": "block-ctl-third"
+                }
+            ]
+        }
+    },
+    "entities": {
+        "Facebook, Inc.": {
+            "domains": [
+                "facebook.com",
+                "facebook.net"
+            ],
+            "displayName": "Facebook"
+        },
+        "Second Entity": {
+            "domains": [
+                "second.example"
+            ],
+            "displayName": "Second Entity"
+        },
+        "Third Entity": {
+            "domains": [
+                "third.example"
+            ],
+            "displayName": "Third Entity"
+        }
+
+    },
+    "domains": {
+        "facebook.com": "Facebook, Inc.",
+        "facebook.net": "Facebook, Inc.",
+        "second.example": "Second Entity",
+        "third.example": "Third Entity"
+    },
+    "cnames": {
+    }
+}

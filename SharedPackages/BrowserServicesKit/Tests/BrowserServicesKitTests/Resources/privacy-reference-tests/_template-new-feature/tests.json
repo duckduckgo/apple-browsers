@@ -1,0 +1,40 @@
+{
+    "setName": {
+        "name": "name of the set",
+        "desc": "description of the set",
+        "tests": [
+            {
+                "name": "name of the particular test",
+                "yourCustomField": "input",
+                "expectSomething": "output",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            }
+        ]
+    },
+    "anotherSet": {
+        "name": "name of the set",
+        "desc": "description of the set",
+        "tests": [
+            {
+                "name": "name of the particular test",
+                "yourCustomField": "input",
+                "expectSomething": "output",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            }
+        ]
+    }
+}

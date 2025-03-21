@@ -1,0 +1,21 @@
+{
+    "readme": "This configuration includes only the referrer trimming feature.",
+    "features": {
+        "referrer": {
+            "state": "enabled",
+            "exceptions": [
+                {
+                    "domain": "keep-referrer.com",
+                    "reason": "referrer header, or JS API, should not be modified"
+                }
+            ]
+        }
+    },
+    "version": 1635943904459,
+    "unprotectedTemporary": [
+        {
+            "domain": "global-keep-referrer.com",
+            "reason": "referrer header, or JS API, should not be modified"
+        }
+    ]
+}

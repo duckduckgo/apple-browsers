@@ -1,0 +1,18 @@
+name: Release
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Set version variable
+      run: echo "VERSION=`date +'%s'`" >> $GITHUB_ENV
+    - uses: ncipollo/release-action@58ae73b360456532aafd58ee170c045abbeaee37
+      with:
+        token: '${{ secrets.GITHUB_TOKEN }}'
+        name: 'privacy-reference-tests-${{ env.VERSION }}'
+        tag: ${{ env.VERSION }}

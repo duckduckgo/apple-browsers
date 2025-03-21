@@ -1,0 +1,101 @@
+{
+    "trackers": {
+        "tracker.com": {
+            "domain": "tracker.com",
+            "owner": {
+                "name": "Tracker INC",
+                "displayName": "Tracker INC",
+                "privacyPolicy": "https://tracker.com/lies",
+                "url": "https://tracker.com/"
+            },
+            "prevalence": 0.1,
+            "fingerprinting": 3,
+            "cookies": 0.1,
+            "categories": [],
+            "default": "block",
+            "rules": [
+                {
+                    "rule": "tracker\\.com\\/script.js",
+                    "action": "ignore"
+                }
+            ]
+        },
+        "unblockable-tracker.net": {
+            "domain": "unblockable-tracker.net",
+            "owner": {
+                "name": "Unblockable Tracker INC",
+                "displayName": "Unblockable Tracker INC",
+                "privacyPolicy": "https://unblockable-tracker.net/lies",
+                "url": "https://unblockable-tracker.net/"
+            },
+            "prevalence": 0.1,
+            "fingerprinting": 3,
+            "cookies": 0.1,
+            "categories": [],
+            "default": "ignore",
+            "rules": []
+        },
+        "excluded-cookie-tracker.com": {
+            "domain": "excluded-cookie-tracker.com",
+            "owner": {
+                "name": "Tracker INC",
+                "displayName": "Tracker INC",
+                "privacyPolicy": "https://tracker.com/lies",
+                "url": "https://tracker.com/"
+            },
+            "prevalence": 0.1,
+            "fingerprinting": 3,
+            "cookies": 0.1,
+            "categories": [],
+            "default": "block",
+            "rules": []
+        }
+    },
+    "entities": {
+        "Company1": {
+            "domains": [
+                "company1.com",
+                "company1.co.uk"
+            ],
+            "prevalence": 0.1,
+            "displayName": "Company 1"
+        },
+        "Company2": {
+            "domains": [
+                "company2.com",
+                "company2.co.uk"
+            ],
+            "prevalence": 0.1,
+            "displayName": "Company 2"
+        },
+        "Tracker INC": {
+            "domains": [
+                "tracker.com",
+                "tracker.test",
+                "excluded-cookie-tracker.com"
+            ],
+            "prevalence": 0.1,
+            "displayName": "Tracker INC"
+        },
+        "Unblockable Tracker INC": {
+            "domains": [
+                "unblockable-tracker.net"
+            ],
+            "prevalence": 0.1,
+            "displayName": "Unblockable Tracker INC"
+        }
+    },
+    "cnames": {
+        "tracker.cname.com": "bad.tracker.com"
+    },
+    "domains": {
+        "company1.com": "Company 1",
+        "company1.co.uk": "Company 1",
+        "company2.com": "Company 2",
+        "company2.co.uk": "Company 2",
+        "tracker.com": "Tracker INC",
+        "tracker.test": "Tracker INC",
+        "excluded-cookie-tracker.com": "Tracker INC",
+        "unblockable-tracker.net": "Unblockable Tracker INC"
+    }
+}

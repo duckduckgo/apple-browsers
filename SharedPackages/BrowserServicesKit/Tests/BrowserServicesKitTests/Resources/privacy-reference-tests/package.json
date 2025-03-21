@@ -1,0 +1,6 @@
+{
+    "name": "@duckduckgo/privacy-reference-tests",
+    "description": "Test metadata used by DuckDuckGo apps and extensions to verify implementation of privacy features.",
+    "license": "Apache-2.0",
+    "repository": "duckduckgo/privacy-reference-tests"
+}

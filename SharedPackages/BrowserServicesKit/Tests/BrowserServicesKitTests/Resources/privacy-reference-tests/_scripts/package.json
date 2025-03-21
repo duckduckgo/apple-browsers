@@ -1,0 +1,14 @@
+{
+  "name": "privacy-reference-tests-linting",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "node linting.js"
+  },
+  "author": "Duck Duck Go, Inc.",
+  "license": "Apache License, Version 2.0",
+  "dependencies": {
+    "ajv": "^8.7.1",
+    "glob": "^7.2.0"
+  }
+}

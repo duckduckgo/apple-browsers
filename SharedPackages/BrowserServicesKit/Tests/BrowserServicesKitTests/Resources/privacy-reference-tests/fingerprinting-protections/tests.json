@@ -1,0 +1,1252 @@
+{
+    "batteryAPI": {
+        "name": "Battery API",
+        "desc": "Battery API should be modified not to leak information about current state of battery / charging",
+        "tests": [
+            {
+                "name": "charging property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.getBattery().then(battery => battery.charging)",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "chargingTime property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.getBattery().then(battery => battery.chargingTime)",
+                "expectPropertyValue": "0",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "dischargingTime property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.getBattery().then(battery => battery.dischargingTime)",
+                "expectPropertyValue": "Infinity",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "chargingTime property - local exception",
+                "siteURL": "https://battery-exception.test/",
+                "property": "navigator.getBattery().then(battery => battery.chargingTime)",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "chargingTime property - global exception",
+                "siteURL": "https://global-exception.test",
+                "property": "navigator.getBattery().then(battery => battery.chargingTime)",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            }
+        ]
+    },
+    "hardwareAPIs": {
+        "name": "Hardware APIs",
+        "desc": "Various hardware APIs should be modified not to leak information about machine capabilities",
+        "tests": [
+            {
+                "name": "keyboard property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.keyboard",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "keyboard property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Navigator.prototype.keyboard",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "hardwareConcurrency property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.hardwareConcurrency",
+                "expectPropertyValue": "2",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "hardwareConcurrency property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Navigator.prototype.hardwareConcurrency",
+                "expectPropertyValue": "2",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "deviceMemory property",
+                "siteURL": "https://example.com/",
+                "property": "navigator.deviceMemory",
+                "expectPropertyValue": "8",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "deviceMemory property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Navigator.prototype.deviceMemory",
+                "expectPropertyValue": "8",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "deviceMemory property - local exception",
+                "siteURL": "https://hardware-exception.test/path/file.html",
+                "property": "Navigator.prototype.deviceMemory",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "deviceMemory property - global exception",
+                "siteURL": "https://global-exception.test/path/file.html",
+                "property": "Navigator.prototype.deviceMemory",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": []
+            }
+        ]
+    },
+    "screenAPI": {
+        "name": "Screen APIs",
+        "desc": "Screen API should be modified not to leak information about browser window size and position",
+        "tests": [
+            {
+                "name": "availTop property",
+                "siteURL": "https://example.com/",
+                "property": "screen.availTop",
+                "expectPropertyValue": "0",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availTop property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.availTop",
+                "expectPropertyValue": "0",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availLeft property",
+                "siteURL": "https://example.com/",
+                "property": "screen.availLeft",
+                "expectPropertyValue": "0",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availLeft property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.availLeft",
+                "expectPropertyValue": "0",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availWidth property",
+                "siteURL": "https://example.com/",
+                "property": "screen.availWidth === screen.width",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availWidth property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.availWidth === screen.width",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availHeight property",
+                "siteURL": "https://example.com/",
+                "property": "screen.availHeight === screen.height",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "availHeight property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.availHeight === screen.height",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "colorDepth property",
+                "siteURL": "https://example.com/",
+                "property": "screen.colorDepth",
+                "expectPropertyValue": "24",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "colorDepth property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.colorDepth",
+                "expectPropertyValue": "24",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "pixelDepth property",
+                "siteURL": "https://example.com/",
+                "property": "screen.pixelDepth",
+                "expectPropertyValue": "24",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "pixelDepth property - prototype access",
+                "siteURL": "https://example.com/",
+                "property": "Screen.prototype.pixelDepth",
+                "expectPropertyValue": "24",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "pixelDepth property - local exception",
+                "siteURL": "https://sub.screensize-exception.test/path/file.html",
+                "property": "Screen.prototype.pixelDepth",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": []
+            },
+            {
+                "name": "pixelDepth property - global exception",
+                "siteURL": "https://global-exception.test/path/file.html",
+                "property": "Screen.prototype.pixelDepth",
+                "expectPropertyValue": "12345",
+                "exceptPlatforms": []
+            }
+        ]
+    },
+    "temporaryStorageAPI": {
+        "name": "(Deprecated) Temporary Storage API",
+        "desc": "Temporary Storage shold be modified not to leak information about free disk space",
+        "tests": [
+            {
+                "name": "queryUsageAndQuota granted space value",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => {navigator.webkitTemporaryStorage.queryUsageAndQuota((used, granted) => resolve(granted))})",
+                "expectPropertyValue": "4294967296",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "queryUsageAndQuota granted space value - global exception",
+                "siteURL": "https://tempstorage-exception.test/path/file.html",
+                "property": "new Promise(resolve => {navigator.webkitTemporaryStorage.queryUsageAndQuota((used, granted) => resolve(granted))})",
+                "expectPropertyValue": "9999999999",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            },
+            {
+                "name": "queryUsageAndQuota granted space value - global exception",
+                "siteURL": "https://global-exception.test/path/file.html",
+                "property": "new Promise(resolve => {navigator.webkitTemporaryStorage.queryUsageAndQuota((used, granted) => resolve(granted))})",
+                "expectPropertyValue": "9999999999",
+                "exceptPlatforms": [
+                       "ios-browser",
+                       "macos-browser"
+                   ]
+            }
+        ]
+    },
+    "harmfulAPIs": {
+        "name": "Harmful APIs",
+        "desc": "Various web APIs should be modified or disabled to prevent leaking private data",
+        "tests": [
+            {
+                "name": "deviceorientation event",
+                "siteURL": "https://example.com/",
+                "property": "firedEvent='none',(t=()=>{window.addEventListener('deviceorientation', () => { firedEvent = 'deviceorientation' }); window.dispatchEvent(new DeviceOrientationEvent('deviceorientation')); return 333}),t(),firedEvent",
+                "expectPropertyValue": "none",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "deviceorientation event exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "firedEvent='none',(t=()=>{window.addEventListener('deviceorientation', () => { firedEvent = 'deviceorientation' }); window.dispatchEvent(new DeviceOrientationEvent('deviceorientation')); return 333}),t(),firedEvent",
+                "expectPropertyValue": "deviceorientation",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "devicemotion event",
+                "siteURL": "https://example.com/",
+                "property": "firedEvent='none',(t=()=>{window.addEventListener('devicemotion', () => { firedEvent = 'devicemotion' }); window.dispatchEvent(new DeviceMotionEvent('devicemotion')); return 333}),t(),firedEvent",
+                "expectPropertyValue": "none",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "devicemotion event exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "firedEvent='none',(t=()=>{window.addEventListener('devicemotion', () => { firedEvent = 'devicemotion' }); window.dispatchEvent(new DeviceMotionEvent('devicemotion')); return 333}),t(),firedEvent",
+                "expectPropertyValue": "devicemotion",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "devicemotion event patch mitigation",
+                "siteURL": "https://patched-harmful-api-settings.test/",
+                "property": "firedEvent='none',(t=()=>{window.addEventListener('devicemotion', () => { firedEvent = 'devicemotion' }); window.dispatchEvent(new DeviceMotionEvent('devicemotion')); return 333}),t(),firedEvent",
+                "expectPropertyValue": "devicemotion",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "AbsoluteOrientationSensor API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Accelerometer API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "GravitySensor API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Gyroscope API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "LinearAccelerationSensor API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "RelativeOrientationSensor API",
+                "siteURL": "https://example.com/",
+                "property": "new Promise(resolve => { s = new AbsoluteOrientationSensor(); s.addEventListener('error', e => resolve('threw')); s.start(); })",
+                "expectPropertyValue": "threw",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "accelerometer permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'accelerometer' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "gyroscope permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'gyroscope' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "magnetometer permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'magnetometer' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "accelerometer permission exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.permissions.query({ name: 'accelerometer' }).then(result => result.state)",
+                "expectPropertyValue": "granted",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "gyroscope permission exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.permissions.query({ name: 'gyroscope' }).then(result => result.state)",
+                "expectPropertyValue": "granted",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "magnetometer permission exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.permissions.query({ name: 'magnetometer' }).then(result => result.state)",
+                "expectPropertyValue": "granted",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints model",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['model']).then(result => result.model)",
+                "expectPropertyValue": "overridden-model",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints model exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['model']).then(result => result.model)",
+                "expectPropertyValue": "some-real-model",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints platformVersion",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['platformVersion']).then(result => result.platformVersion)",
+                "expectPropertyValue": "13.4.0",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints platformVersion exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['platformVersion']).then(result => result.platformVersion)",
+                "expectPropertyValue": "13.4.1",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints platformVersion override",
+                "siteURL": "https://patched-harmful-api-settings.test/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['platformVersion']).then(result => result.platformVersion)",
+                "expectPropertyValue": "13.0.0",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints uaFullVersion",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['uaFullVersion']).then(result => result.uaFullVersion)",
+                "expectPropertyValue": "114.0.0.0",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints fullVersionList",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['fullVersionList']).then(result => `${result.fullVersionList[1].version},${result.fullVersionList[2].version}`)",
+                "expectPropertyValue": "114.0.0.0,114.0.0.0",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints architecture",
+                "siteURL": "https://example.test/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['architecture']).then(result => result.architecture)",
+                "expectPropertyValue": "overridden-architecture",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints bitness",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['bitness']).then(result => result.bitness)",
+                "expectPropertyValue": "16",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints platform",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['platform']).then(result => result.platform)",
+                "expectPropertyValue": "overridden-platform",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "UA hints mobile",
+                "siteURL": "https://example.com/",
+                "property": "navigator.userAgentData.getHighEntropyValues(['mobile']).then(result => result.mobile)",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "NetworkInformation API",
+                "siteURL": "https://example.com/",
+                "property": "typeof navigator.connection",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "NetworkInformation API exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "typeof navigator.connection",
+                "expectPropertyValue": "object",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "getInstalledRelatedApps API",
+                "siteURL": "https://example.com/",
+                "property": "navigator.getInstalledRelatedApps().then(apps => apps.join(','))",
+                "expectPropertyValue": "overridden-return-value",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "getInstalledRelatedApps API exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.getInstalledRelatedApps().then(apps => apps.join(','))",
+                "expectPropertyValue": "some-returned-app",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "FileSystemAccess API - showOpenFilePicker",
+                "siteURL": "https://example.com/",
+                "property": "typeof window.showOpenFilePicker",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - showSaveFilePicker",
+                "siteURL": "https://example.com/",
+                "property": "typeof window.showSaveFilePicker",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - showDirectoryPicker",
+                "siteURL": "https://example.com/",
+                "property": "typeof window.showDirectoryPicker",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - showOpenFilePicker exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "typeof window.showOpenFilePicker",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - showSaveFilePicker exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "typeof window.showSaveFilePicker",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - showDirectoryPicker exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "typeof window.showDirectoryPicker",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - DataTransferItem.getAsFileSystemHandle",
+                "siteURL": "https://example.com/",
+                "property": "typeof DataTransferItem.prototype.getAsFileSystemHandle",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "FileSystemAccess API - DataTransferItem.getAsFileSystemHandle exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "typeof DataTransferItem.prototype.getAsFileSystemHandle",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "Window Placement API - window-placement permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'window-placement' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Window Placement API - window-management permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'window-management' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Window Placement API - Screen.prototype.isExtended",
+                "siteURL": "https://example.com/",
+                "property": "window.screen.isExtended",
+                "expectPropertyValue": "false",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Window Placement API - Screen.prototype.isExtended site exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "window.screen.isExtended",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "Window Placement API - Screen.prototype.isExtended domain override",
+                "siteURL": "https://patched-harmful-api-settings.test/",
+                "property": "window.screen.isExtended",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebBluetooth API getAvailability()",
+                "siteURL": "https://example.com/",
+                "property": "navigator.bluetooth.getAvailability()",
+                "expectPropertyValue": "false",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebBluetooth API getAvailability() exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.bluetooth.getAvailability()",
+                "expectPropertyValue": "true",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebBluetooth API requestDevice()",
+                "siteURL": "https://example.com/",
+                "property": "navigator.bluetooth.requestDevice({acceptAllDevices: true}).catch(e => e.message)",
+                "expectPropertyValue": "Bluetooth permission has been blocked.",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebBluetooth API requestDevice() exception",
+                "siteURL": "https://harmful-apis-exception.test/",
+                "property": "navigator.bluetooth.requestDevice({acceptAllDevices: true})",
+                "expectPropertyValue": "mocked-Bluetooth-requestDevice-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebUSB API requestDevice",
+                "siteURL": "https://example.com/",
+                "property": "navigator.usb.requestDevice({filters: []}).catch(e => e.message)",
+                "expectPropertyValue": "No device selected.",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebUSB API requestDevice exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "navigator.usb.requestDevice({filters: []}).catch(e => e.message)",
+                "expectPropertyValue": "mocked-USB-requestDevice-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebSerial API requestPort",
+                "siteURL": "https://example.com/",
+                "property": "navigator.serial.requestPort().catch(e => e.message)",
+                "expectPropertyValue": "No port selected.",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebSerial API requestPort exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "navigator.serial.requestPort().catch(e => e.message)",
+                "expectPropertyValue": "mocked-Serial-requestPort-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebSerial API requestPort domain override",
+                "siteURL": "https://patched-harmful-api-settings.test/",
+                "property": "navigator.serial.requestPort().catch(e => e.message)",
+                "expectPropertyValue": "mocked-Serial-requestPort-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebHID API requestDevice",
+                "siteURL": "https://example.com/",
+                "property": "navigator.hid.requestDevice({ filters: [] }).then(result => result.join(','))",
+                "expectPropertyValue": "",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebHID API requestDevice exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "navigator.hid.requestDevice({ filters: [] }).then(result => result.join(','))",
+                "expectPropertyValue": "mocked-HID-requestDevice-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebMIDI API navigator.requestMIDIAccess()",
+                "siteURL": "https://example.test",
+                "property": "navigator.requestMIDIAccess().catch(err => err.message)",
+                "expectPropertyValue": "Permission is denied.",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebMIDI API navigator.requestMIDIAccess() exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "navigator.requestMIDIAccess().catch(err => err.message)",
+                "expectPropertyValue": "mocked-requestMIDIAccess-result",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebMIDI API midi permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'midi' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "IdleDetection API IdleDetector",
+                "siteURL": "https://example.test",
+                "property": "typeof window.IdleDetector",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "IdleDetection API IdleDetector exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "typeof window.IdleDetector",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "IdleDetection API idle-detection permission",
+                "siteURL": "https://example.com/",
+                "property": "navigator.permissions.query({ name: 'idle-detection' }).then(result => result.state)",
+                "expectPropertyValue": "denied",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "WebNFC API NDEFReader",
+                "siteURL": "https://example.test",
+                "property": "typeof window.NDEFReader",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebNFC API NDEFReader exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "typeof window.NDEFReader",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebNFC API NDEFMessage",
+                "siteURL": "https://example.test",
+                "property": "typeof window.NDEFMessage",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebNFC API NDEFMessage exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "typeof window.NDEFMessage",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebNFC API NDEFRecord",
+                "siteURL": "https://example.test",
+                "property": "typeof window.NDEFRecord",
+                "expectPropertyValue": "undefined",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+            {
+                "name": "WebNFC API NDEFRecord exception",
+                "siteURL": "https://harmful-apis-exception.test",
+                "property": "typeof window.NDEFRecord",
+                "expectPropertyValue": "function",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            },
+
+            {
+                "name": "StarageManager quota estimation API",
+                "siteURL": "https://example.com/",
+                "property": "navigator.storage.estimate().then(r => r.quota).catch(e => e.message)",
+                "expectPropertyValue": "1337",
+                "exceptPlatforms": [
+                    "web-extension",
+                    "safari-extension",
+                    "ios-browser",
+                    "android-browser",
+                    "macos-browser",
+                    "windows-browser"
+                ]
+            }
+        ]
+    }
+}

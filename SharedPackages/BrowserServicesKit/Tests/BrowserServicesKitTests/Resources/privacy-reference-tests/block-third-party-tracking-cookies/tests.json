@@ -1,0 +1,292 @@
+{
+    "cookieHeader": {
+        "name": "Cookie header removed",
+        "desc": "Cookie header should be removed from requests to known trackers",
+        "tests": [
+            {
+                "name": "cookie sent to a non-tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://all.good.site/love",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie sent to a tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie sent to a unblockable tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://unblockable-tracker.net/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "multiple cookie headers sent to a tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"},
+                    {"name": "Cookie", "value": "somethingElse=123"}
+                ],
+                "expectCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a tracker on a locally safelisted site",
+                "siteURL": "https://exception.local.site/path?query=value",
+                "requestURL": "https://tracker.test/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a tracker on a globally safelisted site",
+                "siteURL": "https://exception.global.site/path?query=value",
+                "requestURL": "https://tracker.test/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a tracker in a first party context",
+                "siteURL": "https://tracker.com/some-page.html",
+                "requestURL": "https://tracker.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a tracker excluded via excludedCookieDomains",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://excluded-cookie-tracker.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a tracker excluded via excludedCookieDomains - subdomain match",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://sub.excluded-cookie-tracker.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "cookie header sent to a CNAMED tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.cname.com/track",
+                "requestHeaders": [
+                    {"name": "Cookie", "value": "PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1"}
+                ],
+                "expectCookieHeadersRemoved": true,
+                "exceptPlatforms": [
+                    "web-extension"
+                ]
+            }
+        ]
+    },
+    "setCookieHeader": {
+        "name": "Set-Cookie header removed",
+        "desc": "Set-Cookie header should be removed from responses from known trackers",
+        "tests": [
+            {
+                "name": "set-cookie received from a non-tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://all.good.site/love",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=all.good.site"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a unblockable tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://unblockable-tracker.net/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=unblockable-tracker.net"}
+                ],
+                "expectSetCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "multiple set-cookie headers received from a tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.com"},
+                    {"name": "Set-Cookie", "value": "somethingElse=123"}
+                ],
+                "expectSetCookieHeadersRemoved": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker on a locally safelisted site",
+                "siteURL": "https://exception.local.site/path?query=value",
+                "requestURL": "https://tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker on a globally safelisted site",
+                "siteURL": "https://exception.global.site/path?query=value",
+                "requestURL": "https://tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker in a first party context",
+                "siteURL": "https://tracker.com/some-page.html",
+                "requestURL": "https://tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker excluded via excludedCookieDomains",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://excluded-cookie-tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=excluded-cookie-tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a tracker excluded via excludedCookieDomains - subdomain match",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://sub.excluded-cookie-tracker.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=excluded-cookie-tracker.com"}
+                ],
+                "expectSetCookieHeadersRemoved": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set-cookie header received from a CNAMED tracker",
+                "siteURL": "https://example.com/path",
+                "requestURL": "https://tracker.cname.com/track",
+                "responseHeaders": [
+                    {"name": "Set-Cookie", "value": "__Secure-ID=123; Secure; Domain=tracker.cname.com"}
+                ],
+                "expectSetCookieHeadersRemoved": true,
+                "exceptPlatforms": [
+                    "web-extension"
+                ]
+            }
+        ]
+    },
+    "cookieAPI": {
+        "name": "document.cookie API tests",
+        "desc": "document.cookie should not allow reading/setting cookies in tracking context",
+        "tests": [
+            {
+                "name": "set cookie in a non-tracking frame",
+                "siteURL": "https://example.com/path",
+                "frameURL": "https://all.good.site/love",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a tracking frame",
+                "siteURL": "https://example.com/path",
+                "frameURL": "https://tracker.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from an unblockable tracker",
+                "siteURL": "https://example.com/path",
+                "frameURL": "https://unblockable-tracker.net/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": false,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from a tracker on a locally safelisted site",
+                "siteURL": "https://exception.local.site/path?query=value",
+                "frameURL": "https://tracker.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from a tracker on a globally safelisted site",
+                "siteURL": "https://exception.global.site/path?query=value",
+                "frameURL": "https://tracker.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from a tracker in a first party context",
+                "siteURL": "https://tracker.com/some-page.html",
+                "frameURL": "https://tracker.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from a tracker excluded via excludedCookieDomains",
+                "siteURL": "https://example.com/path",
+                "frameURL": "https://excluded-cookie-tracker.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": true,
+                "exceptPlatforms": []
+            },
+            {
+                "name": "set cookie in a frame from a CNAMED tracker",
+                "siteURL": "https://example.com/path",
+                "frameURL": "https://tracker.cname.com/track",
+                "setDocumentCookie": "favorite_food=tripe",
+                "expectDocumentCookieSet": false,
+                "exceptPlatforms": [
+                    "web-extension"
+                ]
+            }
+        ]
+    }
+}

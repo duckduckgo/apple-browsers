@@ -63,7 +63,7 @@ struct MapperToUI {
         brokerProfileQueryData.forEach {
             let dataBroker = $0.dataBroker
             let scanJob = $0.scanJobData
-            for optOutJob in $0.optOutJobData {
+            for optOutJob in $0.optOutJobDataExcludingUserRemoved {
                 let extractedProfile = optOutJob.extractedProfile
 
                 var parentBrokerOptOutJobData: [OptOutJobData]?

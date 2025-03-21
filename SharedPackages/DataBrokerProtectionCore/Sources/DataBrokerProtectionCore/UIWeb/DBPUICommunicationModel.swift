@@ -309,7 +309,7 @@ extension DBPUIDataBrokerProfileMatch {
         return queryData.flatMap {
             var profiles = [DBPUIDataBrokerProfileMatch]()
 
-            for optOutJobData in $0.optOutJobData {
+            for optOutJobData in $0.optOutJobDataExcludingUserRemoved {
                 let dataBroker = $0.dataBroker
 
                 // Find opt-out job data for the parent broker, if applicable.

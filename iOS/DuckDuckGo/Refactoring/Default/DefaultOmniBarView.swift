@@ -741,30 +741,18 @@ extension DefaultOmniBarView {
 
 extension DefaultOmniBarView: OmniBarView {
     var text: String? {
-        get {
-            textField.text
-        }
-        set {
-            textField.text = newValue
-        }
+        get { textField.text }
+        set { textField.text = newValue }
     }
     
     var backButtonMenu: UIMenu? {
-        get {
-            backButton.menu
-        }
-        set {
-            backButton.menu = newValue
-        }
+        get { backButton.menu }
+        set { backButton.menu = newValue }
     }
     
     var forwardButtonMenu: UIMenu? {
-        get {
-            forwardButton.menu
-        }
-        set {
-            forwardButton.menu = newValue
-        }
+        get { forwardButton.menu }
+        set { forwardButton.menu = newValue }
     }
     
     var menuButtonView: UIButton {

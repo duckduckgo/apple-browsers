@@ -60,7 +60,6 @@ protocol OmniBar: AnyObject {
     func removeTextSelection()
     func selectTextToEnd(_ offset: Int)
 
-//    func showCustomIcon(icon: OmniBarIcon)
     func updateAccessoryType(_ type: OmniBarAccessoryType)
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool)
@@ -73,10 +72,7 @@ protocol OmniBar: AnyObject {
     func hidePrivacyIcon()
     func resetPrivacyIcon(for url: URL?)
 
-    // TODO: Move to view protocol?
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
-    // ------------------------------
-
 
 }

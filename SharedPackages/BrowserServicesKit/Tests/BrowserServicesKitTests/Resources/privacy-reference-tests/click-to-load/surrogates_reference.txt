@@ -1,2 +1,0 @@
-facebook.net/sdk.js application/javascript
-() => ();

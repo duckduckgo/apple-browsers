@@ -1,5 +1,5 @@
 //
-//  OmniBarViewProtocol.swift
+//  OmniBarView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

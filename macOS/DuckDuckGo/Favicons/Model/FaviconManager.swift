@@ -96,15 +96,19 @@ final class FaviconManager: FaviconManagement {
         case inMemory
     }
 
-    init(cacheType: CacheType) {
+    init(
+        cacheType: CacheType,
+        imageCache: (@MainActor (FaviconStoring) -> FaviconImageCaching)? = nil,
+        referenceCache: (@MainActor (FaviconStoring) -> FaviconReferenceCaching)? = nil
+    ) {
         switch cacheType {
         case .standard:
             store = FaviconStore()
         case .inMemory:
             store = FaviconNullStore()
         }
-        imageCache = FaviconImageCache(faviconStoring: store)
-        referenceCache = FaviconReferenceCache(faviconStoring: store)
+        self.imageCache = imageCache?(store) ?? FaviconImageCache(faviconStoring: store)
+        self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
         if case .inMemory = cacheType {
             loadFavicons()
@@ -150,8 +154,8 @@ final class FaviconManager: FaviconManagement {
 
     // MARK: - Fetching & Cache
 
-    private let imageCache: FaviconImageCache
-    private let referenceCache: FaviconReferenceCache
+    private let imageCache: FaviconImageCaching
+    private let referenceCache: FaviconReferenceCaching
 
     func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
         // Manually add favicon.ico into links

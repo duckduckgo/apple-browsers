@@ -62,7 +62,7 @@ final class MainCoordinator {
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
-        let previewsSource = TabPreviewsSource()
+        let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
         let tabsModel = Self.prepareTabsModel(previewsSource: previewsSource)
         reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
@@ -119,7 +119,7 @@ final class MainCoordinator {
         }
     }
 
-    private static func prepareTabsModel(previewsSource: TabPreviewsSource = TabPreviewsSource(),
+    private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
                                          appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> TabsModel {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let tabsModel: TabsModel

@@ -2109,8 +2109,8 @@ extension TabViewController: WKNavigationDelegate {
         checkForReloadOnError()
     }
     
-    private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount) {
-        delegate?.tab(self, didRequestSettingsToLogins: account)
+    private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
+        delegate?.tab(self, didRequestAutofillLogins: account, source: source)
     }
     
     @objc private func dismissLoginDetails() {
@@ -3069,7 +3069,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                                               presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                               onAction: {
 
-                        self.showLoginDetails(with: newCredential.account)
+                        self.showLoginDetails(with: newCredential.account, source: .viewSavedLoginPrompt)
                     })
                     Favicons.shared.loadFavicon(forDomain: newCredential.account.domain, intoCache: .fireproof, fromCache: .tabs)
                 }
@@ -3123,7 +3123,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                                       onAction: { [weak self] in
                 Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarOpenSettings)
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
-                mainVC.launchAutofillLogins(source: .saveLoginDisablePrompt)
+                mainVC.segueToSettingsLoginsWithAccount(nil, source: .saveLoginDisablePrompt)
             })
         }
     }

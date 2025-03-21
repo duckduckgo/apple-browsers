@@ -1,7 +1,7 @@
 //
-//  DataBrokerExecutionConfigTests.swift
+//  DataBrokerMacOSSchedulingConfigTests.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 
 import XCTest
 import Foundation
-@testable import DataBrokerProtectionShared
+@testable import DataBrokerProtection
 import DataBrokerProtectionSharedTestsUtils
 
-final class DataBrokerExecutionConfigTests: XCTestCase {
+final class DataBrokerMacOSSchedulingConfigTests: XCTestCase {
 
-    private let sut = DataBrokerExecutionConfig(mode: .normal)
+    private let sut = DataBrokerMacOSSchedulingConfig(mode: .normal)
 
     func testWhenOperationIsManualScans_thenConcurrentOperationsBetweenBrokersIsSix() {
         let value = sut.concurrentOperationsFor(.manualScan)

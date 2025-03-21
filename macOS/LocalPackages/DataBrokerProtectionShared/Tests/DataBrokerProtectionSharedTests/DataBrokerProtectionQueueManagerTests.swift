@@ -30,7 +30,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockPixelHandler: MockPixelHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockUpdater: MockDataBrokerProtectionBrokerUpdater!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig(mode: .normal)
+    private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockUserNotification: MockUserNotificationService!
     private var mockOperationErrorDelegate: MockDataBrokerOperationErrorDelegate!
@@ -47,7 +47,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockUserNotification = MockUserNotificationService()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  config: DataBrokerExecutionConfig(mode: .normal),
+                                                                  config: DataBrokerExecutionConfig(),
                                                                   runnerProvider: mockRunnerProvider,
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
@@ -121,7 +121,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig(mode: .normal).concurrentOperationsFor(.manualScan)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.manualScan)
         var errorHandlerCalled = false
 
         // When
@@ -155,7 +155,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig(mode: .normal).concurrentOperationsFor(.all)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.all)
         var errorHandlerCalled = false
 
         // When
@@ -189,7 +189,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected errors to be returned in completion")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig(mode: .normal).concurrentOperationsFor(.scheduledScan)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.scheduledScan)
         var errorHandlerCalled = false
 
         // When
@@ -471,7 +471,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let expectedConcurrentOperations = DataBrokerExecutionConfig(mode: .normal).concurrentOperationsFor(.optOut)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.optOut)
         XCTAssert(mockOperationsCreator.createdType == .manualScan)
 
         // When

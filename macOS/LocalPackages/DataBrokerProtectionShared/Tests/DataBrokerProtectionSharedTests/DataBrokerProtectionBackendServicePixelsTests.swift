@@ -21,7 +21,7 @@ import XCTest
 import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
-    let mockHandler = MockDataBrokerProtectionMacOSPixelsHandler()
+    let mockHandler = MockDataBrokerProtectionPixelsHandler()
     var settings: DataBrokerProtectionSettings!
 
     override func setUpWithError() throws {
@@ -42,7 +42,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
                                                                            settings: settings)
 
         backendPixel.fireGenerateEmailHTTPError(statusCode: 200)
-        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.httpCode], "200", "Incorrect statusCode")
@@ -56,7 +56,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
                                                                            settings: settings)
 
         backendPixel.fireGenerateEmailHTTPError(statusCode: 123)
-        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.httpCode], "123", "Incorrect statusCode")
@@ -70,7 +70,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
 
         backendPixel.fireEmptyAccessToken(callSite: .getEmail)
 
-        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "production", "Incorrect environment")
@@ -86,7 +86,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
 
         backendPixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest)
 
-        let lastPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.last
+        let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
         XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "staging", "Incorrect environment")

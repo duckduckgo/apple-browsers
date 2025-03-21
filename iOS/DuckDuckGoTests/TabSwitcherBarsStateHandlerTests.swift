@@ -92,10 +92,10 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         ])
     }
 
-    func testWhenShowAIChatButtonIsTrueThenDuckChatButtonIsIncludedInTopRightButtonItems() {
+    func testWhenShowAIChatButtonIsTrueThenDuckChatButtonIsIncludedInToolbarItems() {
         stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
-        XCTAssertTrue(stateHandler.topBarRightButtonItems.contains(stateHandler.duckChatButton))
+        XCTAssertTrue(stateHandler.bottomBarItems.contains(stateHandler.duckChatButton))
     }
 
     func testWhenTotalTabsCountIsGreaterThanOneThenCanShowEditButtonIsTrue() {

@@ -90,8 +90,10 @@ class TabSwitcherBarsStateHandler {
                 UIBarButtonItem.flexibleSpace(),
                 fireButton,
                 UIBarButtonItem.flexibleSpace(),
+                showAIChatButton ? duckChatButton : nil,
+                showAIChatButton ? UIBarButtonItem.fixedSpace(8) : nil,
                 plusButton,
-            ]
+            ].compactMap { $0 }
             isBottomBarHidden = false
 
         case .multiSelectEditingNormal:
@@ -153,7 +155,6 @@ class TabSwitcherBarsStateHandler {
         switch interfaceMode {
         case .singleSelectNormal:
             topBarRightButtonItems = [
-                showAIChatButton ? duckChatButton : nil,
                 tabSwitcherStyleButton,
             ].compactMap { $0 }
 
@@ -167,7 +168,6 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
-                showAIChatButton ? duckChatButton : nil,
                 canShowEditButton ? editButton : nil,
             ].compactMap { $0 }
 

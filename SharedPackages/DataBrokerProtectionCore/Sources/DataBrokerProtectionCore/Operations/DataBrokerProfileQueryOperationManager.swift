@@ -399,7 +399,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
         // 4. Validate that profile isn't manually removed by user (using "This isn't me")
         guard let events = try? database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
-              events.max(by: { $0.date < $1.date })?.type != .matchRemovedByUser else {
+              events.closestHistoryEvent?.type != .matchRemovedByUser else {
             Logger.dataBrokerProtection.log("Manually removed by user, skipping...")
             return
         }

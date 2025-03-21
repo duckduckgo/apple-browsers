@@ -4,7 +4,8 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Browsing menu
 - tapOn: Settings
 - scrollUntilVisible:
-    element: Passwords
+    element: Passwords & Autofill
+- tapOn: Passwords & Autofill
 - tapOn: Passwords
 - tapOn: Passcode field
 - inputText: "0000"
@@ -12,5 +13,6 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: My Personal Website 
 - tapOn: Delete Password
 - tapOn: Delete Password
+- tapOn: Passwords & Autofill
 - tapOn: Settings
 - tapOn: Done

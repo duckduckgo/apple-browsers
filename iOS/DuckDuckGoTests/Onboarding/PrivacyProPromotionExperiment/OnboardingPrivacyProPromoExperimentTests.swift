@@ -29,34 +29,23 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
 
     private var sut: OnboardingPrivacyProPromoExperiment!
     private var mockFeatureFlagger: MockFeatureFlagger!
-    private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockVariantManager: MockVariantManager!
 
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
-        mockSubscriptionManager = SubscriptionManagerMock(accountManager: AccountManagerMock(),
-                                                      subscriptionEndpointService: SubscriptionEndpointServiceMock(),
-                                                      authEndpointService: AuthEndpointServiceMock(),
-                                                          storePurchaseManager: StorePurchaseManagerMock(),
-                                                      currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-                                                      canPurchase: true,
-                                                      subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
         mockVariantManager = MockVariantManager()
         sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
                                                   experimentPixelFirer: MockExperimentPixelFirer.self,
-                                                  subscriptionManager: mockSubscriptionManager,
                                                   variantManager: mockVariantManager)
         MockExperimentPixelFirer.reset()
     }
 
-    func testGetCohortIfEnabled_WhenNewUserAndCanPurchase_ReturnsTreatment() {
+    func testGetCohortIfEnabled_WhenNewUser_ReturnsTreatment() {
         // Given
         mockVariantManager.currentVariant = nil
-        mockSubscriptionManager.canPurchase = true
         mockFeatureFlagger.cohortToReturn = PrivacyProOnboardingCTAMarch25Cohort.treatment
         sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
                                                   experimentPixelFirer: MockExperimentPixelFirer.self,
-                                                  subscriptionManager: mockSubscriptionManager,
                                                   variantManager: mockVariantManager)
 
 
@@ -70,27 +59,9 @@ final class OnboardingPrivacyProPromoExperimentTests: XCTestCase {
     func testGetCohortIfEnabled_WhenReturningUser_ReturnsNil() {
         // Given
         mockVariantManager.currentVariant = VariantIOS.returningUser
-        mockSubscriptionManager.canPurchase = true
         mockFeatureFlagger.cohortToReturn = PrivacyProOnboardingCTAMarch25Cohort.treatment
         sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
                                                   experimentPixelFirer: MockExperimentPixelFirer.self,
-                                                  subscriptionManager: mockSubscriptionManager,
-                                                  variantManager: mockVariantManager)
-
-        // When
-        let cohort = sut.getCohortIfEnabled()
-
-        // Then
-        XCTAssertNil(cohort)
-    }
-
-    func testGetCohortIfEnabled_WhenCannotPurchase_ReturnsNil() {
-        // Given
-        mockVariantManager.currentVariant = nil
-        mockSubscriptionManager.canPurchase = false
-        sut = OnboardingPrivacyProPromoExperiment(featureFlagger: mockFeatureFlagger,
-                                                  experimentPixelFirer: MockExperimentPixelFirer.self,
-                                                  subscriptionManager: mockSubscriptionManager,
                                                   variantManager: mockVariantManager)
 
         // When

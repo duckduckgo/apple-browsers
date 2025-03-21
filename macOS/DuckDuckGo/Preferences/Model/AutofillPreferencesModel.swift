@@ -162,6 +162,8 @@ final class AutofillPreferencesModel: ObservableObject {
         passwordManager = persistor.passwordManager
         hasNeverPromptWebsites = !neverPromptWebsitesManager.neverPromptWebsites.isEmpty
         setShouldShowSyncPromo()
+
+        PixelKit.fire(AutofillPixelKitEvent.autofillSettingsOpened.withoutMacPrefix)
     }
 
     private var persistor: AutofillPreferencesPersistor

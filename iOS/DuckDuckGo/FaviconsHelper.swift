@@ -25,6 +25,18 @@ import DesignResourcesKit
 
 struct FaviconsHelper {
 
+    private enum FaviconError: Error {
+        case missingFile
+        case corruptedData
+    }
+
+    private struct Constants {
+        static let duckPlayerDomain = "player"
+        static let duckDuckGoDomain = "duckduckgo.com"
+        static let duckPlayerImageName = "DuckPlayerURLIcon"
+        static let duckDuckGoImageName = "Logo"
+    }
+
     private static let tld: TLD = AppDependencyProvider.shared.storageCache.tld
 
     static func loadFaviconSync(forDomain domain: String?,
@@ -33,16 +45,8 @@ struct FaviconsHelper {
                                 preferredFakeFaviconLetters: String? = nil) -> (image: UIImage?, isFake: Bool) {
 
         // Handle special cases first
-        if domain == "player" {
-            let image = UIImage(named: "DuckPlayerURLIcon")
-            image?.accessibilityIdentifier = "DuckPlayerURLIcon"
-            return (image, false)
-        }
-
-        if URL.isDuckDuckGo(domain: domain) {
-            let image = UIImage(named: "Logo")
-            image?.accessibilityIdentifier = "Logo"
-            return (image, false)
+        if let customImage = customImage(for: domain) {
+            return (customImage, false)
         }
 
         // Check cache and resource availability
@@ -61,19 +65,14 @@ struct FaviconsHelper {
         // Try loading from disk with proper error handling
         do {
             let url = cache.diskStorage.cacheFileURL(forKey: resource.cacheKey)
-
+            
             guard FileManager.default.fileExists(atPath: url.path) else {
-                return createFallbackResult(domain: domain,
-                                          useFakeFavicon: useFakeFavicon,
-                                          preferredLetters: preferredFakeFaviconLetters)
+                throw FaviconError.missingFile
             }
 
             let data = try Data(contentsOf: url, options: [.uncached])
             guard let image = UIImage(data: data) else {
-                Logger.general.error("Failed to create image from data for domain: \(domain ?? "unknown")")
-                return createFallbackResult(domain: domain,
-                                          useFakeFavicon: useFakeFavicon,
-                                          preferredLetters: preferredFakeFaviconLetters)
+                throw FaviconError.corruptedData
             }
 
             // Store in memory cache with original expiry date
@@ -175,6 +174,19 @@ struct FaviconsHelper {
                                            backgroundColor: UIColor.forDomain(domain),
                                            preferredFakeFaviconLetters: preferredLetters)
         return (fakeFavicon, true)
+    }
+
+    private static func customImage(for domain: String?) -> UIImage? {
+        let customFavicons: [String: String] = [
+            Constants.duckPlayerDomain: Constants.duckPlayerImageName,
+            Constants.duckDuckGoDomain: Constants.duckDuckGoImageName
+        ]
+
+        guard let domain = domain, let imageName = customFavicons[domain] else { return nil }
+        
+        let image = UIImage(named: imageName)
+        image?.accessibilityIdentifier = imageName
+        return image
     }
 
 }

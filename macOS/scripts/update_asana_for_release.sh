@@ -37,7 +37,7 @@ find_task_urls_in_git_log() {
 	#    (Use -A 1 to handle cases where URL is on the next line after "Task/Issue URL:")
 	# 3. Filter only lines containing Asana URLs
 	# 4. Remove duplicates
-	git log "${last_release_tag}"..HEAD -- ./ ../BrowserServicesKit/ \
+	git log "${last_release_tag}"..HEAD -- ./ ../SharedPackages/BrowserServicesKit/ \
 		| grep -A 1 'Task.*URL' \
 		| sed -nE 's|.*(https://app\.asana\.com.*)|\1|p' \
 		| uniq

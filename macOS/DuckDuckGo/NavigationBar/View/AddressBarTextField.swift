@@ -321,44 +321,22 @@ final class AddressBarTextField: NSTextField {
     }
 
     private func navigate(suggestion: Suggestion?) {
-        let ntpExperiment = NewTabPageSearchBoxExperiment()
-        let ntpExperimentCohort: NewTabPageSearchBoxExperiment.Cohort? = ntpExperiment.isActive ? ntpExperiment.cohort : nil
-        let source: NewTabPageSearchBoxExperiment.SearchSource? = {
-            guard ntpExperiment.isActive else {
-                return nil
-            }
-            let isNewTab = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab
-            guard isNewTab else {
-                return .addressBar
-            }
-            return isSearchBox ? .ntpSearchBox : .ntpAddressBar
-        }()
-
-        switch suggestion {
-        case .phrase, .none:
-            if let source {
-                ntpExperiment.recordSearch(from: source)
-            }
-        default:
-            break
-        }
-
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
             case .phrase:
-                return .autocompleteClickPhrase(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                return .autocompleteClickPhrase
             case .website:
-                return .autocompleteClickWebsite(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                return .autocompleteClickWebsite
             case .bookmark(_, _, let isFavorite, _):
                 if isFavorite {
-                    return .autocompleteClickFavorite(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                    return .autocompleteClickFavorite
                 } else {
-                    return .autocompleteClickBookmark(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                    return .autocompleteClickBookmark
                 }
             case .historyEntry:
-                return .autocompleteClickHistory(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                return .autocompleteClickHistory
             case .openTab:
-                return .autocompleteClickOpenTab(from: source, cohort: ntpExperimentCohort, onboardingCohort: ntpExperiment.onboardingCohort)
+                return .autocompleteClickOpenTab
             default:
                 return nil
             }

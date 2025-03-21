@@ -33,7 +33,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var coookiePopupProtectionPreferences: MockCookiePopupProtectionPreferencesPersistor!
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -71,7 +71,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     func testModelReturnsCorrectStrings() {
-        XCTAssertEqual(vm.itemsPerRow, HomePage.featuresPerRow)
+        XCTAssertEqual(vm.itemsPerRow, HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
         XCTAssertEqual(vm.deleteActionTitle, UserText.newTabSetUpRemoveItemAction)
     }
 
@@ -301,7 +301,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.shouldShowAllFeatures = false
 
         XCTAssertEqual(vm.visibleFeaturesMatrix.count, 1)
-        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= HomePage.featuresPerRow)
+        XCTAssertTrue(vm.visibleFeaturesMatrix[0].count <= HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
     }
 
     @MainActor func testThatWhenAllFeatureInactiveThenVisibleMatrixIsEmpty() {
@@ -381,7 +381,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         for index in indexesToRemove {
             features.remove(at: index)
         }
-        return features.chunked(into: HomePage.featuresPerRow)
+        return features.chunked(into: HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
     }
 
     @MainActor func test_WhenUserDoesntHaveApplicationInTheDock_ThenAddToDockCardIsDisplayed() {

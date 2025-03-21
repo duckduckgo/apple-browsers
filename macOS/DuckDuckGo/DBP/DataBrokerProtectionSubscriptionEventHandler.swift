@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import Subscription
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import PixelKit
 import Common
 import Networking
@@ -28,12 +29,12 @@ final class DataBrokerProtectionSubscriptionEventHandler {
 
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let featureDisabler: DataBrokerProtectionFeatureDisabling
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private var cancellables = Set<AnyCancellable>()
 
     init(featureDisabler: DataBrokerProtectionFeatureDisabling,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>) {
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) {
         self.featureDisabler = featureDisabler
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler

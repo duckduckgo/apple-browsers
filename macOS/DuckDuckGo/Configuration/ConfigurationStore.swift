@@ -160,7 +160,7 @@ final class ConfigurationStore: ConfigurationStoring {
             do {
                 data = try Data(contentsOf: fileUrl)
             } catch {
-                guard NSApp.runType.requiresEnvironment else { return }
+                guard AppVersion.runType.requiresEnvironment else { return }
 
                 let nserror = error as NSError
 

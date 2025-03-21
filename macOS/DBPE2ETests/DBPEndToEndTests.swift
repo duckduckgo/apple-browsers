@@ -17,6 +17,7 @@
 //
 
 @testable import DataBrokerProtection
+@testable import DataBrokerProtectionShared
 import BrowserServicesKit
 import LoginItems
 import XCTest
@@ -45,13 +46,12 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                     vpnBypassSettings: VPNBypassSettingsProvidingMock(),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager.cache
 
         communicationDelegate = pirProtectionManager.dataManager.cache
 
-        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard))
+        viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
         pirProtectionManager.dataManager.cache.scanDelegate = viewModel
 
@@ -263,8 +263,8 @@ final class DBPEndToEndTests: XCTestCase {
         let optOutEmailReceivedPixelExpectation = expectation(description: "Opt out email received pixel fired")
         let optOutEmailConfirmedPixelExpectation = expectation(description: "Opt out email confirmed pixel fired")
 
-        let optOutEmailReceivedPixel = DataBrokerProtectionPixels.optOutEmailReceive(dataBroker: "", attemptId: UUID(), duration: 0)
-        let optOutEmailConfirmedPixel = DataBrokerProtectionPixels.optOutEmailConfirm(dataBroker: "", attemptId: UUID(), duration: 0)
+        let optOutEmailReceivedPixel = DataBrokerProtectionSharedPixels.optOutEmailReceive(dataBroker: "", attemptId: UUID(), duration: 0)
+        let optOutEmailConfirmedPixel = DataBrokerProtectionSharedPixels.optOutEmailConfirm(dataBroker: "", attemptId: UUID(), duration: 0)
 
         let pixelExpectations = [
             PixelExpectation(pixel: optOutEmailReceivedPixel,
@@ -394,7 +394,7 @@ private extension DBPEndToEndTests {
         wait(for: [expectation], timeout: 0)
     }
 
-    typealias PixelExpectation = (pixel: DataBrokerProtectionPixels, expectation: XCTestExpectation)
+    typealias PixelExpectation = (pixel: DataBrokerProtectionSharedPixels, expectation: XCTestExpectation)
 
     private func pixelKitToTest(_ pixelExpectations: [PixelExpectation]) -> PixelKit {
         return PixelKit(dryRun: false,
@@ -440,18 +440,6 @@ private extension DBPEndToEndTests {
                      addresses: [.init(city: "Dallas", state: "TX")],
                      phones: [],
                      birthYear: birthYear)
-    }
-
-    final class VPNBypassSettingsProvidingMock: VPNBypassSettingsProviding {
-        var vpnBypassSupport: Bool
-        var vpnBypass: Bool
-        var vpnBypassOnboardingShown: Bool
-
-        init(vpnBypassSupport: Bool = false, vpnBypass: Bool = false, vpnBypassOnboardingShown: Bool = false) {
-            self.vpnBypassSupport = vpnBypassSupport
-            self.vpnBypass = vpnBypass
-            self.vpnBypassOnboardingShown = vpnBypassOnboardingShown
-        }
     }
 
     final class PrivacyConfigurationManagingMock: PrivacyConfigurationManaging {

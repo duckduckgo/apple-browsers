@@ -54,7 +54,7 @@ extension UIApplication {
 
     var foregroundSceneWindows: [UIWindow] {
         guard let scene = UIApplication.shared.connectedScenes.first(where: {
-            $0.activationState == .foregroundActive
+            $0.activationState != .background
         }) as? UIWindowScene else {
             return []
         }

@@ -645,7 +645,11 @@ class MainViewController: UIViewController {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
             viewCoordinator.omniBar.moveSeparatorToBottom()
-            viewCoordinator.showToolbarSeparator()
+            if ExperimentalThemingManager().isExperimentalThemingEnabled {
+                viewCoordinator.hideToolbarSeparator()
+            } else {
+                viewCoordinator.showToolbarSeparator()
+            }
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
 
         case .bottom:
@@ -1139,6 +1143,7 @@ class MainViewController: UIViewController {
         addChild(controller)
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
+
         controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         controller.view.frame = viewCoordinator.contentContainer.bounds
         controller.didMove(toParent: self)
@@ -1354,30 +1359,30 @@ class MainViewController: UIViewController {
         suggestionTrayController?.didHide()
     }
     
-    func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource) {
+    func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil) {
         let appSettings = AppDependencyProvider.shared.appSettings
-        let autofillSettingsViewController = AutofillLoginSettingsListViewController(
+        let autofillLoginListViewController = AutofillLoginListViewController(
             appSettings: appSettings,
             currentTabUrl: currentTabUrl,
             currentTabUid: currentTabUid,
             syncService: syncService,
             syncDataProviders: syncDataProviders,
-            selectedAccount: nil,
+            selectedAccount: selectedAccount,
             openSearch: openSearch,
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
             favoritesDisplayMode: self.appSettings.favoritesDisplayMode
         )
-        autofillSettingsViewController.delegate = self
-        let navigationController = UINavigationController(rootViewController: autofillSettingsViewController)
-        autofillSettingsViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
+        autofillLoginListViewController.delegate = self
+        let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
+        autofillLoginListViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(title: UserText.autofillNavigationButtonItemTitleClose,
                                                                                           style: .plain,
                                                                                           target: self,
                                                                                           action: #selector(closeAutofillModal))
         self.present(navigationController, animated: true, completion: nil)
 
-        if let account = AppDependencyProvider.shared.autofillLoginSession.lastAccessedAccount {
-            autofillSettingsViewController.showAccountDetails(account, animated: true)
+        if selectedAccount == nil, let account = AppDependencyProvider.shared.autofillLoginSession.lastAccessedAccount {
+            autofillLoginListViewController.showAccountDetails(account, animated: true)
         }
     }
     
@@ -2544,8 +2549,10 @@ extension MainViewController: TabDelegate {
         segueToDownloads()
     }
     
-    func tabDidRequestAutofillLogins(tab: TabViewController) {
-        launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: .overflow)
+    func tab(_ tab: TabViewController,
+             didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
+             source: AutofillSettingsSource) {
+        launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account)
     }
     
     func tabDidRequestSettings(tab: TabViewController) {
@@ -2553,8 +2560,9 @@ extension MainViewController: TabDelegate {
     }
 
     func tab(_ tab: TabViewController,
-             didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount) {
-        segueToSettingsLoginsWithAccount(account)
+             didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
+             source: AutofillSettingsSource) {
+        segueToSettingsLoginsWithAccount(account, source: source)
     }
 
     func tabContentProcessDidTerminate(tab: TabViewController) {
@@ -3150,8 +3158,8 @@ extension MainViewController {
 }
 
 // MARK: - AutofillLoginSettingsListViewControllerDelegate
-extension MainViewController: AutofillLoginSettingsListViewControllerDelegate {
-    func autofillLoginSettingsListViewControllerDidFinish(_ controller: AutofillLoginSettingsListViewController) {
+extension MainViewController: AutofillLoginListViewControllerDelegate {
+    func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController) {
         controller.dismiss(animated: true)
     }
 }
@@ -3164,5 +3172,9 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
         segueToDownloads()
+    }
+
+    func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
+        segueToSettingsAIChat()
     }
 }

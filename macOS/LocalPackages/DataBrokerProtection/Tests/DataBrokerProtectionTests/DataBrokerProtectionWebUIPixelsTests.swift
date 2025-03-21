@@ -19,10 +19,12 @@
 import XCTest
 import Foundation
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
-    let handler = MockDataBrokerProtectionPixelsHandler()
+    let handler = MockDataBrokerProtectionMacOSPixelsHandler()
 
     override func tearDown() {
         handler.clear()
@@ -33,7 +35,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 404))
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.params!["error_category"],
@@ -46,7 +48,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 100))
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.params!["error_category"],
@@ -59,7 +61,7 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.params!["error_category"],
@@ -72,11 +74,11 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: .custom, type: .loading)
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionPixels.webUILoadingStarted(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingStarted(environment: "staging").name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -89,11 +91,11 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: .production, type: .loading)
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionPixels.webUILoadingStarted(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingStarted(environment: "staging").name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -106,11 +108,11 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: .custom, type: .success)
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionPixels.webUILoadingSuccess(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging").name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -123,11 +125,11 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
 
         sut.firePixel(for: .production, type: .success)
 
-        let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let lastPixelFired = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             lastPixelFired.name,
-            DataBrokerProtectionPixels.webUILoadingSuccess(environment: "staging").name
+            DataBrokerProtectionMacOSPixels.webUILoadingSuccess(environment: "staging").name
         )
         XCTAssertEqual(
             lastPixelFired.params!["environment"],
@@ -141,13 +143,13 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
         sut.firePixel(for: NSError(domain: NSURLErrorDomain, code: 404))
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
 
-        let httpPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let httpPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             httpPixel.params!["error_category"],
             "httpError-404"
         )
-        XCTAssertEqual(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count, 1) // We only fire one pixel
+        XCTAssertEqual(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count, 1) // We only fire one pixel
     }
 
     func testWhenHTTPPixelIsFired_weFireTheNextErrorPixelOnTheSecondTry() {
@@ -157,12 +159,12 @@ final class DataBrokerProtectionWebUIPixelsTests: XCTestCase {
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
         sut.firePixel(for: NSError(domain: NSCocoaErrorDomain, code: 500))
 
-        let httpPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.first!
+        let httpPixel = MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.first!
 
         XCTAssertEqual(
             httpPixel.params!["error_category"],
             "httpError-404"
         )
-        XCTAssertEqual(MockDataBrokerProtectionPixelsHandler.lastPixelsFired.count, 2) // We fire the HTTP pixel and the second cocoa error pixel
+        XCTAssertEqual(MockDataBrokerProtectionMacOSPixelsHandler.lastPixelsFired.count, 2) // We fire the HTTP pixel and the second cocoa error pixel
     }
 }

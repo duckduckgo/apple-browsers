@@ -960,7 +960,7 @@ class TabViewController: UIViewController {
             webView.stopLoading()
             if webView.canGoBack {
                 duckPlayerNavigationHandler.handleGoBack(webView: webView)
-                chromeDelegate?.omniBar.resignFirstResponder()
+                chromeDelegate?.omniBar.endEditing()
                 return
             }
             if openingTab != nil {
@@ -979,7 +979,7 @@ class TabViewController: UIViewController {
 
         if webView.canGoBack {
             webView.goBack()
-            chromeDelegate?.omniBar.resignFirstResponder()
+            chromeDelegate?.omniBar.endEditing()
             return
         }
 
@@ -993,7 +993,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
 
         if webView.goForward() != nil {
-            chromeDelegate?.omniBar.resignFirstResponder()
+            chromeDelegate?.omniBar.endEditing()
         }
     }
     
@@ -1021,7 +1021,7 @@ class TabViewController: UIViewController {
         if let controller = segue.destination as? PrivacyDashboardViewController {
             controller.popoverPresentationController?.delegate = controller
 
-            if let iconView = chromeDelegate.omniBar.privacyInfoContainer.privacyIcon {
+            if let iconView = chromeDelegate.omniBar.barView.privacyIconView {
                 controller.popoverPresentationController?.sourceView = iconView
                 controller.popoverPresentationController?.sourceRect = iconView.bounds
             }
@@ -1660,7 +1660,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            self.chromeDelegate?.omniBar.resignFirstResponder()
+            self.chromeDelegate?.omniBar.endEditing()
             self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
             // Present the contextual onboarding
@@ -2898,7 +2898,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
 
         // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
-        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.textField.isFirstResponder {
+        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
             completionHandler(nil)
             return
         }

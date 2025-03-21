@@ -216,7 +216,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     func launchNewSearch() {
         // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
         guard !privacyProPromotionCoordinating.isShowingPrivacyProPromotion else { return }
-        chromeDelegate?.omniBar.becomeFirstResponder()
+        chromeDelegate?.omniBar.beginEditing()
     }
 
     func openedAsNewTab(allowingKeyboard: Bool) {
@@ -299,7 +299,7 @@ extension NewTabPageViewController {
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .privacyProPromotion else {
-                chromeDelegate?.omniBar.resignFirstResponder()
+                chromeDelegate?.omniBar.endEditing()
                 showNextDaxDialog()
                 return
             }

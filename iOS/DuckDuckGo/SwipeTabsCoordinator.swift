@@ -118,7 +118,7 @@ class SwipeTabsCoordinator: NSObject {
 
     private func updateLayout() {
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.frame.height)
+        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.barView.frame.height)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -364,10 +364,11 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let omniBar = OmniBar.loadFromXib(dependencies: omnibarDependencies)
+            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
 
-            cell.omniBar = omniBar
-            cell.omniBar?.translatesAutoresizingMaskIntoConstraints = false
+            coordinator.parentController?.addChild(controller)
+
+            cell.omniBar = controller
 
             cell.omniBar?.showSeparator()
             if self.appSettings.currentAddressBarPosition.isBottom {
@@ -383,6 +384,8 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
 
             }
+
+            controller.didMove(toParent: coordinator.parentController)
         }
 
         cell.setNeedsUpdateConstraints()
@@ -399,15 +402,18 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var omniBar: OmniBar? {
         didSet {
-            guard let omniBar else { return }
+            guard let omniBarView = omniBar?.barView else { return }
+
             subviews.forEach { $0.removeFromSuperview() }
-            addSubview(omniBar)
+
+            omniBarView.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(omniBarView)
 
             NSLayoutConstraint.activate([
-                constrainView(omniBar, by: .leadingMargin),
-                constrainView(omniBar, by: .trailingMargin),
-                constrainView(omniBar, by: .top),
-                constrainView(omniBar, by: .bottom),
+                constrainView(omniBarView, by: .leadingMargin),
+                constrainView(omniBarView, by: .trailingMargin),
+                constrainView(omniBarView, by: .top),
+                constrainView(omniBarView, by: .bottom),
             ])
 
             addMaskViewIfNeeded()
@@ -415,7 +421,8 @@ class OmniBarCell: UICollectionViewCell {
     }
 
     func addMaskViewIfNeeded() {
-        guard let omniBar else { return }
+        guard let omniBarView = omniBar?.barView else { return }
+
         if ExperimentalThemingManager().isExperimentalThemingEnabled,
            AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
            isPortrait {
@@ -425,9 +432,9 @@ class OmniBarCell: UICollectionViewCell {
 
             maskView.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                maskView.widthAnchor.constraint(equalTo: omniBar.widthAnchor),
-                maskView.bottomAnchor.constraint(equalTo: omniBar.topAnchor),
-                maskView.centerXAnchor.constraint(equalTo: omniBar.centerXAnchor),
+                maskView.widthAnchor.constraint(equalTo: omniBarView.widthAnchor),
+                maskView.bottomAnchor.constraint(equalTo: omniBarView.topAnchor),
+                maskView.centerXAnchor.constraint(equalTo: omniBarView.centerXAnchor),
                 maskView.heightAnchor.constraint(equalToConstant: 25)
             ])
             bringSubviewToFront(maskView)
@@ -437,7 +444,7 @@ class OmniBarCell: UICollectionViewCell {
     override func updateConstraints() {
         let left = superview?.safeAreaInsets.left ?? 0
         let right = superview?.safeAreaInsets.right ?? 0
-        omniBar?.updateOmniBarPadding(left: left, right: right)
+        omniBar?.barView.updateOmniBarPadding(left: left, right: right)
 
         super.updateConstraints()
     }

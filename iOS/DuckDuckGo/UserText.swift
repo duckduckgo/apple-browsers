@@ -360,7 +360,7 @@ public struct UserText {
     
     public static let homeTabSearchAndFavorites = NSLocalizedString("homeTab.searchAndFavorites", value: "Search or enter address", comment: "This describes empty tab")
     public static let homeTabTitle = NSLocalizedString("homeTab.title", value: "Home", comment: "Home tab title")
-    
+
     public static let tabSwitcherAccessibilityLabel = NSLocalizedString("tab.switcher.accessibility.label", value: "Tab Switcher", comment: "Tab Switcher Accessibility Label")
     
     public static let onboardingWidgetsHeader = NSLocalizedString("onboarding.widgets.header", value: "Using DuckDuckGo just got easier.", comment: "")
@@ -868,7 +868,7 @@ public struct UserText {
     public static let autofillCreditCardAuthenticationReason = NSLocalizedString("autofill.creditcard.list.auth.reason", value:"Unlock device to access credit cards", comment: "Reason for auth when opening credit card list")
     public static let autofillCreditCardsNoAuthViewTitle = NSLocalizedString("autofill.creditcard.no-auth.title", value:"Secure your device to save credit cards", comment: "Title for view displayed when autofill is locked on devices where a passcode has not been set")
     public static let autofillCreditCardsNoAuthViewSubtitle = NSLocalizedString("autofill.creditcard.no-auth.subtitle", value:"A passcode is required to protect your credit cards.", comment: "Title for view displayed when autofill is locked on devices where a passcode has not been set")
-    
+
     // Credit card details
     public static let autofillCreditCardDetailsDefaultTitle = NSLocalizedString("autofill.creditcard.details.default-title", value:"Card", comment: "Title for autofill credit card details")
     public static let autofillCreditCardDetailsEditTitle = NSLocalizedString("autofill.creditcard.details.edit-title", value:"Edit Card", comment: "Title when editing autofill credit card details")

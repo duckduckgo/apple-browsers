@@ -32,7 +32,7 @@ struct AutofillSettingsView: View {
                 } label: {
                     CountRowView(viewModel: viewModel, autofillType: .passwords)
                 }
-                
+
                 if viewModel.showCreditCards {
                     Button {
                         viewModel.navigateToCreditCards()
@@ -126,7 +126,7 @@ struct AutofillSettingsView: View {
     private struct CountRowView: View {
         let viewModel: AutofillSettingsViewModel
         let autofillType: AutofillSettingsViewModel.AutofillType
-        
+
         var body: some View {
             HStack {
                 autofillType.icon
@@ -134,26 +134,26 @@ struct AutofillSettingsView: View {
                 Text(autofillType.title)
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
-                
+
                 Spacer()
-                
+
                 if let count = autofillType == .passwords ? viewModel.passwordsCount : viewModel.creditCardsCount {
                     Text("\(count)")
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
-                
+
                 Image(systemName: "chevron.forward")
                     .font(Font.system(.footnote).weight(.bold))
                     .foregroundColor(Color(UIColor.tertiaryLabel))
             }
         }
     }
-    
+
     private struct ToggleRowView: View {
         @Binding var toggleStatus: Bool
         let title: String
-        
+
         var body: some View {
             return Toggle(title, isOn: $toggleStatus)
                 .toggleStyle(.switch)

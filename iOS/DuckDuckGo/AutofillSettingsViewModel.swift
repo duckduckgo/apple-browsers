@@ -40,11 +40,11 @@ final class AutofillSettingsViewModel: ObservableObject {
     private let keyValueStore: KeyValueStoringDictionaryRepresentable
     private let source: AutofillSettingsSource
     private let featureFlagger: FeatureFlagger
-    
+
     enum AutofillType {
         case passwords
         case creditCards
-        
+
         var icon: Image {
             switch self {
             case .passwords:
@@ -53,7 +53,7 @@ final class AutofillSettingsViewModel: ObservableObject {
                 return Image(.creditCard24)
             }
         }
-        
+
         var title: String {
             switch self {
             case .passwords:
@@ -119,7 +119,7 @@ final class AutofillSettingsViewModel: ObservableObject {
             }
         }
     }
-    
+
     func refreshCounts() {
         updatePasswordsCount()
         if showCreditCards {
@@ -129,7 +129,7 @@ final class AutofillSettingsViewModel: ObservableObject {
 
     func updatePasswordsCount() {
         initSecureVaultIfRequired()
-        
+
         guard let vault = secureVault else {
             passwordsCount = nil
             return

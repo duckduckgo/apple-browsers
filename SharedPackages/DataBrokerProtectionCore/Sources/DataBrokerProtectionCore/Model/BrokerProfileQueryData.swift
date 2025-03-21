@@ -41,6 +41,10 @@ public struct BrokerProfileQueryData: Sendable {
         !optOutJobData.isEmpty
     }
 
+    public var optOutJobDataExcludingUserRemoved: [OptOutJobData] {
+        optOutJobData.filter { !$0.isRemovedByUser }
+    }
+
     public init(dataBroker: DataBroker,
                 profileQuery: ProfileQuery,
                 scanJobData: ScanJobData,
@@ -48,6 +52,6 @@ public struct BrokerProfileQueryData: Sendable {
         self.profileQuery = profileQuery
         self.dataBroker = dataBroker
         self.scanJobData = scanJobData
-        self.optOutJobData = optOutJobData.filter { !$0.isRemovedByUser }
+        self.optOutJobData = optOutJobData
     }
 }

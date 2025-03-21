@@ -87,6 +87,10 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
     }
 
+    lazy var autofillCreditCardListView: AutofillCreditCardListView = {
+        AutofillCreditCardListView(viewModel: AutofillCreditCardListViewModel(secureVault: secureVault))
+    }()
+    
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,

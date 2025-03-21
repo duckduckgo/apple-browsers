@@ -24,7 +24,7 @@ import BrowserServicesKit
 struct AutofillCreditCardListView: View {
     
     @ObservedObject var viewModel: AutofillCreditCardListViewModel
-    
+
     var body: some View {
         Group {
             switch viewModel.viewState {
@@ -58,13 +58,13 @@ private struct EmptyStateView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)
-            
+
             Group {
                 Text(UserText.autofillCreditCardEmptyViewTitle)
                     .daxTitle3()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .padding(.top, 16)
-                
+
                 Text(UserText.autofillCreditCardEmptyViewSubtitle)
                     .daxBodyRegular()
                     .foregroundStyle(Color.init(designSystemColor: .textSecondary))
@@ -89,7 +89,7 @@ private struct CreditCardRow: View {
         HStack {
             card.icon
                 .padding(.trailing, 8)
-            
+
             VStack(alignment: .leading) {
                 Text(card.displayTitle)
                     .daxSubheadRegular()
@@ -105,7 +105,7 @@ private struct CreditCardRow: View {
             .padding(.vertical, 4)
             
             Spacer()
-            
+
             Image(systemName: "chevron.forward")
                 .font(Font.system(.footnote).weight(.bold))
                 .foregroundColor(Color(UIColor.tertiaryLabel))

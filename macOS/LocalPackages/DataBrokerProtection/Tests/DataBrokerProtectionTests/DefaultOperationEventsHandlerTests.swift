@@ -82,7 +82,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
         sut.fire(.firstProfileRemoved)
 
         // Then
-        XCTAssertTrue(mockNotificationService.firstScanNotificationWasSent)
+        XCTAssertTrue(mockNotificationService.firstRemovedNotificationWasSent)
     }
 
     func testWhenAllProfilesRemoved_thenAllInfoRemovedWasSent() async throws {

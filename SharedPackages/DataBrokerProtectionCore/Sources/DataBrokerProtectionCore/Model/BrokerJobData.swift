@@ -28,7 +28,7 @@ public protocol BrokerJobData {
 
 public extension BrokerJobData {
     var isRemovedByUser: Bool {
-        historyEvents.closestHistoryEvent?.type != .matchRemovedByUser
+        historyEvents.belongToUserRemovedRecord
     }
 }
 

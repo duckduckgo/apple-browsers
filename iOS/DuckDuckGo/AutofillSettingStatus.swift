@@ -64,6 +64,14 @@ struct AutofillSettingStatus {
         return appSettings.autofillCreditCardsEnabled && (effectiveStatus == .canAuthenticate)
     }
 
+    static var isCreditCardAutofillEnabledInSettings: Bool {
+        setupNotificationObserversIfNeeded()
+        
+        canAuthenticate = canAuthenticate ?? refreshCanAuthenticate()
+
+        return appSettings.autofillCreditCardsEnabled && (canAuthenticate ?? false)
+    }
+
     private static let appSettings = AppDependencyProvider.shared.appSettings
 
     private static var observersSetUp = false

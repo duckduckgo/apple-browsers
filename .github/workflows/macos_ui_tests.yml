@@ -52,7 +52,7 @@ jobs:
           echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:
-    name: UI tests
+    name: ${{ matrix.test }} (macOS ${{ matrix.os-version }})
     needs: [create-notarized-app, create-tests-list]
     runs-on: ${{ matrix.runner }}
     strategy:
@@ -62,10 +62,13 @@ jobs:
         test: ${{ fromJSON(needs.create-tests-list.outputs.test) }}
         include:
           - runner: macos-13-xlarge
+            os-version: "13"
             xcode-version: "15.2"
           - runner: macos-14-xlarge
+            os-version: "14"
             xcode-version: "15.4"
           - runner: macos-15-xlarge
+            os-version: "15"
             xcode-version: "16.2"
 
     concurrency:

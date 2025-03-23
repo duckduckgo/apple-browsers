@@ -187,6 +187,8 @@ final class FireViewController: NSViewController {
         }
 
         if playFireAnimation {
+            view.window?.childWindows?.forEach { $0.close() }
+
             await waitForFireAnimationViewIfNeeded()
 
             progressIndicatorWrapper.isHidden = true

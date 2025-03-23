@@ -193,7 +193,7 @@ jobs:
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
-        sed -i '' 's/Selected tests/${test_id}/' "$file"
+        sed -i '' "s/Selected tests/${test_id}/" "$file"
 
     - name: Upload test report
       uses: actions/upload-artifact@v4
@@ -236,7 +236,7 @@ jobs:
         report_paths: "*.xml"
         check_retries: true
         group_reports: false
-        include_empty_in_summary: false
+        skip_annotations: true
 
   notify-failure:
     name: Notify on failure

@@ -192,6 +192,7 @@ jobs:
         file="${{ matrix.test }} (macOS ${{ matrix.os-version }}).xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
+        sed -i '' 's/Selected tests/${{ matrix.test }}/' "$file"
 
     - name: Upload test report
       uses: actions/upload-artifact@v4
@@ -230,10 +231,11 @@ jobs:
       uses: mikepenz/action-junit-report@v5
       if: always()
       with:
-        check_name: UI Tests Report
+        check_name: Tests Report
         report_paths: "*.xml"
         check_retries: true
         group_reports: false
+        include_empty_in_summary: false
 
   notify-failure:
     name: Notify on failure

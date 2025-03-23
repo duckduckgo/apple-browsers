@@ -238,7 +238,9 @@ jobs:
         report_paths: "*.xml"
         check_retries: true
         group_reports: false
-        skip_annotations: true
+        flaky_summary: true
+        verbose_summary: false
+        include_time_in_summary: true
 
   notify-failure:
     name: Notify on failure

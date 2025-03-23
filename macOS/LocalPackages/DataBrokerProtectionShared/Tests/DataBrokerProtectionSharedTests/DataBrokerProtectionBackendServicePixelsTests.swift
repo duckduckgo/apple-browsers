@@ -27,7 +27,7 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
     override func setUpWithError() throws {
         let suiteName = "com.dbp.tests.\(UUID().uuidString)"
         let defaults =  UserDefaults(suiteName: suiteName) ?? UserDefaults.standard
-        settings = DataBrokerProtectionSettings(defaults: defaults, proxySettings: .init(defaults: .standard))
+        settings = DataBrokerProtectionSettings(defaults: defaults)
     }
 
     override func tearDownWithError() throws {
@@ -45,9 +45,9 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.httpCode], "200", "Incorrect statusCode")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.wasOnWaitlist], "false", "should be true")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.httpCode], "200", "Incorrect statusCode")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "staging", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.wasOnWaitlist], "false", "should be true")
     }
 
     func testSendHTTPErrorOnProductionAndWaitlist_thenValidatePixelSent() {
@@ -59,8 +59,8 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.httpCode], "123", "Incorrect statusCode")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "production", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.httpCode], "123", "Incorrect statusCode")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "production", "Incorrect environment")
     }
 
     func testSendEmptyAccessTokenOnProductionAndWaitlistFromEmailCallsite_thenValidatePixelSent() {
@@ -73,8 +73,8 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "production", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.backendServiceCallSite], "getEmail", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "production", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.backendServiceCallSite], "getEmail", "Should be getEmail")
 
     }
 
@@ -89,9 +89,9 @@ final class DataBrokerProtectionBackendServicePixelsTests: XCTestCase {
         let lastPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last
 
         XCTAssertNotNil(lastPixel)
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.environmentKey], "staging", "Incorrect environment")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.wasOnWaitlist], "false", "should be false")
-        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionPixels.Consts.backendServiceCallSite], "submitCaptchaInformationRequest", "Should be getEmail")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.environmentKey], "staging", "Incorrect environment")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.wasOnWaitlist], "false", "should be false")
+        XCTAssertEqual(lastPixel?.params?[DataBrokerProtectionSharedPixels.Consts.backendServiceCallSite], "submitCaptchaInformationRequest", "Should be getEmail")
 
     }
 

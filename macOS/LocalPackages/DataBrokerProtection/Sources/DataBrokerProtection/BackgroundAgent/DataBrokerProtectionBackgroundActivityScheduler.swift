@@ -41,7 +41,7 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     public private(set) var lastTriggerTimestamp: Date?
 
-    public init(config: DataBrokerExecutionConfig) {
+    public init(config: DataBrokerMacOSSchedulingConfig) {
         activity = NSBackgroundActivityScheduler(identifier: schedulerIdentifier)
         activity.repeats = true
         activity.interval = config.activitySchedulerTriggerInterval

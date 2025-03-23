@@ -6,7 +6,7 @@ defaults:
 
 on:
   push:
-    branches: [ main, "release/**" ]
+    branches: [ main, "release/ios/**" ]
     paths:
       - 'BrowserServicesKit/**'
       - 'iOS/**'
@@ -263,6 +263,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
       - name: Close Asana Task
         uses: ./.github/actions/asana-failed-pr-checks
         with:

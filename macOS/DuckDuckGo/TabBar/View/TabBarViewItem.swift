@@ -112,7 +112,6 @@ final class TabBarItemCellView: NSView {
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
-        faviconImageView.applyFaviconStyle()
         return faviconImageView
     }()
 

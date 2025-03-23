@@ -68,7 +68,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let homeDialog = DaxDialogs.HomeScreenSpec.initial
 
         // When
-        let view = factory.createDaxDialog(for: homeDialog, onDismiss: {})
+        let view = factory.createDaxDialog(for: homeDialog, onDismiss: { _ in })
         let host = UIHostingController(rootView: view)
         XCTAssertNotNil(host.view)
 
@@ -83,7 +83,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let homeDialog = DaxDialogs.HomeScreenSpec.subsequent
 
         // When
-        let view = factory.createDaxDialog(for: homeDialog, onDismiss: {})
+        let view = factory.createDaxDialog(for: homeDialog, onDismiss: { _ in })
         let host = UIHostingController(rootView: view)
         XCTAssertNotNil(host.view)
 
@@ -99,7 +99,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         contextualOnboardingLogicMock.expectation = expectation
         var onDismissedRun = false
         let homeDialog = DaxDialogs.HomeScreenSpec.final
-        let onDimsiss = { onDismissedRun = true }
+        let onDimsiss: (Bool) -> Void = { _ in onDismissedRun = true }
 
         // When
         let view = factory.createDaxDialog(for: homeDialog, onDismiss: onDimsiss)
@@ -121,7 +121,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         let homeDialog = DaxDialogs.HomeScreenSpec.addFavorite
 
         // When
-        let view = factory.createDaxDialog(for: homeDialog, onDismiss: {})
+        let view = factory.createDaxDialog(for: homeDialog, onDismiss: { _ in })
         let host = UIHostingController(rootView: view)
         XCTAssertNotNil(host.view)
 
@@ -159,7 +159,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
 
     func testWhenOnboardingFinalDialogCTAIsTapped_ThenFireExpectedPixel() throws {
         // GIVEN
-        let view = factory.createDaxDialog(for: DaxDialogs.HomeScreenSpec.final, onDismiss: {})
+        let view = factory.createDaxDialog(for: DaxDialogs.HomeScreenSpec.final, onDismiss: { _ in })
         let host = UIHostingController(rootView: view)
         window.rootViewController = host
         let finalDialog = try XCTUnwrap(find(OnboardingFinalDialog.self, in: host))
@@ -178,7 +178,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.HomeScreenSpec.final
         onboardingManagerMock.addToDockEnabledState = .contextual
-        let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
+        let dialog = factory.createDaxDialog(for: spec, onDismiss: { _ in })
 
         // WHEN
         let result = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
@@ -192,7 +192,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.HomeScreenSpec.final
         onboardingManagerMock.addToDockEnabledState = .contextual
-        let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
+        let dialog = factory.createDaxDialog(for: spec, onDismiss: { _ in })
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
 
         // WHEN
@@ -218,7 +218,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.HomeScreenSpec.final
         onboardingManagerMock.addToDockEnabledState = .contextual
-        let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
+        let dialog = factory.createDaxDialog(for: spec, onDismiss: { _ in })
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoShowTutorialCTAAction)
 
@@ -233,7 +233,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.HomeScreenSpec.final
         onboardingManagerMock.addToDockEnabledState = .contextual
-        let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
+        let dialog = factory.createDaxDialog(for: spec, onDismiss: { _ in })
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockPromoDismissCTAAction)
 
@@ -248,7 +248,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // GIVEN
         let spec = DaxDialogs.HomeScreenSpec.final
         onboardingManagerMock.addToDockEnabledState = .contextual
-        let dialog = factory.createDaxDialog(for: spec, onDismiss: {})
+        let dialog = factory.createDaxDialog(for: spec, onDismiss: { _ in })
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: dialog))
         XCTAssertFalse(pixelReporterMock.didCallMeasureAddToDockTutorialDismissCTAAction)
 
@@ -278,7 +278,7 @@ private extension ContextualOnboardingNewTabDialogFactoryTests {
         XCTAssertNil(pixelReporterMock.capturedScreenImpression)
 
         // WHEN
-        let view = factory.createDaxDialog(for: spec, onDismiss: {})
+        let view = factory.createDaxDialog(for: spec, onDismiss: { _ in })
         let host = OnboardingHostingControllerMock(rootView: AnyView(view))
         host.onAppearExpectation = expectation
         window.rootViewController = host

@@ -28,7 +28,6 @@ import SpecialErrorPages
 final class UserScripts: UserScriptsProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let faviconScript = FaviconUserScript()
     let contextMenuScript = ContextMenuUserScript()
     let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
@@ -53,6 +52,7 @@ final class UserScripts: UserScriptsProvider {
 #endif
     let aiChatUserScript: AIChatUserScript?
     let historyViewUserScript: HistoryViewUserScript?
+    let faviconScript = FaviconUserScript()
 
     // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding) {
@@ -107,6 +107,7 @@ final class UserScripts: UserScriptsProvider {
 
         userScripts.append(autoconsentUserScript)
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -177,7 +178,6 @@ final class UserScripts: UserScriptsProvider {
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        faviconScript,
         contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,

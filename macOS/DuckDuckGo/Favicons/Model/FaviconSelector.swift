@@ -37,6 +37,11 @@ final class FaviconSelector {
                         partialResult[3].append(favicon)
                     }
 
+                    // Use medium even for small if small not available
+                    if sizeCategory == .small && favicon.sizeCategory == .medium {
+                        partialResult[3].append(favicon)
+                    }
+
                     // Use large even for medium if medium not available
                     if sizeCategory == .medium && favicon.sizeCategory == .large {
                         partialResult[3].append(favicon)

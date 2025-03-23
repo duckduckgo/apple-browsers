@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Забрани";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Научете повече";
+"autofill.learn.more.link.title" = "[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Преглед";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Търсене на пароли";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Предложения";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Запазване на паролата";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Запитване за запазване и автоматично попълване";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Импортиране на пароли";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Опции";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Докладване на проблем с автоматичното попълване";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Не работи ли автоматичното попълване?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Преглед";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показване на паролата";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Позволете на DuckDuckGo да управлява изскачащите прозорци за съгласие за бисквитки";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Пароли";
+"settings.logins" = "Пароли и автоматично попълване";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Основни настройки";
@@ -3115,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Намерете и изберете **DuckDuckGo**, след това плъзнете до **VPN** и изберете **Добавяне на приспособление**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "Функцията DuckDuckGo VPN е включена";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN е изключен";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Можете да използвате бързите клавиши на Сири за включване на VPN услугата чрез бърза гласова команда, например „Сири, включи DuckDuckGo VPN“. Това е бърз начин да включите VPN, без да използвате ръцете си.";

@@ -21,6 +21,7 @@ import UIKit
 
 class MainViewCoordinator {
 
+    weak var parentController: UIViewController?
     let superview: UIView
 
     var contentContainer: UIView!
@@ -52,8 +53,9 @@ class MainViewCoordinator {
     var addressBarPosition: AddressBarPosition = .top
 
     /// STOP - why are you instanciating this?
-    init(superview: UIView) {
-        self.superview = superview
+    init(parentController: UIViewController) {
+        self.parentController = parentController
+        self.superview = parentController.view
     }
     
     func showToolbarSeparator() {

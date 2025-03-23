@@ -163,7 +163,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
                                                                 database: SecureStorageDatabaseProviderMock(),
                                                                 keystore: EmptySecureStorageKeyStoreProviderMock()))
 
-        let database = DataBrokerProtectionDatabase(pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                                     vault: vault)
 
         let profile = DataBrokerProtectionProfile(
@@ -190,7 +191,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
                                                                 database: SecureStorageDatabaseProviderMock(),
                                                                 keystore: EmptySecureStorageKeyStoreProviderMock()))
 
-        let database = DataBrokerProtectionDatabase(pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                                     vault: vault)
 
         vault.brokers = [DataBroker.mock]
@@ -234,7 +236,8 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
                                                                 database: SecureStorageDatabaseProviderMock(),
                                                                 keystore: EmptySecureStorageKeyStoreProviderMock()))
 
-        let database = DataBrokerProtectionDatabase(pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                                     vault: vault)
 
         vault.brokers = [DataBroker.mock]

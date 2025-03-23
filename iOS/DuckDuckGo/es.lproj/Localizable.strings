@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Deshabilitar";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Más información";
+"autofill.learn.more.link.title" = "[Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Ver";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Buscar contraseñas";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros. [Más información](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Las contraseñas están cifradas. Nadie más que tú puede verlas, ni siquiera nosotros.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Sugerencias";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Guardar contraseña";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Solicitar guardar y autocompletar";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importar contraseñas";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Opciones";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Informar de un problema con la función Autocompletar";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "¿La función Autocompletar no funciona?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Ver";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Mostrar contraseña";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Deja que DuckDuckGo gestione las ventanas emergentes de consentimiento de cookies";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Contraseñas";
+"settings.logins" = "Contraseñas y autocompletar";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Ajustes principales";
@@ -3115,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Busca y selecciona **DuckDuckGo**, luego desliza hasta **VPN** y selecciona **Añadir widget**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "La VPN de DuckDuckGo está conectada.";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "La VPN de DuckDuckGo se ha desconectado";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Los atajos de Siri te permiten conectarte a tu VPN con un comando de voz rápido, como \"Siri, activa la VPN de DuckDuckGo\". Es una manera rápida de utilizar tu VPN sin usar las manos.";

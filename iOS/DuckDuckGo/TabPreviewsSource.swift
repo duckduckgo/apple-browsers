@@ -20,8 +20,20 @@
 import UIKit
 import Core
 
-class TabPreviewsSource {
-    
+protocol TabPreviewsSource: AnyObject {
+
+    func prepare()
+    func update(preview: UIImage, forTab tab: Tab)
+    func removePreview(forTab tab: Tab)
+    func removeAllPreviews()
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) async
+    func totalStoredPreviews() -> Int?
+    func preview(for tab: Tab) -> UIImage?
+
+}
+
+class DefaultTabPreviewsSource: TabPreviewsSource {
+
     struct Constants {
         static let previewsDirectoryName = "Previews"
     }
@@ -33,8 +45,8 @@ class TabPreviewsSource {
     fileprivate var previewStoreDir: URL?
     private var legacyPreviewStoreDir: URL?
     
-    init(storeDir: URL? = TabPreviewsSource.previewStoreDir,
-         legacyDir: URL? = TabPreviewsSource.legacyPreviewStoreDir) {
+    init(storeDir: URL? = DefaultTabPreviewsSource.previewStoreDir,
+         legacyDir: URL? = DefaultTabPreviewsSource.legacyPreviewStoreDir) {
         previewStoreDir = storeDir
         legacyPreviewStoreDir = legacyDir
     }
@@ -176,46 +188,17 @@ class TabPreviewsSource {
         
         return UIImage(data: data)
     }
-}
 
-class TabPreviewsCleanup {
-    
-    static let shared = TabPreviewsCleanup()
-    
-    private let lock = NSLock()
-    private var isCleaning = false
-    
-    func startCleanup(with model: TabsModel, source: TabPreviewsSource, completion: @escaping () -> Void = {}) {
-        lock.lock()
-        guard let storeDir = source.previewStoreDir, !isCleaning else {
-            lock.unlock()
-            completion()
-            return
-        }
-        isCleaning = true
-        lock.unlock()
-        
-        source.cleanupCache()
-        
-        let validIDs = Set(model.tabs.map { $0.uid })
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            if let previews = try? FileManager.default.contentsOfDirectory(at: storeDir, includingPropertiesForKeys: nil) {
-                for previewURL in previews where previewURL.lastPathComponent.hasSuffix(".png") {
-                    let previewID = previewURL.lastPathComponent.dropLast(4)
-                    
-                    if !validIDs.contains(String(previewID)) {
-                        try? FileManager.default.removeItem(at: previewURL)
-                    }
-                }
+    func removePreviewsWithIdNotIn(_ ids: Set<String>) async {
+        guard let directory = previewStoreDir else { return }
+        let contents = try? FileManager.default.contentsOfDirectory(atPath: directory.path)
+        contents?.forEach {
+            let id = $0.dropping(suffix: ".png")
+            if !ids.contains(id) {
+                cache[id] = nil
+                let previewUrl = directory.appending($0)
+                try? FileManager.default.removeItem(at: previewUrl)
             }
-            
-            self.lock.lock()
-            self.isCleaning = false
-            self.lock.unlock()
-            
-            completion()
         }
     }
-    
 }

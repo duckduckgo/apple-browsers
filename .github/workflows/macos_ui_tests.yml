@@ -170,28 +170,53 @@ jobs:
         | tee ui-tests.log
 
     - name: Prepare test report
+      id: prepare-test-report
       if: always()
       run: |
-        xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
+        file="${{ matrix.test }} (macOS ${{ matrix.os-version }}).xml"
+        echo "file=$file" >> $GITHUB_OUTPUT
+        xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
 
-    - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
       if: always()
       with:
-        check_name: "Test Report ${{ matrix.runner }} ${{ matrix.test }}"
-        report_paths: macOS/ui-tests.xml
-        check_retries: true
+        name: "Test Report: ${{ matrix.test }} (macOS ${{ matrix.os-version }})"
+        path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
+        retention-days: 1
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }} ${{ matrix.test }}"
+        name: "BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }})"
         path: |
           macOS/xcodebuild.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
+
+  test-report:
+    name: Report test results
+    if: always()
+    needs: [ui-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download test reports
+      uses: actions/download-artifact@v4
+      if: always()
+      with:
+        pattern: "Test Report:*"
+        merge-multiple: true
+
+    - name: Publish tests report
+      uses: mikepenz/action-junit-report@v4
+      if: always()
+      with:
+        check_title_template: "{{FILE_NAME}}"
+        report_paths: "*.xml"
+        check_retries: true
 
   notify-failure:
     name: Notify on failure

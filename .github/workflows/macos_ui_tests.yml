@@ -35,36 +35,41 @@ jobs:
       MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
-  create-test-matrix:
-    name: Create test matrix
+  create-tests-list:
+    name: Create tests list
     runs-on: macos-15
     outputs:
-      include: ${{ steps.get-tests-matrix.outputs.include }}
+      test: ${{ steps.list-tests.outputs.test }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Calculate matrix
-        id: get-tests-matrix
+      - name: List tests
+        id: list-tests
         run: |
           test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
-          include="$(for i in $test_names; do
-            echo "{\"xcode-version\": \"15.2\", \"runner\": \"macos-13-xlarge\", \"test\": \"$i\"} \
-                {\"xcode-version\": \"15.4\", \"runner\": \"macos-14-xlarge\", \"test\": \"$i\"} \
-                {\"xcode-version\": \"16.2\", \"runner\": \"macos-15-xlarge\", \"test\": \"$i\"}"
-          done | jq -sc '{include: .}')"
-          echo "include=${include}" >> $GITHUB_OUTPUT
+          test=$(echo $test_names | jq -cR 'split(" ")')
+          echo "test=${test}" >> $GITHUB_OUTPUT
 
   ui-tests:
     name: UI tests
-    needs: [create-notarized-app, create-test-matrix]
+    needs: [create-notarized-app, create-tests-list]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.create-test-matrix.outputs.include) }}
+      matrix:
+        runner: ["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]
+        test: ${{ fromJSON(needs.create-tests-list.outputs.test) }}
+        include:
+          - runner: macos-13-xlarge
+            xcode-version: "15.2"
+          - runner: macos-14-xlarge
+            xcode-version: "15.4"
+          - runner: macos-15-xlarge
+            xcode-version: "16.2"
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}
       cancel-in-progress: true
 
     timeout-minutes: 120

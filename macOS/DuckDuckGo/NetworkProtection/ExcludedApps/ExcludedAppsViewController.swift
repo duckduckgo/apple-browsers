@@ -164,7 +164,6 @@ extension ExcludedAppsViewController: NSTableViewDataSource, NSTableViewDelegate
 
         cell.textField?.stringValue = appInfo.name
         cell.imageView?.image = appInfo.icon
-        cell.imageView?.applyFaviconStyle()
 
         return cell
     }

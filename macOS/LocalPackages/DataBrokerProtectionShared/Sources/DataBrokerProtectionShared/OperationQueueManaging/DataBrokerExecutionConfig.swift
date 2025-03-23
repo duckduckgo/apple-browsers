@@ -18,14 +18,7 @@
 
 import Foundation
 
-public enum DataBrokerExecutionConfigMode {
-    case normal
-    case fastForIntegrationTests
-}
-
 public struct DataBrokerExecutionConfig {
-
-    let mode: DataBrokerExecutionConfigMode
 
     let intervalBetweenSameBrokerOperations: TimeInterval = 2
 
@@ -41,27 +34,5 @@ public struct DataBrokerExecutionConfig {
         }
     }
 
-    public var activitySchedulerTriggerInterval: TimeInterval {
-        switch mode {
-        case .normal:
-            return 20 * 60 // 20 minutes
-        case .fastForIntegrationTests:
-            return 1 * 60 // 1 minute
-        }
-    }
-
-    public var activitySchedulerIntervalTolerance: TimeInterval {
-        switch mode {
-        case .normal:
-            return 10 * 60 // 10 minutes
-        case .fastForIntegrationTests:
-            return 30 // 0.5 minutes
-        }
-    }
-
-    public let activitySchedulerQOS: QualityOfService = .userInitiated
-
-    public init(mode: DataBrokerExecutionConfigMode) {
-        self.mode = mode
-    }
+    public init() { }
 }

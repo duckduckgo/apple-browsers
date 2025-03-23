@@ -187,7 +187,6 @@ public final class PixelKit {
                       withHeaders headers: [String: String]?,
                       withAdditionalParameters params: [String: String]?,
                       withError error: Error?,
-                      withNamePrefix namePrefix: String?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
                       onComplete: @escaping CompletionBlock) {
@@ -217,30 +216,28 @@ public final class PixelKit {
             }
         }
 
-        let pixelNameWithPrefix = (namePrefix ?? "") + pixelName
-
         // The event name can't contain `.`
-        reportErrorIf(pixel: pixelNameWithPrefix, contains: ".")
+        reportErrorIf(pixel: pixelName, contains: ".")
 
         switch frequency {
         case .standard:
-            handleStandardFrequency(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleStandardFrequency(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyInitial:
-            handleLegacyInitial(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyInitial(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByName:
-            handleUnique(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleUnique(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .uniqueByNameAndParameters:
-            handleUniqueByNameAndParameters(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleUniqueByNameAndParameters(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyDaily:
-            handleLegacyDaily(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .daily:
-            handleDaily(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDaily(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .legacyDailyAndCount:
-            handleLegacyDailyAndCount(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleLegacyDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndCount:
-            handleDailyAndCount(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDailyAndCount(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         case .dailyAndStandard:
-            handleDailyAndStandard(pixelNameWithPrefix, headers, newParams, allowedQueryReservedCharacters, onComplete)
+            handleDailyAndStandard(pixelName, headers, newParams, allowedQueryReservedCharacters, onComplete)
         }
     }
 
@@ -426,13 +423,14 @@ public final class PixelKit {
         }
 
     // Only set up for macOS and for Experiments
-    private func prefixedAndSuffixedName(for event: Event) -> String {
-        if event.name.hasPrefix("experiment") {
-            return addPlatformSuffix(to: event.name)
+    private func prefixedAndSuffixedName(for event: Event, namePrefix: String?) -> String {
+        let pixelName = (namePrefix ?? "") + event.name
+        if pixelName.hasPrefix("experiment") {
+            return addPlatformSuffix(to: pixelName)
         }
-        if event.name.hasPrefix("m_mac_") {
+        if pixelName.hasPrefix("m_mac_") {
             // Can be a debug event or not, if already prefixed the name remains unchanged
-            return event.name
+            return pixelName
         } else if let debugEvent = event as? DebugEvent {
             // Is a Debug event not already prefixed
             return "m_mac_debug_\(debugEvent.name)"
@@ -440,7 +438,7 @@ public final class PixelKit {
             // Special kind of pixel event that don't follow the standard naming conventions
             return nonStandardEvent.name
         } else {
-            return "m_mac_\(event.name)"
+            return "m_mac_\(pixelName)"
         }
     }
 
@@ -470,7 +468,7 @@ public final class PixelKit {
                      includeAppVersionParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
-        let pixelName = prefixedAndSuffixedName(for: event)
+        let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
 
         if !dryRun {
             if frequency == .daily, pixelHasBeenFiredToday(pixelName) {
@@ -521,7 +519,6 @@ public final class PixelKit {
              withHeaders: headers,
              withAdditionalParameters: newParams,
              withError: newError,
-             withNamePrefix: namePrefix,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
              onComplete: onComplete)
@@ -567,8 +564,8 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: Event) -> Date? {
-        Self.shared?.pixelLastFireDate(event: event)
+    public static func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+        Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
     }
 
     public func pixelLastFireDate(pixelName: String) -> Date? {
@@ -579,8 +576,8 @@ public final class PixelKit {
         return date
     }
 
-    public func pixelLastFireDate(event: Event) -> Date? {
-        pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event))
+    public func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+        pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
     private func updatePixelLastFireDate(pixelName: String) {

@@ -39,7 +39,7 @@ protocol XPCClientInterface: NSObjectProtocol {
 
 public final class DataBrokerProtectionIPCClient: NSObject {
 
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let loginItemStatusChecker: DBPLoginItemStatusChecker
 
     // MARK: - XPC Communication
@@ -48,7 +48,7 @@ public final class DataBrokerProtectionIPCClient: NSObject {
 
     // MARK: - Initializers
 
-    public init(machServiceName: String, pixelHandler: EventMapping<DataBrokerProtectionPixels>, loginItemStatusChecker: DBPLoginItemStatusChecker) {
+    public init(machServiceName: String, pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>, loginItemStatusChecker: DBPLoginItemStatusChecker) {
         self.pixelHandler = pixelHandler
         self.loginItemStatusChecker = loginItemStatusChecker
         let clientInterface = NSXPCInterface(with: XPCClientInterface.self)

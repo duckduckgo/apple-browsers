@@ -146,7 +146,7 @@ class MainViewController: UIViewController {
     /// Do not reference directly, use `presentedMenuButton`
     let menuButton = MenuButton()
     var presentedMenuButton: MenuButton {
-        AppWidthObserver.shared.isLargeWidth ? viewCoordinator.omniBar.menuButtonContent : menuButton
+        AppWidthObserver.shared.isLargeWidth ? viewCoordinator.omniBar.barView.menuButtonContent : menuButton
     }
 
     let gestureBookmarksButton = GestureToolbarButton()
@@ -162,7 +162,7 @@ class MainViewController: UIViewController {
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
-        return viewCoordinator.omniBar.searchContainer.convert(viewCoordinator.omniBar.searchContainer.bounds, to: view)
+        return viewCoordinator.omniBar.barView.searchContainerView.convert(viewCoordinator.omniBar.barView.searchContainerView.bounds, to: view)
     }
 
     var keyModifierFlags: UIKeyModifierFlags?
@@ -314,7 +314,7 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        viewCoordinator = MainViewFactory.createViewHierarchy(self.view,
+        viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger)
@@ -645,7 +645,11 @@ class MainViewController: UIViewController {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
             viewCoordinator.omniBar.moveSeparatorToBottom()
-            viewCoordinator.showToolbarSeparator()
+            if ExperimentalThemingManager().isExperimentalThemingEnabled {
+                viewCoordinator.hideToolbarSeparator()
+            } else {
+                viewCoordinator.showToolbarSeparator()
+            }
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
 
         case .bottom:
@@ -732,7 +736,7 @@ class MainViewController: UIViewController {
     }
     
     private func initBookmarksButton() {
-        viewCoordinator.omniBar.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
+        viewCoordinator.omniBar.barView.bookmarksButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
         gestureBookmarksButton.image = UIImage(named: "Bookmarks")
@@ -838,7 +842,7 @@ class MainViewController: UIViewController {
 
     private func attachOmniBar() {
         viewCoordinator.omniBar.omniDelegate = self
-        viewCoordinator.omniBar.menuButtonContent.delegate = self
+        viewCoordinator.omniBar.barView.menuButtonContent.delegate = self
     }
     
     fileprivate func attachHomeScreen() {
@@ -1028,7 +1032,7 @@ class MainViewController: UIViewController {
     func enterSearch() {
         if presentedViewController == nil {
             showBars()
-            viewCoordinator.omniBar.becomeFirstResponder()
+            viewCoordinator.omniBar.beginEditing()
         }
     }
 
@@ -1139,6 +1143,7 @@ class MainViewController: UIViewController {
         addChild(controller)
         viewCoordinator.contentContainer.subviews.forEach { $0.removeFromSuperview() }
         viewCoordinator.contentContainer.addSubview(controller.view)
+
         controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         controller.view.frame = viewCoordinator.contentContainer.bounds
         controller.didMove(toParent: self)
@@ -1148,7 +1153,7 @@ class MainViewController: UIViewController {
         // prepopulate VC for current tab if needed
         if let currentTab = tabManager.current(createIfNeeded: true) {
             select(tab: currentTab)
-            viewCoordinator.omniBar.resignFirstResponder()
+            viewCoordinator.omniBar.endEditing()
         } else {
             attachHomeScreen()
         }
@@ -1199,7 +1204,7 @@ class MainViewController: UIViewController {
     }
 
     func dismissOmniBar() {
-        viewCoordinator.omniBar.resignFirstResponder()
+        viewCoordinator.omniBar.endEditing()
         hideSuggestionTray()
         refreshOmniBar()
     }
@@ -1211,8 +1216,8 @@ class MainViewController: UIViewController {
     }
 
     fileprivate func refreshBackForwardButtons() {
-        viewCoordinator.omniBar.backButton.isEnabled = viewCoordinator.toolbarBackButton.isEnabled
-        viewCoordinator.omniBar.forwardButton.isEnabled = viewCoordinator.toolbarForwardButton.isEnabled
+        viewCoordinator.omniBar.isBackButtonEnabled = viewCoordinator.toolbarBackButton.isEnabled
+        viewCoordinator.omniBar.isForwardButtonEnabled = viewCoordinator.toolbarForwardButton.isEnabled
     }
   
     var orientationPixelWorker: DispatchWorkItem?
@@ -1226,13 +1231,13 @@ class MainViewController: UIViewController {
 
         self.showMenuHighlighterIfNeeded()
 
-        let isKeyboardShowing = omniBar.textField.isFirstResponder
+        let isKeyboardShowing = omniBar.isTextFieldEditing
         coordinator.animate { _ in
             self.swipeTabsCoordinator?.invalidateLayout()
             self.deferredFireOrientationPixel()
         } completion: { _ in
             if isKeyboardShowing {
-                self.omniBar.becomeFirstResponder()
+                self.omniBar.beginEditing()
             }
 
             ViewHighlighter.updatePositions()
@@ -1279,7 +1284,7 @@ class MainViewController: UIViewController {
 
     func refreshMenuButtonState() {
         if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
-            viewCoordinator.omniBar.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
+            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
 
@@ -1290,7 +1295,7 @@ class MainViewController: UIViewController {
             } else {
                 expectedState = .menuImage
             }
-            viewCoordinator.omniBar.menuButton.accessibilityLabel = UserText.menuButtonHint
+            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.menuButtonHint
 
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
@@ -1301,7 +1306,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.searchStackContainer.frame.width + 24)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 24)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -1614,7 +1619,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.refreshOmnibarPaddingConstraintsForAccessoryButton()
+                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &aiChatCancellables)
     }
@@ -1826,7 +1831,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.tabBarContainer
     }
 
-    var omniBar: OmniBar {
+    var omniBar: any OmniBar {
         viewCoordinator.omniBar
     }
 
@@ -1881,7 +1886,7 @@ extension MainViewController: BrowserChromeDelegate {
         if hidden { hideKeyboard() }
         
         updateNavBarConstant(hidden ? 0 : 1.0)
-        viewCoordinator.omniBar.alpha = hidden ? 0 : 1
+        viewCoordinator.omniBar.barView.alpha = hidden ? 0 : 1
         viewCoordinator.tabBarContainer.alpha = hidden ? 0 : 1
         viewCoordinator.statusBackground.alpha = hidden ? 0 : 1
         
@@ -1904,7 +1909,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        return max(toolbarHeight, viewCoordinator.omniBar.frame.size.height)
+        return max(toolbarHeight, viewCoordinator.omniBar.barView.frame.size.height)
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -1946,7 +1951,7 @@ extension MainViewController: OmniBarDelegate {
 
     func onOmniQueryUpdated(_ updatedQuery: String) {
         if updatedQuery.isEmpty {
-            if newTabPageViewController != nil || !omniBar.textField.isEditing {
+            if newTabPageViewController != nil || !omniBar.isTextFieldEditing {
                 hideSuggestionTray()
             } else {
                 let didShow = tryToShowSuggestionTray(.favorites)
@@ -2135,7 +2140,7 @@ extension MainViewController: OmniBarDelegate {
         return tabURL.isDuckDuckGoSearch
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // We don't want any action here if we're still in autocomplete context
         guard !isShowingAutocompleteSuggestions else { return }
 
@@ -2149,14 +2154,14 @@ extension MainViewController: OmniBarDelegate {
 
         guard newTabPageViewController == nil else { return }
         
-        if !skipSERPFlow, isSERPPresented, let query = omniBar.textField.text {
+        if !skipSERPFlow, isSERPPresented, let query = omniBar.text {
             tryToShowSuggestionTray(.autocomplete(query: query))
         } else {
             tryToShowSuggestionTray(.favorites)
         }
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
 
         let selectQueryText = !(isSERPPresented && !skipSERPFlow)
         skipSERPFlow = false
@@ -2177,7 +2182,7 @@ extension MainViewController: OmniBarDelegate {
         hideNotificationBarIfBrokenSitePromptShown(afterRefresh: true)
     }
 
-    func onAccessoryPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
         hideSuggestionTray()
 
         switch accessoryType {
@@ -2186,16 +2191,16 @@ extension MainViewController: OmniBarDelegate {
         case .share:
             guard let link = currentTab?.link else { return }
             Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.accessoryButton)
+            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButtonView)
         }
     }
 
     private func openAIChatFromAddressBar() {
         /// https://app.asana.com/0/1204167627774280/1209322943444951
 
-        if omniBar.textField.isEditing {
-            let textFieldValue = omniBar.textField.text
-            omniBar.textField.resignFirstResponder()
+        if omniBar.isTextFieldEditing {
+            let textFieldValue = omniBar.text
+            omniBar.endEditing()
 
             /// Check if the URL in the text field is the same as the one loaded
             /// If it is, open the chat normally (no auto-send)
@@ -2219,7 +2224,7 @@ extension MainViewController: OmniBarDelegate {
         Pixel.fire(pixel: .openAIChatFromAddressBar)
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
         if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
             segueToDebugSettings()
         } else {
@@ -2273,7 +2278,7 @@ extension MainViewController: FavoritesOverlayDelegate {
 extension MainViewController: AutocompleteViewControllerDelegate {
 
     func autocompleteDidEndWithUserQuery() {
-        if let query = omniBar.textField.text {
+        if let query = omniBar.text {
             onOmniQuerySubmitted(query
             )
         }
@@ -2320,43 +2325,41 @@ extension MainViewController: AutocompleteViewControllerDelegate {
     func autocomplete(pressedPlusButtonForSuggestion suggestion: Suggestion) {
         switch suggestion {
         case .phrase(phrase: let phrase):
-        viewCoordinator.omniBar.textField.text = phrase
+            viewCoordinator.omniBar.updateQuery(phrase)
         case .website(url: let url):
             if url.isDuckDuckGoSearch, let query = url.searchQuery {
-                viewCoordinator.omniBar.textField.text = query
+                viewCoordinator.omniBar.updateQuery(query)
             } else if !url.isBookmarklet() {
-                viewCoordinator.omniBar.textField.text = url.absoluteString
+                viewCoordinator.omniBar.updateQuery(url.absoluteString)
             }
         case .bookmark(title: let title, _, _, _):
-            viewCoordinator.omniBar.textField.text = title
+            viewCoordinator.omniBar.updateQuery(title)
         case .historyEntry(title: let title, _, _):
-            viewCoordinator.omniBar.textField.text = title
+            viewCoordinator.omniBar.updateQuery(title)
         case .openTab: break // no-op
         case .unknown(value: let value), .internalPage(title: let value, url: _):
             assertionFailure("Unknown suggestion: \(value)")
         }
-
-        viewCoordinator.omniBar.textDidChange()
     }
     
     func autocomplete(highlighted suggestion: Suggestion, for query: String) {
 
         switch suggestion {
         case .phrase(phrase: let phrase):
-            viewCoordinator.omniBar.textField.text = phrase
+            viewCoordinator.omniBar.text = phrase
             if phrase.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
             }
         case .website(url: let url):
-            viewCoordinator.omniBar.textField.text = url.absoluteString
+            viewCoordinator.omniBar.text = url.absoluteString
         case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _):
-            viewCoordinator.omniBar.textField.text = title
+            viewCoordinator.omniBar.text = title
             if title.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
             }
         case .historyEntry(title: let title, let url, _):
             if url.isDuckDuckGoSearch, let query = url.searchQuery {
-                viewCoordinator.omniBar.textField.text = query
+                viewCoordinator.omniBar.text = query
             }
 
             if (title ?? url.absoluteString).hasPrefix(query) {
@@ -2841,7 +2844,7 @@ extension MainViewController: AutoClearWorker {
     }
 
     func forgetTabs() {
-        omniBar.resignFirstResponder()
+        omniBar.endEditing()
         findInPageView?.done()
         tabManager.removeAll()
     }
@@ -3126,11 +3129,11 @@ extension MainViewController {
         }
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
-        viewCoordinator.omniBar.backButton.menu = backMenu
+        viewCoordinator.omniBar.barView.backButtonMenu = backMenu
         viewCoordinator.toolbarBackButton.menu = backMenu
         
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
-        viewCoordinator.omniBar.forwardButton.menu = forwardMenu
+        viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
         viewCoordinator.toolbarForwardButton.menu = forwardMenu
     }
 

@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionPixelsHandler.swift
+//  DataBrokerProtectionMacOSPixelsHandler.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import DataBrokerProtection
 import PixelKit
 import Common
 
-public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionPixels> {
+public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 
     public init() {
         super.init { event, _, _, _ in
@@ -71,7 +71,7 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
         }
     }
 
-    override init(mapping: @escaping EventMapping<DataBrokerProtectionPixels>.Mapping) {
+    override init(mapping: @escaping EventMapping<DataBrokerProtectionMacOSPixels>.Mapping) {
         fatalError("Use init()")
     }
 }

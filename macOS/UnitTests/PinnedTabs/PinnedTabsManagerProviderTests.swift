@@ -117,4 +117,67 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         XCTAssertFalse(provider.currentPinnedTabManagers.contains { $0 === manager })
     }
 
+    @MainActor
+    func test_WhenMigratingFromSharedToPerWindow_ThenTabsAreMigratedToFirstNewPerWindowManager() async {
+        // Start in shared mode and add a tab to shared pinned tabs manager
+        tabsPreferences.pinnedTabsMode = .shared
+
+        let sharedManager = Application.appDelegate.pinnedTabsManager
+        let sharedTab = Tab(content: .url(URL(string: "https://duckduckgo.com")!, source: .ui))
+        sharedManager.pin(sharedTab)
+
+        // Switch mode and get new pinned tab managers
+        tabsPreferences.pinnedTabsMode = .separate
+
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
+        let window = WindowsManager.openNewWindow(with: tabCollectionViewModel)
+        window?.makeKeyAndOrderFront(nil)
+
+        try? await Task.sleep(interval: 1)
+
+        let newManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: tabCollectionViewModel)
+
+        let secondNewManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider))
+
+        XCTAssert(newManager.tabCollection.tabs.contains(where: { $0.url == sharedTab.url }))
+        XCTAssert(secondNewManager.tabCollection.tabs.isEmpty)
+        XCTAssert(sharedManager.tabCollection.tabs.isEmpty)
+    }
+
+    @MainActor
+    func test_WhenMigratingFromPerWindowToShared_ThenTabsAreMigratedToSharedManager() async {
+        // Start in separate mode and create two windows with pinned tabs
+        tabsPreferences.pinnedTabsMode = .separate
+
+        let firstTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
+        let firstWindow = WindowsManager.openNewWindow(with: firstTabCollectionViewModel)
+        firstWindow?.makeKeyAndOrderFront(nil)
+
+        let tab1 = Tab(content: .url(URL(string: "https://first.com")!, source: .ui))
+        firstTabCollectionViewModel.pinnedTabsManager!.pin(tab1)
+
+        let secondTabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
+        let secondWindow = WindowsManager.openNewWindow(with: secondTabCollectionViewModel)
+        secondWindow?.makeKeyAndOrderFront(nil)
+
+        let tab2 = Tab(content: .url(URL(string: "https://second.com")!, source: .ui))
+        secondTabCollectionViewModel.pinnedTabsManager!.pin(tab2)
+
+        try? await Task.sleep(interval: 1)
+
+        // Switch to shared mode and trigger migration
+        tabsPreferences.pinnedTabsMode = .shared
+
+        let sharedManager = provider.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: firstTabCollectionViewModel)
+
+        let urls = sharedManager.tabCollection.tabs.compactMap { $0.url?.absoluteString }
+
+        XCTAssertTrue(urls.contains("https://first.com"))
+        XCTAssertTrue(urls.contains("https://second.com"))
+
+        // Ensure both per-window managers are empty
+        XCTAssertTrue(firstTabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs.isEmpty)
+        XCTAssertTrue(secondTabCollectionViewModel.pinnedTabsManager!.tabCollection.tabs.isEmpty)
+    }
+
 }

@@ -227,12 +227,14 @@ jobs:
         merge-multiple: true
 
     - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+      uses: mikepenz/action-junit-report@v5
       if: always()
       with:
-        check_title_template: "{{FILE_NAME}}"
+        check_name: UI Tests Report
         report_paths: "*.xml"
         check_retries: true
+        detailed_summary: true
+        group_suite: true
 
   notify-failure:
     name: Notify on failure

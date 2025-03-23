@@ -77,7 +77,7 @@ jobs:
         id: list-tests
         run: |
           # Find all test files in the UITests directory
-          # This assumes that all test test files are named *Tests.swift and are put directly in the UITests directory
+          # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
           test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
           test=$(echo $test_names | jq -cR 'split(" ")')
           echo "test=${test}" >> $GITHUB_OUTPUT
@@ -199,6 +199,7 @@ jobs:
         file="${test_id}.xml"
         echo "file=$file" >> $GITHUB_OUTPUT
         xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
+        # Replace the default test suite name with the test id for better grouping in the test report
         sed -i '' "s/Selected tests/${test_id}/" "$file"
 
     # Upload test report as artifact for the test-report job

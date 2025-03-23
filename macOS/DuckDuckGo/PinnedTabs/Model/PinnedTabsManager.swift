@@ -21,6 +21,7 @@ import Combine
 import Common
 import Foundation
 import os.log
+import PixelKit
 
 final class PinnedTabsManager {
 
@@ -29,13 +30,16 @@ final class PinnedTabsManager {
 
     let didUnpinTabPublisher: AnyPublisher<Int, Never>
 
-    func pin(_ tab: Tab, at index: Int? = nil) {
+    func pin(_ tab: Tab, at index: Int? = nil, firePixel: Bool = true) {
         if let index = index {
             tabCollection.insert(tab, at: index)
         } else {
             tabCollection.append(tab: tab)
         }
 
+        if firePixel {
+            PixelKit.fire(GeneralPixel.userPinnedTab)
+        }
 #if !APPSTORE
         if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
@@ -43,7 +47,7 @@ final class PinnedTabsManager {
 #endif
     }
 
-    func unpinTab(at index: Int, published: Bool = false) -> Tab? {
+    func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
         guard let tab = tabCollection.tabs[safe: index] else {
             Logger.general.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
@@ -54,6 +58,9 @@ final class PinnedTabsManager {
         }
         didUnpinTabSubject.send(index)
 
+        if firePixel {
+            PixelKit.fire(GeneralPixel.userUnpinnedTab)
+        }
 #if !APPSTORE
         if #available(macOS 15.3, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)

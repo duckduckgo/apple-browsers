@@ -484,6 +484,12 @@ enum GeneralPixel: PixelKitEventV2 {
     // Enhanced statistics
     case usageSegments
 
+    // Pinned Tabs
+    case userPinnedTab
+    case userUnpinnedTab
+    case userSwitchedToPerWindowPinnedTabs
+    case userSwitchedToSharedPinnedTabs
+
     var name: String {
         switch self {
         case .crash:
@@ -1195,6 +1201,16 @@ enum GeneralPixel: PixelKitEventV2 {
 
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
+
+            // Pinned Tabs
+        case .userPinnedTab:
+            return "user_pinned_tab"
+        case .userUnpinnedTab:
+            return "user_unpinned_tab"
+        case .userSwitchedToPerWindowPinnedTabs:
+            return "user_switched_to_per_window_pinned_tabs"
+        case .userSwitchedToSharedPinnedTabs:
+            return "user_switched_to_shared_pinned_tabs"
         }
     }
 

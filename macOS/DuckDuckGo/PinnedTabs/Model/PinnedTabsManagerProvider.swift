@@ -146,7 +146,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         for tab in sharedPinnedTabsManager.tabCollection.tabs {
             guard let url = tab.url else { continue }
             let newTab = Tab(content: .url(url, source: .ui))
-            newPinnedTabsManager.pin(newTab)
+            newPinnedTabsManager.pin(newTab, firePixel: false)
         }
         sharedPinnedTabsManager.tabCollection.removeAll()
     }
@@ -163,7 +163,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     private func migrateAllPerWindowPinnedTabsToShared() {
         let allTabs = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.uniqued()
         perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }
-        allTabs.forEach { sharedPinnedTabsManager.pin($0) }
+        allTabs.forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
     }
 
     // MARK: Cache

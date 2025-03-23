@@ -43,6 +43,14 @@ extension Preferences {
         @State private var showWarningAlert = false
         @State private var pendingSelection: PinnedTabsMode?
 
+        private func firePinnedTabsPixel(_ newMode: PinnedTabsMode) {
+            if newMode == .shared {
+                PixelKit.fire(GeneralPixel.userSwitchedToSharedPinnedTabs)
+            } else {
+                PixelKit.fire(GeneralPixel.userSwitchedToPerWindowPinnedTabs)
+            }
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
@@ -135,9 +143,11 @@ extension Preferences {
                                             showWarningAlert = true
                                         } else {
                                             tabsModel.pinnedTabsMode = newValue
+                                            firePinnedTabsPixel(newValue)
                                         }
                                     } else {
                                         tabsModel.pinnedTabsMode = newValue
+                                        firePinnedTabsPixel(newValue)
                                     }
                                 }
                             )) {
@@ -155,6 +165,8 @@ extension Preferences {
                                     // Apply the change only if confirmed
                                     if let selection = pendingSelection {
                                         tabsModel.pinnedTabsMode = selection
+
+                                        firePinnedTabsPixel(selection)
                                     }
                                 },
                                 secondaryButton: .cancel {

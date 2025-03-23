@@ -247,6 +247,7 @@ jobs:
         flaky_summary: true
         verbose_summary: false
         include_time_in_summary: true
+        skip_annotations: true
 
   notify-failure:
     name: Notify on failure

@@ -6,6 +6,12 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      all_os_versions:
+        description: "Whether to test all OS versions or only the latest"
+        type: boolean
+        default: true
+        required: true
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   pull_request:
@@ -35,14 +41,33 @@ jobs:
       MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
-  create-tests-list:
-    name: Create tests list
+  setup-tests:
+    name: Set up tests list
     runs-on: macos-15
     outputs:
+      runner: ${{ steps.define-runners.outputs.runner }}
+      include: ${{ steps.define-runners.outputs.include }}
       test: ${{ steps.list-tests.outputs.test }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Define runners
+        id: define-runners
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" || "${{ inputs.all_os_versions }}" == "false" ]]; then
+            runner='["macos-15-xlarge"]'
+            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}]'
+          else
+            runner='["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]'
+            include='[
+              {"runner": "macos-13-xlarge", "os-version": "13", "xcode-version": "15.2"},
+              {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
+              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}
+            ]'
+          fi
+          echo "runner=${runner}" >> $GITHUB_OUTPUT
+          echo "include=${include}" >> $GITHUB_OUTPUT
 
       - name: List tests
         id: list-tests
@@ -53,23 +78,14 @@ jobs:
 
   ui-tests:
     name: ${{ matrix.test }} (macOS ${{ matrix.os-version }})
-    needs: [create-notarized-app, create-tests-list]
+    needs: [create-notarized-app, setup-tests]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        runner: ["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]
-        test: ${{ fromJSON(needs.create-tests-list.outputs.test) }}
-        include:
-          - runner: macos-13-xlarge
-            os-version: "13"
-            xcode-version: "15.2"
-          - runner: macos-14-xlarge
-            os-version: "14"
-            xcode-version: "15.4"
-          - runner: macos-15-xlarge
-            os-version: "15"
-            xcode-version: "16.2"
+        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}

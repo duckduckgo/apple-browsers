@@ -15,9 +15,10 @@ on:
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
   pull_request:
-    branches:
-      - hotfix/macos/**
-      - release/macos/**
+    paths:
+      - '.github/**'
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
 
 jobs:
   create-notarized-app:
@@ -55,7 +56,8 @@ jobs:
       - name: Define runners
         id: define-runners
         run: |
-          if [[ "${{ github.event_name }}" == "pull_request" || "${{ inputs.all_os_versions }}" == "false" ]]; then
+          all_os_versions="${{ inputs.all_os_versions || 'true' }}"
+          if [[ "${{ github.event_name }}" == "pull_request" || "$all_os_versions" == "false" ]]; then
             runner='["macos-15-xlarge"]'
             include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}]'
           else

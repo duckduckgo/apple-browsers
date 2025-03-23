@@ -60,11 +60,11 @@ jobs:
             include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}]'
           else
             runner='["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]'
-            include='[
+            include=$(jq -c <<< '[
               {"runner": "macos-13-xlarge", "os-version": "13", "xcode-version": "15.2"},
               {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
               {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}
-            ]'
+            ]')
           fi
           echo "runner=${runner}" >> $GITHUB_OUTPUT
           echo "include=${include}" >> $GITHUB_OUTPUT

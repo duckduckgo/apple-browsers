@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Deaktivieren";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Mehr erfahren";
+"autofill.learn.more.link.title" = "[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Ansehen";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Passwörter suchen";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Passwörter sind verschlüsselt. Niemand außer dir kann sie sehen, nicht einmal wir.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Vorgeschlagen";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Passwort speichern";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Zum Speichern und automatischen Ausfüllen auffordern";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Passwörter importieren";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Optionen";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Problem mit Autofill melden";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Automatisches Ausfüllen funktioniert nicht?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Ansehen";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Passwort anzeigen";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Lasse Cookie-Zustimmungs-Popups von DuckDuckGo verwalten";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Passwörter";
+"settings.logins" = "Passwörter und Autovervollständigen";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Haupteinstellungen";
@@ -3115,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Finde **DuckDuckGo** und wähle es aus. Wische dann zu **VPN** und wähle **Widget hinzufügen**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN ist verbunden";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN ist getrennt";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri-Kurzbefehle ermöglichen es dir, mit einem schnellen Sprachbefehl wie „Siri, aktiviere DuckDuckGo VPN“ eine Verbindung zu deinem VPN herzustellen. So kannst du dein VPN schnell und freihändig nutzen.";

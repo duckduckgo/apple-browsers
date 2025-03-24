@@ -86,7 +86,7 @@ final class DefaultBrowserPreferences: ObservableObject {
             // Temporary pixel for first time user import data
             DispatchQueue.main.async {
 #if DEBUG
-                guard NSApp.runType.requiresEnvironment else { return }
+                guard AppVersion.runType.requiresEnvironment else { return }
 #endif
                 if AppDelegate.isNewUser && self.isDefault {
                     PixelKit.fire(GeneralPixel.setAsDefaultInitial, frequency: .legacyInitial)

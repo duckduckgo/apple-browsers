@@ -21,10 +21,12 @@ import XCTest
 import Common
 
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
-    private var mockPixelHandler: EventMapping<DataBrokerProtectionPixels>!
+    private var mockPixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockEntitlementMonitor: DataBrokerProtectionEntitlementMonitor!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
@@ -39,12 +41,11 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
     }
 
     override func setUp() {
-        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
+        mockPixelHandler = MockDataBrokerProtectionMacOSPixelsHandler()
         mockAuthenticationManager = MockAuthenticationManager()
         mockPixelHandler = MockPixelHandler()
         mockEntitlementMonitor = DataBrokerProtectionEntitlementMonitor()
-        mockDataManager = MockDataBrokerProtectionDataManager(pixelHandler: mockPixelHandler,
-                                                              fakeBrokerFlag: DataBrokerDebugFlagFakeBroker())
+        mockDataManager = MockDataBrokerProtectionDataManager(database: MockDatabase())
         mockStopAction = MockDataProtectionStopAction()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockFreemiumDBPUserStateManager.didActivate = false

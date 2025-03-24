@@ -43,6 +43,7 @@ import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import RemoteMessaging
 import os.log
 import Freemium
@@ -102,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: .shared,
-        settingsModel: homePageSettingsModel,
+        customizationModel: newTabPageCustomizationModel,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: HistoryCoordinator.shared,
         privacyStats: privacyStats,
@@ -110,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     )
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
-    let homePageSettingsModel = HomePage.Models.SettingsModel()
+    let newTabPageCustomizationModel = NewTabPageCustomizationModel()
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
@@ -152,7 +153,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionAuthV1toV2Bridge)
         return DataBrokerProtectionSubscriptionEventHandler(featureDisabler: DataBrokerProtectionFeatureDisabler(),
                                                             authenticationManager: authManager,
-                                                            pixelHandler: DataBrokerProtectionPixelsHandler())
+                                                            pixelHandler: DataBrokerProtectionMacOSPixelsHandler())
     }()
 
     private var didFinishLaunching = false
@@ -181,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
         _didCrashDuringCrashHandlersSetUp = didCrashDuringCrashHandlersSetUp
-        if case .normal = NSApplication.runType,
+        if case .normal = AppVersion.runType,
            !didCrashDuringCrashHandlersSetUp.wrappedValue {
 
             didCrashDuringCrashHandlersSetUp.wrappedValue = true
@@ -190,7 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         do {
-            let encryptionKey = NSApplication.runType.requiresEnvironment ? try keyStore.readKey() : nil
+            let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
         } catch {
             Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
@@ -200,7 +201,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             Self.configurePixelKit()
 
             Database.shared.loadStore { _, error in
@@ -245,7 +246,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
 #if DEBUG
-        AppPrivacyFeatures.shared = NSApplication.runType.requiresEnvironment
+        AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
         // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
         ? AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
         : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
@@ -321,7 +322,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         // MARK:
 
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
                 database: RemoteMessagingDatabase().db,
                 bookmarksDatabase: BookmarkDatabase.shared.db,
@@ -353,8 +354,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Update DBP environment and match the Subscription environment
-        let dbpSettings = DataBrokerProtectionSettings()
-        DataBrokerProtectionSettings().alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
+        let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        dbpSettings.alignTo(subscriptionEnvironment: subscriptionAuthV1toV2Bridge.currentEnvironment)
 
         // Also update the stored run type so the login item knows if tests are running
         dbpSettings.updateStoredRunType()
@@ -373,7 +374,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                   freemiumDBPFeature: freemiumDBPFeature)
 
 #if DEBUG
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase(), errorEvents: PrivacyStatsErrorHandler())
         } else {
             privacyStats = MockPrivacyStats()
@@ -391,7 +392,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore)
 
 #if SPARKLE
-        if NSApp.runType != .uiTests {
+        if AppVersion.runType != .uiTests {
             updateController = UpdateController(internalUserDecider: internalUserDecider)
             stateRestorationManager.subscribeToAutomaticAppRelaunching(using: updateController.willRelaunchAppPublisher)
         }
@@ -414,7 +415,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         defer {
             didFinishLaunching = true
         }
@@ -431,7 +432,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // https://app.asana.com/0/1177771139624306/1207024603216659/f
         LottieConfiguration.shared.renderingEngine = .mainThread
 
-        if case .normal = NSApp.runType {
+        if case .normal = AppVersion.runType {
             FaviconManager.shared.loadFavicons()
         }
         configurationManager.start()
@@ -452,7 +453,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         dockCustomization = DockCustomizer()
         #endif
 
-        let statisticsLoader = NSApp.runType.requiresEnvironment ? StatisticsLoader.shared : nil
+        let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
 
         startupSync()
@@ -482,14 +483,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
 
-        if [.normal, .uiTests].contains(NSApp.runType) {
+        if [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
         BWManager.shared.initCommunication()
 
         if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
-           case .normal = NSApp.runType {
+           case .normal = AppVersion.runType {
             WindowsManager.openNewWindow(lazyLoadTabs: true)
         }
 
@@ -660,7 +661,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if WindowControllersManager.shared.mainWindowControllers.isEmpty,
-           case .normal = sender.runType {
+           case .normal = AppVersion.runType {
             WindowsManager.openNewWindow()
             return true
         }
@@ -854,7 +855,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func subscribeToUpdateControllerChanges() {
 #if SPARKLE
-        guard NSApp.runType != .uiTests else { return }
+        guard AppVersion.runType != .uiTests else { return }
 
         updateProgressCancellable = updateController.updateProgressPublisher
             .sink { [weak self] progress in

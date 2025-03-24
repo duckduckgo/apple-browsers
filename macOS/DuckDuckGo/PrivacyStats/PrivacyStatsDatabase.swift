@@ -21,6 +21,7 @@ import CoreData
 import PixelKit
 import PrivacyStats
 import Persistence
+import Common
 
 public final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
@@ -39,7 +40,7 @@ public final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     }
 
     public func initializeDatabase() -> CoreDataDatabase {
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             db.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {

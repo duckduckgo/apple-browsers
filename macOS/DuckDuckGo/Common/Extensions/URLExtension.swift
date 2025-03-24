@@ -101,7 +101,7 @@ extension URL {
 
         // Add experimental atb parameter to SERP queries for internal users to display Privacy Reminder
         // https://app.asana.com/0/1199230911884351/1205979030848528/f
-        if case .normal = NSApp.runType,
+        if case .normal = AppVersion.runType,
            NSApp.delegateTyped.featureFlagger.isFeatureOn(.appendAtbToSerpQueries),
            let atbWithVariant = LocalStatisticsStore().atbWithVariant {
             url = url.appendingParameter(name: URL.DuckDuckGoParameters.ATB.atb, value: atbWithVariant + "-wb")

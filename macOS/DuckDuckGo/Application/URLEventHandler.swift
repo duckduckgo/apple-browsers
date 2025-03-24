@@ -24,6 +24,7 @@ import Subscription
 import NetworkProtectionUI
 import VPNAppLauncher
 import DataBrokerProtection
+import DataBrokerProtectionShared
 import os.log
 import BrowserServicesKit
 

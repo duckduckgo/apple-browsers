@@ -19,6 +19,8 @@
 import XCTest
 import Foundation
 @testable import DataBrokerProtection
+import DataBrokerProtectionShared
+import DataBrokerProtectionSharedTestsUtils
 
 final class MapperToUITests: XCTestCase {
 
@@ -519,37 +521,5 @@ extension Array where Element == BrokerProfileQueryData {
         } else {
             return 1 + broker.mirrorSites.filter { $0.shouldWeIncludeMirrorSite() }.count
         }
-    }
-}
-
-extension Date {
-
-    var yesterday: Date? {
-        let calendar = Calendar.current
-
-        return calendar.date(byAdding: .day, value: -1, to: self)
-    }
-
-    var tomorrow: Date? {
-        let calendar = Calendar.current
-
-        return calendar.date(byAdding: .day, value: 1, to: self)
-    }
-
-    static var minusOneHour: Date? {
-        nowMinusHour(1)
-    }
-
-    static var minusTwoHours: Date? {
-        nowMinusHour(2)
-    }
-
-    static var minusThreeHours: Date? {
-        nowMinusHour(3)
-    }
-
-    private static func nowMinusHour(_ hour: Int) -> Date? {
-        let calendar = Calendar.current
-        return calendar.date(byAdding: .hour, value: -hour, to: Date())
     }
 }

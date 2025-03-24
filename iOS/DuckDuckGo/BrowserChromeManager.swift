@@ -32,7 +32,7 @@ protocol BrowserChromeDelegate: AnyObject {
     var toolbarHeight: CGFloat { get }
     var barsMaxHeight: CGFloat { get }
 
-    var omniBar: OmniBar { get }
+    var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
 }
 

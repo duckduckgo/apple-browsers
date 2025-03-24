@@ -438,10 +438,6 @@ extension DuckPlayer {
         return (title, sharingURL)
     }
 
-    func title(for page: HomePage.Models.RecentlyVisitedPageModel) -> String? {
-        title(forHistoryItemWithTitle: page.actualTitle, url: page.url)
-    }
-
     func title(for historyEntry: NewTabPageDataModel.HistoryEntry) -> String? {
         title(forHistoryItemWithTitle: historyEntry.title, url: historyEntry.url.url)
     }

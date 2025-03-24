@@ -1030,6 +1030,47 @@ final class DaxDialog: XCTestCase {
         XCTAssertTrue(result)
     }
 
+    func testWhenCurrentHomeSpecIsPrivacyProPromotion_ThenIsShowingPrivacyProPromotionIsTrue() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingFinalDialogShown = true
+        settings.privacyProPromotionDialogShown = false
+        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+
+        // WHEN
+        _ = sut.nextHomeScreenMessageNew()
+        let result = sut.isShowingPrivacyProPromotion
+
+        // THEN
+        XCTAssertTrue(result)
+    }
+
+    func testWhenCurrentHomeSpecIsNotPrivacyProPromotion_ThenIsShowingPrivacyProPromotionIsFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        let sut = makeSUT(settings: settings)
+
+        // WHEN
+        let result = sut.isShowingPrivacyProPromotion
+
+        // THEN
+        XCTAssertFalse(result)
+    }
+
+    func testWhenCurrentHomeSpecIsFinal_ThenIsShowingPrivacyProPromotionIsFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        let sut = makeSUT(settings: settings)
+
+        // WHEN
+        _ = sut.nextHomeScreenMessageNew()
+        let result = sut.isShowingPrivacyProPromotion
+
+        // THEN
+        XCTAssertFalse(result)
+    }
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,

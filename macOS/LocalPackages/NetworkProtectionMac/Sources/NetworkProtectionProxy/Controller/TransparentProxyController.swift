@@ -216,6 +216,16 @@ public final class TransparentProxyController {
 
     // MARK: - Connection & Session
 
+    /// Checks whether a connection is the one being used by this proxy, not loading our configuration from settings.
+    ///
+    /// Not loading the connection from settings can be good in some circumstances, as it triggers a status updates.  This is particularly
+    /// useful when we're comparing the connection from an event triggered by a status update, so the proxy won't enter an infinite
+    /// loop of updating status > loading config > updating status > etc.
+    ///
+    public func isUsingConnection(_ connection: NEVPNConnection) -> Bool {
+        internalManager?.connection === connection
+    }
+
     public var connection: NEVPNConnection? {
         get async {
             await manager?.connection

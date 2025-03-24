@@ -137,13 +137,14 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           source: source)
     }
 
-    func loginSettings(delegate: AutofillLoginSettingsListViewControllerDelegate,
-                       selectedAccount: SecureVaultModels.WebsiteAccount?) -> AutofillLoginSettingsListViewController {
-        return AutofillLoginSettingsListViewController(appSettings: self.appSettings,
+    func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
+                       selectedAccount: SecureVaultModels.WebsiteAccount?,
+                       source: AutofillSettingsSource?) -> AutofillSettingsViewController {
+        return AutofillSettingsViewController(appSettings: self.appSettings,
                                                        syncService: self.syncService,
                                                        syncDataProviders: self.syncDataProviders,
                                                        selectedAccount: selectedAccount,
-                                                       source: .settings,
+                                                       source: source ?? .settings,
                                                        bookmarksDatabase: self.bookmarksDatabase,
                                                        favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }

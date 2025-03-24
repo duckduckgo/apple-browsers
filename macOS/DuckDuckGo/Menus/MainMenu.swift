@@ -723,7 +723,7 @@ final class MainMenu: NSMenu {
 
             FreemiumDebugMenu()
 
-            if case .normal = NSApp.runType {
+            if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
                     .submenu(NetworkProtectionDebugMenu())
             }

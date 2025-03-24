@@ -31,22 +31,22 @@ class MainViewFactory {
         coordinator.superview
     }
 
-    private init(superview: UIView, omnibarDependencies: OmnibarDependencyProvider, featureFlagger: FeatureFlagger) {
-        coordinator = MainViewCoordinator(superview: superview)
+    private init(parentController: UIViewController, omnibarDependencies: OmnibarDependencyProvider, featureFlagger: FeatureFlagger) {
+        coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }
 
-    static func createViewHierarchy(_ superview: UIView,
+    static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger) -> MainViewCoordinator {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings)
-        let factory = MainViewFactory(superview: superview, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
+        let factory = MainViewFactory(parentController: parentController, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
         factory.createViews()
-        factory.disableAutoresizingOnImmediateSubviews(superview)
+        factory.disableAutoresizingOnImmediateSubviews(factory.superview)
         factory.constrainViews()
         return factory.coordinator
     }
@@ -82,8 +82,11 @@ extension MainViewFactory {
     }
 
     private func createOmniBar() {
-        coordinator.omniBar = OmniBar.loadFromXib(dependencies: omnibarDependencies)
-        coordinator.omniBar.translatesAutoresizingMaskIntoConstraints = false
+        let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+        coordinator.parentController?.addChild(controller)
+        coordinator.omniBar = controller
+        controller.barView.translatesAutoresizingMaskIntoConstraints = false
+        controller.didMove(toParent: coordinator.parentController)
     }
     
     final class NavigationBarCollectionView: UICollectionView {

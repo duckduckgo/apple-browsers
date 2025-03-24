@@ -104,7 +104,7 @@ final class AppContentBlocking {
     }
 
     private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
 
         let domainEvent: GeneralPixel
         var finalParameters = parameters ?? [:]

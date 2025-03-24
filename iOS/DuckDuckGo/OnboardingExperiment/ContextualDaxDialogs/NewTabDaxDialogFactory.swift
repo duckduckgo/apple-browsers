@@ -27,7 +27,16 @@ typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & PrivacyProProm
 
 protocol NewTabDaxDialogProvider {
     associatedtype DaxDialog: View
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping () -> Void) -> DaxDialog
+
+    /// Creates a Dax dialog for a given home screen specification.
+    ///
+    /// - Parameters:
+    ///   - homeDialog: The specific `DaxDialogs.HomeScreenSpec` configuration that determines the dialog's content.
+    ///   - onDismiss: A closure that is executed when the dialog is dismissed.
+    ///     - `activateSearch`: A Boolean value indicating whether the search should be activated after dismissal (i.e if the omnibar should become the first responder)
+    ///
+    /// - Returns: A view conforming to `DaxDialog` that represents the Dax dialog.
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> DaxDialog
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
@@ -52,7 +61,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     }
 
     @ViewBuilder
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping () -> Void) -> some View {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
         switch homeDialog {
         case .initial:
             createInitialDialog()
@@ -108,7 +117,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
     }
 
-    private func createFinalDialog(onDismiss: @escaping () -> Void) -> some View {
+    private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
         let shouldShowAddToDock = onboardingManager.addToDockEnabledState == .contextual
 
         let (message, cta) = if shouldShowAddToDock {
@@ -133,7 +142,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                     self?.onboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
                 }
             }
-            onDismiss()
+            onDismiss(true)
         }
 
         return FadeInView {
@@ -158,7 +167,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(onDismiss: @escaping () -> Void) -> some View {
+    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
 
         return FadeInView {
             PrivacyProPromotionView(title: UserText.PrivacyProPromotionOnboarding.Promo.title,
@@ -173,11 +182,11 @@ private extension NewTabDaxDialogFactory {
                     object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
                     userInfo: nil
                 )
-                onDismiss()
+                onDismiss(false)
             },
                                     dismissAction: { [weak self] in
                 self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
-                onDismiss()
+                onDismiss(true)
             })
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)

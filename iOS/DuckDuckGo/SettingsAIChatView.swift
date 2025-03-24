@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import Core
 
 struct SettingsAIChatView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -62,5 +63,8 @@ struct SettingsAIChatView: View {
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+        .onAppear {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed)
+        }
     }
 }

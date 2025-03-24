@@ -85,6 +85,7 @@ struct SettingsState {
 
     // Logins properties
     var activeWebsiteAccount: SecureVaultModels.WebsiteAccount?
+    var autofillSource: AutofillSettingsSource?
 
     // About properties
     var version: String
@@ -139,6 +140,7 @@ struct SettingsState {
             longPressPreviews: true,
             allowUniversalLinks: true,
             activeWebsiteAccount: nil,
+            autofillSource: nil,
             version: "0.0.0.0",
             crashCollectionOptInStatus: .undetermined,
             debugModeEnabled: false,

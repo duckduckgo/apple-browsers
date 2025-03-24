@@ -85,6 +85,7 @@ class SwipeTabsCoordinator: NSObject {
         collectionView.showsVerticalScrollIndicator = false
 
         updateLayout()
+        registerForNotifications()
     }
     
     enum State {
@@ -117,7 +118,7 @@ class SwipeTabsCoordinator: NSObject {
 
     private func updateLayout() {
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.frame.height)
+        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.barView.frame.height)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -141,6 +142,29 @@ class SwipeTabsCoordinator: NSObject {
                                          at: .centeredHorizontally,
                                          animated: false)
     }
+
+
+    private func registerForNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(updateRoundCornersMaskView),
+                                               name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(updateRoundCornersMaskView),
+                                               name: UIDevice.orientationDidChangeNotification,
+                                               object: nil)
+    }
+
+    @objc func updateRoundCornersMaskView() {
+        for cell in collectionView.visibleCells {
+            if let omniBarCell = cell as? OmniBarCell {
+                omniBarCell.roundCornersMaskView?.removeFromSuperview()
+                omniBarCell.roundCornersMaskView = nil
+                omniBarCell.addMaskViewIfNeeded()
+            }
+        }
+    }
+
 }
 
 // MARK: UICollectionViewDelegate
@@ -201,17 +225,34 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
         
-        let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
-        
+        let targetSize = coordinator.contentContainer.frame.size
+        var height = targetSize.height
+
         let tab = tabsModel.safeGetTabAt(nextIndex)
         if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
+            if appSettings.currentAddressBarPosition.isBottom,
+               tab.link != nil,
+               let collectionView = coordinator.navigationBarContainer.subviews.first as? UICollectionView {
+                // Adjust the preview height to account for the omnibar at the bottom
+                // When the omnibar is at the bottom, the webview content extends underneath it
+                // We need to subtract the omnibar height from the total height to get the visible content area
+                // Note: We use the collectionView's height directly instead of navigationBarContainer.height
+                // because the container height can change when the keyboard appears
+                height = targetSize.height - collectionView.frame.size.height
+            }
+            preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
         } else if tab?.link == nil {
+            let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
             createPreviewFromLogoContainerWithSize(targetFrame.size)
+            preview?.frame = targetFrame
         }
-        
-        preview?.frame = targetFrame
+
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            preview?.clipsToBounds = true
+            preview?.layer.cornerRadius = 12
+        }
     }
     
     private func createPreviewFromImage(_ image: UIImage) {
@@ -281,7 +322,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
 // MARK: Public Interface
 extension SwipeTabsCoordinator {
-    
+
     func refresh(tabsModel: TabsModel, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         coordinator.navigationBarCollectionView.reloadData()
@@ -326,10 +367,11 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let omniBar = OmniBar.loadFromXib(dependencies: omnibarDependencies)
+            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
 
-            cell.omniBar = omniBar
-            cell.omniBar?.translatesAutoresizingMaskIntoConstraints = false
+            coordinator.parentController?.addChild(controller)
+
+            cell.omniBar = controller
 
             cell.omniBar?.showSeparator()
             if self.appSettings.currentAddressBarPosition.isBottom {
@@ -345,6 +387,8 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
 
             }
+
+            controller.didMove(toParent: coordinator.parentController)
         }
 
         cell.setNeedsUpdateConstraints()
@@ -355,28 +399,55 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 }
 
 class OmniBarCell: UICollectionViewCell {
-    
+
+    weak var coordinator: MainViewCoordinator?
+    var roundCornersMaskView: RoundedCornersMaskView?
+
     weak var omniBar: OmniBar? {
         didSet {
-            subviews.forEach { $0.removeFromSuperview() }
-            if let omniBar {
-                addSubview(omniBar)
+            guard let omniBarView = omniBar?.barView else { return }
 
-                NSLayoutConstraint.activate([
-                    constrainView(omniBar, by: .leadingMargin),
-                    constrainView(omniBar, by: .trailingMargin),
-                    constrainView(omniBar, by: .top),
-                    constrainView(omniBar, by: .bottom),
-                ])
-                
-            }
+            subviews.forEach { $0.removeFromSuperview() }
+
+            omniBarView.translatesAutoresizingMaskIntoConstraints = false
+            addSubview(omniBarView)
+
+            NSLayoutConstraint.activate([
+                constrainView(omniBarView, by: .leadingMargin),
+                constrainView(omniBarView, by: .trailingMargin),
+                constrainView(omniBarView, by: .top),
+                constrainView(omniBarView, by: .bottom),
+            ])
+
+            addMaskViewIfNeeded()
+        }
+    }
+
+    func addMaskViewIfNeeded() {
+        guard let omniBarView = omniBar?.barView else { return }
+
+        if ExperimentalThemingManager().isExperimentalThemingEnabled,
+           AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
+           isPortrait {
+            let maskView = RoundedCornersMaskView(cornerRadius: 12.0, cornerColor: .systemPink, cornersPosition: .bottom)
+            addSubview(maskView)
+            roundCornersMaskView = maskView
+
+            maskView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                maskView.widthAnchor.constraint(equalTo: omniBarView.widthAnchor),
+                maskView.bottomAnchor.constraint(equalTo: omniBarView.topAnchor),
+                maskView.centerXAnchor.constraint(equalTo: omniBarView.centerXAnchor),
+                maskView.heightAnchor.constraint(equalToConstant: 25)
+            ])
+            bringSubviewToFront(maskView)
         }
     }
 
     override func updateConstraints() {
         let left = superview?.safeAreaInsets.left ?? 0
         let right = superview?.safeAreaInsets.right ?? 0
-        omniBar?.updateOmniBarPadding(left: left, right: right)
+        omniBar?.barView.updateOmniBarPadding(left: left, right: right)
 
         super.updateConstraints()
     }

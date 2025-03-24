@@ -71,7 +71,7 @@ extension MainViewController {
         }
         
         var arrowKeys = [UIKeyCommand]()
-        if viewCoordinator.omniBar.textField.isFirstResponder {
+        if viewCoordinator.omniBar.isTextFieldEditing {
             arrowKeys = [
                 UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionUp), input: UIKeyCommand.inputUpArrow, modifierFlags: []),
                 UIKeyCommand(title: "", action: #selector(keyboardMoveSelectionDown), input: UIKeyCommand.inputDownArrow, modifierFlags: [])
@@ -144,7 +144,7 @@ extension MainViewController {
             controller.launchNewSearch()
         } else {
             showBars()
-            viewCoordinator.omniBar.becomeFirstResponder()
+            viewCoordinator.omniBar.beginEditing()
         }
     }
 

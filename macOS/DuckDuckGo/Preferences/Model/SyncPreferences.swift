@@ -437,6 +437,18 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func launchedFromSyncPromo(_ sender: Notification) {
         syncPromoSource = sender.userInfo?[SyncPromoManager.Constants.syncPromoSourceKey] as? String
     }
+    
+    private func waitForDevicesToChangeThenPresentSyncing() {
+        $devices.removeDuplicates()
+            .dropFirst()
+            .prefix(1)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task {
+                    await self.presentDialog(for: .nowSyncing)
+                }
+            }.store(in: &cancellables)
+    }
 
     private var onEndFlow: () -> Void = {}
 
@@ -824,5 +836,83 @@ extension SyncPreferences: ManagementDialogModelDelegate {
 
     func switchAccountsCancelled() {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
+    }
+    
+    private func handleError(_ syncErrorType: SyncErrorType, error: Error?, pixelEvent: PixelKitEvent?) {
+        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: syncErrorType)
+        if let pixelEvent {
+            PixelKit.fire(DebugEvent(pixelEvent, error: error))
+        }
+    }
+}
+
+extension SyncPreferences: SyncConnectionControllerDelegate {
+    func controllerWillBeginTransmittingRecoveryKey() async {
+        // no-op
+    }
+    
+    func controllerDidFinishTransmittingRecoveryKey() {
+        waitForDevicesToChangeThenPresentSyncing()
+    }
+    
+    func controllerDidReceiveRecoveryKey() {
+        presentDialog(for: .prepareToSync)
+    }
+    
+    func controllerDidRecognizeScannedCode() async {
+        // no-op
+    }
+    
+    func controllerDidCreateSyncAccount() {
+        let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
+        PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
+        guard let code = recoveryCode else {
+            return
+        }
+        presentDialog(for: .saveRecoveryCode(code))
+    }
+    
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
+        guard shouldShowSyncEnabled else { return }
+        self.$devices
+            .removeDuplicates()
+            .dropFirst()
+            .prefix(1)
+            .sink { [weak self] _ in
+                guard let self,
+                      let code = recoveryCode else { return }
+                self.presentDialog(for: .saveRecoveryCode(code))
+            }.store(in: &cancellables)
+    }
+    
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
+        self.codeToDisplay = self.recoveryCode
+        mapDevices(registeredDevices)
+        PixelKit.fire(GeneralPixel.syncLogin)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if isRecovery {
+                self.showDevicesSynced()
+            } else {
+                self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
+            }
+            self.stopPollingForRecoveryKey()
+        }
+    }
+    
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
+        handleAccountAlreadyExists(recoveryKey)
+    }
+    
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
+        switch error {
+        case .unableToRecogniseCode:
+            handleError(.unableToRecogniseCode, error: underlyingError, pixelEvent: nil)
+        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+            handleError(.unableToSyncToOtherDevice, error: error, pixelEvent: GeneralPixel.syncLoginError(error: error))
+        case .failedToCreateAccount:
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: error))
+        case .foundExistingAccount:
+            handleError(.unableToMergeTwoAccounts, error: underlyingError, pixelEvent: nil)
+        }
     }
 }

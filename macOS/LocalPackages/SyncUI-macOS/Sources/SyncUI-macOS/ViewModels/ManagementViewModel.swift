@@ -82,6 +82,7 @@ public enum SyncErrorType {
     case invalidCode
     case unableCreateRecoveryPDF
     case unableToAuthenticateOnDevice
+    case unableToRecogniseCode
 
     var title: String {
         switch self {
@@ -114,6 +115,8 @@ public enum SyncErrorType {
             return UserText.unableCreateRecoveryPdfDescription
         case .unableToAuthenticateOnDevice:
             return UserText.unableToAuthenticateDevice
+        case .unableToRecogniseCode:
+            return UserText.unableToRecogniseCode
         }
     }
 

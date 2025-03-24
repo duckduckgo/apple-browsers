@@ -3077,10 +3077,10 @@
 		BDADBDCD2BD2BC5700421B9B /* vpn-light-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = BD384AC72BBC821100EF3735 /* vpn-light-mode.json */; };
 		BDBA859F2C5D25B700BC54F5 /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDBA859E2C5D25B700BC54F5 /* VPNMetadataCollector.swift */; };
 		BDBA85A02C5D25B700BC54F5 /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDBA859E2C5D25B700BC54F5 /* VPNMetadataCollector.swift */; };
+		BDD13E212D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD13E202D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift */; };
+		BDD13E222D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD13E202D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift */; };
 		BDD30ACD2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD30ACC2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift */; };
 		BDD30ACE2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD30ACC2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift */; };
-		BDD30AD02D8A2B0300457A89 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD30ACF2D8A2B0300457A89 /* VPNBypassServiceExtensions.swift */; };
-		BDD30AD12D8A2B0300457A89 /* VPNBypassServiceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD30ACF2D8A2B0300457A89 /* VPNBypassServiceExtensions.swift */; };
 		BDE981D92BBD10D600645880 /* vpn-dark-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = BD384AC82BBC821100EF3735 /* vpn-dark-mode.json */; };
 		BDE981DA2BBD10D600645880 /* vpn-light-mode.json in Resources */ = {isa = PBXBuildFile; fileRef = BD384AC72BBC821100EF3735 /* vpn-light-mode.json */; };
 		C10529432C9CC18B0041E502 /* AutofillCredentialsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10529422C9CC18B0041E502 /* AutofillCredentialsDebugView.swift */; };
@@ -5105,8 +5105,8 @@
 		BDA7648C2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultVPNLocationFormatterTests.swift; sourceTree = "<group>"; };
 		BDA764902BC4E57200D0400C /* MockVPNLocationFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockVPNLocationFormatter.swift; sourceTree = "<group>"; };
 		BDBA859E2C5D25B700BC54F5 /* VPNMetadataCollector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNMetadataCollector.swift; sourceTree = "<group>"; };
+		BDD13E202D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNBypassServiceExtensions.swift; sourceTree = "<group>"; };
 		BDD30ACC2D8A2A8A00457A89 /* VPNBypassServiceExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNBypassServiceExtensions.swift; sourceTree = "<group>"; };
-		BDD30ACF2D8A2B0300457A89 /* VPNBypassServiceExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNBypassServiceExtensions.swift; sourceTree = "<group>"; };
 		C10529422C9CC18B0041E502 /* AutofillCredentialsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsDebugView.swift; sourceTree = "<group>"; };
 		C10529452C9F456C0041E502 /* AutofillCredentialsDebugViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsDebugViewModel.swift; sourceTree = "<group>"; };
 		C11198302C898AB500F0272C /* FreemiumDBPFirstProfileSavedNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumDBPFirstProfileSavedNotifier.swift; sourceTree = "<group>"; };
@@ -5931,7 +5931,7 @@
 				3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */,
 				3169132B2BD2C7960051B46D /* ErrorView */,
 				9D8FA00B2AC5BDCE005DD0D0 /* LoginItem+DataBrokerProtection.swift */,
-				BDD30ACF2D8A2B0300457A89 /* VPNBypassServiceExtensions.swift */,
+				BDD13E202D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift */,
 			);
 			path = DBP;
 			sourceTree = "<group>";
@@ -12131,7 +12131,6 @@
 				C172E7382C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				3706FB68293F65D500E42796 /* NSNotificationName+Debug.swift in Sources */,
 				31CF74562CDC177D004ACCE5 /* AIChatUserScript.swift in Sources */,
-				BDD30AD12D8A2B0300457A89 /* VPNBypassServiceExtensions.swift in Sources */,
 				31FBF22F2CDD068000626C17 /* AIChatUserScriptHandling.swift in Sources */,
 				1D39E5782C2BFD5700757339 /* ReleaseNotesTabExtension.swift in Sources */,
 				1D1A334A2A6FEB170080ACED /* BurnerMode.swift in Sources */,
@@ -12177,6 +12176,7 @@
 				3707C717294B5D0F00682A9F /* FindInPageTabExtension.swift in Sources */,
 				3706FB81293F65D500E42796 /* IndexPathExtension.swift in Sources */,
 				4BF97AD62B43C45800EB4240 /* NetworkProtectionNavBarPopoverManager.swift in Sources */,
+				BDD13E212D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */,
 				B6BCC5502AFE4F7D002C5499 /* DataImportTypePicker.swift in Sources */,
 				7BAF9E4B2A8A3CC9002D3B6E /* UserDefaults+NetworkProtectionShared.swift in Sources */,
 				B6685E3D29A602D90043D2EE /* ExternalAppSchemeHandler.swift in Sources */,
@@ -13768,7 +13768,6 @@
 				F1DA518C2BF607D200CF29FA /* SubscriptionRedirectManager.swift in Sources */,
 				4BBC16A227C485BC00E00A38 /* DeviceIdleStateDetector.swift in Sources */,
 				319FCFF32CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
-				BDD30AD02D8A2B0300457A89 /* VPNBypassServiceExtensions.swift in Sources */,
 				4B379C2427BDE1B0008A968E /* FlatButton.swift in Sources */,
 				37054FC92873301700033B6F /* PinnedTabView.swift in Sources */,
 				4BA1A6A0258B079600F6F690 /* DataEncryption.swift in Sources */,
@@ -13838,6 +13837,7 @@
 				4BE65474271FCD40008D1D63 /* PasswordManagementIdentityItemView.swift in Sources */,
 				566B73692BECBF8400FF1959 /* SyncAlertsPresenter.swift in Sources */,
 				B68412142B694BA10092F66A /* NSObject+performSelector.m in Sources */,
+				BDD13E222D8BD47A00FBC383 /* VPNBypassServiceExtensions.swift in Sources */,
 				B6F41031264D2B23003DA42C /* ProgressExtension.swift in Sources */,
 				843AD3DD2CD389CC00163067 /* XMLNodeExtension.swift in Sources */,
 				BB80DDD52D75F15A00ED1FFF /* DefaultBrowserAndDockPromptExperimentDeciding.swift in Sources */,

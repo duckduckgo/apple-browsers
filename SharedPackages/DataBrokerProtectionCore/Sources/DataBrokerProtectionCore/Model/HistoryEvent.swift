@@ -106,7 +106,14 @@ public extension Array where Element == HistoryEvent {
         self.sorted(by: { $0.date > $1.date }).first
     }
 
+    /// Determines if this collection of events indicates the record was removed by the user.
+    ///
+    /// This property checks both the most recent event and the entire history because:
+    /// - The `.matchRemovedByUser` event is typically the most recent one, so we can exit early
+    /// - However, if an opt-out operation is in progress, newer events might be added after the event
+    ///
+    /// - Returns: `true` if the record was removed by the user, `false` otherwise
     var belongToUserRemovedRecord: Bool {
-        closestHistoryEvent?.type == .matchRemovedByUser
+        closestHistoryEvent?.type == .matchRemovedByUser || contains(where: { $0.type == .matchRemovedByUser })
     }
 }

@@ -40,7 +40,7 @@ protocol SyncDependencies: SyncDependenciesDebuggingSupport {
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var errorEvents: EventMapping<SyncError> { get }
 
-    func createRemoteConnector(_ connectInfo: ConnectInfo) throws -> RemoteConnecting
+    func createRemoteConnector() throws -> RemoteConnecting
     func createRecoveryKeyTransmitter() throws -> RecoveryKeyTransmitting
 }
 

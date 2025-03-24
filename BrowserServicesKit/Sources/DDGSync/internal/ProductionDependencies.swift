@@ -71,8 +71,8 @@ struct ProductionDependencies: SyncDependencies {
         scheduler = SyncScheduler()
     }
 
-    func createRemoteConnector(_ info: ConnectInfo) throws -> RemoteConnecting {
-        return try RemoteConnector(crypter: crypter, api: api, endpoints: endpoints, connectInfo: info)
+    func createRemoteConnector() throws -> RemoteConnecting {
+        return try RemoteConnector(crypter: crypter, api: api, endpoints: endpoints)
     }
 
     func createRecoveryKeyTransmitter() throws -> RecoveryKeyTransmitting {

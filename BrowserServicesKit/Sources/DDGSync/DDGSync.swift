@@ -104,8 +104,7 @@ public class DDGSync: DDGSyncing {
         guard try dependencies.secureStore.account() == nil else {
             throw SyncError.accountAlreadyExists
         }
-        let info = try dependencies.crypter.prepareForConnect()
-        return try dependencies.createRemoteConnector(info)
+        return try dependencies.createRemoteConnector()
     }
 
     public func transmitRecoveryKey(_ connectCode: SyncCode.ConnectCode) async throws {

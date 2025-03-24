@@ -31,12 +31,11 @@ final class RemoteConnector: RemoteConnecting {
 
     init(crypter: CryptingInternal,
          api: RemoteAPIRequestCreating,
-         endpoints: Endpoints,
-         connectInfo: ConnectInfo) throws {
+         endpoints: Endpoints) throws {
         self.crypter = crypter
         self.api = api
         self.endpoints = endpoints
-        self.connectInfo = connectInfo
+        self.connectInfo = try crypter.prepareForConnect()
         self.code = try connectInfo.toCode()
     }
 

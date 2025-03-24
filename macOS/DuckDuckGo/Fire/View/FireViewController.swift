@@ -153,7 +153,10 @@ final class FireViewController: NSViewController {
     private let fireAnimationBeginning = 0.1
     private let fireAnimationEnd = 0.63
 
+    @MainActor
     func animateFireWhenClosing() async {
+        closeAllChildWindows()
+
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
             progressIndicatorWrapper.isHidden = true
@@ -187,7 +190,7 @@ final class FireViewController: NSViewController {
         }
 
         if playFireAnimation {
-            view.window?.childWindows?.forEach { $0.close() }
+            closeAllChildWindows()
 
             await waitForFireAnimationViewIfNeeded()
 
@@ -219,6 +222,11 @@ final class FireViewController: NSViewController {
         if fireAnimationView == nil {
             await fireAnimationViewLoadingTask?.value
         }
+    }
+
+    @MainActor
+    private func closeAllChildWindows() {
+        view.window?.childWindows?.forEach { $0.close() }
     }
 }
 

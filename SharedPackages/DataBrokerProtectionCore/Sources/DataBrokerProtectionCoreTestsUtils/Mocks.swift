@@ -972,7 +972,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         nil
     }
 
-    func clear() {
+    public func clear() {
         wasSaveProfileCalled = false
         wasFetchProfileCalled = false
         wasSaveOptOutOperationCalled = false

@@ -161,7 +161,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     private func migrateAllPerWindowPinnedTabsToShared() {
-        let allTabs = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }.uniqued()
+        let allTabs = perWindowPinnedTabsManagers.flatMap { $0.tabCollection.tabs }
         perWindowPinnedTabsManagers.forEach { $0.tabCollection.removeAll() }
         allTabs.forEach { sharedPinnedTabsManager.pin($0, firePixel: false) }
     }
@@ -174,12 +174,6 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
                 arePerWindowPinnedTabsEnabled,
                 windowControllerManager.mainWindowControllers.count == 1 else { return }
         closedWindowPinnedTabCache = pinnedTabsManager.tabCollection.duplicate()
-    }
-}
-
-fileprivate extension Array where Element: Hashable {
-    func uniqued() -> [Element] {
-        Array(Set(self))
     }
 }
 

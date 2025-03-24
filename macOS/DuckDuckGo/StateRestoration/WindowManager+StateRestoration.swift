@@ -161,7 +161,7 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
         static let frame = "frame"
         static let model = "model"
         static let isMiniaturized = "isMiniaturized"
-        static let pinnedTabs = "pinned_tabs"
+        static let pinnedTabs = "pinnedTabs"
 
     }
 

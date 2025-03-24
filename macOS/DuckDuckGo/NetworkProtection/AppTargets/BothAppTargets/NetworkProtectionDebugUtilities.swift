@@ -59,7 +59,9 @@ final class NetworkProtectionDebugUtilities {
     }
 
     func resetAllState(keepAuthToken: Bool) async throws {
-        try await vpnUninstaller.uninstall(removeSystemExtension: true)
+        try await vpnUninstaller.uninstall(
+            removeSystemExtension: true,
+            showNotification: true)
 
         settings.resetToDefaults()
 

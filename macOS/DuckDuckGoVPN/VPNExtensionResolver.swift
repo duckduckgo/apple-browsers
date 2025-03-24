@@ -18,9 +18,12 @@
 
 import BrowserServicesKit
 import FeatureFlags
+import Foundation
+import NetworkProtectionUI
+import VPNAppState
 import VPNExtensionManagement
 
-class VPNExtensionResolver {
+final class VPNExtensionResolver {
 
     public enum AvailableExtensions {
         case both(appexBundleID: String, sysexBundleID: String)
@@ -29,14 +32,17 @@ class VPNExtensionResolver {
 
     private let availableExtensions: AvailableExtensions
     private let featureFlagger: FeatureFlagger
+    private let vpnAppState: VPNAppState
     private let isConfigurationInstalled: (_ extensionBundleID: String) async -> Bool
 
     init(availableExtensions: AvailableExtensions,
          featureFlagger: FeatureFlagger,
+         vpnAppState: VPNAppState = VPNAppState(defaults: .netP),
          isConfigurationInstalled: @escaping (_ extensionBundleID: String) async -> Bool) {
 
         self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
+        self.vpnAppState = vpnAppState
         self.isConfigurationInstalled = isConfigurationInstalled
     }
 
@@ -47,11 +53,15 @@ class VPNExtensionResolver {
             switch availableExtensions {
             case .both(let appexBundleID, _):
                 guard featureFlagger.isFeatureOn(.networkProtectionAppStoreSysex) else {
+                    vpnAppState.isUsingSystemExtension = false
                     return false
                 }
 
-                return await !isConfigurationInstalled(appexBundleID)
+                let result = await !isConfigurationInstalled(appexBundleID)
+                vpnAppState.isUsingSystemExtension = result
+                return result
             case .sysex:
+                vpnAppState.isUsingSystemExtension = true
                 return true
             }
         }

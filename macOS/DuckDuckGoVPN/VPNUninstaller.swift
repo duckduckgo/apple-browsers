@@ -23,7 +23,7 @@ import PixelKit
 import SystemExtensions
 
 protocol VPNUninstalling {
-    func uninstall(includingSystemExtension: Bool) async throws
+    func uninstall(showNotification: Bool) async throws
     func removeSystemExtension() async throws
     func removeVPNConfiguration() async throws
 }
@@ -47,7 +47,7 @@ final class VPNUninstaller: VPNUninstalling {
         self.pixelKit = pixelKit
     }
 
-    func uninstall(includingSystemExtension: Bool) async throws {
+    func uninstall(showNotification: Bool) async throws {
         pixelKit?.fire(VPNUninstallAttempt.begin, frequency: .legacyDailyAndCount)
 
         do {
@@ -58,7 +58,10 @@ final class VPNUninstaller: VPNUninstalling {
 
             await resetOnboardingStatus()
 
-            defaults.networkProtectionShouldShowVPNUninstalledMessage = true
+            if showNotification {
+                defaults.networkProtectionShouldShowVPNUninstalledMessage = true
+            }
+
             pixelKit?.fire(VPNUninstallAttempt.success, frequency: .legacyDailyAndCount)
         } catch {
             switch error {
@@ -94,12 +97,10 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     private func resetOnboardingStatus() async {
-        if defaults.networkProtectionOnboardingStatus == .completed {
-            if await tunnelController.extensionResolver.isUsingSystemExtension {
-                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
-            } else {
-                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
-            }
+        if await tunnelController.extensionResolver.isUsingSystemExtension {
+            defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)
+        } else {
+            defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
         }
     }
 }

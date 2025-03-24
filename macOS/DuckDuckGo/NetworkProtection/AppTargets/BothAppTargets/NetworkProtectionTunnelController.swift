@@ -461,8 +461,19 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Ensures that the system extension is activated if necessary.
     ///
     private func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
+
+        PixelKit.fire(
+            NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationAttempt,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true)
+
         do {
             try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
+
+            PixelKit.fire(
+                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
+                frequency: .dailyAndCount,
+                includeAppVersionParameter: true)
         } catch {
             switch error {
             case OSSystemExtensionError.requestSuperseded:
@@ -480,25 +491,11 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationFailure(error),
-                frequency: .standard,
+                frequency: .dailyAndCount,
                 includeAppVersionParameter: true
             )
 
             throw error
-        }
-
-        self.controllerErrorStore.lastErrorMessage = nil
-
-        // We'll only update to completed if we were showing the onboarding step to
-        // allow the system extension.  Otherwise we may override the allow-VPN
-        // onboarding step.
-        //
-        // Additionally if the onboarding step was allowing the system extension, we won't
-        // start the tunnel at once, and instead require that the user enables the toggle.
-        //
-        if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-            onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-            return
         }
     }
 
@@ -581,6 +578,20 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     // onboarding step is set correctly.  This can be useful to
                     // help prevent the value from being de-synchronized.
                     self?.onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue
+                }
+
+                self.controllerErrorStore.lastErrorMessage = nil
+
+                // We'll only update to completed if we were showing the onboarding step to
+                // allow the system extension.  Otherwise we may override the allow-VPN
+                // onboarding step.
+                //
+                // Additionally if the onboarding step was allowing the system extension, we won't
+                // start the tunnel at once, and instead require that the user enables the toggle.
+                //
+                if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
+                    onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
+                    return
                 }
             }
 

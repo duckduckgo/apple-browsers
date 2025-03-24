@@ -24,7 +24,7 @@ public enum VPNCommand: Codable {
     case removeVPNConfiguration
     case sendTestNotification
     case restartAdapter
-    case uninstallVPN
+    case uninstallVPN(showNotification: Bool)
     case disableConnectOnDemandAndShutDown
     case quitAgent
 }

@@ -45,6 +45,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
+    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    case networkProtectionAppStoreSysexMessage
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -79,7 +82,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
+        case .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionAppStoreSysexMessage, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -114,7 +117,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionAppExclusions:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
-            return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
+        case .networkProtectionAppStoreSysexMessage:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:

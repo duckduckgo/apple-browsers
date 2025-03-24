@@ -1,5 +1,5 @@
 //
-//  NetworkProtectionAppEvents.swift
+//  VPNAppEventsHandler.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
 import Common
+import FeatureFlags
 import Foundation
 import LoginItems
 import NetworkProtection
@@ -27,7 +30,7 @@ import Subscription
 
 /// Implements the sequence of steps that the VPN needs to execute when the App starts up.
 ///
-final class NetworkProtectionAppEvents {
+final class VPNAppEventsHandler {
 
     // MARK: - Legacy VPN Item and Extension
 
@@ -49,14 +52,18 @@ final class NetworkProtectionAppEvents {
     private let featureGatekeeper: VPNFeatureGatekeeper
     private let uninstaller: VPNUninstalling
     private let defaults: UserDefaults
+    private var cancellables = Set<AnyCancellable>()
 
     init(featureGatekeeper: VPNFeatureGatekeeper,
+         featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>,
          uninstaller: VPNUninstalling = VPNUninstaller(),
          defaults: UserDefaults = .netP) {
 
         self.defaults = defaults
         self.uninstaller = uninstaller
         self.featureGatekeeper = featureGatekeeper
+
+        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler)
     }
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
@@ -91,4 +98,26 @@ final class NetworkProtectionAppEvents {
         loginItemsManager.restartLoginItems(LoginItemsManager.networkProtectionLoginItems)
     }
 
+    // MARK: - Feature Flag Overriding
+
+    private func subscribeToFeatureFlagOverrideChanges(
+        featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>) {
+
+            featureFlagOverridesPublishingHandler.flagDidChangePublisher
+                .filter { flag, _ in
+                    flag == .networkProtectionAppStoreSysex
+                }.map { _, enabled in
+                    enabled
+                }.sink { [defaults] enabled in
+                    if enabled
+                        && defaults.networkProtectionOnboardingStatus == .isOnboarding(step: .userNeedsToAllowVPNConfiguration) {
+
+                        defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)
+                    } else if !enabled && defaults.networkProtectionOnboardingStatus == .isOnboarding(step: .userNeedsToAllowExtension) {
+
+                        defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+                    }
+                }
+                .store(in: &cancellables)
+    }
 }

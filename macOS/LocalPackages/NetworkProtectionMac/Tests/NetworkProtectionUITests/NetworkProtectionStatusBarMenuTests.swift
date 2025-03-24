@@ -49,6 +49,7 @@ final class StatusBarMenuTests: XCTestCase {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         let item = NSStatusItem()
         let model = StatusBarMenuModel(vpnSettings: .init(defaults: defaults))
+        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher<Bool, Never>(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
 
         let menu = StatusBarMenu(
             model: model,
@@ -61,9 +62,10 @@ final class StatusBarMenuTests: XCTestCase {
             menuItems: { [] },
             agentLoginItem: nil,
             isMenuBarStatusView: false,
+            isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .standard,
             locationFormatter: MockVPNLocationFormatter(),
-            uninstallHandler: { })
+            uninstallHandler: { _ in })
 
         menu.show()
 
@@ -75,6 +77,7 @@ final class StatusBarMenuTests: XCTestCase {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         let item = NSStatusItem()
         let model = StatusBarMenuModel(vpnSettings: .init(defaults: defaults))
+        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher<Bool, Never>(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
 
         let menu = StatusBarMenu(
             model: model,
@@ -87,9 +90,10 @@ final class StatusBarMenuTests: XCTestCase {
             menuItems: { [] },
             agentLoginItem: nil,
             isMenuBarStatusView: false,
+            isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .standard,
             locationFormatter: MockVPNLocationFormatter(),
-            uninstallHandler: { })
+            uninstallHandler: { _ in })
 
         menu.hide()
 

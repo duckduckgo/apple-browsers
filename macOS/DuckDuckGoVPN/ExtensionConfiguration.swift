@@ -27,7 +27,7 @@ protocol ExtensionConfigurationStore {
     var isUsingSystemExtension: Bool { get set }
 }
 
-class UserDefaultsExtensionConfigurationStore {
+final class UserDefaultsExtensionConfigurationStore {
     private let usingSystemExtensionKey: String
     private let userDefaults: UserDefaults
 
@@ -51,7 +51,7 @@ protocol ExtensionConfiguration {
 
 /// Extension configuration updater
 ///
-class ExtensionConfigurationUpdater: ExtensionConfiguration {
+final class ExtensionConfigurationUpdater: ExtensionConfiguration {
 
     private let availableExtensionVariants: ExtensionVariant
     private var store: ExtensionConfigurationStore
@@ -82,7 +82,7 @@ class ExtensionConfigurationUpdater: ExtensionConfiguration {
 
 /// Extension configuration reader
 ///
-class ExtensionConfigurationReader: ExtensionConfiguration {
+final class ExtensionConfigurationReader: ExtensionConfiguration {
 
     private let availableExtensionVariants: ExtensionVariant
     private var store: ExtensionConfigurationStore

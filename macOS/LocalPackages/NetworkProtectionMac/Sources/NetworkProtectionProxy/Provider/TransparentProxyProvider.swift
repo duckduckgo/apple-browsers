@@ -134,9 +134,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
                 Task {
                     try await self.updateNetworkSettings()
                 }
-            case .proxyAvailable:
-                // no-op, handled by app
-                break
             }
         }.store(in: &cancellables)
     }

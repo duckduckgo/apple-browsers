@@ -23,6 +23,7 @@ import NetworkProtection
 import os.log
 import PixelKit
 import SystemExtensions
+import VPNAppState
 import VPNExtensionManagement
 
 /// Controller for ``TransparentProxyProvider``
@@ -60,6 +61,7 @@ public final class TransparentProxyController {
     public let setup: ManagerSetupCallback
 
     private var internalManager: NETransparentProxyManager?
+    private let vpnAppState: VPNAppState
     public let settings: TransparentProxySettings
     private let notificationCenter: NotificationCenter
     private var cancellables = Set<AnyCancellable>()
@@ -76,6 +78,7 @@ public final class TransparentProxyController {
     ///         to be setup.
     ///
     public init(extensionResolver: VPNExtensionResolving,
+                vpnAppState: VPNAppState,
                 settings: TransparentProxySettings,
                 notificationCenter: NotificationCenter = .default,
                 dryMode: Bool = false,
@@ -85,6 +88,7 @@ public final class TransparentProxyController {
         self.dryMode = dryMode
         self.extensionResolver = extensionResolver
         self.notificationCenter = notificationCenter
+        self.vpnAppState = vpnAppState
         self.settings = settings
         self.setup = setup
         self.eventHandler = eventHandler
@@ -240,7 +244,7 @@ public final class TransparentProxyController {
     // MARK: - Start & stop the proxy
 
     public var isRequiredForActiveFeatures: Bool {
-        settings.proxyAvailable
+        vpnAppState.isUsingSystemExtension
         && (settings.appRoutingRules.count > 0 || settings.excludedDomains.count > 0)
     }
 

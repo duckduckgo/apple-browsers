@@ -35,6 +35,7 @@ import ServiceManagement
 import Subscription
 import SwiftUICore
 import VPNAppLauncher
+import VPNAppState
 import VPNExtensionManagement
 
 @objc(Application)
@@ -158,12 +159,13 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     private let configurationManager: ConfigurationManager
     private var configurationSubscription: AnyCancellable?
     private let privacyConfigurationManager = VPNPrivacyConfigurationManager(internalUserDecider: DefaultInternalUserDecider(store: UserDefaults.appConfiguration))
+    private let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private lazy var featureFlagger = DefaultFeatureFlagger(
         internalUserDecider: privacyConfigurationManager.internalUserDecider,
         privacyConfigManager: privacyConfigurationManager,
         localOverrides: FeatureFlagLocalOverrides(
             keyValueStore: UserDefaults.appConfiguration,
-            actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+            actionHandler: featureFlagOverridesPublishingHandler
         ),
         experimentManager: nil,
         for: FeatureFlag.self)
@@ -183,19 +185,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     private var cancellables = Set<AnyCancellable>()
     private lazy var networkExtensionController = NetworkExtensionController(sysexBundleID: Self.tunnelSysexBundleID, featureFlagger: featureFlagger)
+    private let vpnAppState = VPNAppState(defaults: .netP)
     private let tunnelSettings: VPNSettings
     private lazy var userDefaults = UserDefaults.netP
-    private lazy var proxySettings: TransparentProxySettings = {
-        let settings = TransparentProxySettings(defaults: .netP)
-
-#if APPSTORE
-        settings.proxyAvailable = false
-#else
-        settings.proxyAvailable = true
-#endif
-
-        return settings
-    }()
+    private let proxySettings: TransparentProxySettings = TransparentProxySettings(defaults: .netP)
 
     @MainActor
     private lazy var vpnProxyLauncher = VPNProxyLauncher(
@@ -208,6 +201,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         let controller = TransparentProxyController(
             extensionResolver: proxyExtensionResolver,
+            vpnAppState: vpnAppState,
             settings: proxySettings,
             eventHandler: eventHandler) { [weak self] manager in
                 guard let self else { return }
@@ -270,9 +264,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var proxyExtensionResolver = VPNExtensionResolver(
-            availableExtensions: proxyExtensions,
-            featureFlagger: featureFlagger,
-            isConfigurationInstalled: tunnelController.isConfigurationInstalled(extensionBundleID:))
+        availableExtensions: proxyExtensions,
+        featureFlagger: featureFlagger,
+        isConfigurationInstalled: tunnelController.isConfigurationInstalled(extensionBundleID:))
 
     @MainActor
     private lazy var tunnelController = NetworkProtectionTunnelController(
@@ -356,6 +350,31 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         makeStatusBarMenu()
     }()
 
+    // MARK: - VPN Update offering
+
+    private func refreshVPNUpdateOffered() {
+        refreshVPNUpdateOffered(isUsingSystemExtension: vpnAppState.isUsingSystemExtension)
+    }
+
+    private func refreshVPNUpdateOffered(isUsingSystemExtension: Bool) {
+        let newValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !isUsingSystemExtension
+
+        isExtensionUpdateOfferedSubject.send(newValue)
+    }
+
+    private lazy var isExtensionUpdateOfferedSubject: CurrentValueSubject<Bool, Never> = {
+#if APPSTORE
+        let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
+            && !vpnAppState.isUsingSystemExtension
+
+        let isExtensionUpdateOfferedSubject = CurrentValueSubject<Bool, Never>(initialValue)
+
+        return isExtensionUpdateOfferedSubject
+#else
+        return CurrentValueSubject(false)
+#endif
+    }()
+
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
         let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
         let proxySettings = TransparentProxySettings(defaults: .netP)
@@ -370,7 +389,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                 }))
         }
 
-        if proxySettings.proxyAvailable {
+        if vpnAppState.isUsingSystemExtension {
             menuItems.append(contentsOf: [
                 .textWithDetail(
                     icon: Image(.window16),
@@ -440,6 +459,28 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             appLauncher: appLauncher,
             proxySettings: proxySettings)
 
+        let menuItems = { [weak self] () -> [NetworkProtectionStatusView.Model.MenuItem] in
+            guard let self else { return [] }
+
+            guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
+                return legacyStatusViewSubmenu()
+            }
+
+            return statusViewSubmenu()
+        }
+
+        let isExtensionUpdateOfferedPublisher = CurrentValuePublisher<Bool, Never>(
+            initialValue: isExtensionUpdateOfferedSubject.value,
+            publisher: isExtensionUpdateOfferedSubject.eraseToAnyPublisher())
+
+        // Make sure that if the user switches to sysex or vice-versa, we update
+        // the offering message.
+        vpnAppState.isUsingSystemExtensionPublisher
+            .sink { [weak self] value in
+                self?.refreshVPNUpdateOffered(isUsingSystemExtension: value)
+            }
+            .store(in: &cancellables)
+
         return StatusBarMenu(
             model: model,
             onboardingStatusPublisher: onboardingStatusPublisher,
@@ -447,24 +488,17 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             controller: tunnelController,
             iconProvider: iconProvider,
             uiActionHandler: uiActionHandler,
-            menuItems: { [weak self] in
-                guard let self else { return [] }
-
-                guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
-                    return legacyStatusViewSubmenu()
-                }
-
-                return statusViewSubmenu()
-            },
+            menuItems: menuItems,
             agentLoginItem: nil,
             isMenuBarStatusView: true,
+            isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .netP,
             locationFormatter: DefaultVPNLocationFormatter(),
-            uninstallHandler: { [weak self] in
+            uninstallHandler: { [weak self] _ in
                 guard let self else { return }
 
                 do {
-                    try await self.vpnUninstaller.uninstall(includingSystemExtension: true)
+                    try await self.vpnUninstaller.uninstall(showNotification: true)
                     exit(EXIT_SUCCESS)
                 } catch {
                     // Intentional no-op: we already anonymously track VPN uninstallation failures using
@@ -520,6 +554,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setupMenuVisibility() {
         if tunnelSettings.showInMenuBar {
+            refreshVPNUpdateOffered()
             networkProtectionMenu.show()
         } else {
             networkProtectionMenu.hide()
@@ -582,7 +617,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
-
 }
 
 extension DuckDuckGoVPNAppDelegate: AccountManagerKeychainAccessDelegate {

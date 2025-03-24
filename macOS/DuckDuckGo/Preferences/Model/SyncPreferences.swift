@@ -417,9 +417,11 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             return
         }
 
-        onEndFlow = {
-            self.connector?.stopPolling()
-            self.connector = nil
+        onEndFlow = { [weak self] in
+            self?.connector?.stopPolling()
+            self?.connector = nil
+            self?.connectionController.stopConnectMode()
+            self?.connectionController.stopExchangeMode()
 
             Task { @MainActor in
                 guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
@@ -556,6 +558,42 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func startPollingForRecoveryKey(isRecovery: Bool) {
+        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+            newStartPollingForRecoveryKey(isRecovery: isRecovery)
+        } else {
+            legacyStartPollingForRecoveryKey(isRecovery: isRecovery)
+        }
+    }
+    
+    private func newStartPollingForRecoveryKey(isRecovery: Bool) {
+        Task { @MainActor in
+            do {
+                self.codeToDisplay = try connectionController.startConnectMode()
+                if isRecovery {
+                    self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
+                } else {
+                    self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
+                }
+            } catch {
+                if syncService.account == nil {
+                    if isRecovery {
+                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
+                            type: .unableToSyncToServer,
+                            description: error.localizedDescription
+                        )
+                    } else {
+                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
+                            type: .unableToSyncToOtherDevice,
+                            description: error.localizedDescription
+                        )
+                    }
+                    PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
+                }
+            }
+        }
+    }
+    
+    private func legacyStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
                 self.connector = try syncService.remoteConnect()
@@ -598,6 +636,16 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
+        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+            Task {
+                await connectionController.syncCodeEntered(code: recoveryCode)
+            }
+        } else {
+            legacyRecoverDevice(recoveryCode: recoveryCode, fromRecoveryScreen: fromRecoveryScreen)
+        }
+    }
+    
+    private func legacyRecoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
         Task { @MainActor in
             guard let syncCode = try? SyncCode.decodeBase64String(recoveryCode) else {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .invalidCode, description: "")
@@ -724,7 +772,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             }
             return
         }
-        if isSyncEnabled {
+        if isSyncEnabled && featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+            self.startPollingForPublicKey()
+        } else if isSyncEnabled {
             presentDialog(for: .syncWithAnotherDevice(code: recoveryCode ?? ""))
         } else {
             self.startPollingForRecoveryKey(isRecovery: false)
@@ -760,7 +810,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     @MainActor
     func copyCode() {
         var code: String?
-        if isSyncEnabled {
+        if isSyncEnabled && featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
             code = recoveryCode
         } else {
             code = codeToDisplay
@@ -794,19 +844,6 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         recoverDevice(recoveryCode: code, fromRecoveryScreen: fromRecoveryScreen)
     }
 
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) {
-        Task { @MainActor in
-            if devices.count > 1 {
-                managementDialogModel.showSwitchAccountsMessage()
-                PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
-            } else {
-                await switchAccounts(recoveryKey: recoveryKey)
-                managementDialogModel.endFlow()
-            }
-            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
-        }
-    }
-
     func userConfirmedSwitchAccounts(recoveryCode: String) {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount.withoutMacPrefix)
         guard let recoveryKey = try? SyncCode.decodeBase64String(recoveryCode).recovery else {
@@ -837,6 +874,32 @@ extension SyncPreferences: ManagementDialogModelDelegate {
 
     func switchAccountsCancelled() {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
+    }
+    
+    private func startPollingForPublicKey() {
+        Task { @MainActor in
+            do {
+                // Step A
+                self.codeToDisplay = try connectionController.startExchangeMode()
+                self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
+            } catch {
+                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
+                PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
+            }
+        }
+    }
+    
+    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) {
+        Task { @MainActor in
+            if devices.count > 1 {
+                managementDialogModel.showSwitchAccountsMessage()
+                PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
+            } else {
+                await switchAccounts(recoveryKey: recoveryKey)
+                managementDialogModel.endFlow()
+            }
+            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
+        }
     }
     
     private func handleError(_ syncErrorType: SyncErrorType, error: Error?, pixelEvent: PixelKitEvent?) {

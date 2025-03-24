@@ -27,7 +27,7 @@ import DataBrokerProtectionShared
 
 final public class DataBrokerProtectionViewController: NSViewController {
     private let dataManager: DataBrokerProtectionDataManaging
-    private let vpnBypassService: VPNBypassServiceProvider
+    private let vpnBypassService: VPNBypassFeatureProvider
     private var webView: WKWebView?
     private var loader: NSProgressIndicator!
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
@@ -39,7 +39,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
     private var reloadObserver: NSObjectProtocol?
 
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
-                vpnBypassService: VPNBypassServiceProvider,
+                vpnBypassService: VPNBypassFeatureProvider,
                 dataManager: DataBrokerProtectionDataManaging,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,

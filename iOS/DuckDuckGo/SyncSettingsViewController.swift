@@ -30,6 +30,7 @@ import BrowserServicesKit
 class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     lazy var authenticator = Authenticator()
+    lazy var connectionController: SyncConnectionController = syncService.createConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: self)
 
     let syncService: DDGSyncing
     let syncBookmarksAdapter: SyncBookmarksAdapter

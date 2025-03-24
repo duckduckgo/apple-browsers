@@ -234,11 +234,19 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount) {
+    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account)
+            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
+        }
+    }
+
+    func segueToSettingsAIChat() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .aiChat)
         }
     }
 

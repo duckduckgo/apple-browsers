@@ -63,8 +63,7 @@ extension DataImportSummaryViewController: DataImportSummaryViewModelDelegate {
     func dataImportSummaryViewModelDidRequestLaunchSync(_ viewModel: DataImportSummaryViewModel) {
         guard let navigationController = presentingViewController as? UINavigationController else { return }
 
-        if let parent = navigationController.topViewController as? AutofillLoginSettingsListViewController {
-            // TODO - pass source?
+        if let parent = navigationController.topViewController as? AutofillLoginListViewController {
             dismiss(animated: true) {
                 parent.segueToSync()
             }

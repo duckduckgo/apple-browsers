@@ -26,30 +26,37 @@ let package = Package(
     products: [
         .library(
             name: "DataBrokerProtectionShared",
-            targets: ["DataBrokerProtectionShared"])
+            targets: ["DataBrokerProtectionShared"]),
+        .library(name: "DataBrokerProtectionSharedTestsUtils", targets: ["DataBrokerProtectionSharedTestsUtils"]),
     ],
     dependencies: [
         .package(path: "../../BrowserServicesKit"),
-        .package(path: "../SwiftUIExtensions"),
-        .package(path: "../AppKitExtensions"),
-        .package(path: "../XPCHelper"),
-        .package(path: "../Freemium"),
+        .package(path: "../NetworkProtectionMac"),
     ],
     targets: [
         .target(
             name: "DataBrokerProtectionShared",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
-                .product(name: "AppKitExtensions", package: "AppKitExtensions"),
-                .byName(name: "XPCHelper"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "Freemium", package: "Freemium"),
+                .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
             ],
-            // Commented out until this package needs to bundle resources, as it causes SwiftPM warnings:
-            // resources: [.copy("Resources")],
+            resources: [.copy("Resources")],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "DataBrokerProtectionSharedTestsUtils",
+            dependencies: [
+                "DataBrokerProtectionShared",
+                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "Configuration", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "BrowserServicesKit"),
+            ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -58,13 +65,14 @@ let package = Package(
             name: "DataBrokerProtectionSharedTests",
             dependencies: [
                 "DataBrokerProtectionShared",
+                "DataBrokerProtectionSharedTestsUtils",
                 "BrowserServicesKit",
-                "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+            ],
+            resources: [
+                .copy("Resources")
             ]
-            // Commented out until this package needs to bundle resources, as it causes SwiftPM warnings:
-            // resources: [.copy("Resources")]
         )
     ]
 )

@@ -107,6 +107,7 @@
     },
     "**%lld** tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -323,6 +324,7 @@
     },
     "%lld tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -998,7 +1000,7 @@
     },
     "add.favorite" : {
       "comment" : "Button for adding a favorite bookmark",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29567,7 +29569,7 @@
     },
     "home.page.settings.background" : {
       "comment" : "Section title in Home Page Settings to customization Home Page background",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29627,7 +29629,7 @@
     },
     "home.page.settings.browser.theme" : {
       "comment" : "Section title in Home Page Settings to adjust browser theme",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -30227,7 +30229,7 @@
     },
     "home.page.settings.sections" : {
       "comment" : "Section title in Home Page Settings to adjust Home Page sections visibility",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -40815,7 +40817,7 @@
     },
     "newTab.search.bar.section.title" : {
       "comment" : "Setting to show or hide the search box (search field) in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -41895,7 +41897,7 @@
     },
     "newTab.setup.section.title" : {
       "comment" : "Title of the setup section in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

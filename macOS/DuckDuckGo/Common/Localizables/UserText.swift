@@ -576,7 +576,6 @@ struct UserText {
     static let newBookmark = NSLocalizedString("bookmarks.add.dialog.title", value: "New Bookmark", comment: "Bookmark creation dialog title")
     static let bookmarksOpenInNewTabs = NSLocalizedString("bookmarks.open.in.new.tabs", value: "Open in New Tabs", comment: "Open all bookmarks in folder in new tabs")
     static let addToFavorites = NSLocalizedString("add.to.favorites", value: "Add to Favorites", comment: "Button for adding bookmarks to favorites")
-    static let addFavorite = NSLocalizedString("add.favorite", value: "Add Favorite", comment: "Button for adding a favorite bookmark")
     static let editFavorite = NSLocalizedString("edit.favorite", value: "Edit Favorite", comment: "Header of the view that edits a favorite bookmark")
     static let removeFromFavorites = NSLocalizedString("remove.from.favorites", value: "Remove from Favorites", comment: "Button for removing bookmarks from favorites")
     static let bookmarkThisPage = NSLocalizedString("bookmark.this.page", value: "Bookmark This Page…", comment: "Menu item for bookmarking current page")
@@ -1227,14 +1226,10 @@ struct UserText {
     static let newTabMenuItemShowContinuteSetUp = NSLocalizedString("newTab.menu.item.show.continue.setup", value: "Show Next Steps", comment: "Title of the menu item in the home page to show/hide continue setup section")
     static let newTabMenuItemShowRecentActivity = NSLocalizedString("newTab.menu.item.show.recent.activity", value: "Show Recent Activity", comment: "Title of the menu item in the home page to show/hide recent activity section")
 
-    // Search Bar
-    static let newTabSearchBarSectionTitle = NSLocalizedString("newTab.search.bar.section.title", value: "Search Box", comment: "Setting to show or hide the search box (search field) in the home page")
-
     // Favorites
     static let newTabFavoriteSectionTitle = NSLocalizedString("newTab.favorites.section.title", value: "Favorites", comment: "Title of the Favorites section in the home page")
 
     // Set Up
-    static let newTabSetUpSectionTitle = NSLocalizedString("newTab.setup.section.title", value: "Next Steps", comment: "Title of the setup section in the home page")
     static let newTabSetUpDefaultBrowserCardTitle = NSLocalizedString("newTab.setup.default.browser.title", value: "Default to Privacy", comment: "Title of the Default Browser card of the Set Up section in the home page")
     static let newTabSetUpDockCardTitle = NSLocalizedString("newTab.setup.dock.title", value: "Keep in Your Dock", comment: "Title of the new tab page card for adding application to the Dock")
     static let newTabSetUpImportCardTitle = NSLocalizedString("newTab.setup.import.title", value: "Bring Your Stuff", comment: "Title of the Import card of the Set Up section in the home page")
@@ -1289,15 +1284,12 @@ struct UserText {
     static let homePageSettingsOnboardingMessage = NSLocalizedString("home.page.settings.onboarding.message", value: "Add extra personality and pick what you want to see on your new tab page. Give it a try!", comment: "Home Page Settings Onboarding message")
     static let homePageSettingsTitle = NSLocalizedString("home.page.settings.header", value: "Customize", comment: "Home Page Settings title")
     static let goToSettings = NSLocalizedString("home.page.settings.go.to.settings", value: "Go to Settings", comment: "Settings button caption")
-    static let background = NSLocalizedString("home.page.settings.background", value: "Background", comment: "Section title in Home Page Settings to customization Home Page background")
     static let solidColors = NSLocalizedString("home.page.settings.solid.colors", value: "Solid Colors", comment: "Button caption for presenting available solid-color Home Page backgrounds")
     static let gradients = NSLocalizedString("home.page.settings.gradients", value: "Gradients", comment: "Button caption for presenting available Home Page background gradients")
     static let myBackgrounds = NSLocalizedString("home.page.settings.my.backgrounds", value: "My Backgrounds", comment: "Button caption for presenting available user-provided Home Page background images")
     static let myBackgroundsDisclaimer = NSLocalizedString("home.page.settings.my.backgrounds.disclaimer", value: "Images are stored on your device so DuckDuckGo can't see or access them.", comment: "Disclaimer explaining privacy of user-provided custom Home Page background images")
     static let addBackground = NSLocalizedString("home.page.settings.add.background", value: "Add Background", comment: "Button caption for adding user-provided Home Page background image")
     static let defaultBackground = NSLocalizedString("home.page.settings.default.background", value: "Default", comment: "Default as in 'default background'")
-    static let browserTheme = NSLocalizedString("home.page.settings.browser.theme", value: "Browser Theme", comment: "Section title in Home Page Settings to adjust browser theme")
-    static let homePageSections = NSLocalizedString("home.page.settings.sections", value: "Sections", comment: "Section title in Home Page Settings to adjust Home Page sections visibility")
     static let deleteBackground = NSLocalizedString("home.page.settings.delete.background", value: "Delete Background", comment: "Context menu option to delete custom home page background image")
     static let cannotReadImageAlertMessage = NSLocalizedString("cannot.read.image.alert.message", value: "There was an issue uploading this file", comment: "Header of the alert dialog informing user that the app failed to load the provided custom background image")
 

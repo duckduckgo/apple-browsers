@@ -815,7 +815,7 @@ public struct UserText {
     // MARK: - VPN Control Widget
 
     public static let vpnControlWidgetEnableVPNIntentSuccess = NSLocalizedString("vpn.control-widget.enable.vpn.intent.success", value: "DuckDuckGo VPN is connected", comment: "Message for success when running the intent to enable the DuckDuckGo VPN")
-    public static let vpnControlWidgetDisableVPNIntentSuccess = NSLocalizedString("vpn.control-widget.disable.vpn.intent.success", value: "DuckDuckGo VPN is connected", comment: "Message for success when running the intent to enable the DuckDuckGo VPN")
+    public static let vpnControlWidgetDisableVPNIntentSuccess = NSLocalizedString("vpn.control-widget.disable.vpn.intent.success", value: "DuckDuckGo VPN is disconnected", comment: "Message for success when running the intent to disable the DuckDuckGo VPN")
 
     // MARK: - VPN Control Widget Education View
 
@@ -870,6 +870,10 @@ public struct UserText {
         """, comment: "Message used when sharing to iMessage")
     
     // MARK: Autofill
+    public static let autofillSettingsViewSectionHeader = NSLocalizedString("autofill.settings.view.section-header", value: "View", comment: "Section header for the autofill settings screen")
+    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Options", comment: "Section header for the autofill settings screen")
+    public static let autofillSettingsAskToSaveAndAutofill = NSLocalizedString("autofill.settings.ask-to-save-and-autofill", value: "Ask to save and autofill", comment: "Title for the toggle that enables autofill")
+    public static let autofillSettingsImportPasswordsSectionHeader = NSLocalizedString("autofill.settings.import-passwords.section-header", value: "Import Passwords", comment: "Section header for the autofill settings screen")
 
     public static let autofillLoginDetailsLoginName = NSLocalizedString("autofill.logins.details.login-name", value:"Title", comment: "Login name label for login details on autofill")
     public static let autofillLoginDetailsUsername = NSLocalizedString("autofill.logins.details.username", value:"Username", comment: "Username label for login details on autofill")
@@ -881,8 +885,6 @@ public struct UserText {
     public static let autofillEmptyViewSubtitle = NSLocalizedString("autofill.logins.empty-view.subtitle.first.paragraph", value:"You can import saved passwords from another browser into DuckDuckGo.", comment: "Subtitle for view displayed when no autofill passwords have been saved")
     public static let autofillEmptyViewImportButtonTitle = NSLocalizedString("autofill.logins.empty-view.button.title", value:"Import Passwords", comment: "Title for button to Import Passwords when autofill has no items")
     public static let autofillEmptyViewImportViaSyncButtonTitle = NSLocalizedString("autofill.logins.empty-view.import-via-sync.button.title", value:"Sync Desktop Passwords", comment: "Title for button to sync with the desktop app to fetch your passwords when autofill has no items")
-
-    public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "Learn More", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
 
     public static let autofillSearchNoResultTitle = NSLocalizedString("autofill.logins.search.no-results.title", value:"No Results", comment: "Title displayed when there are no results on Autofill search")
     public static func autofillSearchNoResultSubtitle(for query: String) -> String {
@@ -908,8 +910,8 @@ Take back control of your personal information with the browser designed for dat
     public static let autofillLoginListTitle = NSLocalizedString("autofill.logins.list.title", value:"Passwords", comment: "Title for screen listing autofill logins")
     public static let autofillLoginListSearchPlaceholder = NSLocalizedString("autofill.logins.list.search-placeholder", value:"Search passwords", comment: "Placeholder for search field on autofill login listing")
     public static let autofillLoginListSuggested = NSLocalizedString("autofill.logins.list.suggested", value:"Suggested", comment: "Section title for group of suggested saved logins")
-    public static let autofillLoginListSettingsFooterMarkdown = NSLocalizedString("autofill.logins.list.settings.footer.markdown", value: "Passwords are encrypted. Nobody but you can see them, not even us. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More.")
-    public static let autofillLoginListSettingsFooterFallback = NSLocalizedString("autofill.logins.list.settings.footer.fallback", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
+    public static let autofillLoginListSettingsFooter = NSLocalizedString("autofill.logins.list.settings.footer", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
+    public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
 
     public static let autofillResetNeverSavedActionTitle = NSLocalizedString("autofill.logins.list.never.saved.reset.action.title", value:"If you reset excluded sites, you will be prompted to save your password next time you sign in to any of these sites.", comment: "Alert title")
     public static let autofillResetNeverSavedActionConfirmButton = NSLocalizedString("autofill.logins.list.never.saved.reset.action.confirm", value: "Reset Excluded Sites", comment: "Confirm button to reset list of never saved sites")
@@ -1232,7 +1234,7 @@ Take back control of your personal information with the browser designed for dat
     // General Section
     public static let settingsSetDefault = NSLocalizedString("settings.default.browser", value: "Set as Default Browser", comment: "Settings screen cell text for setting the app as default browser")
     public static let settingsSync = NSLocalizedString("settings.sync", value: "Sync & Backup", comment: "Settings screen cell text for sync and backup")
-    public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords", comment: "Settings screen cell text for passwords")
+    public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords & Autofill", comment: "Settings screen cell text for passwords")
     
     // Appeareance Section
     public static let settingsTheme = NSLocalizedString("settings.theme", value: "Theme", comment: "Settings screen cell text for theme")
@@ -1546,6 +1548,7 @@ Take back control of your personal information with the browser designed for dat
     public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
     public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Let me choose", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
     public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Don't Show", comment: "Text displayed when DuckPlayer is in off for youtube.")
+    public static let duckPlayerNativeAutoOpenLabel = NSLocalizedString("duckPlayerNative.auto.open.label", value: "Auto-open Duck Player on Youtube", comment: "Label for the automatic youtun")
 
     // MARK: - AI Chat
 

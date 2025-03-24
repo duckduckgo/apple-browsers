@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -371,7 +368,7 @@
 "autofill.keep-enabled.alert.disable" = "Išjungti";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Sužinoti daugiau";
+"autofill.learn.more.link.title" = "[Sužinoti daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "Peržiūrėti";
@@ -515,10 +512,7 @@
 "autofill.logins.list.search-placeholder" = "Ieškoti slaptažodžių";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Slaptažodžiai yra užšifruoti. Niekas, išskyrus jus, negali jų matyti – net mes.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Slaptažodžiai yra užšifruoti. Niekas, išskyrus jus, negali jų matyti – net mes. [Sužinoti daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Slaptažodžiai yra užšifruoti. Niekas, išskyrus jus, negali jų matyti – net mes.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Siūloma";
@@ -653,6 +647,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Išsaugoti slaptažodį";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Prašyk išsaugoti ir automatiškai užpildyti";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Importuoti slaptažodžius";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Parinktys";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Praneškite apie funkcijos „Automatinis užpildymas“ problemą";
 
@@ -673,6 +676,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Automatinis užpildymas neveikia?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "Peržiūrėti";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Rodyti slaptažodį";
@@ -2524,7 +2530,7 @@
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Leiskite „DuckDuckGo“ valdyti sutikimo su slapukais iššokančiuosius langus";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Slaptažodžiai";
+"settings.logins" = "Slaptažodžiai ir automatinis užpildymas";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Pagrindiniai nustatymai";
@@ -3115,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Raskite ir pasirinkite **DuckDuckGo**, tada perbraukite iki **VPN** ir pasirinkite **Pridėti valdiklį**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "„DuckDuckGo“ VPN prijungtas";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "„DuckDuckGo“ VPN atjungtas.";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "„Siri“ spartieji klavišai leidžia prisijungti prie VPN naudojant greitą balso komandą, pvz., „Siri“, įjunk „DuckDuckGo“ VPN. Tai greitas ir patogus būdas naudotis savo VPN be rankų.";

@@ -48,9 +48,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// https://app.asana.com/0/72649045549333/1208241266421040/f
-    case htmlNewTabPage
-
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
 
@@ -82,7 +79,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
+        case .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionAppStoreSysex, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
             return true
         case .debugMenu,
              .sslCertificatesBypass,
@@ -118,8 +115,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteDevelopment(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
-        case .htmlNewTabPage:
-            return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:

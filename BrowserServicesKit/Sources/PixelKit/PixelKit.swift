@@ -423,13 +423,14 @@ public final class PixelKit {
         }
 
     // Only set up for macOS and for Experiments
-    private func prefixedAndSuffixedName(for event: Event) -> String {
-        if event.name.hasPrefix("experiment") {
-            return addPlatformSuffix(to: event.name)
+    private func prefixedAndSuffixedName(for event: Event, namePrefix: String?) -> String {
+        let pixelName = (namePrefix ?? "") + event.name
+        if pixelName.hasPrefix("experiment") {
+            return addPlatformSuffix(to: pixelName)
         }
-        if event.name.hasPrefix("m_mac_") {
+        if pixelName.hasPrefix("m_mac_") {
             // Can be a debug event or not, if already prefixed the name remains unchanged
-            return event.name
+            return pixelName
         } else if let debugEvent = event as? DebugEvent {
             // Is a Debug event not already prefixed
             return "m_mac_debug_\(debugEvent.name)"
@@ -437,7 +438,7 @@ public final class PixelKit {
             // Special kind of pixel event that don't follow the standard naming conventions
             return nonStandardEvent.name
         } else {
-            return "m_mac_\(event.name)"
+            return "m_mac_\(pixelName)"
         }
     }
 
@@ -462,11 +463,12 @@ public final class PixelKit {
                      withHeaders headers: [String: String]? = nil,
                      withAdditionalParameters params: [String: String]? = nil,
                      withError error: Error? = nil,
+                     withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
-        let pixelName = prefixedAndSuffixedName(for: event)
+        let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
 
         if !dryRun {
             if frequency == .daily, pixelHasBeenFiredToday(pixelName) {
@@ -527,6 +529,7 @@ public final class PixelKit {
                             withHeaders headers: [String: String] = [:],
                             withAdditionalParameters parameters: [String: String]? = nil,
                             withError error: Error? = nil,
+                            withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
@@ -536,6 +539,7 @@ public final class PixelKit {
                           withHeaders: headers,
                           withAdditionalParameters: parameters,
                           withError: error,
+                          withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
                           onComplete: onComplete)
@@ -560,8 +564,8 @@ public final class PixelKit {
         Self.shared?.cohort(from: cohortLocalDate, dateGenerator: dateGenerator) ?? ""
     }
 
-    public static func pixelLastFireDate(event: Event) -> Date? {
-        Self.shared?.pixelLastFireDate(event: event)
+    public static func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+        Self.shared?.pixelLastFireDate(event: event, namePrefix: namePrefix)
     }
 
     public func pixelLastFireDate(pixelName: String) -> Date? {
@@ -572,8 +576,8 @@ public final class PixelKit {
         return date
     }
 
-    public func pixelLastFireDate(event: Event) -> Date? {
-        pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event))
+    public func pixelLastFireDate(event: Event, namePrefix: String? = nil) -> Date? {
+        pixelLastFireDate(pixelName: prefixedAndSuffixedName(for: event, namePrefix: namePrefix))
     }
 
     private func updatePixelLastFireDate(pixelName: String) {

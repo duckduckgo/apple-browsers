@@ -20,13 +20,14 @@ import XCTest
 import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionProxy
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 import Combine
 
 final class VPNPreferencesModelTests: XCTestCase {
 
     var model: VPNPreferencesModel!
-    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+    let userDefaults = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
     var vpnSettings: VPNSettings!
     var xpsClient: VPNControllerXPCClient!
     var proxySettings: TransparentProxySettings!

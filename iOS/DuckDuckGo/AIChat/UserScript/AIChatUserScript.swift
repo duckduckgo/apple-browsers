@@ -17,20 +17,31 @@
 //  limitations under the License.
 //
 
-
 import Common
 import UserScript
 import Foundation
 import AIChat
 
+/// Protocol defining the delegate methods for AIChatUserScript events
+protocol AIChatUserScriptDelegate: AnyObject {
+    /// Called when the user script receives a message from the web content
+    /// - Parameters:
+    ///   - userScript: The user script that received the message
+    ///   - message: The type of message received
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName)
+}
+
 final class AIChatUserScript: NSObject, Subfeature {
 
-    enum MessageNames: String, CaseIterable {
+    enum MessageName: String, CaseIterable {
         case openAIChat
         case getAIChatNativeConfigValues
         case getAIChatNativeHandoffData
+        case closeAIChat
+        case openAIChatSettings
     }
 
+    weak var delegate: AIChatUserScriptDelegate?
     private var handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
@@ -53,14 +64,18 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        switch MessageNames(rawValue: methodName) {
+        guard let messageName = MessageName(rawValue: methodName) else { return nil }
+
+        delegate?.aiChatUserScript(self, didReceiveMessage: messageName)
+
+        switch messageName {
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
             return handler.openAIChat
-        default:
+        case .closeAIChat, .openAIChatSettings:
             return nil
         }
     }

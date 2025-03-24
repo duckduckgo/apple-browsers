@@ -68,7 +68,7 @@ class PrivacyIconLogicTests: XCTestCase {
         let entity = Entity(displayName: "E", domains: [], prevalence: 1.0)
         let protectionStatus = ProtectionStatus(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false)
         let privacyInfo = PrivacyInfo(url: url, parentEntity: entity, protectionStatus: protectionStatus)
-        privacyInfo.serverTrust = MockSecTrust()
+        privacyInfo.serverTrustEvaluation = ServerTrustEvaluation(securityTrust: MockSecTrust(), isCertificateInvalid: nil)
 
         let icon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
         
@@ -83,7 +83,7 @@ class PrivacyIconLogicTests: XCTestCase {
         let entity = Entity(displayName: "E", domains: [], prevalence: 100.0)
         let protectionStatus = ProtectionStatus(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false)
         let privacyInfo = PrivacyInfo(url: url, parentEntity: entity, protectionStatus: protectionStatus)
-        privacyInfo.serverTrust = MockSecTrust()
+        privacyInfo.serverTrustEvaluation = ServerTrustEvaluation(securityTrust: MockSecTrust(), isCertificateInvalid: nil)
 
         let icon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
         
@@ -97,6 +97,7 @@ class PrivacyIconLogicTests: XCTestCase {
         let entity = Entity(displayName: "E", domains: [], prevalence: 100.0)
         let protectionStatus = ProtectionStatus(unprotectedTemporary: false, enabledFeatures: [], allowlisted: false, denylisted: false)
         let privacyInfo = PrivacyInfo(url: url, parentEntity: entity, protectionStatus: protectionStatus, shouldCheckServerTrust: true)
+        privacyInfo.serverTrustEvaluation = ServerTrustEvaluation(securityTrust: nil, isCertificateInvalid: true)
 
         let icon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
 

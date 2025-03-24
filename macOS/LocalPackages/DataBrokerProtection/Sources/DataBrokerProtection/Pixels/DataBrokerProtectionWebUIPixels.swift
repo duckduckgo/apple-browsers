@@ -20,6 +20,7 @@ import Foundation
 import Common
 import BrowserServicesKit
 import PixelKit
+import DataBrokerProtectionShared
 
 final class DataBrokerProtectionWebUIPixels {
 
@@ -28,10 +29,10 @@ final class DataBrokerProtectionWebUIPixels {
         case success
     }
 
-    let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private var wasHTTPErrorPixelFired = false
 
-    init(pixelHandler: EventMapping<DataBrokerProtectionPixels>) {
+    init(pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) {
         self.pixelHandler = pixelHandler
     }
 

@@ -179,11 +179,4 @@ extension NSView {
         return NSImage(cgImage: imageRepresentation.cgImage!, size: bounds.size)
     }
 
-    // MARK: - Favicon
-
-    func applyFaviconStyle() {
-        wantsLayer = true
-        layer?.cornerRadius = 3.0
-    }
-
 }

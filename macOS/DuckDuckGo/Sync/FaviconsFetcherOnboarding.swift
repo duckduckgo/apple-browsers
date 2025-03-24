@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import DDGSync
 import SyncUI_macOS
+import Common
 
 final class FaviconsFetcherOnboarding {
 
@@ -34,7 +35,7 @@ final class FaviconsFetcherOnboarding {
 
     @MainActor
     func presentOnboardingIfNeeded(in targetWindow: NSWindow? = nil) {
-        guard case .normal = NSApp.runType, shouldPresentOnboarding else {
+        guard case .normal = AppVersion.runType, shouldPresentOnboarding else {
             return
         }
         didPresentFaviconsFetchingOnboarding = true

@@ -353,6 +353,8 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        
+        case autofillSettingsOpened
 
         case autofillManagementOpened
         case autofillManagementCopyUsername
@@ -818,6 +820,22 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // Set As Default Browser Debug Pixels
+        // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
+
+        /// Fired when a successful result (either true or false) is returned from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserSuccessfulResult
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method
+        /// and we don’t have a persisted version of the previous result.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure
+
+        /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserUnknownFailure
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -1038,6 +1056,14 @@ extension Pixel {
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
         case openAIChatFromIconShortcut
+
+        case aiChatSettingsVoiceTurnedOff
+        case aiChatSettingsVoiceTurnedOn
+        case aiChatSettingsAddressBarTurnedOff
+        case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsBrowserMenuTurnedOff
+        case aiChatSettingsBrowserMenuTurnedOn
+        case aiChatSettingsDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1372,6 +1398,8 @@ extension Pixel.Event {
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
 
+        case .autofillSettingsOpened: return "autofill_settings_opened"
+            
         case .autofillManagementOpened:
             return "m_autofill_management_opened"
         case .autofillManagementCopyUsername:
@@ -1680,6 +1708,11 @@ extension Pixel.Event {
             return "m_d_tab-interaction-state_failed-to-restore"
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
+
+        case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
+        case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
 
             // MARK: Ad Attribution
 
@@ -2059,7 +2092,13 @@ extension Pixel.Event {
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
-
+        case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
+        case .aiChatSettingsVoiceTurnedOn: return "m_aichat_settings_voice_turned_on"
+        case .aiChatSettingsAddressBarTurnedOff: return "m_aichat_settings_address_bar_turned_off"
+        case .aiChatSettingsAddressBarTurnedOn: return "m_aichat_settings_address_bar_turned_on"
+        case .aiChatSettingsBrowserMenuTurnedOff: return "m_aichat_settings_browser_menu_turned_off"
+        case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
+        case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

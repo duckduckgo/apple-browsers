@@ -103,3 +103,15 @@ protocol RecoveryKeyTransmitting {
     func send(_ code: SyncCode.ConnectCode) async throws
 
 }
+
+protocol ExchangePublicKeyTransmitting {
+    
+    func sendGeneratedExchangeInfo(_ code: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo
+
+}
+
+protocol ExchangeRecoveryKeyTransmitting {
+    
+    func send() async throws
+    
+}

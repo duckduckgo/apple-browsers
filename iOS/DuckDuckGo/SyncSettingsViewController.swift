@@ -434,7 +434,80 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
             UIApplication.shared.open(appSettings)
         }
     }
+}
 
+extension SyncSettingsViewController: SyncConnectionControllerDelegate {
+    
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
+        guard shouldShowSyncEnabled else { return }
+        self.rootView.model.$devices
+            .removeDuplicates()
+            .dropFirst()
+            .prefix(1)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.dismissVCAndShowRecoveryPDF()
+            }.store(in: &cancellables)
+    }
+    
+    func controllerDidCreateSyncAccount() {
+        let additionalParameters = source.map { ["source": $0] } ?? [:]
+        Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
+        self.dismissVCAndShowRecoveryPDF()
+        rootView.model.syncEnabled(recoveryCode: recoveryCode)
+    }
+    
+    func controllerWillBeginTransmittingRecoveryKey() async {
+        dismissPresentedViewController()
+        await showPreparingSyncAsync()
+    }
+    
+    func controllerDidFinishTransmittingRecoveryKey() {
+        dismissPresentedViewController()
+    }
+    
+    func controllerDidReceiveRecoveryKey() {
+        dismissPresentedViewController()
+        showPreparingSync()
+    }
+    
+    func controllerDidRecognizeScannedCode() async {
+        dismissPresentedViewController()
+        await showPreparingSyncAsync()
+    }
+    
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
+        if rootView.model.devices.count > 1 {
+            promptToSwitchAccounts(recoveryKey: recoveryKey)
+        } else {
+            await switchAccounts(recoveryKey: recoveryKey)
+        }
+    }
+    
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
+        mapDevices(registeredDevices)
+        Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if isRecovery {
+                self.dismissPresentedViewController()
+            } else {
+                self.dismissVCAndShowRecoveryPDF()
+            }
+        }
+    }
+    
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
+        switch error {
+        case .unableToRecogniseCode:
+            handleError(.unableToRecogniseCode, error: underlyingError, event: .syncSignupError)
+        case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
+            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+        case .failedToCreateAccount:
+            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        case .foundExistingAccount:
+            handleError(.unableToMergeTwoAccounts, error: error, event: .syncLoginExistingAccountError)
+        }
+    }
 }
 
 extension SyncSettingsViewController {

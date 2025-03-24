@@ -120,7 +120,7 @@ public struct ScanOrSeeCode: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(designSystemColor: .panel))
+                    .fill(.black)
                     .frame(width: width - 20)
             )
             .padding(20)

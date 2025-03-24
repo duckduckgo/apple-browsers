@@ -81,6 +81,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let durationOfFirstOptOut = "duration_firstoptout"
         public static let numberOfNewRecordsFound = "num_new_found"
         public static let numberOfReappereances = "num_reappeared"
+        public static let numberOfHiddenFound = "num_hidden_found"
         public static let optOutSubmitSuccessRate = "optout_submit_success_rate"
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
@@ -160,7 +161,7 @@ public enum DataBrokerProtectionSharedPixels {
     // https://app.asana.com/0/1204006570077678/1206889724879222/f
     case globalMetricsWeeklyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
     case globalMetricsMonthlyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
-    case dataBrokerMetricsWeeklyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int)
+    case dataBrokerMetricsWeeklyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int, numberOfHiddenFound: Int)
     case dataBrokerMetricsMonthlyStats(dataBrokerURL: String, profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int, numberOfReappereances: Int)
 
     // Custom stats
@@ -371,8 +372,17 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                             Consts.numberOfOptOutsFailure: String(failedOptOuts),
                             Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
                             Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound)]
-        case .dataBrokerMetricsWeeklyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances),
-                     .dataBrokerMetricsMonthlyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances):
+        case .dataBrokerMetricsWeeklyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances, let numberOfHiddenFound):
+            return [Consts.dataBrokerParamKey: dataBrokerURL,
+                    Consts.numberOfRecordsFound: String(profilesFound),
+                    Consts.numberOfOptOutsInProgress: String(optOutsInProgress),
+                    Consts.numberOfSucessfulOptOuts: String(successfulOptOuts),
+                    Consts.numberOfOptOutsFailure: String(failedOptOuts),
+                    Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
+                    Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
+                    Consts.numberOfReappereances: String(numberOfReappereances),
+                    Consts.numberOfHiddenFound: String(numberOfHiddenFound)]
+        case .dataBrokerMetricsMonthlyStats(let dataBrokerURL, let profilesFound, let optOutsInProgress, let successfulOptOuts, let failedOptOuts, let durationOfFirstOptOut, let numberOfNewRecordsFound, let numberOfReappereances):
                    return [Consts.dataBrokerParamKey: dataBrokerURL,
                            Consts.numberOfRecordsFound: String(profilesFound),
                            Consts.numberOfOptOutsInProgress: String(optOutsInProgress),

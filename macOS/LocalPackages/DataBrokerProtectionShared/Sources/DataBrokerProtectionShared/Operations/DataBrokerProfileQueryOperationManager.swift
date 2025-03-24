@@ -460,7 +460,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     shouldRunNextStep: shouldRunNextStep)
 
             // 7c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
-            let tries = try calculateRetriesForOptOutJobs(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try fetchTotalNumberOfOptOutJobs(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
@@ -481,7 +481,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
         } catch {
             // 8. Catch errors from the opt-out job and report them:
-            let tries = try? calculateRetriesForOptOutJobs(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try? fetchTotalNumberOfOptOutJobs(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
             handleOperationError(
                 origin: .optOut,
@@ -540,10 +540,10 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         try database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
     }
 
-    private func calculateRetriesForOptOutJobs(database: DataBrokerProtectionRepository,
-                                               brokerId: Int64,
-                                               profileQueryId: Int64,
-                                               extractedProfileId: Int64) throws -> Int {
+    private func fetchTotalNumberOfOptOutJobs(database: DataBrokerProtectionRepository,
+                                              brokerId: Int64,
+                                              profileQueryId: Int64,
+                                              extractedProfileId: Int64) throws -> Int {
         let events = try database.fetchOptOutHistoryEvents(
             brokerId: brokerId,
             profileQueryId: profileQueryId,

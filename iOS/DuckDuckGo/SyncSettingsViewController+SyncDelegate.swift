@@ -235,7 +235,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func showSyncWithAnotherDevice() {
-        collectCode(showConnectMode: true)
+        collectCode(showQRCode: true)
     }
 
     func showRecoverData() {
@@ -243,7 +243,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             guard error == nil, let self else { return }
 
             self.dismissPresentedViewController()
-            self.collectCode(showConnectMode: false)
+            self.collectCode(showQRCode: false)
         }
     }
 
@@ -307,57 +307,57 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    private func collectCode(showConnectMode: Bool) {
+    private func collectCode(showQRCode: Bool) {
         if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            newCollectCode(showConnectMode: showConnectMode)
+            newCollectCode(showQRCode: showQRCode)
         } else {
-            legacyCollectCode(showConnectMode: showConnectMode)
+            legacyCollectCode(showQRCode: showQRCode)
         }
     }
     
-    private func newCollectCode(showConnectMode: Bool) {
+    private func newCollectCode(showQRCode: Bool) {
         let code: String
         
-        if showConnectMode {
-            do {
-                code = try connectionController.startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
-            }
-        } else {
+        if isSyncEnabled {
             do {
                 code = try connectionController.startExchangeMode()
             } catch {
                 self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                 return
             }
+        } else {
+            do {
+                code = try connectionController.startConnectMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                return
+            }
         }
-        presentScanOrPasteCodeView(code: code, showConnectMode: showConnectMode)
+        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
     
-    private func legacyCollectCode(showConnectMode: Bool) {
+    private func legacyCollectCode(showQRCode: Bool) {
         let code: String
         
-        if showConnectMode {
+        if isSyncEnabled {
+            code = recoveryCode
+        } else {
             do {
                 code = try startConnectMode()
             } catch {
                 self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                 return
             }
-        } else {
-            code = recoveryCode
         }
-        presentScanOrPasteCodeView(code: code, showConnectMode: showConnectMode)
+        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
     
-    private func presentScanOrPasteCodeView(code: String, showConnectMode: Bool) {
+    private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {
         let model = ScanOrPasteCodeViewModel(code: code)
         model.delegate = self
         
         var controller: UIHostingController<AnyView>
-        if showConnectMode {
+        if showQRCode {
             controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
             controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))

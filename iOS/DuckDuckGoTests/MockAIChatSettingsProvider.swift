@@ -26,12 +26,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var aiChatURL: URL
     public var isAIChatAddressBarUserSettingsEnabled: Bool
     public var isAIChatBrowsingMenuUserSettingsEnabled: Bool
-    public var isAIChatFeatureEnabled: Bool
-    public var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool
     public var isAIChatAddressBarShortcutFeatureEnabled: Bool
-    public var isAIChatVoiceSearchFeatureEnabled: Bool
     public var isAIChatVoiceSearchUserSettingsEnabled: Bool
-    public var isAIChatTabSwitcherFeatureEnabled: Bool
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
@@ -48,12 +44,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.aiChatURL = aiChatURL
         self.isAIChatAddressBarUserSettingsEnabled = isAIChatAddressBarUserSettingsEnabled
         self.isAIChatBrowsingMenuUserSettingsEnabled = isAIChatBrowsingMenuUserSettingsEnabled
-        self.isAIChatFeatureEnabled = isAIChatFeatureEnabled
-        self.isAIChatBrowsingMenubarShortcutFeatureEnabled = isAIChatBrowsingMenubarShortcutFeatureEnabled
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
-        self.isAIChatVoiceSearchFeatureEnabled = isAIChatVoiceSearchFeatureEnabled
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
-        self.isAIChatTabSwitcherFeatureEnabled = isAIChatTabSwitcherFeatureEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
     }
     
@@ -70,7 +62,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     }
 
     public func enableAIChatTabSwitcherUserSettings(enable: Bool) {
-        isAIChatTabSwitcherFeatureEnabled = enable
+        isAIChatTabSwitcherUserSettingsEnabled = enable
     }
 
 }

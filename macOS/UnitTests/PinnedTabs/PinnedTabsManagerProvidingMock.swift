@@ -20,7 +20,7 @@
 import Combine
 
 class PinnedTabsManagerProvidingMock: PinnedTabsManagerProviding {
-    var arePerWindowPinnedTabsEnabled: Bool = false
+    var pinnedTabsMode: PinnedTabsMode = .shared
     var arePinnedTabsEmpty: Bool = true
     var currentPinnedTabManagers: [PinnedTabsManager] = []
     var areDifferentPinnedTabsPresent: Bool = false

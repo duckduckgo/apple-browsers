@@ -328,13 +328,13 @@ final class Fire {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
-            if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
+            if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
-                if !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
+                if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
                     $0.close()
                 }
             }

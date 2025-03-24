@@ -39,14 +39,8 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         super.tearDown()
     }
 
-    func test_WhenPerWindowPinnedTabsEnabled_ThenReturnsTrue() {
-        tabsPreferences.pinnedTabsMode = .separate
-        XCTAssertTrue(provider.arePerWindowPinnedTabsEnabled)
-    }
-
-    func test_WhenSharedModeEnabled_ThenReturnsFalse() {
-        tabsPreferences.pinnedTabsMode = .shared
-        XCTAssertFalse(provider.arePerWindowPinnedTabsEnabled)
+    func test_providerReturnsSameModeAsTabsPreferences() {
+        XCTAssertTrue(provider.pinnedTabsMode == tabsPreferences.pinnedTabsMode)
     }
 
     func test_WhenSettingChanged_ThenPublisherEmitsValue() {

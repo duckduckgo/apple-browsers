@@ -1181,7 +1181,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
         PinnedTabsDiscoveryPopover.popoverPresented = true
 
         // Present only in case shared pinned tabs are set
-        guard !pinnedTabsManagerProvider.arePerWindowPinnedTabsEnabled else { return }
+        guard pinnedTabsManagerProvider.pinnedTabsMode == .shared else { return }
 
         // Wait until pinned tab change is applied to pinned tabs view
         DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) { [weak self] in

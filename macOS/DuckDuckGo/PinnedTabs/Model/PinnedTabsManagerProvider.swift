@@ -20,8 +20,8 @@ import Combine
 
 protocol PinnedTabsManagerProviding {
 
-    /// True if per-window pinned tabs are enabled in Settings
-    var arePerWindowPinnedTabsEnabled: Bool { get }
+    /// Pinned tabs mode currently set in Settings
+    var pinnedTabsMode: PinnedTabsMode { get }
 
     /// True if there are no pinned tabs in the whole application
     var arePinnedTabsEmpty: Bool { get }
@@ -81,13 +81,13 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
             .filter { $0 !== sharedPinnedTabsManager }
     }
 
-    var arePerWindowPinnedTabsEnabled: Bool {
-        tabsPreferences.pinnedTabsMode == .separate
+    var pinnedTabsMode: PinnedTabsMode {
+        tabsPreferences.pinnedTabsMode
     }
 
     @MainActor
     var arePinnedTabsEmpty: Bool {
-        if arePerWindowPinnedTabsEnabled {
+        if pinnedTabsMode == .separate {
             return perWindowPinnedTabsManagers.allSatisfy { $0.tabCollection.tabs.isEmpty }
         }
         return sharedPinnedTabsManager.tabCollection.tabs.isEmpty
@@ -95,30 +95,38 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     var currentPinnedTabManagers: [PinnedTabsManager] {
-        arePerWindowPinnedTabsEnabled ? perWindowPinnedTabsManagers : [sharedPinnedTabsManager]
+        switch pinnedTabsMode {
+        case .separate:
+            return perWindowPinnedTabsManagers
+        case .shared:
+            return [sharedPinnedTabsManager]
+        }
     }
 
     @MainActor
     var areDifferentPinnedTabsPresent: Bool {
-        arePerWindowPinnedTabsEnabled && perWindowPinnedTabsManagers.filter { !$0.tabCollection.tabs.isEmpty }.count >= 2
+        pinnedTabsMode == .separate && perWindowPinnedTabsManagers.filter { !$0.tabCollection.tabs.isEmpty }.count >= 2
     }
 
     @MainActor
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
-        if arePerWindowPinnedTabsEnabled {
+        switch pinnedTabsMode {
+            case .separate:
             return windowControllerManager.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
+        case .shared:
+            return sharedPinnedTabsManager
         }
-        return sharedPinnedTabsManager
     }
 
     // MARK: Providing PinnedTabsManagers
 
     @MainActor
     func getNewPinnedTabsManager(shouldMigrate: Bool = false, tabCollectionViewModel: TabCollectionViewModel) -> PinnedTabsManager {
-        if arePerWindowPinnedTabsEnabled {
+        switch pinnedTabsMode {
+        case .separate:
             return getNewPerWindowPinnedTabsManager(shouldMigrate: shouldMigrate,
                                                     tabCollectionViewModel: tabCollectionViewModel)
-        } else {
+        case .shared:
             return getSharedPinnedTabManager(shouldMigrate: shouldMigrate)
         }
     }
@@ -171,7 +179,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     @MainActor
     func cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: PinnedTabsManager?) {
         guard let pinnedTabsManager,
-                arePerWindowPinnedTabsEnabled,
+              pinnedTabsMode == .separate,
                 windowControllerManager.mainWindowControllers.count == 1 else { return }
         closedWindowPinnedTabCache = pinnedTabsManager.tabCollection.duplicate()
     }

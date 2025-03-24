@@ -194,7 +194,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToPinnedTabsSettingChanged() {
         pinnedTabsManagerProvider.settingChangedPublisher
-            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 guard let self = self else { return }

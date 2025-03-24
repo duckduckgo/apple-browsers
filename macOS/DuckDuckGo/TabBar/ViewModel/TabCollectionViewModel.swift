@@ -722,7 +722,6 @@ final class TabCollectionViewModel: NSObject {
 
     private func subscribeToPinnedTabsSettingChanged() {
         pinnedTabsManagerProvider?.settingChangedPublisher
-            .dropFirst()
             .sink { [weak self] _ in
                 guard let self = self else { return }
                 self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)

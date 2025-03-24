@@ -108,7 +108,6 @@ final class AppStateRestorationManager: NSObject {
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
             // There is a favicon assignment after a restored tab loads that triggered unnecessary
             // saving of the state
-            .dropFirst()
             .sink { [weak self] _ in
                 self?.persistAppState()
             }

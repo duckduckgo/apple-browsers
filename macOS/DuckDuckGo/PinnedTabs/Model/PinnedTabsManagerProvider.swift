@@ -62,6 +62,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
         self.settingChangedPublisher = tabsPreferences.$pinnedTabsMode
             .map { _ in () }
             .receive(on: DispatchQueue.main)
+            .dropFirst()
             .eraseToAnyPublisher()
     }
 
@@ -111,7 +112,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
     @MainActor
     func pinnedTabsManager(for tab: Tab) -> PinnedTabsManager? {
         switch pinnedTabsMode {
-            case .separate:
+        case .separate:
             return windowControllerManager.allTabCollectionViewModels.first(where: { $0.tabs.contains(tab) || $0.pinnedTabs.contains(tab) })?.pinnedTabsManager
         case .shared:
             return sharedPinnedTabsManager

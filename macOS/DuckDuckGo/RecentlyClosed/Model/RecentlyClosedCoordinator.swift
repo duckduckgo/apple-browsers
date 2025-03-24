@@ -104,7 +104,6 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
     private func subscribeToPinnedTabsSettingChanged() {
         pinnedTabsManagerProvider.settingChangedPublisher
-            .dropFirst()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.subscribeToCurrentPinnedTabCollections()

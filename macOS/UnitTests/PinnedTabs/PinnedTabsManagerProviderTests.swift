@@ -46,7 +46,6 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
     func test_WhenSettingChanged_ThenPublisherEmitsValue() {
         let expectation = expectation(description: "Publisher emits value")
         provider.settingChangedPublisher
-            .dropFirst()
             .sink { _ in
             expectation.fulfill()
         }.store(in: &cancellables)

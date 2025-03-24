@@ -75,6 +75,7 @@ protocol TabExtensionDependencies {
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
     var tunnelController: NetworkProtectionIPCTunnelController? { get }
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
+    var faviconManagement: FaviconManagement? { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -216,6 +217,12 @@ extension TabExtensionsBuilder {
             AIChatOnboardingTabExtension(webViewPublisher: args.webViewFuture,
                                          notificationCenter: .default,
                                          remoteSettings: AIChatRemoteSettings())
+        }
+
+        add {
+            FaviconsTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                 contentPublisher: args.contentPublisher,
+                                 faviconManagement: dependencies.faviconManagement)
         }
 
 #if SPARKLE

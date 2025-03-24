@@ -526,7 +526,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Portrait rotation
     private func handlePortraitOrientation() {
-        hostView?.chromeDelegate?.omniBar.resignFirstResponder()
+        hostView?.chromeDelegate?.omniBar.endEditing()
         hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
         hideBrowserChromeTimer?.invalidate()
         hideBrowserChromeTimer = nil
@@ -535,7 +535,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Landscape rotation
     private func handleLandscapeOrientation() {
-        hostView?.chromeDelegate?.omniBar.resignFirstResponder()
+        hostView?.chromeDelegate?.omniBar.endEditing()
         hostView?.setupWebViewForLandscapeVideo()
         hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
     }

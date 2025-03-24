@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Nájdi a vyber **DuckDuckGo**, potom potiahni prstom na položku **VPN**, a vyber položku **Pridať miniaplikáciu**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN je pripojené";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN je odpojená";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Skratky Siri ti umožňujú pripojiť sa k VPN pomocou rýchleho hlasového príkazu, napríklad „Siri, zapni DuckDuckGo VPN“. Je to rýchly a bezdotykový spôsob, ako používať svoju VPN.";

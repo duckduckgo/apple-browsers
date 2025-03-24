@@ -48,7 +48,7 @@ final class CaptchaServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append({ _ in throw MockError.someError })
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -68,7 +68,7 @@ final class CaptchaServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append({ _ in (HTTPURLResponse.ok, try? self.jsonEncoder.encode(response)) })
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -88,7 +88,7 @@ final class CaptchaServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append({ _ in (HTTPURLResponse.ok, try? self.jsonEncoder.encode(response)) })
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -112,7 +112,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -134,7 +134,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -156,7 +156,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -178,7 +178,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -202,7 +202,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -224,7 +224,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {
@@ -240,7 +240,7 @@ final class CaptchaServiceTests: XCTestCase {
 
         let sut = CaptchaService(urlSession: mockURLSession,
                                  authenticationManager: mockAuthenticationManager,
-                                 settings: DataBrokerProtectionSettings(defaults: .standard, proxySettings: .init(defaults: proxyUserDefaults)),
+                                 settings: DataBrokerProtectionSettings(defaults: .standard),
                                  servicePixel: servicePixel)
 
         do {

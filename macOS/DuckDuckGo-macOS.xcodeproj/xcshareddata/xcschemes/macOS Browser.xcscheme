@@ -313,6 +313,16 @@
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtectionSharedTests"
+               BuildableName = "DataBrokerProtectionSharedTests"
+               BlueprintName = "DataBrokerProtectionSharedTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtectionShared">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

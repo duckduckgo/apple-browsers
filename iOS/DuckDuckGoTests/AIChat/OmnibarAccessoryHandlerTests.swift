@@ -34,7 +34,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
 
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoURL() {
@@ -43,7 +43,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
         let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.chat)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithNonDuckDuckGoURL() {
@@ -52,7 +52,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
         let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoHomeURL() {
@@ -61,6 +61,6 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
         let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGHomeURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 }

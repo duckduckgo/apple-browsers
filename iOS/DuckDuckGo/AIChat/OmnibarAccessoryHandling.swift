@@ -22,13 +22,13 @@ import AIChat
 import BrowserServicesKit
 
 protocol OmnibarAccessoryHandling {
-    func omnibarAccessory(for url: URL?) -> OmniBar.AccessoryType
+    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType
 }
 
 struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
     let settings: AIChatSettingsProvider
 
-    func omnibarAccessory(for url: URL?) -> OmniBar.AccessoryType {
+    func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
         guard settings.isAIChatAddressBarUserSettingsEnabled else {
             return .share
         }

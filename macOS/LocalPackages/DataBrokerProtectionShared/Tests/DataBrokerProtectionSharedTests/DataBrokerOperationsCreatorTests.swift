@@ -26,7 +26,7 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
 
     // Dependencies
     private var mockDatabase: MockDatabase!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig(mode: .normal)
+    private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockPixelHandler: MockPixelHandler!
     private var mockUserNotificationService: MockUserNotificationService!
@@ -39,11 +39,12 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
         mockUserNotificationService = MockUserNotificationService()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                        config: mockSchedulerConfig,
-                                                        runnerProvider: mockRunnerProvider,
-                                                        notificationCenter: .default,
-                                                        pixelHandler: mockPixelHandler,
-                                                        userNotificationService: mockUserNotificationService)
+                                                                  config: mockSchedulerConfig,
+                                                                  runnerProvider: mockRunnerProvider,
+                                                                  notificationCenter: .default,
+                                                                  pixelHandler: mockPixelHandler,
+                                                                  userNotificationService: mockUserNotificationService,
+                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {

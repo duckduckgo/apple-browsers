@@ -23,7 +23,52 @@ import BrowserServicesKit
 import os.log
 
 @MainActor
-final class FaviconImageCache {
+protocol FaviconImageCaching {
+
+    init(faviconStoring: FaviconStoring)
+
+    var loaded: Bool { get }
+
+    func load() async throws
+
+    func insert(_ favicons: [Favicon])
+
+    func get(faviconUrl: URL) -> Favicon?
+
+    func getFavicons(with urls: some Sequence<URL>) -> [Favicon]?
+
+    nonisolated func cleanOldExcept(fireproofDomains: FireproofDomains,
+                                    bookmarkManager: BookmarkManager,
+                                    completion: @escaping @MainActor () -> Void)
+
+    nonisolated func burnExcept(fireproofDomains: FireproofDomains,
+                                bookmarkManager: BookmarkManager,
+                                savedLogins: Set<String>,
+                                completion: @escaping @MainActor () -> Void)
+
+    nonisolated func burnDomains(_ baseDomains: Set<String>,
+                                 exceptBookmarks bookmarkManager: BookmarkManager,
+                                 exceptSavedLogins logins: Set<String>,
+                                 exceptHistoryDomains history: Set<String>,
+                                 tld: TLD,
+                                 completion: @escaping @MainActor () -> Void)
+}
+
+extension FaviconImageCaching {
+    nonisolated func loadFavicons(completionHandler: ((Error?) -> Void)? = nil) {
+        Task { @MainActor in
+            do {
+                try await self.load()
+                completionHandler?(nil)
+            } catch {
+                completionHandler?(error)
+            }
+        }
+    }
+}
+
+@MainActor
+final class FaviconImageCache: FaviconImageCaching {
 
     private let storing: FaviconStoring
 
@@ -34,17 +79,6 @@ final class FaviconImageCache {
     }
 
     private(set) var loaded = false
-
-    nonisolated func loadFavicons(completionHandler: (@MainActor (Error?) -> Void)? = nil) {
-        Task {
-            do {
-                try await self.load()
-                await completionHandler?(nil)
-            } catch {
-                await completionHandler?(error)
-            }
-        }
-    }
 
     func load() async throws {
         let favicons: [Favicon]
@@ -63,7 +97,9 @@ final class FaviconImageCache {
     }
 
     func insert(_ favicons: [Favicon]) {
-        guard loaded else { return }
+        guard !favicons.isEmpty, loaded else {
+            return
+        }
 
         // Remove existing favicon with the same URL
         let oldFavicons = favicons.compactMap { entries[$0.url] }

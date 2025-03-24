@@ -215,6 +215,7 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
+    private var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     public var url: URL? {
         willSet {
@@ -470,8 +471,9 @@ class TabViewController: UIViewController {
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
+        registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
-        
+
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
         }
@@ -502,6 +504,13 @@ class TabViewController: UIViewController {
         NotificationCenter.default.addObserver(self, selector:
                                                 #selector(onAddressBarPositionChanged),
                                                name: AppUserDefaults.Notifications.addressBarPositionChanged,
+                                               object: nil)
+    }
+
+    private func registerForOrientationDidChangeNotification() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(updateRoundedCorners),
+                                               name: UIDevice.orientationDidChangeNotification,
                                                object: nil)
     }
 
@@ -552,6 +561,7 @@ class TabViewController: UIViewController {
         // Update DuckPlayer when WebView appears
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
         
+        updateRoundedCorners()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -591,6 +601,13 @@ class TabViewController: UIViewController {
     
     func applyInheritedAttribution(_ attribution: AdClickAttributionLogic.State?) {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
+    }
+
+    @objc func updateRoundedCorners() {
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            webViewContainer.clipsToBounds = true
+            webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
+        }
     }
 
     // The `consumeCookies` is legacy behaviour from the previous Fireproofing implementation. Cookies no longer need to be consumed after invocations
@@ -634,11 +651,19 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        webView.scrollView.refreshControl = refreshControl
-        // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
-        // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
-        // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
-        configureRefreshControl(refreshControl)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                                                pullableView: webViewContainerView,
+                                                                onRefresh: { [weak self] in
+                self?.handlePullToRefresh()
+            })
+        } else {
+            webView.scrollView.refreshControl = refreshControl
+            // Be sure to set `tintColor` after the control is attached to ScrollView otherwise haptics are gone.
+            // We don't have to care about it for this control instance the next time `setRefreshControlEnabled`
+            // is called. Looks like a bug introduced in iOS 17.4 (https://github.com/facebook/react-native/issues/43388)
+            configureRefreshControl(refreshControl)
+        }
 
         updateContentMode()
 
@@ -654,7 +679,7 @@ class TabViewController: UIViewController {
         if let webView = webView {
             duckPlayerNavigationHandler.handleAttach(webView: webView)
         }
-        
+
         if consumeCookies {
             consumeCookiesThenLoadRequest(request)
         } else if !didRestoreWebViewState, let urlRequest = request {
@@ -688,6 +713,8 @@ class TabViewController: UIViewController {
             userContentController?.assertObjectDeallocated(after: 1.0)
         }
 #endif
+
+        updateRoundedCorners()
     }
 
     private func addObservers() {
@@ -700,16 +727,8 @@ class TabViewController: UIViewController {
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
         refreshControl.addAction(UIAction { [weak self] _ in
-            guard let self else { return }
-            reload()
-            delegate?.tabDidRequestRefresh(tab: self)
-            Pixel.fire(pixel: .pullToRefresh)
-            if let url = webView.url {
-                AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
-            }
+            self?.handlePullToRefresh()
         }, for: .valueChanged)
-
-        refreshControl.backgroundColor = .systemBackground
         refreshControl.tintColor = .label
     }
 
@@ -905,10 +924,20 @@ class TabViewController: UIViewController {
     private func showProgressIndicator() {
         progressWorker.didStartLoading()
     }
-    
+
+    private func handlePullToRefresh() {
+        reload()
+        delegate?.tabDidRequestRefresh(tab: self)
+        Pixel.fire(pixel: .pullToRefresh)
+        if let url = webView.url {
+            AppDependencyProvider.shared.pageRefreshMonitor.register(for: url)
+        }
+    }
+
     private func hideProgressIndicator() {
         progressWorker.didFinishLoading()
         webView.scrollView.refreshControl?.endRefreshing()
+        pullToRefreshViewAdapter?.endRefreshing()
     }
 
     public func reload() {
@@ -931,7 +960,7 @@ class TabViewController: UIViewController {
             webView.stopLoading()
             if webView.canGoBack {
                 duckPlayerNavigationHandler.handleGoBack(webView: webView)
-                chromeDelegate?.omniBar.resignFirstResponder()
+                chromeDelegate?.omniBar.endEditing()
                 return
             }
             if openingTab != nil {
@@ -950,7 +979,7 @@ class TabViewController: UIViewController {
 
         if webView.canGoBack {
             webView.goBack()
-            chromeDelegate?.omniBar.resignFirstResponder()
+            chromeDelegate?.omniBar.endEditing()
             return
         }
 
@@ -964,7 +993,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
 
         if webView.goForward() != nil {
-            chromeDelegate?.omniBar.resignFirstResponder()
+            chromeDelegate?.omniBar.endEditing()
         }
     }
     
@@ -992,7 +1021,7 @@ class TabViewController: UIViewController {
         if let controller = segue.destination as? PrivacyDashboardViewController {
             controller.popoverPresentationController?.delegate = controller
 
-            if let iconView = chromeDelegate.omniBar.privacyInfoContainer.privacyIcon {
+            if let iconView = chromeDelegate.omniBar.barView.privacyIconView {
                 controller.popoverPresentationController?.sourceView = iconView
                 controller.popoverPresentationController?.sourceRect = iconView.bounds
             }
@@ -1072,7 +1101,11 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
+        } else {
+            webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
+        }
     }
 
     private var didGoBackForward: Bool = false {
@@ -1627,7 +1660,7 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            self.chromeDelegate?.omniBar.resignFirstResponder()
+            self.chromeDelegate?.omniBar.endEditing()
             self.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
 
             // Present the contextual onboarding
@@ -2865,7 +2898,7 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
 
         // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
-        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.textField.isFirstResponder {
+        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
             completionHandler(nil)
             return
         }

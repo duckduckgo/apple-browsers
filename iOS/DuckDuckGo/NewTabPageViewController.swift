@@ -44,6 +44,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private let pixelFiring: PixelFiring.Type
 
+    private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
+
     var isDaxDialogVisible: Bool {
         daxDialogViewController?.view.isHidden == false
     }
@@ -56,6 +58,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          variantManager: VariantManager,
          newTabDialogFactory: any NewTabDaxDialogProvider,
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
+         privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
          pixelFiring: PixelFiring.Type = Pixel.self) {
 
@@ -63,6 +66,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.variantManager = variantManager
         self.newTabDialogFactory = newTabDialogFactory
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
+        self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
         self.pixelFiring = pixelFiring
 
         newTabPageViewModel = NewTabPageViewModel()
@@ -210,7 +214,9 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     weak var shortcutsDelegate: NewTabPageControllerShortcutsDelegate?
 
     func launchNewSearch() {
-        chromeDelegate?.omniBar.becomeFirstResponder()
+        // If we are displaying a Privacy Pro promotion on a new tab, do not activate search
+        guard !privacyProPromotionCoordinating.isShowingPrivacyProPromotion else { return }
+        chromeDelegate?.omniBar.beginEditing()
     }
 
     func openedAsNewTab(allowingKeyboard: Bool) {
@@ -288,19 +294,22 @@ extension NewTabPageViewController {
 
         guard let spec = dialogProvider.nextHomeScreenMessageNew() else { return }
 
-        let onDismiss = { [weak self] in
+        let onDismiss: (_ activateSearch: Bool) -> Void = { [weak self] activateSearch in
             guard let self else { return }
 
             let nextSpec = dialogProvider.nextHomeScreenMessageNew()
             guard nextSpec != .privacyProPromotion else {
+                chromeDelegate?.omniBar.endEditing()
                 showNextDaxDialog()
                 return
             }
 
             dialogProvider.dismiss()
             self.dismissHostingController(didFinishNTPOnboarding: true)
-            // Make the address bar first responder after closing the new tab page final dialog.
-            self.launchNewSearch()
+            if activateSearch {
+                // Make the address bar first responder after closing the new tab page final dialog.
+                self.launchNewSearch()
+            }
         }
         let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onDismiss: onDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)

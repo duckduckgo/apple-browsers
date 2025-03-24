@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionPixels.swift
+//  DataBrokerProtectionMacOSPixels.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -23,7 +23,7 @@ import Configuration
 import PixelKit
 import DataBrokerProtectionShared
 
-public enum DataBrokerProtectionPixels {
+public enum DataBrokerProtectionMacOSPixels {
 
     // Backgrond Agent events
     case backgroundAgentStarted
@@ -73,7 +73,7 @@ public enum DataBrokerProtectionPixels {
     case entitlementCheckError
 }
 
-extension DataBrokerProtectionPixels: PixelKitEvent {
+extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
     public var name: String {
         switch self {
 
@@ -183,7 +183,7 @@ extension DataBrokerProtectionPixels: PixelKitEvent {
     }
 }
 
-public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionPixels> {
+public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 
     public init() {
         super.init { event, _, _, _ in
@@ -232,7 +232,7 @@ public class DataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectio
         }
     }
 
-    override init(mapping: @escaping EventMapping<DataBrokerProtectionPixels>.Mapping) {
+    override init(mapping: @escaping EventMapping<DataBrokerProtectionMacOSPixels>.Mapping) {
         fatalError("Use init()")
     }
 }

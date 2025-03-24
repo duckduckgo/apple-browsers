@@ -60,7 +60,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
             }
         }
 
-        let pixelHandler = DataBrokerProtectionPixelsHandler()
+        let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         pixelHandler.fire(.backgroundAgentStarted)
 
         // prevent agent from running twice

@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Găsește și selectează **DuckDuckGo**, apoi glisează la **VPN** și selectează **Adaugă widget**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN este conectat.";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN este deconectat";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Comenzile rapide Siri îți permit să te conectezi la VPN cu o comandă vocală rapidă, cum ar fi „Siri, pornește DuckDuckGo VPN”. Este o modalitate rapidă, fără mâini, de a-ți folosi VPN-ul.";

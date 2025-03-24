@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Atrodi un atlasi **DuckDuckGo**, pēc tam pavelc uz **VPN** un izvēlies opciju **Pievienot logrīku**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN ir pieslēgts";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN ir atvienots";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri saīsnes ļauj izveidot savienojumu ar VPN, izmantojot īsu balss komandu, piemēram, \"Siri, ieslēdz DuckDuckGo VPN\". Tas ir ērts veids, kā izmantot VPN brīvroku režīmā.";

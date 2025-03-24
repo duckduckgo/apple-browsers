@@ -157,7 +157,7 @@ final class DataBrokerProtectionEngagementPixelsTests: XCTestCase {
         XCTAssertFalse(repository.wasMonthlyPixelSent)
     }
 
-    private func wasPixelFired(_ pixel: DataBrokerProtectionPixels) -> Bool {
+    private func wasPixelFired(_ pixel: DataBrokerProtectionSharedPixels) -> Bool {
         MockDataBrokerProtectionPixelsHandler.lastPixelsFired.contains(where: { $0.name == pixel.name })
     }
 

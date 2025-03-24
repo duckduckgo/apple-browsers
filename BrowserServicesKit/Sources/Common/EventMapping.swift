@@ -24,7 +24,7 @@ open class EventMapping<Event> {
                                 _ params: [String: String]?,
                                 _ onComplete: @escaping (Error?) -> Void) -> Void
 
-    private let eventMapper: Mapping
+    public var eventMapper: Mapping
 
     public init(mapping: @escaping Mapping) {
         eventMapper = mapping

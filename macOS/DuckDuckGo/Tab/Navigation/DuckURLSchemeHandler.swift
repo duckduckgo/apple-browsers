@@ -189,7 +189,7 @@ private extension DuckURLSchemeHandler {
 
     func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
         guard faviconManager.areFaviconsLoaded,
-              let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium),
+              let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
               let imagePNGData = favicon.image?.pngData
         else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {

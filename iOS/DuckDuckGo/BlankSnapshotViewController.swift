@@ -67,7 +67,7 @@ class BlankSnapshotViewController: UIViewController {
 
         tabSwitcherButton = TabSwitcherButton()
 
-        viewCoordinator = MainViewFactory.createViewHierarchy(view,
+        viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger)
@@ -131,7 +131,7 @@ class BlankSnapshotViewController: UIViewController {
 
         let layout = viewCoordinator.navigationBarCollectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.scrollDirection = .horizontal
-        layout?.itemSize = CGSize(width: viewCoordinator.superview.frame.size.width, height: viewCoordinator.omniBar.frame.height)
+        layout?.itemSize = CGSize(width: viewCoordinator.superview.frame.size.width, height: viewCoordinator.omniBar.barView.frame.height)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -201,13 +201,13 @@ extension BlankSnapshotViewController: OmniBarDelegate {
         userInteractionDetected()
     }
 
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar, tapped: Bool) {
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool) {
         // No-op
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) -> Bool {
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
         DispatchQueue.main.async {
-            self.viewCoordinator.omniBar.resignFirstResponder()
+            self.viewCoordinator.omniBar.endEditing()
             self.userInteractionDetected()
         }
         return false

@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Znajdź i zaznacz **DuckDuckGo**, a następnie przesuń palcem do **VPN** i wybierz **Dodaj widżet**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "Nawiązano połączenie DuckDuckGo VPN";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "Sieć DuckDuckGo VPN jest rozłączona";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Skróty Siri umożliwiają łączenie się z siecią VPN za pomocą szybkiej komendy głosowej, np. „Siri, włącz DuckDuckGo VPN”. To szybki sposób korzystania z sieci VPN bez konieczności użycia rąk.";

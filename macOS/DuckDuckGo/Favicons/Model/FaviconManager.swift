@@ -22,6 +22,7 @@ import Combine
 import BrowserServicesKit
 import Common
 import History
+import CoreImage
 
 @MainActor
 protocol FaviconManagement: AnyObject {
@@ -31,17 +32,17 @@ protocol FaviconManagement: AnyObject {
 
     func loadFavicons()
 
-    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL, completion: @escaping @MainActor (Favicon?) -> Void)
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon?
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]])
 
-    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> URL?
+    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> URL?
 
-    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> Favicon?
+    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
-    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon?
+    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
-    func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory) -> Favicon?
+    func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon?
 
     func burnExcept(fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>, completion: @escaping @MainActor () -> Void)
 
@@ -52,6 +53,29 @@ protocol FaviconManagement: AnyObject {
                      tld: TLD,
                      completion: @escaping @MainActor () -> Void)
 
+}
+
+/**
+ * This extension provides convenience functions for fetching favicons at a specific size category.
+ *
+ * All functions in this extension call their more verbose equivalents with `fallBackToSmaller = false`.
+ */
+extension FaviconManagement {
+    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> URL? {
+        getCachedFaviconURL(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: false)
+    }
+
+    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+        getCachedFavicon(for: documentUrl, sizeCategory: sizeCategory, fallBackToSmaller: false)
+    }
+
+    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+        getCachedFavicon(for: host, sizeCategory: sizeCategory, fallBackToSmaller: false)
+    }
+
+    func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+        getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory, fallBackToSmaller: false)
+    }
 }
 
 @MainActor
@@ -72,15 +96,19 @@ final class FaviconManager: FaviconManagement {
         case inMemory
     }
 
-    init(cacheType: CacheType) {
+    init(
+        cacheType: CacheType,
+        imageCache: (@MainActor (FaviconStoring) -> FaviconImageCaching)? = nil,
+        referenceCache: (@MainActor (FaviconStoring) -> FaviconReferenceCaching)? = nil
+    ) {
         switch cacheType {
         case .standard:
             store = FaviconStore()
         case .inMemory:
             store = FaviconNullStore()
         }
-        imageCache = FaviconImageCache(faviconStoring: store)
-        referenceCache = FaviconReferenceCache(faviconStoring: store)
+        self.imageCache = imageCache?(store) ?? FaviconImageCache(faviconStoring: store)
+        self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
         if case .inMemory = cacheType {
             loadFavicons()
@@ -126,24 +154,20 @@ final class FaviconManager: FaviconManagement {
 
     // MARK: - Fetching & Cache
 
-    private let imageCache: FaviconImageCache
-    private let referenceCache: FaviconReferenceCache
+    private let imageCache: FaviconImageCaching
+    private let referenceCache: FaviconReferenceCaching
 
-    nonisolated func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink],
-                                        documentUrl: URL,
-                                        completion: @escaping @MainActor (Favicon?) -> Void) {
-        Task {
-            // Manually add favicon.ico into links
-            let faviconLinks = self.createFallbackLinksIfNeeded(faviconLinks, documentUrl: documentUrl)
+    func handleFaviconLinks(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) async -> Favicon? {
+        // Manually add favicon.ico into links
+        let faviconLinks = createFallbackLinksIfNeeded(faviconLinks, documentUrl: documentUrl)
 
-            await self.awaitFaviconsLoaded()
-            // Fetch favicons if needed
-            let faviconLinksToFetch = await self.filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
-            let newFavicons = await self.fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
-            let favicon = await self.cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.compactMap { URL(string: $0.href) }, for: documentUrl)
+        await awaitFaviconsLoaded()
+        // Fetch favicons if needed
+        let faviconLinksToFetch = await filteringAlreadyFetchedFaviconLinks(from: faviconLinks)
+        let newFavicons = await fetchFavicons(faviconLinks: faviconLinksToFetch, documentUrl: documentUrl)
+        let favicon = cacheFavicons(newFavicons, faviconURLs: faviconLinks.lazy.map(\.href), for: documentUrl)
 
-            await completion(favicon)
-        }
+        return favicon
     }
 
     func handleFaviconsByDocumentUrl(_ faviconsByDocumentUrl: [URL: [Favicon]]) {
@@ -197,28 +221,40 @@ final class FaviconManager: FaviconManagement {
         }
     }
 
-    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> URL? {
-        referenceCache.getFaviconUrl(for: documentUrl, sizeCategory: sizeCategory)
+    func getCachedFaviconURL(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> URL? {
+        guard let faviconURL = referenceCache.getFaviconUrl(for: documentUrl, sizeCategory: sizeCategory) else {
+            guard fallBackToSmaller, let smallerSizeCategory = sizeCategory.smaller else {
+                return nil
+            }
+            return getCachedFaviconURL(for: documentUrl, sizeCategory: smallerSizeCategory, fallBackToSmaller: fallBackToSmaller)
+        }
+        return faviconURL
     }
 
-    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory) -> Favicon? {
-        guard let faviconUrl = referenceCache.getFaviconUrl(for: documentUrl, sizeCategory: sizeCategory) else {
-            return nil
+    func getCachedFavicon(for documentUrl: URL, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
+        guard let faviconURL = referenceCache.getFaviconUrl(for: documentUrl, sizeCategory: sizeCategory) else {
+            guard fallBackToSmaller, let smallerSizeCategory = sizeCategory.smaller else {
+                return nil
+            }
+            return getCachedFavicon(for: documentUrl, sizeCategory: smallerSizeCategory, fallBackToSmaller: fallBackToSmaller)
         }
 
-        return imageCache.get(faviconUrl: faviconUrl)
+        return imageCache.get(faviconUrl: faviconURL)
     }
 
-    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
+    func getCachedFavicon(for host: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
         guard let faviconUrl = referenceCache.getFaviconUrl(for: host, sizeCategory: sizeCategory) else {
-            return nil
+            guard fallBackToSmaller, let smallerSizeCategory = sizeCategory.smaller else {
+                return nil
+            }
+            return getCachedFavicon(for: host, sizeCategory: smallerSizeCategory, fallBackToSmaller: fallBackToSmaller)
         }
 
         return imageCache.get(faviconUrl: faviconUrl)
     }
 
-    func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory) -> Favicon? {
-        if let favicon = getCachedFavicon(for: domain, sizeCategory: sizeCategory) {
+    func getCachedFavicon(forDomainOrAnySubdomain domain: String, sizeCategory: Favicon.SizeCategory, fallBackToSmaller: Bool) -> Favicon? {
+        if let favicon = getCachedFavicon(for: domain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
             return favicon
         }
 
@@ -228,7 +264,7 @@ final class FaviconManager: FaviconManagement {
         }
 
         if let subdomain {
-            return getCachedFavicon(for: subdomain, sizeCategory: sizeCategory)
+            return getCachedFavicon(for: subdomain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller)
         }
         return nil
     }
@@ -279,20 +315,18 @@ final class FaviconManager: FaviconManagement {
     private nonisolated func createFallbackLinksIfNeeded(_ faviconLinks: [FaviconUserScript.FaviconLink], documentUrl: URL) -> [FaviconUserScript.FaviconLink] {
         let validSchemes: [URL.NavigationalScheme?] = [.http, .https]
         guard faviconLinks.isEmpty,
-              let host = documentUrl.host,
+              let root = documentUrl.root?.toHttps(),
               validSchemes.contains(documentUrl.navigationalScheme) else {
             return faviconLinks
         }
         return [
-            FaviconUserScript.FaviconLink(href: "\(URL.NavigationalScheme.https.separated())\(host)/favicon.ico",
-                                          rel: "favicon.ico")
+            FaviconUserScript.FaviconLink(href: root.appending("favicon.ico"), rel: "favicon.ico")
         ]
     }
 
     private nonisolated func filteringAlreadyFetchedFaviconLinks(from faviconLinks: [FaviconUserScript.FaviconLink]) async -> [FaviconUserScript.FaviconLink] {
         let urlsToLinks = faviconLinks.reduce(into: [URL: FaviconUserScript.FaviconLink]()) { result, faviconLink in
-            guard let url = URL(string: faviconLink.href) else { return }
-            result[url] = faviconLink
+            result[faviconLink.href] = faviconLink
         }
         let weekAgo = Date.weekAgo
         let cachedFavicons = await self.imageCache.getFavicons(with: urlsToLinks.keys)?
@@ -313,13 +347,13 @@ final class FaviconManager: FaviconManagement {
 
         return await withTaskGroup(of: Favicon?.self) { [faviconURLSession] group in
             for faviconLink in faviconLinks {
-                guard let faviconUrl = URL(string: faviconLink.href) else { continue }
+                let faviconUrl = faviconLink.href
                 group.addTask {
                     guard let data = try? await faviconURLSession.data(from: faviconUrl).0 else { return nil }
 
                     let favicon = Favicon(identifier: UUID(),
                                           url: faviconUrl,
-                                          image: NSImage(data: data),
+                                          image: NSImage(dataUsingCIImage: data),
                                           relationString: faviconLink.rel,
                                           documentUrl: documentUrl,
                                           dateCreated: Date())
@@ -383,5 +417,23 @@ extension FaviconManager: Bookmarks.FaviconStoring {
 
             self.cacheFavicons([favicon], faviconURLs: [faviconURL], for: documentURL)
         }
+    }
+}
+
+fileprivate extension NSImage {
+    /**
+     * This function attempts to initialize `NSImage` from `CIImage`.
+     *
+     * This helps to preserve transparency on some PNG images, and fixes
+     * storing `NSImage` initialized with `ico` files in NSKeyedArchiver.
+     */
+    convenience init?(dataUsingCIImage data: Data) {
+        guard let ciImage = CIImage(data: data) else {
+            self.init(data: data)
+            return
+        }
+        let rep = NSCIImageRep(ciImage: ciImage)
+        self.init(size: rep.size)
+        addRepresentation(rep)
     }
 }

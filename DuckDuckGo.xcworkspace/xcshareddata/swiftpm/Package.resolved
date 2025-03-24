@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "5c952d2e50d6de15c9bbdee9ca033b209abd752b",
-        "version" : "7.29.0"
+        "revision" : "8fa69d009d3205b969bc76477897e3b82095f9f6",
+        "version" : "8.5.0"
       }
     },
     {
@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "30bbec9210d88411fc19ab8bd6e593a33548cf06",
-        "version" : "4.0.0"
+        "revision" : "493a824c8abaf54064d8551d67c72e5ec59d2bf9",
+        "version" : "4.0.1"
       }
     },
     {

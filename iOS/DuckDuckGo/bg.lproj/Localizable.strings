@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Намерете и изберете **DuckDuckGo**, след това плъзнете до **VPN** и изберете **Добавяне на приспособление**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "Функцията DuckDuckGo VPN е включена";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN е изключен";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Можете да използвате бързите клавиши на Сири за включване на VPN услугата чрез бърза гласова команда, например „Сири, включи DuckDuckGo VPN“. Това е бърз начин да включите VPN, без да използвате ръцете си.";

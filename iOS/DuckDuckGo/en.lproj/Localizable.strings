@@ -3089,8 +3089,8 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Find and select **DuckDuckGo**, then swipe to **VPN** and select **Add Widget**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN is connected";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN is disconnected";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri Shortcuts let you connect to your VPN with a quick voice command, like “Siri, turn on DuckDuckGo VPN”. It’s a fast, hands-free way to use your VPN.";

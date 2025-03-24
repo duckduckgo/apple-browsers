@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Найдите и выберите **DuckDuckGo**, а затем с помощью свайпа перейдите к **VPN** и выберите вариант **Добавить виджет**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "VPN DuckDuckGo подключен";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN отключен";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Быстрые команды Siri позволяют оперативно подключиться к VPN с помощью голосового управления, например: «Siri, включи DuckDuckGo VPN». Это быстрый и удобный способ включить VPN, не занимая рук.";

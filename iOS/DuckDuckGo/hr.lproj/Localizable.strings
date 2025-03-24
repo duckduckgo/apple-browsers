@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Pronađi i odaberi **DuckDuckGo**, zatim prijeđi prstom do **VPN-a** i odaberi **Dodaj widget**.";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN je povezan";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "Veza s DuckDuckGo VPN-om je prekinuta";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri prečaci omogućuju ti povezivanje s VPN-om brzom glasovnom naredbom, poput „Siri, uključi DuckDuckGo VPN“. To je brz način korištenja VPN-a bez upotrebe ruku.";

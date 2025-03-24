@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Trova e seleziona **DuckDuckGo**, quindi scorri fino a **VPN** e seleziona **Aggiungi widget**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "La VPN di DuckDuckGo è connessa";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "La VPN di DuckDuckGo si è disconnessa";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Le scorciatoie di Siri permettono di connettersi alla tua VPN con un rapido comando vocale, ad esempio \"Siri, attiva la VPN DuckDuckGo\". È un modo semplice e comodo per usare la VPN.";

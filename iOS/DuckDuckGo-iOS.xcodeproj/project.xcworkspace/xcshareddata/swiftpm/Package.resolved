@@ -32,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "5c952d2e50d6de15c9bbdee9ca033b209abd752b",
-        "version" : "7.29.0"
+        "revision" : "8fa69d009d3205b969bc76477897e3b82095f9f6",
+        "version" : "8.5.0"
       }
     },
     {
@@ -219,7 +219,7 @@
     {
       "identity" : "trackerradarkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/TrackerRadarKit",
+      "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
         "revision" : "5de0a610a7927b638a5fd463a53032c9934a2c3b",
         "version" : "3.0.0"

@@ -1,5 +1,5 @@
 //
-//  OmniBar.swift
+//  DefaultOmniBarView.swift
 //  DuckDuckGo
 //
 //  Copyright © 2017 DuckDuckGo. All rights reserved.
@@ -26,19 +26,14 @@ import DuckPlayer
 import os.log
 import BrowserServicesKit
 
-extension OmniBar: NibLoading {}
+extension DefaultOmniBarView: NibLoading {}
 
 public enum OmniBarIcon: String {
     case duckPlayer = "DuckPlayerURLIcon"
     case specialError = "Globe-24"
 }
 
-class OmniBar: UIView {
-
-    enum AccessoryType {
-         case share
-         case chat
-     }
+class DefaultOmniBarView: UIView {
 
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
@@ -84,7 +79,7 @@ class OmniBar: UIView {
 
     weak var omniDelegate: OmniBarDelegate?
     fileprivate var state: OmniBarState!
-    private(set) var accessoryType: AccessoryType = .share {
+    private(set) var accessoryType: OmniBarAccessoryType = .share {
         didSet {
             switch accessoryType {
             case .chat:
@@ -103,8 +98,8 @@ class OmniBar: UIView {
     // Set up a view to add a custom icon to the Omnibar
     private var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
-    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> OmniBar {
-        let omniBar = OmniBar.load(nibName: "OmniBar")
+    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> DefaultOmniBarView {
+        let omniBar = DefaultOmniBarView.load(nibName: "OmniBar")
         omniBar.state = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
         omniBar.refreshState(omniBar.state)
         return omniBar
@@ -211,7 +206,11 @@ class OmniBar: UIView {
     var textFieldTapped = true
 
     private func configureSeparator() {
-        separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            separatorHeightConstraint.constant = 0.0
+        } else {
+            separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
+        }
     }
 
     private func configureEditingMenu() {
@@ -285,7 +284,7 @@ class OmniBar: UIView {
         textField.selectedTextRange = nil
     }
 
-    func updateAccessoryType(_ type: AccessoryType) {
+    func updateAccessoryType(_ type: OmniBarAccessoryType) {
         DispatchQueue.main.async { self.accessoryType = type }
     }
 
@@ -599,11 +598,11 @@ class OmniBar: UIView {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: OmniBar.didLayoutNotification, object: self)
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
     }
 }
 
-extension OmniBar: UITextFieldDelegate {
+extension DefaultOmniBarView: UITextFieldDelegate {
     func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
         self.refreshState(self.state.onEditingStartedState)
         return true
@@ -642,7 +641,7 @@ extension OmniBar: UITextFieldDelegate {
     }
 }
 
-extension OmniBar {
+extension DefaultOmniBarView {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
@@ -653,7 +652,7 @@ extension OmniBar {
 
         editingBackground?.backgroundColor = theme.searchBarBackgroundColor
         editingBackground?.borderColor = theme.searchBarBackgroundColor
-        
+
         privacyIconAndTrackersAnimator.resetImageProvider()
         
         searchStackContainer?.tintColor = theme.barTintColor
@@ -681,7 +680,7 @@ extension OmniBar {
     }
 }
 
-extension OmniBar {
+extension DefaultOmniBarView {
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
         if state.dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) {
@@ -741,5 +740,46 @@ extension OmniBar {
         }
 
         dismissButtonAnimator?.startAnimation()
+    }
+}
+
+extension DefaultOmniBarView: OmniBarView {
+    var text: String? {
+        get { textField.text }
+        set { textField.text = newValue }
+    }
+    
+    var backButtonMenu: UIMenu? {
+        get { backButton.menu }
+        set { backButton.menu = newValue }
+    }
+    
+    var forwardButtonMenu: UIMenu? {
+        get { forwardButton.menu }
+        set { forwardButton.menu = newValue }
+    }
+    
+    var menuButtonView: UIButton {
+        menuButton
+    }
+
+    var bookmarksButtonView: UIButton {
+        bookmarksButton
+    }
+    
+    var accessoryButtonView: UIButton {
+        accessoryButton
+    }
+    
+    var searchContainerWidth: CGFloat {
+        searchStackContainer.frame.width
+    }
+
+    var searchContainerView: UIView {
+        searchContainer
+    }
+
+    var privacyIconView: UIView? {
+        privacyInfoContainer.privacyIcon
     }
 }

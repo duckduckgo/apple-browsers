@@ -88,8 +88,9 @@ final class AppStateRestorationManager: NSObject {
     // Cleans all stored snapshots except snapshots listed in the state
     func cleanTabSnapshots(state: WindowManagerStateRestoration? = nil) {
         let tabs = state?.windows.flatMap { $0.model.tabCollection.tabs } ?? []
-        let pinnedTabs = state?.applicationPinnedTabs?.tabs ?? []
-        let stateSnapshotIds = (tabs + pinnedTabs).compactMap { $0.tabSnapshotIdentifier }
+        let perWindowPinnedTabs = state?.windows.flatMap { $0.pinnedTabs?.tabs ?? [] } ?? []
+        let applicationPinnedTabs = state?.applicationPinnedTabs?.tabs ?? []
+        let stateSnapshotIds = (tabs + perWindowPinnedTabs + applicationPinnedTabs).compactMap { $0.tabSnapshotIdentifier }
         Task {
             await tabSnapshotCleanupService.cleanStoredSnapshots(except: Set(stateSnapshotIds))
         }

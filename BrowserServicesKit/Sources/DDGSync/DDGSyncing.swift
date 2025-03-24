@@ -265,6 +265,25 @@ public protocol RemoteConnecting {
 
 }
 
+protocol RemoteKeyExchanging {
+    
+    // Step A
+    var code: String { get }
+
+    // Step C
+    func pollForPublicKey() async throws -> ExchangeMessage?
+    
+    func stopPolling()
+}
+
+protocol RemoteExchangeRecovering {
+    
+    // Step E
+    func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey?
+
+    func stopPolling()
+}
+
 /**
  * Describes Sync scheduler.
  *

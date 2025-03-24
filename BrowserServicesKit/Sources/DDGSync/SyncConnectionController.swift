@@ -1,5 +1,5 @@
 //
-//  SyncActivationController.swift
+//  SyncConnectionController.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -209,7 +209,7 @@ final public class SyncConnectionController {
         }
         
         do {
-            guard let recoveryKey = try await self.remoteExchangeAgain(exchangeInfo: exchangeInfo).pollForRecoveryKey() else {
+            guard let recoveryKey = try await self.remoteExchangeRecoverer(exchangeInfo: exchangeInfo).pollForRecoveryKey() else {
                 // Polling likelly cancelled.
                 return false
             }
@@ -220,7 +220,7 @@ final public class SyncConnectionController {
         }
     }
     
-    private func remoteExchangeAgain(exchangeInfo: ExchangeInfo) throws -> RemoteExchangeRecovering {
+    private func remoteExchangeRecoverer(exchangeInfo: ExchangeInfo) throws -> RemoteExchangeRecovering {
         return try dependencies.createRemoteExchangeRecoverer(exchangeInfo)
     }
     

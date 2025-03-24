@@ -308,20 +308,33 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func collectCode(showConnectMode: Bool) {
-        let model = ScanOrPasteCodeViewModel(showConnectMode: showConnectMode, recoveryCode: recoveryCode.isEmpty ? nil : recoveryCode)
+        let code: String
+        
+        if showConnectMode {
+            do {
+                code = try startConnectMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                return
+            }
+        } else {
+            code = recoveryCode
+        }
+        
+        let model = ScanOrPasteCodeViewModel(code: code)
         model.delegate = self
-
+        
         var controller: UIHostingController<AnyView>
         if showConnectMode {
             controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
             controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
         }
-
+        
         let navController = UIDevice.current.userInterfaceIdiom == .phone
         ? PortraitNavigationController(rootViewController: controller)
         : UINavigationController(rootViewController: controller)
-
+        
         navController.overrideUserInterfaceStyle = .dark
         navController.setNeedsStatusBarAppearanceUpdate()
         navController.modalPresentationStyle = .fullScreen

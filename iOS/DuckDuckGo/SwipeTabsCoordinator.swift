@@ -229,9 +229,10 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         var height = targetSize.height
 
         let tab = tabsModel.safeGetTabAt(nextIndex)
-        if let tab, tab.link != nil, let image = tabPreviewsSource.preview(for: tab) {
+        if let tab, let image = tabPreviewsSource.preview(for: tab) {
             createPreviewFromImage(image)
             if appSettings.currentAddressBarPosition.isBottom,
+               tab.link != nil,
                let collectionView = coordinator.navigationBarContainer.subviews.first as? UICollectionView {
                 // Adjust the preview height to account for the omnibar at the bottom
                 // When the omnibar is at the bottom, the webview content extends underneath it
@@ -240,11 +241,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 // because the container height can change when the keyboard appears
                 height = targetSize.height - collectionView.frame.size.height
             }
+            preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
         } else if tab?.link == nil {
-            createPreviewFromLogoContainerWithSize(targetSize)
+            let targetFrame = CGRect(origin: .zero, size: coordinator.contentContainer.frame.size)
+            createPreviewFromLogoContainerWithSize(targetFrame.size)
+            preview?.frame = targetFrame
         }
 
-        preview?.frame = CGRect(x: 0, y: 0, width: targetSize.width, height: height)
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
             preview?.clipsToBounds = true

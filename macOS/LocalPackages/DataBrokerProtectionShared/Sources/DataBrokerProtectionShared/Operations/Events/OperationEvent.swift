@@ -25,4 +25,3 @@ public enum OperationEvent {
     case firstProfileRemoved
     case allProfilesRemoved
 }
-

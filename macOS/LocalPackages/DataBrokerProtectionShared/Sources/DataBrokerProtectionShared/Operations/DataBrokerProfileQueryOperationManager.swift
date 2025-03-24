@@ -376,7 +376,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     }
 
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
-                                                            database: DataBrokerProtectionRepository) {
+                                                     database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
               savedExtractedProfiles.count > 0 else {

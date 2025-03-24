@@ -137,6 +137,11 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitRecoveryKey(_ connectCode: SyncCode.ConnectCode) async throws
     
     /**
+     Sends this device's recovery key to the server encrypted using supplied key
+     */
+    func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionController
+    
+    /**
      Sends this device's public key to the server encrypted using supplied key
      // Step B
      */

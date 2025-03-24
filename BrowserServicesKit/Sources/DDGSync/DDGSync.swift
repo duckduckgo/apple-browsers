@@ -152,8 +152,6 @@ public class DDGSync: DDGSyncing {
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
-
-        return []
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
@@ -168,8 +166,6 @@ public class DDGSync: DDGSyncing {
         } catch {
             throw handleUnauthenticatedAndMap(error)
         }
-
-        return []
     }
 
     public func deleteAccount() async throws {

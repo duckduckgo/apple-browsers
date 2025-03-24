@@ -118,6 +118,24 @@ public class DDGSync: DDGSyncing {
             throw handleUnauthenticatedAndMap(error)
         }
     }
+    
+    // Step B
+    public func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
+        do {
+            return try await dependencies.createExchangePublicKeyTransmitter().sendGeneratedExchangeInfo(exchangeCode, deviceName: deviceName)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+    
+    // Step D
+    public func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
+        do {
+            try await dependencies.createExchangeRecoveryKeyTransmitter(exchangeMessage: exchangeMessage).send()
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
 
     public func disconnect() async throws {
         guard let deviceId = try dependencies.secureStore.account()?.deviceId else {

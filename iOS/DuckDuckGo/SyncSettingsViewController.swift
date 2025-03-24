@@ -317,6 +317,8 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func endConnectMode() {
         connector?.stopPolling()
         connector = nil
+        connectionController.stopConnectMode()
+        connectionController.stopExchangeMode()
     }
 
     func startConnectMode() throws -> String {
@@ -352,8 +354,16 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
             }
         }
     }
-
+    
     func syncCodeEntered(code: String) async -> Bool {
+        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+            return await connectionController.syncCodeEntered(code: code)
+        } else {
+            return await legacySyncCodeEntered(code: code)
+        }
+    }
+
+    private func legacySyncCodeEntered(code: String) async -> Bool {
         var shouldShowSyncEnabled = true
         guard let syncCode = try? SyncCode.decodeBase64String(code) else {
             return false

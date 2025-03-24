@@ -308,6 +308,35 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func collectCode(showConnectMode: Bool) {
+        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+            newCollectCode(showConnectMode: showConnectMode)
+        } else {
+            legacyCollectCode(showConnectMode: showConnectMode)
+        }
+    }
+    
+    private func newCollectCode(showConnectMode: Bool) {
+        let code: String
+        
+        if showConnectMode {
+            do {
+                code = try connectionController.startConnectMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                return
+            }
+        } else {
+            do {
+                code = try connectionController.startExchangeMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                return
+            }
+        }
+        presentScanOrPasteCodeView(code: code, showConnectMode: showConnectMode)
+    }
+    
+    private func legacyCollectCode(showConnectMode: Bool) {
         let code: String
         
         if showConnectMode {
@@ -320,7 +349,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         } else {
             code = recoveryCode
         }
-        
+        presentScanOrPasteCodeView(code: code, showConnectMode: showConnectMode)
+    }
+    
+    private func presentScanOrPasteCodeView(code: String, showConnectMode: Bool) {
         let model = ScanOrPasteCodeViewModel(code: code)
         model.delegate = self
         

@@ -132,6 +132,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
 
+        let pinnedTabsCount: Int = await MainActor.run {
+            pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
+        }
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
@@ -153,7 +157,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
-                                                       pinnedTabsCount: pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +),
+                                                       pinnedTabsCount: pinnedTabsCount,
                                                        hasCustomHomePage: startupPreferencesPersistor().launchToCustomHomePage,
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,

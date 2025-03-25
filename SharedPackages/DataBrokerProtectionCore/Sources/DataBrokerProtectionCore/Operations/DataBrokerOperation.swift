@@ -157,7 +157,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                 .sortedByPreferredRunDate()
         } else {
             filteredAndSortedOperationsData = operationsData
-                .excludingUserRemoved() 
+                .excludingUserRemoved()
         }
 
         return filteredAndSortedOperationsData

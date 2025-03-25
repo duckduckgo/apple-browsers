@@ -179,5 +179,3 @@ struct MockRemoteConnecting: RemoteConnecting {
     func stopPolling() {
     }
 }
-
-

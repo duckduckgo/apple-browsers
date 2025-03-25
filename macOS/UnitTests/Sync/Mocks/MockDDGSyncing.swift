@@ -26,11 +26,11 @@ class MockDDGSyncing: DDGSyncing {
     func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate) -> any SyncConnectionControlling {
         MockSyncConnectionControlling()
     }
-    
+
     func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
         .init(keyId: "", publicKey: .init(), secretKey: .init())
     }
-    
+
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
         
     }

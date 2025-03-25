@@ -1,5 +1,5 @@
 //
-//  ExchangeKeyTransmitters.swift
+//  ExchangeKeyTransmitter.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -36,12 +36,9 @@ struct ExchangePublicKeyTransmitter: ExchangePublicKeyTransmitting {
             ExchangeRequest(keyId: code.keyId, encryptedMessage: encodedRecoveryKey)
         )
 
-        print("🦄 B: Send public key with keyID: \(code.keyId), publicKey: \(code.publicKey)")
-        Swift.print("Exchange JSON request is: \(String(data: body, encoding: .utf8) ?? "nil")")
-
         let request = api.createRequest(url: endpoints.exchange,
                                         method: .post,
-                                        headers: [:], // TODO: Will we authenticate in certain scenarios?
+                                        headers: [:],
                                         parameters: [:],
                                         body: body,
                                         contentType: "application/json")
@@ -73,12 +70,9 @@ struct ExchangeRecoveryKeyTransmitter: ExchangeRecoveryKeyTransmitting {
             ExchangeRequest(keyId: exchangeMessage.keyId, encryptedMessage: encodedRecoveryKey)
         )
 
-        print("🦄 D: Send recovery key with keyID: \(exchangeMessage.keyId), recoveryCode: \(recoveryCode)")
-        print("Exchange JSON request is: \(String(data: body, encoding: .utf8) ?? "nil")")
-
         let request = api.createRequest(url: endpoints.exchange,
                                         method: .post,
-                                        headers: [:], // TODO: Will we authenticate in certain scenarios?
+                                        headers: [:],
                                         parameters: [:],
                                         body: body,
                                         contentType: "application/json")

@@ -202,6 +202,8 @@ class MainViewController: UIViewController {
         return OmnibarAccessoryHandler(settings: settings, featureFlagger: featureFlagger)
     }()
 
+    let isAuthV2Enabled: Bool
+
     init(
         bookmarksDatabase: CoreDataDatabase,
         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
@@ -279,7 +281,7 @@ class MainViewController: UIViewController {
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
-
+        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self

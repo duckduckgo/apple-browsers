@@ -37,7 +37,7 @@ protocol OperationsManager {
                       pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                       showWebView: Bool,
                       isImmediateOperation: Bool,
-                      userNotificationService: DataBrokerProtectionUserNotificationService,
+                      eventsHandler: EventMapping<OperationEvent>,
                       shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
@@ -48,7 +48,7 @@ extension OperationsManager {
                       notificationCenter: NotificationCenter,
                       runner: WebJobRunner,
                       pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                      userNotificationService: DataBrokerProtectionUserNotificationService,
+                      eventsHandler: EventMapping<OperationEvent>,
                       isManual: Bool,
                       shouldRunNextStep: @escaping () -> Bool) async throws {
 
@@ -60,7 +60,7 @@ extension OperationsManager {
                                pixelHandler: pixelHandler,
                                showWebView: false,
                                isImmediateOperation: isManual,
-                               userNotificationService: userNotificationService,
+                               eventsHandler: eventsHandler,
                                shouldRunNextStep: shouldRunNextStep)
     }
 }
@@ -89,7 +89,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                showWebView: Bool = false,
                                isImmediateOperation: Bool = false,
-                               userNotificationService: DataBrokerProtectionUserNotificationService,
+                               eventsHandler: EventMapping<OperationEvent>,
                                shouldRunNextStep: @escaping () -> Bool) async throws {
 
         if operationData as? ScanJobData != nil {
@@ -100,7 +100,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                        pixelHandler: pixelHandler,
                                        showWebView: showWebView,
                                        isManual: isImmediateOperation,
-                                       userNotificationService: userNotificationService,
+                                       eventsHandler: eventsHandler,
                                        shouldRunNextStep: shouldRunNextStep)
         } else if let optOutJobData = operationData as? OptOutJobData {
             try await runOptOutOperation(for: optOutJobData.extractedProfile,
@@ -110,7 +110,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                          notificationCenter: notificationCenter,
                                          pixelHandler: pixelHandler,
                                          showWebView: showWebView,
-                                         userNotificationService: userNotificationService,
+                                         eventsHandler: eventsHandler,
                                          shouldRunNextStep: shouldRunNextStep)
         }
     }
@@ -124,7 +124,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                    pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                    showWebView: Bool = false,
                                    isManual: Bool = false,
-                                   userNotificationService: DataBrokerProtectionUserNotificationService,
+                                   eventsHandler: EventMapping<OperationEvent>,
                                    shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
@@ -214,7 +214,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     brokerProfileQueryData: brokerProfileQueryData,
                     database: database,
                     pixelHandler: pixelHandler,
-                    userNotificationService: userNotificationService
+                    eventsHandler: eventsHandler
                 )
             } else {
                 // 7b. If there were no removed profiles, update the date entries:
@@ -328,9 +328,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        userNotificationService: DataBrokerProtectionUserNotificationService
+        eventsHandler: EventMapping<OperationEvent>
     ) throws {
-        var shouldSendProfileRemovedNotification = false
+        var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
             if let extractedProfileId = removedProfile.id {
                 let event = HistoryEvent(
@@ -341,7 +341,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 )
                 try database.add(event)
                 try database.updateRemovedDate(Date(), on: extractedProfileId)
-                shouldSendProfileRemovedNotification = true
+                shouldSendProfileRemovedEvent = true
 
                 try updateOperationDataDates(
                     origin: .scan,
@@ -366,13 +366,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             }
         }
 
-        if shouldSendProfileRemovedNotification {
-            sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService, database: database)
+        if shouldSendProfileRemovedEvent {
+            sendProfilesRemovedEventIfNecessary(eventsHandler: eventsHandler, database: database)
         }
     }
 
-    private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService,
-                                                           database: DataBrokerProtectionRepository) {
+    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
+                                                     database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
               savedExtractedProfiles.count > 0 else {
@@ -380,12 +380,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         if savedExtractedProfiles.count == 1 {
-            userNotificationService.sendAllInfoRemovedNotificationIfPossible()
+            eventsHandler.fire(.allProfilesRemoved)
         } else {
             if savedExtractedProfiles.allSatisfy({ $0.removedDate != nil }) {
-                userNotificationService.sendAllInfoRemovedNotificationIfPossible()
+                eventsHandler.fire(.allProfilesRemoved)
             } else {
-                userNotificationService.sendFirstRemovedNotificationIfPossible()
+                eventsHandler.fire(.firstProfileRemoved)
             }
         }
     }
@@ -399,7 +399,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                      notificationCenter: NotificationCenter,
                                      pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                      showWebView: Bool = false,
-                                     userNotificationService: DataBrokerProtectionUserNotificationService,
+                                     eventsHandler: EventMapping<OperationEvent>,
                                      shouldRunNextStep: @escaping () -> Bool) async throws {
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,

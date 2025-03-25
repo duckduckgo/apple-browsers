@@ -3295,8 +3295,6 @@
 		F1476FC12C1359FB00EAE46A /* SubscriptionUIHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */; };
 		F1664A682D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
 		F1664A692D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */; };
-		F1664A6B2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A6A2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift */; };
-		F1664A6C2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1664A6A2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift */; };
 		F17114822C7C98FB009836C1 /* Logger+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114812C7C98FB009836C1 /* Logger+Favicons.swift */; };
 		F17114832C7C98FB009836C1 /* Logger+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114812C7C98FB009836C1 /* Logger+Favicons.swift */; };
 		F17114852C7C9D28009836C1 /* Logger+Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114842C7C9D28009836C1 /* Logger+Fire.swift */; };
@@ -5210,7 +5208,6 @@
 		F118EA842BEACC7000F77634 /* NonStandardPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonStandardPixel.swift; sourceTree = "<group>"; };
 		F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandler.swift; sourceTree = "<group>"; };
 		F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2.swift; sourceTree = "<group>"; };
-		F1664A6A2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkProtectionKeychainStore+TokenStoring.swift"; sourceTree = "<group>"; };
 		F17114812C7C98FB009836C1 /* Logger+Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Favicons.swift"; sourceTree = "<group>"; };
 		F17114842C7C9D28009836C1 /* Logger+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Fire.swift"; sourceTree = "<group>"; };
 		F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DBPBackgroundAgent.swift"; sourceTree = "<group>"; };
@@ -6900,7 +6897,6 @@
 				4B41ED9F2B15437A001EEDF4 /* NetworkProtectionNotificationsPresenterFactory.swift */,
 				EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */,
 				7B0099802B65C6B300FE7C31 /* MacTransparentProxyProvider.swift */,
-				F1664A6A2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift */,
 				EE66418B2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift */,
 			);
 			path = NetworkExtensionTargets;
@@ -13191,7 +13187,6 @@
 				EE66418D2B9B1981005BCD17 /* NetworkProtectionTokenStore+SubscriptionTokenKeychainStorage.swift in Sources */,
 				EEBCA0C72BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift in Sources */,
 				F1DA51932BF6081D00CF29FA /* AttributionPixelHandler.swift in Sources */,
-				F1664A6B2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift in Sources */,
 				7B2E52252A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift in Sources */,
 				F1DA51892BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */,
 				B602E8232A1E260E006D261F /* Bundle+NetworkProtectionExtensions.swift in Sources */,
@@ -13332,7 +13327,6 @@
 				EEBCA0C62BD7CE2C004DF19C /* VPNFailureRecoveryPixel.swift in Sources */,
 				4B4D60A12A0B2D6100BCD287 /* NetworkProtectionOptionKeyExtension.swift in Sources */,
 				B602E8182A1E2570006D261F /* URL+NetworkProtection.swift in Sources */,
-				F1664A6C2D70B2530034CCB8 /* NetworkProtectionKeychainStore+TokenStoring.swift in Sources */,
 				B65DA5F52A77D3FA00CBEE8D /* BundleExtension.swift in Sources */,
 				4B52354E2C854CB700AFAF64 /* DuckDuckGoUserAgent.swift in Sources */,
 				4B4D60892A0B2A1C00BCD287 /* NetworkProtectionUNNotificationsPresenter.swift in Sources */,

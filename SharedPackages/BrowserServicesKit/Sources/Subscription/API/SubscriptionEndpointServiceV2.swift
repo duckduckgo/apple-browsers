@@ -131,7 +131,7 @@ public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV
                 throw SubscriptionEndpointServiceError.noData
             } else {
                 let bodyString: String = try response.decodeBody()
-                Logger.subscriptionEndpointService.log("(\(statusCode.description) Failed to retrieve Subscription details: \(bodyString)")
+                Logger.subscriptionEndpointService.log("(\(statusCode.description) Failed to retrieve Subscription details: \(bodyString, privacy: .public)")
                 throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
             }
         }
@@ -160,7 +160,13 @@ New: \(subscription.debugDescription, privacy: .public)
     func updateCache(with subscription: PrivacyProSubscription) {
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
-            if expiryDate.isInTheFuture() {
+#if DEBUG
+            // In DEBUG the subscription duration is just a a couple of minutes, we want to avoid the cache to be immediately invalidated
+            let isInTheFuture = false
+#else
+            let isInTheFuture = expiryDate.isInTheFuture()
+#endif
+            if isInTheFuture {
                 Logger.subscriptionEndpointService.debug("Subscription cache set with expiration date: \(expiryDate, privacy: .public)")
                 subscriptionCache.set(subscription, expires: expiryDate)
             } else {
@@ -168,7 +174,12 @@ New: \(subscription.debugDescription, privacy: .public)
                 subscriptionCache.set(subscription)
             }
             Logger.subscriptionEndpointService.debug("Notifying subscription changed")
-            NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
+            Task { @MainActor in
+                NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
+                // TMP: Convert to Entitlement (authV1)
+                let entitlements = subscription.features?.map { $0.entitlement } ?? []
+                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+            }
         }
     }
 

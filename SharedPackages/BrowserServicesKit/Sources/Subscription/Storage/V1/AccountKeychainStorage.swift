@@ -62,14 +62,6 @@ public final class AccountKeychainStorage: AccountStoring {
         try set(string: authToken, forField: .authToken)
     }
 
-    public func getAccessToken() throws -> String? {
-        try getString(forField: .accessToken)
-    }
-
-    public func store(accessToken: String) throws {
-        try set(string: accessToken, forField: .accessToken)
-    }
-
     public func getEmail() throws -> String? {
         try getString(forField: .email)
     }
@@ -96,7 +88,6 @@ public final class AccountKeychainStorage: AccountStoring {
 
     public func clearAuthenticationState() throws {
         try deleteItem(forField: .authToken)
-        try deleteItem(forField: .accessToken)
         try deleteItem(forField: .email)
         try deleteItem(forField: .externalID)
     }
@@ -110,7 +101,6 @@ extension AccountKeychainStorage {
     */
     enum AccountKeychainField: String, CaseIterable {
         case authToken = "account.authToken"
-        case accessToken = "account.accessToken"
         case email = "account.email"
         case externalID = "account.external_id"
 

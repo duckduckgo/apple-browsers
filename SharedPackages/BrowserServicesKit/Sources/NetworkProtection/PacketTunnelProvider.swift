@@ -28,8 +28,6 @@ import os.log
 
 open class PacketTunnelProvider: NEPacketTunnelProvider {
 
-    public static let isAuthV2Enabled = false
-
     public enum Event {
         case userBecameActive
         case connectionTesterStatusChange(_ status: ConnectionTesterStatus, server: String)
@@ -244,7 +242,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private lazy var serverSelectionResolver: VPNServerSelectionResolving = {
         let locationRepository = NetworkProtectionLocationListCompositeRepository(
             environment: settings.selectedEnvironment,
-            tokenHandler: tokenHandler,
+            tokenHandler: tokenHandlerProvider(),
             errorEvents: debugEvents
         )
         return VPNServerSelectionResolver(locationListRepository: locationRepository, vpnSettings: settings)
@@ -273,7 +271,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     private lazy var keyStore = NetworkProtectionKeychainKeyStore(keychainType: keychainType,
                                                                   errorEvents: debugEvents)
 
-    private let tokenHandler: any SubscriptionTokenHandling
+    private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
+    public static var isAuthV2Enabled: Bool = false
 
     private func resetRegistrationKey() {
         Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
@@ -393,7 +392,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private lazy var deviceManager: NetworkProtectionDeviceManagement = NetworkProtectionDeviceManager(
         environment: self.settings.selectedEnvironment,
-        tokenHandler: self.tokenHandler,
+        tokenHandler: self.tokenHandlerProvider(),
         keyStore: self.keyStore,
         errorEvents: self.debugEvents
     )
@@ -404,7 +403,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     public lazy var entitlementMonitor = NetworkProtectionEntitlementMonitor()
     public lazy var serverStatusMonitor = NetworkProtectionServerStatusMonitor(
         networkClient: NetworkProtectionBackendClient(environment: self.settings.selectedEnvironment),
-        tokenHandler: self.tokenHandler
+        tokenHandler: self.tokenHandlerProvider()
     )
 
     private var lastTestFailed = false
@@ -433,17 +432,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 snoozeTimingStore: NetworkProtectionSnoozeTimingStore,
                 wireGuardInterface: WireGuardInterface,
                 keychainType: KeychainType,
-                tokenHandler: any SubscriptionTokenHandling,
+                tokenHandlerProvider: @escaping () -> any SubscriptionTokenHandling,
                 debugEvents: EventMapping<NetworkProtectionError>,
                 providerEvents: EventMapping<Event>,
                 settings: VPNSettings,
                 defaults: UserDefaults,
                 entitlementCheck: (() async -> Result<Bool, Error>)?) {
-        Logger.networkProtectionMemory.debug("[+] PacketTunnelProvider")
+        Logger.networkProtectionMemory.log("[+] PacketTunnelProvider")
 
         self.notificationsPresenter = notificationsPresenter
         self.keychainType = keychainType
-        self.tokenHandler = tokenHandler
+        self.tokenHandlerProvider = tokenHandlerProvider
         self.debugEvents = debugEvents
         self.providerEvents = providerEvents
         self.tunnelHealth = tunnelHealthStore
@@ -457,8 +456,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 
         super.init()
 
+        Logger.networkProtectionMemory.log("[+] PacketTunnelProvider initialized")
+
         observeSettingChanges()
-        Logger.networkProtectionMemory.debug("[+] PacketTunnelProvider initialized")
     }
 
     deinit {
@@ -503,6 +503,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         loadDNSSettings(from: options)
         loadTesterEnabled(from: options)
 #if os(macOS)
+        loadAuthVersion(from: options)
         if !Self.isAuthV2Enabled {
             try await loadAuthToken(from: options)
         } else {
@@ -586,21 +587,36 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
 #if os(macOS)
+    private func loadAuthVersion(from options: StartupOptions) {
+        switch options.isAuthV2Enabled {
+        case .set(let newAuthVersion):
+            Logger.networkProtection.log("Set new isAuthV2Enabled")
+            settings.isAuthV2Enabled = newAuthVersion
+        case .useExisting:
+            Logger.networkProtection.log("Use existing isAuthV2Enabled")
+        case .reset:
+            settings.isAuthV2Enabled = false
+        }
+        PacketTunnelProvider.isAuthV2Enabled = settings.isAuthV2Enabled
+        Logger.networkProtection.log("Load isAuthV2Enabled: \(self.settings.isAuthV2Enabled, privacy: .public)")
+    }
+
     private func loadAuthToken(from options: StartupOptions) async throws {
+        let tokenHandlerProvider = tokenHandlerProvider()
         Logger.networkProtection.log("Load auth token")
         switch options.authToken {
         case .set(let newAuthToken):
             Logger.networkProtection.log("Set new token")
-            if let currentAuthToken = try? await tokenHandler.getToken(), currentAuthToken == newAuthToken {
+            if let currentAuthToken = try? await tokenHandlerProvider.getToken(), currentAuthToken == newAuthToken {
                 Logger.networkProtection.log("Token unchanged, using the current one")
                 return
             }
 
-            try await tokenHandler.adoptToken(newAuthToken)
+            try await tokenHandlerProvider.adoptToken(newAuthToken)
         case .useExisting:
             Logger.networkProtection.log("Use existing token")
             do {
-                try await tokenHandler.getToken()
+                try await tokenHandlerProvider.getToken()
             } catch {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
             }
@@ -608,29 +624,27 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("Reset token")
             // This case should in theory not be possible, but it's ideal to have this in place
             // in case an error in the controller on the client side allows it.
-            try? await tokenHandler.removeToken()
+            try? await tokenHandlerProvider.removeToken()
             throw TunnelError.tokenReset
         }
     }
 
     private func loadTokenContainer(from options: StartupOptions) async throws {
+        let tokenHandlerProvider = tokenHandlerProvider()
         Logger.networkProtection.log("Load token container")
         switch options.tokenContainer {
         case .set(let newTokenContainer):
-            Logger.networkProtection.log("Set new token")
+            Logger.networkProtection.log("Set new token container")
             do {
-                try await tokenHandler.adoptToken(newTokenContainer)
-                // Important: Here we force the token refresh in order to immediately branch the system extension token from the main app one.
-                // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-                try await tokenHandler.refreshToken()
+                try await tokenHandlerProvider.adoptToken(newTokenContainer)
             } catch {
-                Logger.networkProtection.fault("Error force-refreshing token container: \(error, privacy: .public)\n \(newTokenContainer.refreshToken, privacy: .public)")
+                Logger.networkProtection.fault("Error adopting token container: \(error, privacy: .public)")
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
             }
         case .useExisting:
-            Logger.networkProtection.log("Use existing token")
+            Logger.networkProtection.log("Use existing token container")
             do {
-                try await tokenHandler.getToken()
+                try await tokenHandlerProvider.getToken()
             } catch {
                 Logger.networkProtection.fault("Error loading token container: \(error, privacy: .public)")
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)
@@ -639,7 +653,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("Reset token")
             // This case should in theory not be possible, but it's ideal to have this in place
             // in case an error in the controller on the client side allows it.
-            try await tokenHandler.removeToken()
+            try await tokenHandlerProvider.removeToken()
             throw TunnelError.tokenReset
         }
     }
@@ -708,7 +722,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("🟢 Startup options loaded correctly")
 
 #if os(iOS)
-            if (try? await tokenHandler.getToken()) == nil {
+            if (try? await tokenHandlerProvider().getToken()) == nil {
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: nil)
             }
 #endif
@@ -720,7 +734,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // expired.  In either case it should be enough to record the manual failures
                 // for these prerequisited to avoid flooding our metrics.
                 providerEvents.fire(.tunnelStartOnDemandWithoutAccessToken)
+                Logger.networkProtection.log("Going to sleep...")
                 try? await Task.sleep(interval: .seconds(15))
+                Logger.networkProtection.log("Waking up...")
             } else {
                 // If the VPN was started manually without the basic prerequisites we always
                 // want to know as this should not be possible.
@@ -748,7 +764,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 // We add a delay when the VPN is started by
                 // on-demand and there's an error, to avoid frenetic ON/OFF
                 // cycling.
+                Logger.networkProtection.log("Going to sleep...")
                 try? await Task.sleep(interval: .seconds(15))
+                Logger.networkProtection.log("Waking up...")
             }
 
             let errorDescription = (error as? LocalizedError)?.localizedDescription ?? String(describing: error)
@@ -1110,11 +1128,16 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         case .cancelSnooze:
             cancelSnooze(completionHandler: completionHandler)
         }
+
+        if message != .getDataVolume {
+            Logger.networkProtectionIPC.log("⚪️ Message handled: \(String(describing: message), privacy: .public)")
+        }
     }
 
     // MARK: - App Requests: Handling
 
     private func handleRequest(_ request: ExtensionRequest, completionHandler: ((Data?) -> Void)? = nil) {
+        Logger.networkProtectionIPC.log("⚪️ Handling app request: \(String(describing: request), privacy: .public)")
         switch request {
         case .changeTunnelSetting(let change):
             handleSettingChangeAppRequest(change, completionHandler: completionHandler)
@@ -1170,7 +1193,8 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setRegistrationKeyValidity,
                 .setSelectedEnvironment,
                 .setShowInMenuBar,
-                .setDisableRekeying:
+                .setDisableRekeying,
+                .setIsAuthV2Enabled:
             // Intentional no-op
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by
@@ -1221,7 +1245,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         resetRegistrationKey()
         Task {
 #if os(macOS)
-            try? await tokenHandler.removeToken()
+            try? await tokenHandlerProvider().removeToken()
 #endif
 
             completionHandler?(nil)
@@ -1584,8 +1608,9 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
 #if os(macOS)
     @MainActor
     private func attemptShutdownDueToRevokedAccess() async {
+        Logger.networkProtection.log("Shutting down due to revoked access")
         let cancelTunnel = {
-            try? await self.tokenHandler.removeToken()
+            try? await self.tokenHandlerProvider().removeToken()
             self.cancelTunnelWithError(TunnelError.vpnAccessRevoked)
         }
 

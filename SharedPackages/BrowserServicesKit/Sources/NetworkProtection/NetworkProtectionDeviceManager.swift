@@ -192,12 +192,13 @@ public actor NetworkProtectionDeviceManager: NetworkProtectionDeviceManagement {
     private func register(keyPair: KeyPair,
                           selectionMethod: NetworkProtectionServerSelectionMethod) async throws -> (server: NetworkProtectionServer,
                                                                                                     newExpiration: Date?) {
+
+        Logger.networkProtection.log("Registering with server using method: \(selectionMethod.debugDescription, privacy: .public)")
+
         guard let token = try? await VPNAuthTokenBuilder.getVPNAuthToken(from: tokenHandler) else {
             Logger.networkProtection.error("Missing auth token")
             throw NetworkProtectionError.noAuthTokenFound
         }
-
-        Logger.networkProtection.debug("Registering with server using method: \(selectionMethod.debugDescription)")
 
         let serverSelection: RegisterServerSelection
         let excludedServerName: String?

@@ -112,6 +112,7 @@ public struct StartupOptions {
     let dnsSettings: StoredOption<NetworkProtectionDNSSettings>
     public let excludeLocalNetworks: StoredOption<Bool>
 #if os(macOS)
+    let isAuthV2Enabled: StoredOption<Bool>
     let authToken: StoredOption<String>
     let tokenContainer: StoredOption<TokenContainer>
 #endif
@@ -136,6 +137,7 @@ public struct StartupOptions {
 
         let resetStoredOptionsIfNil = startupMethod == .manualByMainApp
 #if os(macOS)
+        isAuthV2Enabled = Self.readIsAuthV2Enabled(from: options, resetIfNil: resetStoredOptionsIfNil)
         authToken = Self.readAuthToken(from: options, resetIfNil: resetStoredOptionsIfNil)
         tokenContainer = Self.readTokenContainer(from: options, resetIfNil: resetStoredOptionsIfNil)
 #endif
@@ -149,8 +151,8 @@ public struct StartupOptions {
     }
 
     var description: String {
-        return """
-        StartupOptions(
+        var result = """
+        StartupOptions:
             startupMethod: \(self.startupMethod.debugDescription),
             simulateError: \(self.simulateError.description),
             simulateCrash: \(self.simulateCrash.description),
@@ -161,14 +163,32 @@ public struct StartupOptions {
             selectedLocation: \(self.selectedLocation.description),
             dnsSettings: \(self.dnsSettings.description),
             enableTester: \(self.enableTester),
-            excludeLocalNetworks: \(self.excludeLocalNetworks)
-        )
+            excludeLocalNetworks: \(self.excludeLocalNetworks),
         """
+#if os(macOS)
+        result += """
+            isAuthV2Enabled: \(self.isAuthV2Enabled),
+            authToken: \(self.authToken),
+            tokenContainer: \(self.tokenContainer),
+        """
+#endif
+        return result
     }
 
     // MARK: - Helpers for reading stored options
 
 #if os(macOS)
+    private static func readIsAuthV2Enabled(from options: [String: Any], resetIfNil: Bool) -> StoredOption<Bool> {
+        StoredOption(resetIfNil: resetIfNil) {
+            guard let isAuthV2Enabled = options[NetworkProtectionOptionKey.isAuthV2Enabled] as? Bool else {
+                Logger.networkProtection.fault("`isAuthV2Enabled` is missing or invalid")
+                return nil
+            }
+
+            return isAuthV2Enabled
+        }
+    }
+
     private static func readAuthToken(from options: [String: Any], resetIfNil: Bool) -> StoredOption<String> {
         StoredOption(resetIfNil: resetIfNil) {
             guard let authToken = options[NetworkProtectionOptionKey.authToken] as? String,

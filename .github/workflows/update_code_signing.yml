@@ -30,11 +30,6 @@ jobs:
 
       - name: Check out the code
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Prepare fastlane
-        run: bundle install
 
       - name: Archive and upload the app
         env:
@@ -45,37 +40,39 @@ jobs:
         run: |
           case "${{ inputs.target }}" in
             ios-release-appstore)
-              platform="ios"
+              platform="iOS"
               lane="sync_signing"
               ;;
             ios-release-adhoc)
-              platform="ios"
+              platform="iOS"
               lane="sync_signing_adhoc"
               ;;
             ios-alpha-appstore)
-              platform="ios"
+              platform="iOS"
               lane="sync_signing_alpha"
               ;;
             ios-alpha-adhoc)
-              platform="ios"
+              platform="iOS"
               lane="sync_signing_alpha_adhoc"
               ;;
             macos-release-appstore)
-              platform="mac"
+              platform="macOS"
               lane="sync_signing"
               ;;
             macos-release-dmg)
-              platform="mac"
+              platform="macOS"
               lane="sync_signing_dmg_release"
               ;;
             macos-review-dmg)
-              platform="mac"
+              platform="macOS"
               lane="sync_signing_dmg_review"
               ;;
             macos-ci)
-              platform="mac"
+              platform="macOS"
               lane="sync_signing_ci"
               ;;
           esac
  
-          bundle exec fastlane ${platform} ${lane}
+          cd "$platform"
+          bundle install
+          bundle exec fastlane ${lane}

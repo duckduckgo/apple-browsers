@@ -133,3 +133,10 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
         hasher.combine(retryPolicy)
     }
 }
+
+extension APIRequestV2 {
+
+    public var url: URL? {
+        urlRequest.url
+    }
+}

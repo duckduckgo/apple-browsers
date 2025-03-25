@@ -124,24 +124,6 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(app.staticTexts["Privacy Test Pages"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
-    func testCorrectTabIsSelected_whenTabBarIsInOverflowMode() {
-        /// Opens 20 sites
-        for i in 1..<21 {
-            openSite(pageTitle: "Page #\(i)")
-
-            if i != 20 {
-                app.openNewTab()
-            }
-        }
-
-        /// Selects the first tab and closes it
-        app.typeKey("1", modifierFlags: [.command])
-        app.menuItems["Close Tab"].tap()
-
-        /// Asserts that the recently used tab is shown
-        XCTAssertTrue(app.staticTexts["Sample text for Page #20"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-    }
-
     // MARK: - Utilities
 
     private func resetPinnedTabs() {

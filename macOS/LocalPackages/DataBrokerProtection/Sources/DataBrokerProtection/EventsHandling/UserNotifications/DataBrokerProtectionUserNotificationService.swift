@@ -24,6 +24,14 @@ import os.log
 import PixelKit
 import DataBrokerProtectionShared
 
+public protocol DataBrokerProtectionUserNotificationService {
+    func requestNotificationPermission()
+    func sendFirstScanCompletedNotification()
+    func sendFirstRemovedNotificationIfPossible()
+    func sendAllInfoRemovedNotificationIfPossible()
+    func scheduleCheckInNotificationIfPossible()
+}
+
 public enum DataBrokerProtectionNotificationCommand: String {
     case showDashboard = "databrokerprotection://show_dashboard"
 

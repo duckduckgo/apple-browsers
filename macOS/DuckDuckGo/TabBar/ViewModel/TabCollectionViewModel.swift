@@ -497,8 +497,8 @@ final class TabCollectionViewModel: NSObject {
             newSelectionIndex = selectionIndex.sanitized(for: self)
         }
 
-        select(at: newSelectionIndex, forceChange: forced)
         notifyDelegate()
+        select(at: newSelectionIndex, forceChange: forced)
     }
 
     func getLastSelectedTab() -> TabIndex? {

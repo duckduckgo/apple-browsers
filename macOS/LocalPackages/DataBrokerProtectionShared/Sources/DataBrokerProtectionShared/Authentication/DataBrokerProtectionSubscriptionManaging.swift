@@ -30,21 +30,32 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
 
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let runTypeProvider: AppRunTypeProviding
+    let isAuthV2Enabled: Bool
 
     public func accessToken() async -> String? {
         // We use a staging token for privacy pro supplied through a github secret/action
         // for PIR end to end tests. This is also stored in bitwarden if you want to run
         // the tests locally
-        if runTypeProvider.runType == .integrationTests,
-           let token = ProcessInfo.processInfo.environment["PRIVACYPRO_STAGING_TOKEN"] { // todo auth V1 token??
-            return token
+
+        if runTypeProvider.runType == .integrationTests {
+            var tokenKey: String
+            if !isAuthV2Enabled {
+                tokenKey = "PRIVACYPRO_STAGING_TOKEN"
+            } else {
+                tokenKey = "PRIVACYPRO_STAGING_TOKEN_V2"
+            }
+
+            if let token = ProcessInfo.processInfo.environment[tokenKey] {
+                return token
+            }
         }
         return try? await subscriptionManager.getAccessToken()
     }
 
-    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding) {
+    public init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, runTypeProvider: AppRunTypeProviding, isAuthV2Enabled: Bool) {
         self.subscriptionManager = subscriptionManager
         self.runTypeProvider = runTypeProvider
+        self.isAuthV2Enabled = isAuthV2Enabled
     }
 
     public func hasValidEntitlement() async throws -> Bool {

@@ -134,7 +134,8 @@ public struct OAuthRequest {
         ]
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
-                                         queryItems: queryItems) else {
+                                         queryItems: queryItems,
+                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -256,7 +257,8 @@ public struct OAuthRequest {
         ]
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
-                                         queryItems: queryItems) else {
+                                         queryItems: queryItems,
+                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
             return nil
         }
 
@@ -354,8 +356,8 @@ public struct OAuthRequest {
 
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .post,
-                                         headers: APIRequestV2.HeadersV2(cookies: [cookie],
-                                                                         authToken: accessTokenV1)) else {
+                                         headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1),
+                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
             return nil
         }
         return OAuthRequest(apiRequest: request,

@@ -724,12 +724,9 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
 
         self.updateTabMode(for: collectionView.numberOfItems(inSection: 0) - 1, updateLayout: false)
 
-        let visibleIndexPaths = collectionView.indexPathsForVisibleItems
-        let selectedIndexPathIsVisible = visibleIndexPaths().contains(where: { $0.item == selectionIndex })
-
         // don't scroll when mouse over and removing non-last Tab
         let shouldScroll = collectionView.isAtEndScrollPosition
-        && (!self.view.isMouseLocationInsideBounds() || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1) || !selectedIndexPathIsVisible
+            && (!self.view.isMouseLocationInsideBounds() || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1)
         let visiRect = collectionView.enclosingScrollView!.contentView.documentVisibleRect
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.15

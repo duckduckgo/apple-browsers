@@ -343,7 +343,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
             do {
                 if let recoveryKey = try await connector?.pollForRecoveryKey() {
                     dismissPresentedViewController()
-                    showPreparingSync()
+                    showPreparingSync(nil)
                     try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
                 } else {
                     // Likely cancelled elsewhere
@@ -370,7 +370,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         }
         if let recoveryKey = syncCode.recovery {
             dismissPresentedViewController()
-            await showPreparingSyncAsync()
+            await showPreparingSync()
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
                 return true
@@ -379,7 +379,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
             }
         } else if let connectKey = syncCode.connect {
             dismissPresentedViewController()
-            showPreparingSync()
+            showPreparingSync(nil)
             if syncService.account == nil {
                 do {
                     try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
@@ -470,7 +470,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerWillBeginTransmittingRecoveryKey() async {
         dismissPresentedViewController()
-        await showPreparingSyncAsync()
+        await showPreparingSync()
     }
     
     func controllerDidFinishTransmittingRecoveryKey() {
@@ -479,12 +479,12 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
     func controllerDidReceiveRecoveryKey() {
         dismissPresentedViewController()
-        showPreparingSync()
+        showPreparingSync(nil)
     }
     
     func controllerDidRecognizeScannedCode() async {
         dismissPresentedViewController()
-        await showPreparingSyncAsync()
+        await showPreparingSync()
     }
     
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {

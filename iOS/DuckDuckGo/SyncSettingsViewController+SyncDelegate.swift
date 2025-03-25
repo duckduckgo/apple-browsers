@@ -142,7 +142,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             Task { @MainActor in
                 do {
                     self.dismissPresentedViewController()
-                    self.showPreparingSync()
+                    self.showPreparingSync(nil)
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -281,7 +281,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func showPreparingSyncAsync() async {
+    func showPreparingSync() async {
         await withCheckedContinuation { continuation in
             showPreparingSync {
                 continuation.resume()
@@ -289,7 +289,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func showPreparingSync(_ completion: (() -> Void)? = nil) {
+    func showPreparingSync(_ completion: (() -> Void)?) {
         let controller = UIHostingController(rootView: PreparingToSyncView())
         navigationController?.present(controller, animated: true, completion: completion)
     }

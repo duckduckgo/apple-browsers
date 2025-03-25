@@ -75146,9 +75146,6 @@
         }
       }
     },
-    "Warning" : {
-
-    },
     "We couldn‘t find any bookmarks." : {
       "comment" : "Data import error message: Bookmarks weren‘t found.",
       "localizations" : {

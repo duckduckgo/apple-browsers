@@ -38,7 +38,7 @@ final class PinnedTabsManager {
         }
 
         if firePixel {
-            PixelKit.fire(GeneralPixel.userPinnedTab)
+            PixelKit.fire(GeneralPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
 #if !APPSTORE
         if #available(macOS 15.3, *) {
@@ -59,7 +59,7 @@ final class PinnedTabsManager {
         didUnpinTabSubject.send(index)
 
         if firePixel {
-            PixelKit.fire(GeneralPixel.userUnpinnedTab)
+            PixelKit.fire(GeneralPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
 #if !APPSTORE
         if #available(macOS 15.3, *) {

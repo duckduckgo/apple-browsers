@@ -123,7 +123,6 @@ public class DDGSync: DDGSyncing {
         SyncConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: delegate, syncService: self, dependencies: dependencies)
     }
 
-    // Step B
     public func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
         do {
             return try await dependencies.createExchangePublicKeyTransmitter().sendGeneratedExchangeInfo(exchangeCode, deviceName: deviceName)
@@ -132,7 +131,6 @@ public class DDGSync: DDGSyncing {
         }
     }
 
-    // Step D
     public func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
         do {
             try await dependencies.createExchangeRecoveryKeyTransmitter(exchangeMessage: exchangeMessage).send()

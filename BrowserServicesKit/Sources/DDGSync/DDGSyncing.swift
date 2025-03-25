@@ -137,19 +137,19 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitRecoveryKey(_ connectCode: SyncCode.ConnectCode) async throws
 
     /**
-     Sends this device's recovery key to the server encrypted using supplied key
+     Creates controller to manage connecting to another device
      */
     func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling
 
     /**
      Sends this device's public key to the server encrypted using supplied key
-     // Step B
+     Step B from https://app.asana.com/0/0/1209571867429615
      */
     func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo
 
     /**
      Sends this device's recovery key to the server encrypted using supplied key
-     // Step D
+     Step D from https://app.asana.com/0/0/1209571867429615
      */
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
 
@@ -284,10 +284,10 @@ public protocol RemoteConnecting {
 
 protocol RemoteKeyExchanging {
 
-    // Step A
+    /// Step A from https://app.asana.com/0/72649045549333/1209571867429615/f
     var code: String { get }
 
-    // Step C
+    /// Step C from https://app.asana.com/0/72649045549333/1209571867429615/f
     func pollForPublicKey() async throws -> ExchangeMessage?
 
     func stopPolling()
@@ -295,7 +295,7 @@ protocol RemoteKeyExchanging {
 
 protocol RemoteExchangeRecovering {
 
-    // Step E
+    /// Step E from https://app.asana.com/0/72649045549333/1209571867429615/f
     func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey?
 
     func stopPolling()

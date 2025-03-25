@@ -879,7 +879,6 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
-                // Step A
                 self.codeToDisplay = try connectionController.startExchangeMode()
                 self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
             } catch {

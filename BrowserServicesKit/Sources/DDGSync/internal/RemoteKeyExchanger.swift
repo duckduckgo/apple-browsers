@@ -39,7 +39,6 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
         self.code = try exchangeInfo.toCode()
     }
 
-    // Step C
     func pollForPublicKey() async throws -> ExchangeMessage? {
         assert(!isPolling, "exchanger is already polling")
 
@@ -139,7 +138,6 @@ final class RemoteExchangeRecoverer: RemoteExchangeRecovering {
 
     // MARK: Recover Key
 
-    // Step E
     func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
         assert(!isPolling, "exchanger is already polling")
 

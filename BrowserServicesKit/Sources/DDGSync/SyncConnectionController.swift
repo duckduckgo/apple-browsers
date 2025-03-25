@@ -56,12 +56,35 @@ public enum SyncConnectionError: Error {
 }
 
 public protocol SyncConnectionControlling {
+    /**
+     Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key
+     */
     func startExchangeMode() throws -> String
+
+    /**
+     Stops polling for transmitted public key
+     */
     func stopExchangeMode()
+
+    /**
+     Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
+     */
     func startConnectMode() throws -> String
+
+    /**
+     Stops polling for transmitted recovery key
+     */
     func stopConnectMode()
+
+    /**
+     Handles a scanned or pasted key and starts excange, recovery or connect flow
+     */
     @discardableResult
     func syncCodeEntered(code: String) async -> Bool
+
+    /**
+     Logs in to an existing account using a recovery key.
+     */
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws
 }
 
@@ -76,7 +99,7 @@ final public class SyncConnectionController: SyncConnectionControlling {
     private var exchanger: RemoteKeyExchanging?
     private var connector: RemoteConnecting?
 
-    var recoveryCode: String {
+    private var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
             return ""
         }
@@ -109,7 +132,6 @@ final public class SyncConnectionController: SyncConnectionControlling {
         self.connector = connector
         self.startConnectPolling()
 
-        // Step A
         return connector.code
     }
 
@@ -120,7 +142,6 @@ final public class SyncConnectionController: SyncConnectionControlling {
 
     @discardableResult
     public func syncCodeEntered(code: String) async -> Bool {
-        // Step B
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(code)
@@ -160,7 +181,6 @@ final public class SyncConnectionController: SyncConnectionControlling {
         Task { @MainActor in
             let exchangeMessage: ExchangeMessage
             do {
-                // Step C
                 guard let message = try await exchanger?.pollForPublicKey() else {
                     // Polling likely cancelled
                     return
@@ -173,7 +193,6 @@ final public class SyncConnectionController: SyncConnectionControlling {
 
             await delegate?.controllerWillBeginTransmittingRecoveryKey()
             do {
-                // Step D
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
             } catch {
                 delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error)

@@ -1275,45 +1275,6 @@ public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProt
     }
 }
 
-public final class MockUserNotificationService: DataBrokerProtectionUserNotificationService {
-
-    public var requestPermissionWasAsked = false
-    public var firstScanNotificationWasSent = false
-    public var firstRemovedNotificationWasSent = false
-    public var checkInNotificationWasScheduled = false
-    public var allInfoRemovedWasSent = false
-
-    public init() {}
-
-    public func requestNotificationPermission() {
-        requestPermissionWasAsked = true
-    }
-
-    public func sendFirstScanCompletedNotification() {
-        firstScanNotificationWasSent = true
-    }
-
-    public func sendFirstRemovedNotificationIfPossible() {
-        firstRemovedNotificationWasSent = true
-    }
-
-    public func sendAllInfoRemovedNotificationIfPossible() {
-        allInfoRemovedWasSent = true
-    }
-
-    public func scheduleCheckInNotificationIfPossible() {
-        checkInNotificationWasScheduled = true
-    }
-
-    public func reset() {
-        requestPermissionWasAsked = false
-        firstScanNotificationWasSent = false
-        firstRemovedNotificationWasSent = false
-        checkInNotificationWasScheduled = false
-        allInfoRemovedWasSent = false
-    }
-}
-
 public final class MockDataBrokerProtectionOperationQueue: DataBrokerProtectionOperationQueue {
     public var maxConcurrentOperationCount = 1
 
@@ -1437,6 +1398,48 @@ public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErro
     }
 }
 
+public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
+
+    public var profileSavedFired = false
+    public var firstScanCompletedFired = false
+    public var firstScanCompletedAndMatchesFoundFired = false
+    public var firstProfileRemovedFired = false
+    public var allProfilesRemovedFired = false
+
+    public init() {
+        super.init { _, _, _, _ in
+        }
+
+        // A workaround to be able to reference self in the eventMapper
+        self.eventMapper = { event, _, _, _ in
+            self.handle(event: event)
+        }
+    }
+
+    private func handle(event: OperationEvent) {
+        switch event {
+        case .profileSaved:
+            profileSavedFired = true
+        case .firstScanCompleted:
+            firstScanCompletedFired = true
+        case .firstScanCompletedAndMatchesFound:
+            firstScanCompletedAndMatchesFoundFired = true
+        case .firstProfileRemoved:
+            firstProfileRemovedFired = true
+        case .allProfilesRemoved:
+            allProfilesRemovedFired = true
+        }
+    }
+
+    public func reset() {
+        profileSavedFired = false
+        firstScanCompletedFired = false
+        firstScanCompletedAndMatchesFoundFired = false
+        firstProfileRemovedFired = false
+        allProfilesRemovedFired = false
+    }
+}
+
 public extension DefaultDataBrokerOperationDependencies {
     static var mock: DefaultDataBrokerOperationDependencies {
         DefaultDataBrokerOperationDependencies(database: MockDatabase(),
@@ -1444,7 +1447,7 @@ public extension DefaultDataBrokerOperationDependencies {
                                                runnerProvider: MockRunnerProvider(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
-                                               userNotificationService: MockUserNotificationService(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+                                               eventsHandler: MockOperationEventsHandler(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 }
 

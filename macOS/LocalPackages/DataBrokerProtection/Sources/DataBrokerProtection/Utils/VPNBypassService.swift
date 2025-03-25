@@ -32,19 +32,6 @@ public final class VPNBypassService: VPNBypassServiceProvider {
         self.proxySettings = proxySettings
     }
 
-    // This requires VPN system extension, so App Store version is not currently supported
-    public var isSupported: Bool {
-#if APPSTORE
-#if NETP_SYSTEM_EXTENSION
-        return true
-#else
-        return false
-#endif
-#else
-        return true
-#endif
-    }
-
     public var isEnabled: Bool {
         proxySettings.isExcluding(appIdentifier: backgroundAgentBundleId)
     }

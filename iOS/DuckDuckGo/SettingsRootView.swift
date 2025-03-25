@@ -108,7 +108,7 @@ struct SettingsRootView: View {
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
 
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !viewModel.isAuthV2Enabled {
             switch target {
             case .dbp:
                 SubscriptionPIRView()

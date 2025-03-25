@@ -26,14 +26,14 @@ public struct VPNAuthTokenBuilder {
 
     public static func getVPNAuthToken(from tokenProvider: any SubscriptionTokenHandling) async throws -> String {
         let token = try await tokenProvider.getToken()
-        if token.hasPrefix(tokenPrefix) {
-            // In AuthV1 adding the token prefix is managed by the classes storing the token, in AuthV2 the token is stored as the original TokenContainer and the prefix is added by this builder
-            return token
-        }
-        return tokenPrefix + token
+        return getVPNAuthToken(from: token)
     }
 
     public static func getVPNAuthToken(from originalToken: String) -> String{
+        if originalToken.hasPrefix(tokenPrefix) {
+            // In AuthV1 adding the token prefix is managed by the classes storing the token, in AuthV2 the token is stored as the original TokenContainer and the prefix is added by this builder
+            return originalToken
+        }
         return tokenPrefix + originalToken
     }
 }

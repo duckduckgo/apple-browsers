@@ -6,12 +6,24 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      all_os_versions:
+        description: "Whether to test all OS versions or only the latest"
+        type: boolean
+        default: true
+        required: true
   schedule:
     - cron: '0 3 * * 1-5' # 3AM UTC offsetted to legacy to avoid action-junit-report@v4 bug
+  push:
+    branches: [ main, "release/macos/**", "hotfix/macos/**" ]
+    paths:
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
   pull_request:
-    branches:
-      - hotfix/macos/**
-      - release/macos/**
+    paths:
+      - '.github/**'
+      - 'BrowserServicesKit/**'
+      - 'macOS/**'
 
 jobs:
   create-notarized-app:
@@ -35,24 +47,59 @@ jobs:
       MM_WEBHOOK_URL: ${{ secrets.MM_WEBHOOK_URL }}
       SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
+  # This job sets up the matrix strategy arguments for the ui-tests job
+  setup-tests:
+    name: Set up tests list
+    runs-on: macos-15
+    outputs:
+      runner: ${{ steps.define-runners.outputs.runner }}
+      include: ${{ steps.define-runners.outputs.include }}
+      test: ${{ steps.list-tests.outputs.test }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Define runners
+        id: define-runners
+        run: |
+          # scheduled runs don't have inputs so let's default to true for all_os_versions
+          all_os_versions="${{ inputs.all_os_versions || 'true' }}"
+          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
+            runner='["macos-15-xlarge"]'
+            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}]'
+          else
+            runner='["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]'
+            include=$(jq -c <<< '[
+              {"runner": "macos-13-xlarge", "os-version": "13", "xcode-version": "15.2"},
+              {"runner": "macos-14-xlarge", "os-version": "14", "xcode-version": "15.4"},
+              {"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}
+            ]')
+          fi
+          echo "runner=${runner}" >> $GITHUB_OUTPUT
+          echo "include=${include}" >> $GITHUB_OUTPUT
+
+      - name: List tests
+        id: list-tests
+        run: |
+          # Find all test files in the UITests directory
+          # This assumes that all test files are named *Tests.swift and are put directly in the UITests directory
+          test_names="$(find UITests -type f -maxdepth 1 -name *Tests.swift | xargs basename | sed 's/\.swift//')"
+          test=$(echo $test_names | jq -cR 'split(" ")')
+          echo "test=${test}" >> $GITHUB_OUTPUT
+
   ui-tests:
-    name: UI tests
-    needs: create-notarized-app
+    name: ${{ matrix.test }} (macOS ${{ matrix.os-version }})
+    needs: [create-notarized-app, setup-tests]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-13-xlarge, macos-14-xlarge, macos-15-xlarge]
-        include:
-          - xcode-version: "15.2"
-            runner: macos-13-xlarge
-          - xcode-version: "15.4"
-            runner: macos-14-xlarge
-          - xcode-version: "16.2"
-            runner: macos-15-xlarge
+        runner: ${{ fromJSON(needs.setup-tests.outputs.runner) }}
+        test: ${{ fromJSON(needs.setup-tests.outputs.test) }}
+        include: ${{ fromJSON(needs.setup-tests.outputs.include) }}
 
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
+      group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}-${{ matrix.test }}
       cancel-in-progress: true
 
     timeout-minutes: 120
@@ -145,32 +192,68 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          '-only-testing:UI Tests/${{ matrix.test }}' \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
     - name: Prepare test report
+      id: prepare-test-report
       if: always()
       run: |
-        xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
+        test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
+        file="${test_id}.xml"
+        echo "file=$file" >> $GITHUB_OUTPUT
+        xcbeautify --report junit --report-path . --junit-report-filename "$file" < ui-tests.log
+        # Replace the default test suite name with the test id for better grouping in the test report
+        sed -i '' "s/Selected tests/${test_id}/" "$file"
 
-    - name: Publish tests report
-      uses: mikepenz/action-junit-report@v4
+    # Upload test report as artifact for the test-report job
+    # that publishes a combined report for all test cases
+    - name: Upload test report
+      uses: actions/upload-artifact@v4
       if: always()
       with:
-        check_name: "Test Report ${{ matrix.runner }}"
-        report_paths: macOS/ui-tests.xml
-        check_retries: true
+        name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
+        retention-days: 1
 
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
+        name: "BuildLogs ${{ matrix.test }} (macOS ${{ matrix.os-version }})"
         path: |
           macOS/xcodebuild.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7
+
+  test-report:
+    name: Report test results
+    if: always()
+    needs: [ui-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Download test reports
+      uses: actions/download-artifact@v4
+      if: always()
+      with:
+        pattern: "testreport-*"
+        merge-multiple: true
+
+    - name: Publish tests report
+      uses: mikepenz/action-junit-report@v5
+      if: always()
+      with:
+        check_name: Tests Report
+        report_paths: "*.xml"
+        check_retries: true
+        group_reports: false
+        flaky_summary: true
+        verbose_summary: false
+        include_time_in_summary: true
+        skip_annotations: true
 
   notify-failure:
     name: Notify on failure

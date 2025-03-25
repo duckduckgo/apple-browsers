@@ -38,13 +38,9 @@ final class SubscriptionDebugViewController: UITableViewController {
     private var featureFlagger: FeatureFlagger {
         AppDependencyProvider.shared.featureFlagger
     }
-
+    private let isAuthV2Enabled: Bool = AppDependencyProvider.shared.vpnSettings.isAuthV2Enabled
     var currentEnvironment: SubscriptionEnvironment {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
-            return subscriptionManagerV1.currentEnvironment
-        } else {
-            return subscriptionManagerV2.currentEnvironment
-        }
+        AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
     }
 
     // swiftlint:disable:next force_cast
@@ -130,7 +126,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     var serviceEnvironment: SubscriptionEnvironment.ServiceEnvironment {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             return subscriptionManagerV1.currentEnvironment.serviceEnvironment
         } else {
             return subscriptionManagerV2.currentEnvironment.serviceEnvironment
@@ -374,7 +370,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func clearAuthData() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             clearAuthDataV1()
         } else {
             clearAuthDataV2()
@@ -396,7 +392,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func showAccountDetails() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             showAccountDetailsV1()
         } else {
             showAccountDetailsV2()
@@ -459,7 +455,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func syncAppleIDAccount() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             syncAppleIDAccountV1()
         } else {
             syncAppleIDAccountV2()
@@ -493,7 +489,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func validateToken() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             validateTokenV1()
         } else {
             validateTokenV2()
@@ -529,7 +525,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func getSubscriptionDetails() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             getSubscriptionDetailsV1()
         } else {
             getSubscriptionDetailsV2()
@@ -564,7 +560,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     private func checkEntitlements() {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             checkEntitlementsV1()
         } else {
             checkEntitlementsV2()

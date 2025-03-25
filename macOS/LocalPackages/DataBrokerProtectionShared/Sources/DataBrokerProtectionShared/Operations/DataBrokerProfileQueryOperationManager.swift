@@ -422,7 +422,6 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         // 4. Set up dependencies used to report the status of the opt-out job:
-        let retriesCalculatorUseCase = OperationRetriesCalculatorUseCase()
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
@@ -461,7 +460,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     shouldRunNextStep: shouldRunNextStep)
 
             // 7c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
-            let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
@@ -482,7 +481,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
         } catch {
             // 8. Catch errors from the opt-out job and report them:
-            let tries = try? retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try? fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
             handleOperationError(
                 origin: .optOut,
@@ -539,6 +538,19 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         try database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+    }
+
+    private func fetchTotalNumberOfOptOutAttempts(database: DataBrokerProtectionRepository,
+                                                  brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws -> Int {
+        let events = try database.fetchOptOutHistoryEvents(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            extractedProfileId: extractedProfileId
+        )
+
+        return events.filter { $0.type == .optOutStarted }.count
     }
 
     // MARK: - Generic Job Logic

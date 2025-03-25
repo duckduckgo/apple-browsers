@@ -154,9 +154,9 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
         XCTAssertEqual(stateHandler.topBarRightButtonItems, [
             stateHandler.doneButton,
-            stateHandler.duckChatButton,
             stateHandler.fireButton,
-            stateHandler.plusButton
+            stateHandler.plusButton,
+            stateHandler.duckChatButton,
         ])
     }
 

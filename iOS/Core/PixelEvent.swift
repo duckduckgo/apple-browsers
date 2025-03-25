@@ -1063,6 +1063,8 @@ extension Pixel {
         case aiChatSettingsAddressBarTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
+        case aiChatSettingsTabManagerTurnedOff
+        case aiChatSettingsTabManagerTurnedOn
         case aiChatSettingsDisplayed
 
         // MARK: Lifecycle
@@ -2098,6 +2100,8 @@ extension Pixel.Event {
         case .aiChatSettingsAddressBarTurnedOn: return "m_aichat_settings_address_bar_turned_on"
         case .aiChatSettingsBrowserMenuTurnedOff: return "m_aichat_settings_browser_menu_turned_off"
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
+        case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
+        case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
 
         // MARK: Lifecycle

@@ -161,9 +161,9 @@ class TabSwitcherBarsStateHandler {
         case .singleSelectLarge, .multiSelectAvailableLarge:
             topBarRightButtonItems = [
                 doneButton,
-                showAIChatButton ? duckChatButton : nil,
                 fireButton,
                 plusButton,
+                showAIChatButton ? duckChatButton : nil,
             ].compactMap { $0 }
 
         case .multiSelectAvailableNormal:

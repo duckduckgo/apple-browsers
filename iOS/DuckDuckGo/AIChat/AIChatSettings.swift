@@ -112,6 +112,11 @@ struct AIChatSettings: AIChatSettingsProvider {
     func enableAIChatTabSwitcherUserSettings(enable: Bool) {
         userDefaults.showAIChatTabSwitcher = enable
         triggerSettingsChangedNotification()
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
+        }
     }
 
     // MARK: - Private

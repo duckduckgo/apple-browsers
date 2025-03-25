@@ -9799,7 +9799,7 @@
     },
     "bookmarks.bar.context-menu.copy" : {
       "comment" : "Copy menu item for the bookmarks bar context menu",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

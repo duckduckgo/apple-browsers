@@ -56,7 +56,17 @@ public enum SyncConnectionError: Error {
     case foundExistingAccount
 }
 
-final public class SyncConnectionController {
+public protocol SyncConnectionControlling {
+    func startExchangeMode() throws -> String
+    func stopExchangeMode()
+    func startConnectMode() throws -> String
+    func stopConnectMode()
+    @discardableResult
+    func syncCodeEntered(code: String) async -> Bool
+    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws
+}
+
+final public class SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing

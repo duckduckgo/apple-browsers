@@ -139,7 +139,7 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     /**
      Sends this device's recovery key to the server encrypted using supplied key
      */
-    func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionController
+    func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling
 
     /**
      Sends this device's public key to the server encrypted using supplied key

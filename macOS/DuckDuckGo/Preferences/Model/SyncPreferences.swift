@@ -462,7 +462,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private var connector: RemoteConnecting?
     private let userAuthenticator: UserAuthenticating
     private var syncPromoSource: String?
-    private lazy var connectionController: SyncConnectionController = syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: self)
+    private lazy var connectionController: SyncConnectionControlling = syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: self)
 }
 
 extension SyncPreferences: ManagementDialogModelDelegate {

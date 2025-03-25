@@ -23,6 +23,17 @@ import Combine
 @testable import DDGSync
 
 final class MockDDGSyncing: DDGSyncing {
+    func createConnectionController(deviceName: String, deviceType: String, delegate: any SyncConnectionControllerDelegate) -> SyncConnectionControlling {
+        MockSyncConnectionControlling()
+    }
+    
+    func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
+        .init(keyId: "", publicKey: .init(), secretKey: .init())
+    }
+    
+    func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
+        
+    }
 
     var registeredDevices = [
         RegisteredDevice(id: "1", name: "Device 1", type: "desktop"),
@@ -115,6 +126,29 @@ final class MockDDGSyncing: DDGSyncing {
     }
 }
 
+final class MockSyncConnectionControlling: SyncConnectionControlling {
+    func startExchangeMode() throws -> String {
+        ""
+    }
+    
+    func stopExchangeMode() {
+    }
+    
+    func startConnectMode() throws -> String {
+        ""
+    }
+    
+    func stopConnectMode() {
+    }
+    
+    func syncCodeEntered(code: String) async -> Bool {
+        true
+    }
+    
+    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
+    }
+}
+
 class CapturingScheduler: Scheduling {
     var notifyDataChangedCalled = false
 
@@ -145,3 +179,5 @@ struct MockRemoteConnecting: RemoteConnecting {
     func stopPolling() {
     }
 }
+
+

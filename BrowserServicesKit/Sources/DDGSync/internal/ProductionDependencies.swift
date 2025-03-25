@@ -30,7 +30,7 @@ struct ProductionDependencies: SyncDependencies {
     let payloadCompressor: SyncPayloadCompressing
     var keyValueStore: KeyValueStoring
     let secureStore: SecureStoring
-    let crypter: CryptingInternal
+    var crypter: CryptingInternal
     let scheduler: SchedulingInternal
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>

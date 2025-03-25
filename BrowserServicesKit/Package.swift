@@ -7,7 +7,7 @@ import PackageDescription
 let package = Package(
     name: "BrowserServicesKit",
     platforms: [
-        .iOS("15.0"),
+        .iOS("16.0"),
         .macOS("11.4")
     ],
     products: [
@@ -556,6 +556,7 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
+                "NetworkingTestingUtils"
             ],
             resources: [
                 .copy("Resources/SyncMetadata_V3.sqlite"),

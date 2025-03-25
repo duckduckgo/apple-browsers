@@ -164,20 +164,26 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         let openTabs = windowControllersManager.allTabViewModels(for: burnerMode, includingPinnedTabs: !burnerMode.isBurner)
         var isSettingsOpened = false
         var isBookmarksOpened = false
+        var isHistoryOpened = false
         // suggestions for Bookmarks&Settings if not Switch to Tab suggestions
         for tab in openTabs {
             if tab.tabContent == .bookmarks {
                 isBookmarksOpened = true
             } else if case .settings = tab.tabContent {
                 isSettingsOpened = true
+            } else if case .history = tab.tabContent {
+                isHistoryOpened = true
             }
-            if isBookmarksOpened && isSettingsOpened { break }
+            if isBookmarksOpened && isSettingsOpened && isHistoryOpened { break }
         }
         if !isBookmarksOpened {
             result.append(.init(title: UserText.bookmarks, url: .bookmarks))
         }
         if !isSettingsOpened {
             result.append(.init(title: UserText.settings, url: .settings))
+        }
+        if !isHistoryOpened {
+            result.append(.init(title: UserText.mainMenuHistory, url: .history))
         }
         result += PreferencePaneIdentifier.allCases.map {
             // preference panes URLs

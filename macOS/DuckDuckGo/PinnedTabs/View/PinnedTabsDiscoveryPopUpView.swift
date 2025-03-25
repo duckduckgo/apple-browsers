@@ -55,7 +55,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
             }
         }
         .padding()
-        .frame(width: buttonWidth == 0 ? Constants.panelWidth : buttonWidth * 2 + Constants.verticalSpacing * 2)
+        .frame(width: buttonWidth == 0 ? Constants.panelWidth : buttonWidth + Constants.verticalSpacing * 2 + 8)
             .onPreferenceChange(ButtonWidthPreferenceKey.self) { value in
                 self.buttonWidth = value
             }
@@ -90,7 +90,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
         static var defaultValue: CGFloat = 0
 
         static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-            value = max(value, nextValue()) // Get the widest button
+            value += nextValue() // sum all widths
         }
     }
 }

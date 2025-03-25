@@ -31,7 +31,7 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
 
-      - name: Archive and upload the app
+      - name: Update code signing assets
         env:
           APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}

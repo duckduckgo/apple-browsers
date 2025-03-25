@@ -32,7 +32,7 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
-        
+
     }
 
     var registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop"), RegisteredDevice(id: "2", name: "Device 2", type: "mobile"), RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
@@ -122,21 +122,21 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
     func startExchangeMode() throws -> String {
         ""
     }
-    
+
     func stopExchangeMode() {
     }
-    
+
     func startConnectMode() throws -> String {
         ""
     }
-    
+
     func stopConnectMode() {
     }
-    
+
     func syncCodeEntered(code: String) async -> Bool {
         true
     }
-    
+
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
     }
 }

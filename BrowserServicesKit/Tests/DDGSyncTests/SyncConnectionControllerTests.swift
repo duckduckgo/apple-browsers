@@ -1,6 +1,5 @@
 //
 //  SyncConnectionControllerTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -255,7 +254,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
-        
+
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
@@ -266,7 +265,7 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         XCTAssertEqual(error, SyncConnectionError.failedToLogIn)
     }
-    
+
     // MARK: syncCodeEntered
 
     private func waitForError() async throws -> SyncConnectionError? {

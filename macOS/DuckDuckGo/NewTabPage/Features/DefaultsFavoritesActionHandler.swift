@@ -47,7 +47,7 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
         }
     }
 
-    func copyToPasteboard(_ favorite: Bookmark) {
+    func copyLink(_ favorite: Bookmark) {
         favorite.copyUrlToPasteboard()
     }
 

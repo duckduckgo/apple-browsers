@@ -36,6 +36,21 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         super.tearDown()
     }
 
+    func testWhenDuckChatEnabledThenBottomBarItemsAreSetCorrectly() {
+        stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
+
+        XCTAssertEqual(stateHandler.bottomBarItems, [
+            stateHandler.doneButton,
+            UIBarButtonItem.flexibleSpace(),
+            stateHandler.fireButton,
+            UIBarButtonItem.flexibleSpace(),
+            stateHandler.duckChatButton,
+            UIBarButtonItem.fixedSpace(24),
+            stateHandler.plusButton
+        ])
+        XCTAssertFalse(stateHandler.isBottomBarHidden)
+    }
+
     func testWhenInterfaceModeIsSingleSelectNormalThenBottomBarItemsAreSetCorrectly() {
         stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 

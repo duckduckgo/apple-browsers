@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 import enum Core.AppDeepLinkSchemes
 
 enum LaunchAction {
@@ -52,13 +53,16 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let urlHandler: URLHandling
     private let shortcutItemHandler: ShortcutItemHandling
     private let keyboardPresenter: KeyboardPresenting
+    private let pixelFiring: PixelFiring.Type
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
-         keyboardPresenter: KeyboardPresenting) {
+         keyboardPresenter: KeyboardPresenting,
+         pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.keyboardPresenter = keyboardPresenter
+        self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
@@ -87,13 +91,12 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     private func fireAppLaunchedWithExternalLinkPixel(url: URL) {
         // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
-        // If scheme is either `http` or `https` we know the app has been opened by clicking on an external link and the browser is the default one.
-        guard url.scheme == "http" || url.scheme == "https" else {
-            Logger(subsystem: "REPORTING", category: "REPORTING").debug("~~~THIRD PARTY EXTERNAL LAUNCH: \(false)")
-            return
+        // If scheme is either `http` or `https` we know the app has been opened by clicking directly an external link.
+        if url.scheme == "http" || url.scheme == "https" {
+            pixelFiring.fire(.appLaunchFromExternalLink, withAdditionalParameters: [:])
+        } else if url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
+            pixelFiring.fire(.appLaunchFromShareExtension, withAdditionalParameters: [:])
         }
-
-        Logger(subsystem: "REPORTING", category: "REPORTING").debug("~~~THIRD PARTY EXTERNAL LAUNCH: \(true)")
     }
 
 }

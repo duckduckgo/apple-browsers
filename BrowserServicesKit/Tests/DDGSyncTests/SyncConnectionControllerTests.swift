@@ -225,10 +225,10 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_pollSucceeds_logsIn() async throws {
-        let mockRemoteConnector = MockRemoteConnecting()
+        let remoteConnector = MockRemoteConnecting()
         let userId = "TestUserId"
-        mockRemoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: userId, primaryKey: Data())
-        dependencies.createRemoteConnectorStub = mockRemoteConnector
+        remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: userId, primaryKey: Data())
+        dependencies.createRemoteConnectorStub = remoteConnector
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
 
@@ -240,9 +240,9 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_pollingFails_sendsError() async throws {
-        let mockRemoteConnector = MockRemoteConnecting()
-        mockRemoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
-        dependencies.createRemoteConnectorStub = mockRemoteConnector
+        let remoteConnector = MockRemoteConnecting()
+        remoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
+        dependencies.createRemoteConnectorStub = remoteConnector
 
         _ = try controller.startConnectMode()
 
@@ -252,8 +252,10 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     func test_startConnectMode_loginFails_sendsError() async throws {
-        let mockRemoteConnector = MockRemoteConnecting()
-        dependencies.createRemoteConnectorStub = mockRemoteConnector
+        let remoteConnector = MockRemoteConnecting()
+        dependencies.createRemoteConnectorStub = remoteConnector
+        remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
+        
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
@@ -264,6 +266,8 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         XCTAssertEqual(error, SyncConnectionError.failedToLogIn)
     }
+    
+    // MARK: syncCodeEntered
 
     private func waitForError() async throws -> SyncConnectionError? {
         let publisher = await delegate.$didErrorCalled
@@ -331,7 +335,7 @@ public extension XCTestCase {
         // created at the top of our test, and once done, we
         // also cancel our cancellable to avoid getting any
         // unused variable warnings:
-        await fulfillment(of: [expectation])
+        await fulfillment(of: [expectation], timeout: timeout)
         cancellable.cancel()
 
         // Here we pass the original file and line number that
@@ -359,6 +363,7 @@ public extension XCTestCase {
             publisher.first {
                 value == $0
             },
+            timeout: timeout,
             waitForFinish: false
         )
     }

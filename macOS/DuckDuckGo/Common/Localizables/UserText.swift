@@ -41,6 +41,7 @@ struct UserText {
     static let update = NSLocalizedString("update", value: "Update", comment: "Update button")
     static let dontUpdate = NSLocalizedString("dont.update", value: "Don't Update", comment: "Don't Update button")
     static let copy = NSLocalizedString("copy", value: "Copy", comment: "Copy button")
+    static let copyLink = NSLocalizedString("copy.link", value: "Copy Link", comment: "Copy Link button")
     static let details = NSLocalizedString("details", value: "Details", comment: "details button")
     static let submit = NSLocalizedString("submit", value: "Submit", comment: "Submit button")
     static let submitReport = NSLocalizedString("submit.report", value: "Submit Report", comment: "Submit Report button")

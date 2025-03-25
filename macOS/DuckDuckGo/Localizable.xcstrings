@@ -16062,6 +16062,18 @@
         }
       }
     },
+    "copy.link" : {
+      "comment" : "Copy Link button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy Link"
+          }
+        }
+      }
+    },
     "Country" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)",
       "localizations" : {

@@ -24,35 +24,35 @@ import BrowserServicesKit
 public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerWillBeginTransmittingRecoveryKey() async
     func controllerDidFinishTransmittingRecoveryKey()
-    
+
     func controllerDidReceiveRecoveryKey()
 
     func controllerDidRecognizeScannedCode() async
-    
+
     func controllerDidCreateSyncAccount()
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool)
-    
+
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool)
-    
+
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async
-    
+
     func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?)
 }
 
 public enum SyncConnectionError: Error {
     case unableToRecogniseCode
-    
+
     case failedToFetchPublicKey
     case failedToTransmitExchangeRecoveryKey
     case failedToFetchConnectRecoveryKey
     case failedToLogIn
-    
+
     case failedToTransmitExchangeKey
     case failedToFetchExchangeRecoveryKey
-    
+
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
-    
+
     case foundExistingAccount
 }
 
@@ -61,12 +61,12 @@ final public class SyncConnectionController {
     private let deviceType: String
     private let syncService: DDGSyncing
     private let dependencies: SyncDependencies
-    
+
     weak var delegate: SyncConnectionControllerDelegate?
-    
+
     private var exchanger: RemoteKeyExchanging?
     private var connector: RemoteConnecting?
-    
+
     var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
             return ""
@@ -74,7 +74,7 @@ final public class SyncConnectionController {
 
         return code
     }
-    
+
     init(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate? = nil, syncService: DDGSyncing, dependencies: SyncDependencies) {
         self.deviceName = deviceName
         self.deviceType = deviceType
@@ -89,26 +89,26 @@ final public class SyncConnectionController {
         startExchangePolling()
         return exchanger.code
     }
-    
+
     public func stopExchangeMode() {
         exchanger?.stopPolling()
         exchanger = nil
     }
-    
+
     public func startConnectMode() throws -> String {
         let connector = try remoteConnect()
         self.connector = connector
         self.startConnectPolling()
-        
+
         // Step A
         return connector.code
     }
-    
+
     public func stopConnectMode() {
         self.connector?.stopPolling()
         self.connector = nil
     }
-    
+
     @discardableResult
     public func syncCodeEntered(code: String) async -> Bool {
         // Step B
@@ -119,7 +119,7 @@ final public class SyncConnectionController {
             await delegate?.controllerDidError(.unableToRecogniseCode, underlyingError: error)
             return false
         }
-        
+
         await delegate?.controllerDidRecognizeScannedCode()
 
         if let exchangeKey = syncCode.exchangeKey {
@@ -133,20 +133,20 @@ final public class SyncConnectionController {
             return false
         }
     }
-    
+
     public func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
         await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: isRecovery)
     }
-    
+
     private func remoteConnect() throws -> RemoteConnecting {
         try dependencies.createRemoteConnector()
     }
-    
+
     private func remoteExchange() throws -> RemoteKeyExchanging {
         try dependencies.createRemoteKeyExchanger()
     }
-    
+
     private func startExchangePolling() {
         Task { @MainActor in
             let exchangeMessage: ExchangeMessage
@@ -161,7 +161,7 @@ final public class SyncConnectionController {
                 delegate?.controllerDidError(.failedToFetchPublicKey, underlyingError: error)
                 return
             }
-            
+
             await delegate?.controllerWillBeginTransmittingRecoveryKey()
             do {
                 // Step D
@@ -169,12 +169,12 @@ final public class SyncConnectionController {
             } catch {
                 delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error)
             }
-            
+
             delegate?.controllerDidFinishTransmittingRecoveryKey()
             exchanger?.stopPolling()
         }
     }
-    
+
     private func startConnectPolling() {
         Task { @MainActor in
             let recoveryKey: SyncCode.RecoveryKey
@@ -188,9 +188,9 @@ final public class SyncConnectionController {
                 delegate?.controllerDidError(.failedToFetchConnectRecoveryKey, underlyingError: error)
                 return
             }
-            
+
             delegate?.controllerDidReceiveRecoveryKey()
-            
+
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false)
             } catch {
@@ -198,7 +198,7 @@ final public class SyncConnectionController {
             }
         }
     }
-    
+
     private func handleExchangeKey(_ exchangeKey: SyncCode.ExchangeKey) async -> Bool {
         let exchangeInfo: ExchangeInfo
         do {
@@ -207,7 +207,7 @@ final public class SyncConnectionController {
             await delegate?.controllerDidError(.failedToTransmitExchangeKey, underlyingError: error)
             return false
         }
-        
+
         do {
             guard let recoveryKey = try await self.remoteExchangeRecoverer(exchangeInfo: exchangeInfo).pollForRecoveryKey() else {
                 // Polling likelly cancelled.
@@ -219,11 +219,11 @@ final public class SyncConnectionController {
             return false
         }
     }
-    
+
     private func remoteExchangeRecoverer(exchangeInfo: ExchangeInfo) throws -> RemoteExchangeRecovering {
         return try dependencies.createRemoteExchangeRecoverer(exchangeInfo)
     }
-    
+
     private func handleRecoveryKey(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async -> Bool {
         do {
             try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: isRecovery)
@@ -233,10 +233,10 @@ final public class SyncConnectionController {
             return false
         }
     }
-    
+
     private func handleConnectKey(_ connectKey: SyncCode.ConnectCode) async -> Bool {
         var shouldShowSyncEnabled = true
-        
+
         if syncService.account == nil {
             do {
                 try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)

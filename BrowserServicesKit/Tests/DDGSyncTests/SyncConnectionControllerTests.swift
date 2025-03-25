@@ -32,13 +32,13 @@ final class MockRemoteExchangeRecovering: RemoteExchangeRecovering {
     var pollForRecoveryKeyResult: SyncCode.RecoveryKey?
     var pollForRecoveryKeyError: Error?
     var stopPollingCalled = 0
-    
+
     func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
         pollForRecoveryKeyCalled += 1
         if let error = pollForRecoveryKeyError { throw error }
         return pollForRecoveryKeyResult
     }
-    
+
     func stopPolling() {
         stopPollingCalled += 1
     }
@@ -57,39 +57,39 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
     @Published var didFindTwoAccountsDuringRecoveryCalled: SyncCode.RecoveryKey?
     @Published var didErrorCalled: Bool = false
     var didErrorErrors: (error: SyncConnectionError, underlyingError: Error?)?
-    
+
     func controllerWillBeginTransmittingRecoveryKey() async {
         didBeginTransmittingRecoveryKeyCalled = true
     }
-    
+
     func controllerDidFinishTransmittingRecoveryKey() {
         didFinishTransmittingRecoveryKeyCalled = true
     }
-    
+
     func controllerDidReceiveRecoveryKey() {
         didReceiveRecoveryKeyCalled = true
     }
-    
+
     func controllerDidRecognizeScannedCode() async {
         didRecognizeScannedCodeCalled = true
     }
-    
+
     func controllerDidCreateSyncAccount() {
         didCreateSyncAccountCalled = true
     }
-    
+
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
         didCompleteAccountConnectionValue = shouldShowSyncEnabled
     }
-    
+
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
         didCompleteLoginDevices = registeredDevices
     }
-    
+
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
         didFindTwoAccountsDuringRecoveryCalled = recoveryKey
     }
-    
+
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
         didErrorCalled = true
         didErrorErrors = (error, underlyingError)
@@ -101,14 +101,14 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
 import NetworkingTestingUtils
 
 final class SyncConnectionControllerTests: XCTestCase {
-    
+
     private var controller: SyncConnectionController!
     private var syncService: DDGSync!
     private var delegate: MockSyncConnectionControllerDelegate!
     private var dependencies: MockSyncDependencies!
     private static var deviceName = "TestDeviceName"
     private static var deviceType = "TestDeviceType"
-    
+
     @MainActor
     override func setUp() {
         super.setUp()
@@ -117,7 +117,7 @@ final class SyncConnectionControllerTests: XCTestCase {
         delegate = MockSyncConnectionControllerDelegate()
         controller = SyncConnectionController(deviceName: Self.deviceName, deviceType: Self.deviceType, delegate: delegate, syncService: syncService, dependencies: dependencies)
     }
-    
+
     override func tearDown() {
         MockURLProtocol.requestHandler = nil
         controller = nil
@@ -128,88 +128,88 @@ final class SyncConnectionControllerTests: XCTestCase {
     }
 
     // MARK: startExchangeMode
-    
+
     func test_startExchangeMode_returnsExchangerCode() throws {
         let expectedExchangerCode = "TestExchangerCode"
         let mockRemoteKeyExchanger: MockRemoteKeyExchanging = .init()
         dependencies.createRemoteKeyExchangerStub = mockRemoteKeyExchanger
         mockRemoteKeyExchanger.code = expectedExchangerCode
-        
+
         XCTAssertEqual(try controller.startExchangeMode(), expectedExchangerCode)
     }
-    
+
     func test_startExchangeMode_pollSucceeds_transmitsRecoveryKey() async throws {
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
-        
+
         let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
-        
+
         _ = try controller.startExchangeMode()
-        
+
         let publisher = await delegate.$didFinishTransmittingRecoveryKeyCalled
         try await waitForPublisher(publisher, timeout: 5, toEmit: true)
-        
+
         XCTAssertEqual(exchangeRecoveryKeyTransmitter.sendCalled, 1)
     }
-    
+
     func test_startExchangeMode_pollSucceeds_stopsExchangerPolling() async throws {
         let remoteExchanger = MockRemoteKeyExchanging()
         givenExchangerPollForPublicKeySucceeds(remoteExchanger)
-        
+
         let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
-        
+
         _ = try controller.startExchangeMode()
-        
+
         let publisher = await delegate.$didFinishTransmittingRecoveryKeyCalled
         try await waitForPublisher(publisher, timeout: 5, toEmit: true)
-        
+
         XCTAssertEqual(remoteExchanger.stopPollingCalled, 1)
     }
-    
+
     func test_startExchangeMode_pollFails_sendsError() async throws {
         // Mock exchanger creation
         let remoteExchanger = MockRemoteKeyExchanging()
         dependencies.createRemoteKeyExchangerStub = remoteExchanger
         remoteExchanger.pollForPublicKeyError = SyncError.unableToDecodeResponse("")
-        
+
         _ = try controller.startExchangeMode()
-        
+
         let error = try await waitForError()
-        
+
         XCTAssertEqual(error, SyncConnectionError.failedToFetchPublicKey)
     }
-    
+
     func test_startExchangeMode_recoveryKeyTransmitFails_sendsError() async throws {
         // Mock exchanger creation
         givenExchangerPollForPublicKeySucceeds()
-        
+
         let exchangeRecoveryKeyTransmitter = MockExchangeRecoveryKeyTransmitting()
         dependencies.createExchangeRecoveryKeyTransmitterStub = exchangeRecoveryKeyTransmitter
         exchangeRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
-        
+
         _ = try controller.startExchangeMode()
-        
+
         let error = try await waitForError()
-        
+
         XCTAssertEqual(error, SyncConnectionError.failedToTransmitExchangeRecoveryKey)
     }
-    
+
     private func givenExchangerPollForPublicKeySucceeds(_ exchanger: MockRemoteKeyExchanging = MockRemoteKeyExchanging()) {
         let expectedMessage = ExchangeMessage(keyId: "keyID", publicKey: .init(), deviceName: "")
         exchanger.pollForPublicKeyResult = expectedMessage
         dependencies.createRemoteKeyExchangerStub = exchanger
     }
-    
+
     // MARK: startConnectMode
-    
+
     func test_startConnectMode_returnsConnectorCode() throws {
         let expectedConnectorCode = "TestConnectorCode"
         let mockRemoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         mockRemoteConnector.code = expectedConnectorCode
-        
+
         XCTAssertEqual(try controller.startConnectMode(), expectedConnectorCode)
     }
 
@@ -217,13 +217,13 @@ final class SyncConnectionControllerTests: XCTestCase {
         let remoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = remoteConnector
         remoteConnector.pollForRecoveryKeyStub = SyncCode.RecoveryKey(userId: "", primaryKey: Data())
-        
+
         _ = try controller.startConnectMode()
-        
+
         let publisher = await delegate.$didReceiveRecoveryKeyCalled
         try await waitForPublisher(publisher, timeout: 5, toEmit: true)
     }
-    
+
     func test_startConnectMode_pollSucceeds_logsIn() async throws {
         let mockRemoteConnector = MockRemoteConnecting()
         let userId = "TestUserId"
@@ -231,40 +231,40 @@ final class SyncConnectionControllerTests: XCTestCase {
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
-        
+
         _ = try controller.startConnectMode()
-        
+
         try await waitForPublisher(mockAccountManager.$loginCalled, timeout: 5, toEmit: true)
-        
+
         XCTAssertEqual(mockAccountManager.loginSpy?.recoveryKey.userId, userId)
     }
-    
+
     func test_startConnectMode_pollingFails_sendsError() async throws {
         let mockRemoteConnector = MockRemoteConnecting()
         mockRemoteConnector.pollForRecoveryKeyError = SyncError.failedToPrepareForConnect("")
         dependencies.createRemoteConnectorStub = mockRemoteConnector
-        
+
         _ = try controller.startConnectMode()
-        
+
         let error = try await waitForError()
-        
+
         XCTAssertEqual(error, SyncConnectionError.failedToFetchConnectRecoveryKey)
     }
-    
+
     func test_startConnectMode_loginFails_sendsError() async throws {
         let mockRemoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
         mockAccountManager.loginError = SyncError.failedToDecryptValue("")
-        
+
         _ = try controller.startConnectMode()
-        
+
         let error = try await waitForError()
-        
+
         XCTAssertEqual(error, SyncConnectionError.failedToLogIn)
     }
-    
+
     private func waitForError() async throws -> SyncConnectionError? {
         let publisher = await delegate.$didErrorCalled
         try await waitForPublisher(publisher, timeout: 5, toEmit: true)
@@ -363,4 +363,3 @@ public extension XCTestCase {
         )
     }
 }
-

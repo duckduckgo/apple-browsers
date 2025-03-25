@@ -154,7 +154,7 @@ public struct SyncCode: Codable {
         let deviceId: String
         let secretKey: Data
     }
-    
+
     public struct ExchangeKey: Codable, Sendable {
         let keyId: String
         let publicKey: Data

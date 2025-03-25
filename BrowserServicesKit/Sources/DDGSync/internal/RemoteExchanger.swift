@@ -19,17 +19,16 @@
 import Foundation
 
 final class RemoteKeyExchanger: RemoteKeyExchanging {
-    
-    
+
     let code: String
     let exchangeInfo: ExchangeInfo
-    
+
     let crypter: CryptingInternal
     let api: RemoteAPIRequestCreating
     let endpoints: Endpoints
-    
+
     var isPolling = false
-    
+
     // TODO: Just use the Crypter internally
     init(crypter: CryptingInternal,
          api: RemoteAPIRequestCreating,
@@ -40,30 +39,30 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
         self.exchangeInfo = try crypter.prepareForExchange()
         self.code = try exchangeInfo.toCode()
     }
-    
+
     // Step C
     func pollForPublicKey() async throws -> ExchangeMessage? {
         assert(!isPolling, "exchanger is already polling")
-        
+
         isPolling = true
         while isPolling {
             if let key = try await fetchPublicKey() {
                 return key
             }
-            
+
             if isPolling {
                 try await Task.sleep(nanoseconds: 2 * 1_000_000_000)
             }
         }
         return nil
     }
-    
+
     func stopPolling() {
         isPolling = false
     }
-    
+
     // MARK: Public Key
-    
+
     private func fetchPublicKey() async throws -> ExchangeMessage? {
         print("🦄 C: Fetch public key with keyID: \(exchangeInfo.keyId), publicKey: \(exchangeInfo.publicKey)")
         if let base64EncodedEncryptedRecoveryKeyString = try await fetchEncryptedExchangeMessage() {
@@ -73,7 +72,7 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
         }
         return nil
     }
-    
+
     private func decryptEncryptedExchangeKey(_ base64EncodedEncryptedExchangeString: String) throws -> ExchangeMessage {
         guard let base64DecodedEncryptedExchangeMessage = Data(base64Encoded: base64EncodedEncryptedExchangeString) else {
             throw SyncError.failedToDecryptValue("Failed to convert base64 string to Data") // TODO: Add new error for this?
@@ -81,33 +80,33 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
         let data = try crypter.unseal(encryptedData: base64DecodedEncryptedExchangeMessage,
                                       publicKey: exchangeInfo.publicKey,
                                       secretKey: exchangeInfo.secretKey)
-        
+
         let exchangeMessage = try JSONDecoder.snakeCaseKeys.decode(ExchangeMessage.self, from: data)
-        
+
         return exchangeMessage
     }
-    
+
     private func fetchEncryptedExchangeMessage() async throws -> String? {
         let url = endpoints.exchange.appendingPathComponent(exchangeInfo.keyId)
-        
+
         let request = api.createRequest(url: url,
                                         method: .get,
                                         headers: [:],
                                         parameters: [:],
                                         body: nil,
                                         contentType: nil)
-        
+
         do {
             let result = try await request.execute()
             guard let data = result.data else {
                 throw SyncError.invalidDataInResponse("No body in successful GET on /exchange")
             }
-            
+
             let base64EncodedEncryptedExchangeMessageString = try JSONDecoder
                 .snakeCaseKeys
                 .decode(ExchangeResult.self, from: data)
                 .encryptedMessage
-            
+
             return base64EncodedEncryptedExchangeMessageString
         } catch SyncError.unexpectedStatusCode(let statusCode) {
             if statusCode == 404 {
@@ -116,7 +115,7 @@ final class RemoteKeyExchanger: RemoteKeyExchanging {
             throw SyncError.unexpectedStatusCode(statusCode)
         }
     }
-    
+
     struct ExchangeResult: Decodable {
         let encryptedMessage: String
     }
@@ -140,9 +139,9 @@ final class RemoteExchangeRecoverer: RemoteExchangeRecovering {
         self.endpoints = endpoints
         self.exchangeInfo = exchangeInfo
     }
-    
+
     // MARK: Recover Key
-    
+
     // Step E
     func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
         assert(!isPolling, "exchanger is already polling")
@@ -159,11 +158,11 @@ final class RemoteExchangeRecoverer: RemoteExchangeRecovering {
         }
         return nil
     }
-    
+
     func stopPolling() {
         isPolling = false
     }
-    
+
     private func fetchRecoveryKey() async throws -> SyncCode.RecoveryKey? {
         if let base64EncodedEncryptedRecoveryKeyString = try await fetchEncryptedRecoveryKey() {
             let recoveryKey = try decryptEncryptedRecoveryKey(base64EncodedEncryptedRecoveryKeyString)

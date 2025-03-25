@@ -118,11 +118,11 @@ public class DDGSync: DDGSyncing {
             throw handleUnauthenticatedAndMap(error)
         }
     }
-    
+
     public func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionController {
         SyncConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: delegate, syncService: self, dependencies: dependencies)
     }
-    
+
     // Step B
     public func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
         do {
@@ -131,7 +131,7 @@ public class DDGSync: DDGSyncing {
             throw handleUnauthenticatedAndMap(error)
         }
     }
-    
+
     // Step D
     public func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
         do {

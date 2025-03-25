@@ -56,7 +56,7 @@ public enum FeatureFlag: String, CaseIterable {
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
     case popoverVsBannerExperiment
-    
+
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
 }

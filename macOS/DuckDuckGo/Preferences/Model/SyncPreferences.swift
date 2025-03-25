@@ -439,7 +439,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private func launchedFromSyncPromo(_ sender: Notification) {
         syncPromoSource = sender.userInfo?[SyncPromoManager.Constants.syncPromoSourceKey] as? String
     }
-    
+
     private func waitForDevicesToChangeThenPresentSyncing() {
         $devices.removeDuplicates()
             .dropFirst()
@@ -564,7 +564,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             legacyStartPollingForRecoveryKey(isRecovery: isRecovery)
         }
     }
-    
+
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
@@ -592,7 +592,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             }
         }
     }
-    
+
     private func legacyStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
@@ -644,7 +644,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             legacyRecoverDevice(recoveryCode: recoveryCode, fromRecoveryScreen: fromRecoveryScreen)
         }
     }
-    
+
     private func legacyRecoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
         Task { @MainActor in
             guard let syncCode = try? SyncCode.decodeBase64String(recoveryCode) else {
@@ -875,7 +875,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     func switchAccountsCancelled() {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
     }
-    
+
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
@@ -888,7 +888,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             }
         }
     }
-    
+
     private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) {
         Task { @MainActor in
             if devices.count > 1 {
@@ -901,7 +901,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
         }
     }
-    
+
     private func handleError(_ syncErrorType: SyncErrorType, error: Error?, pixelEvent: PixelKitEvent?) {
         managementDialogModel.syncErrorMessage = SyncErrorMessage(type: syncErrorType)
         if let pixelEvent {
@@ -914,19 +914,19 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     func controllerWillBeginTransmittingRecoveryKey() async {
         // no-op
     }
-    
+
     func controllerDidFinishTransmittingRecoveryKey() {
         waitForDevicesToChangeThenPresentSyncing()
     }
-    
+
     func controllerDidReceiveRecoveryKey() {
         presentDialog(for: .prepareToSync)
     }
-    
+
     func controllerDidRecognizeScannedCode() async {
         // no-op
     }
-    
+
     func controllerDidCreateSyncAccount() {
         let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
         PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
@@ -935,7 +935,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         }
         presentDialog(for: .saveRecoveryCode(code))
     }
-    
+
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
         guard shouldShowSyncEnabled else { return }
         self.$devices
@@ -948,7 +948,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
                 self.presentDialog(for: .saveRecoveryCode(code))
             }.store(in: &cancellables)
     }
-    
+
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
         self.codeToDisplay = self.recoveryCode
         mapDevices(registeredDevices)
@@ -962,11 +962,11 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
             self.stopPollingForRecoveryKey()
         }
     }
-    
+
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
         handleAccountAlreadyExists(recoveryKey)
     }
-    
+
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
         switch error {
         case .unableToRecogniseCode:

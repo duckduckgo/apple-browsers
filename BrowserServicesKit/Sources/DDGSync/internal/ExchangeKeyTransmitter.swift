@@ -22,20 +22,20 @@ struct ExchangePublicKeyTransmitter: ExchangePublicKeyTransmitting {
     let endpoints: Endpoints
     let api: RemoteAPIRequestCreating
     let crypter: CryptingInternal
-    
+
     func sendGeneratedExchangeInfo(_ code: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
         let exchangeInfo = try crypter.prepareForExchange()
         let exchangeKey = try JSONEncoder.snakeCaseKeys.encode(
             ExchangeMessage(keyId: exchangeInfo.keyId, publicKey: exchangeInfo.publicKey, deviceName: deviceName)
         )
-                
+
         let encryptedRecoveryKey = try crypter.seal(exchangeKey, secretKey: code.publicKey)
         let encodedRecoveryKey = encryptedRecoveryKey.base64EncodedString()
 
         let body = try JSONEncoder.snakeCaseKeys.encode(
             ExchangeRequest(keyId: code.keyId, encryptedMessage: encodedRecoveryKey)
         )
-        
+
         print("🦄 B: Send public key with keyID: \(code.keyId), publicKey: \(code.publicKey)")
         Swift.print("Exchange JSON request is: \(String(data: body, encoding: .utf8) ?? "nil")")
 
@@ -56,23 +56,23 @@ struct ExchangeRecoveryKeyTransmitter: ExchangeRecoveryKeyTransmitting {
     let crypter: CryptingInternal
     let storage: SecureStoring
     let exchangeMessage: ExchangeMessage
-    
+
     func send() async throws {
         guard let recoveryCode = try storage.account()?.recoveryCode else {
             throw SyncError.accountNotFound
         }
-        
+
         guard let recoveryCodeData = Data(base64Encoded: recoveryCode) else {
             throw SyncError.unableToEncodeRequestBody("Base64 encoding failed")
         }
-        
+
         let encryptedRecoveryKey = try crypter.seal(recoveryCodeData, secretKey: exchangeMessage.publicKey)
         let encodedRecoveryKey = encryptedRecoveryKey.base64EncodedString()
 
         let body = try JSONEncoder.snakeCaseKeys.encode(
             ExchangeRequest(keyId: exchangeMessage.keyId, encryptedMessage: encodedRecoveryKey)
         )
-        
+
         print("🦄 D: Send recovery key with keyID: \(exchangeMessage.keyId), recoveryCode: \(recoveryCode)")
         print("Exchange JSON request is: \(String(data: body, encoding: .utf8) ?? "nil")")
 

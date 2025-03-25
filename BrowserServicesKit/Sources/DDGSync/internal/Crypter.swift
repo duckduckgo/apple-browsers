@@ -150,7 +150,7 @@ struct Crypter: CryptingInternal {
                            publicKey: Data(publicKeyBytes),
                            secretKey: Data(secretKeyBytes))
     }
-    
+
     func prepareForExchange() throws -> ExchangeInfo {
         var publicKeyBytes = [UInt8](repeating: 0, count: Int(DDGSYNCCRYPTO_PUBLIC_KEY_SIZE.rawValue))
         var secretKeyBytes = [UInt8](repeating: 0, count: Int(DDGSYNCCRYPTO_PRIVATE_KEY_SIZE.rawValue))

@@ -20,21 +20,21 @@ import BrowserServicesKit
 
 public final class MockFeatureFlagger: FeatureFlagger {
     public var allActiveExperiments: BrowserServicesKit.Experiments = [:]
-    
+
     private(set) var didCallResolveCohort: Bool = false
 
     public var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
     public var localOverrides: FeatureFlagLocalOverriding?
 
     var mockActiveExperiments: [String: ExperimentData] = [:]
-    
+
     var featuresStub: [String: Bool] = [:]
     public func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
         featuresStub[featureFlag.rawValue] ?? false
     }
-    
+
     var resolveCohortStub: (any FeatureFlagCohortDescribing)?
-    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag : BrowserServicesKit.FeatureFlagDescribing {
+    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag: BrowserServicesKit.FeatureFlagDescribing {
         resolveCohortStub
     }
 }

@@ -351,15 +351,13 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     }
 
     private func updateView() {
-        let isFirstResponderOrBigSearchBox = isFirstResponder
-
-        let isPassiveTextFieldHidden = isFirstResponderOrBigSearchBox || mode.isEditing
+        let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.alphaValue = isPassiveTextFieldHidden ? 1 : 0
         passiveTextField.alphaValue = isPassiveTextFieldHidden ? 0 : 1
 
-        updateShadowViewPresence(isFirstResponderOrBigSearchBox)
-        inactiveBackgroundView.alphaValue = isFirstResponderOrBigSearchBox ? 0 : 1
-        activeBackgroundView.alphaValue = isFirstResponderOrBigSearchBox ? 1 : 0
+        updateShadowViewPresence(isFirstResponder)
+        inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
+        activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
 

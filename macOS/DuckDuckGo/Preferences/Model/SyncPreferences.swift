@@ -968,8 +968,8 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
         switch error {
-        case .unableToRecogniseCode:
-            handleError(.unableToRecogniseCode, error: underlyingError, pixelEvent: nil)
+        case .unableToRecognizeCode:
+            handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
             handleError(.unableToSyncToOtherDevice, error: error, pixelEvent: GeneralPixel.syncLoginError(error: error))
         case .failedToCreateAccount:

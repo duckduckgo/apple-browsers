@@ -39,7 +39,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 }
 
 public enum SyncConnectionError: Error {
-    case unableToRecogniseCode
+    case unableToRecognizeCode
 
     case failedToFetchPublicKey
     case failedToTransmitExchangeRecoveryKey
@@ -146,7 +146,7 @@ final public class SyncConnectionController: SyncConnectionControlling {
         do {
             syncCode = try SyncCode.decodeBase64String(code)
         } catch {
-            await delegate?.controllerDidError(.unableToRecogniseCode, underlyingError: error)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
             return false
         }
 
@@ -159,7 +159,7 @@ final public class SyncConnectionController: SyncConnectionControlling {
         } else if let connectKey = syncCode.connect {
             return await handleConnectKey(connectKey)
         } else {
-            await delegate?.controllerDidError(.unableToRecogniseCode, underlyingError: nil)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
             return false
         }
     }

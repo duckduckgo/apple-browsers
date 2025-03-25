@@ -396,7 +396,7 @@ platform :mac do
     sync_code_signing(
       api_key: get_api_key,
       username: get_username(options),
-      readonly: is_ci
+      readonly: !is_ci
     )
   end
 

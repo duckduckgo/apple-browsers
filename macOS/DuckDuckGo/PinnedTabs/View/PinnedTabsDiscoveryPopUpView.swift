@@ -28,6 +28,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
     }
 
     var callback: ((Bool) -> Void)?
+    @State private var buttonWidth: CGFloat = 0
 
     var body: some View {
         VStack(spacing: Constants.verticalSpacing) {
@@ -38,7 +39,7 @@ struct PinnedTabsDiscoveryPopUpView: View {
                     .foregroundColor(.primary)
                 Text(.init(UserText.pinnedTabsDiscoveryPopoverMessage2))
                     .foregroundColor(.secondary)
-            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing)
+            }
 
             HStack {
                 createButton(title: UserText.pinnedTabsDiscoveryPopoverShared,
@@ -51,10 +52,13 @@ struct PinnedTabsDiscoveryPopUpView: View {
                     setPerWindowPinnedTabs()
                     callback?(true)
                 }
-            }.frame(width: Constants.panelWidth - 2 * Constants.verticalSpacing)
+            }
         }
         .padding()
-        .frame(width: Constants.panelWidth, height: Constants.panelHeight)
+        .frame(width: buttonWidth == 0 ? Constants.panelWidth : buttonWidth * 2 + Constants.verticalSpacing * 2)
+            .onPreferenceChange(ButtonWidthPreferenceKey.self) { value in
+                self.buttonWidth = value
+            }
     }
 
     private func createButton(title: String, style: some ButtonStyle, action: @escaping () -> Void) -> some View {
@@ -62,16 +66,31 @@ struct PinnedTabsDiscoveryPopUpView: View {
             Text(title)
                 .font(.system(size: 13))
                 .fontWeight(.light)
-                .frame(maxWidth: .infinity)
+                .lineLimit(1)
+                .fixedSize()
                 .frame(height: 22)
         }
         .buttonStyle(style)
         .padding(0)
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .preference(key: ButtonWidthPreferenceKey.self, value: geometry.size.width)
+            }
+        )
     }
 
     private func setPerWindowPinnedTabs() {
         Task.detached { @MainActor in
             TabsPreferences.shared.pinnedTabsMode = .separate
+        }
+    }
+
+    private struct ButtonWidthPreferenceKey: PreferenceKey {
+        static var defaultValue: CGFloat = 0
+
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = max(value, nextValue()) // Get the widest button
         }
     }
 }

@@ -80,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
 
     let pinnedTabsManager = PinnedTabsManager()
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
@@ -249,6 +250,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
 #endif
 
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+
         configurationManager = ConfigurationManager(store: configurationStore)
 
         featureFlagger = DefaultFeatureFlagger(
@@ -323,7 +326,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 database: RemoteMessagingDatabase().db,
                 bookmarksDatabase: BookmarkDatabase.shared.db,
                 appearancePreferences: .shared,
-                pinnedTabsManager: pinnedTabsManager,
+                pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(

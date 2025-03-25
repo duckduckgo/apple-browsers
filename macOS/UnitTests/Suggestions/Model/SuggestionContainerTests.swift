@@ -111,11 +111,12 @@ final class SuggestionContainerTests: XCTestCase {
 extension SuggestionContainerTests {
 
     class WindowControllersManagerMock: WindowControllersManagerProtocol {
+
+        var pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding
+
         var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
-
-        var pinnedTabsManager: DuckDuckGo_Privacy_Browser.PinnedTabsManager
 
         var didRegisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
 
@@ -143,8 +144,8 @@ extension SuggestionContainerTests {
             nil
         }
 
-        init(pinnedTabsManager: PinnedTabsManager, tabCollectionViewModels: [TabCollectionViewModel] = []) {
-            self.pinnedTabsManager = pinnedTabsManager
+        init(pinnedTabsManagerProvider: PinnedTabsManagerProvider, tabCollectionViewModels: [TabCollectionViewModel] = []) {
+            self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
             self.allTabCollectionViewModels = tabCollectionViewModels
         }
     }

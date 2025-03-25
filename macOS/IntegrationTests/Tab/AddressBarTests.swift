@@ -93,7 +93,8 @@ class AddressBarTests: XCTestCase {
         StartupPreferences.shared.customHomePageURL = URL.duckDuckGo.absoluteString
         StartupPreferences.shared.launchToCustomHomePage = false
 
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: .init())
+        TabsPreferences.shared.pinnedTabsMode = .shared
+
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -108,6 +109,8 @@ class AddressBarTests: XCTestCase {
 
         NSError.disableSwizzledDescription = false
         StartupPreferences.shared.launchToCustomHomePage = false
+
+        TabsPreferences.shared.pinnedTabsMode = .separate
 
         HTTPStubs.removeAllStubs()
     }
@@ -810,7 +813,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabOpen_webViewBecomesFirstResponder() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
+        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
 
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
@@ -842,8 +845,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabWhenAddressBarIsActive_addressBarIsKeptActive() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
-
+        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!

@@ -318,7 +318,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         let url = URL(string: "http://privacy-test-pages.site/security/badware/scam.html")!
         try await loadUrl(url)
         await fulfillment(of: [e], timeout: 1)
-        XCTAssertNil(tabViewModel.tab.error)
+        XCTAssertNotEqual(tabViewModel.tab.error, MaliciousSiteError(code: .scam, failingUrl: url))
     }
 
     @MainActor

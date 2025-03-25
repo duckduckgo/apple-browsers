@@ -45,9 +45,9 @@ extension Preferences {
 
         private func firePinnedTabsPixel(_ newMode: PinnedTabsMode) {
             if newMode == .shared {
-                PixelKit.fire(GeneralPixel.userSwitchedToSharedPinnedTabs, frequency: .dailyAndStandard)
+                PixelKit.fire(PinnedTabsPixel.userSwitchedToSharedPinnedTabs, frequency: .dailyAndStandard)
             } else {
-                PixelKit.fire(GeneralPixel.userSwitchedToPerWindowPinnedTabs, frequency: .dailyAndStandard)
+                PixelKit.fire(PinnedTabsPixel.userSwitchedToPerWindowPinnedTabs, frequency: .dailyAndStandard)
             }
         }
 

@@ -558,11 +558,11 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func startPollingForRecoveryKey(isRecovery: Bool) {
-        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            newStartPollingForRecoveryKey(isRecovery: isRecovery)
-        } else {
+        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyStartPollingForRecoveryKey(isRecovery: isRecovery)
+            return
         }
+        newStartPollingForRecoveryKey(isRecovery: isRecovery)
     }
 
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {

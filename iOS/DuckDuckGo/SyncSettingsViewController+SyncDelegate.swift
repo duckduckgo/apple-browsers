@@ -308,11 +308,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func collectCode(showQRCode: Bool) {
-        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            newCollectCode(showQRCode: showQRCode)
-        } else {
+        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyCollectCode(showQRCode: showQRCode)
+            return
         }
+        newCollectCode(showQRCode: showQRCode)
     }
     
     private func newCollectCode(showQRCode: Bool) {

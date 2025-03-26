@@ -636,12 +636,12 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
-        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            Task {
-                await connectionController.syncCodeEntered(code: recoveryCode)
-            }
-        } else {
+        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             legacyRecoverDevice(recoveryCode: recoveryCode, fromRecoveryScreen: fromRecoveryScreen)
+            return
+        }
+        Task {
+            await connectionController.syncCodeEntered(code: recoveryCode)
         }
     }
 
@@ -772,10 +772,12 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             }
             return
         }
-        if isSyncEnabled && featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+        if isSyncEnabled {
+            guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
+                presentDialog(for: .syncWithAnotherDevice(code: recoveryCode ?? ""))
+                return
+            }
             self.startPollingForPublicKey()
-        } else if isSyncEnabled {
-            presentDialog(for: .syncWithAnotherDevice(code: recoveryCode ?? ""))
         } else {
             self.startPollingForRecoveryKey(isRecovery: false)
         }

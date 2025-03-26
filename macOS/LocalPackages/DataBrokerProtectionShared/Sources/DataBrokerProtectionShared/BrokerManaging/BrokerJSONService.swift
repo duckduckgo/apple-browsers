@@ -72,7 +72,8 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                 request.setValue(contentType, forHTTPHeaderField: "Content-Type")
             }
             if let eTag {
-                request.setValue(eTag, forHTTPHeaderField: "ETag")
+                request.cachePolicy = .reloadIgnoringCacheData
+                request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
             }
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 

@@ -1201,7 +1201,7 @@
 "duckai.settings.enable.browsing-menu-toggle" = "Show Duck.ai in Browser Menu";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Show Duck.ai in Tab Manager";
+"duckai.settings.enable.tab-switcher-toggle" = "Show Duck.ai on the Tabs Screen";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Show Duck.ai in Voice Search";

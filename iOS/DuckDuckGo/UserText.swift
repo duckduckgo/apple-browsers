@@ -1567,7 +1567,7 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
 
     public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Show Duck.ai in Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
-    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Show Duck.ai in Tab Manager", comment: "Toggle text to enable/disable Duck.ai in tab manager")
+    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Show Duck.ai on the Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

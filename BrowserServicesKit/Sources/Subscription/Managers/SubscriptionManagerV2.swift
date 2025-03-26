@@ -271,7 +271,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult
     public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
-        guard isUserAuthenticated else {
+        guard await isUserAuthenticated() else {
             throw SubscriptionEndpointServiceError.noData
         }
 
@@ -343,7 +343,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     public func getCustomerPortalURL() async throws -> URL {
-        guard isUserAuthenticated else {
+        guard await isUserAuthenticated() else {
             throw SubscriptionEndpointServiceError.noData
         }
 
@@ -358,7 +358,20 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        oAuthClient.isUserAuthenticated
+        var tokenContainer: TokenContainer?
+        // extremely ugly hack, will be replaced by `func isUserAuthenticated()` as soon auth v1 is removed
+        let semaphore = DispatchSemaphore(value: 0)
+        Task {
+            tokenContainer = try? await getTokenContainer(policy: .localValid)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return tokenContainer != nil
+    }
+
+    private func isUserAuthenticated() async -> Bool {
+        let token = try? await getTokenContainer(policy: .local)
+        return token != nil
     }
 
     public var userEmail: String? {
@@ -465,7 +478,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     /// - Parameter forceRefresh: ignore subscription and token cache and re-download everything
     /// - Returns: An Array of SubscriptionFeature where each feature is enabled or disabled based on the user entitlements
     public func currentSubscriptionFeatures(forceRefresh: Bool) async throws -> [SubscriptionFeatureV2] {
-        guard isUserAuthenticated else { return [] }
+        guard await isUserAuthenticated() else { return [] }
 
         var userEntitlements: [SubscriptionEntitlement]
         var availableFeatures: [SubscriptionEntitlement]
@@ -495,7 +508,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     public func isFeatureAvailableForUser(_ entitlement: SubscriptionEntitlement) async throws -> Bool {
-        guard isUserAuthenticated else { return false }
+        guard await isUserAuthenticated() else { return false }
 
         let currentFeatures = try await currentSubscriptionFeatures(forceRefresh: false)
         return currentFeatures.contains { feature in

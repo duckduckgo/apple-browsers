@@ -1254,8 +1254,17 @@
 /* Text displayed when DuckPlayer is automatically enabled for Youtube */
 "duckPlayerNative.auto.label" = "Automatically";
 
-/* Label for the automatic youtun */
+/* Label for the automatic youtube video opening */
 "duckPlayerNative.auto.open.label" = "Auto-open Duck Player on Youtube";
+
+/* CTA for DuckPlayer priming modal */
+"duckPlayerNative.modal.cta" = "Watch Now Privately";
+
+/* Description for DuckPlayer priming modal */
+"duckPlayerNative.modal.description" = "Watch YouTube without targeted ads or influencing your recommendations.";
+
+/* Title for DuckPlayer priming modal */
+"duckPlayerNative.modal.title" = "Try Duck Player Mode for a private YouTube experience with DuckDuckGo";
 
 /* Text displayed when DuckPlayer is in off for youtube. */
 "duckPlayerNative.never.label" = "Don't Show";

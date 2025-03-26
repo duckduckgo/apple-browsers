@@ -83,6 +83,8 @@ public class AppUserDefaults: AppSettings {
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
+        static let duckPlayerNativeUIPrimingModalPresentedCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentedCount"
+        static let nativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
     }
 
     private struct DebugKeys {
@@ -487,6 +489,12 @@ public class AppUserDefaults: AppSettings {
                                             object: duckPlayerNativeYoutubeMode)
         }
     }
+
+    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalPresentedCount, defaultValue: 0)
+    var duckPlayerNativeUIPrimingModalPresentedCount: Int
+    
+    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalTimeSinceLastPresented, defaultValue: 0)
+    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int
 
     @UserDefaultsWrapper(key: .debugOnboardingHighlightsEnabledKey, defaultValue: false)
     var onboardingHighlightsEnabled: Bool

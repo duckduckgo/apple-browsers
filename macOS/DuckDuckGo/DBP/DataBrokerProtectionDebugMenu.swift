@@ -25,6 +25,7 @@ import LoginItems
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import Subscription
 
 final class DataBrokerProtectionDebugMenu: NSMenu {
 
@@ -286,8 +287,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             fatalError("Failed to make secure storage vault")
         }
 
-        let updater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
-        updater.updateBrokers()
+        Task {
+            let service = BrokerJSONService(defaults: .dbp, vault: vault, accountManager: DefaultSubscriptionManager().accountManager)
+            try await service.checkForBrokerJSONUpdates()
+        }
     }
 
     @objc private func toggleVPNBypass() {

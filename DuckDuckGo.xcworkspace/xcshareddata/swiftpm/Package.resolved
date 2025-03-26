@@ -41,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "branch" : "mariusz/add-alternative-colors",
-        "revision" : "bd52554cfcd008627b62c32836a0d62479350d1f"
+        "revision" : "7083d28778f86a0d6620c08ab0eb98270749f14e",
+        "version" : "4.1.0"
       }
     },
     {

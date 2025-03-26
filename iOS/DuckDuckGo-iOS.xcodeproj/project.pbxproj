@@ -12859,8 +12859,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
 			requirement = {
-				branch = "mariusz/add-alternative-colors";
-				kind = branch;
+				kind = exactVersion;
+				version = 4.1.0;
 			};
 		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

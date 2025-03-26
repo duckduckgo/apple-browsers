@@ -32,41 +32,15 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     }
 
     enum Endpoint {
-        private static let baseURL = URL(string: "https://dbp.duckduckgo.com/dbp/remote/v0")!
-        static var mainConfigURL: URL {
-            baseURL.appending("main_config.json")
-        }
-        static var allBrokersURL: URL {
-            if #available(macOS 13.0, iOS 16.0, *) {
-                return baseURL.appending(queryItems: [
-                    .init(name: "name", value: "all.zip"),
-                    .init(name: "type", value: "spec")
-                ])
-            } else {
-                var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)!
-                components.queryItems = [
-                    .init(name: "name", value: "all.zip"),
-                    .init(name: "type", value: "spec")
-                ]
-                return components.url!
-            }
-        }
-
         case mainConfig
         case allBrokers
 
-        static func url(for endpoint: Endpoint) -> URL {
-            switch endpoint {
-            case .mainConfig: return Endpoint.mainConfigURL
-            case .allBrokers: return Endpoint.allBrokersURL
-            }
-        }
-
         static func request(for endpoint: Endpoint,
+                            baseURL: URL,
                             contentType: String? = nil,
                             eTag: String? = nil,
-                            accessToken: String) -> URLRequest {
-            var request = URLRequest(url: url(for: endpoint))
+                            accessToken: String) throws -> URLRequest {
+            var request = URLRequest(url: try url(for: endpoint, baseURL: baseURL))
             request.httpMethod = "GET"
             if let contentType {
                 request.setValue(contentType, forHTTPHeaderField: "Content-Type")
@@ -78,6 +52,28 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
             return request
+        }
+
+        private static func url(for endpoint: Endpoint, baseURL: URL) throws -> URL {
+            var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
+
+            switch endpoint {
+            case .mainConfig:
+                components?.path = "/dbp/remote/v0/main_config.json"
+            case .allBrokers:
+                var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
+                components?.path = "/dbp/remote/v0"
+                components?.queryItems = [
+                    .init(name: "name", value: "all.zip"),
+                    .init(name: "type", value: "spec")
+                ]
+            }
+
+            guard let url = components?.url else {
+                throw Error.clientError
+            }
+
+            return url
         }
     }
 
@@ -95,13 +91,15 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     private static let mainConfigETagKey = "brokerJSONMainConfigETag"
 
     private let defaults: UserDefaults
+    private let settings: DataBrokerProtectionSettings
     private let vault: any DataBrokerProtectionSecureVault
     private let accountManager: AccountManager
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-    public init(defaults: UserDefaults, vault: any DataBrokerProtectionSecureVault, accountManager: AccountManager) {
+    public init(defaults: UserDefaults, settings: DataBrokerProtectionSettings, vault: any DataBrokerProtectionSecureVault, accountManager: AccountManager) {
         self.defaults = defaults
+        self.settings = settings
         self.vault = vault
         self.accountManager = accountManager
     }
@@ -111,10 +109,11 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     public func checkForBrokerJSONUpdates() async throws {
         guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
 
-        let request = Endpoint.request(for: .mainConfig,
-                                       contentType: "application/json",
-                                       eTag: loadMainConfigETag(),
-                                       accessToken: accessToken)
+        let request = try Endpoint.request(for: .mainConfig,
+                                           baseURL: settings.selectedEnvironment.endpointURL,
+                                           contentType: "application/json",
+                                           eTag: loadMainConfigETag(),
+                                           accessToken: accessToken)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let response = response as? HTTPURLResponse else { return }
 
@@ -146,7 +145,9 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     func downloadBrokerJSONs() async throws {
         guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
 
-        let request = Endpoint.request(for: .allBrokers, accessToken: accessToken)
+        let request = try Endpoint.request(for: .allBrokers,
+                                           baseURL: settings.selectedEnvironment.endpointURL,
+                                           accessToken: accessToken)
         let temporaryURL: URL
 
         if #available(macOS 12.0, *) {

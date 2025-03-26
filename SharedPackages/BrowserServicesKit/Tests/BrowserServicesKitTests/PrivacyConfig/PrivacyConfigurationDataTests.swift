@@ -132,4 +132,76 @@ class PrivacyConfigurationDataTests: XCTestCase {
         XCTAssertEqual(allowlist.state, "disabled")
         XCTAssertEqual(allowlist.entries.count, 0)
     }
+
+    func testRoundTripEncodingDecoding() throws {
+        // Load the JSON from the file.
+        let jsonData = data.fromJsonFile("Resources/privacy-config-example.json")
+        let originalConfig = try PrivacyConfigurationData(data: jsonData)
+
+        // Re-Encode the original config
+        let encodedJsonData = try originalConfig.toJSONData()
+
+        // De-decode the config into PrivacyConfigurationData
+        let roundTrippedConfig = try PrivacyConfigurationData(data: encodedJsonData)
+
+        // Check de-decoded PrivacyConfigurationData contains correct fields
+        XCTAssertEqual(roundTrippedConfig.version, "2021.6.7")
+
+        XCTAssertEqual(roundTrippedConfig.unprotectedTemporary.count, 1)
+        XCTAssertEqual(roundTrippedConfig.unprotectedTemporary.first?.domain, "example.com")
+
+        let duckPlayerFeature = roundTrippedConfig.features["duckPlayer"]
+        XCTAssertNotNil(duckPlayerFeature)
+        XCTAssertEqual(duckPlayerFeature?.state, "enabled")
+
+        let windowsWaitlistFeature = roundTrippedConfig.features["windowsWaitlist"]
+        XCTAssertNotNil(windowsWaitlistFeature)
+        XCTAssertEqual(windowsWaitlistFeature?.state, "enabled")
+
+        let windowsDownloadLinkFeature = roundTrippedConfig.features["windowsDownloadLink"]
+        XCTAssertNotNil(windowsDownloadLinkFeature)
+        XCTAssertEqual(windowsDownloadLinkFeature?.state, "disabled")
+
+        let newTabContinueSetUp = roundTrippedConfig.features["newTabContinueSetUp"]
+        XCTAssertNotNil(newTabContinueSetUp)
+        XCTAssertEqual(newTabContinueSetUp?.state, "enabled")
+
+        let gpcFeature = roundTrippedConfig.features["contentBlocking"]
+        XCTAssertNotNil(gpcFeature)
+        XCTAssertEqual(gpcFeature?.state, "enabled")
+        XCTAssertEqual(gpcFeature?.exceptions.first?.domain, "example.com")
+
+        let exampleFeature = roundTrippedConfig.features["exampleFeature"]
+        XCTAssertEqual(exampleFeature?.state, "enabled")
+        XCTAssertEqual((exampleFeature?.settings["dictValue"] as? [String: String])?["key"], "value")
+        XCTAssertEqual((exampleFeature?.settings["arrayValue"] as? [String])?.first, "value")
+        XCTAssertEqual((exampleFeature?.settings["stringValue"] as? String), "value")
+        XCTAssertEqual((exampleFeature?.settings["numericalValue"] as? Int), 1)
+
+        if let subfeatures = exampleFeature?.features {
+            XCTAssertEqual(subfeatures["disabledSubfeature"]?.state, "disabled")
+            XCTAssertEqual(subfeatures["minSupportedSubfeature"]?.minSupportedVersion, "1.36.0")
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.state, "enabled")
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?.count, 3)
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?[0].name, "myExperimentControl")
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.cohorts?[0].weight, 1)
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.targets?[0].localeCountry, "US")
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.targets?[0].localeLanguage, "fr")
+            XCTAssertEqual(subfeatures["enabledSubfeature"]?.settings, "{\"foo\":\"foo\\/value\",\"bar\":\"bar\\/value\"}")
+            XCTAssertEqual(subfeatures["internalSubfeature"]?.state, "internal")
+        } else {
+            XCTFail("Could not parse subfeatures")
+        }
+
+        let allowlist = roundTrippedConfig.trackerAllowlist
+        XCTAssertEqual(allowlist.state, "enabled")
+        let rulesMap = allowlist.entries.reduce(into: [String: [String]]()) { partialResult, entry in
+            for e in entry.value {
+                partialResult[e.rule] = e.domains
+            }
+        }
+        XCTAssertEqual(rulesMap["example.com/tracker.js"], ["test.com"])
+        XCTAssertEqual(rulesMap["example2.com/path/"], ["<all>"])
+        XCTAssertEqual(rulesMap["example2.com/resource.json"], ["<all>"])
+    }
 }

@@ -1441,6 +1441,10 @@ class MainViewController: UIViewController {
     }
 
     func showHomeRowReminder() {
+        // Show the reminder only if users have not seen the Add to Dock promo.
+        // iPhone users would have seen Add to Dock promo during the onboarding.
+        // iPad users don't see the Add to Dock promo during the onboarding.
+        guard !OnboardingManager().userHasSeenAddToDockPromoDuringOnboarding else { return }
         let feature = HomeRowReminder()
         if feature.showNow() {
             showNotification(title: UserText.homeRowReminderTitle, message: UserText.homeRowReminderMessage) { tapped in
@@ -2948,7 +2952,7 @@ extension MainViewController: AutoClearWorker {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if KeyboardSettings().onNewTab && !self.contextualOnboardingLogic.isShowingAddToDockDialog { // If we're showing the Add to Dock dialog prevent address bar to become first responder. We want to make sure the user focues on the Add to Dock instructions.
+            } else if KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     self.enterSearch()
                 }

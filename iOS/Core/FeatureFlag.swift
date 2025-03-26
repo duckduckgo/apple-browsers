@@ -96,6 +96,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/1206329551987282/1209130794450271
     case onboardingSetAsDefaultBrowser
+
+    /// https://app.asana.com/0/72649045549333/1209633877674689/f
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -123,7 +126,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .networkProtectionRiskyDomainsProtection,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -232,6 +236,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         }
     }
 }

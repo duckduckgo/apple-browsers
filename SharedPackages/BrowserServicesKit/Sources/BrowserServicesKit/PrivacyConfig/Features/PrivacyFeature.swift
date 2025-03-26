@@ -25,6 +25,7 @@ public enum PrivacyFeature: String {
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
     case fingerprintingScreenSize
+    case fingerprintingCanvas
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
@@ -69,6 +70,7 @@ public enum PrivacyFeature: String {
     case webViewStateRestoration
     case experimentalBrowserTheming
     case setAsDefaultAndAddToDock
+    case contentScopeExperiments
     case extendedOnboarding
 }
 
@@ -114,6 +116,14 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
+}
+
+public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .contentScopeExperiments
+    }
+
+    case fingerprintingCanvas
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -169,6 +179,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level2AllowSetupFlows
     case level3AllowCreateAccount
     case seamlessAccountSwitching
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

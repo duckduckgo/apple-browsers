@@ -245,7 +245,6 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     var shouldShowPrivacyButtonPulse: Bool = false
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
-    var isShowingAddToDockDialog: Bool = false
     var isShowingPrivacyProPromotion: Bool = false
 
     func setTryAnonymousSearchMessageSeen() {

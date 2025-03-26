@@ -137,6 +137,23 @@ public protocol DDGSyncing: DDGSyncingDebuggingSupport {
     func transmitRecoveryKey(_ connectCode: SyncCode.ConnectCode) async throws
 
     /**
+     Creates controller to manage connecting to another device
+     */
+    func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling
+
+    /**
+     Sends this device's public key to the server encrypted using supplied key
+     Step B from https://app.asana.com/0/0/1209571867429615
+     */
+    func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo
+
+    /**
+     Sends this device's recovery key to the server encrypted using supplied key
+     Step D from https://app.asana.com/0/0/1209571867429615
+     */
+    func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws
+
+    /**
      Disconnect this client from the sync service. Removes all local info, but leaves in places bookmarks, etc.
      */
     func disconnect() async throws
@@ -263,6 +280,25 @@ public protocol RemoteConnecting {
 
     func stopPolling()
 
+}
+
+protocol RemoteKeyExchanging {
+
+    /// Step A from https://app.asana.com/0/72649045549333/1209571867429615/f
+    var code: String { get }
+
+    /// Step C from https://app.asana.com/0/72649045549333/1209571867429615/f
+    func pollForPublicKey() async throws -> ExchangeMessage?
+
+    func stopPolling()
+}
+
+protocol RemoteExchangeRecovering {
+
+    /// Step E from https://app.asana.com/0/72649045549333/1209571867429615/f
+    func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey?
+
+    func stopPolling()
 }
 
 /**

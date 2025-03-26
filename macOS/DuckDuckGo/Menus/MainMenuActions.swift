@@ -149,7 +149,7 @@ extension AppDelegate {
 
     @objc func reopenAllWindowsFromLastSession(_ sender: Any?) {
         DispatchQueue.main.async {
-            self.stateRestorationManager.restoreLastSessionState(interactive: true)
+            self.stateRestorationManager.restoreLastSessionState(interactive: true, includeRegularTabs: true)
         }
     }
 
@@ -784,6 +784,8 @@ extension MainViewController {
             tabCollectionViewModel.unpinTab(at: index)
         case .unpinned(let index):
             tabCollectionViewModel.pinTab(at: index)
+
+            tabBarViewController.presentPinnedTabsDiscoveryPopoverIfNecessary()
         }
     }
 
@@ -924,7 +926,9 @@ extension MainViewController {
         if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
-        tabCollectionViewModel.pinnedTabsManager?.tabCollection.removeAll()
+        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
+            pinnedTabsManager.tabCollection.removeAll()
+        }
     }
 
     @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {

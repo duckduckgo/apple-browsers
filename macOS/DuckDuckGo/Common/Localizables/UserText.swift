@@ -739,6 +739,15 @@ struct UserText {
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
 
+    static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
+    static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")
+    static let pinnedTabsWarningMessage = NSLocalizedString("preferences-pinned-tabs-warning", value: "This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again.", comment: "Content of warning before switching from per window pinned tabs to shared pinned tabs")
+    static let pinnedTabsDiscoveryPopoverTitle = NSLocalizedString("pinned-tabs.discovery.popover.title", value: "New Pinned Tab Settings", comment: "Title for pinned tabs discovery dialog")
+    static let pinnedTabsDiscoveryPopoverMessage = NSLocalizedString("pinned-tabs.discovery.popover.message", value: "You can now choose to have shared or separate pinned tabs across multiple browser windows.", comment: "Info message to users about option to adjust behavior of pinned tabs")
+    static let pinnedTabsDiscoveryPopoverMessage2 = NSLocalizedString("pinned-tabs.discovery.popover.message.2", value: "You can change this anytime in Settings.", comment: "Info message to users about option to adjust behavior of pinned tabs")
+    static let pinnedTabsDiscoveryPopoverShared = NSLocalizedString("pinned-tabs.discovery.popover.shared", value: "Keep Shared Pinned Tabs", comment: "Button to close the popover")
+    static let pinnedTabsDiscoveryPopoverSeparate = NSLocalizedString("pinned-tabs.discovery.popover.separate", value: "Use Separate Pinned Tabs", comment: "Button opening Settings")
+
     static let homePage = NSLocalizedString("preferences-homepage.title", value: "Homepage", comment: "Title for Homepage section in settings")
     static let homePageDescription = NSLocalizedString("preferences-homepage.description", value: "When navigating home or opening new windows.", comment: "Homepage behavior description")
     static let newTab = NSLocalizedString("preferences-homepage-newTab", value: "New Tab page", comment: "Option to open a new tab")
@@ -759,6 +768,15 @@ struct UserText {
             return NSLocalizedString("context.menu.new.tab.mode.at.end", value: "Add to the right of other tabs", comment: "Preferences > Tabs > At end of list")
         case .nextToCurrent:
             return NSLocalizedString("context.menu.new.tab.mode.next.to.current", value: "Add to the right of the current tab", comment: "Preferences > Tabs > Next to current tab")
+        }
+    }
+
+    static func pinnedTabsMode(for mode: PinnedTabsMode) -> String {
+        switch mode {
+        case .shared:
+            return NSLocalizedString("pinned.tabs.mode.shared", value: "Shared across all windows", comment: "Preferences > Tabs > Pinned tabs are shared across all windows")
+        case .separate:
+            return NSLocalizedString("pinned.tabs.mode.separate", value: "Separate in each window", comment: "Preferences > Tabs > Pinned tabs are different in each window")
         }
     }
 

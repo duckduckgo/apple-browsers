@@ -45,7 +45,7 @@ public final class SubscriptionManagerMock: SubscriptionManager {
         internalStorePurchaseManager
     }
 
-    public func loadInitialData() {
+    public func loadInitialData() async {
 
     }
 

@@ -107,6 +107,9 @@
                   Identifier = "FireproofingReferenceTests/testFireproofing()">
                </Test>
                <Test
+                  Identifier = "PixelExperimentTests/testWhenNoCohort_NoEnrollmentPixelFired()">
+               </Test>
+               <Test
                   Identifier = "PixelStoreTests/testWhenValuesAreAddedThenCallbacksAreCalled()">
                </Test>
                <Test

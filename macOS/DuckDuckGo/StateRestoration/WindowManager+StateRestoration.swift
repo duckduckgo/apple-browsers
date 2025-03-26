@@ -22,25 +22,30 @@ import os.log
 
 extension WindowsManager {
 
-    @discardableResult class func restoreState(from coder: NSCoder, includePinnedTabs: Bool = true, includeWindows: Bool = true) throws -> WindowManagerStateRestoration {
+    @discardableResult class func restoreState(from coder: NSCoder, includeRegularTabs: Bool, includePinnedTabs: Bool = true, includeWindows: Bool = true) throws -> WindowManagerStateRestoration {
         guard let state = coder.decodeObject(of: WindowManagerStateRestoration.self,
                                              forKey: NSKeyedArchiveRootObjectKey) else {
             throw coder.error ?? NSError(domain: "WindowsManagerStateRestoration", code: -1, userInfo: nil)
         }
 
-        if let pinnedTabsCollection = state.pinnedTabs {
+        if let pinnedTabsCollection = state.applicationPinnedTabs {
+            migrateSharedPinnedTabsSettingIfNecessary(pinnedTabsCollection)
             WindowControllersManager.shared.restorePinnedTabs(pinnedTabsCollection)
         }
         if includeWindows {
-            restoreWindows(from: state)
+            restoreWindows(from: state, includeRegularTabs: includeRegularTabs)
         }
 
         return state
     }
 
-    private class func restoreWindows(from state: WindowManagerStateRestoration) {
+    private class func restoreWindows(from state: WindowManagerStateRestoration, includeRegularTabs: Bool) {
         for item in state.windows.reversed() {
-            setUpWindow(from: item)
+            if !includeRegularTabs && (item.pinnedTabs?.tabs.isEmpty ?? true) {
+                continue
+            }
+
+            setUpWindow(from: item, includeRegularTabs: includeRegularTabs)
         }
 
         if let idx = state.keyWindowIndex {
@@ -52,10 +57,30 @@ extension WindowsManager {
         }
     }
 
-    private class func setUpWindow(from item: WindowRestorationItem) {
-        guard let window = openNewWindow(with: item.model, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
+    private class func setUpWindow(from item: WindowRestorationItem, includeRegularTabs: Bool) {
+        let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel()
+        guard let window = openNewWindow(with: tabCollectionViewModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
         window.setContentSize(item.frame.size)
         window.setFrameOrigin(item.frame.origin)
+
+        let pinnedTabsManager = (window.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel.pinnedTabsManager
+        if let pinnedTabs = item.pinnedTabs, let pinnedTabsManager, pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
+            pinnedTabsManager.setUp(with: pinnedTabs)
+        }
+    }
+
+    // Shared pinned tabs migration
+
+    @UserDefaultsWrapper(key: .pinnedTabsMigrated, defaultValue: false)
+    static var pinnedTabsMigrated: Bool
+
+    private class func migrateSharedPinnedTabsSettingIfNecessary(_ collection: TabCollection) {
+        guard !pinnedTabsMigrated else { return }
+        pinnedTabsMigrated = true
+
+        // Set the shared pinned tabs setting only in case shared pinned tabs are restored
+        guard !collection.tabs.isEmpty else { return }
+        TabsPreferences.shared.pinnedTabsMode = .shared
     }
 
 }
@@ -69,7 +94,7 @@ extension WindowControllersManager {
     }
 
     func restorePinnedTabs(_ collection: TabCollection) {
-        pinnedTabsManager.setUp(with: collection)
+        Application.appDelegate.pinnedTabsManager.setUp(with: collection)
     }
 
 }
@@ -86,7 +111,7 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
 
     let windows: [WindowRestorationItem]
     let keyWindowIndex: Int?
-    let pinnedTabs: TabCollection?
+    let applicationPinnedTabs: TabCollection?
 
     init?(coder: NSCoder) {
         guard let restorationArray = coder.decodeObject(of: [NSArray.self, WindowRestorationItem.self],
@@ -99,7 +124,7 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
             ? coder.decodeInteger(forKey: NSSecureCodingKeys.keyWindowIndex)
             : nil
 
-        self.pinnedTabs = coder.containsValue(forKey: NSSecureCodingKeys.pinnedTabs)
+        self.applicationPinnedTabs = coder.containsValue(forKey: NSSecureCodingKeys.pinnedTabs)
             ? coder.decodeObject(of: TabCollection.self, forKey: NSSecureCodingKeys.pinnedTabs)
             : nil
 
@@ -120,13 +145,13 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
             windowControllersManager.mainWindowControllers.firstIndex(of: $0)
         }
 
-        self.pinnedTabs = windowControllersManager.pinnedTabsManager.tabCollection
+        self.applicationPinnedTabs = Application.appDelegate.pinnedTabsManager.tabCollection
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(windows as NSArray, forKey: NSSecureCodingKeys.controllers)
         keyWindowIndex.map(coder.encode(forKey: NSSecureCodingKeys.keyWindowIndex))
-        coder.encode(pinnedTabs, forKey: NSSecureCodingKeys.pinnedTabs)
+        coder.encode(applicationPinnedTabs, forKey: NSSecureCodingKeys.pinnedTabs)
     }
 }
 
@@ -136,12 +161,14 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
         static let frame = "frame"
         static let model = "model"
         static let isMiniaturized = "isMiniaturized"
+        static let pinnedTabs = "pinnedTabs"
 
     }
 
     let model: TabCollectionViewModel
     let frame: NSRect
     let isMiniaturized: Bool
+    let pinnedTabs: TabCollection?
 
     @MainActor
     init?(windowController: MainWindowController) {
@@ -153,6 +180,11 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
         self.frame = windowController.window!.frame
         self.model = windowController.mainViewController.tabCollectionViewModel
         self.isMiniaturized = windowController.window!.isMiniaturized
+        if windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
+            self.pinnedTabs = windowController.mainViewController.tabCollectionViewModel.pinnedTabsCollection
+        } else {
+            self.pinnedTabs = nil
+        }
     }
 
     static var supportsSecureCoding: Bool { true }
@@ -165,11 +197,15 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
         self.model = model
         self.frame = coder.decodeRect(forKey: NSSecureCodingKeys.frame)
         self.isMiniaturized = coder.decodeBool(forKey: NSSecureCodingKeys.isMiniaturized)
+        self.pinnedTabs = coder.containsValue(forKey: NSSecureCodingKeys.pinnedTabs)
+        ? coder.decodeObject(of: TabCollection.self, forKey: NSSecureCodingKeys.pinnedTabs)
+        : nil
     }
 
     func encode(with coder: NSCoder) {
         coder.encode(frame, forKey: NSSecureCodingKeys.frame)
         coder.encode(model, forKey: NSSecureCodingKeys.model)
         coder.encode(isMiniaturized, forKey: NSSecureCodingKeys.isMiniaturized)
+        coder.encode(pinnedTabs, forKey: NSSecureCodingKeys.pinnedTabs)
     }
 }

@@ -1548,7 +1548,11 @@ Take back control of your personal information with the browser designed for dat
     public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
     public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Let me choose", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
     public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Don't Show", comment: "Text displayed when DuckPlayer is in off for youtube.")
-    public static let duckPlayerNativeAutoOpenLabel = NSLocalizedString("duckPlayerNative.auto.open.label", value: "Auto-open Duck Player on Youtube", comment: "Label for the automatic youtun")
+    public static let duckPlayerNativeAutoOpenLabel = NSLocalizedString("duckPlayerNative.auto.open.label", value: "Auto-open Duck Player on Youtube", comment: "Label for the automatic youtube video opening")
+    
+    public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Try Duck Player Mode for a private YouTube experience with DuckDuckGo", comment: "Title for DuckPlayer priming modal")
+    public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Watch YouTube without targeted ads or influencing your recommendations.", comment: "Description for DuckPlayer priming modal")
+    public static let duckPlayerNativeModalCTA = NSLocalizedString("duckPlayerNative.modal.cta", value: "Watch Now Privately", comment: "CTA for DuckPlayer priming modal")
 
     // MARK: - AI Chat
 

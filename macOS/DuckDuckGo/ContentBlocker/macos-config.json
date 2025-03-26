@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1742210085846,
+    "version": 1742842782684,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -122,9 +122,6 @@
                     "domain": "flexmls.com"
                 },
                 {
-                    "domain": "intuit.com"
-                },
-                {
                     "domain": "publicmediasignin.org"
                 }
             ],
@@ -152,7 +149,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "c13692b3c1a0957dc8649e83a62b9170"
+            "hash": "52f262bbcdf1759284d24c0be1445156"
         },
         "androidBrowserConfig": {
             "exceptions": [],
@@ -186,9 +183,6 @@
             "exceptions": [
                 {
                     "domain": "allocine.fr"
-                },
-                {
-                    "domain": "barmer.de"
                 },
                 {
                     "domain": "bild.de"
@@ -437,13 +431,7 @@
                     "domain": "serif.com"
                 },
                 {
-                    "domain": "wetransfer.com"
-                },
-                {
                     "domain": "collectcheckout.com"
-                },
-                {
-                    "domain": "sbid.org"
                 },
                 {
                     "domain": "wunderground.com"
@@ -545,6 +533,9 @@
                     "domain": "hobbies.co.uk"
                 },
                 {
+                    "domain": "stamma.org"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -555,9 +546,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
@@ -700,6 +688,7 @@
                     "vital-parts.co.uk",
                     "lta.org.uk",
                     "hobbyhall.fi",
+                    "wetransfer.com",
                     "wienmobil.at",
                     "memsoft.fr",
                     "bafin.de",
@@ -714,7 +703,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "28f4e7f7632d1a72f1f81cab686aa1a8"
+            "hash": "4ef31d671526474e4ba8a912b9d71806"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -808,12 +797,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
-            "hash": "59b097dcb61ea6827979df24aa926315"
+            "hash": "3784423a316ced2f9a533b55e1f862dd"
         },
         "brokenSitePrompt": {
             "state": "enabled",
@@ -1529,9 +1515,6 @@
                     "domain": "flexmls.com"
                 },
                 {
-                    "domain": "intuit.com"
-                },
-                {
                     "domain": "tinder.com"
                 },
                 {
@@ -1554,7 +1537,7 @@
             },
             "state": "enabled",
             "minSupportedVersion": "1.93.0",
-            "hash": "fa305c70b10ccc2c9e3e366bc213c726"
+            "hash": "cbfdb4ed07be6b0f16df07c95ebcc303"
         },
         "clickToPlay": {
             "exceptions": [
@@ -1569,9 +1552,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
@@ -1584,7 +1564,7 @@
                 }
             },
             "state": "enabled",
-            "hash": "2eb8d8984ef101de3f28e6b362f6b1bd"
+            "hash": "62ade25f4a9639e8947e3ac387584290"
         },
         "clientBrandHint": {
             "exceptions": [],
@@ -1616,9 +1596,6 @@
                     "domain": "soranews24.com"
                 },
                 {
-                    "domain": "wunderground.com"
-                },
-                {
                     "domain": "marvel.com"
                 },
                 {
@@ -1629,9 +1606,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 },
                 {
                     "domain": "wjla.com"
@@ -1663,7 +1637,7 @@
                     ]
                 }
             },
-            "hash": "2f1e2f628beefe338ba310b29502d1ce"
+            "hash": "e9af0e2625611aea5e869fc4faae65de"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1739,14 +1713,11 @@
                     "domain": "flexmls.com"
                 },
                 {
-                    "domain": "intuit.com"
-                },
-                {
                     "domain": "legalandgeneral.com"
                 }
             ],
             "state": "enabled",
-            "hash": "92ca68ee33011095836df3befddec955"
+            "hash": "11f9b449c5694802f718aea5cca1166b"
         },
         "customUserAgent": {
             "settings": {
@@ -1835,6 +1806,10 @@
                     {
                         "domain": "app.lyssna.com",
                         "reason": "Unsupported browser message"
+                    },
+                    {
+                        "domain": "ihg.com",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2872"
                     }
                 ],
                 "webViewDefault": [
@@ -1854,7 +1829,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "059fd5e5154e55935600bf085c2af34f"
+            "hash": "ef29ed52e9896f118352089f99074d4a"
         },
         "dbp": {
             "state": "enabled",
@@ -2005,9 +1980,6 @@
                     "domain": "duckduckgo.com"
                 },
                 {
-                    "domain": "openai.com"
-                },
-                {
                     "domain": "marvel.com"
                 },
                 {
@@ -2018,9 +1990,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 },
                 {
                     "domain": "wunderground.com"
@@ -2122,7 +2091,7 @@
                         "type": "hide-empty"
                     },
                     {
-                        "selector": "[class*='ad-content']",
+                        "selector": "[class^='ad-content']",
                         "type": "hide-empty"
                     },
                     {
@@ -3044,6 +3013,28 @@
                             {
                                 "selector": ".TopBanner-container",
                                 "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "cnn.com",
+                        "rules": [
+                            {
+                                "selector": ".ad-slot-wrapper",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "coindesk.com",
+                        "rules": [
+                            {
+                                "selector": ".animate-shimmer",
+                                "type": "hide"
+                            },
+                            {
+                                "selector": "[data-freestar-ad='true']",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -4288,6 +4279,15 @@
                         ]
                     },
                     {
+                        "domain": "messenger.com",
+                        "rules": [
+                            {
+                                "selector": ".xw7yly9.xktsk01:has(div > a[href='https://www.facebook.com/help/messenger-app/597429858389632/'])",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "metro.co.uk",
                         "rules": [
                             {
@@ -4987,6 +4987,9 @@
                         "domain": "slate.com",
                         "rules": [
                             {
+                                "type": "disable-default"
+                            },
+                            {
                                 "selector": ".slate-ad",
                                 "type": "hide-empty"
                             },
@@ -5621,6 +5624,15 @@
                         ]
                     },
                     {
+                        "domain": "youtube.com",
+                        "rules": [
+                            {
+                                "selector": "ytm-promoted-sparkles-web-renderer",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "first-party.site",
                         "rules": [
                             {
@@ -5715,11 +5727,37 @@
                                 "type": "hide"
                             }
                         ]
+                    },
+                    {
+                        "domain": "tradera.com",
+                        "rules": [
+                            {
+                                "selector": ".ad-slot-container",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "techxplore.com",
+                        "rules": [
+                            {
+                                "selector": ".ads-placeholder-250",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".article-banner",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".article-sidebar-banner",
+                                "type": "hide-empty"
+                            }
+                        ]
                     }
                 ]
             },
             "state": "enabled",
-            "hash": "e09d994f4b4b74a57dd6e26f37884c3a"
+            "hash": "732968a0480b0c373a6ba4dfe564eede"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -5734,13 +5772,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "9abb6475e11e5ee59dfa24f29c42bfdb"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "extendedOnboarding": {
             "exceptions": [],
@@ -5764,12 +5799,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
-            "hash": "9185acad0d24605f06bc7d11fc056d9f"
+            "hash": "5b9e716c52331f6b647cb9567979ba2c"
         },
         "fingerprintingBattery": {
             "exceptions": [
@@ -5787,13 +5819,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "baea0321f2d5c77d7c3783425b7efa30"
+            "hash": "9ed616378e3abe589e0d76de5907b08f"
         },
         "fingerprintingCanvas": {
             "settings": {
@@ -5895,13 +5924,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "4a2fe80c750e4bda03bbd3c801e79102"
+            "hash": "633757ded6d6e3be6a1a204d03d19307"
         },
         "fingerprintingHardware": {
             "settings": {
@@ -5981,9 +6007,6 @@
                     "domain": "flexmls.com"
                 },
                 {
-                    "domain": "intuit.com"
-                },
-                {
                     "domain": "airbnb.com"
                 },
                 {
@@ -6018,7 +6041,7 @@
                 }
             ],
             "state": "enabled",
-            "hash": "f570b944686f9d323f4aa1efdabf99ef"
+            "hash": "686131b9d4b7e496bd2967e4617b4f7a"
         },
         "fingerprintingScreenSize": {
             "settings": {
@@ -6066,13 +6089,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "be1761aa9ac23671b21a184ffd8a959b"
+            "hash": "b9d3d9677c63ed8c32a4c8064fda7528"
         },
         "fingerprintingTemporaryStorage": {
             "exceptions": [
@@ -6096,13 +6116,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "871ad80e63df79c7cafc2bc662b749c0"
+            "hash": "5102bc3333498bc063d83d302e16edb9"
         },
         "fullScreenMode": {
             "state": "disabled",
@@ -6122,13 +6139,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "9abb6475e11e5ee59dfa24f29c42bfdb"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "gpc": {
             "state": "enabled",
@@ -6183,9 +6197,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
@@ -6197,7 +6208,7 @@
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "486a470047b954ab56a270b85f4c51ef"
+            "hash": "59b838baac04ac0efabc4e0b031881c0"
         },
         "harmfulApis": {
             "settings": {
@@ -6310,13 +6321,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "b95e3f3b1d072b94940ea52fab0d8002"
+            "hash": "e4668f6b44c1d867c1b59ee95e821aed"
         },
         "history": {
             "state": "disabled",
@@ -6368,12 +6376,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
-            "hash": "f1398cdb859904169ada0c5102b0cffc"
+            "hash": "5ad8843e6ed35508e501028eff18d52f"
         },
         "incontextSignup": {
             "exceptions": [],
@@ -6416,13 +6421,23 @@
             "features": {
                 "onByDefault": {
                     "state": "enabled"
+                },
+                "scamProtection": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 10
+                            }
+                        ]
+                    }
                 }
             },
             "settings": {
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "f08eb043e8d4f5be9c6e1d34f26a598e"
+            "hash": "aa323fc9ac4bdee298d8f467782219f0"
         },
         "marketplaceAdPostback": {
             "state": "disabled",
@@ -6456,9 +6471,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
@@ -6469,7 +6481,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "5bd189275f1845c775678297ed7bb26c"
+            "hash": "e2daba047553f553d37e77e0a7670f0e"
         },
         "networkProtection": {
             "state": "enabled",
@@ -6514,11 +6526,17 @@
                 "appExclusions": {
                     "state": "enabled",
                     "minSupportedVersion": "1.127.0"
+                },
+                "riskyDomainsProtection": {
+                    "state": "enabled"
+                },
+                "appStoreSystemExtension": {
+                    "state": "enabled"
                 }
             },
             "exceptions": [],
             "minSupportedVersion": "1.57.1",
-            "hash": "9f05d3a31697cf6bb9b1b48587d112d1"
+            "hash": "1bf34038add1cebafc10010493993335"
         },
         "newTabContinueSetUp": {
             "exceptions": [],
@@ -6559,13 +6577,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "ee074ba9427c3265adce690d37df1879"
+            "hash": "8b21215291e766b96894e9359c8fd651"
         },
         "performanceMetrics": {
             "state": "enabled",
@@ -6581,12 +6596,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
-            "hash": "955fe61e7b1dcf9c2d71091ade9a070c"
+            "hash": "efca7990b31a8636fbddaab40d2a18da"
         },
         "phishingDetection": {
             "state": "disabled",
@@ -6770,13 +6782,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "411b24e44200a83ca4f058c98fc8da9f"
+            "hash": "57d833bc120779cfa0672112194acc24"
         },
         "remoteMessaging": {
             "state": "enabled",
@@ -6797,15 +6806,12 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
                 "windowInMs": 0
             },
-            "hash": "7d9a6efe05fc5e9da5b24896f62f23de"
+            "hash": "21ef14af51a4ca23d83db2a82784c39f"
         },
         "runtimeChecks": {
             "state": "disabled",
@@ -6821,13 +6827,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {},
-            "hash": "2a1e1d774bc1cfd2724356b978160e06"
+            "hash": "88e32d71041236b82393de277b2952a0"
         },
         "sendFullPackageInstallSource": {
             "state": "enabled",
@@ -6848,13 +6851,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "9abb6475e11e5ee59dfa24f29c42bfdb"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "setAsDefaultAndAddToDock": {
             "state": "enabled",
@@ -6899,13 +6899,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "9abb6475e11e5ee59dfa24f29c42bfdb"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "sslCertificates": {
             "state": "enabled",
@@ -6930,13 +6927,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "9abb6475e11e5ee59dfa24f29c42bfdb"
+            "hash": "78dac7be701d735e14b6976594608de1"
         },
         "syncPromotion": {
             "state": "enabled",
@@ -7208,6 +7202,16 @@
                                     "adamtheautomator.com",
                                     "gardeningknowhow.com",
                                     "packhacker.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "adtng.com": {
+                        "rules": [
+                            {
+                                "rule": "adtng.com",
+                                "domains": [
+                                    "hanime.tv"
                                 ]
                             }
                         ]
@@ -7892,29 +7896,171 @@
                                     "ah.nl",
                                     "applesfera.com",
                                     "rocketnews24.com",
-                                    "servustv.com"
+                                    "servustv.com",
+                                    "wunderground.com"
                                 ]
                             },
                             {
                                 "rule": "securepubads.g.doubleclick.net/tag/js/gpt.js",
                                 "domains": [
+                                    "13wham.com",
+                                    "22thepoint.com",
+                                    "abc3340.com",
+                                    "abc45.com",
+                                    "abc6onyourside.com",
+                                    "abc7amarillo.com",
+                                    "abcnews4.com",
+                                    "abcstlouis.com",
                                     "ah.nl",
                                     "applesfera.com",
                                     "asuracomic.net",
+                                    "azteca48.com",
+                                    "bakersfieldnow.com",
+                                    "cbs12.com",
+                                    "cbs2iowa.com",
+                                    "cbs4local.com",
+                                    "cbs6albany.com",
+                                    "cbsaustin.com",
+                                    "chattanoogacw.com",
+                                    "cnycentral.com",
+                                    "cw14online.com",
+                                    "cw18milwaukee.com",
+                                    "cw23tv.com",
+                                    "cw34.com",
+                                    "cw35.com",
+                                    "cw7michigan.com",
+                                    "cwalbany.com",
+                                    "cwbaltimore.com",
+                                    "cwcentralpa.com",
+                                    "cwcincinnati.com",
+                                    "cwcolumbus.com",
+                                    "cwlasvegas.com",
+                                    "cwnashville.tv",
+                                    "cwokc.com",
+                                    "cwomaha.tv",
+                                    "cwrochester.com",
+                                    "cwtreasurevalley.com",
+                                    "dayton247now.com",
                                     "fincopilot.net",
+                                    "fox11online.com",
+                                    "fox17.com",
+                                    "fox23maine.com",
+                                    "fox28savannah.com",
+                                    "fox38corpuschristi.com",
+                                    "fox42kptm.com",
+                                    "fox47.com",
+                                    "fox49.tv",
+                                    "fox4beaumont.com",
+                                    "fox56.com",
+                                    "foxbaltimore.com",
+                                    "foxchattanooga.com",
+                                    "foxillinois.com",
+                                    "foxkansas.com",
+                                    "foxnebraska.com",
+                                    "foxreno.com",
+                                    "foxrichmond.com",
+                                    "foxrochester.com",
+                                    "foxsanantonio.com",
                                     "goplay.be",
+                                    "idahonews.com",
                                     "itsthevibe.com",
+                                    "katu.com",
+                                    "katv.com",
+                                    "kcby.com",
+                                    "kdsm17.com",
+                                    "keprtv.com",
+                                    "kfdm.com",
+                                    "kfoxtv.com",
+                                    "khqa.com",
+                                    "kimatv.com",
+                                    "kjzz.com",
+                                    "klewtv.com",
+                                    "kmph.com",
+                                    "kmyu.tv",
                                     "komonews.com",
+                                    "kpic.com",
+                                    "krcgtv.com",
+                                    "ktul.com",
+                                    "ktvl.com",
+                                    "ktvo.com",
+                                    "ktxs.com",
+                                    "kunptv.com",
+                                    "kunwtv.com",
                                     "kutv.com",
+                                    "kval.com",
+                                    "local12.com",
+                                    "local21news.com",
                                     "lowes.com",
+                                    "midmichigannow.com",
+                                    "my15wtcn.com",
+                                    "my24milwaukee.com",
+                                    "my48.tv",
+                                    "mycbs4.com",
+                                    "myfox28columbus.com",
+                                    "mylvtv.com",
+                                    "mynbc15.com",
+                                    "mynews4.com",
+                                    "myrdctv.com",
+                                    "mytv30web.com",
+                                    "mytvbaltimore.com",
+                                    "mytvbuffalo.com",
+                                    "mytvcharleston.com",
+                                    "mytvrichmond.com",
+                                    "mytvwichita.com",
+                                    "mytvz.com",
+                                    "nbc16.com",
+                                    "nbc24.com",
+                                    "nbcmontana.com",
+                                    "nebraska.tv",
+                                    "nevadasportsnet.com",
+                                    "news3lv.com",
+                                    "news4sanantonio.com",
+                                    "newschannel20.com",
+                                    "newschannel9.com",
                                     "nytimes.com",
+                                    "okcfox.com",
+                                    "raleighcw.com",
                                     "realmadrid.com",
                                     "repretel.com",
                                     "rocketnews24.com",
+                                    "siouxlandnews.com",
                                     "solitaired.com",
+                                    "southernoregoncw.com",
+                                    "star64.tv",
                                     "stuff.co.nz",
+                                    "thecw38.com",
+                                    "thecw46.com",
+                                    "thecwtc.com",
+                                    "thenationaldesk.com",
+                                    "turnto10.com",
+                                    "univisionseattle.com",
+                                    "upnorthlive.com",
+                                    "utv44.com",
                                     "uwbadgers.com",
+                                    "wabm68.com",
+                                    "wach.com",
+                                    "wchstv.com",
+                                    "wcti12.com",
+                                    "wcyb.com",
+                                    "weartv.com",
+                                    "wfgxtv.com",
+                                    "wfxl.com",
+                                    "wgme.com",
+                                    "wgxa.tv",
+                                    "wjactv.com",
+                                    "wjla.com",
+                                    "wlos.com",
+                                    "wpde.com",
+                                    "wpgh53.com",
+                                    "wsbt.com",
+                                    "wset.com",
+                                    "wtov9.com",
+                                    "wtto21.com",
+                                    "wtwc40.com",
                                     "wunderground.com",
+                                    "wutv29.com",
+                                    "wvah.com",
+                                    "wwmt.com",
                                     "youmath.it"
                                 ]
                             },
@@ -7940,7 +8086,8 @@
                                     "itsthevibe.com",
                                     "kutv.com",
                                     "lowes.com",
-                                    "triblive.com"
+                                    "triblive.com",
+                                    "wunderground.com"
                                 ]
                             },
                             {
@@ -9324,7 +9471,8 @@
                                 "rule": "npttech.com/advertising.js",
                                 "domains": [
                                     "blick.ch",
-                                    "independent.co.uk"
+                                    "independent.co.uk",
+                                    "slate.com"
                                 ]
                             }
                         ]
@@ -10588,12 +10736,9 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
-            "hash": "092303e738ae2837c757d575b0e12379"
+            "hash": "1dbf505288b341a2d631d5d842127d84"
         },
         "trackingCookies1p": {
             "settings": {
@@ -10614,13 +10759,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "b9e5cdb9cca3dfe1765bd087cc8199d9"
+            "hash": "55e8c2ef8c2a2bb95ae018d616a464d5"
         },
         "trackingCookies3p": {
             "settings": {
@@ -10638,13 +10780,10 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "state": "disabled",
-            "hash": "ee074ba9427c3265adce690d37df1879"
+            "hash": "8b21215291e766b96894e9359c8fd651"
         },
         "trackingParameters": {
             "exceptions": [
@@ -10674,9 +10813,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 }
             ],
             "settings": {
@@ -10710,7 +10846,7 @@
             },
             "state": "enabled",
             "minSupportedVersion": "0.22.3",
-            "hash": "a0e32a9aa42d989a0c15f3fb45f79130"
+            "hash": "ceed30c329607284bbcd3e90736cc859"
         },
         "voiceSearch": {
             "exceptions": [],
@@ -10735,9 +10871,6 @@
                 },
                 {
                     "domain": "flexmls.com"
-                },
-                {
-                    "domain": "intuit.com"
                 },
                 {
                     "domain": "lastpass.com"
@@ -10795,7 +10928,7 @@
                     }
                 ]
             },
-            "hash": "d2aeb32e3cf48e7ee91f77b9d8de6458"
+            "hash": "91fae475f5f361b76901d8e740e01df7"
         },
         "webViewStateRestoration": {
             "state": "disabled",

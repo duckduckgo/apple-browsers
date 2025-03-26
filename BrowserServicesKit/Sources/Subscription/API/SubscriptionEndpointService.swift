@@ -108,6 +108,11 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         }
     }
 
+    public func clearSubscription() {
+        subscriptionCache.reset()
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: nil)
+    }
+
     public func getSubscription(accessToken: String, cachePolicy: APICachePolicy = .returnCacheDataElseLoad) async -> Result<PrivacyProSubscription, SubscriptionServiceError> {
 
         switch cachePolicy {

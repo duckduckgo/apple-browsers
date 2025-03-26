@@ -32,7 +32,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockUpdater: MockDataBrokerProtectionBrokerUpdater!
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
-    private var mockUserNotification: MockUserNotificationService!
+    private var mockEventsHandler: MockOperationEventsHandler!
     private var mockOperationErrorDelegate: MockDataBrokerOperationErrorDelegate!
     private var mockDependencies: DefaultDataBrokerOperationDependencies!
 
@@ -44,14 +44,14 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockUpdater = MockDataBrokerProtectionBrokerUpdater()
         mockRunnerProvider = MockRunnerProvider()
-        mockUserNotification = MockUserNotificationService()
+        mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
                                                                   config: DataBrokerExecutionConfig(),
                                                                   runnerProvider: mockRunnerProvider,
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
-                                                                  userNotificationService: mockUserNotification,
+                                                                  eventsHandler: mockEventsHandler,
                                                                   dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 

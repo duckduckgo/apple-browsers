@@ -59,7 +59,7 @@ public class DefaultAPIService: APIService {
 #if DEBUG
         if let bodyString = String(data: data, encoding: .utf8),
            !bodyString.isEmpty {
-            Logger.networking.debug("Request body: \(bodyString, privacy: .public)")
+            Logger.networking.debug("Response body: \(bodyString, privacy: .public)")
         }
 #endif
 
@@ -68,7 +68,7 @@ public class DefaultAPIService: APIService {
            request.isAuthenticated == true,
            !authAlreadyRefreshed,
            let authorizationRefresherCallback {
-
+            Logger.networking.log("Refreshing token for \(request.url?.absoluteString ?? "unknown URL", privacy: .public)")
             // Ask to refresh the token
             let refreshedToken = try await authorizationRefresherCallback(request)
             request.updateAuthorizationHeader(refreshedToken)
@@ -80,10 +80,11 @@ public class DefaultAPIService: APIService {
         // It's a failure and the request must be retried
         if  let retryPolicy = request.retryPolicy,
             responseHTTPStatus.isFailure,
-            responseHTTPStatus != .unauthorized, // No retries needed is unuathorised
+            responseHTTPStatus != .unauthorized, // No retries needed is unauthorised
             failureRetryCount < retryPolicy.maxRetries {
 
             if retryPolicy.delay > 0 {
+                Logger.networking.debug("Retrying after \(retryPolicy.delay) seconds")
                 try? await Task.sleep(interval: retryPolicy.delay)
             }
 

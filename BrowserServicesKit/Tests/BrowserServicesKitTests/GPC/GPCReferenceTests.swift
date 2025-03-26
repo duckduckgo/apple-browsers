@@ -176,7 +176,7 @@ final class GPCReferenceTests: XCTestCase {
 
         let contentScopeScript = ContentScopeUserScript(privacyManager,
                                                         properties: properties,
-                                                        privacyConfigurationJsonGenerator: nil)
+                                                        privacyConfigurationJSONGenerator: nil)
 
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(self.schemeHandler, forURLScheme: self.schemeHandler.scheme)

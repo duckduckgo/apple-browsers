@@ -41,12 +41,12 @@ final class ContentScopeUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
-    func testPrivacyConfigurationJsonGeneratorIsUsed() {
+    func testPrivacyConfigurationJSONGeneratorIsUsed() {
         // GIVEN
         configGenerator.config = generatorConfig
 
         // WHEN
-        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJsonGenerator: configGenerator)
+        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         // THEN
         XCTAssertTrue(source.contains(generatorConfig))
@@ -57,14 +57,14 @@ final class ContentScopeUserScriptTests: XCTestCase {
         configGenerator.config = nil
 
         // WHEN
-        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJsonGenerator: configGenerator)
+        let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         // THEN
         XCTAssertFalse(source.contains(generatorConfig))
     }
 }
 
-class MockCSSPrivacyConfigGenerator: CustomisedPrivacyConfigurationJsonGenerating {
+class MockCSSPrivacyConfigGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     var config: String?
     var privacyConfiguration: Data? {
         config?.data(using: .utf8)

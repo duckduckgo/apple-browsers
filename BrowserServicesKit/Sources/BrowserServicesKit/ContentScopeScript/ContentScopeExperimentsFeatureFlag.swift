@@ -1,5 +1,5 @@
 //
-//  ContentScopeExperimentsFeatureFlags.swift
+//  ContentScopeExperimentsFeatureFlag.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum ContentScopeExperimentsFeatureFlags: String, CaseIterable {
+public enum ContentScopeExperimentsFeatureFlag: String, CaseIterable {
     case fingerprintingCanvas
 
     public var subfeature: any PrivacySubfeature {
@@ -29,23 +29,21 @@ public enum ContentScopeExperimentsFeatureFlags: String, CaseIterable {
     }
 }
 
-extension ContentScopeExperimentsFeatureFlags: FeatureFlagDescribing {
+extension ContentScopeExperimentsFeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
-        return true
+        true
     }
 
     public var source: FeatureFlagSource {
-        return .remoteReleasable(.subfeature(ContentScopeExperimentsSubfeatures.fingerprintingCanvas))
+        .remoteReleasable(.subfeature(ContentScopeExperimentsSubfeatures.fingerprintingCanvas))
     }
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
-        return ContentScopeExperimentsCohort.self
+        ContentScopeExperimentsCohort.self
     }
 
     public enum ContentScopeExperimentsCohort: String, FeatureFlagCohortDescribing {
-        /// Control cohort with no changes applied.
         case control
-        /// Treatment cohort where the experiment modifications are applied.
         case treatment
     }
 

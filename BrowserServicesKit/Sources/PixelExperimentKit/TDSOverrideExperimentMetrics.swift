@@ -21,7 +21,7 @@ import PixelKit
 import Configuration
 import BrowserServicesKit
 
-public enum TDSExperimentMetricType: String {
+public enum BreakageExperimentMetricType: String {
     /// Metric triggered when the privacy toggle is used.
     case privacyToggleUsed = "privacyToggleUsed"
     /// Metric triggered after 2 quick refreshes.
@@ -54,7 +54,7 @@ public struct SiteBreakageExperimentMetrics {
         }.first
     }
 
-    public static func fireTDSExperimentMetric( metricType: TDSExperimentMetricType,
+    public static func fireTDSExperimentMetric( metricType: BreakageExperimentMetricType,
                                                 etag: String,
                                                 fireDebugExperiment: @escaping FireDebugExperiment) {
         for experiment in TDSExperimentType.allCases {
@@ -72,8 +72,8 @@ public struct SiteBreakageExperimentMetrics {
         }
     }
 
-    public static func fireCSSExperimentMetric( metricType: TDSExperimentMetricType) {
-        for experiment in ContentScopeExperimentsFeatureFlags.allCases {
+    public static func fireContentScopeExperimentMetric( metricType: BreakageExperimentMetricType) {
+        for experiment in ContentScopeExperimentsFeatureFlag.allCases {
             for day in 0...5 {
                 ExperimentConfig.firePixelExperiment(experiment.subfeature.rawValue,
                                                      metricType.rawValue,

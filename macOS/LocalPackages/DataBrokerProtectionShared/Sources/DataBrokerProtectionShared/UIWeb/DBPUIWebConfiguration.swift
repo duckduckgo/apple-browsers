@@ -72,7 +72,7 @@ public final class DBPUIUserScript: UserScriptsProvider {
          webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
          vpnBypassService: VPNBypassServiceProvider?) {
         self.webUISettings = webUISettings
-        contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false, privacyConfigurationJsonGenerator: nil)
+        contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig, properties: prefs, isIsolated: false, privacyConfigurationJSONGenerator: nil)
         contentScopeUserScriptIsolated.messageNames = ["dbpui"]
         dbpUICommunicationLayer = DBPUICommunicationLayer(webURLSettings: webUISettings,
                                                           vpnBypassService: vpnBypassService,

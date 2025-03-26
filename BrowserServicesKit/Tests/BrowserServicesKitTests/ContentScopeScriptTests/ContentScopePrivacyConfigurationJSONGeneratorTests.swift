@@ -1,5 +1,5 @@
 //
-//  ContentScopePrivacyConfigurationJsonGeneratorTests.swift
+//  ContentScopePrivacyConfigurationJSONGeneratorTests.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import XCTest
 import BrowserServicesKit
 import Combine
 
-final class ContentScopePrivacyConfigurationJsonGeneratorTests: XCTestCase {
+final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
 
     private var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
     private var mockFeatureFlagger: MockFeatureFlagger!
@@ -67,9 +67,9 @@ final class ContentScopePrivacyConfigurationJsonGeneratorTests: XCTestCase {
 
     func testGeneratorEnablesFeatureForTreatmentCohort() {
         // GIVEN
-        mockFeatureFlagger.cohort = ContentScopeExperimentsFeatureFlags.ContentScopeExperimentsCohort.treatment
+        mockFeatureFlagger.cohort = ContentScopeExperimentsFeatureFlag.ContentScopeExperimentsCohort.treatment
         mockPrivacyConfigurationManager.currentConfigString = config
-        let generator = ContentScopePrivacyConfigurationJsonGenerator(
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager
         )
@@ -87,9 +87,9 @@ final class ContentScopePrivacyConfigurationJsonGeneratorTests: XCTestCase {
 
     func testGeneratorKeepsFeatureDisabledFeatureForControlCohort() {
         // GIVEN
-        mockFeatureFlagger.cohort = ContentScopeExperimentsFeatureFlags.ContentScopeExperimentsCohort.control
+        mockFeatureFlagger.cohort = ContentScopeExperimentsFeatureFlag.ContentScopeExperimentsCohort.control
         mockPrivacyConfigurationManager.currentConfigString = config
-        let generator = ContentScopePrivacyConfigurationJsonGenerator(
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager
         )

@@ -90,7 +90,7 @@ struct HeadlessWebView: UIViewRepresentable {
             let contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
             let contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
-                                                                privacyConfigurationJsonGenerator: ContentScopePrivacyConfigurationJsonGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+                                                                privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             userContentController.addUserScript(contentBlockerUserScript.makeWKUserScriptSync())
             userContentController.addUserScript(contentScopeUserScript.makeWKUserScriptSync())
         }

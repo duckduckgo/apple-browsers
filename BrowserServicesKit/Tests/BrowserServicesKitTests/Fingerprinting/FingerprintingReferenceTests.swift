@@ -229,7 +229,7 @@ final class FingerprintingReferenceTests: XCTestCase {
 
         let contentScopeScript = ContentScopeUserScript(self.privacyManager,
                                                         properties: contentScopeProperties,
-                                                        privacyConfigurationJsonGenerator: nil)
+                                                        privacyConfigurationJSONGenerator: nil)
 
         configuration.userContentController.addUserScript(WKUserScript(source: "\(scriptToInject) init(window)",
                                                                        injectionTime: .atDocumentStart,

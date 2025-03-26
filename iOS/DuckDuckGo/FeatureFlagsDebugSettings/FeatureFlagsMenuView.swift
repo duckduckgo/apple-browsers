@@ -30,7 +30,7 @@ struct FeatureFlagsMenuView: View {
             List {
                 featureFlagsSection()
                 experimentsSection()
-                cssExperimentsSection()
+                contentScopeExperimentsSection()
                 resetAllOverridesSection()
             }
             .navigationTitle(Text(verbatim: "Feature Flags"))
@@ -104,9 +104,9 @@ struct FeatureFlagsMenuView: View {
         }
     }
 
-    // MARK: - C-S-S Experiments Section
-    private func cssExperimentsSection() -> some View {
-        Section(header: Text(verbatim: "C-S-S Experiments")) {
+    // MARK: - Content Scope Experiments Section
+    private func contentScopeExperimentsSection() -> some View {
+        Section(header: Text(verbatim: "Content Scope Experiments")) {
             ForEach(viewModel.cssExperiments, id: \.self) { flag in
                 experimentRow(flag: flag)
             }

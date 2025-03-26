@@ -141,7 +141,7 @@ final class PrivacyDashboardViewController: UIViewController {
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             }
-            SiteBreakageExperimentMetrics.fireCSSExperimentMetric(metricType: .privacyToggleUsed)
+            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
         }
         
         contentBlockingManager.scheduleCompilation()

@@ -1,5 +1,5 @@
 //
-//  ContentScopePrivacyConfigurationJsonGenerator.swift
+//  ContentScopePrivacyConfigurationJSONGenerator.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,23 +20,18 @@ import Foundation
 
 /// A protocol that defines an interface for generating a JSON representation of a the privacy configuration file.
 /// It can be used to create customised configurations
-public protocol CustomisedPrivacyConfigurationJsonGenerating {
+public protocol CustomisedPrivacyConfigurationJSONGenerating {
     var privacyConfiguration: Data? { get }
 }
 
 /// A JSON generator for content scope privacy configuration. This struct updates the configuration by enabling
-/// privact features for which the associated experiment cohort in ContentScopeExperiment  is `.treatment`.
+/// privacy features for which the associated experiment cohort in ContentScopeExperiment  is `.treatment`.
 ///
 /// Note: The subfeatures of ContentScopeExperiment must have the same name as the parent feature to be updated.
-public struct ContentScopePrivacyConfigurationJsonGenerator: CustomisedPrivacyConfigurationJsonGenerating {
+public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     let featureFlagger: FeatureFlagger
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
-    /// Initializes the generator with the required feature flagger and privacy configuration manager.
-    ///
-    /// - Parameters:
-    ///   - featureFlagger: The object responsible for resolving experiment cohorts.
-    ///   - privacyConfigurationManager: The manager that provides the current privacy configuration.
     public init(featureFlagger: FeatureFlagger, privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -63,16 +58,23 @@ public struct ContentScopePrivacyConfigurationJsonGenerator: CustomisedPrivacyCo
     /// - Returns: A new dictionary with updated feature configurations.
     private func updatedFeatureState(config: [PrivacyConfigurationData.FeatureName: PrivacyConfigurationData.PrivacyFeature]) -> [PrivacyConfigurationData.FeatureName: PrivacyConfigurationData.PrivacyFeature] {
         var newConfig = config
-        var configsToEnable = [ContentScopeExperimentsFeatureFlags]()
-        for experiment in ContentScopeExperimentsFeatureFlags.allCases {
-            if let cohort = featureFlagger.resolveCohort(for: experiment) as? ContentScopeExperimentsFeatureFlags.ContentScopeExperimentsCohort, cohort == .treatment {
+        var configsToEnable = [ContentScopeExperimentsFeatureFlag]()
+        for experiment in ContentScopeExperimentsFeatureFlag.allCases {
+            if let cohort = featureFlagger.resolveCohort(for: experiment) as? ContentScopeExperimentsFeatureFlag.ContentScopeExperimentsCohort, cohort == .treatment {
                 configsToEnable.append(experiment)
             }
         }
 
         for configToEnable in configsToEnable {
             if let oldConfig = config[configToEnable.rawValue] {
-                newConfig[configToEnable.rawValue] = PrivacyConfigurationData.PrivacyFeature(state: "enabled", exceptions: oldConfig.exceptions, settings: oldConfig.settings, features: oldConfig.features, minSupportedVersion: oldConfig.minSupportedVersion, hash: oldConfig.hash)
+                newConfig[configToEnable.rawValue] = PrivacyConfigurationData.PrivacyFeature(
+                    state: "enabled",
+                    exceptions: oldConfig.exceptions,
+                    settings: oldConfig.settings,
+                    features: oldConfig.features,
+                    minSupportedVersion: oldConfig.minSupportedVersion,
+                    hash: oldConfig.hash
+                )
             }
         }
 

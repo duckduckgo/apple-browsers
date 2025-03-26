@@ -148,7 +148,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
                 isIsolated: Bool = false,
-                privacyConfigurationJsonGenerator: CustomisedPrivacyConfigurationJsonGenerating?
+                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
         let contextName = self.isIsolated ? "contentScopeScriptsIsolated" : "contentScopeScripts"
@@ -163,7 +163,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 properties: properties,
                 isolated: isIsolated,
                 config: broker.messagingConfig(),
-                privacyConfigurationJsonGenerator: privacyConfigurationJsonGenerator
+                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
@@ -171,9 +171,9 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       properties: ContentScopeProperties,
                                       isolated: Bool,
                                       config: WebkitMessagingConfig,
-                                      privacyConfigurationJsonGenerator: CustomisedPrivacyConfigurationJsonGenerating?
+                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) -> String {
-        let privacyConfigJsonData = privacyConfigurationJsonGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
+        let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),

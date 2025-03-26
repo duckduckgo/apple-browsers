@@ -76,7 +76,7 @@ final class DataBrokerUserScript: UserScriptsProvider {
         contentScopeUserScriptIsolated = ContentScopeUserScript(privacyConfig.withDataBrokerProtectionFeatureOverride,
                                                                 properties: prefs,
                                                                 isIsolated: true,
-                                                                privacyConfigurationJsonGenerator: nil)
+                                                                privacyConfigurationJSONGenerator: nil)
         dataBrokerFeature = DataBrokerProtectionFeature(delegate: delegate)
         dataBrokerFeature.broker = contentScopeUserScriptIsolated.broker
         contentScopeUserScriptIsolated.registerSubfeature(delegate: dataBrokerFeature)

@@ -367,15 +367,12 @@ extension PrivacyConfigurationData {
     public func toJSONDictionary() -> [String: Any] {
         var json = [String: Any]()
 
-        // Encode version
         if let version = self.version {
             json[CodingKeys.version.rawValue] = Int(version) ?? version
         }
 
-        // Encode unprotectedTemporary entries
         json[CodingKeys.unprotectedTemporary.rawValue] = self.unprotectedTemporary.map { $0.toJSONDictionary() }
 
-        // Encode trackerAllowlist and Features
         var featuresDict = [String: Any]()
         if let allowlistJSON = trackerAllowlist.toTrackerAllowListJSONDictionary() {
             featuresDict[CodingKeys.trackerAllowlist.rawValue] = allowlistJSON
@@ -398,7 +395,6 @@ extension PrivacyConfigurationData {
 }
 
 extension PrivacyConfigurationData.ExceptionEntry {
-    /// Encodes ExceptionEntry
     public func toJSONDictionary() -> [String: String] {
         var dict: [String: String] = [CodingKeys.domain.rawValue: domain]
         if let reason = reason {
@@ -409,7 +405,6 @@ extension PrivacyConfigurationData.ExceptionEntry {
 }
 
 extension PrivacyConfigurationData.PrivacyFeature {
-    /// Encodes PrivacyFeature
     public func toJSONDictionary() -> [String: Any]? {
         var dict: [String: Any] = [:]
         dict[CodingKeys.state.rawValue] = state
@@ -418,7 +413,6 @@ extension PrivacyConfigurationData.PrivacyFeature {
             dict[CodingKeys.settings.rawValue] = settings
         }
 
-        // Encode nested features if any.
         var featuresDict = [String: Any]()
         for (key, feature) in features {
             if let featureJSON = feature.toJSONDictionary() {
@@ -440,7 +434,6 @@ extension PrivacyConfigurationData.PrivacyFeature {
 }
 
 extension PrivacyConfigurationData.PrivacyFeature.Feature {
-    /// Encodes Sub-features
     public func toJSONDictionary() -> [String: Any]? {
         var dict: [String: Any] = [:]
         dict[CodingKeys.state.rawValue] = state
@@ -470,21 +463,18 @@ extension PrivacyConfigurationData.PrivacyFeature.Feature {
 }
 
 extension PrivacyConfigurationData.PrivacyFeature.Feature.Rollout {
-    /// Encodes Rollout
     public func toJSONDictionary() -> [String: Any] {
         return [CodingKeys.steps.rawValue: steps.map { $0.toJSONDictionary() }]
     }
 }
 
 extension PrivacyConfigurationData.PrivacyFeature.Feature.RolloutStep {
-    // Encodes RolloutStep
     public func toJSONDictionary() -> [String: Any] {
         return [CodingKeys.percent.rawValue: percent]
     }
 }
 
 extension PrivacyConfigurationData.PrivacyFeature.Feature.Target {
-    // Encodes Targets
     public func toJSONDictionary() -> [String: Any] {
         var dict = [String: Any]()
         if let country = localeCountry {
@@ -498,7 +488,6 @@ extension PrivacyConfigurationData.PrivacyFeature.Feature.Target {
 }
 
 extension PrivacyConfigurationData.Cohort {
-    // Encodes Cohorts
     public func toJSONDictionary() -> [String: Any] {
         return [CodingKeys.name.rawValue: name, CodingKeys.weight.rawValue: weight]
     }

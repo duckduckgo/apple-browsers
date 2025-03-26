@@ -306,7 +306,7 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
             $0.add(column: BrokerDB.Columns.isActive.name, .boolean).notNull().defaults(to: true)
         }
         try database.execute(sql: """
-                UPDATE \(BrokerDB.databaseTableName) SET \(BrokerDB.Columns.eTag) = "", \(BrokerDB.Columns.isActive) = true
+                UPDATE \(BrokerDB.databaseTableName) SET \(BrokerDB.Columns.eTag.name) = '', \(BrokerDB.Columns.isActive.name) = true
         """)
     }
 

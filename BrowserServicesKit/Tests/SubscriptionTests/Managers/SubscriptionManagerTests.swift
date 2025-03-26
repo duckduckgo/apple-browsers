@@ -125,7 +125,7 @@ final class SubscriptionManagerTests: XCTestCase {
         }
 
         // When
-        subscriptionManager.loadInitialData()
+        await subscriptionManager.loadInitialData()
 
         try await Task.sleep(seconds: 0.5)
 
@@ -140,7 +140,7 @@ final class SubscriptionManagerTests: XCTestCase {
         XCTAssertFalse(accountManager.isUserAuthenticated)
 
         // When
-        subscriptionManager.loadInitialData()
+        await subscriptionManager.loadInitialData()
 
         // Then
         XCTAssertFalse(subscriptionService.getSubscriptionCalled)

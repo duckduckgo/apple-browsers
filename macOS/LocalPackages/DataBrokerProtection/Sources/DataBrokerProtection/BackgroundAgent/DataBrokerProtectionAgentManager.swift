@@ -34,18 +34,20 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassServiceProvider) -> DataBrokerProtectionAgentManager {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let pixelHandler = DataBrokerProtectionPixelsHandler()
+        let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-        let executionConfig = DataBrokerExecutionConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
-        let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: executionConfig)
+        let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
+        let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
 
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
+        let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
+
         Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
@@ -114,18 +116,19 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                    pixelHandler: pixelHandler,
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
+        let executionConfig = DataBrokerExecutionConfig()
         let operationDependencies = DefaultDataBrokerOperationDependencies(
             database: dataManager.database,
             config: executionConfig,
             runnerProvider: runnerProvider,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
-            userNotificationService: notificationService,
+            eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
             vpnBypassService: vpnBypassService)
 
         return DataBrokerProtectionAgentManager(
-            userNotificationService: notificationService,
+            eventsHandler: eventsHandler,
             activityScheduler: activityScheduler,
             ipcServer: ipcServer,
             queueManager: queueManager,
@@ -143,14 +146,14 @@ public class DataBrokerProtectionAgentManagerProvider {
 
 public final class DataBrokerProtectionAgentManager {
 
-    private let userNotificationService: DataBrokerProtectionUserNotificationService
+    private let eventsHandler: EventMapping<OperationEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
     private let queueManager: DataBrokerProtectionQueueManager
     private let dataManager: DataBrokerProtectionDataManaging
     private let operationDependencies: DataBrokerOperationDependencies
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
     private let privacyConfigurationManager: DBPPrivacyConfigurationManager
@@ -162,21 +165,21 @@ public final class DataBrokerProtectionAgentManager {
 
     private var didStartActivityScheduler = false
 
-    init(userNotificationService: DataBrokerProtectionUserNotificationService,
+    init(eventsHandler: EventMapping<OperationEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
          ipcServer: DataBrokerProtectionIPCServer,
          queueManager: DataBrokerProtectionQueueManager,
          dataManager: DataBrokerProtectionDataManaging,
          operationDependencies: DataBrokerOperationDependencies,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
          privacyConfigurationManager: DBPPrivacyConfigurationManager,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     ) {
-        self.userNotificationService = userNotificationService
+        self.eventsHandler = eventsHandler
         self.activityScheduler = activityScheduler
         self.ipcServer = ipcServer
         self.queueManager = queueManager
@@ -281,7 +284,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     public func profileSaved() {
         let backgroundAgentInitialScanStartTime = Date()
 
-        userNotificationService.requestNotificationPermission()
+        eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies) { [weak self] errors in
             guard let self = self else { return }
@@ -305,14 +308,14 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
             if errors?.oneTimeError == nil {
                 self.pixelHandler.fire(.ipcServerImmediateScansFinishedWithoutError)
-                self.userNotificationService.sendFirstScanCompletedNotification()
+                self.eventsHandler.fire(.firstScanCompleted)
             }
         } completion: { [weak self] in
             guard let self else { return }
 
             if let hasMatches = try? self.dataManager.hasMatches(),
                hasMatches {
-                self.userNotificationService.scheduleCheckInNotificationIfPossible()
+                self.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
             }
 
             fireImmediateScansCompletionPixel(startTime: backgroundAgentInitialScanStartTime)

@@ -107,6 +107,9 @@
                   Identifier = "FireproofingReferenceTests/testFireproofing()">
                </Test>
                <Test
+                  Identifier = "PixelExperimentTests/testWhenNoCohort_NoEnrollmentPixelFired()">
+               </Test>
+               <Test
                   Identifier = "PixelStoreTests/testWhenValuesAreAddedThenCallbacksAreCalled()">
                </Test>
                <Test
@@ -243,6 +246,26 @@
                BuildableName = "SyncUITests"
                BlueprintName = "SyncUITests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtectionTests"
+               BuildableName = "DataBrokerProtectionTests"
+               BlueprintName = "DataBrokerProtectionTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtectionSharedTests"
+               BuildableName = "DataBrokerProtectionSharedTests"
+               BlueprintName = "DataBrokerProtectionSharedTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtectionShared">
             </BuildableReference>
          </TestableReference>
       </Testables>

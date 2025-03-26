@@ -193,66 +193,36 @@ struct OnboardingFinalDialog: View {
     let logoPosition: DaxDialogLogoPosition
     let message: String
     let cta: String
-    let canShowAddToDockTutorial: Bool
-    let showAddToDockTutorialAction: () -> Void
-    let dismissAction: (_ fromAddToDock: Bool) -> Void
+    let dismissAction: () -> Void
 
     @State private var showAddToDockTutorial = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             DaxDialogView(logoPosition: logoPosition) {
-                if showAddToDockTutorial {
-                    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing) {
-                        dismissAction(true)
-                    }
-                } else {
-                    ContextualDaxDialogContent(
-                        title: canShowAddToDockTutorial ? UserText.AddToDockOnboarding.Promo.title : UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
-                        titleFont: Font(UIFont.daxTitle3()),
-                        message: NSAttributedString(string: message),
-                        messageFont: Font.system(size: 16),
-                        customView: AnyView(customView),
-                        customActionView: AnyView(customActionView)
-                    )
-                }
+                ContextualDaxDialogContent(
+                    title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
+                    titleFont: Font(UIFont.daxTitle3()),
+                    message: NSAttributedString(string: message),
+                    messageFont: Font.system(size: 16),
+                    customActionView: AnyView(customActionView)
+                )
             }
-            .padding()
         }
-    }
-
-    @ViewBuilder
-    private var customView: some View {
-        if canShowAddToDockTutorial {
-            AddToDockPromoView()
-                .aspectRatio(contentMode: .fill)
-                .padding(.vertical)
-        } else {
-            EmptyView()
-        }
+        .padding()
     }
 
     @ViewBuilder
     private var customActionView: some View {
-        VStack {
-            if canShowAddToDockTutorial {
-                OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.tutorial,
-                    action: {
-                        showAddToDockTutorialAction()
-                        showAddToDockTutorial = true
-                    }
-                )
+        OnboardingCTAButton(
+            title: cta,
+            buttonStyle: .primary,
+            action: {
+                dismissAction()
             }
-            OnboardingCTAButton(
-                title: cta,
-                buttonStyle: canShowAddToDockTutorial ? .ghost : .primary,
-                action: {
-                    dismissAction(false)
-                }
-            )
-        }
+        )
     }
+
 }
 
 struct PrivacyProPromotionView: View {
@@ -382,26 +352,12 @@ struct OnboardingAddToDockTutorialContent: View {
         .padding()
 }
 
-#Preview("Final Dialog - No Add to Dock Tutorial") {
+#Preview("Final Dialog") {
     OnboardingFinalDialog(
         logoPosition: .top,
         message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
         cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-        canShowAddToDockTutorial: false,
-        showAddToDockTutorialAction: {},
-        dismissAction: { _ in }
-    )
-    .padding()
-}
-
-#Preview("Final Dialog - Add to Dock Tutorial") {
-    OnboardingFinalDialog(
-        logoPosition: .left,
-        message: UserText.AddToDockOnboarding.Promo.contextualMessage,
-        cta: UserText.AddToDockOnboarding.Buttons.startBrowsing,
-        canShowAddToDockTutorial: true,
-        showAddToDockTutorialAction: {},
-        dismissAction: { _ in }
+        dismissAction: { }
     )
     .padding()
 }

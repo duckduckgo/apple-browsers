@@ -3121,8 +3121,8 @@
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Leia ja vali **DuckDuckGo**, seejärel pühi **VPN**-ile ja vali **Lisa vidin**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN on ühendatud";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN-i ühendus on katkenud.";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri otseteed võimaldavad teil oma VPN-iga ühenduse luua kiire häälkäsklusega, näiteks \"Siri, lülita DuckDuckGo VPN sisse\". See on kiire ja käed-vaba viis oma VPN-i kasutamiseks.";

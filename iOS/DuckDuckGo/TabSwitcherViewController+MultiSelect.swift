@@ -195,11 +195,15 @@ extension TabSwitcherViewController {
     }
 
     func deselectAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherDeselectAll)
+        DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
         collectionView.reloadData()
         updateUIForSelectionMode()
     }
 
     func selectAllTabs() {
+        Pixel.fire(pixel: .tabSwitcherSelectAll)
+        DailyPixel.fire(pixel: .tabSwitcherSelectAllDaily)
         collectionView.reloadData()
         tabsModel.tabs.indices.forEach {
             collectionView.selectItem(at: IndexPath(row: $0, section: 0), animated: true, scrollPosition: [])
@@ -526,18 +530,6 @@ extension TabSwitcherViewController {
 
     func selectModeShareLinks() {
         shareTabs(selectedTabs.compactMap { tabsModel.safeGetTabAt($0.row) })
-    }
-
-    func selectModeDeselectAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherDeselectAll)
-        DailyPixel.fire(pixel: .tabSwitcherDeselectAllDaily)
-        deselectAllTabs()
-    }
-
-    func selectModeSelectAllTabs() {
-        Pixel.fire(pixel: .tabSwitcherSelectAll)
-        DailyPixel.fire(pixel: .tabSwitcherSelectAllDaily)
-        selectAllTabs()
     }
 
 }

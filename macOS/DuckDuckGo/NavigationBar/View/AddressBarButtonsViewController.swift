@@ -558,7 +558,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         privacyEntryPointButton.sendAction(on: .leftMouseUp)
 
-        imageButton.applyFaviconStyle()
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
 
         cameraButton.sendAction(on: .leftMouseDown)

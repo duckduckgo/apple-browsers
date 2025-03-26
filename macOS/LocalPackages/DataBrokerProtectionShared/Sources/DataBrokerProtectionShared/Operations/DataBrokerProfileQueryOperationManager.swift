@@ -18,8 +18,6 @@
 
 import Foundation
 import Common
-import NetworkProtection
-import NetworkProtectionIPC
 import os.log
 
 enum OperationsError: Error {
@@ -39,7 +37,7 @@ protocol OperationsManager {
                       pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                       showWebView: Bool,
                       isImmediateOperation: Bool,
-                      userNotificationService: DataBrokerProtectionUserNotificationService,
+                      eventsHandler: EventMapping<OperationEvent>,
                       shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
@@ -50,7 +48,7 @@ extension OperationsManager {
                       notificationCenter: NotificationCenter,
                       runner: WebJobRunner,
                       pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                      userNotificationService: DataBrokerProtectionUserNotificationService,
+                      eventsHandler: EventMapping<OperationEvent>,
                       isManual: Bool,
                       shouldRunNextStep: @escaping () -> Bool) async throws {
 
@@ -62,23 +60,21 @@ extension OperationsManager {
                                pixelHandler: pixelHandler,
                                showWebView: false,
                                isImmediateOperation: isManual,
-                               userNotificationService: userNotificationService,
+                               eventsHandler: eventsHandler,
                                shouldRunNextStep: shouldRunNextStep)
     }
 }
 
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
-    private let vpnIPCClient: VPNControllerXPCClient?
-    private let vpnBypassService: VPNBypassServiceProvider?
+    private let vpnBypassService: VPNBypassFeatureProvider?
 
-    init(vpnIPCClient: VPNControllerXPCClient?, vpnBypassService: VPNBypassServiceProvider?) {
-        vpnIPCClient?.register { _ in }
-        self.vpnIPCClient = vpnIPCClient
+    init(vpnBypassService: VPNBypassFeatureProvider?) {
+        vpnBypassService?.setUp()
         self.vpnBypassService = vpnBypassService
     }
 
     private var vpnConnectionState: String {
-        vpnIPCClient?.connectionStatusObserver.recentValue.description ?? "unknown"
+        vpnBypassService?.connectionStatus ?? "unknown"
     }
 
     private var vpnBypassStatus: String {
@@ -93,7 +89,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                showWebView: Bool = false,
                                isImmediateOperation: Bool = false,
-                               userNotificationService: DataBrokerProtectionUserNotificationService,
+                               eventsHandler: EventMapping<OperationEvent>,
                                shouldRunNextStep: @escaping () -> Bool) async throws {
 
         if operationData as? ScanJobData != nil {
@@ -104,7 +100,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                        pixelHandler: pixelHandler,
                                        showWebView: showWebView,
                                        isManual: isImmediateOperation,
-                                       userNotificationService: userNotificationService,
+                                       eventsHandler: eventsHandler,
                                        shouldRunNextStep: shouldRunNextStep)
         } else if let optOutJobData = operationData as? OptOutJobData {
             try await runOptOutOperation(for: optOutJobData.extractedProfile,
@@ -114,7 +110,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                          notificationCenter: notificationCenter,
                                          pixelHandler: pixelHandler,
                                          showWebView: showWebView,
-                                         userNotificationService: userNotificationService,
+                                         eventsHandler: eventsHandler,
                                          shouldRunNextStep: shouldRunNextStep)
         }
     }
@@ -128,7 +124,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                    pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                    showWebView: Bool = false,
                                    isManual: Bool = false,
-                                   userNotificationService: DataBrokerProtectionUserNotificationService,
+                                   eventsHandler: EventMapping<OperationEvent>,
                                    shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
@@ -218,7 +214,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     brokerProfileQueryData: brokerProfileQueryData,
                     database: database,
                     pixelHandler: pixelHandler,
-                    userNotificationService: userNotificationService
+                    eventsHandler: eventsHandler
                 )
             } else {
                 // 7b. If there were no removed profiles, update the date entries:
@@ -332,9 +328,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        userNotificationService: DataBrokerProtectionUserNotificationService
+        eventsHandler: EventMapping<OperationEvent>
     ) throws {
-        var shouldSendProfileRemovedNotification = false
+        var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
             if let extractedProfileId = removedProfile.id {
                 let event = HistoryEvent(
@@ -345,7 +341,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 )
                 try database.add(event)
                 try database.updateRemovedDate(Date(), on: extractedProfileId)
-                shouldSendProfileRemovedNotification = true
+                shouldSendProfileRemovedEvent = true
 
                 try updateOperationDataDates(
                     origin: .scan,
@@ -370,13 +366,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             }
         }
 
-        if shouldSendProfileRemovedNotification {
-            sendProfileRemovedNotificationIfNecessary(userNotificationService: userNotificationService, database: database)
+        if shouldSendProfileRemovedEvent {
+            sendProfilesRemovedEventIfNecessary(eventsHandler: eventsHandler, database: database)
         }
     }
 
-    private func sendProfileRemovedNotificationIfNecessary(userNotificationService: DataBrokerProtectionUserNotificationService,
-                                                           database: DataBrokerProtectionRepository) {
+    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
+                                                     database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
               savedExtractedProfiles.count > 0 else {
@@ -384,12 +380,12 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         if savedExtractedProfiles.count == 1 {
-            userNotificationService.sendAllInfoRemovedNotificationIfPossible()
+            eventsHandler.fire(.allProfilesRemoved)
         } else {
             if savedExtractedProfiles.allSatisfy({ $0.removedDate != nil }) {
-                userNotificationService.sendAllInfoRemovedNotificationIfPossible()
+                eventsHandler.fire(.allProfilesRemoved)
             } else {
-                userNotificationService.sendFirstRemovedNotificationIfPossible()
+                eventsHandler.fire(.firstProfileRemoved)
             }
         }
     }
@@ -403,7 +399,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                      notificationCenter: NotificationCenter,
                                      pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                      showWebView: Bool = false,
-                                     userNotificationService: DataBrokerProtectionUserNotificationService,
+                                     eventsHandler: EventMapping<OperationEvent>,
                                      shouldRunNextStep: @escaping () -> Bool) async throws {
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,
@@ -426,7 +422,6 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         // 4. Set up dependencies used to report the status of the opt-out job:
-        let retriesCalculatorUseCase = OperationRetriesCalculatorUseCase()
         let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: brokerProfileQueryData.dataBroker.url,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
@@ -465,7 +460,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                     shouldRunNextStep: shouldRunNextStep)
 
             // 7c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
-            let tries = try retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
@@ -486,7 +481,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             )
         } catch {
             // 8. Catch errors from the opt-out job and report them:
-            let tries = try? retriesCalculatorUseCase.calculateForOptOut(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+            let tries = try? fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
             stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
             handleOperationError(
                 origin: .optOut,
@@ -543,6 +538,19 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
 
         try database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+    }
+
+    private func fetchTotalNumberOfOptOutAttempts(database: DataBrokerProtectionRepository,
+                                                  brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws -> Int {
+        let events = try database.fetchOptOutHistoryEvents(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            extractedProfileId: extractedProfileId
+        )
+
+        return events.filter { $0.type == .optOutStarted }.count
     }
 
     // MARK: - Generic Job Logic
@@ -614,13 +622,5 @@ extension Bundle {
             fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
         }
         return bundleID
-    }
-}
-
-public extension VPNControllerXPCClient {
-    static let shared = VPNControllerXPCClient()
-
-    convenience init() {
-        self.init(machServiceName: Bundle.main.vpnMenuAgentBundleId)
     }
 }

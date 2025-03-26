@@ -35,14 +35,14 @@ struct DefaultDataBrokerProtectionAgentStopper: DataBrokerProtectionAgentStopper
     private let dataManager: DataBrokerProtectionDataManaging
     private let entitlementMonitor: DataBrokerProtectionEntitlementMonitoring
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let stopAction: DataProtectionStopAction
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
     init(dataManager: DataBrokerProtectionDataManaging,
          entitlementMonitor: DataBrokerProtectionEntitlementMonitoring,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>,
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          stopAction: DataProtectionStopAction = DefaultDataProtectionStopAction(),
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
         self.dataManager = dataManager

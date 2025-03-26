@@ -26,7 +26,7 @@ import DataBrokerProtectionSharedTestsUtils
 
 final class DataBrokerProtectionAgentStopperTests: XCTestCase {
 
-    private var mockPixelHandler: EventMapping<DataBrokerProtectionPixels>!
+    private var mockPixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockEntitlementMonitor: DataBrokerProtectionEntitlementMonitor!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
@@ -41,7 +41,7 @@ final class DataBrokerProtectionAgentStopperTests: XCTestCase {
     }
 
     override func setUp() {
-        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
+        mockPixelHandler = MockDataBrokerProtectionMacOSPixelsHandler()
         mockAuthenticationManager = MockAuthenticationManager()
         mockPixelHandler = MockPixelHandler()
         mockEntitlementMonitor = DataBrokerProtectionEntitlementMonitor()

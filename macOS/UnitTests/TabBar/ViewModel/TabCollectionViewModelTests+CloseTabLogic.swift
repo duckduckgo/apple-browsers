@@ -166,6 +166,6 @@ fileprivate extension TabCollectionViewModel {
 
     static func aTabCollectionViewModel() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
-        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManager: nil)
+        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
     }
 }

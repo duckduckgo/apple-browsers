@@ -32,12 +32,10 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
     }()
 
     private var sut: OnboardingManager!
-    private var appSettingsMock: AppSettingsMock!
     private var featureFlaggerMock: MockFeatureFlagger!
     private var variantManagerMock: MockVariantManager!
 
     init() {
-        appSettingsMock = AppSettingsMock()
         featureFlaggerMock = MockFeatureFlagger()
         variantManagerMock = MockVariantManager()
         makeSUT()
@@ -45,7 +43,6 @@ final class OnboardingManagerSetDefaultBrowserExperimentTests {
 
     func makeSUT() {
         sut = OnboardingManager(
-            appDefaults: appSettingsMock,
             featureFlagger: featureFlaggerMock,
             variantManager: variantManagerMock,
             isIphone: true

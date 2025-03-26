@@ -33,7 +33,7 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
 
     var canPurchase: Bool { get }
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
-    func loadInitialData()
+    func loadInitialData() async
     func refreshCachedSubscriptionAndEntitlements(completion: @escaping (_ isSubscriptionActive: Bool) -> Void)
 
     /// Subscription feature related URL that matches current environment
@@ -123,12 +123,10 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
 
     // MARK: -
 
-    public func loadInitialData() {
-        Task {
-            if let token = accountManager.accessToken {
-                _ = await subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: .reloadIgnoringLocalCacheData)
-                _ = await accountManager.fetchEntitlements(cachePolicy: .reloadIgnoringLocalCacheData)
-            }
+    public func loadInitialData() async {
+        if let token = accountManager.accessToken {
+            _ = await subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: .reloadIgnoringLocalCacheData)
+            _ = await accountManager.fetchEntitlements(cachePolicy: .reloadIgnoringLocalCacheData)
         }
     }
 

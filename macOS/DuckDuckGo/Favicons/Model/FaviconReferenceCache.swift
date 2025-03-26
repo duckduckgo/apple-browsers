@@ -23,7 +23,71 @@ import BrowserServicesKit
 import os.log
 
 @MainActor
-final class FaviconReferenceCache {
+protocol FaviconReferenceCaching {
+
+    init(faviconStoring: FaviconStoring)
+
+    // References to favicon URLs for whole domains
+    var hostReferences: [String: FaviconHostReference] { get }
+
+    // References to favicon URLs for special URLs
+    var urlReferences: [URL: FaviconUrlReference] { get }
+
+    var loaded: Bool { get }
+    func load() async throws
+
+    func insert(faviconUrls: (smallFaviconUrl: URL?, mediumFaviconUrl: URL?), documentUrl: URL)
+
+    func getFaviconUrl(for documentURL: URL, sizeCategory: Favicon.SizeCategory) -> URL?
+    func getFaviconUrl(for host: String, sizeCategory: Favicon.SizeCategory) -> URL?
+
+    func cleanOld(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager) async
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async
+    func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: TLD) async
+}
+
+extension FaviconReferenceCaching {
+
+    nonisolated func loadReferences(completionHandler: ((Error?) -> Void)? = nil) {
+        Task { @MainActor in
+            do {
+                try await self.load()
+                completionHandler?(nil)
+            } catch {
+                completionHandler?(error)
+            }
+        }
+    }
+
+    nonisolated func cleanOldExcept(fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, completion: ((()) -> Void)? = nil) {
+        Task { @MainActor in
+            await self.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
+            completion?(())
+        }
+    }
+
+    nonisolated func burnExcept(fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>, completion: @escaping () -> Void) {
+        Task { @MainActor in
+            await self.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
+            completion()
+        }
+    }
+
+    nonisolated func burnDomains(_ baseDomains: Set<String>,
+                                 exceptBookmarks bookmarkManager: BookmarkManager,
+                                 exceptSavedLogins logins: Set<String>,
+                                 exceptHistoryDomains history: Set<String>,
+                                 tld: TLD,
+                                 completion: @escaping () -> Void) {
+        Task { @MainActor in
+            await self.burnDomains(baseDomains, exceptBookmarks: bookmarkManager, exceptSavedLogins: logins, exceptHistoryDomains: history, tld: tld)
+            completion()
+        }
+    }
+}
+
+@MainActor
+final class FaviconReferenceCache: FaviconReferenceCaching {
 
     private let storing: FaviconStoring
 
@@ -38,17 +102,6 @@ final class FaviconReferenceCache {
     }
 
     private(set) var loaded = false
-
-    nonisolated func loadReferences(completionHandler: (@MainActor (Error?) -> Void)? = nil) {
-        Task {
-            do {
-                try await self.load()
-                await completionHandler?(nil)
-            } catch {
-                await completionHandler?(error)
-            }
-        }
-    }
 
     nonisolated func load() async throws {
         do {
@@ -151,15 +204,6 @@ final class FaviconReferenceCache {
 
     // MARK: - Clean
 
-    nonisolated func cleanOldExcept(fireproofDomains: FireproofDomains,
-                                    bookmarkManager: BookmarkManager,
-                                    completion: (@MainActor (()) -> Void)? = nil) {
-        Task {
-            await self.cleanOld(except: fireproofDomains, bookmarkManager: bookmarkManager)
-            await completion?(())
-        }
-    }
-
     func cleanOld(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager) async {
         let bookmarkedHosts = bookmarkManager.allHosts()
         // Remove host references
@@ -182,16 +226,6 @@ final class FaviconReferenceCache {
 
     // MARK: - Burning
 
-    nonisolated func burnExcept(fireproofDomains: FireproofDomains,
-                                bookmarkManager: BookmarkManager,
-                                savedLogins: Set<String>,
-                                completion: @escaping @MainActor () -> Void) {
-        Task {
-            await self.burn(except: fireproofDomains, bookmarkManager: bookmarkManager, savedLogins: savedLogins)
-            await completion()
-        }
-    }
-
     func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
         let bookmarkedHosts = bookmarkManager.allHosts()
         func isHostApproved(host: String) -> Bool {
@@ -212,18 +246,6 @@ final class FaviconReferenceCache {
             }
             return !isHostApproved(host: host)
         }).value
-    }
-
-    nonisolated func burnDomains(_ baseDomains: Set<String>,
-                                 exceptBookmarks bookmarkManager: BookmarkManager,
-                                 exceptSavedLogins logins: Set<String>,
-                                 exceptHistoryDomains history: Set<String>,
-                                 tld: TLD,
-                                 completion: @escaping @MainActor () -> Void) {
-        Task {
-            await self.burnDomains(baseDomains, exceptBookmarks: bookmarkManager, exceptSavedLogins: logins, exceptHistoryDomains: history, tld: tld)
-            await completion()
-        }
     }
 
     func burnDomains(_ baseDomains: Set<String>,

@@ -27,19 +27,19 @@ import DataBrokerProtectionShared
 
 final public class DataBrokerProtectionViewController: NSViewController {
     private let dataManager: DataBrokerProtectionDataManaging
-    private let vpnBypassService: VPNBypassServiceProvider
+    private let vpnBypassService: VPNBypassFeatureProvider
     private var webView: WKWebView?
     private var loader: NSProgressIndicator!
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let webUIViewModel: DBPUIViewModel
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let webUIPixel: DataBrokerProtectionWebUIPixels
 
     private let openURLHandler: (URL?) -> Void
     private var reloadObserver: NSObjectProtocol?
 
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
-                vpnBypassService: VPNBypassServiceProvider,
+                vpnBypassService: VPNBypassFeatureProvider,
                 dataManager: DataBrokerProtectionDataManaging,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
@@ -49,7 +49,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
         self.vpnBypassService = vpnBypassService
         self.openURLHandler = openURLHandler
         self.webUISettings = webUISettings
-        self.pixelHandler = DataBrokerProtectionPixelsHandler()
+        self.pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         self.webUIPixel = DataBrokerProtectionWebUIPixels(pixelHandler: pixelHandler)
 
         guard let pixelKit = PixelKit.shared else {

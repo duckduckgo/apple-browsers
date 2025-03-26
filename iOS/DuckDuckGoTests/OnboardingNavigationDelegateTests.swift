@@ -73,7 +73,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
             syncDataProviders: dataProviders,
             appSettings: AppSettingsMock(),
-            previewsSource: TabPreviewsSource(),
+            previewsSource: MockTabPreviewsSource(),
             tabsModel: tabsModel,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
             privacyProDataReporter: MockPrivacyProDataReporter(),

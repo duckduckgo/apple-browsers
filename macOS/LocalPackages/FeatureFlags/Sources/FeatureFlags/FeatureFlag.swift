@@ -56,6 +56,9 @@ public enum FeatureFlag: String, CaseIterable {
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
     case popoverVsBannerExperiment
+
+    /// https://app.asana.com/0/72649045549333/1207991044706236/f
+    case privacyProAuthV2
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -76,16 +79,26 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
+        case .autofillPartialFormSaves,
+                .autcompleteTabs,
+                .networkProtectionAppExclusions,
+                .networkProtectionRiskyDomainsProtection,
+                .syncSeamlessAccountSwitching,
+                .historyView,
+                .webExtensions,
+                .autoUpdateInDEBUG,
+                .popoverVsBannerExperiment,
+                .privacyProAuthV2,
+                .scamSiteProtection:
             return true
         case .debugMenu,
-             .sslCertificatesBypass,
-             .appendAtbToSerpQueries,
-             .freemiumDBP,
-             .contextualOnboarding,
-             .unknownUsernameCategorization,
-             .credentialsImportPromotionForExistingUsers,
-             .maliciousSiteProtection:
+                .sslCertificatesBypass,
+                .appendAtbToSerpQueries,
+                .freemiumDBP,
+                .contextualOnboarding,
+                .unknownUsernameCategorization,
+                .credentialsImportPromotionForExistingUsers,
+                .maliciousSiteProtection:
             return false
         }
     }
@@ -128,6 +141,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .popoverVsBannerExperiment:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
+        case .privacyProAuthV2:
+            return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         }
     }
 }

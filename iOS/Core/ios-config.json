@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1742831687046,
+    "version": 1742989406131,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -543,6 +543,15 @@
                     "domain": "hobbies.co.uk"
                 },
                 {
+                    "domain": "fairlawns.co.uk"
+                },
+                {
+                    "domain": "stamma.org"
+                },
+                {
+                    "domain": "nature.scot"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -724,7 +733,7 @@
                     }
                 }
             },
-            "hash": "e168ad382325066ab8f87a6cc7adc2c4"
+            "hash": "8ddd036890b60fc33a4e39c37eb9c3c6"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -2528,6 +2537,10 @@
                     {
                         "selector": ".clsy-c-advsection",
                         "type": "hide-empty"
+                    },
+                    {
+                        "selector": "[class^='DisplayAdvert']",
+                        "type": "closest-empty"
                     }
                 ],
                 "styleTagExceptions": [
@@ -3071,6 +3084,15 @@
                         "rules": [
                             {
                                 "selector": ".TopBanner-container",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "cnn.com",
+                        "rules": [
+                            {
+                                "selector": ".ad-slot-wrapper",
                                 "type": "hide-empty"
                             }
                         ]
@@ -3998,20 +4020,6 @@
                             {
                                 "selector": ".video-container",
                                 "type": "hide"
-                            },
-                            {
-                                "selector": ".top-ad-recirc",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "height",
-                                        "value": "auto"
-                                    },
-                                    {
-                                        "property": "min-height",
-                                        "value": "auto"
-                                    }
-                                ]
                             }
                         ]
                     },
@@ -4140,6 +4148,15 @@
                         ]
                     },
                     {
+                        "domain": "kabutan.jp",
+                        "rules": [
+                            {
+                                "selector": "[id^=div-gpt-ad-]",
+                                "type": "closest-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "kbb.com",
                         "rules": [
                             {
@@ -4181,10 +4198,6 @@
                         "domain": "kutv.com",
                         "rules": [
                             {
-                                "selector": "[class*='DisplayAdvert']",
-                                "type": "hide-empty"
-                            },
-                            {
                                 "selector": "[class*='adBeforeContent']",
                                 "type": "hide-empty"
                             }
@@ -4199,6 +4212,15 @@
                             },
                             {
                                 "selector": "[class*='styles__ad']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "lemonde.fr",
+                        "rules": [
+                            {
+                                "selector": ".dfp__container",
                                 "type": "hide-empty"
                             }
                         ]
@@ -4346,6 +4368,15 @@
                             {
                                 "selector": ".ad-slot-container",
                                 "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "minkabu.jp",
+                        "rules": [
+                            {
+                                "selector": ".ad",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -5807,7 +5838,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "a73f42b76821735755fb0d21f85c7c40"
+            "hash": "7dc378e1d439d5a9bba78ba1f6cd243d"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6491,6 +6522,9 @@
                         "steps": [
                             {
                                 "percent": 10
+                            },
+                            {
+                                "percent": 25
                             }
                         ]
                     }
@@ -6500,7 +6534,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "beadba8b37d0ca1e54b64e6ceb426033"
+            "hash": "a6aedcfaa4d1f648ec19e42014174606"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -6760,7 +6794,7 @@
                     "minSupportedVersion": "7.157.0"
                 },
                 "privacyProOnboardingCTAMarch25": {
-                    "state": "internal",
+                    "state": "enabled",
                     "targets": [
                         {
                             "localeCountry": "US"
@@ -6775,10 +6809,11 @@
                             "name": "treatment",
                             "weight": 1
                         }
-                    ]
+                    ],
+                    "minSupportedVersion": "7.163.0"
                 }
             },
-            "hash": "eb9ffc08c052d8bce710e23fd39ce6d9"
+            "hash": "7ef9f8b719d411e6760c7ba17ad66cda"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",

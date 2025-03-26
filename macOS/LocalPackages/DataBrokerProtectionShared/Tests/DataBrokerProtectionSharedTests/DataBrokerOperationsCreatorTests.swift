@@ -29,21 +29,21 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockPixelHandler: MockPixelHandler!
-    private var mockUserNotificationService: MockUserNotificationService!
+    private var mockEventsHandler: MockOperationEventsHandler!
     var mockDependencies: DefaultDataBrokerOperationDependencies!
 
     override func setUpWithError() throws {
         mockDatabase = MockDatabase()
         mockRunnerProvider = MockRunnerProvider()
         mockPixelHandler = MockPixelHandler()
-        mockUserNotificationService = MockUserNotificationService()
+        mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
                                                                   config: mockSchedulerConfig,
                                                                   runnerProvider: mockRunnerProvider,
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
-                                                                  userNotificationService: mockUserNotificationService,
+                                                                  eventsHandler: mockEventsHandler,
                                                                   dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
     }
 

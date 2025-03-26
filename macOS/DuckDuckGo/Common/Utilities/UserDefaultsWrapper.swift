@@ -99,6 +99,7 @@ public struct UserDefaultsWrapper<T> {
         case defaultPageZoom = "preferences.appearance.default-page-zoom"
         case websitePageZoom = "preferences.appearance.website-page-zoom"
         case bookmarksBarAppearance = "preferences.appearance.bookmarks-bar"
+        case sharedPinnedTabs = "preferences.tabs.shared-pinned-tabs"
 
         case homeButtonPosition = "preferences.appeareance.home-button-position"
 
@@ -161,6 +162,8 @@ public struct UserDefaultsWrapper<T> {
 
         case pinnedViews = "pinning.pinned-views"
         case manuallyToggledPinnedViews = "pinning.manually-toggled-pinned-views"
+        case pinnedTabsDiscoveryPopoverPresented = "pinned.tabs.discovery.popover.presented"
+        case pinnedTabsMigrated = "pinned.tabs.migrated"
 
         case lastDatabaseFactoryFailurePixelDate = "last.database.factory.failure.pixel.date"
 

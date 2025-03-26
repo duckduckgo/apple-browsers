@@ -37,7 +37,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public var currentEnvironment: Subscription.SubscriptionEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .appStore)
 
-    public func loadInitialData() {}
+    public func loadInitialData() async {}
 
     public func refreshCachedSubscription(completion: @escaping (Bool) -> Void) {}
 
@@ -114,7 +114,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         resultTokenContainer = nil
     }
 
-    public func removeTokenContainer() {
+    public func removeLocalAccount() {
         resultTokenContainer = nil
     }
 

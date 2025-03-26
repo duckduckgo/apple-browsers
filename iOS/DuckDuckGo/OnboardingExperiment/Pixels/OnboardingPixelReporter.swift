@@ -115,7 +115,7 @@ final class OnboardingPixelReporter {
         self.userDefaults = userDefaults
     }
 
-    private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion, .atb]) {
+    private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:], includedParameters: [Pixel.QueryParameters] = [.appVersion]) {
         
         func enqueue(event: Pixel.Event, unique: Bool, additionalParameters: [String: String], includedParameters: [Pixel.QueryParameters]) {
             enqueuedPixels.append(.init(event: event, unique: unique, additionalParameters: additionalParameters, includedParameters: includedParameters))
@@ -169,19 +169,19 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
     }
 
     func measureChooseAppIconImpression() {
-        fire(event: .onboardingIntroChooseAppIconImpressionUnique, unique: true, includedParameters: [.appVersion])
+        fire(event: .onboardingIntroChooseAppIconImpressionUnique, unique: true)
     }
 
     func measureChooseCustomAppIconColor() {
-        fire(event: .onboardingIntroChooseCustomAppIconColorCTAPressed, unique: false, includedParameters: [.appVersion])
+        fire(event: .onboardingIntroChooseCustomAppIconColorCTAPressed, unique: false)
     }
 
     func measureAddressBarPositionSelectionImpression() {
-        fire(event: .onboardingIntroChooseAddressBarImpressionUnique, unique: true, includedParameters: [.appVersion])
+        fire(event: .onboardingIntroChooseAddressBarImpressionUnique, unique: true)
     }
 
     func measureChooseBottomAddressBarPosition() {
-        fire(event: .onboardingIntroBottomAddressBarSelected, unique: false, includedParameters: [.appVersion])
+        fire(event: .onboardingIntroBottomAddressBarSelected, unique: false)
     }
 
 }
@@ -313,3 +313,13 @@ struct EnqueuedPixel {
     let additionalParameters: [String: String]
     let includedParameters: [Pixel.QueryParameters]
 }
+
+#if canImport(XCTest) || DEBUG
+extension OnboardingPixelReporter {
+
+    func fireTestPixelWithATB(event: Pixel.Event) {
+        fire(event: event, unique: true, includedParameters: [.appVersion, .atb])
+    }
+
+}
+#endif

@@ -149,7 +149,8 @@ extension SubscriptionTokenKeychainStorageV2 {
     }
 
     func deleteItem(forField field: SubscriptionKeychainField, useDataProtectionKeychain: Bool = true) throws {
-        let query = defaultAttributes()
+        var query = defaultAttributes()
+        query[kSecAttrService] = field.keyValue
 
         let status = SecItemDelete(query as CFDictionary)
 

@@ -49060,6 +49060,150 @@
         }
       }
     },
+    "pinned-tabs.discovery.popover.message" : {
+      "comment" : "Info message to users about option to adjust behavior of pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can now choose to have shared or separate pinned tabs across multiple browser windows."
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.message.2" : {
+      "comment" : "Info message to users about option to adjust behavior of pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can change this anytime in Settings."
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.separate" : {
+      "comment" : "Button opening Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use Separate Pinned Tabs"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.shared" : {
+      "comment" : "Button to close the popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Shared Pinned Tabs"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.title" : {
+      "comment" : "Title for pinned tabs discovery dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Pinned Tab Settings"
+          }
+        }
+      }
+    },
+    "pinned.tabs.mode.separate" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are different in each window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Separate in each window"
+          }
+        }
+      }
+    },
+    "pinned.tabs.mode.shared" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are shared across all windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared across all windows"
+          }
+        }
+      }
+    },
+    "pinning.hide-aichat-shortcut" : {
+      "comment" : "Menu item for hiding the AI Chat shortcut",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-Chat-Verknüpfung ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI Chat Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar acceso directo a AI Chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le raccourci de chat IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi scorciatoia AI Chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor AI-chat verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj skrót do AI Chat"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar atalho do AI Chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть ярлык AI Chat"
+          }
+        }
+      }
+    },
     "pinning.hide-autofill-shortcut" : {
       "comment" : "Menu item for hiding the passwords shortcut",
       "extractionState" : "extracted_with_value",
@@ -57028,6 +57172,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Стартовая страница"
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs-warning" : {
+      "comment" : "Content of warning before switching from per window pinned tabs to shared pinned tabs\nTitle of warning before switching from per window pinned tabs to shared pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to share pinned tabs across all windows?"
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs.title" : {
+      "comment" : "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinned tabs are"
           }
         }
       }

@@ -43,20 +43,17 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let onboardingManager: OnboardingAddToDockManaging
     private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager(),
         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.onboardingManager = onboardingManager
         self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
@@ -118,40 +115,16 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     }
 
     private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
-        let shouldShowAddToDock = onboardingManager.addToDockEnabledState == .contextual
-
-        let (message, cta) = if shouldShowAddToDock {
-            (UserText.AddToDockOnboarding.Promo.contextualMessage, UserText.AddToDockOnboarding.Buttons.startBrowsing)
-        } else {
-            (
-                UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton
-            )
-        }
-
-        let showAddToDockTutorialAction: () -> Void = { [weak self] in
-            self?.onboardingPixelReporter.measureAddToDockPromoShowTutorialCTAAction()
-        }
-
-        let dismissAction = { [weak self] isDismissedFromAddToDockTutorial in
-            if isDismissedFromAddToDockTutorial {
-                self?.onboardingPixelReporter.measureAddToDockTutorialDismissCTAAction()
-            } else {
-                self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                if shouldShowAddToDock {
-                    self?.onboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
-                }
-            }
+        let dismissAction = { [weak self] in
+            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
             onDismiss(true)
         }
 
         return FadeInView {
             OnboardingFinalDialog(
                 logoPosition: .top,
-                message: message,
-                cta: cta,
-                canShowAddToDockTutorial: shouldShowAddToDock,
-                showAddToDockTutorialAction: showAddToDockTutorialAction,
+                message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+                cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: dismissAction
             )
         }
@@ -159,9 +132,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         .onFirstAppear { [weak self] in
             self?.daxDialogsFlowCoordinator.setFinalOnboardingDialogSeen()
             self?.onboardingPixelReporter.measureScreenImpression(event: .daxDialogsEndOfJourneyNewTabUnique)
-            if shouldShowAddToDock {
-                self?.onboardingPixelReporter.measureAddToDockPromoImpression()
-            }
         }
     }
 }

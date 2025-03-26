@@ -422,12 +422,19 @@ public final class PixelKit {
             fireRequest(pixelName, headers, parameters, allowedQueryReservedCharacters, callBackOnMainThread, onComplete)
         }
 
-    // Only set up for macOS and for Experiments
     private func prefixedAndSuffixedName(for event: Event, namePrefix: String?) -> String {
         let pixelName = (namePrefix ?? "") + event.name
         if pixelName.hasPrefix("experiment") {
             return addPlatformSuffix(to: pixelName)
         }
+
+#if os(iOS)
+        return pixelName
+#else
+        // Many macOS pixel names need "correcting" after the fact
+        // However, we should try and move away from this approach
+        // (and towards the more deliberate approach above with the prefix and experiment suffix)
+        // This approach won't work for iOS as the names have a very varied set of prefixes
         if pixelName.hasPrefix("m_mac_") {
             // Can be a debug event or not, if already prefixed the name remains unchanged
             return pixelName
@@ -440,6 +447,7 @@ public final class PixelKit {
         } else {
             return "m_mac_\(pixelName)"
         }
+#endif
     }
 
     private func addPlatformSuffix(to name: String) -> String {

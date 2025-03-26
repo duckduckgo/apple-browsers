@@ -147,7 +147,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
-                isIsolated: Bool = false
+                isIsolated: Bool = false,
+                privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
         let contextName = self.isIsolated ? "contentScopeScriptsIsolated" : "contentScopeScripts"
@@ -161,17 +162,19 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 privacyConfigManager,
                 properties: properties,
                 isolated: isIsolated,
-                config: broker.messagingConfig()
+                config: broker.messagingConfig(),
+                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
     public static func generateSource(_ privacyConfigurationManager: PrivacyConfigurationManaging,
                                       properties: ContentScopeProperties,
                                       isolated: Bool,
-                                      config: WebkitMessagingConfig
+                                      config: WebkitMessagingConfig,
+                                      privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) -> String {
-
-        guard let privacyConfigJson = String(data: privacyConfigurationManager.currentConfig, encoding: .utf8),
+        let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
+        guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
               let userUnprotectedDomainsString = String(data: userUnprotectedDomains, encoding: .utf8),
               let jsonProperties = try? JSONEncoder().encode(properties),

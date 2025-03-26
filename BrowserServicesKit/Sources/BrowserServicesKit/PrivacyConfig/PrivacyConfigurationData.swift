@@ -40,9 +40,14 @@ public struct PrivacyConfigurationData {
         public let name: String
         public let weight: Int
 
+        enum CodingKeys: String {
+            case name
+            case weight
+        }
+
         public init?(json: [String: Any]) {
-            guard let name = json["name"] as? String,
-                  let weight = json["weight"] as? Int else {
+            guard let name = json[CodingKeys.name.rawValue] as? String,
+                  let weight = json[CodingKeys.weight.rawValue] as? Int else {
                 return nil
             }
 
@@ -111,6 +116,16 @@ public struct PrivacyConfigurationData {
         self.features = features
         self.unprotectedTemporary = unprotectedTemporary
         self.trackerAllowlist = TrackerAllowlist(entries: trackerAllowlist, state: State.enabled)
+        self.version = version
+    }
+
+    public init(features: [FeatureName: PrivacyFeature],
+                unprotectedTemporary: [ExceptionEntry],
+                trackerAllowlist: TrackerAllowlist,
+                version: String? = nil) {
+        self.features = features
+        self.unprotectedTemporary = unprotectedTemporary
+        self.trackerAllowlist = trackerAllowlist
         self.version = version
     }
 
@@ -343,5 +358,155 @@ public struct PrivacyConfigurationData {
             self.domain = domain
             self.reason = reason
         }
+    }
+}
+
+// MARK: Encoding Functions
+extension PrivacyConfigurationData {
+    /// Returns a dictionary representation of the configuration.
+    public func toJSONDictionary() -> [String: Any] {
+        var json = [String: Any]()
+
+        if let version = self.version {
+            json[CodingKeys.version.rawValue] = Int(version) ?? version
+        }
+
+        json[CodingKeys.unprotectedTemporary.rawValue] = self.unprotectedTemporary.map { $0.toJSONDictionary() }
+
+        var featuresDict = [String: Any]()
+        if let allowlistJSON = trackerAllowlist.toTrackerAllowListJSONDictionary() {
+            featuresDict[CodingKeys.trackerAllowlist.rawValue] = allowlistJSON
+        }
+        for (key, feature) in features {
+            if let featureJSON = feature.toJSONDictionary() {
+                featuresDict[key] = featureJSON
+            }
+        }
+        json[CodingKeys.features.rawValue] = featuresDict
+
+        return json
+    }
+
+    /// Returns the JSON Data representation.
+    public func toJSONData() throws -> Data {
+        let jsonDict = self.toJSONDictionary()
+        return try JSONSerialization.data(withJSONObject: jsonDict, options: [.prettyPrinted])
+    }
+}
+
+extension PrivacyConfigurationData.ExceptionEntry {
+    public func toJSONDictionary() -> [String: String] {
+        var dict: [String: String] = [CodingKeys.domain.rawValue: domain]
+        if let reason = reason {
+            dict[CodingKeys.reason.rawValue] = reason
+        }
+        return dict
+    }
+}
+
+extension PrivacyConfigurationData.PrivacyFeature {
+    public func toJSONDictionary() -> [String: Any]? {
+        var dict: [String: Any] = [:]
+        dict[CodingKeys.state.rawValue] = state
+        dict[CodingKeys.exceptions.rawValue] = exceptions.map { $0.toJSONDictionary() }
+        if !settings.isEmpty {
+            dict[CodingKeys.settings.rawValue] = settings
+        }
+
+        var featuresDict = [String: Any]()
+        for (key, feature) in features {
+            if let featureJSON = feature.toJSONDictionary() {
+                featuresDict[key] = featureJSON
+            }
+        }
+        if !featuresDict.isEmpty {
+            dict[CodingKeys.features.rawValue] = featuresDict
+        }
+
+        if let minVersion = minSupportedVersion {
+            dict[CodingKeys.minSupportedVersion.rawValue] = minVersion
+        }
+        if let hash = hash {
+            dict[CodingKeys.hash.rawValue] = hash
+        }
+        return dict
+    }
+}
+
+extension PrivacyConfigurationData.PrivacyFeature.Feature {
+    public func toJSONDictionary() -> [String: Any]? {
+        var dict: [String: Any] = [:]
+        dict[CodingKeys.state.rawValue] = state
+        if let minVersion = minSupportedVersion {
+            dict[CodingKeys.minSupportedVersion.rawValue] = minVersion
+        }
+        if let rollout = rollout?.toJSONDictionary() {
+            dict[CodingKeys.rollout.rawValue] = rollout
+        }
+        if let cohorts = cohorts {
+            dict[CodingKeys.cohorts.rawValue] = cohorts.map { $0.toJSONDictionary() }
+        }
+        if let targets = targets {
+            dict[CodingKeys.targets.rawValue] = targets.map { $0.toJSONDictionary() }
+        }
+        if let settings = settings {
+            // Attempt to convert the settings JSON string back to an object
+            if let settingsData = settings.data(using: .utf8),
+               let settingsObject = try? JSONSerialization.jsonObject(with: settingsData, options: []) {
+                dict[CodingKeys.settings.rawValue] = settingsObject
+            } else {
+                dict[CodingKeys.settings.rawValue] = settings
+            }
+        }
+        return dict
+    }
+}
+
+extension PrivacyConfigurationData.PrivacyFeature.Feature.Rollout {
+    public func toJSONDictionary() -> [String: Any] {
+        return [CodingKeys.steps.rawValue: steps.map { $0.toJSONDictionary() }]
+    }
+}
+
+extension PrivacyConfigurationData.PrivacyFeature.Feature.RolloutStep {
+    public func toJSONDictionary() -> [String: Any] {
+        return [CodingKeys.percent.rawValue: percent]
+    }
+}
+
+extension PrivacyConfigurationData.PrivacyFeature.Feature.Target {
+    public func toJSONDictionary() -> [String: Any] {
+        var dict = [String: Any]()
+        if let country = localeCountry {
+            dict[CodingKeys.localeCountry.rawValue] = country
+        }
+        if let language = localeLanguage {
+            dict[CodingKeys.localeLanguage.rawValue] = language
+        }
+        return dict
+    }
+}
+
+extension PrivacyConfigurationData.Cohort {
+    public func toJSONDictionary() -> [String: Any] {
+        return [CodingKeys.name.rawValue: name, CodingKeys.weight.rawValue: weight]
+    }
+}
+
+extension PrivacyConfigurationData.TrackerAllowlist {
+    func toTrackerAllowListJSONDictionary() -> [String: Any]? {
+        guard var baseDict = self.toJSONDictionary() else { return nil }
+
+        var allowlistedTrackers = [String: Any]()
+        for (trackerDomain, entries) in entries {
+            let rules = entries.map { entry -> [String: Any] in
+                return ["rule": entry.rule, "domains": entry.domains]
+            }
+            allowlistedTrackers[trackerDomain] = ["rules": rules]
+        }
+
+        // Insert the allowlistedTrackers into the base dictionary's settings.
+        baseDict[PrivacyConfigurationData.PrivacyFeature.CodingKeys.settings.rawValue] = ["allowlistedTrackers": allowlistedTrackers]
+        return baseDict
     }
 }

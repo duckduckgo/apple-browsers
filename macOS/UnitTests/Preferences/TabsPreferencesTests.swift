@@ -23,6 +23,7 @@ class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
     var preferNewTabsToWindows: Bool = false
     var switchToNewTabWhenOpened: Bool = false
     var newTabPosition: NewTabPosition = .atEnd
+    var sharedPinnedTabs: Bool = false
 }
 
 final class TabsPreferencesTests: XCTestCase {
@@ -31,11 +32,13 @@ final class TabsPreferencesTests: XCTestCase {
         let mockPersistor = MockTabsPreferencesPersistor()
         mockPersistor.preferNewTabsToWindows = true
         mockPersistor.switchToNewTabWhenOpened = true
+        mockPersistor.sharedPinnedTabs = true
         mockPersistor.newTabPosition = .nextToCurrent
         let tabsPreferences = TabsPreferences(persistor: mockPersistor)
 
         XCTAssertTrue(tabsPreferences.preferNewTabsToWindows)
         XCTAssertTrue(tabsPreferences.switchToNewTabWhenOpened)
+        XCTAssertTrue(tabsPreferences.pinnedTabsMode == .shared)
         XCTAssertEqual(tabsPreferences.newTabPosition, .nextToCurrent)
     }
 
@@ -44,10 +47,12 @@ final class TabsPreferencesTests: XCTestCase {
         let tabsPreferences = TabsPreferences(persistor: mockPersistor)
         tabsPreferences.preferNewTabsToWindows = true
         tabsPreferences.switchToNewTabWhenOpened = true
+        tabsPreferences.pinnedTabsMode = .shared
         tabsPreferences.newTabPosition = .nextToCurrent
 
         XCTAssertTrue(mockPersistor.preferNewTabsToWindows)
         XCTAssertTrue(mockPersistor.switchToNewTabWhenOpened)
+        XCTAssertTrue(mockPersistor.sharedPinnedTabs)
         XCTAssertEqual(mockPersistor.newTabPosition, .nextToCurrent)
     }
 }

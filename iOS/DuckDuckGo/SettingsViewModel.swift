@@ -51,6 +51,7 @@ final class SettingsViewModel: ObservableObject {
     let experimentalThemingManager: ExperimentalThemingManager
 
     // Subscription Dependencies
+    let isAuthV2Enabled: Bool
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -69,7 +70,7 @@ final class SettingsViewModel: ObservableObject {
     // Properties
     private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
-    
+
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
@@ -79,10 +80,10 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    
+
     // View State
     @Published private(set) var state: SettingsState
-    
+
     // MARK: Cell Visibility
     enum Features {
         case sync
@@ -93,12 +94,12 @@ final class SettingsViewModel: ObservableObject {
         case speechRecognition
         case networkProtection
     }
-    
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
     @Published var shouldShowRecentlyVisitedSites: Bool = true
-    
+
     @Published var isInternalUser: Bool = AppDependencyProvider.shared.internalUserDecider.isInternalUser
 
     @Published var selectedFeedbackFlow: String?
@@ -107,16 +108,16 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
-    
+
     // MARK: Bindings
-    
-    var themeBinding: Binding<ThemeName> {
-        Binding<ThemeName>(
-            get: { self.state.appTheme },
+
+    var themeStyleBinding: Binding<ThemeStyle> {
+        Binding<ThemeStyle>(
+            get: { self.state.appThemeStyle },
             set: {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
-                self.state.appTheme = $0
-                ThemeManager.shared.enableTheme(with: $0)
+                self.state.appThemeStyle = $0
+                ThemeManager.shared.setThemeStyle($0)
             }
         )
     }
@@ -170,16 +171,8 @@ final class SettingsViewModel: ObservableObject {
                 self.experimentalThemingManager.toggleExperimentalTheming()
                 self.state.isExperimentalThemingEnabled = self.experimentalThemingManager.isExperimentalThemingEnabled
             })
-        }
-
-    var alternativeColorsBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isAlternativeColorSchemeEnabled },
-            set: { _ in
-                self.experimentalThemingManager.toggleAlternativeColorScheme()
-                self.state.isAlternativeColorSchemeEnabled = self.experimentalThemingManager.isAlternativeColorSchemeEnabled
-            })
     }
+
 
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
@@ -453,6 +446,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
+         isAuthV2Enabled: Bool,
          subscriptionManagerV1: (any SubscriptionManager)?,
          subscriptionManagerV2: (any SubscriptionManagerV2)?,
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
@@ -471,6 +465,7 @@ final class SettingsViewModel: ObservableObject {
 
         self.state = SettingsState.defaults
         self.legacyViewProvider = legacyViewProvider
+        self.isAuthV2Enabled = isAuthV2Enabled
         self.subscriptionManagerV1 = subscriptionManagerV1
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
@@ -504,14 +499,13 @@ extension SettingsViewModel {
     @MainActor
     private func initState() {
         self.state = SettingsState(
-            appTheme: appSettings.currentThemeName,
+            appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
-            isAlternativeColorSchemeEnabled: experimentalThemingManager.isAlternativeColorSchemeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -903,7 +897,7 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchase() async {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             await restoreAccountPurchaseV1()
         } else {
             await restoreAccountPurchaseV2()

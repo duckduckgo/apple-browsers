@@ -127,6 +127,18 @@ public struct ConnectInfo {
     public let secretKey: Data
 }
 
+public struct ExchangeInfo {
+    public let keyId: String
+    public let publicKey: Data
+    public let secretKey: Data
+}
+
+public struct ExchangeMessage: Codable, Sendable {
+    public let keyId: String
+    public let publicKey: Data
+    public let deviceName: String
+}
+
 public struct SyncCode: Codable {
 
     public enum Base64Error: Error {
@@ -143,8 +155,14 @@ public struct SyncCode: Codable {
         let secretKey: Data
     }
 
+    public struct ExchangeKey: Codable, Sendable {
+        let keyId: String
+        let publicKey: Data
+    }
+
     public var recovery: RecoveryKey?
     public var connect: ConnectCode?
+    public var exchangeKey: ExchangeKey?
 
     public static func decode(_ data: Data) throws -> Self {
         return try JSONDecoder.snakeCaseKeys.decode(self, from: data)

@@ -54,15 +54,24 @@ extension LoginResult {
     }
 }
 
-struct AccountManagingMock: AccountManaging {
+class AccountManagingMock: AccountManaging {
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
         .mock
     }
 
     func deleteAccount(_ account: SyncAccount) async throws {}
 
+    var loginStub: LoginResult?
+    var loginError: Error?
+    var loginSpy: (recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String)?
+    @Published var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> LoginResult {
-        .mock
+        loginCalled = true
+        loginSpy = (recoveryKey, deviceName, deviceType)
+        if let error = loginError {
+            throw error
+        }
+        return loginStub ?? .mock
     }
 
     func refreshToken(_ account: SyncAccount, deviceName: String) async throws -> LoginResult {
@@ -209,7 +218,8 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
     func userDisabledProtection(forDomain: String) {}
 }
 
-struct MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSupport {
+final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSupport {
+
     var endpoints: Endpoints = Endpoints(baseURL: URL(string: "https://dev.null")!)
     var account: AccountManaging = AccountManagingMock()
     var api: RemoteAPIRequestCreating = RemoteAPIRequestCreatingMock()
@@ -227,15 +237,113 @@ struct MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSupport 
         (api as! RemoteAPIRequestCreatingMock).request = request
     }
 
-    func createRemoteConnector(_ connectInfo: ConnectInfo) throws -> RemoteConnecting {
-        try RemoteConnector(crypter: crypter, api: api, endpoints: endpoints, connectInfo: connectInfo)
+    var createRemoteConnectorStub: RemoteConnecting?
+    func createRemoteConnector() throws -> RemoteConnecting {
+        createRemoteConnectorStub ?? MockRemoteConnecting()
     }
 
+    var createRemoteKeyExchangerStub: RemoteKeyExchanging?
+    func createRemoteKeyExchanger() throws -> any RemoteKeyExchanging {
+        createRemoteKeyExchangerStub ?? MockRemoteKeyExchanging()
+    }
+
+    var createRemoteExchangeRecoverer: RemoteExchangeRecovering?
+    func createRemoteExchangeRecoverer(_ exchangeInfo: ExchangeInfo) throws -> any RemoteExchangeRecovering {
+        createRemoteExchangeRecoverer ?? MockRemoteExchangeRecovering()
+    }
+
+    var createRecoveryTransmitterStub: RecoveryKeyTransmitting?
     func createRecoveryKeyTransmitter() throws -> RecoveryKeyTransmitting {
-        RecoveryKeyTransmitter(endpoints: endpoints, api: api, storage: secureStore, crypter: crypter)
+        createRecoveryTransmitterStub ?? MockRecoveryKeyTransmitting()
+    }
+
+    var createExchangePublicKeyTransmitterStub: ExchangePublicKeyTransmitting?
+    func createExchangePublicKeyTransmitter() throws -> ExchangePublicKeyTransmitting {
+        createExchangePublicKeyTransmitterStub ?? MockExchangePublicKeyTransmitting()
+    }
+
+    var createExchangeRecoveryKeyTransmitterStub: ExchangeRecoveryKeyTransmitting?
+    func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> ExchangeRecoveryKeyTransmitting {
+        createExchangeRecoveryKeyTransmitterStub ?? MockExchangeRecoveryKeyTransmitting()
     }
 
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
+}
+
+final class MockRemoteConnecting: RemoteConnecting {
+    var code: String = ""
+
+    var pollForRecoveryKeyCalled = 0
+    var pollForRecoveryKeyError: Error?
+    var pollForRecoveryKeyStub: SyncCode.RecoveryKey?
+    func pollForRecoveryKey() async throws -> SyncCode.RecoveryKey? {
+        if let error = pollForRecoveryKeyError {
+            throw error
+        }
+        pollForRecoveryKeyCalled += 1
+        return pollForRecoveryKeyStub
+    }
+
+    var stopPollingCalled = 0
+    func stopPolling() {
+        pollForRecoveryKeyCalled += 1
+    }
+}
+
+final class MockRemoteKeyExchanging: RemoteKeyExchanging {
+    var code: String
+    var pollForPublicKeyCalled = 0
+    var pollForPublicKeyResult: ExchangeMessage?
+    var pollForPublicKeyError: Error?
+    var stopPollingCalled = 0
+
+    init(code: String = "", pollResult: ExchangeMessage? = nil) {
+        self.code = code
+        self.pollForPublicKeyResult = pollResult
+    }
+
+    func pollForPublicKey() async throws -> ExchangeMessage? {
+        pollForPublicKeyCalled += 1
+        if let error = pollForPublicKeyError { throw error }
+        return pollForPublicKeyResult
+    }
+
+    func stopPolling() {
+        stopPollingCalled += 1
+    }
+}
+
+final class MockRecoveryKeyTransmitting: RecoveryKeyTransmitting {
+
+    var sendCalled = 0
+    var sendSpy: SyncCode.ConnectCode?
+    var sendError: Error?
+    func send(_ code: SyncCode.ConnectCode) async throws {
+        sendCalled += 1
+        sendSpy = code
+    }
+}
+
+final class MockExchangePublicKeyTransmitting: ExchangePublicKeyTransmitting {
+
+    var sendGeneratedExchangeInfoCalled = 0
+    var sendGeneratedExchangeInfoError: Error?
+    var sendGeneratedExchangeInfoStub: ExchangeInfo?
+    func sendGeneratedExchangeInfo(_ code: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
+        if let sendGeneratedExchangeInfoError { throw sendGeneratedExchangeInfoError }
+        sendGeneratedExchangeInfoCalled += 1
+        return sendGeneratedExchangeInfoStub ?? ExchangeInfo(keyId: "", publicKey: .init(), secretKey: .init())
+    }
+}
+
+final class MockExchangeRecoveryKeyTransmitting: ExchangeRecoveryKeyTransmitting {
+
+    var sendCalled = 0
+    var sendError: Error?
+    func send() async throws {
+        guard sendError == nil else { throw sendError! }
+        sendCalled += 1
+    }
 }
 
 final class MockDataProvidersSource: DataProvidersSource {
@@ -330,6 +438,7 @@ class SyncGzipPayloadCompressorMock: SyncPayloadCompressing {
 }
 
 struct CryptingMock: CryptingInternal {
+
     var _encryptAndBase64Encode: (String) throws -> String = { "encrypted_\($0)" }
     var _base64DecodeAndDecrypt: (String) throws -> String = { $0.dropping(prefix: "encrypted_") }
 
@@ -377,6 +486,9 @@ struct CryptingMock: CryptingInternal {
         ConnectInfo(deviceID: "1234", publicKey: Data(), secretKey: Data())
     }
 
+    func prepareForExchange() throws -> ExchangeInfo {
+        ExchangeInfo(keyId: "1234", publicKey: Data(), secretKey: Data())
+    }
 }
 
 class SyncMetadataStoreMock: SyncMetadataStore {

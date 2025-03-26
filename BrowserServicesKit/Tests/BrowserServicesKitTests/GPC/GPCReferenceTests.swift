@@ -175,7 +175,8 @@ final class GPCReferenceTests: XCTestCase {
                                                 featureToggles: ContentScopeFeatureToggles.allTogglesOn)
 
         let contentScopeScript = ContentScopeUserScript(privacyManager,
-                                                        properties: properties)
+                                                        properties: properties,
+                                                        privacyConfigurationJSONGenerator: nil)
 
         let configuration = WKWebViewConfiguration()
         configuration.setURLSchemeHandler(self.schemeHandler, forURLScheme: self.schemeHandler.scheme)

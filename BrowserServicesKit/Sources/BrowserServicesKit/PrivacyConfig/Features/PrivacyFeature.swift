@@ -25,6 +25,7 @@ public enum PrivacyFeature: String {
     case fingerprintingTemporaryStorage
     case fingerprintingBattery
     case fingerprintingScreenSize
+    case fingerprintingCanvas
     case gpc
     case httpsUpgrade = "https"
     case autoconsent
@@ -69,6 +70,7 @@ public enum PrivacyFeature: String {
     case webViewStateRestoration
     case experimentalBrowserTheming
     case setAsDefaultAndAddToDock
+    case contentScopeExperiments
     case extendedOnboarding
 }
 
@@ -116,6 +118,14 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemium
 }
 
+public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .contentScopeExperiments
+    }
+
+    case fingerprintingCanvas
+}
+
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .aiChat
@@ -146,6 +156,14 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/0/1206580121312550/1209150117333883/f
     case appExclusions
 
+    /// App Store System Extension support
+    ///  https://app.asana.com/0/0/1209402073283584
+    case appStoreSystemExtension
+
+    /// App Store System Extension Update Message support
+    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    case appStoreSystemExtensionMessage
+
     /// Display user tips for Network Protection
     /// https://app.asana.com/0/72649045549333/1208231259093710/f
     case userTips
@@ -169,6 +187,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level2AllowSetupFlows
     case level3AllowCreateAccount
     case seamlessAccountSwitching
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

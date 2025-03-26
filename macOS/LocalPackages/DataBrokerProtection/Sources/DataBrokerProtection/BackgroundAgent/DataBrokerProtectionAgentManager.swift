@@ -46,6 +46,8 @@ public class DataBrokerProtectionAgentManagerProvider {
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
 
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
+        let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
+
         Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
         let configStore = ConfigurationStore()
         let privacyConfigurationManager = DBPPrivacyConfigurationManager()
@@ -121,12 +123,12 @@ public class DataBrokerProtectionAgentManagerProvider {
             runnerProvider: runnerProvider,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
-            userNotificationService: notificationService,
+            eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
             vpnBypassService: vpnBypassService)
 
         return DataBrokerProtectionAgentManager(
-            userNotificationService: notificationService,
+            eventsHandler: eventsHandler,
             activityScheduler: activityScheduler,
             ipcServer: ipcServer,
             queueManager: queueManager,
@@ -144,7 +146,7 @@ public class DataBrokerProtectionAgentManagerProvider {
 
 public final class DataBrokerProtectionAgentManager {
 
-    private let userNotificationService: DataBrokerProtectionUserNotificationService
+    private let eventsHandler: EventMapping<OperationEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
     private let queueManager: DataBrokerProtectionQueueManager
@@ -163,7 +165,7 @@ public final class DataBrokerProtectionAgentManager {
 
     private var didStartActivityScheduler = false
 
-    init(userNotificationService: DataBrokerProtectionUserNotificationService,
+    init(eventsHandler: EventMapping<OperationEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
          ipcServer: DataBrokerProtectionIPCServer,
          queueManager: DataBrokerProtectionQueueManager,
@@ -177,7 +179,7 @@ public final class DataBrokerProtectionAgentManager {
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     ) {
-        self.userNotificationService = userNotificationService
+        self.eventsHandler = eventsHandler
         self.activityScheduler = activityScheduler
         self.ipcServer = ipcServer
         self.queueManager = queueManager
@@ -282,7 +284,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     public func profileSaved() {
         let backgroundAgentInitialScanStartTime = Date()
 
-        userNotificationService.requestNotificationPermission()
+        eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies) { [weak self] errors in
             guard let self = self else { return }
@@ -306,14 +308,14 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
             if errors?.oneTimeError == nil {
                 self.pixelHandler.fire(.ipcServerImmediateScansFinishedWithoutError)
-                self.userNotificationService.sendFirstScanCompletedNotification()
+                self.eventsHandler.fire(.firstScanCompleted)
             }
         } completion: { [weak self] in
             guard let self else { return }
 
             if let hasMatches = try? self.dataManager.hasMatches(),
                hasMatches {
-                self.userNotificationService.scheduleCheckInNotificationIfPossible()
+                self.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
             }
 
             fireImmediateScansCompletionPixel(startTime: backgroundAgentInitialScanStartTime)

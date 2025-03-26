@@ -53,7 +53,6 @@ protocol DependencyProvider {
     var persistentPixel: PersistentPixelFiring { get }
 
     // Subscription
-    var isAuthV2Enabled: Bool { get }
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
@@ -80,14 +79,7 @@ final class AppDependencyProvider: DependencyProvider {
     let pageRefreshMonitor = PageRefreshMonitor(onDidDetectRefreshPattern: PageRefreshMonitor.onDidDetectRefreshPattern)
 
     // Subscription
-    let isAuthV2Enabled = false
-    var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge {
-        if !isAuthV2Enabled {
-            return subscriptionManager!
-        } else {
-            return subscriptionManagerV2!
-        }
-    }
+    let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     var subscriptionManager: (any SubscriptionManager)?
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
 
@@ -101,6 +93,7 @@ final class AppDependencyProvider: DependencyProvider {
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
+    let isAuthV2Enabled: Bool
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -112,10 +105,9 @@ final class AppDependencyProvider: DependencyProvider {
                                                localOverrides: featureFlaggerOverrides,
                                                experimentManager: experimentManager,
                                                for: FeatureFlag.self)
-
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        // MARK: - Configure Subscription
+        // Configure Subscription
 
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
@@ -123,8 +115,13 @@ final class AppDependencyProvider: DependencyProvider {
         var accessTokenProvider: () -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
+            Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+        }
+        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         if !isAuthV2Enabled {
-            // MARK: Subscription V1
+            // V1
+            Logger.subscription.debug("Configuring Subscription V1")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
@@ -158,8 +155,16 @@ final class AppDependencyProvider: DependencyProvider {
             }()
             tokenHandler = accountManager
             authenticationStateProvider = subscriptionManager
+            subscriptionAuthV1toV2Bridge = subscriptionManager
+
+            if tokenStorageV2.tokenContainer != nil {
+                Logger.subscription.debug("Cleaning up Auth V2 token")
+                tokenStorageV2.tokenContainer = nil
+                subscriptionEndpointService.clearSubscription()
+            }
         } else {
-            // MARK: Subscription V2
+            // V2
+            Logger.subscription.debug("Configuring Subscription V2")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let configuration = URLSessionConfiguration.default
@@ -174,18 +179,14 @@ final class AppDependencyProvider: DependencyProvider {
             let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
 
             // keychain storage
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-                Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
-            }
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
 
-            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
 
             apiService.authorizationRefresherCallback = { _ in
-                guard let tokenContainer = tokenStorage.tokenContainer else {
+                guard let tokenContainer = tokenStorageV2.tokenContainer else {
                     throw OAuthClientError.internalError("Missing refresh token")
                 }
 
@@ -218,6 +219,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,
+                                                                   legacyAccountStorage: AccountKeychainStorage(),
                                                                    isInternalUserEnabled: {
                 ContentBlocking.shared.privacyConfigurationManager.internalUserDecider.isInternalUser
             })
@@ -242,7 +244,10 @@ final class AppDependencyProvider: DependencyProvider {
             }()
             tokenHandler = subscriptionManager
             authenticationStateProvider = subscriptionManager
+            subscriptionAuthV1toV2Bridge = subscriptionManager
         }
+
+        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,

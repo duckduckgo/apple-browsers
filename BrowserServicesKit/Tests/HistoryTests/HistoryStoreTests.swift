@@ -22,6 +22,7 @@ import Combine
 import class Persistence.CoreDataDatabase
 @testable import History
 import Common
+import CoreData
 
 final class HistoryStoreTests: XCTestCase {
 

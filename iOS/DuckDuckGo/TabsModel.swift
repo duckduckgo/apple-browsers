@@ -140,10 +140,12 @@ public class TabsModel: NSObject, NSCoding {
             currentIndex = index
         } else if currentIndex >= tabs.count {
             currentIndex = tabs.count - 1
+        } else if currentIndex > 0 {
+            currentIndex -= 1
         }
         // Else: don't adjust the index as it'll be the 'next' tab
     }
-
+ 
     func remove(tab: Tab) {
         if let index = indexOf(tab: tab) {
             remove(at: index)

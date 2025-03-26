@@ -89,6 +89,8 @@ struct MapperToUI {
                                                                           dataBrokerName: mirrorSite.name,
                                                                           dataBrokerURL: mirrorSite.url,
                                                                           dataBrokerParentURL: dataBroker.parent,
+                                                                          dataBrokerETag: dataBroker.eTag,
+                                                                          dataBrokerVersion: dataBroker.version,
                                                                           parentBrokerOptOutJobData: parentBrokerOptOutJobData,
                                                                           optOutUrl: dataBroker.optOutUrl)
 
@@ -135,7 +137,7 @@ struct MapperToUI {
             }
             .flatMap {
                 var brokers = [DBPUIDataBroker]()
-                brokers.append(DBPUIDataBroker(name: $0.dataBroker.name,
+                brokers.append(DBPUIDataBroker(name: $0.dataBroker.nameForDEBUG,
                                                url: $0.dataBroker.url,
                                                date: $0.scanJobData.lastRunDate!.timeIntervalSince1970,
                                                parentURL: $0.dataBroker.parent,
@@ -173,7 +175,7 @@ struct MapperToUI {
             }
             .flatMap {
                 var brokers = [DBPUIDataBroker]()
-                brokers.append(DBPUIDataBroker(name: $0.dataBroker.name,
+                brokers.append(DBPUIDataBroker(name: $0.dataBroker.nameForDEBUG,
                                                url: $0.dataBroker.url,
                                                date: $0.scanJobData.preferredRunDate!.timeIntervalSince1970,
                                                parentURL: $0.dataBroker.parent,
@@ -401,7 +403,7 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
             $0.shouldWeIncludeMirrorSite() ? $0.scannedBroker(withStatus: status) : nil
         }
 
-        return [ScannedBroker(name: broker.name, url: broker.url, status: status)] + mirrorBrokers
+        return [ScannedBroker(name: broker.nameForDEBUG, url: broker.url, status: status)] + mirrorBrokers
     }
 
     var lastOperation: BrokerJobData? {
@@ -474,5 +476,15 @@ fileprivate extension BrokerJobData {
 fileprivate extension Array where Element == HistoryEvent {
     var closestHistoryEvent: HistoryEvent? {
         self.sorted(by: { $0.date > $1.date }).first
+    }
+}
+
+extension DataBroker {
+    var nameForDEBUG: String {
+#if DEBUG
+        return name.appendingFormat(" (%@@%@)", String(eTag.prefix(6)), version)
+#else
+        return name
+#endif
     }
 }

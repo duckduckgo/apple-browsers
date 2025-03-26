@@ -231,6 +231,8 @@ extension DBPUIDataBrokerProfileMatch {
                 dataBrokerName: String,
                 dataBrokerURL: String,
                 dataBrokerParentURL: String?,
+                dataBrokerETag: String?,
+                dataBrokerVersion: String,
                 parentBrokerOptOutJobData: [OptOutJobData]?,
                 optOutUrl: String) {
         let extractedProfile = optOutJobData.extractedProfile
@@ -267,7 +269,12 @@ extension DBPUIDataBrokerProfileMatch {
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
         } ?? false
 
-        self.init(dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+#if DEBUG
+        let name = dataBrokerName.appendingFormat(" (%@@%@)", dataBrokerETag != nil ? String(dataBrokerETag!.prefix(6)) : "", dataBrokerVersion)
+#else
+        let name = dataBrokerName
+#endif
+        self.init(dataBroker: DBPUIDataBroker(name: name, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
@@ -287,6 +294,8 @@ extension DBPUIDataBrokerProfileMatch {
                   dataBrokerName: dataBroker.name,
                   dataBrokerURL: dataBroker.url,
                   dataBrokerParentURL: dataBroker.parent,
+                  dataBrokerETag: dataBroker.eTag,
+                  dataBrokerVersion: dataBroker.version,
                   parentBrokerOptOutJobData: parentBrokerOptOutJobData,
                   optOutUrl: optOutUrl)
     }
@@ -331,6 +340,8 @@ extension DBPUIDataBrokerProfileMatch {
                                                                dataBrokerName: mirrorSite.name,
                                                                dataBrokerURL: mirrorSite.url,
                                                                dataBrokerParentURL: dataBroker.parent,
+                                                               dataBrokerETag: dataBroker.eTag,
+                                                               dataBrokerVersion: dataBroker.version,
                                                                parentBrokerOptOutJobData: parentBrokerOptOutJobData,
                                                                optOutUrl: dataBroker.optOutUrl)
                         }

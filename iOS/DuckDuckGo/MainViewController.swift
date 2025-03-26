@@ -3179,6 +3179,12 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
-        segueToSettingsAIChat()
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsAIChat()
+            }
+        } else {
+            segueToSettingsAIChat()
+        }
     }
 }

@@ -117,6 +117,7 @@ class AutofillDebugViewController: UITableViewController {
             }
         }
     }
+    // swiftlint:enable cyclomatic_complexity
 
     private func promptForNumberOfLoginsToAdd() {
         let alertController = UIAlertController(title: "Enter number of Logins to add for autofill.me", message: nil, preferredStyle: .alert)

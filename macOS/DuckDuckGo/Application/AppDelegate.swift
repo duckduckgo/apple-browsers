@@ -428,6 +428,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
+
+            vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
         HistoryCoordinator.shared.loadHistory {
@@ -536,7 +538,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
         networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
-        vpnAppEventsHandler.applicationDidFinishLaunching()
 
         UNUserNotificationCenter.current().delegate = self
 

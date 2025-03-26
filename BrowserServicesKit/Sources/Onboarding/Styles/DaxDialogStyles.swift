@@ -85,17 +85,17 @@ public extension OnboardingStyles {
         private func backgroundColor(isPressed: Bool, isHovered: Bool) -> Color {
             switch (colorScheme, isPressed, isHovered) {
             case (.light, false, false):
-                return .black.opacity(0.01)
+                return .shade(0.01)
             case (.dark, false, false):
-                return .white.opacity(0.03)
+                return .tint(0.03)
             case (.light, false, true):
-                return .black.opacity(0.03)
+                return .shade(0.03)
             case (.dark, false, true):
-                return .white.opacity(0.06)
+                return .tint(0.06)
             case (.light, true, _):
-                return .black.opacity(0.06)
+                return .shade(0.06)
             case (.dark, true, _):
-                return .white.opacity(0.06)
+                return .tint(0.06)
             case (_, _, _):
                 return .clear
             }
@@ -105,20 +105,10 @@ public extension OnboardingStyles {
 }
 
 extension Color {
-    static let lightRestBlue = Color(0x3969EF)
-    static let darkRestBlue = Color(0x7295F6)
-    static let lightHoverBlue = Color(0x2B55CA)
-    static let darkHoverBlue = Color(0x8FABF9)
-    static let lightPressedBlue = Color(0x1E42A4)
-    static let darkPressedBlue = Color(0xADC2FC)
-
-    init(_ hex: UInt, alpha: Double = 1) {
-        self.init(
-            .sRGB,
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255,
-            opacity: alpha
-        )
-    }
+    static let lightRestBlue = Color(baseColor: .blue50)
+    static let darkRestBlue = Color(baseColor: .blue30)
+    static let lightHoverBlue = Color(baseColor: .blue60)
+    static let darkHoverBlue = Color(baseColor: .blue20)
+    static let lightPressedBlue = Color(baseColor: .blue70)
+    static let darkPressedBlue = Color(baseColor: .blue10)
 }

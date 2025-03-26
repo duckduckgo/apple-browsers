@@ -156,8 +156,8 @@ final class PrivacyDashboardViewController: UIViewController {
 extension PrivacyDashboardViewController {
     
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
-        view.backgroundColor = theme.privacyDashboardWebviewBackgroundColor
+        // Enforce default color palette here until PrivacyDashboard can support different color sets
+        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground, palette: .default)
         privacyDashboardController.theme = .init(traitCollection)
     }
 

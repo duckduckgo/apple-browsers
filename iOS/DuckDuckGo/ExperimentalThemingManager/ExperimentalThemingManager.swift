@@ -39,17 +39,7 @@ struct ExperimentalThemingManager {
         updateNeededDependencies()
     }
 
-    var isAlternativeColorSchemeEnabled: Bool {
-        isExperimentalThemingEnabled && featureFlagger.isFeatureOn(for: FeatureFlag.alternativeColorScheme, allowOverride: true)
-    }
-
-    func toggleAlternativeColorScheme() {
-        featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.alternativeColorScheme)
-
-        updateNeededDependencies()
-    }
-
     private func updateNeededDependencies() {
-        ThemeManager.shared.updateCurrentTheme()
+        ThemeManager.shared.updateColorScheme()
     }
 }

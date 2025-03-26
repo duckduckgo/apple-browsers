@@ -32,6 +32,7 @@ let package = Package(
     dependencies: [
         .package(path: "../../BrowserServicesKit"),
         .package(path: "../NetworkProtectionMac"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.19"),
     ],
     targets: [
         .target(
@@ -42,6 +43,7 @@ let package = Package(
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
+                "ZIPFoundation",
             ],
             resources: [.copy("Resources")],
             swiftSettings: [

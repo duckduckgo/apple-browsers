@@ -810,7 +810,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     @MainActor
     func copyCode() {
         var code: String?
-        if isSyncEnabled && featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+        if isSyncEnabled && !featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
             code = recoveryCode
         } else {
             code = codeToDisplay

@@ -54,6 +54,7 @@ public enum SyncError: Error, Equatable {
     case failedToEncryptValue(_ message: String)
     case failedToDecryptValue(_ message: String)
     case failedToPrepareForConnect(_ message: String)
+    case failedToPrepareForExchange(_ message: String)
     case failedToOpenSealedBox(_ message: String)
     case failedToSealData(_ message: String)
 
@@ -130,6 +131,8 @@ public enum SyncError: Error, Equatable {
             return [syncErrorString: "failedToDecryptValue"]
         case .failedToPrepareForConnect:
             return [syncErrorString: "failedToPrepareForConnect"]
+        case .failedToPrepareForExchange:
+            return [syncErrorString: "failedToPrepareForExchange"]
         case .failedToOpenSealedBox:
             return [syncErrorString: "failedToOpenSealedBox"]
         case .failedToSealData:
@@ -190,6 +193,7 @@ extension SyncError: CustomNSError {
         case .failedToEncryptValue: return 5
         case .failedToDecryptValue: return 6
         case .failedToPrepareForConnect: return 7
+        case .failedToPrepareForExchange: return 32
         case .failedToOpenSealedBox: return 8
         case .failedToSealData: return 9
 

@@ -112,7 +112,7 @@ extension FaviconsTabExtension: FaviconsTabExtensionProtocol, TabExtension {
     func getPublicProtocol() -> FaviconsTabExtensionProtocol { self }
 
     var faviconPublisher: AnyPublisher<NSImage?, Never> {
-        $favicon.eraseToAnyPublisher()
+        $favicon.dropFirst().eraseToAnyPublisher()
     }
 }
 

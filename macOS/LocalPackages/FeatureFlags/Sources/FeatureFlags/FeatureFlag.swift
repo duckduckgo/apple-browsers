@@ -65,6 +65,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
+
+    /// https://app.asana.com/0/72649045549333/1209633877674689/f
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -97,7 +100,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autoUpdateInDEBUG,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
-                .scamSiteProtection:
+                .scamSiteProtection,
+                .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -155,6 +159,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         case .privacyProAuthV2:
             return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         }
     }
 }

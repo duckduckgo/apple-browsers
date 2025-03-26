@@ -556,6 +556,7 @@ let package = Package(
                 "BookmarksTestsUtils",
                 "DDGSync",
                 "PersistenceTestingUtils",
+                "NetworkingTestingUtils"
             ],
             resources: [
                 .copy("Resources/SyncMetadata_V3.sqlite"),

@@ -234,7 +234,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         guard v1MigrationNeeded else {
             return
         }
-        v1MigrationNeeded = false
 
         // Attempting V1 token migration
         do {
@@ -243,6 +242,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
                 // cleaning up old data
                 clearSubscriptionCache()
+
+                v1MigrationNeeded = false
             }
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")

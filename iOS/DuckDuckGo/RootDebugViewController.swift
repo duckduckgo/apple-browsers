@@ -102,6 +102,8 @@ class RootDebugViewController: UITableViewController {
         controller.addAction(UIAlertAction(title: "OK!", style: .default))
 
         present(controller: controller, fromView: self.view)
+
+        view.backgroundColor = UIColor(designSystemColor: .background)
     }
 
     // Brindy - migrated
@@ -151,6 +153,8 @@ class RootDebugViewController: UITableViewController {
         } else if cell.tag == Row.toggleInternalUserState.rawValue {
             cell.accessoryType = (internalUserDecider.isInternalUser) ? .checkmark : .none
         }
+
+        cell.backgroundColor = UIColor(designSystemColor: .background)
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

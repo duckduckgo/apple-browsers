@@ -37,27 +37,27 @@ class ThemeManagerTests: XCTestCase {
         let defaults = AppUserDefaults(groupName: "com.duckduckgo.mobile.ios.Tests")
         let manager = ThemeManager(settings: defaults)
 
-        manager.enableTheme(with: .light)
+        manager.setThemeStyle(.light)
 
-        XCTAssertEqual(defaults.currentThemeName, .light)
+        XCTAssertEqual(defaults.currentThemeStyle, .light)
     }
 
     func testEnablingDarkThemeModifiesSettings() {
         let defaults = AppUserDefaults(groupName: "com.duckduckgo.mobile.ios.Tests")
         let manager = ThemeManager(settings: defaults)
 
-        manager.enableTheme(with: .dark)
+        manager.setThemeStyle(.dark)
 
-        XCTAssertEqual(defaults.currentThemeName, .dark)
+        XCTAssertEqual(defaults.currentThemeStyle, .dark)
     }
 
     func testEnablingSystemThemeModifiesSettings() {
         let defaults = AppUserDefaults(groupName: "com.duckduckgo.mobile.ios.Tests")
         let manager = ThemeManager(settings: defaults)
 
-        manager.enableTheme(with: .systemDefault)
+        manager.setThemeStyle(.systemDefault)
 
-        XCTAssertEqual(defaults.currentThemeName, .systemDefault)
+        XCTAssertEqual(defaults.currentThemeStyle, .systemDefault)
     }
 
     func testEnablingThemeOverridesUserInterfaceStyle() {
@@ -67,13 +67,13 @@ class ThemeManagerTests: XCTestCase {
         let defaults = AppUserDefaults(groupName: "com.duckduckgo.mobile.ios.Tests")
         let manager = ThemeManager(settings: defaults)
 
-        manager.enableTheme(with: .dark)
+        manager.setThemeStyle(.dark)
         XCTAssertEqual(window.traitCollection.userInterfaceStyle, .dark)
 
-        manager.enableTheme(with: .light)
+        manager.setThemeStyle(.light)
         XCTAssertEqual(window.traitCollection.userInterfaceStyle, .light)
 
-        manager.enableTheme(with: .systemDefault)
+        manager.setThemeStyle(.systemDefault)
         XCTAssertEqual(window.overrideUserInterfaceStyle, .unspecified)
     }
 }

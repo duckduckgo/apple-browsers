@@ -63,14 +63,13 @@ struct SettingsState {
     }
     
     // Appearance properties
-    var appTheme: ThemeName
+    var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
     var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
     var isExperimentalThemingEnabled: Bool
-    var isAlternativeColorSchemeEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -125,14 +124,13 @@ struct SettingsState {
 
     static var defaults: SettingsState {
         return SettingsState(
-            appTheme: .systemDefault,
+            appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: .fireRising,
             textZoom: TextZoom(enabled: false, level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalThemingEnabled: false,
-            isAlternativeColorSchemeEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

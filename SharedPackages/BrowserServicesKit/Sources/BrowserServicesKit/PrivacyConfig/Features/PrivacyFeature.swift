@@ -156,6 +156,14 @@ public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
     /// https://app.asana.com/0/1206580121312550/1209150117333883/f
     case appExclusions
 
+    /// App Store System Extension support
+    ///  https://app.asana.com/0/0/1209402073283584
+    case appStoreSystemExtension
+
+    /// App Store System Extension Update Message support
+    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    case appStoreSystemExtensionMessage
+
     /// Display user tips for Network Protection
     /// https://app.asana.com/0/72649045549333/1208231259093710/f
     case userTips

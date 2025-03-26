@@ -41,30 +41,6 @@ protocol OperationsManager {
                       shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
-extension OperationsManager {
-    func runOperation(operationData: BrokerJobData,
-                      brokerProfileQueryData: BrokerProfileQueryData,
-                      database: DataBrokerProtectionRepository,
-                      notificationCenter: NotificationCenter,
-                      runner: WebJobRunner,
-                      pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                      eventsHandler: EventMapping<OperationEvent>,
-                      isManual: Bool,
-                      shouldRunNextStep: @escaping () -> Bool) async throws {
-
-        try await runOperation(operationData: operationData,
-                               brokerProfileQueryData: brokerProfileQueryData,
-                               database: database,
-                               notificationCenter: notificationCenter,
-                               runner: runner,
-                               pixelHandler: pixelHandler,
-                               showWebView: false,
-                               isImmediateOperation: isManual,
-                               eventsHandler: eventsHandler,
-                               shouldRunNextStep: shouldRunNextStep)
-    }
-}
-
 struct DataBrokerProfileQueryOperationManager: OperationsManager {
     private let vpnBypassService: VPNBypassFeatureProvider?
 

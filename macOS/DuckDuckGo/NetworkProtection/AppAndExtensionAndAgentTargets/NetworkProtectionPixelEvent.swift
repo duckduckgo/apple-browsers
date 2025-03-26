@@ -105,6 +105,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
     case networkProtectionDNSUpdateCustom
     case networkProtectionDNSUpdateDefault
 
+    case networkProtectionSystemExtensionActivationAttempt
+    case networkProtectionSystemExtensionActivationSuccess
     case networkProtectionSystemExtensionActivationFailure(_ error: Error)
 
     case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
@@ -287,6 +289,12 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
         case .networkProtectionRekeyFailure:
             return "netp_rekey_failure"
 
+        case .networkProtectionSystemExtensionActivationAttempt:
+            return "netp_system_extension_activation_attempt"
+
+        case .networkProtectionSystemExtensionActivationSuccess:
+            return "netp_system_extension_activation_success"
+
         case .networkProtectionSystemExtensionActivationFailure:
             return "netp_system_extension_activation_failure"
 
@@ -425,6 +433,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionRekeyAttempt,
                 .networkProtectionRekeyCompleted,
                 .networkProtectionRekeyFailure,
+                .networkProtectionSystemExtensionActivationAttempt,
+                .networkProtectionSystemExtensionActivationSuccess,
                 .networkProtectionSystemExtensionActivationFailure,
                 .networkProtectionServerMigrationAttempt,
                 .networkProtectionServerMigrationSuccess,
@@ -506,6 +516,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionServerMigrationSuccess,
                 .networkProtectionDNSUpdateCustom,
                 .networkProtectionDNSUpdateDefault,
+                .networkProtectionSystemExtensionActivationAttempt,
+                .networkProtectionSystemExtensionActivationSuccess,
                 .networkProtectionConfigurationInvalidPayload:
             return nil
         }

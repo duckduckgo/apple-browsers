@@ -25,12 +25,14 @@ import NetworkProtection
 import NetworkProtectionProxy
 import os.log
 import SwiftUI
+import VPNAppState
 
 /// Abstraction of the the VPN status bar menu with a simple interface.
 ///
 @objc
 public final class StatusBarMenu: NSObject {
     public typealias MenuItem = NetworkProtectionStatusView.Model.MenuItem
+    public typealias UninstallHandler = NetworkProtectionStatusView.Model.UninstallHandler
 
     private let model: StatusBarMenuModel
 
@@ -44,9 +46,10 @@ public final class StatusBarMenu: NSObject {
     private let menuItems: () -> [MenuItem]
     private let agentLoginItem: LoginItem?
     private let isMenuBarStatusView: Bool
+    private let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>
     private let userDefaults: UserDefaults
     private let locationFormatter: VPNLocationFormatting
-    private let uninstallHandler: () async -> Void
+    private let uninstallHandler: UninstallHandler
 
     // MARK: - NetP Icon publisher
 
@@ -71,9 +74,10 @@ public final class StatusBarMenu: NSObject {
                 menuItems: @escaping () -> [MenuItem],
                 agentLoginItem: LoginItem?,
                 isMenuBarStatusView: Bool,
+                isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>,
                 userDefaults: UserDefaults,
                 locationFormatter: VPNLocationFormatting,
-                uninstallHandler: @escaping () async -> Void) {
+                uninstallHandler: @escaping UninstallHandler) {
 
         self.model = model
         let statusItem = statusItem ?? NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -87,6 +91,7 @@ public final class StatusBarMenu: NSObject {
         self.menuItems = menuItems
         self.agentLoginItem = agentLoginItem
         self.isMenuBarStatusView = isMenuBarStatusView
+        self.isExtensionUpdateOfferedPublisher = isExtensionUpdateOfferedPublisher
         self.userDefaults = userDefaults
         self.locationFormatter = locationFormatter
         self.uninstallHandler = uninstallHandler
@@ -153,8 +158,9 @@ public final class StatusBarMenu: NSObject {
             let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,
                                          forMenuApp: true,
-                                         vpnSettings: VPNSettings(defaults: userDefaults),
-                                         proxySettings: TransparentProxySettings(defaults: userDefaults),
+                                         vpnAppState: .init(defaults: userDefaults),
+                                         vpnSettings: .init(defaults: userDefaults),
+                                         proxySettings: .init(defaults: userDefaults),
                                          logger: Logger(subsystem: "DuckDuckGo", category: "TipKit"))
 
             let debugInformationViewModel = DebugInformationViewModel(showDebugInformation: isOptionKeyPressed)
@@ -166,6 +172,7 @@ public final class StatusBarMenu: NSObject {
                 uiActionHandler: uiActionHandler,
                 menuItems: menuItems,
                 agentLoginItem: agentLoginItem,
+                isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
                 isMenuBarStatusView: isMenuBarStatusView,
                 userDefaults: userDefaults,
                 locationFormatter: locationFormatter,

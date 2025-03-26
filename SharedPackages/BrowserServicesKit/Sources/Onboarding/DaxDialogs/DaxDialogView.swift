@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 // MARK: - Metrics
 
@@ -122,7 +123,7 @@ public struct DaxDialogView<Content: View>: View {
     }
 
     private var wrappedContent: some View {
-        let backgroundColor = Color("surface", bundle: bundle)
+        let backgroundColor = Color(designSystemColor: .surface)
         let shadowColors: (Color, Color) = colorScheme == .light ?
         (.black.opacity(0.08), .black.opacity(0.1)) :
         (.black.opacity(0.20), .black.opacity(0.16))

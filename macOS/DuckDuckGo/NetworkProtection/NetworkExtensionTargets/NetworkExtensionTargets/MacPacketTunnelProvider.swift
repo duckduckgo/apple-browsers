@@ -717,8 +717,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let source: String
 
-#if NETP_SYSTEM_EXTENSION
+#if NETP_SYSTEM_EXTENSION && !APPSTORE
         source = "vpnSystemExtension"
+#elseif NETP_SYSTEM_EXTENSION && APPSTORE
+        source = "vpnSystemExtensionAppStore"
 #else
         source = "vpnAppExtension"
 #endif

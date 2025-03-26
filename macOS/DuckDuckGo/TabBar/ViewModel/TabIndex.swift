@@ -269,7 +269,7 @@ extension TabIndex {
             return previousTabWithRemovedTabAsParent
         }
 
-        if let recentlyClosedTabIndex = viewModel.getPreviosulyActiveTab() {
+        if let recentlyClosedTabIndex = viewModel.getPreviouslyActiveTab() {
             return recentlyClosedTabIndex
         }
 

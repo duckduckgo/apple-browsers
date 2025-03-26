@@ -125,7 +125,7 @@ final class TabCollectionViewModel: NSObject {
     }
 
     /// This property logic will be true when the user appends a new tab
-    /// it will be set to false when the user moves selects an existing tab
+    /// it will be set to false when the user selects an existing tab
     private var shouldReturnToPreviousActiveTab: Bool = false
 
     init(
@@ -511,7 +511,7 @@ final class TabCollectionViewModel: NSObject {
         select(at: newSelectionIndex, forceChange: forced)
     }
 
-    func getPreviosulyActiveTab() -> TabIndex? {
+    func getPreviouslyActiveTab() -> TabIndex? {
         guard shouldReturnToPreviousActiveTab else {
             return nil
         }

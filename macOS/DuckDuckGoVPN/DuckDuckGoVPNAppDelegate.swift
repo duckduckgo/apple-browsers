@@ -53,30 +53,28 @@ final class DuckDuckGoVPNApplication: NSApplication {
             exit(0)
         }
 
-        // MARK: - Configure Subscription
+        // Configure Subscription
         let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-
-        // MARK: V1
+        let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
+        // V1
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
         let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
         let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-        let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+        let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
         accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
                                                entitlementsCache: entitlementsCache,
                                                subscriptionEndpointService: subscriptionEndpointService,
                                                authEndpointService: authEndpointService)
-
-        // MARK: V2
-        subscriptionManagerV2 = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
+        // V2
+        subscriptionManagerV2 = DefaultSubscriptionManagerV2(keychainType: keychainType,
                                                              environment: subscriptionEnvironment,
                                                              userDefaults: subscriptionUserDefaults,
                                                              canPerformAuthMigration: false,
                                                              canHandlePixels: false)
-        // MARK: -
 
         _delegate = DuckDuckGoVPNAppDelegate(accountManager: accountManager,
                                              subscriptionManagerV2: subscriptionManagerV2,
@@ -271,8 +269,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         settings: tunnelSettings,
         defaults: userDefaults,
         accessTokenStorage: accessTokenStorage,
-        subscriptionManagerV2: subscriptionManagerV2,
-        isAuthV2Enable: DuckDuckGoVPNApplication.isAuthV2Enabled)
+        subscriptionManagerV2: subscriptionManagerV2)
 
     /// An IPC server that provides access to the tunnel controller.
     ///

@@ -349,6 +349,7 @@ class NavigationResponderMock: NavigationResponder {
     }
 
     var onSameDocumentNavigation: (@MainActor (Navigation?, WKSameDocumentNavigationType?) -> Void)?
+    @MainActor
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         if navigationActionsCache.dict[navigation.navigationAction.identifier] == nil {
             navigationActionsCache.dict[navigation.navigationAction.identifier] = .init(navigation.navigationAction)

@@ -142,7 +142,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             Task { @MainActor in
                 do {
                     self.dismissPresentedViewController()
-                    self.showPreparingSync()
+                    self.showPreparingSync(nil)
                     try await self.syncService.createAccount(deviceName: self.deviceName, deviceType: self.deviceType)
                     let additionalParameters = self.source.map { ["source": $0] } ?? [:]
                     try await Pixel.fire(pixel: .syncSignupDirect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
@@ -235,7 +235,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     @MainActor
     func showSyncWithAnotherDevice() {
-        collectCode(showConnectMode: true)
+        collectCode(showQRCode: true)
     }
 
     func showRecoverData() {
@@ -243,7 +243,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             guard error == nil, let self else { return }
 
             self.dismissPresentedViewController()
-            self.collectCode(showConnectMode: false)
+            self.collectCode(showQRCode: false)
         }
     }
 
@@ -281,7 +281,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func showPreparingSyncAsync() async {
+    func showPreparingSync() async {
         await withCheckedContinuation { continuation in
             showPreparingSync {
                 continuation.resume()
@@ -289,7 +289,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func showPreparingSync(_ completion: (() -> Void)? = nil) {
+    func showPreparingSync(_ completion: (() -> Void)?) {
         let controller = UIHostingController(rootView: PreparingToSyncView())
         navigationController?.present(controller, animated: true, completion: completion)
     }
@@ -307,21 +307,66 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    private func collectCode(showConnectMode: Bool) {
-        let model = ScanOrPasteCodeViewModel(showConnectMode: showConnectMode, recoveryCode: recoveryCode.isEmpty ? nil : recoveryCode)
+    private func collectCode(showQRCode: Bool) {
+        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
+            legacyCollectCode(showQRCode: showQRCode)
+            return
+        }
+        newCollectCode(showQRCode: showQRCode)
+    }
+    
+    private func newCollectCode(showQRCode: Bool) {
+        let code: String
+        
+        if isSyncEnabled {
+            do {
+                code = try connectionController.startExchangeMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                return
+            }
+        } else {
+            do {
+                code = try connectionController.startConnectMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                return
+            }
+        }
+        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
+    }
+    
+    private func legacyCollectCode(showQRCode: Bool) {
+        let code: String
+        
+        if isSyncEnabled {
+            code = recoveryCode
+        } else {
+            do {
+                code = try startConnectMode()
+            } catch {
+                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                return
+            }
+        }
+        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
+    }
+    
+    private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {
+        let model = ScanOrPasteCodeViewModel(code: code)
         model.delegate = self
-
+        
         var controller: UIHostingController<AnyView>
-        if showConnectMode {
+        if showQRCode {
             controller = UIHostingController(rootView: AnyView(ScanOrSeeCode(model: model)))
         } else {
             controller = UIHostingController(rootView: AnyView(ScanOrEnterCodeToRecoverSyncedDataView(model: model)))
         }
-
+        
         let navController = UIDevice.current.userInterfaceIdiom == .phone
         ? PortraitNavigationController(rootViewController: controller)
         : UINavigationController(rootViewController: controller)
-
+        
         navController.overrideUserInterfaceStyle = .dark
         navController.setNeedsStatusBarAppearanceUpdate()
         navController.modalPresentationStyle = .fullScreen

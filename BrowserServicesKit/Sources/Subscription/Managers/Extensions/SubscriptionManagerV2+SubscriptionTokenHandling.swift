@@ -28,7 +28,7 @@ extension DefaultSubscriptionManagerV2: SubscriptionTokenHandling {
     }
 
     public func removeToken() async throws {
-        removeTokenContainer()
+        removeLocalAccount()
     }
 
     public func refreshToken() async throws {

@@ -51,6 +51,7 @@ final class SettingsViewModel: ObservableObject {
     let experimentalThemingManager: ExperimentalThemingManager
 
     // Subscription Dependencies
+    let isAuthV2Enabled: Bool
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -445,6 +446,7 @@ final class SettingsViewModel: ObservableObject {
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
+         isAuthV2Enabled: Bool,
          subscriptionManagerV1: (any SubscriptionManager)?,
          subscriptionManagerV2: (any SubscriptionManagerV2)?,
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
@@ -463,6 +465,7 @@ final class SettingsViewModel: ObservableObject {
 
         self.state = SettingsState.defaults
         self.legacyViewProvider = legacyViewProvider
+        self.isAuthV2Enabled = isAuthV2Enabled
         self.subscriptionManagerV1 = subscriptionManagerV1
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionAuthV1toV2Bridge = subscriptionAuthV1toV2Bridge
@@ -898,7 +901,7 @@ extension SettingsViewModel {
     }
 
     func restoreAccountPurchase() async {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !isAuthV2Enabled {
             await restoreAccountPurchaseV1()
         } else {
             await restoreAccountPurchaseV2()

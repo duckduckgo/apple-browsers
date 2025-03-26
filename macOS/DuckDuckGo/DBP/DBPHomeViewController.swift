@@ -32,7 +32,7 @@ public extension Notification.Name {
 final class DBPHomeViewController: NSViewController {
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
-    private let vpnBypassService: VPNBypassServiceProvider
+    private let vpnBypassService: VPNBypassFeatureProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
@@ -78,7 +78,7 @@ final class DBPHomeViewController: NSViewController {
     }()
 
     init(dataBrokerProtectionManager: DataBrokerProtectionManager,
-         vpnBypassService: VPNBypassServiceProvider,
+         vpnBypassService: VPNBypassFeatureProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager

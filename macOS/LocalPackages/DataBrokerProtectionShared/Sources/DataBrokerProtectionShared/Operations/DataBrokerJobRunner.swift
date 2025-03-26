@@ -37,35 +37,6 @@ public protocol WebJobRunner {
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
-public extension WebJobRunner {
-
-    func scan(_ profileQuery: BrokerProfileQueryData,
-              stageCalculator: StageDurationCalculator,
-              pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-              shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
-
-        try await scan(profileQuery,
-                       stageCalculator: stageCalculator,
-                       pixelHandler: pixelHandler,
-                       showWebView: false,
-                       shouldRunNextStep: shouldRunNextStep)
-    }
-
-    func optOut(profileQuery: BrokerProfileQueryData,
-                extractedProfile: ExtractedProfile,
-                stageCalculator: StageDurationCalculator,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                shouldRunNextStep: @escaping () -> Bool) async throws {
-
-        try await optOut(profileQuery: profileQuery,
-                         extractedProfile: extractedProfile,
-                         stageCalculator: stageCalculator,
-                         pixelHandler: pixelHandler,
-                         showWebView: false,
-                         shouldRunNextStep: shouldRunNextStep)
-    }
-}
-
 @MainActor
 public final class DataBrokerJobRunner: WebJobRunner {
     let privacyConfigManager: PrivacyConfigurationManaging

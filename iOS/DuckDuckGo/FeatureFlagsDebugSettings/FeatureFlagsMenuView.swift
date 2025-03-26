@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
+import BrowserServicesKit
 
 struct FeatureFlagsMenuView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel = FeatureFlagsSettingViewModel()
@@ -29,6 +30,7 @@ struct FeatureFlagsMenuView: View {
             List {
                 featureFlagsSection()
                 experimentsSection()
+                contentScopeExperimentsSection()
                 resetAllOverridesSection()
             }
             .navigationTitle(Text(verbatim: "Feature Flags"))
@@ -90,7 +92,7 @@ struct FeatureFlagsMenuView: View {
         }
     }
 
-    private func experimentRow(flag: FeatureFlag) -> some View {
+    private func experimentRow(flag: any FeatureFlagDescribing) -> some View {
         NavigationLink(destination: ExperimentCohortView(viewModel: viewModel, experiment: flag)) {
             VStack(alignment: .leading) {
                 Text(verbatim: flag.rawValue)
@@ -98,6 +100,15 @@ struct FeatureFlagsMenuView: View {
                 Text(verbatim: "Current cohort: \(viewModel.getCurrentCohort(for: flag) ?? "None")")
                     .font(.caption)
                     .foregroundColor(.gray)
+            }
+        }
+    }
+
+    // MARK: - Content Scope Experiments Section
+    private func contentScopeExperimentsSection() -> some View {
+        Section(header: Text(verbatim: "Content Scope Experiments")) {
+            ForEach(viewModel.cssExperiments, id: \.self) { flag in
+                experimentRow(flag: flag)
             }
         }
     }

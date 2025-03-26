@@ -141,8 +141,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// Used only from the Mac Packet Tunnel Provider when a token is received during configuration
     func adopt(tokenContainer: TokenContainer)
 
-    /// Remove the stored token container
-    func removeTokenContainer()
+    /// Remove the stored token container and the legacy token
+    func removeLocalAccount()
 }
 
 /// Single entry point for everything related to Subscription. This manager is disposable, every time something related to the environment changes this need to be recreated.
@@ -155,6 +155,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public var tokenRecoveryHandler: TokenRecoveryHandler?
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
+    private var v1MigrationNeeded: Bool = true
+    private let legacyAccountStorage: AccountKeychainStorage?
 
     public init(storePurchaseManager: StorePurchaseManagerV2? = nil,
                 oAuthClient: any OAuthClient,
@@ -163,6 +165,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 pixelHandler: @escaping PixelHandler,
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
+                legacyAccountStorage: AccountKeychainStorage? = nil,
                 isInternalUserEnabled: @escaping () -> Bool =  { false }) {
         self._storePurchaseManager = storePurchaseManager
         self.oAuthClient = oAuthClient
@@ -171,7 +174,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         self.pixelHandler = pixelHandler
         self.tokenRecoveryHandler = tokenRecoveryHandler
         self.isInternalUserEnabled = isInternalUserEnabled
-
+        self.legacyAccountStorage = legacyAccountStorage
         if initForPurchase {
             switch currentEnvironment.purchasePlatform {
             case .appStore:
@@ -226,10 +229,14 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - Subscription
 
-    public func loadInitialData() async {
+    func migrateAuthV1toAuthV2IfNeeded() async {
+
+        guard v1MigrationNeeded else {
+            return
+        }
+        v1MigrationNeeded = false
 
         // Attempting V1 token migration
-        // IMPORTANT: This MUST be the first operation executed by Subscription
         do {
             if (try await oAuthClient.migrateV1Token()) != nil {
                 pixelHandler(.v1MigrationSuccessful)
@@ -241,18 +248,24 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler(.v1MigrationFailed)
         }
+    }
+
+    public func loadInitialData() async {
+        Logger.subscription.log("Loading initial data...")
 
         // Fetching fresh subscription
-        if isUserAuthenticated {
-            do {
-                let subscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
-                Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
-                if subscription.isActive {
-                    pixelHandler(.subscriptionIsActive)
-                }
-            } catch {
-                Logger.subscription.error("Failed to load initial subscription data: \(error, privacy: .public)")
+        do {
+            _ = try await currentSubscriptionFeatures(forceRefresh: true)
+            let subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
+            Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
+            if subscription.isActive {
+                pixelHandler(.subscriptionIsActive)
             }
+        } catch SubscriptionEndpointServiceError.noData {
+            Logger.subscription.log("No Subscription available")
+            clearSubscriptionCache()
+        } catch {
+            Logger.subscription.error("Failed to load initial subscription data: \(error, privacy: .public)")
         }
     }
 
@@ -356,9 +369,13 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     @discardableResult public func getTokenContainer(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         Logger.subscription.debug("Get tokens \(policy.description, privacy: .public)")
+
         do {
             let currentCachedTokenContainer = oAuthClient.currentTokenContainer
             let currentCachedEntitlements = currentCachedTokenContainer?.decodedAccessToken.subscriptionEntitlements
+
+            await migrateAuthV1toAuthV2IfNeeded()
+
             let resultTokenContainer = try await oAuthClient.getTokens(policy: policy)
             let newEntitlements = resultTokenContainer.decodedAccessToken.subscriptionEntitlements
 
@@ -390,11 +407,16 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
+
+        guard let tokenRecoveryHandler else {
+            throw SubscriptionManagerError.tokenUnavailable(error: nil)
+        }
+
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
         pixelHandler(.deadToken)
         await signOut(notifyUI: false)
 
-        try await tokenRecoveryHandler?()
+        try await tokenRecoveryHandler()
 
         return try await getTokenContainer(policy: .local)
     }
@@ -409,18 +431,21 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         oAuthClient.adopt(tokenContainer: tokenContainer)
     }
 
-    public func removeTokenContainer() {
+    public func removeLocalAccount() {
+        Logger.subscription.log("Removing local account")
         oAuthClient.removeLocalAccount()
     }
 
     public func signOut(notifyUI: Bool) async {
-        Logger.subscription.log("SignOut: Removing all traces of the subscription and auth tokens")
+        Logger.subscription.log("SignOut: Removing all traces of the subscription and account")
         try? await oAuthClient.logout()
         clearSubscriptionCache()
         if notifyUI {
-            Logger.subscription.debug("SignOut: Notifying the UI")
+            Logger.subscription.log("SignOut: Notifying the UI")
             NotificationCenter.default.post(name: .accountDidSignOut, object: self, userInfo: nil)
         }
+        Logger.subscription.log("Removing V1 Account")
+        try? legacyAccountStorage?.clearAuthenticationState()
     }
 
     public func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
@@ -485,7 +510,7 @@ extension DefaultSubscriptionManagerV2: SubscriptionTokenProvider {
     }
 
     public func removeAccessToken() {
-        removeTokenContainer()
+        removeLocalAccount()
     }
 }
 

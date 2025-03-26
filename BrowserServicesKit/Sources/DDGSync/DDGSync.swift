@@ -104,8 +104,7 @@ public class DDGSync: DDGSyncing {
         guard try dependencies.secureStore.account() == nil else {
             throw SyncError.accountAlreadyExists
         }
-        let info = try dependencies.crypter.prepareForConnect()
-        return try dependencies.createRemoteConnector(info)
+        return try dependencies.createRemoteConnector()
     }
 
     public func transmitRecoveryKey(_ connectCode: SyncCode.ConnectCode) async throws {
@@ -116,7 +115,27 @@ public class DDGSync: DDGSyncing {
         do {
             try await dependencies.createRecoveryKeyTransmitter().send(connectCode)
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func createConnectionController(deviceName: String, deviceType: String, delegate: SyncConnectionControllerDelegate) -> SyncConnectionControlling {
+        SyncConnectionController(deviceName: deviceName, deviceType: deviceType, delegate: delegate, syncService: self, dependencies: dependencies)
+    }
+
+    public func transmitGeneratedExchangeInfo(_ exchangeCode: SyncCode.ExchangeKey, deviceName: String) async throws -> ExchangeInfo {
+        do {
+            return try await dependencies.createExchangePublicKeyTransmitter().sendGeneratedExchangeInfo(exchangeCode, deviceName: deviceName)
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
+        }
+    }
+
+    public func transmitExchangeRecoveryKey(for exchangeMessage: ExchangeMessage) async throws {
+        do {
+            try await dependencies.createExchangeRecoveryKeyTransmitter(exchangeMessage: exchangeMessage).send()
+        } catch {
+            throw handleUnauthenticatedAndMap(error)
         }
     }
 
@@ -128,7 +147,7 @@ public class DDGSync: DDGSyncing {
             try await disconnect(deviceId: deviceId)
             try removeAccount(reason: .userTurnedOffSync)
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
         }
     }
 
@@ -139,7 +158,7 @@ public class DDGSync: DDGSyncing {
         do {
             try await dependencies.account.logout(deviceId: deviceId, token: token)
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
         }
     }
 
@@ -151,10 +170,8 @@ public class DDGSync: DDGSyncing {
         do {
             return try await dependencies.account.fetchDevicesForAccount(account)
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
         }
-
-        return []
     }
 
     public func updateDeviceName(_ name: String) async throws -> [RegisteredDevice] {
@@ -167,10 +184,8 @@ public class DDGSync: DDGSyncing {
             try dependencies.secureStore.persistAccount(result.account)
             return result.devices
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
         }
-
-        return []
     }
 
     public func deleteAccount() async throws {
@@ -182,7 +197,7 @@ public class DDGSync: DDGSyncing {
             try await dependencies.account.deleteAccount(account)
             try removeAccount(reason: .userDeletedAccount)
         } catch {
-            try handleUnauthenticated(error)
+            throw handleUnauthenticatedAndMap(error)
         }
     }
 
@@ -315,7 +330,7 @@ public class DDGSync: DDGSyncing {
             .sink { [weak self] error in
                 // Safe to try? because the error is reported to Sync Data Provider anyway
                 // and here we only care about logging the user out of Sync
-                try? self?.handleUnauthenticated(error)
+                _ = self?.handleUnauthenticatedAndMap(error)
             }
 
         cancelSyncCancellable = dependencies.scheduler.cancelSyncPublisher
@@ -348,11 +363,11 @@ public class DDGSync: DDGSyncing {
         dependencies.errorEvents.fire(.accountRemoved(reason))
     }
 
-    private func handleUnauthenticated(_ error: Error) throws {
+    private func handleUnauthenticatedAndMap(_ error: Error) -> Error {
         guard let syncError = error as? SyncError,
               case .unexpectedStatusCode(let statusCode) = syncError,
               statusCode == 401 else {
-            throw error
+            return error
         }
 
         do {
@@ -361,7 +376,9 @@ public class DDGSync: DDGSyncing {
         } catch {
             Logger.sync.error("Failed to delete account upon unauthenticated server response: \(error.localizedDescription, privacy: .public)")
             if error is SyncError {
-                throw error
+                return error
+            } else {
+                return SyncError.failedToRemoveAccount
             }
         }
     }

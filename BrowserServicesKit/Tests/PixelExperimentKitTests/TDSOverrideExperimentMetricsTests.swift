@@ -21,8 +21,9 @@ import XCTest
 import BrowserServicesKit
 import Configuration
 import PixelKit
+import ContentScopeScripts
 
-final class TDSOverrideExperimentMetricsTests: XCTestCase {
+final class SiteBreakageExperimentMetricsTests: XCTestCase {
 
     var mockFeatureFlagger: MockFeatureFlagger!
     var pixelCalls: [(SubfeatureID, String, ClosedRange<Int>, String)] = []
@@ -31,7 +32,7 @@ final class TDSOverrideExperimentMetricsTests: XCTestCase {
     override func setUpWithError() throws {
         mockFeatureFlagger = MockFeatureFlagger()
         PixelKit.configureExperimentKit(featureFlagger: mockFeatureFlagger, eventTracker: ExperimentEventTracker(store: MockExperimentActionPixelStore()), fire: { _, _, _ in })
-        TDSOverrideExperimentMetrics.configureTDSOverrideExperimentMetrics { subfeatureID, metric, conversionWindow, value in
+        SiteBreakageExperimentMetrics.configureSiteBreakageExperimentMetrics { subfeatureID, metric, conversionWindow, value in
             self.pixelCalls.append((subfeatureID, metric, conversionWindow, value))
         }
     }
@@ -47,7 +48,7 @@ final class TDSOverrideExperimentMetricsTests: XCTestCase {
         ]
 
         // WHEN
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
             self.debugCalls.append(parameters)
         }
 
@@ -62,9 +63,26 @@ final class TDSOverrideExperimentMetricsTests: XCTestCase {
         XCTAssertEqual(debugCalls.first?["experiment"], "\(TDSExperimentType.allCases[3].subfeature.rawValue)testCohort")
     }
 
+    func test_OnfireContentScopeExperimentMetricPrivacyToggleUsed_WhenExperimentActive_ThenCorrectPixelFunctionsCalled() {
+        // GIVEN
+        mockFeatureFlagger.experiments = [
+            ContentScopeExperimentsFeatureFlag.allCases[0].subfeature.rawValue: ExperimentData(parentID: "someParentID", cohortID: "testCohort", enrollmentDate: Date())
+        ]
+
+        // WHEN
+        SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
+
+        // THEN
+        XCTAssertEqual(pixelCalls.count, ContentScopeExperimentsFeatureFlag.allCases.count * 6, "firePixelExperiment should be called for each experiment and each conversionWindow 0...5.")
+        XCTAssertEqual(pixelCalls.first?.0, ContentScopeExperimentsFeatureFlag.allCases[0].subfeature.rawValue, "expected SubfeatureID should be passed as parameter")
+        XCTAssertEqual(pixelCalls.first?.1, "privacyToggleUsed", "expected metric should be passed as parameter")
+        XCTAssertEqual(pixelCalls.first?.2, 0...0, "expected Conversion Window should be passed as parameter")
+        XCTAssertEqual(pixelCalls.first?.3, "1", "expected Value should be passed as parameter")
+    }
+
     func test_OnfireTdsExperimentMetricPrivacyToggleUsed_WhenNoExperimentActive_ThenCorrectPixelFunctionsCalled() {
         // WHEN
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: "testEtag") { parameters in
             self.debugCalls.append(parameters)
         }
 
@@ -84,7 +102,7 @@ final class TDSOverrideExperimentMetricsTests: XCTestCase {
         ]
 
         // WHEN
-        let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort
+        let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort
 
         // THEN
         XCTAssertEqual(experimentName, "\(TDSExperimentType.allCases[3].subfeature.rawValue)_testCohort")
@@ -92,7 +110,7 @@ final class TDSOverrideExperimentMetricsTests: XCTestCase {
 
     func test_OnGetActiveTDSExperimentNameWithCohort_WhenNoExperimentActive_ThenCorrectExperimentNameReturned() {
         // WHEN
-        let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort
+        let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort
 
         // THEN
         XCTAssertNil(experimentName)

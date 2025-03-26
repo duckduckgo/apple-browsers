@@ -183,7 +183,10 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 }
 
 class MockPrivacyConfigurationManager: PrivacyConfigurationManaging {
-    var currentConfig: Data = .init()
+    var currentConfigString: String = ""
+    var currentConfig: Data {
+        currentConfigString.data(using: .utf8)!
+    }
     var updatesSubject = PassthroughSubject<Void, Never>()
     let updatesPublisher: AnyPublisher<Void, Never>
     var privacyConfig: PrivacyConfiguration

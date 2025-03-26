@@ -1195,6 +1195,7 @@ enum GeneralPixel: PixelKitEventV2 {
 
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
+
         }
     }
 

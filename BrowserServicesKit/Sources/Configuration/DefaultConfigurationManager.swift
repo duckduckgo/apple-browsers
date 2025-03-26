@@ -109,7 +109,7 @@ open class DefaultConfigurationManager: NSObject {
     }
 
     /// Implement this in the subclass.
-    /// Use this method to fetch neccessary configurations and store them.
+    /// Use this method to fetch necessary configurations and store them.
     open func refreshNow(isDebug: Bool = false) async {
         fatalError("refreshNow Must be implemented by subclass")
     }

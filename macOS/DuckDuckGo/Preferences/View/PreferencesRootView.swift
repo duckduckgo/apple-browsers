@@ -50,11 +50,9 @@ enum Preferences {
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
 
-        init(
-            model: PreferencesSidebarModel,
-            subscriptionManager: SubscriptionManager,
-            subscriptionUIHandler: SubscriptionUIHandling
-        ) {
+        init(model: PreferencesSidebarModel,
+             subscriptionManager: SubscriptionManager,
+             subscriptionUIHandler: SubscriptionUIHandling) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
@@ -111,7 +109,7 @@ enum Preferences {
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .subscription:
                     SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
-                                                               subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
+                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:

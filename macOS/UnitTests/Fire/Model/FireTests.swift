@@ -77,16 +77,17 @@ final class FireTests: XCTestCase {
             .init(content: .url("https://spreadprivacy.com/".url!, source: .link)),
             .init(content: .url("https://wikipedia.org/".url!, source: .link))
         ]
-        let pinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
+        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+        pinnedTabsManagerProvider.pinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         windowControllerManager: WindowControllersManager.shared,
                         faviconManagement: faviconManager,
-                        pinnedTabsManager: pinnedTabsManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: ContentBlocking.shared.tld)
-        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManager)
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
 
         let burningExpectation = expectation(description: "Burning")
@@ -97,7 +98,7 @@ final class FireTests: XCTestCase {
         waitForExpectations(timeout: 5, handler: nil)
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
-        XCTAssertEqual(pinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl))
+        XCTAssertEqual(pinnedTabsManagerProvider.pinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl))
     }
 
     @MainActor
@@ -173,8 +174,7 @@ final class FireTests: XCTestCase {
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
-                                                                    service: service,
-                                                                    shouldRestorePreviousSession: false)
+                                                                    service: service)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -192,8 +192,7 @@ final class FireTests: XCTestCase {
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
-                                                                    service: service,
-                                                                    shouldRestorePreviousSession: false)
+                                                                    service: service)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -325,9 +324,9 @@ final class FireTests: XCTestCase {
 fileprivate extension TabCollectionViewModel {
 
     @MainActor
-    static func makeTabCollectionViewModel(with pinnedTabsManager: PinnedTabsManager? = nil) -> TabCollectionViewModel {
+    static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil) -> TabCollectionViewModel {
 
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManager: pinnedTabsManager ?? WindowControllersManager.shared.pinnedTabsManager)
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? WindowControllersManager.shared.pinnedTabsManagerProvider)
         tabCollectionViewModel.append(tab: Tab(content: .none))
         tabCollectionViewModel.append(tab: Tab(content: .none))
         return tabCollectionViewModel

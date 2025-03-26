@@ -30,7 +30,7 @@ struct ProductionDependencies: SyncDependencies {
     let payloadCompressor: SyncPayloadCompressing
     var keyValueStore: KeyValueStoring
     let secureStore: SecureStoring
-    let crypter: CryptingInternal
+    var crypter: CryptingInternal
     let scheduler: SchedulingInternal
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let errorEvents: EventMapping<SyncError>
@@ -71,12 +71,37 @@ struct ProductionDependencies: SyncDependencies {
         scheduler = SyncScheduler()
     }
 
-    func createRemoteConnector(_ info: ConnectInfo) throws -> RemoteConnecting {
-        return try RemoteConnector(crypter: crypter, api: api, endpoints: endpoints, connectInfo: info)
+    func createRemoteConnector() throws -> RemoteConnecting {
+        return try RemoteConnector(crypter: crypter, api: api, endpoints: endpoints)
+    }
+
+    func createRemoteKeyExchanger() throws -> any RemoteKeyExchanging {
+        return try RemoteKeyExchanger(
+            crypter: crypter,
+            api: api,
+            endpoints: endpoints
+        )
+    }
+
+    func createRemoteExchangeRecoverer(_ exchangeInfo: ExchangeInfo) throws -> any RemoteExchangeRecovering {
+        return try RemoteExchangeRecoverer(
+            crypter: crypter,
+            api: api,
+            endpoints: endpoints,
+            exchangeInfo: exchangeInfo
+        )
     }
 
     func createRecoveryKeyTransmitter() throws -> RecoveryKeyTransmitting {
         return RecoveryKeyTransmitter(endpoints: endpoints, api: api, storage: secureStore, crypter: crypter)
+    }
+
+    func createExchangePublicKeyTransmitter() throws -> any ExchangePublicKeyTransmitting {
+        return ExchangePublicKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter)
+    }
+
+    func createExchangeRecoveryKeyTransmitter(exchangeMessage: ExchangeMessage) throws -> any ExchangeRecoveryKeyTransmitting {
+        return ExchangeRecoveryKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter, storage: secureStore, exchangeMessage: exchangeMessage)
     }
 
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {

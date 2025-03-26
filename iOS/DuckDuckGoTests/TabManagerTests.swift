@@ -25,6 +25,42 @@ import SubscriptionTestingUtilities
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    func testWhenClosingOnlyOpenTabThenASingleEmptyTabIsAdded() async throws {
+
+        let tabsModel = TabsModel(desktop: false)
+        XCTAssertEqual(1, tabsModel.count)
+
+        let originalTab = tabsModel.get(tabAt: 0)
+        XCTAssertTrue(originalTab === tabsModel.get(tabAt: 0))
+
+        let manager = makeManager(tabsModel)
+        manager.remove(at: 0)
+
+        XCTAssertEqual(1, tabsModel.count)
+        XCTAssertFalse(originalTab === tabsModel.get(tabAt: 0))
+    }
+
+    func testWhenTabOpenedFromOtherTabThenRemovingTabSetsIndexToPreviousTab() async throws {
+        let tabsModel = TabsModel(desktop: false)
+        tabsModel.add(tab: Tab())
+        XCTAssertEqual(2, tabsModel.count)
+
+        tabsModel.select(tabAt: 0)
+
+        let manager = makeManager(tabsModel)
+        _ = manager.add(url: URL(string: "https://example.com")!, inheritedAttribution: nil)
+
+        // We expect the new tab to be the index after whatever was current (ie zero)
+        XCTAssertEqual(1, tabsModel.currentIndex)
+        XCTAssertEqual("https://example.com", tabsModel.tabs[1].link?.url.absoluteString)
+
+        XCTAssertEqual(3, tabsModel.count)
+
+        manager.remove(at: 1)
+        // We expect the new current index to be the previous index
+        XCTAssertEqual(0, tabsModel.currentIndex)
+    }
+
     func testWhenAppBecomesActiveAndExcessPreviewsThenCleanUpHappens() async throws {
         let mock = MockTabPreviewsSource(totalStoredPreviews: 4)
         let tabsModel = TabsModel(desktop: false)
@@ -39,7 +75,9 @@ final class TabManagerTests: XCTestCase {
         manager.removeAll()
     }
 
-    func makeManager(_ model: TabsModel, previewsSource: TabPreviewsSource) -> TabManager {
+    func makeManager(_ model: TabsModel,
+                     previewsSource: TabPreviewsSource = MockTabPreviewsSource()) -> TabManager {
+
         return TabManager(model: model,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),

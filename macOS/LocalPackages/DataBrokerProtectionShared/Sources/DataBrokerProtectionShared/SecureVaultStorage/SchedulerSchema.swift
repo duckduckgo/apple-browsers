@@ -95,6 +95,8 @@ public struct BrokerDB: Codable {
     let json: Data
     let version: String
     let url: String
+    let eTag: String
+    let isActive: Bool
 }
 
 extension BrokerDB: PersistableRecord, FetchableRecord {
@@ -106,6 +108,8 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         case json
         case version
         case url
+        case eTag
+        case isActive
     }
 
     public init(row: Row) throws {
@@ -114,6 +118,8 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         json = row[Columns.json]
         version = row[Columns.version]
         url = row[Columns.url]
+        eTag = row[Columns.eTag]
+        isActive = row[Columns.isActive]
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -122,6 +128,8 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         container[Columns.json] = json
         container[Columns.version] = version
         container[Columns.url] = url
+        container[Columns.eTag] = eTag
+        container[Columns.isActive] = isActive
     }
 }
 

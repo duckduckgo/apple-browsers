@@ -58,7 +58,7 @@ public struct MapperToDB {
 
     func mapToDB(_ broker: DataBroker, id: Int64? = nil) throws -> BrokerDB {
         let encodedBroker = try jsonEncoder.encode(broker)
-        return .init(id: id, name: broker.name, json: encodedBroker, version: broker.version, url: broker.url)
+        return .init(id: id, name: broker.name, json: encodedBroker, version: broker.version, url: broker.url, eTag: broker.eTag, isActive: broker.isActive)
     }
 
     func mapToDB(_ profileQuery: ProfileQuery, relatedTo profileId: Int64) throws -> ProfileQueryDB {
@@ -177,7 +177,9 @@ struct MapperToModel {
             schedulingConfig: decodedBroker.schedulingConfig,
             parent: decodedBroker.parent,
             mirrorSites: decodedBroker.mirrorSites,
-            optOutUrl: decodedBroker.optOutUrl
+            optOutUrl: decodedBroker.optOutUrl,
+            eTag: decodedBroker.eTag,
+            isActive: decodedBroker.isActive
         )
     }
 

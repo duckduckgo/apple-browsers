@@ -124,8 +124,8 @@ public struct DataBroker: Codable, Sendable {
     public let parent: String?
     public let mirrorSites: [MirrorSite]
     public let optOutUrl: String
-    public let eTag: String
-    public let isActive: Bool
+    public var eTag: String
+    public var isActive: Bool
 
     public var isFakeBroker: Bool {
         name.contains("fake") // A future improvement will be to add a property in the JSON file.
@@ -255,6 +255,14 @@ public struct DataBroker: Codable, Sendable {
             Logger.dataBrokerProtection.error("DataBroker error: initFromResource, error: \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    public mutating func setETag(_ eTag: String) {
+        self.eTag = eTag
+    }
+
+    public mutating func setIsActive(_ isActive: Bool) {
+        self.isActive = isActive
     }
 }
 

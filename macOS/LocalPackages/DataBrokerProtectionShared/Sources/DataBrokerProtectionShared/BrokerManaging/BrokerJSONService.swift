@@ -20,22 +20,11 @@ import Foundation
 import Subscription
 import ZIPFoundation
 
-public protocol BrokerJSONETagStoring {
-    func loadMainConfigETag() -> String?
-    func saveMainConfigETag(_ etag: String)
-    func loadETag(forBrokerNamed name: String) throws -> String?
-}
-
-public protocol BrokerJSONDownloading {
-    func downloadBrokerJSONs() async throws
-    func processBrokerJSONs()
-}
-
 public protocol BrokerJSONServiceProvider: AnyObject {
-
+    func checkForBrokerJSONUpdates() async throws
 }
 
-public final class BrokerJSONService: BrokerJSONServiceProvider, BrokerJSONETagStoring, BrokerJSONDownloading {
+public final class BrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
         case missingAccessToken
         case serverError
@@ -73,12 +62,32 @@ public final class BrokerJSONService: BrokerJSONServiceProvider, BrokerJSONETagS
             }
         }
 
-        static func request(for endpoint: Endpoint, accessToken: String) -> URLRequest {
+        static func request(for endpoint: Endpoint,
+                            contentType: String? = nil,
+                            eTag: String? = nil,
+                            accessToken: String) -> URLRequest {
             var request = URLRequest(url: url(for: endpoint))
             request.httpMethod = "GET"
+            if let contentType {
+                request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+            }
+            if let eTag {
+                request.setValue(eTag, forHTTPHeaderField: "ETag")
+            }
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 
             return request
+        }
+    }
+
+    struct BrokerJSON: Hashable {
+        let fileName: String
+        let eTag: String
+
+        static func from(payload: [String: String]) -> [BrokerJSON] {
+            payload.map { fileName, eTag in
+                .init(fileName: fileName, eTag: eTag)
+            }
         }
     }
 
@@ -88,29 +97,53 @@ public final class BrokerJSONService: BrokerJSONServiceProvider, BrokerJSONETagS
     private let vault: any DataBrokerProtectionSecureVault
     private let accountManager: AccountManager
 
-    init(defaults: UserDefaults, vault: any DataBrokerProtectionSecureVault, accountManager: AccountManager) {
+    private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
+    public init(defaults: UserDefaults, vault: any DataBrokerProtectionSecureVault, accountManager: AccountManager) {
         self.defaults = defaults
         self.vault = vault
         self.accountManager = accountManager
     }
 
-    public func loadMainConfigETag() -> String? {
-        defaults.string(forKey: Self.mainConfigETagKey)
-    }
+    // MARK: - Main flow
 
-    public func saveMainConfigETag(_ etag: String) {
-        defaults.set(etag, forKey: Self.mainConfigETagKey)
-    }
+    public func checkForBrokerJSONUpdates() async throws {
+        guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
 
-    public func loadETag(forBrokerNamed name: String) throws -> String? {
-        guard let broker = try vault.fetchBroker(with: name) else { return nil }
-        return broker.eTag
-    }
+        let request = Endpoint.request(for: .mainConfig,
+                                       contentType: "application/json",
+                                       eTag: loadMainConfigETag(),
+                                       accessToken: accessToken)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let response = response as? HTTPURLResponse else { return }
 
-    public func downloadBrokerJSONs() async throws {
-        guard let accessToken = accountManager.accessToken else {
-            throw Error.missingAccessToken
+        if response.statusCode == 304 {
+            return
         }
+
+        guard response.statusCode == 200 else { throw Error.serverError }
+
+        try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
+        saveMainConfigETag(response.etag)
+    }
+
+    func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
+        let eTagMapping = mainConfig.jsonETags.current
+        let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
+        let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url, eTag: $0.eTag) }
+        let diff = Set(incomingBrokerJSONs).subtracting(Set(savedBrokerJSONs))
+        guard !diff.isEmpty else { return }
+
+        try await downloadBrokerJSONs()
+        try processBrokerJSONs(withFileNames: diff.map(\.fileName),
+                               eTagMapping: eTagMapping,
+                               activeBrokers: mainConfig.activeDataBrokers)
+    }
+
+    // MARK: - File handling
+
+    func downloadBrokerJSONs() async throws {
+        guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
 
         let request = Endpoint.request(for: .allBrokers, accessToken: accessToken)
         let temporaryURL: URL
@@ -145,12 +178,107 @@ public final class BrokerJSONService: BrokerJSONServiceProvider, BrokerJSONETagS
             }
         }
 
-        let fileManager = FileManager.default
-        let destinationURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try fileManager.unzipItem(at: temporaryURL, to: destinationURL)
+        try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
     }
 
-    public func processBrokerJSONs() {
-        
+    func processBrokerJSONs(withFileNames brokerFileNames: [String],
+                            eTagMapping: [String: String],
+                            activeBrokers: [String]) throws {
+        let directoryURL: URL
+        if #available(macOS 13.0, iOS 16.0, *) {
+            directoryURL = uncompressedBrokerJSONDirectoryURL.appending(path: "json", directoryHint: .isDirectory)
+        } else {
+            directoryURL = uncompressedBrokerJSONDirectoryURL.appendingPathComponent("json", isDirectory: true)
+        }
+        let fileURLs = try FileManager.default.contentsOfDirectory(at: directoryURL,
+                                                                   includingPropertiesForKeys: nil,
+                                                                   options: [.skipsHiddenFiles])
+        for fileURL in fileURLs {
+            let fileName = fileURL.lastPathComponent
+            guard brokerFileNames.contains(fileName) else { continue }
+
+            var dataBroker = try DataBroker.initFromResource(fileURL)
+            dataBroker.setETag(eTagMapping[fileName] ?? "")
+            dataBroker.setIsActive(activeBrokers.contains(fileName))
+
+            try upsertBroker(dataBroker)
+        }
+    }
+
+    func upsertBroker(_ broker: DataBroker) throws {
+        guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
+            try addBroker(broker)
+            return
+        }
+
+        guard shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else { return }
+        guard let savedBrokerId = savedBroker.id else { return }
+
+        try vault.update(broker, with: savedBrokerId)
+        try updateAttemptCount(broker)
+    }
+
+    /// 1. We save the broker into the database
+    /// 2. We fetch the user profile and obtain the profile queries
+    /// 3. We create the new scans operations for the profile queries and the new broker id
+    func addBroker(_ broker: DataBroker) throws {
+        let brokerId = try vault.save(broker: broker)
+        let profileQueries = try vault.fetchAllProfileQueries(for: 1)
+        let profileQueryIDs = profileQueries.compactMap({ $0.id })
+
+        for profileQueryId in profileQueryIDs {
+            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: nil, preferredRunDate: Date())
+        }
+    }
+
+    func shouldUpdate(incoming: String, storedVersion: String) -> Bool {
+        let result = incoming.compare(storedVersion, options: .numeric)
+
+        return result == .orderedDescending
+    }
+
+    /// Reset attempt count to 0 when broker JSON is updated
+    func updateAttemptCount(_ broker: DataBroker) throws {
+        guard let brokerId = broker.id else { return }
+
+        let optOutJobs = try vault.fetchOptOuts(brokerId: brokerId)
+        for optOutJob in optOutJobs {
+            if let extractedProfileId = optOutJob.extractedProfile.id {
+                try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
+            }
+        }
+    }
+
+    // MARK: - ETag storage
+
+    func loadMainConfigETag() -> String? {
+        defaults.string(forKey: Self.mainConfigETagKey)
+    }
+
+    func saveMainConfigETag(_ etag: String?) {
+        defaults.set(etag, forKey: Self.mainConfigETagKey)
+    }
+
+    func loadETag(forBrokerNamed name: String) throws -> String? {
+        guard let broker = try vault.fetchBroker(with: name) else { return nil }
+        return broker.eTag
+    }
+}
+
+struct MainConfig: Decodable {
+    let mainConfigETag: String
+    let activeDataBrokers: [String]
+    let jsonETags: JSONETagPayload
+    let testDataBrokers: [String]
+
+    struct JSONETagPayload: Decodable {
+        let current: [String: String]
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case mainConfigETag = "main_config_etag"
+        case activeDataBrokers = "active_data_brokers"
+        case jsonETags = "json_etags"
+        case testDataBrokers = "test_data_brokers"
     }
 }

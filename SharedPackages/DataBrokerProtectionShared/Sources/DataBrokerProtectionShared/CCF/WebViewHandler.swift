@@ -148,9 +148,12 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         webView?.frame = CGRect(origin: .zero, size: CGSize(width: 1024, height: height))
         let configuration = WKSnapshotConfiguration()
         configuration.rect = CGRect(x: 0, y: 0, width: webView?.frame.size.width ?? 0.0, height: height)
+
+#if os(macOS)
         if let image = try await webView?.takeSnapshot(configuration: configuration) {
             saveToDisk(image: image, path: path, fileName: fileName)
         }
+#endif
     }
 
     func saveHTML(path: String, fileName: String) async throws {
@@ -170,6 +173,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         }
     }
 
+    @available(macOS 11.4, *)
     private func saveToDisk(image: NSImage, path: String, fileName: String) {
         guard let tiffData = image.tiffRepresentation else {
             // Handle the case where tiff representation is not available

@@ -30,8 +30,7 @@ let package = Package(
         .library(name: "DataBrokerProtectionSharedTestsUtils", targets: ["DataBrokerProtectionSharedTestsUtils"]),
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../NetworkProtectionMac"),
+        .package(path: "../BrowserServicesKit"),
     ],
     targets: [
         .target(
@@ -41,7 +40,6 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
             ],
             resources: [.copy("Resources")],
             swiftSettings: [

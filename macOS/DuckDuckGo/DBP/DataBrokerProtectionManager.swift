@@ -74,13 +74,13 @@ public final class DataBrokerProtectionManager {
         return dataManager
     }()
 
-    lazy var brokerJSONService: BrokerJSONServiceProvider = {
+    lazy var brokerUpdater: BrokerJSONServiceProvider = {
         let settings = DataBrokerProtectionSettings(defaults: .dbp)
-        let brokerJSONService = BrokerJSONService(defaults: .dbp,
-                                                  settings: settings,
-                                                  vault: vault,
-                                                  authenticationManager: authenticationManager)
-        return brokerJSONService
+        let brokerUpdater = BrokerJSONService(defaults: .dbp,
+                                              settings: settings,
+                                              vault: vault,
+                                              authenticationManager: authenticationManager)
+        return brokerUpdater
     }()
 
     private lazy var ipcClient: DataBrokerProtectionIPCClient = {

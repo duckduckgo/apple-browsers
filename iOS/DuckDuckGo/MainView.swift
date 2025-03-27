@@ -26,6 +26,7 @@ class MainViewFactory {
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
     private let omnibarDependencies: OmnibarDependencyProvider
+    private let experimentalThemingManager = ExperimentalThemingManager()
 
     var superview: UIView {
         coordinator.superview
@@ -77,8 +78,12 @@ extension MainViewFactory {
     }
     
     private func createProgressView() {
-        coordinator.progress = ProgressView()
-        superview.addSubview(coordinator.progress)
+        if experimentalThemingManager.isExperimentalThemingEnabled {
+            coordinator.progress = coordinator.omniBar!.barView.progressView
+        } else {
+            coordinator.progress = ProgressView()
+            superview.addSubview(coordinator.progress)
+        }
     }
 
     private func createOmniBar() {
@@ -198,17 +203,22 @@ extension MainViewFactory {
     }
 
     private func constrainProgress() {
+        guard experimentalThemingManager.isExperimentalThemingEnabled == false else { return }
+
         let progress = coordinator.progress!
         let navigationBarContainer = coordinator.navigationBarContainer!
 
-        coordinator.constraints.progressBarTop = progress.constrainView(navigationBarContainer, by: .top, to: .bottom)
-        coordinator.constraints.progressBarBottom = progress.constrainView(navigationBarContainer, by: .bottom, to: .top)
+        let progressBarTop = progress.constrainView(navigationBarContainer, by: .top, to: .bottom)
+        let progressBarBottom = progress.constrainView(navigationBarContainer, by: .bottom, to: .top)
+
+        coordinator.constraints.progressBarTop = progressBarTop
+        coordinator.constraints.progressBarBottom = progressBarBottom
 
         NSLayoutConstraint.activate([
             progress.constrainView(navigationBarContainer, by: .trailing),
             progress.constrainView(navigationBarContainer, by: .leading),
             progress.constrainAttribute(.height, to: 3),
-            coordinator.constraints.progressBarTop,
+            progressBarTop,
         ])
     }
     

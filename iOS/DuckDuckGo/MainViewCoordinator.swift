@@ -74,8 +74,8 @@ class MainViewCoordinator {
         var toolbarBottom: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
         var tabBarContainerTop: NSLayoutConstraint!
-        var progressBarTop: NSLayoutConstraint!
-        var progressBarBottom: NSLayoutConstraint!
+        var progressBarTop: NSLayoutConstraint?
+        var progressBarBottom: NSLayoutConstraint?
         var statusBackgroundToNavigationBarContainerBottom: NSLayoutConstraint!
         var statusBackgroundBottomToSafeAreaTop: NSLayoutConstraint!
         var contentContainerBottomToToolbarTop: NSLayoutConstraint!
@@ -147,13 +147,13 @@ class MainViewCoordinator {
 
     func setAddressBarTopActive(_ active: Bool) {
         constraints.navigationBarContainerTop.isActive = active
-        constraints.progressBarTop.isActive = active
+        constraints.progressBarTop?.isActive = active
         constraints.topSlideContainerBottomToNavigationBarBottom.isActive = active
         constraints.statusBackgroundToNavigationBarContainerBottom.isActive = active
     }
 
     func setAddressBarBottomActive(_ active: Bool) {
-        constraints.progressBarBottom.isActive = active
+        constraints.progressBarBottom?.isActive = active
         constraints.navigationBarContainerBottom.isActive = active
         constraints.topSlideContainerBottomToStatusBackgroundBottom.isActive = active
         constraints.statusBackgroundBottomToSafeAreaTop.isActive = active

@@ -114,11 +114,13 @@ class SwipeTabsCoordinator: NSObject {
         scrollToCurrent()
 
         collectionView.reloadData()
+        collectionView.layoutIfNeeded()
     }
 
     private func updateLayout() {
+        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? 60 : 52
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.barView.frame.height)
+        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -413,10 +415,10 @@ class OmniBarCell: UICollectionViewCell {
             addSubview(omniBarView)
 
             NSLayoutConstraint.activate([
-                constrainView(omniBarView, by: .leadingMargin),
-                constrainView(omniBarView, by: .trailingMargin),
-                constrainView(omniBarView, by: .top),
-                constrainView(omniBarView, by: .bottom),
+                omniBarView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+                omniBarView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+                omniBarView.topAnchor.constraint(equalTo: topAnchor),
+                omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
 
             addMaskViewIfNeeded()
@@ -441,6 +443,7 @@ class OmniBarCell: UICollectionViewCell {
                 maskView.heightAnchor.constraint(equalToConstant: 25)
             ])
             bringSubviewToFront(maskView)
+                
         }
     }
 }

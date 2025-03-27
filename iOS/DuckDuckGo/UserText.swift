@@ -1537,22 +1537,23 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
     // Duck Player Native UI
-    static let duckPlayerNativeWatchOnYouTube = NSLocalizedString("duck-player.native-watch-on-youtube", value: "Watch in Youtube", comment: "Text for the button to watch a video on YouTube")
-    static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
+    static let duckPlayerNativeWatchOnYouTube = NSLocalizedString("duck-player.native-watch-on-youtube", value: "Watch in Youtube", comment: "Text for the button to watch a video on YouTube")    
     static let duckPlayerNativeOpenInDuckPlayer = NSLocalizedString("duck-player.native-open-in-duckplayer", value: "Play this video in Duck Player", comment: "Text for the button to watch a video on DuckPlayer")
     static let duckPlayerNativeResumeInDuckPlayer = NSLocalizedString("duck-player.native-resume-in-duckplayer", value: "Resume in Duck Player", comment: "Text for the button to resume watching a video on DuckPlayer")
     public static let duckPlayerTapToWatchWithoutAds = NSLocalizedString("duckplayer.pill.watch.without.ads", value: "No targeted ads, always private", comment: "Caption for Duck Player entry point")
-    public static let duckPlayerNativeUseOnSERPLabel = NSLocalizedString("duckPlayerNative.use.on.serp.label", value: "Use on Search Results", comment: "Label for the use DuckPlayer on SERP toggle")
-    public static let duckPlayerNativeUseOnSERPFooter = NSLocalizedString("duckPlayerNative.use.on.serp.footer", value: "YouTube videos on DuckDuckGo search results will open in Duck Player.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    public static let duckPlayerNativeUseOnSERPLabel = NSLocalizedString("duckPlayerNative.use.on.serp.label", value: "DuckDuckGo Search Results", comment: "Label for the use DuckPlayer on SERP toggle")
+    public static let duckPlayerNativeUseOnSERPFooter = NSLocalizedString("duckPlayerNative.use.on.serp.footer", value: "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
     public static let duckPlayerNativeUseOnYoutubeLabel = NSLocalizedString("duckPlayerNative.use.on.youtube.label", value: "Use on Youtube.com", comment: "Label for the use DuckPlayer on Youtube toggle")
-    public static let duckPlayerNativeUseOnYoutubeFooter = NSLocalizedString("duckPlayerNative.use.on.youtube.footer", value: "Makes Duck Player available on Youtube video pages.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    public static let duckPlayerNativeUseOnYoutubeFooter = NSLocalizedString("duckPlayerNative.use.on.youtube.footer", value: "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
     public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
     public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Let me choose", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
     public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Don't Show", comment: "Text displayed when DuckPlayer is in off for youtube.")
     public static let duckPlayerNativeAutoOpenLabel = NSLocalizedString("duckPlayerNative.auto.open.label", value: "Auto-open Duck Player on Youtube", comment: "Label for the automatic youtube video opening")
-    
-    public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Try Duck Player Mode for a private YouTube experience with DuckDuckGo", comment: "Title for DuckPlayer priming modal")
-    public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Watch YouTube without targeted ads or influencing your recommendations.", comment: "Description for DuckPlayer priming modal")
+    static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
+    static let duckPlayerNativeAutoplayVideosDescription = NSLocalizedString("duck-player.native-autoplay-videos.description", value: "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.", comment: "Text for the description about autoplay videos")
+
+    public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Play this video in Duck Player to watch without targeted ads!", comment: "Title for DuckPlayer priming modal")
+    public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.", comment: "Description for DuckPlayer priming modal")
     public static let duckPlayerNativeModalCTA = NSLocalizedString("duckPlayerNative.modal.cta", value: "Watch Now Privately", comment: "CTA for DuckPlayer priming modal")
 
     // MARK: - AI Chat

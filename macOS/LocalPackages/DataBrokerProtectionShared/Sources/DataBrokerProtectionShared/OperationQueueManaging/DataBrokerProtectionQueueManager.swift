@@ -76,7 +76,7 @@ public protocol DataBrokerProtectionQueueManager {
     init(operationQueue: DataBrokerProtectionOperationQueue,
          operationsCreator: DataBrokerOperationsCreator,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+         brokerJSONService: BrokerJSONServiceProvider?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -101,7 +101,7 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     private var operationQueue: DataBrokerProtectionOperationQueue
     private let operationsCreator: DataBrokerOperationsCreator
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
+    private let brokerJSONService: BrokerJSONServiceProvider?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = DataBrokerProtectionQueueMode.idle
@@ -120,13 +120,13 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     public init(operationQueue: DataBrokerProtectionOperationQueue,
                 operationsCreator: DataBrokerOperationsCreator,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+                brokerJSONService: BrokerJSONServiceProvider?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.operationQueue = operationQueue
         self.operationsCreator = operationsCreator
         self.mismatchCalculator = mismatchCalculator
-        self.brokerUpdater = brokerUpdater
+        self.brokerJSONService = brokerJSONService
         self.pixelHandler = pixelHandler
     }
 
@@ -250,8 +250,9 @@ private extension DefaultDataBrokerProtectionQueueManager {
     }
 
     func updateBrokerData() {
-        // Update broker files if applicable
-        brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
+        Task {
+            try await brokerJSONService?.checkForBrokerJSONUpdates()
+        }
     }
 
     func addOperations(withType type: OperationType,

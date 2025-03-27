@@ -92,21 +92,24 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     private let defaults: UserDefaults
     private let settings: DataBrokerProtectionSettings
     private let vault: any DataBrokerProtectionSecureVault
-    private let accountManager: AccountManager
+    private let authenticationManager: DataBrokerProtectionAuthenticationManaging
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-    public init(defaults: UserDefaults, settings: DataBrokerProtectionSettings, vault: any DataBrokerProtectionSecureVault, accountManager: AccountManager) {
+    public init(defaults: UserDefaults,
+                settings: DataBrokerProtectionSettings,
+                vault: any DataBrokerProtectionSecureVault,
+                authenticationManager: DataBrokerProtectionAuthenticationManaging) {
         self.defaults = defaults
         self.settings = settings
         self.vault = vault
-        self.accountManager = accountManager
+        self.authenticationManager = authenticationManager
     }
 
     // MARK: - Main flow
 
     public func checkForBrokerJSONUpdates() async throws {
-        guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
+        guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
         let request = try Endpoint.request(for: .mainConfig,
                                            baseURL: settings.selectedEnvironment.endpointURL,
@@ -143,7 +146,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     // MARK: - File handling
 
     func downloadBrokerJSONs() async throws {
-        guard let accessToken = accountManager.accessToken else { throw Error.missingAccessToken }
+        guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
         let request = try Endpoint.request(for: .allBrokers,
                                            baseURL: settings.selectedEnvironment.endpointURL,

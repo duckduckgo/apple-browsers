@@ -25,6 +25,7 @@ import LoginItems
 import Common
 import Freemium
 import NetworkProtectionIPC
+import Subscription
 
 public final class DataBrokerProtectionManager {
 
@@ -42,20 +43,28 @@ public final class DataBrokerProtectionManager {
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
-    lazy var dataManager: DataBrokerProtectionDataManager = {
-        let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-
+    private lazy var sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> = {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        return sharedPixelsHandler
+    }()
+
+    private lazy var vault: any DataBrokerProtectionSecureVault = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+
         guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
             fatalError("Failed to make secure storage vault")
         }
 
+        return vault
+    }()
+
+    lazy var dataManager: DataBrokerProtectionDataManager = {
+        let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
 
         let dataManager = DataBrokerProtectionDataManager(database: database,
@@ -63,6 +72,15 @@ public final class DataBrokerProtectionManager {
 
         dataManager.delegate = self
         return dataManager
+    }()
+
+    lazy var brokerJSONService: BrokerJSONServiceProvider = {
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
+        let brokerJSONService = BrokerJSONService(defaults: .dbp,
+                                                  settings: settings,
+                                                  vault: vault,
+                                                  authenticationManager: authenticationManager)
+        return brokerJSONService
     }()
 
     private lazy var ipcClient: DataBrokerProtectionIPCClient = {

@@ -90,11 +90,15 @@ public class DataBrokerProtectionAgentManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
+        let brokerJSONService = BrokerJSONService(defaults: .dbp,
+                                                  settings: dbpSettings,
+                                                  vault: vault,
+                                                  authenticationManager: authenticationManager)
+
         let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
                                                                     operationsCreator: operationsBuilder,
                                                                     mismatchCalculator: mismatchCalculator,
-                                                                    brokerUpdater: brokerUpdater,
+                                                                    brokerJSONService: brokerJSONService,
                                                                     pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,

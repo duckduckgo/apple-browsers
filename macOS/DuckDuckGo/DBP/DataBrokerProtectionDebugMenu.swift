@@ -291,7 +291,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             let service = BrokerJSONService(defaults: .dbp,
                                             settings: DataBrokerProtectionSettings(defaults: .dbp),
                                             vault: vault,
-                                            accountManager: DefaultSubscriptionManager().accountManager)
+                                            authenticationManager: DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
+                                                subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge))
             try await service.checkForBrokerJSONUpdates()
         }
     }

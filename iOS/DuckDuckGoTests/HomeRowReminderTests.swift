@@ -60,38 +60,6 @@ class HomeRowReminderTests: XCTestCase {
         XCTAssertFalse(feature.showNow())
     }
 
-    // MARK: - Add To Dock - Onboarding
-
-    func testWhenAddToDockHasShownInOboardingIntroThenDoNotShowAddToDockReminder() {
-        // GIVEN
-        var variantManager = MockVariantManager()
-        variantManager.isSupportedBlock = { feature in
-            feature == .addToDockIntro
-        }
-        let sut = HomeRowReminder(storage: storage, variantManager: variantManager)
-
-        // WHEN
-        let result = sut.showNow()
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
-    func testWhenAddToDockHasShownInContextualOboardingThenDoNotShowAddToDockReminder() {
-        // GIVEN
-        var variantManager = MockVariantManager()
-        variantManager.isSupportedBlock = { feature in
-            feature == .addToDockContextual
-        }
-        let sut = HomeRowReminder(storage: storage, variantManager: variantManager)
-
-        // WHEN
-        let result = sut.showNow()
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
     // MARK: - Helper functions
 
     private func setReminderTimeElapsed() {

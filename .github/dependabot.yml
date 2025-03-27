@@ -8,7 +8,7 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "swift" # For Swift package updates
-    directory: "BrowserServicesKit" # Location of Package.swift file
+    directory: "SharedPackages/BrowserServicesKit" # Location of Package.swift file
     schedule:
       interval: "daily"
     ignore:

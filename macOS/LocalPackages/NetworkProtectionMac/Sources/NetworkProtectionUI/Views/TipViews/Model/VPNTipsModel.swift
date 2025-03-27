@@ -24,6 +24,7 @@ import NetworkProtectionProxy
 import os.log
 import TipKit
 import PixelKit
+import VPNAppState
 import VPNPixels
 
 @MainActor
@@ -54,6 +55,7 @@ public final class VPNTipsModel: ObservableObject {
     }
 
     private let isMenuApp: Bool
+    private let vpnAppState: VPNAppState
     private let vpnSettings: VPNSettings
     private let proxySettings: TransparentProxySettings
     private let logger: Logger
@@ -62,6 +64,7 @@ public final class VPNTipsModel: ObservableObject {
     public init(statusObserver: ConnectionStatusObserver,
                 activeSitePublisher: CurrentValuePublisher<ActiveSiteInfo?, Never>,
                 forMenuApp isMenuApp: Bool,
+                vpnAppState: VPNAppState,
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 logger: Logger) {
@@ -70,6 +73,7 @@ public final class VPNTipsModel: ObservableObject {
         self.connectionStatus = statusObserver.recentValue
         self.isMenuApp = isMenuApp
         self.logger = logger
+        self.vpnAppState = vpnAppState
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
 
@@ -132,7 +136,7 @@ public final class VPNTipsModel: ObservableObject {
 
         // If the proxy is available, we can show this tip after the geoswitchin tip
         // Otherwise we can't show this tip
-        if proxySettings.proxyAvailable,
+        if vpnAppState.isUsingSystemExtension,
            case .invalidated = geoswitchingTip.status {
 
             return true
@@ -149,11 +153,11 @@ public final class VPNTipsModel: ObservableObject {
 
         // If the proxy is available, we need to wait until the domain exclusions tip was shown.
         // If the proxy is not available, we can show this tip after the geoswitchin tip
-        if proxySettings.proxyAvailable,
+        if vpnAppState.isUsingSystemExtension,
            case .invalidated = domainExclusionsTip.status {
 
             return true
-        } else if !proxySettings.proxyAvailable,
+        } else if !vpnAppState.isUsingSystemExtension,
            case .invalidated = geoswitchingTip.status {
 
             return true

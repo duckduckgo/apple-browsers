@@ -779,6 +779,18 @@
         }
       }
     },
+    "alert.unable-to-scan-qr-code-description" : {
+      "comment" : "Description for unable to scan qr code error",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sorry, this code is invalid. Please make sure the correct code was entered or scanned."
+          }
+        }
+      }
+    },
     "alert.unable-to-sync-to-server-description" : {
       "comment" : "Description for unable to sync to server error",
       "extractionState" : "extracted_with_value",

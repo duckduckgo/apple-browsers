@@ -2,7 +2,7 @@ import("../iOS/fastlane/Fastfile")
 import("../macOS/fastlane/Fastfile")
 
 lane :update_dependencies do
-  Dir.chdir("../BrowserServicesKit") do
+  Dir.chdir("../SharedPackages/BrowserServicesKit") do
     sh('swift package update')
   end
 

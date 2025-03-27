@@ -70,7 +70,7 @@ final class SettingsViewModel: ObservableObject {
     // Properties
     private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
-    
+
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
@@ -80,10 +80,10 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    
+
     // View State
     @Published private(set) var state: SettingsState
-    
+
     // MARK: Cell Visibility
     enum Features {
         case sync
@@ -94,12 +94,12 @@ final class SettingsViewModel: ObservableObject {
         case speechRecognition
         case networkProtection
     }
-    
+
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 
     @Published var shouldShowRecentlyVisitedSites: Bool = true
-    
+
     @Published var isInternalUser: Bool = AppDependencyProvider.shared.internalUserDecider.isInternalUser
 
     @Published var selectedFeedbackFlow: String?
@@ -108,16 +108,16 @@ final class SettingsViewModel: ObservableObject {
     // Used to automatically navigate to a specific section
     // immediately after loading the Settings View
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
-    
+
     // MARK: Bindings
-    
-    var themeBinding: Binding<ThemeName> {
-        Binding<ThemeName>(
-            get: { self.state.appTheme },
+
+    var themeStyleBinding: Binding<ThemeStyle> {
+        Binding<ThemeStyle>(
+            get: { self.state.appThemeStyle },
             set: {
                 Pixel.fire(pixel: .settingsThemeSelectorPressed)
-                self.state.appTheme = $0
-                ThemeManager.shared.enableTheme(with: $0)
+                self.state.appThemeStyle = $0
+                ThemeManager.shared.setThemeStyle($0)
             }
         )
     }
@@ -171,16 +171,8 @@ final class SettingsViewModel: ObservableObject {
                 self.experimentalThemingManager.toggleExperimentalTheming()
                 self.state.isExperimentalThemingEnabled = self.experimentalThemingManager.isExperimentalThemingEnabled
             })
-        }
-
-    var alternativeColorsBinding: Binding<Bool> {
-        Binding<Bool>(
-            get: { self.state.isAlternativeColorSchemeEnabled },
-            set: { _ in
-                self.experimentalThemingManager.toggleAlternativeColorScheme()
-                self.state.isAlternativeColorSchemeEnabled = self.experimentalThemingManager.isAlternativeColorSchemeEnabled
-            })
     }
+
 
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
@@ -507,14 +499,13 @@ extension SettingsViewModel {
     @MainActor
     private func initState() {
         self.state = SettingsState(
-            appTheme: appSettings.currentThemeName,
+            appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
-            isAlternativeColorSchemeEnabled: experimentalThemingManager.isAlternativeColorSchemeEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

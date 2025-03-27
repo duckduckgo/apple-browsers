@@ -2,7 +2,7 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:BrowserServicesKit">
+      location = "group:SharedPackages/BrowserServicesKit">
    </FileRef>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

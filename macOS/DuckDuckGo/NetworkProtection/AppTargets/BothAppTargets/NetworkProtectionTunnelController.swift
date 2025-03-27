@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import BrowserServicesKit
 import Combine
 import SwiftUI
 import Common
 import FeatureFlags
+import Foundation
 import NetworkExtension
 import NetworkProtection
 import NetworkProtectionProxy
@@ -28,14 +29,10 @@ import NetworkProtectionUI
 import Networking
 import PixelKit
 import os.log
-
-#if NETP_SYSTEM_EXTENSION
+import Subscription
 import SystemExtensionManager
 import SystemExtensions
-#endif
-
-import Subscription
-import BrowserServicesKit
+import VPNExtensionManagement
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
 typealias NetworkProtectionConfigChangeHandler = () -> Void
@@ -71,9 +68,14 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     private let accessTokenStorage: SubscriptionTokenKeychainStorage
     private let subscriptionManagerV2: any SubscriptionManagerV2
 
-    // MARK: - Debug Options Support
+    // MARK: - Extensions Support
 
-    private let networkExtensionBundleID: String
+    private let availableExtensions: VPNExtensionResolver.AvailableExtensions
+    lazy var extensionResolver: VPNExtensionResolver = {
+        VPNExtensionResolver(availableExtensions: availableExtensions, featureFlagger: featureFlagger, isConfigurationInstalled: { [weak self] extensionBundleID in
+            await self?.isConfigurationInstalled(extensionBundleID: extensionBundleID) ?? true
+        })
+    }()
     private let networkExtensionController: NetworkExtensionController
 
     // MARK: - Notification Center
@@ -118,8 +120,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return internalManager
             }
 
+            let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
             let manager = try? await NETunnelProviderManager.loadAllFromPreferences().first { manager in
-                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == networkExtensionBundleID
+                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == extensionBundleID
             }
             internalManager = manager
             return manager
@@ -140,7 +144,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     @MainActor
     private func setupAndSave(_ tunnelManager: NETunnelProviderManager) async throws {
-        setup(tunnelManager)
+        await setup(tunnelManager)
         try await tunnelManager.saveToPreferences()
         try await tunnelManager.loadFromPreferences()
     }
@@ -152,7 +156,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// - Parameters:
     ///         - notificationCenter: (meant for testing) the notification center that this object will use.
     ///
-    init(networkExtensionBundleID: String,
+    init(availableExtensions: VPNExtensionResolver.AvailableExtensions,
          networkExtensionController: NetworkExtensionController,
          featureFlagger: FeatureFlagger,
          settings: VPNSettings,
@@ -161,8 +165,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          accessTokenStorage: SubscriptionTokenKeychainStorage,
          subscriptionManagerV2: any SubscriptionManagerV2) {
 
+        self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
-        self.networkExtensionBundleID = networkExtensionBundleID
         self.networkExtensionController = networkExtensionController
         self.notificationCenter = notificationCenter
         self.settings = settings
@@ -340,7 +344,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     /// Setups the tunnel manager if it's not set up already.
     ///
     @MainActor
-    private func setup(_ tunnelManager: NETunnelProviderManager) {
+    private func setup(_ tunnelManager: NETunnelProviderManager) async {
         Logger.networkProtection.log("Setting up tunnel manager")
         if tunnelManager.localizedDescription == nil {
             tunnelManager.localizedDescription = UserText.networkProtectionTunnelName
@@ -350,10 +354,12 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             tunnelManager.isEnabled = true
         }
 
+        let extensionBundleID = await extensionResolver.activeExtensionBundleID
+
         tunnelManager.protocolConfiguration = {
             let protocolConfiguration = tunnelManager.protocolConfiguration as? NETunnelProviderProtocol ?? NETunnelProviderProtocol()
             protocolConfiguration.serverAddress = "127.0.0.1" // Dummy address... the NetP service will take care of grabbing a real server
-            protocolConfiguration.providerBundleIdentifier = Bundle.tunnelExtensionBundleID
+            protocolConfiguration.providerBundleIdentifier = extensionBundleID
             protocolConfiguration.providerConfiguration = [
                 NetworkProtectionOptionKey.defaultPixelHeaders: APIRequest.Headers().httpHeaders,
             ]
@@ -426,12 +432,46 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     // MARK: - Activate System Extension
 
-#if NETP_SYSTEM_EXTENSION
+    /// Checks if the specified configuration is installed.
+    ///
+    /// We first check if ``internalManager`` exists, and if it does exist we assume it represents the only installed configuration.
+    /// We do this because it's best to avoid calling `loadAllFromPreferences` excessively as it triggers VPN status updates when we do.
+    /// If it doesn't exist, we load all configurations and check if the one with the specified extension bundle ID exists.
+    ///
+    func isConfigurationInstalled(extensionBundleID: String) async -> Bool {
+
+        guard let internalManager,
+              let configuration = internalManager.protocolConfiguration as? NETunnelProviderProtocol,
+              internalManager.connection.status != .invalid else {
+
+            guard let allConfigurations = try? await NETunnelProviderManager.loadAllFromPreferences() else {
+                return false
+            }
+
+            return allConfigurations.contains { manager in
+                (manager.protocolConfiguration as? NETunnelProviderProtocol)?.providerBundleIdentifier == extensionBundleID
+            }
+        }
+
+        return configuration.providerBundleIdentifier == extensionBundleID
+    }
+
     /// Ensures that the system extension is activated if necessary.
     ///
     private func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
+
+        PixelKit.fire(
+            NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationAttempt,
+            frequency: .dailyAndCount,
+            includeAppVersionParameter: true)
+
         do {
             try await networkExtensionController.activateSystemExtension(waitingForUserApproval: waitingForUserApproval)
+
+            PixelKit.fire(
+                NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationSuccess,
+                frequency: .dailyAndCount,
+                includeAppVersionParameter: true)
         } catch {
             switch error {
             case OSSystemExtensionError.requestSuperseded:
@@ -449,28 +489,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionSystemExtensionActivationFailure(error),
-                frequency: .standard,
+                frequency: .dailyAndCount,
                 includeAppVersionParameter: true
             )
 
             throw error
         }
-
-        self.controllerErrorStore.lastErrorMessage = nil
-
-        // We'll only update to completed if we were showing the onboarding step to
-        // allow the system extension.  Otherwise we may override the allow-VPN
-        // onboarding step.
-        //
-        // Additionally if the onboarding step was allowing the system extension, we won't
-        // start the tunnel at once, and instead require that the user enables the toggle.
-        //
-        if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-            onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-            return
-        }
     }
-#endif
 
     // MARK: - Starting & Stopping the VPN
 
@@ -548,6 +573,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         do {
             try await start(isFirstAttempt: true)
+
             // It's important to note that we've seen instances where the call to start() the VPN
             // doesn't throw any errors, yet the tunnel fails to start.  In any case this pixel
             // should be interpreted as "the controller successfully requested the tunnel to be
@@ -580,28 +606,28 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     }
 
     private func start(isFirstAttempt: Bool) async throws {
-#if NETP_SYSTEM_EXTENSION
-        try await activateSystemExtension { [weak self] in
-            // If we're waiting for user approval we wanna make sure the
-            // onboarding step is set correctly.  This can be useful to
-            // help prevent the value from being de-synchronized.
-            self?.onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue
-        }
+        if await extensionResolver.isUsingSystemExtension {
+            try await activateSystemExtension { [weak self] in
+                // If we're waiting for user approval we wanna make sure the
+                // onboarding step is set correctly.  This can be useful to
+                // help prevent the value from being de-synchronized.
+                self?.onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue
+            }
 
-        self.controllerErrorStore.lastErrorMessage = nil
+            self.controllerErrorStore.lastErrorMessage = nil
 
-        // We'll only update to completed if we were showing the onboarding step to
-        // allow the system extension.  Otherwise we may override the allow-VPN
-        // onboarding step.
-        //
-        // Additionally if the onboarding step was allowing the system extension, we won't
-        // start the tunnel at once, and instead require that the user enables the toggle.
-        //
-        if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
-            onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
-            return
+            // We'll only update to completed if we were showing the onboarding step to
+            // allow the system extension.  Otherwise we may override the allow-VPN
+            // onboarding step.
+            //
+            // Additionally if the onboarding step was allowing the system extension, we won't
+            // start the tunnel at once, and instead require that the user enables the toggle.
+            //
+            if onboardingStatusRawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
+                onboardingStatusRawValue = OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue
+                return
+            }
         }
-#endif
 
         let tunnelManager: NETunnelProviderManager
 

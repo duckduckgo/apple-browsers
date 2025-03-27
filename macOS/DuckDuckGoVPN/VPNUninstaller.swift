@@ -23,7 +23,7 @@ import PixelKit
 import SystemExtensions
 
 protocol VPNUninstalling {
-    func uninstall(includingSystemExtension: Bool) async throws
+    func uninstall(showNotification: Bool) async throws
     func removeSystemExtension() async throws
     func removeVPNConfiguration() async throws
 }
@@ -47,18 +47,21 @@ final class VPNUninstaller: VPNUninstalling {
         self.pixelKit = pixelKit
     }
 
-    func uninstall(includingSystemExtension: Bool) async throws {
+    func uninstall(showNotification: Bool) async throws {
         pixelKit?.fire(VPNUninstallAttempt.begin, frequency: .legacyDailyAndCount)
 
         do {
-            try await removeSystemExtension()
+            if await tunnelController.extensionResolver.isUsingSystemExtension {
+                try await removeSystemExtension()
+            }
             try await removeVPNConfiguration()
 
-            if defaults.networkProtectionOnboardingStatus == .completed {
-                defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+            await resetOnboardingStatus()
+
+            if showNotification {
+                defaults.networkProtectionShouldShowVPNUninstalledMessage = true
             }
 
-            defaults.networkProtectionShouldShowVPNUninstalledMessage = true
             pixelKit?.fire(VPNUninstallAttempt.success, frequency: .legacyDailyAndCount)
         } catch {
             switch error {
@@ -75,11 +78,9 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
         await tunnelController.stop()
         try await networkExtensionController.deactivateSystemExtension()
         defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)
-#endif
     }
 
     func removeVPNConfiguration() async throws {
@@ -92,7 +93,13 @@ final class VPNUninstaller: VPNUninstalling {
 
         try await manager.removeFromPreferences()
 
-        if defaults.networkProtectionOnboardingStatus == .completed {
+        await resetOnboardingStatus()
+    }
+
+    private func resetOnboardingStatus() async {
+        if await tunnelController.extensionResolver.isUsingSystemExtension {
+            defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowExtension)
+        } else {
             defaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
         }
     }

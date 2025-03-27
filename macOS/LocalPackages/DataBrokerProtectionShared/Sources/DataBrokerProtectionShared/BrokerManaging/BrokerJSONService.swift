@@ -111,33 +111,39 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     // MARK: - Main flow
 
     public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
-        let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
-        if !skipsLimiter,
-           Date().timeIntervalSince(lastBrokerJSONUpdateCheck) < Self.updateCheckInterval {
-            /// TODO: Add logger
-            return
-        }
+        do {
+            let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
+            if !skipsLimiter,
+               Date().timeIntervalSince(lastBrokerJSONUpdateCheck) < Self.updateCheckInterval {
+                Logger.dataBrokerProtection.log("Skipping broker JSON update check due to rate limiting")
+                return
+            }
 
-        guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+            guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
-        let request = try Endpoint.request(for: .mainConfig,
-                                           baseURL: settings.selectedEnvironment.endpointURL,
-                                           contentType: "application/json",
-                                           eTag: settings.mainConfigETag,
-                                           accessToken: accessToken)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let response = response as? HTTPURLResponse else { return }
+            let request = try Endpoint.request(for: .mainConfig,
+                                               baseURL: settings.selectedEnvironment.endpointURL,
+                                               contentType: "application/json",
+                                               eTag: settings.mainConfigETag,
+                                               accessToken: accessToken)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let response = response as? HTTPURLResponse else { return }
 
-        if response.statusCode == 304 {
+            if response.statusCode == 304 {
+                Logger.dataBrokerProtection.log("Broker JSONs are up to date: main config eTag matches")
+                settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
+                return
+            }
+
+            guard response.statusCode == 200 else { throw Error.serverError }
+
+            try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
+            settings.mainConfigETag = response.etag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
-            return
+        } catch {
+            pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "checkForBrokerJSONUpdates"))
+            throw error
         }
-
-        guard response.statusCode == 200 else { throw Error.serverError }
-
-        try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
-        settings.mainConfigETag = response.etag
-        settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
     }
 
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
@@ -146,6 +152,8 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url, eTag: $0.eTag) }
         let diff = Set(incomingBrokerJSONs).subtracting(Set(savedBrokerJSONs))
         guard !diff.isEmpty else { return }
+
+        Logger.dataBrokerProtection.log("Changes detected in \(diff.count, privacy: .public) brokers")
 
         try await downloadBrokerJSONs()
         try processBrokerJSONs(withFileNames: diff.map(\.fileName),
@@ -195,6 +203,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         }
 
         try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
+        Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
     }
 
     /// brokerFileNames might contain both active and test brokers
@@ -236,8 +245,14 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
             return
         }
 
-        guard shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else { return }
+        guard shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else {
+            Logger.dataBrokerProtection.log("False positive (changed eTag but same version): \(broker.url, privacy: .public)")
+            return
+        }
+
         guard let savedBrokerId = savedBroker.id else { return }
+
+        Logger.dataBrokerProtection.log("Updated broker found: \(broker.url, privacy: .public)")
 
         try vault.update(broker, with: savedBrokerId)
         try updateAttemptCount(broker)
@@ -247,6 +262,8 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     /// 2. We fetch the user profile and obtain the profile queries
     /// 3. We create the new scans operations for the profile queries and the new broker id
     func addBroker(_ broker: DataBroker) throws {
+        Logger.dataBrokerProtection.log("New broker found: \(broker.url, privacy: .public)")
+
         let brokerId = try vault.save(broker: broker)
         let profileQueries = try vault.fetchAllProfileQueries(for: 1)
         let profileQueryIDs = profileQueries.compactMap({ $0.id })

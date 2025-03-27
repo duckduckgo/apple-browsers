@@ -61,7 +61,6 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
             case .mainConfig:
                 components?.path = "/dbp/remote/v0/main_config.json"
             case .allBrokers:
-                var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
                 components?.path = "/dbp/remote/v0"
                 components?.queryItems = [
                     .init(name: "name", value: "all.zip"),
@@ -137,7 +136,8 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         try await downloadBrokerJSONs()
         try processBrokerJSONs(withFileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
-                               activeBrokers: mainConfig.activeDataBrokers)
+                               activeBrokers: mainConfig.activeDataBrokers,
+                               testBrokers: mainConfig.testDataBrokers)
     }
 
     // MARK: - File handling
@@ -183,9 +183,12 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
     }
 
-    func processBrokerJSONs(withFileNames brokerFileNames: [String],
+    /// brokerFileNames might contain both active and test brokers
+    /// TODO: Inject directory URL, test this logic
+    func processBrokerJSONs(withFileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],
-                            activeBrokers: [String]) throws {
+                            activeBrokers: [String],
+                            testBrokers: [String]) throws {
         let directoryURL: URL
         if #available(macOS 13.0, iOS 16.0, *) {
             directoryURL = uncompressedBrokerJSONDirectoryURL.appending(path: "json", directoryHint: .isDirectory)
@@ -197,13 +200,19 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                                                                    options: [.skipsHiddenFiles])
         for fileURL in fileURLs {
             let fileName = fileURL.lastPathComponent
-            guard brokerFileNames.contains(fileName) else { continue }
+            guard changedBrokerFileNames.contains(fileName) else { continue }
 
             var dataBroker = try DataBroker.initFromResource(fileURL)
             dataBroker.setETag(eTagMapping[fileName] ?? "")
-            dataBroker.setIsActive(activeBrokers.contains(fileName))
-
-            try upsertBroker(dataBroker)
+            if activeBrokers.contains(fileName) {
+                dataBroker.setIsActive(true)
+                try upsertBroker(dataBroker)
+            } else if testBrokers.contains(fileName) {
+#if DEBUG
+                dataBroker.setIsActive(false)
+                try upsertBroker(dataBroker)
+#endif
+            }
         }
     }
 

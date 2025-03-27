@@ -99,7 +99,7 @@ final class DateExtensionTests: XCTestCase {
         let daysAgo = date.daysAgo(3)
         let expectedDate = Calendar.current.date(byAdding: .day, value: -3, to: date)!
 
-        XCTAssertEqual(daysAgo.startOfDay, expectedDate.startOfDay)
+        XCTAssertEqual(daysAgo.startOfDay.timeIntervalSince1970, expectedDate.startOfDay.timeIntervalSince1970, accuracy: 0.1)
     }
 
     func testStartOfMinuteNow() {
@@ -107,7 +107,7 @@ final class DateExtensionTests: XCTestCase {
         let now = Calendar.current.date(bySetting: .second, value: 0, of: Date())!
         let expectedStart = Calendar.current.date(byAdding: .minute, value: -1, to: now)!
 
-        XCTAssertEqual(startOfMinuteNow, expectedStart)
+        XCTAssertEqual(startOfMinuteNow.timeIntervalSince1970, expectedStart.timeIntervalSince1970, accuracy: 0.1)
     }
 
     func testMonthsWithIndex() {

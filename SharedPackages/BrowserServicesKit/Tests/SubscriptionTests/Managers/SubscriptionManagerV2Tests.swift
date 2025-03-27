@@ -111,7 +111,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             activeOffers: []
         )
         mockSubscriptionEndpointService.getSubscriptionResult = .success(expiredSubscription)
-
+        mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
         do {
             try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
         } catch {

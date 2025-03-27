@@ -37,6 +37,7 @@ public final class VPNAppState {
 
     public func resetToDefaults() {
         defaults.resetVPNIsUsingSystemExtension()
+        defaults.resetIsVPNMigratedToAuthV2()
     }
 
     // MARK: - System Extension support
@@ -65,5 +66,9 @@ public final class VPNAppState {
         set {
             defaults.isVPNMigratedToAuthV2 = newValue
         }
+    }
+
+    public func resetIsMigratedToAuthV2() {
+        defaults.resetIsVPNMigratedToAuthV2()
     }
 }

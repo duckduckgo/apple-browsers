@@ -89,9 +89,9 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
 
     public func isSubscriptionPresent() -> Bool {
         switch returnSubscription! {
-        case .success(let subscription):
+        case .success:
             return true
-        case .failure(let error):
+        case .failure:
             return false
         }
     }

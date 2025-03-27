@@ -87,7 +87,7 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
     public func getCachedSubscription() -> Subscription.PrivacyProSubscription? {
         switch getSubscriptionResult! {
         case .success(let subscription): return subscription
-        case .failure(let error): return nil
+        case .failure: return nil
         }
     }
 }

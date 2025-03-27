@@ -62,7 +62,8 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/bloom_cpp.git", exact: "3.0.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
-        .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6")
+        .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit.git", exact: "4.1.0")
     ],
     targets: [
         .target(
@@ -440,7 +441,8 @@ let package = Package(
         .target(
             name: "Onboarding",
             dependencies: [
-                "BrowserServicesKit"
+                "BrowserServicesKit",
+                "DesignResourcesKit"
             ],
             resources: [
                 .process("Resources")

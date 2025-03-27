@@ -47,7 +47,7 @@ class AppSettingsMock: AppSettings {
 
     var autocomplete: Bool = true
 
-    var currentThemeName: DuckDuckGo.ThemeName = .systemDefault
+    var currentThemeStyle: DuckDuckGo.ThemeStyle = .systemDefault
 
     var autoClearAction: DuckDuckGo.AutoClearSettingsModel.Action = .clearData
 

@@ -70,11 +70,11 @@ file_header:
 
 # General Config
 excluded:
-  - BrowserServicesKit/Package.swift
-  - BrowserServicesKit/.build
-  - BrowserServicesKit/scripts/
-  - BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
-  - BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
+  - SharedPackages/BrowserServicesKit/Package.swift
+  - SharedPackages/BrowserServicesKit/.build
+  - SharedPackages/BrowserServicesKit/scripts/
+  - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
+  - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
   - iOS/DerivedData
   - iOS/DuckDuckGo/UserText.swift
   - iOS/fastlane/SnapshotHelper.swift

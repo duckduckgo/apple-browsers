@@ -30,7 +30,7 @@ let package = Package(
         .library(name: "DataBrokerProtectionSharedTestsUtils", targets: ["DataBrokerProtectionSharedTestsUtils"]),
     ],
     dependencies: [
-        .package(path: "../../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
         .package(path: "../NetworkProtectionMac"),
     ],
     targets: [

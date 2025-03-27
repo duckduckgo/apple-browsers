@@ -45,7 +45,7 @@ enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
 protocol AppSettings: AnyObject {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
-    var currentThemeName: ThemeName { get set }
+    var currentThemeStyle: ThemeStyle { get set }
     
     var autoClearAction: AutoClearSettingsModel.Action { get set }
     var autoClearTiming: AutoClearSettingsModel.Timing { get set }

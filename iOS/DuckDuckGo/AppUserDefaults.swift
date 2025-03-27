@@ -46,7 +46,9 @@ public class AppUserDefaults: AppSettings {
     struct Keys {
         static let autocompleteKey = "com.duckduckgo.app.autocompleteDisabledKey"
         static let recentlyVisitedSites = "com.duckduckgo.app.recentlyVisitedSitesKey"
-        static let currentThemeNameKey = "com.duckduckgo.app.currentThemeNameKey"
+
+        // This key's value is a leftover from previous approach. It's not changed to prevent the need of migration.
+        static let currentThemeStyleKey = "com.duckduckgo.app.currentThemeNameKey"
         
         static let autoClearActionKey = "com.duckduckgo.app.autoClearActionKey"
         static let autoClearTimingKey = "com.duckduckgo.app.autoClearTimingKey"
@@ -131,12 +133,12 @@ public class AppUserDefaults: AppSettings {
 
     }
 
-    var currentThemeName: ThemeName {
+    var currentThemeStyle: ThemeStyle {
         
         get {
-            var currentThemeName: ThemeName?
-            if let stringName = userDefaults?.string(forKey: Keys.currentThemeNameKey) {
-                currentThemeName = ThemeName(rawValue: stringName)
+            var currentThemeName: ThemeStyle?
+            if let stringName = userDefaults?.string(forKey: Keys.currentThemeStyleKey) {
+                currentThemeName = ThemeStyle(rawValue: stringName)
             }
             
             if let themeName = currentThemeName {
@@ -147,7 +149,7 @@ public class AppUserDefaults: AppSettings {
         }
         
         set {
-            userDefaults?.setValue(newValue.rawValue, forKey: Keys.currentThemeNameKey)
+            userDefaults?.setValue(newValue.rawValue, forKey: Keys.currentThemeStyleKey)
         }
         
     }

@@ -251,7 +251,7 @@ private extension DefaultDataBrokerProtectionQueueManager {
 
     func updateBrokerData() {
         Task {
-            try await brokerUpdater?.checkForBrokerJSONUpdates()
+            try await brokerUpdater?.checkForBrokerJSONUpdates(skipsLimiter: false)
         }
     }
 

@@ -75,9 +75,7 @@ public final class DataBrokerProtectionManager {
     }()
 
     lazy var brokerUpdater: BrokerJSONServiceProvider = {
-        let settings = DataBrokerProtectionSettings(defaults: .dbp)
-        let brokerUpdater = BrokerJSONService(defaults: .dbp,
-                                              settings: settings,
+        let brokerUpdater = BrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
                                               vault: vault,
                                               authenticationManager: authenticationManager,
                                               pixelHandler: sharedPixelsHandler)

@@ -20,9 +20,10 @@ import Foundation
 import Subscription
 import ZIPFoundation
 import Common
+import os.log
 
 public protocol BrokerJSONServiceProvider: AnyObject {
-    func checkForBrokerJSONUpdates() async throws
+    func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws
 }
 
 public final class BrokerJSONService: BrokerJSONServiceProvider {
@@ -88,9 +89,8 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         }
     }
 
-    private static let mainConfigETagKey = "brokerJSONMainConfigETag"
+    private static let updateCheckInterval = TimeInterval.hours(1)
 
-    private let defaults: UserDefaults
     private let settings: DataBrokerProtectionSettings
     private let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
@@ -98,12 +98,10 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
-    public init(defaults: UserDefaults,
-                settings: DataBrokerProtectionSettings,
+    public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) {
-        self.defaults = defaults
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
@@ -112,25 +110,34 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - Main flow
 
-    public func checkForBrokerJSONUpdates() async throws {
+    public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
+        let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
+        if !skipsLimiter,
+           Date().timeIntervalSince(lastBrokerJSONUpdateCheck) < Self.updateCheckInterval {
+            /// TODO: Add logger
+            return
+        }
+
         guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
         let request = try Endpoint.request(for: .mainConfig,
                                            baseURL: settings.selectedEnvironment.endpointURL,
                                            contentType: "application/json",
-                                           eTag: loadMainConfigETag(),
+                                           eTag: settings.mainConfigETag,
                                            accessToken: accessToken)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let response = response as? HTTPURLResponse else { return }
 
         if response.statusCode == 304 {
+            settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
             return
         }
 
         guard response.statusCode == 200 else { throw Error.serverError }
 
         try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
-        saveMainConfigETag(response.etag)
+        settings.mainConfigETag = response.etag
+        settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
     }
 
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
@@ -265,21 +272,6 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                 try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
             }
         }
-    }
-
-    // MARK: - ETag storage
-
-    func loadMainConfigETag() -> String? {
-        defaults.string(forKey: Self.mainConfigETagKey)
-    }
-
-    func saveMainConfigETag(_ etag: String?) {
-        defaults.set(etag, forKey: Self.mainConfigETagKey)
-    }
-
-    func loadETag(forBrokerNamed name: String) throws -> String? {
-        guard let broker = try vault.fetchBroker(with: name) else { return nil }
-        return broker.eTag
     }
 }
 

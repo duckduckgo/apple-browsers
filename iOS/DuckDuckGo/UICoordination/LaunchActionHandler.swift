@@ -19,7 +19,6 @@
 
 import UIKit
 import Core
-import enum Core.AppDeepLinkSchemes
 
 enum LaunchAction {
 

@@ -192,6 +192,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
+        self.newTabPageWebViewModel.removeUserScripts()
     }
 
     @objc

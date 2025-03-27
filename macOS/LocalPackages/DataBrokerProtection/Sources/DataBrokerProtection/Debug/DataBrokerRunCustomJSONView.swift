@@ -76,7 +76,7 @@ struct DataBrokerRunCustomJSONView: View {
                 Divider()
 
                 List(viewModel.brokers.sorted(by: { $0.name.lowercased() < $1.name.lowercased() }), id: \.name) { broker in
-                    Text(broker.name)
+                    Text(broker.displayName)
                         .onTapGesture {
                             jsonText = broker.toJSONString()
                         }

@@ -282,4 +282,12 @@ extension DataBroker {
     var type: DataBrokerHierarchy {
         parent == nil ? .parent : .child
     }
+    
+    public var displayName: String {
+#if DEBUG
+        return name.appendingFormat(" (%@@%@)", String(eTag.prefix(6)), version)
+#else
+        return name
+#endif
+    }
 }

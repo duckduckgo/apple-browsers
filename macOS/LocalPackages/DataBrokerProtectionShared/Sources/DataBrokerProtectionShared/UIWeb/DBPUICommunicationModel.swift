@@ -270,11 +270,11 @@ extension DBPUIDataBrokerProfileMatch {
         } ?? false
 
 #if DEBUG
-        let name = dataBrokerName.appendingFormat(" (%@@%@)", dataBrokerETag != nil ? String(dataBrokerETag!.prefix(6)) : "", dataBrokerVersion)
+        let displayName = dataBrokerName.appendingFormat(" (%@@%@)", dataBrokerETag != nil ? String(dataBrokerETag!.prefix(6)) : "", dataBrokerVersion)
 #else
-        let name = dataBrokerName
+        let displayName = dataBrokerName
 #endif
-        self.init(dataBroker: DBPUIDataBroker(name: name, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+        self.init(dataBroker: DBPUIDataBroker(name: displayName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),

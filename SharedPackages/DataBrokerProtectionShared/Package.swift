@@ -22,7 +22,10 @@ import PackageDescription
 
 let package = Package(
     name: "DataBrokerProtectionShared",
-    platforms: [ .macOS("11.4") ],
+    platforms: [
+        .iOS("15.0"),
+        .macOS("11.4")
+    ],
     products: [
         .library(
             name: "DataBrokerProtectionShared",

@@ -149,7 +149,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
         let eTagMapping = mainConfig.jsonETags.current
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
-        let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url, eTag: $0.eTag) }
+        let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }
         let diff = Set(incomingBrokerJSONs).subtracting(Set(savedBrokerJSONs))
         guard !diff.isEmpty else { return }
 
@@ -252,7 +252,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
 
         guard let savedBrokerId = savedBroker.id else { return }
 
-        Logger.dataBrokerProtection.log("Updated broker found: \(broker.url, privacy: .public)")
+        Logger.dataBrokerProtection.log("Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
 
         try vault.update(broker, with: savedBrokerId)
         try updateAttemptCount(broker)

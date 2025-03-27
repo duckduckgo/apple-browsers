@@ -52,6 +52,9 @@ final class BrowserTabViewController: NSViewController {
         actionsManager: newTabPageActionsManager,
         activeRemoteMessageModel: activeRemoteMessageModel
     )
+
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+
     private(set) weak var webView: WebView?
     private weak var webViewContainer: NSView?
     private weak var webViewSnapshot: NSView?
@@ -1448,7 +1451,7 @@ extension BrowserTabViewController {
     }
 
     private func handleTabSelectedInKeyWindow(_ tabIndex: TabIndex) {
-        if tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
+        if pinnedTabsManagerProvider.pinnedTabsMode == .shared, tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
             makeWebViewSnapshot()
         } else {
             hideWebViewSnapshotIfNeeded()

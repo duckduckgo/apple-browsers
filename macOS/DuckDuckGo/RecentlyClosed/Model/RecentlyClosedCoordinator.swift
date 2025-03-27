@@ -33,15 +33,19 @@ protocol RecentlyClosedCoordinating: AnyObject {
 @MainActor
 final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
-    static let shared = RecentlyClosedCoordinator(windowControllerManager: WindowControllersManager.shared)
+    static let shared = RecentlyClosedCoordinator(windowControllerManager: WindowControllersManager.shared,
+                                                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider)
 
     var windowControllerManager: WindowControllersManagerProtocol
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
-    init(windowControllerManager: WindowControllersManagerProtocol) {
+    init(windowControllerManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
         self.windowControllerManager = windowControllerManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
 
         guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
+        subscribeToPinnedTabsSettingChanged()
     }
 
     var canReopenRecentlyClosedTab: Bool {
@@ -53,30 +57,37 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     private var mainVCDidRegisterCancellable: AnyCancellable?
     private var mainVCDidUnregisterCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var pinnedTabsCancellables = Set<AnyCancellable>()
 
     private func subscribeToWindowControllersManager() {
-        subscribeToPinnedTabCollection(of: windowControllerManager.pinnedTabsManager)
+        subscribeToCurrentPinnedTabCollections()
 
         mainVCDidRegisterCancellable = windowControllerManager.didRegisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.subscribeToTabCollection(of: mainWindowController)
+                self?.subscribeToCurrentPinnedTabCollections()
             })
         mainVCDidUnregisterCancellable = windowControllerManager.didUnregisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.cacheWindowContent(mainWindowController: mainWindowController)
+                self?.subscribeToCurrentPinnedTabCollections()
             })
     }
 
-    private func subscribeToPinnedTabCollection(of pinnedTabsManager: PinnedTabsManager) {
-        let tabCollection = pinnedTabsManager.tabCollection
-        tabCollection.didRemoveTabPublisher
-            .sink { [weak self, weak tabCollection] (tab, index) in
-                guard let tabCollection = tabCollection else {
-                    return
+    private func subscribeToCurrentPinnedTabCollections() {
+        pinnedTabsCancellables.removeAll()
+
+        let tabCollections = pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection }
+        tabCollections.forEach { tabCollection in
+            tabCollection.didRemoveTabPublisher
+                .sink { [weak self, weak tabCollection] (tab, index) in
+                    guard let tabCollection = tabCollection else {
+                        return
+                    }
+                    self?.cacheTabContent(tab, of: tabCollection, at: .pinned(index))
                 }
-                self?.cacheTabContent(tab, of: tabCollection, at: .pinned(index))
-            }
-            .store(in: &cancellables)
+                .store(in: &pinnedTabsCancellables)
+        }
     }
 
     private func subscribeToTabCollection(of mainWindowController: MainWindowController) {
@@ -89,6 +100,14 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
                 self?.cacheTabContent(tab, of: tabCollection, at: .unpinned(index))
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToPinnedTabsSettingChanged() {
+        pinnedTabsManagerProvider.settingChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.subscribeToCurrentPinnedTabCollections()
+            }.store(in: &cancellables)
     }
 
     // MARK: - Cache
@@ -187,7 +206,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         }
 
         let tab = Tab(content: recentlyClosedTab.tabContent.loadedFromCache(), interactionStateData: recentlyClosedTab.interactionData, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
-        let tabIndex = min(recentlyClosedTab.index.item, windowControllerManager.pinnedTabsManager.tabCollection.tabs.count)
+        let tabIndex = min(recentlyClosedTab.index.item, Application.appDelegate.pinnedTabsManager.tabCollection.tabs.count)
 
         tabCollectionViewModel.insert(tab, at: .pinned(tabIndex), selected: true)
     }

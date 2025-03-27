@@ -54,19 +54,6 @@ public protocol DataBrokerJob: CCFCommunicationDelegate {
 }
 
 public extension DataBrokerJob {
-    func run(inputValue: InputValue,
-             webViewHandler: WebViewHandler?,
-             actionsHandler: ActionsHandler?,
-             shouldRunNextStep: @escaping () -> Bool) async throws -> ReturnValue {
-
-        try await run(inputValue: inputValue,
-                      webViewHandler: webViewHandler,
-                      actionsHandler: actionsHandler,
-                      showWebView: false)
-    }
-}
-
-public extension DataBrokerJob {
 
     // MARK: - Shared functions
 

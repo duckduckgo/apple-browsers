@@ -165,7 +165,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithPinnedTabs_WhenInsertOrAppendCalledPreferencesAreRespected() {
         let persistor = MockTabsPreferencesPersistor()
-        var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManager: PinnedTabsManager(),
+        var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                                                             tabsPreferences: TabsPreferences(persistor: persistor))
         tabCollectionViewModel.appendPinnedTab()
 
@@ -174,7 +174,7 @@ extension TabCollectionViewModelTests {
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
         persistor.newTabPosition = .nextToCurrent
-        tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManager: PinnedTabsManager(),
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
                                                             tabsPreferences: TabsPreferences(persistor: persistor))
         tabCollectionViewModel.appendPinnedTab()
 
@@ -298,6 +298,7 @@ extension TabCollectionViewModelTests {
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
 
+        tabCollectionViewModel.select(at: .unpinned(2))
         tabCollectionViewModel.remove(at: .unpinned(2))
 
         XCTAssertIdentical(tabCollectionViewModel.selectedTabViewModel?.tab, parentTab)
@@ -361,8 +362,7 @@ fileprivate extension TabCollectionViewModel {
 
     static func aTabCollectionViewModelWithPinnedTab() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
-        let pinnedTabsManager = PinnedTabsManager()
-        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManager: pinnedTabsManager)
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock())
         vm.appendPinnedTab()
         return vm
     }

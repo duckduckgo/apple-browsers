@@ -107,6 +107,9 @@
                   Identifier = "FireproofingReferenceTests/testFireproofing()">
                </Test>
                <Test
+                  Identifier = "PixelExperimentTests/testWhenNoCohort_NoEnrollmentPixelFired()">
+               </Test>
+               <Test
                   Identifier = "PixelStoreTests/testWhenValuesAreAddedThenCallbacksAreCalled()">
                </Test>
                <Test
@@ -159,6 +162,12 @@
                </Test>
                <Test
                   Identifier = "HTTPSUpgradeIntegrationTests">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">

@@ -286,8 +286,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             throw StartError.fetchAuthTokenFailed(error)
         }
 
-        options[NetworkProtectionOptionKey.selectedEnvironment] = AppDependencyProvider.shared.vpnSettings
-            .selectedEnvironment.rawValue as NSString
+        options[NetworkProtectionOptionKey.selectedEnvironment] = settings.selectedEnvironment.rawValue as NSString
 
         ensureRiskyDomainsEnabledIfNeeded()
         var dnsSettings = settings.dnsSettings

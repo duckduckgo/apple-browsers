@@ -160,7 +160,7 @@ class MockFrameInfo: WKFrameInfo {
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
-        
+            
     private let duckPlayerSettingsSubject = PassthroughSubject<Void, Never>()
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> {
         duckPlayerSettingsSubject.eraseToAnyPublisher()
@@ -176,6 +176,9 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
     var nativeUISERPEnabled: Bool = true
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
+    var nativeUIPrimingModalPresentedCount: Int = 0
+    var nativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 

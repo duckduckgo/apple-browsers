@@ -174,14 +174,15 @@ extension TabIndex {
 
     // MARK: - Logic when closing a tab
 
-    /// When closing a tab, the following rules will be used to find the appropriate tab to activate. Rules will be evaluated top to bottom and evaluation stops once a tab has been found:
+    /// When closing an active tab, the following rules will be used to find the appropriate tab to activate. Rules will be evaluated top to bottom and evaluation stops once a tab has been found:
     /// 1. If this tab has a parent (i.e. has been opened via "Open In New Tab"):
     ///     a. Try to find the next tab with the same parent tab
     ///     b. Try to find the previous tab with the same parent tab
     ///     c. Try to find the parent tab
     /// 2. Try to find the next tab that has the closing tab as it's parent
     /// 3. Try to find the previous tab that has the closing tab as it's parent
-    /// 4. Try to find the previously closed tab.
+    /// 4. Try to find the previously active tab.
+    ///     a. The previously active tab is only remembered until the user moves to an existing tab or creates new tabs.
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab
     @MainActor
@@ -253,7 +254,8 @@ extension TabIndex {
     /// The rules are:
     /// 1. Try to find the next tab that has the closed tab as its parent
     /// 2. Try to find the previous tab that has the closed tab as its parent
-    /// 3. Try to find the recently opened tab
+    /// 3. Try to find the recently active tab
+    ///     a. The previously active tab is only remembered until the user moves to an existing tab or creates new tabs.
     /// 4. Try to find the current tab index (if it still exists)
     /// 5. Try to find the next tab
     /// 6. Try to find the previous tab
@@ -267,7 +269,7 @@ extension TabIndex {
             return previousTabWithRemovedTabAsParent
         }
 
-        if let recentlyClosedTabIndex = viewModel.getLastSelectedTab() {
+        if let recentlyClosedTabIndex = viewModel.getPreviouslyActiveTab() {
             return recentlyClosedTabIndex
         }
 

@@ -179,6 +179,7 @@ extension SyncSettingsView {
             }
             .accessibility(identifier: "device")
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -200,6 +201,7 @@ extension SyncSettingsView {
                 model.delegate?.refreshDevices(clearDevices: false)
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder
@@ -257,6 +259,7 @@ extension SyncSettingsView {
         .onAppear(perform: {
             model.delegate?.updateOptions()
         })
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     @ViewBuilder

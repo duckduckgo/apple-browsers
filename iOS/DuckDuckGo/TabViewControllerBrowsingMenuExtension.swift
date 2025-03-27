@@ -532,9 +532,10 @@ extension TabViewController {
         }
         Pixel.fire(pixel: isProtected ? .browsingMenuDisableProtection : .browsingMenuEnableProtection)
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
             UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
         }
+        SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
     }
 
     private func togglePrivacyProtection(domain: String, didSendReport: Bool = false) {

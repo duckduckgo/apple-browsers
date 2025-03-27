@@ -32,8 +32,6 @@ import os.log
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
     private let _delegate: DuckDuckGoDBPBackgroundAgentAppDelegate
 
-    private let isAuthV2Enabled = false
-
     override init() {
         Logger.dbpBackgroundAgent.log("🟢 Starting: \(NSRunningApplication.current.processIdentifier, privacy: .public)")
 
@@ -70,26 +68,7 @@ final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
             exit(0)
         }
 
-        // MARK: - Configure Subscription
-
-        if !isAuthV2Enabled {
-            // V1
-            let subscriptionManager = DefaultSubscriptionManager()
-            _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate(subscriptionManager: subscriptionManager)
-        } else {
-            // V2
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
-            let subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
-                                                                 environment: subscriptionEnvironment,
-                                                                 userDefaults: subscriptionUserDefaults,
-                                                                 canPerformAuthMigration: false,
-                                                                 canHandlePixels: false)
-            _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate(subscriptionManager: subscriptionManager)
-        }
-        // MARK: -
-
+        _delegate = DuckDuckGoDBPBackgroundAgentAppDelegate()
         super.init()
         self.delegate = _delegate
     }
@@ -108,8 +87,23 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var manager: DataBrokerProtectionAgentManager?
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
-        self.subscriptionManager = subscriptionManager
+    override init() {
+
+        // Configure Subscription
+        if !settings.isAuthV2Enabled {
+            Logger.dbpBackgroundAgent.log("Using Auth V1")
+            subscriptionManager = DefaultSubscriptionManager()
+        } else {
+            Logger.dbpBackgroundAgent.log("Using Auth V2")
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+            let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
+            subscriptionManager = DefaultSubscriptionManagerV2(keychainType: .dataProtection(.named(subscriptionAppGroup)),
+                                                               environment: subscriptionEnvironment,
+                                                               userDefaults: subscriptionUserDefaults,
+                                                               canPerformAuthMigration: false,
+                                                               canHandlePixels: false)
+        }
     }
 
     @MainActor

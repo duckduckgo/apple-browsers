@@ -494,21 +494,16 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
-        if let brokers = try FileResources().fetchBrokerFromResourceFiles() {
-            var brokerIDs = [Int64]()
+        /// TODO: Make sure brokers are ready here
+        let brokers = try vault.fetchAllBrokers()
+        let brokerIDs = brokers.compactMap(\.id)
 
-            for broker in brokers {
-                let brokerId = try vault.save(broker: broker)
-                brokerIDs.append(brokerId)
-            }
-
-            try initializeDatabaseForProfile(
-                profileId: Self.profileId,
-                vault: vault,
-                brokerIDs: brokerIDs,
-                profileQueries: newProfileQueries
-            )
-        }
+        try initializeDatabaseForProfile(
+            profileId: Self.profileId,
+            vault: vault,
+            brokerIDs: brokerIDs,
+            profileQueries: newProfileQueries
+        )
     }
 
     // https://app.asana.com/0/481882893211075/1205574642847432/f

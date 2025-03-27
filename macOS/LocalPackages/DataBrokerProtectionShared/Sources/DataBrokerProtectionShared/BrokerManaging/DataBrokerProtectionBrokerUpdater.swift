@@ -24,6 +24,7 @@ import SecureStorage
 import os.log
 
 public protocol ResourcesRepository {
+    @available(*, deprecated, message: "Use remote broker delivery instead")
     func fetchBrokerFromResourceFiles() throws -> [DataBroker]?
 }
 

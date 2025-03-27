@@ -44,7 +44,10 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
     private var userContentController: DataBrokerUserContentController?
 
     private var webView: WebView?
+
+#if os(macOS)
     private var window: NSWindow?
+#endif
 
     private var timer: Timer?
 
@@ -70,6 +73,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
 
+#if os(macOS)
         if showWebView {
             window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024), styleMask: [.titled],
@@ -79,6 +83,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
         }
+#endif
 
         installTimer()
 

@@ -29,7 +29,12 @@ final class DaxDialogsNewTabTests: XCTestCase {
     override func setUp() {
         settings = MockDaxDialogsSettings()
         let mockVariantManager = MockVariantManager(isSupportedReturns: true)
-        daxDialogs = DaxDialogs(settings: settings, entityProviding: MockEntityProvider(), variantManager: mockVariantManager)
+        daxDialogs = DaxDialogs(
+            settings: settings,
+            entityProviding: MockEntityProvider(),
+            variantManager: mockVariantManager,
+            onboardingPrivacyProPromoExperiment: MockOnboardingPrivacyProPromoExperimenting(cohort: .none)
+        )
     }
 
     override func tearDown() {

@@ -100,7 +100,7 @@ public struct OAuthRequest {
     }
 
     private struct Defaults {
-        static let standardRetryDelay: TimeInterval = 2
+        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .seconds(2))
     }
 
     static func ddgAuthSessionCookie(domain: String, path: String, authSessionID: String) -> HTTPCookie? {
@@ -139,7 +139,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
                                          queryItems: queryItems,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: Defaults.standardRetryDelay)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -235,7 +235,7 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie],
                                                                          contentType: .json),
                                          body: jsonBody,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: Defaults.standardRetryDelay)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -262,7 +262,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
                                          queryItems: queryItems,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: Defaults.standardRetryDelay)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
 
@@ -360,7 +360,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .post,
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1),
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: Defaults.standardRetryDelay)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request,
@@ -376,7 +376,7 @@ public struct OAuthRequest {
 
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 2, delay: Defaults.standardRetryDelay)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request,

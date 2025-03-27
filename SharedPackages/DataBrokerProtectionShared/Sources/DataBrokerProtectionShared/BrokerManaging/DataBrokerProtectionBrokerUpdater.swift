@@ -18,7 +18,6 @@
 
 import Foundation
 import Common
-import AppKitExtensions
 import Cocoa
 import SecureStorage
 import os.log

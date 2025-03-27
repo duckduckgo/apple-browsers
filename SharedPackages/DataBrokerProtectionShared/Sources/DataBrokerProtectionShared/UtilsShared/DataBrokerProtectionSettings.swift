@@ -20,7 +20,6 @@ import Foundation
 import Combine
 import Common
 import BrowserServicesKit
-import AppKitExtensions
 
 public protocol AppRunTypeProviding: AnyObject {
     var runType: AppVersion.AppRunType { get }

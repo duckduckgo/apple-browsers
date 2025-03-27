@@ -19,7 +19,6 @@
 import Foundation
 import Subscription
 import Common
-import AppKitExtensions
 
 public protocol DataBrokerProtectionSubscriptionManaging {
     func accessToken() async -> String?

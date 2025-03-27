@@ -91,9 +91,10 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                            pixelHandler: sharedPixelsHandler)
 
         let brokerUpdater = BrokerJSONService(defaults: .dbp,
-                                                  settings: dbpSettings,
-                                                  vault: vault,
-                                                  authenticationManager: authenticationManager)
+                                              settings: dbpSettings,
+                                              vault: vault,
+                                              authenticationManager: authenticationManager,
+                                              pixelHandler: sharedPixelsHandler)
 
         let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
                                                                     operationsCreator: operationsBuilder,

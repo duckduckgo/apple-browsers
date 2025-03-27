@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import ZIPFoundation
+import Common
 
 public protocol BrokerJSONServiceProvider: AnyObject {
     func checkForBrokerJSONUpdates() async throws
@@ -93,17 +94,20 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     private let settings: DataBrokerProtectionSettings
     private let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
     public init(defaults: UserDefaults,
                 settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
-                authenticationManager: DataBrokerProtectionAuthenticationManaging) {
+                authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) {
         self.defaults = defaults
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
+        self.pixelHandler = pixelHandler
     }
 
     // MARK: - Main flow

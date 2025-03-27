@@ -277,22 +277,17 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     @objc private func forceBrokerJSONFilesUpdate() {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-
-        guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
-        }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             fatalError("Failed to make secure storage vault")
         }
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
+            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
 
         Task {
             let service = BrokerJSONService(defaults: .dbp,
                                             settings: DataBrokerProtectionSettings(defaults: .dbp),
                                             vault: vault,
-                                            authenticationManager: DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
-                                                subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge))
+                                            authenticationManager: authenticationManager)
             try await service.checkForBrokerJSONUpdates()
         }
     }

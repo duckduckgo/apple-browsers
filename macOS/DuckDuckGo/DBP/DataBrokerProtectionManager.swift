@@ -79,7 +79,8 @@ public final class DataBrokerProtectionManager {
         let brokerUpdater = BrokerJSONService(defaults: .dbp,
                                               settings: settings,
                                               vault: vault,
-                                              authenticationManager: authenticationManager)
+                                              authenticationManager: authenticationManager,
+                                              pixelHandler: sharedPixelsHandler)
         return brokerUpdater
     }()
 

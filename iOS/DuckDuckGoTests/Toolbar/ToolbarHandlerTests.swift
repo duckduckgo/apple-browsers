@@ -46,20 +46,7 @@ class ToolbarHandlerTests: XCTestCase {
         super.tearDown()
     }
 
-    func testUpdateToolbarWithStateNewTabFeatureOff() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        toolbarHandler.updateToolbarWithState(.newTab)
-
-        XCTAssertEqual(mockToolbar.items?.count, 9)
-        XCTAssertEqual(mockToolbar.items?[0].title, UserText.keyCommandBrowserBack)
-        XCTAssertEqual(mockToolbar.items?[2].title, UserText.keyCommandBrowserForward)
-        XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
-        XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
-        XCTAssertEqual(mockToolbar.items?[8].title, UserText.actionOpenBookmarks)
-    }
-
-    func testUpdateToolbarWithStateNewTabFeatureOn() {
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatNewTabPage]
+    func testUpdateToolbarWithStateNewTab() {
         toolbarHandler.updateToolbarWithState(.newTab)
 
         XCTAssertEqual(mockToolbar.items?.count, 9)

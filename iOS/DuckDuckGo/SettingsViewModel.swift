@@ -532,11 +532,7 @@ extension SettingsViewModel {
             duckPlayerNativeUI: appSettings.duckPlayerNativeUI,
             duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
             duckPlayerNativeUISERPEnabled: appSettings.duckPlayerNativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode,
-            aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
-                                         isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
-                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
-                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
+            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode
         )
 
         updateRecentlyVisitedSitesVisibility()
@@ -1016,6 +1012,15 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatVoiceSearchUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatTabSwitcherEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
             }
         )
     }

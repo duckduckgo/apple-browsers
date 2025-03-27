@@ -53,7 +53,7 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if featureFlagger.isFeatureOn(.aiChatDeepLink), url.isDuckAIURL {
+        if url.isDuckAIURL {
             return handleURLInterception(interceptedURLType: .aiChat)
         }
 
@@ -107,14 +107,12 @@ extension TabURLInterceptorDefault {
                 return false
             }
         case .aiChat:
-            if featureFlagger.isFeatureOn(.aiChatDeepLink) {
-                NotificationCenter.default.post(
-                    name: .urlInterceptAIChat,
-                    object: nil,
-                    userInfo: nil
-                )
-                return false
-            }
+            NotificationCenter.default.post(
+                name: .urlInterceptAIChat,
+                object: nil,
+                userInfo: nil
+            )
+            return false
         }
         return true
     }

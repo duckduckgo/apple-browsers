@@ -443,14 +443,6 @@ class OmniBarCell: UICollectionViewCell {
             bringSubviewToFront(maskView)
         }
     }
-
-    override func updateConstraints() {
-        let left = superview?.safeAreaInsets.left ?? 0
-        let right = superview?.safeAreaInsets.right ?? 0
-        omniBar?.barView.updateOmniBarPadding(left: left, right: right)
-
-        super.updateConstraints()
-    }
 }
 
 extension TabsModel {

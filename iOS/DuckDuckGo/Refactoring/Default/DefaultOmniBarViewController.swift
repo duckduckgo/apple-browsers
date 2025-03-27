@@ -275,7 +275,10 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
     }
 
     func updateAccessoryType(_ type: OmniBarAccessoryType) {
-        DispatchQueue.main.async { self.omniBarView.accessoryType = type }
+        DispatchQueue.main.async {
+            self.omniBarView.accessoryType = type
+            self.updatePadding()
+        }
     }
 
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
@@ -312,11 +315,6 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
         } else {
             privacyIconAndTrackersAnimator.completeForNoAnimation()
         }
-    }
-
-    func updatePadding(left: CGFloat, right: CGFloat) {
-        omniBarView.omniBarLeadingConstraint.constant = (state.hasLargeWidth ? 24 : 8) + left
-        omniBarView.omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth) + right
     }
 
     func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
@@ -364,12 +362,6 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
         privacyIconAndTrackersAnimator.completeAnimationForDaxDialog(in: omniBarView)
     }
 
-    /// When a setting that affects the accessory button is modified, `refreshState` is called.
-    /// This requires updating the padding to ensure consistent layout.
-    func refreshOmnibarPaddingConstraintsForAccessoryButton() {
-        omniBarView.omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth) + (UIApplication.shared.firstKeyWindow?.safeAreaInsets.right ?? 0)
-    }
-
     // MARK: - Private/animation
 
     private func enqueueAnimationIfNeeded(_ block: @escaping () -> Void) {
@@ -381,6 +373,13 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
     }
 
     // MARK: - Private
+
+    /// When a setting that affects the accessory button is modified, `refreshState` is called.
+    /// This requires updating the padding to ensure consistent layout.
+    private func updatePadding() {
+        omniBarView.omniBarLeadingConstraint.constant = (state.hasLargeWidth ? 24 : 8)
+        omniBarView.omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth)
+    }
 
     // Support static custom icons, for things like internal pages, for example
     private func showCustomIcon(icon: OmniBarIcon) {
@@ -431,8 +430,9 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
             omniBarView.searchStackContainer.setCustomSpacing(13, after: omniBarView.voiceSearchButton)
         }
 
-        if oldState.showAccessoryButton != state.showAccessoryButton {
-            refreshOmnibarPaddingConstraintsForAccessoryButton()
+        if oldState.showAccessoryButton != state.showAccessoryButton ||
+            oldState.hasLargeWidth != state.hasLargeWidth {
+            updatePadding()
         }
 
         UIView.animate(withDuration: 0.0) { [weak self] in

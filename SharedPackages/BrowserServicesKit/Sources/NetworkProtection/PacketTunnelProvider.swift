@@ -1148,7 +1148,12 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func handleSettingChangeAppRequest(_ change: VPNSettings.Change, completionHandler: ((Data?) -> Void)? = nil) {
-        settings.apply(change: change)
+        switch change {
+        case .setIsAuthV2Enabled:
+            return
+        default:
+            settings.apply(change: change)
+        }
     }
 
     @MainActor

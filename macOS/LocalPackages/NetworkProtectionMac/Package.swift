@@ -36,7 +36,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.4.3"),
-        .package(path: "../../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),

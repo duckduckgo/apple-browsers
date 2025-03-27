@@ -19,6 +19,15 @@
       }
     },
     {
+      "identity" : "designresourceskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/DesignResourcesKit.git",
+      "state" : {
+        "revision" : "7083d28778f86a0d6620c08ab0eb98270749f14e",
+        "version" : "4.1.0"
+      }
+    },
+    {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
@@ -32,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/GRDB.swift.git",
       "state" : {
-        "revision" : "5b2f6a81099d26ae0f9e38788f51490cd6a4b202",
-        "version" : "2.4.2"
+        "revision" : "c3cc998fc14efa356259e5d01d8910e82de080ad",
+        "version" : "6.6.0"
       }
     },
     {

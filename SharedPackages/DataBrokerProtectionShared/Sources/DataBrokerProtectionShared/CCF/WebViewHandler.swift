@@ -173,7 +173,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         }
     }
 
-    @available(macOS 11.4, *)
+#if os(macOS)
     private func saveToDisk(image: NSImage, path: String, fileName: String) {
         guard let tiffData = image.tiffRepresentation else {
             // Handle the case where tiff representation is not available
@@ -208,6 +208,7 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             print("Error png data was not respresented")
         }
     }
+#endif
 
     /// Workaround for stuck scans
     /// https://app.asana.com/0/0/1208502720748038/1208596554608118/f

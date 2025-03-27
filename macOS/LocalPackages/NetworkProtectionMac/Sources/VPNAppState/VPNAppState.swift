@@ -54,4 +54,16 @@ public final class VPNAppState {
             defaults.vpnIsUsingSystemExtension = newValue
         }
     }
+
+    // MARK: - AuthV2 migration support
+
+    public var isMigratedToAuthV2: Bool {
+        get {
+            defaults.isVPNMigratedToAuthV2
+        }
+
+        set {
+            defaults.isVPNMigratedToAuthV2 = newValue
+        }
+    }
 }

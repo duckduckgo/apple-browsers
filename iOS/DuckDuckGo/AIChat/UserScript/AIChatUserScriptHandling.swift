@@ -36,10 +36,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
     }
 
-    private var isHandoffEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatDeepLink)
-    }
-
     private var platform: String {
         "ios"
     }
@@ -68,14 +64,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: isHandoffEnabled,
+        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
                                  platform: platform,
                                  supportsClosingAIChat: true,
                                  supportsOpeningSettings: true)
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeHandoffData(isAIChatHandoffEnabled: isHandoffEnabled,
+        AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
                                platform: platform,
                                aiChatPayload: payloadHandler?.consumePayload() as? AIChatPayload)
     }

@@ -282,7 +282,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
 
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
         if !isAuthV2Enabled {
             // MARK: V1
             Logger.general.log("Using Auth V1")
@@ -325,6 +324,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
+        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(

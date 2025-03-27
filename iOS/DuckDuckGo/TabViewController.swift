@@ -42,7 +42,6 @@ import Onboarding
 import os.log
 import Navigation
 import Subscription
-import ContentScopeScripts
 
 class TabViewController: UIViewController {
 

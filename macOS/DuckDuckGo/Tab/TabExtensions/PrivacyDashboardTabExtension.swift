@@ -200,11 +200,11 @@ extension PrivacyDashboardTabExtension: AutoconsentUserScriptDelegate {
 }
 
 extension PrivacyDashboardTabExtension: ContentScopeUserScriptDelegate {
-    
+
     func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
         self.privacyInfo?.addDebugFlag(debugFlag)
     }
-    
+
 }
 
 protocol PrivacyDashboardProtocol: AnyObject, NavigationResponder {

@@ -21,7 +21,7 @@ import Subscription
 import OSLog
 import PixelKit
 import Common
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 /// Protocol defining the interface for managing Freemium DBP pixel experiments.

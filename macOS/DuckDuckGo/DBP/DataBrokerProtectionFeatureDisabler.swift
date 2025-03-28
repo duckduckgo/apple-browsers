@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import Common
 import os.log
 

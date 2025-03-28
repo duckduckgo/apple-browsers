@@ -18,7 +18,7 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 
 final class DataBrokerPrerequisitesStatusVerifierTests: XCTestCase {
     private let statusChecker = MockDBPLoginItemStatusChecker()

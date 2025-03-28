@@ -20,7 +20,7 @@ import Cocoa
 import Combine
 import Common
 import ServiceManagement
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit

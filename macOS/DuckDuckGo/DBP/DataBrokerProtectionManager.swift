@@ -18,7 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import PixelKit
 import LoginItems

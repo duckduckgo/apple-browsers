@@ -26,7 +26,7 @@ import UserScript
 @testable import PixelKit
 import PixelKitTestingUtilities
 import os.log
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 @available(macOS 12.0, *)

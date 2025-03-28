@@ -23,7 +23,7 @@ import XCTest
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 @testable import DuckDuckGo_Privacy_Browser

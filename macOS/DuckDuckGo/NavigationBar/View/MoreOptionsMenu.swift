@@ -25,7 +25,7 @@ import NetworkProtection
 import Subscription
 import os.log
 import Freemium
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import SwiftUI
 

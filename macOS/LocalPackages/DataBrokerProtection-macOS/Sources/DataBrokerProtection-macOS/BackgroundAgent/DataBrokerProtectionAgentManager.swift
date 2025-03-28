@@ -268,7 +268,7 @@ private extension DataBrokerProtectionAgentManager {
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivitySchedulerDelegate {
 
-    public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtection.DataBrokerProtectionBackgroundActivityScheduler, completion: (() -> Void)?) {
+    public func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler, completion: (() -> Void)?) {
         startScheduledOperations(completion: completion)
     }
 
@@ -397,7 +397,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                                     completion: nil))
     }
 
-    public func getDebugMetadata() async -> DataBrokerProtection.DBPBackgroundAgentMetadata? {
+    public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 
         if let backgroundAgentVersion = Bundle.main.releaseVersionNumber,
             let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String {

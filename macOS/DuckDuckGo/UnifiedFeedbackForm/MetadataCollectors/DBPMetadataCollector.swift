@@ -19,7 +19,7 @@
 import Foundation
 import NetworkProtection
 import NetworkProtectionIPC
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 
 struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {

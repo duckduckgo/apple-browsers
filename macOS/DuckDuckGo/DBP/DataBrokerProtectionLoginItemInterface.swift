@@ -109,7 +109,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.runAllOptOuts(showWebView: showWebView)
     }
 
-    func getDebugMetadata() async -> DataBrokerProtection.DBPBackgroundAgentMetadata? {
+    func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }
 }

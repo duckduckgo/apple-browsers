@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import Subscription
-import DataBrokerProtection_macos
+import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import PixelKit
 import Common

@@ -23,6 +23,7 @@ import Common
 import os.log
 
 public protocol BrokerJSONServiceProvider: AnyObject {
+    func checkForBrokerJSONUpdates() async throws
     func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws
 }
 
@@ -109,6 +110,10 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     }
 
     // MARK: - Main flow
+
+    public func checkForBrokerJSONUpdates() async throws {
+        try await checkForBrokerJSONUpdates(skipsLimiter: false)
+    }
 
     public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
         do {
@@ -232,6 +237,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                 try upsertBroker(dataBroker)
             } else if testBrokers.contains(fileName) {
 #if DEBUG
+                /// TODO: Update other places to handle isActive = true only
                 dataBroker.setIsActive(false)
                 try upsertBroker(dataBroker)
 #endif

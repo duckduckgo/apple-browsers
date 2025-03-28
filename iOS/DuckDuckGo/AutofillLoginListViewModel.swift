@@ -341,9 +341,7 @@ final class AutofillLoginListViewModel: ObservableObject {
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
                                       variant: "",
-                                      cookieConsentInfo: nil,
-                                      debugFlags: "",
-                                      privacyExperiments: [:])
+                                      cookieConsentInfo: nil)
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }

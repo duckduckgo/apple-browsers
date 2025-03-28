@@ -43,7 +43,6 @@ final class PrivacyDashboardTabExtension {
     init(contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
          autoconsentUserScriptPublisher: some Publisher<UserScriptWithAutoconsent?, Never>,
-         contentScopeUserScriptPublisher: some Publisher<UserScriptWithContentScope?, Never>,
          didUpgradeToHttpsPublisher: some Publisher<URL, Never>,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
@@ -55,10 +54,6 @@ final class PrivacyDashboardTabExtension {
 
         autoconsentUserScriptPublisher.sink { [weak self] autoconsentUserScript in
             autoconsentUserScript?.delegate = self
-        }.store(in: &cancellables)
-
-        contentScopeUserScriptPublisher.sink { [weak self] contentScopeUserScript in
-            contentScopeUserScript?.delegate = self
         }.store(in: &cancellables)
 
         didUpgradeToHttpsPublisher.sink { [weak self] upgradedUrl in
@@ -195,14 +190,6 @@ extension PrivacyDashboardTabExtension: AutoconsentUserScriptDelegate {
 
     func autoconsentUserScript(consentStatus: CookieConsentInfo) {
         self.privacyInfo?.cookieConsentManaged = consentStatus
-    }
-
-}
-
-extension PrivacyDashboardTabExtension: ContentScopeUserScriptDelegate {
-
-    func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
-        self.privacyInfo?.addDebugFlag(debugFlag)
     }
 
 }

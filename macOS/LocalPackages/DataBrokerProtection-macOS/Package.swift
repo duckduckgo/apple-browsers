@@ -21,12 +21,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "DataBrokerProtection",
+    name: "DataBrokerProtection-macOS",
     platforms: [ .macOS("11.4") ],
     products: [
         .library(
-            name: "DataBrokerProtection",
-            targets: ["DataBrokerProtection"])
+            name: "DataBrokerProtection-macOS",
+            targets: ["DataBrokerProtection-macOS"])
     ],
     dependencies: [
         .package(path: "../../SharedPackages/BrowserServicesKit"),
@@ -39,7 +39,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "DataBrokerProtection",
+            name: "DataBrokerProtection-macOS",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
@@ -59,9 +59,9 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "DataBrokerProtectionTests",
+            name: "DataBrokerProtection-macOSTests",
             dependencies: [
-                "DataBrokerProtection",
+                "DataBrokerProtection-macOS",
                 "DataBrokerProtectionCore",
                 .product(name: "DataBrokerProtectionCoreTestsUtils", package: "DataBrokerProtectionCore"),
                 "BrowserServicesKit",

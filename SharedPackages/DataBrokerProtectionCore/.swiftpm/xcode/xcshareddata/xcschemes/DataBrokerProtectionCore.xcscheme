@@ -15,9 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionShared"
-               BuildableName = "DataBrokerProtectionShared"
-               BlueprintName = "DataBrokerProtectionShared"
+               BlueprintIdentifier = "DataBrokerProtectionCore"
+               BuildableName = "DataBrokerProtectionCore"
+               BlueprintName = "DataBrokerProtectionCore"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -34,9 +34,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionSharedTests"
-               BuildableName = "DataBrokerProtectionSharedTests"
-               BlueprintName = "DataBrokerProtectionSharedTests"
+               BlueprintIdentifier = "DataBrokerProtectionCoreTests"
+               BuildableName = "DataBrokerProtectionCoreTests"
+               BlueprintName = "DataBrokerProtectionCoreTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -62,9 +62,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "DataBrokerProtectionShared"
-            BuildableName = "DataBrokerProtectionShared"
-            BlueprintName = "DataBrokerProtectionShared"
+            BlueprintIdentifier = "DataBrokerProtectionCore"
+            BuildableName = "DataBrokerProtectionCore"
+            BlueprintName = "DataBrokerProtectionCore"
             ReferencedContainer = "container:">
          </BuildableReference>
       </MacroExpansion>

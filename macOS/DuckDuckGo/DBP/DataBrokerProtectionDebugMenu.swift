@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 import Foundation
 import AppKit

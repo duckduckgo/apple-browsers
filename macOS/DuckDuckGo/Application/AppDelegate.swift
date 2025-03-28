@@ -42,7 +42,7 @@ import NetworkProtection
 import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 import RemoteMessaging
 import os.log

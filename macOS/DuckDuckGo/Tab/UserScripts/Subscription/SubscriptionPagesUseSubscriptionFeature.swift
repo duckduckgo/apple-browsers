@@ -25,7 +25,7 @@ import Subscription
 import PixelKit
 import os.log
 import Freemium
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 import Networking
 

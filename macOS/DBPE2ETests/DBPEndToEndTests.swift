@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-@testable import DataBrokerProtection
+@testable import DataBrokerProtection_macos
 @testable import DataBrokerProtectionCore
 import BrowserServicesKit
 import LoginItems

@@ -23,7 +23,7 @@ import PixelKit
 import Subscription
 import NetworkProtectionUI
 import VPNAppLauncher
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 import os.log
 import BrowserServicesKit

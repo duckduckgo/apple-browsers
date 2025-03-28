@@ -18,7 +18,7 @@
 
 import Foundation
 import Combine
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import LoginItems
 import os.log
 

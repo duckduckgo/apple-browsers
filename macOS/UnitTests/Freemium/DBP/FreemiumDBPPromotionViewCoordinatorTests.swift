@@ -21,7 +21,7 @@ import Freemium
 @testable import DuckDuckGo_Privacy_Browser
 import Combine
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 
 final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {

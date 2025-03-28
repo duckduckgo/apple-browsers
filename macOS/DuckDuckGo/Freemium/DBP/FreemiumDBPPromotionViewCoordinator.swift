@@ -20,7 +20,7 @@ import Combine
 import Foundation
 import Freemium
 import OSLog
-import DataBrokerProtection
+import DataBrokerProtection_macos
 import DataBrokerProtectionCore
 import Common
 

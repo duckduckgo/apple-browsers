@@ -56,4 +56,7 @@ protocol OmniBarView: UIView {
 
     var onSettingsLongPress: (() -> Void)? { get set }
     var onAccessoryLongPress: (() -> Void)? { get set }
+
+    // static function is needed to allow creation of DefaultOmniBarView from xib
+    static func create() -> Self
 }

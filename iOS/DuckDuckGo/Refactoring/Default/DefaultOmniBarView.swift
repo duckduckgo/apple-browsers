@@ -33,7 +33,7 @@ public enum OmniBarIcon: String {
     case specialError = "Globe-24"
 }
 
-class DefaultOmniBarView: UIView {
+final class DefaultOmniBarView: UIView {
 
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
@@ -110,9 +110,8 @@ class DefaultOmniBarView: UIView {
     // Set up a view to add a custom icon to the Omnibar
     private(set) var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
-    static func loadFromXib(dependencies: OmnibarDependencyProvider) -> DefaultOmniBarView {
-        let omniBar = DefaultOmniBarView.load(nibName: "OmniBar")
-        return omniBar
+    static func create() -> DefaultOmniBarView {
+        DefaultOmniBarView.load(nibName: "OmniBar")
     }
 
     required init?(coder: NSCoder) {
@@ -120,7 +119,7 @@ class DefaultOmniBarView: UIView {
     }
 
     // Tests require this
-    init(dependencies: OmnibarDependencyProvider, frame: CGRect) {
+    override init(frame: CGRect) {
         super.init(frame: frame)
     }
 

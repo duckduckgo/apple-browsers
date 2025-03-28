@@ -74,6 +74,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private let stackView = UIStackView()
 
+    static func create() -> Self {
+        Self.init()
+    }
+
     init() {
         super.init(frame: .zero)
 

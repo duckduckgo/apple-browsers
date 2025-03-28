@@ -2627,7 +2627,6 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.printingUserScript.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
-        userScripts.contentScopeUserScript.delegate = self
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -2733,13 +2732,6 @@ extension TabViewController: AutoconsentUserScriptDelegate {
     
     func autoconsentUserScript(_ script: AutoconsentUserScript, didUpdateCookieConsentStatus cookieConsentStatus: PrivacyDashboard.CookieConsentInfo) {
         privacyInfo?.cookieConsentManaged = cookieConsentStatus
-    }
-}
-
-// MARK: - ContentScopeUserScriptDelegate
-extension TabViewController: ContentScopeUserScriptDelegate {
-    func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
-        privacyInfo?.addDebugFlag(debugFlag)
     }
 }
 

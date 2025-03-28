@@ -298,7 +298,7 @@
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Dt8-We-5tV">
                                     <rect key="frame" x="373" y="0.0" width="30" height="40"/>
-                                    <accessibility key="accessibilityConfiguration" label="Clear Text"/>
+                                    <accessibility key="accessibilityConfiguration" label="Stop Loading"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="Ym5-FI-uOP"/>
                                     </constraints>

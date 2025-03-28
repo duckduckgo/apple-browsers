@@ -1849,6 +1849,7 @@
 		4BD96E0C2C4DCEAA003BC32C /* VPNSnoozeLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeLiveActivityWidget.swift; sourceTree = "<group>"; };
 		4BE27566272F878F006B20B0 /* URLRequestExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = URLRequestExtension.swift; path = ../DuckDuckGo/URLRequestExtension.swift; sourceTree = "<group>"; };
 		4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
+		4BE822CC2D95A7F500262F1E /* DataBrokerProtectionShared */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionShared; path = ../SharedPackages/DataBrokerProtectionShared; sourceTree = SOURCE_ROOT; };
 		560E990E2BEE2CB800507CE0 /* SyncErrorMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorMessage.swift; sourceTree = "<group>"; };
 		563A3CFD2D37B8FA001966FD /* ConfigurationManagerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerIntegrationTests.swift; sourceTree = "<group>"; };
 		563A3D002D37BF83001966FD /* ConfigurationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerTests.swift; sourceTree = "<group>"; };
@@ -4284,6 +4285,7 @@
 			isa = PBXGroup;
 			children = (
 				4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */,
+				4BE822CC2D95A7F500262F1E /* DataBrokerProtectionShared */,
 				31794BFF2821DFB600F18633 /* DuckUI */,
 				4B94B79C2D4831700014AAB8 /* SyncUI-iOS */,
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,

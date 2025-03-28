@@ -42,8 +42,8 @@ import NetworkProtection
 import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import RemoteMessaging
 import os.log
 import Freemium

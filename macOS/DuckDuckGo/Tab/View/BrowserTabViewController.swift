@@ -31,7 +31,7 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()

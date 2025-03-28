@@ -20,7 +20,7 @@ import Foundation
 import XCTest
 import Common
 
-@testable import DataBrokerProtection
+@testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 

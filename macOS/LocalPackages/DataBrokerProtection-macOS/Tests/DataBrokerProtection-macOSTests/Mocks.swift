@@ -26,7 +26,7 @@ import SecureStorage
 import Freemium
 import DataBrokerProtectionCore
 
-@testable import DataBrokerProtection
+@testable import DataBrokerProtection_macOS
 
 public class MockDataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {
 

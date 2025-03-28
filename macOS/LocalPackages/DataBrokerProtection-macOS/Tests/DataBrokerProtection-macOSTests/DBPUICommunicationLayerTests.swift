@@ -18,7 +18,7 @@
 
 import XCTest
 import WebKit
-@testable import DataBrokerProtection
+@testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 

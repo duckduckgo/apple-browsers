@@ -19,7 +19,7 @@
 import XCTest
 import Configuration
 import Persistence
-@testable import DataBrokerProtection
+@testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 

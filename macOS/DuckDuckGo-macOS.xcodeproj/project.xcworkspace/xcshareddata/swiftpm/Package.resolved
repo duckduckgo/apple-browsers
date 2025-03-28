@@ -37,6 +37,15 @@
       }
     },
     {
+      "identity" : "designresourceskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/DesignResourcesKit.git",
+      "state" : {
+        "revision" : "7083d28778f86a0d6620c08ab0eb98270749f14e",
+        "version" : "4.1.0"
+      }
+    },
+    {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",

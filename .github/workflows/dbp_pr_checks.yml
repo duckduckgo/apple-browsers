@@ -134,7 +134,7 @@ jobs:
           path: SharedPackages/DataBrokerProtectionShared/DerivedData/SourcePackages
           key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-bsk-spm-ios-
+            ${{ runner.os }}-dbp-spm-ios-
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer

@@ -74,7 +74,7 @@ public final class PrivacyInfo {
     public func addDebugFlag(_ flag: String) {
         if debugFlags.isEmpty {
             debugFlags = flag
-        } else if !debugFlags.contains(flag){
+        } else if !debugFlags.contains(flag) {
             debugFlags.append(",\(flag)")
         }
     }

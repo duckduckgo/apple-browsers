@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import UserNotifications
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils

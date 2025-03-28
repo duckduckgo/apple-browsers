@@ -167,9 +167,7 @@ public struct UpdateManager: InternalUpdateManaging {
             }
 
             // Check that at least one of the dataset type have updated
-            let shouldSaveLastUpdateDate = results.reduce(false) { partial, newValue in
-                partial || newValue
-            }
+            let shouldSaveLastUpdateDate = results.contains(true)
 
             if shouldSaveLastUpdateDate {
                 await saveLastUpdateDate(for: datasetType)

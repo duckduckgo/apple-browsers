@@ -19,13 +19,30 @@
 
 import Foundation
 import Core
+import AIChat
 
 struct AIChatDeepLinkHandler {
 
     /// Utility function to handle AI Chat deeplink since it needs to be called from 2 different entry points
     func handleDeepLink(_ url: URL, on mainViewController: MainViewController) {
         firePixel(url)
-        mainViewController.openAIChat()
+
+        guard !isAIChatAlreadyPresented(on: mainViewController) else {
+            return
+        }
+
+        mainViewController.dismiss(animated: true) {
+            mainViewController.openAIChat()
+        }
+    }
+
+    /// Checks if the AIChatViewController is already presented
+    private func isAIChatAlreadyPresented(on mainViewController: MainViewController) -> Bool {
+        if let presentedVC = mainViewController.presentedViewController as? RoundedPageSheetContainerViewController,
+           presentedVC.contentViewController is AIChatViewController {
+            return true
+        }
+        return false
     }
 
     func firePixel(_ url: URL) {

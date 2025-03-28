@@ -20,13 +20,13 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <navigationBar contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3Kd-yL-Gby">
-                                <rect key="frame" x="0.0" y="20" width="375" height="44"/>
+                                <rect key="frame" x="-1" y="24" width="375" height="44"/>
                                 <items>
                                     <navigationItem title="Title" id="P3h-DO-2nT"/>
                                 </items>
                             </navigationBar>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="XZT-ek-lrC">
-                                <rect key="frame" x="0.0" y="69.5" width="375" height="597.5"/>
+                                <rect key="frame" x="0.0" y="73.5" width="375" height="593.5"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="14" minimumInteritemSpacing="14" id="bWt-k2-BEm">
                                     <size key="itemSize" width="327" height="206"/>
@@ -324,12 +324,12 @@
                             <constraint firstItem="XZT-ek-lrC" firstAttribute="top" secondItem="3Kd-yL-Gby" secondAttribute="bottom" constant="5.5" id="3tE-r6-pL1"/>
                             <constraint firstItem="PrD-ff-flI" firstAttribute="leading" secondItem="WJ0-lP-E4v" secondAttribute="leading" id="B4L-BE-vvi"/>
                             <constraint firstAttribute="trailing" secondItem="PrD-ff-flI" secondAttribute="trailing" id="BaM-0l-RFS"/>
-                            <constraint firstItem="3Kd-yL-Gby" firstAttribute="centerX" secondItem="Nqt-nV-6p2" secondAttribute="centerX" id="CDY-b4-gBI"/>
+                            <constraint firstItem="3Kd-yL-Gby" firstAttribute="centerX" secondItem="Nqt-nV-6p2" secondAttribute="centerX" constant="-1" id="CDY-b4-gBI"/>
                             <constraint firstAttribute="bottom" secondItem="XZT-ek-lrC" secondAttribute="bottom" id="J8G-Xc-ZM0"/>
                             <constraint firstItem="3Kd-yL-Gby" firstAttribute="width" secondItem="WJ0-lP-E4v" secondAttribute="width" id="MMS-h8-g8C"/>
                             <constraint firstItem="XZT-ek-lrC" firstAttribute="centerX" secondItem="Nqt-nV-6p2" secondAttribute="centerX" id="SmA-Z9-yAN"/>
                             <constraint firstItem="XZT-ek-lrC" firstAttribute="width" secondItem="Nqt-nV-6p2" secondAttribute="width" id="XCa-fk-cv9"/>
-                            <constraint firstItem="3Kd-yL-Gby" firstAttribute="top" secondItem="Nqt-nV-6p2" secondAttribute="top" id="hbL-Ud-Buh"/>
+                            <constraint firstItem="3Kd-yL-Gby" firstAttribute="top" secondItem="Nqt-nV-6p2" secondAttribute="top" constant="4" id="hbL-Ud-Buh"/>
                         </constraints>
                     </view>
                     <connections>

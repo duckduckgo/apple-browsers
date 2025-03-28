@@ -75,7 +75,7 @@ final class ToolbarHandler: ToolbarStateHandling {
             case .pageLoaded:
                 return createPageLoadedButtons()
             case .newTab:
-                return featureFlagger.isFeatureOn(.aiChatNewTabPage) ? createNewTabButtons() : createLegacyNewTabButtons()
+                return createNewTabButtons()
             }
         }()
 
@@ -128,17 +128,4 @@ final class ToolbarHandler: ToolbarStateHandling {
         ]
     }
 
-    private func createLegacyNewTabButtons() -> [UIBarButtonItem] {
-        return [
-            backButton,
-            .flexibleSpace(),
-            forwardButton,
-            .flexibleSpace(),
-            fireButton,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
-            bookmarkButton
-        ]
-    }
 }

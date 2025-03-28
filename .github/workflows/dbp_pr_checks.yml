@@ -52,9 +52,9 @@ jobs:
             SharedPackages/DataBrokerProtectionCore/.build/checkouts
             SharedPackages/DataBrokerProtectionCore/.build/repositories
             SharedPackages/DataBrokerProtectionCore/.build/workspace-state.json
-          key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
+          key: ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-bsk-spm-
+            ${{ runner.os }}-dbp-spm-
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
@@ -132,9 +132,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
-          key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
+          key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
-            ${{ runner.os }}-bsk-spm-ios-
+            ${{ runner.os }}-dbp-spm-ios-
 
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer

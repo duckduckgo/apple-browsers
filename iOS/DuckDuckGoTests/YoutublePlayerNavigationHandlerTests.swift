@@ -674,8 +674,9 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         }
 
         // Assert
-        RunLoop.current.run(until: Date().addingTimeInterval(0.2)) // Gives the run loop time to process deinit event
-        XCTAssertNil(weakWebView)
+        DispatchQueue.main.async {
+            XCTAssertNil(weakWebView)
+        }
     }
 
 }

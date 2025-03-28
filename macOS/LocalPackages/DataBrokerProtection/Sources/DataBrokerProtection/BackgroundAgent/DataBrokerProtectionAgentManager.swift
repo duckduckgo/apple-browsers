@@ -27,7 +27,7 @@ import os.log
 import Freemium
 import Subscription
 import UserNotifications
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {

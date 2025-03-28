@@ -17,7 +17,7 @@
 //
 
 @testable import DataBrokerProtection
-@testable import DataBrokerProtectionShared
+@testable import DataBrokerProtectionCore
 import BrowserServicesKit
 import LoginItems
 import XCTest

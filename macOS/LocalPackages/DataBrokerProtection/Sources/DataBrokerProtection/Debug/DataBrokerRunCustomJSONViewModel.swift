@@ -18,7 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import Common
 import ContentScopeScripts
 import Combine

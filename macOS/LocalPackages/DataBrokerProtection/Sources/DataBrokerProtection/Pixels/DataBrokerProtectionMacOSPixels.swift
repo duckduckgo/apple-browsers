@@ -21,7 +21,7 @@ import Common
 import BrowserServicesKit
 import Configuration
 import PixelKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public enum DataBrokerProtectionMacOSPixels {
 

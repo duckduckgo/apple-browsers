@@ -19,8 +19,8 @@
 import XCTest
 import WebKit
 @testable import DataBrokerProtection
-import DataBrokerProtectionShared
-import DataBrokerProtectionSharedTestsUtils
+import DataBrokerProtectionCore
+import DataBrokerProtectionCoreTestsUtils
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 

@@ -22,7 +22,7 @@ import Common
 import AppKit
 import os.log
 import PixelKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public protocol DataBrokerProtectionUserNotificationService {
     func requestNotificationPermission()

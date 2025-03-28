@@ -19,7 +19,7 @@
 import Foundation
 import NetworkProtectionProxy
 import Combine
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public final class VPNBypassService: VPNBypassServiceProvider {
     private let dbpSettings: DataBrokerProtectionSettings

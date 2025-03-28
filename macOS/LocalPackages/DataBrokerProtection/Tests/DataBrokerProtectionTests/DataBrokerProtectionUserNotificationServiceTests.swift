@@ -19,8 +19,8 @@
 import XCTest
 import DataBrokerProtection
 import UserNotifications
-import DataBrokerProtectionShared
-import DataBrokerProtectionSharedTestsUtils
+import DataBrokerProtectionCore
+import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerProtectionUserNotificationServiceTests: XCTestCase {
 

@@ -26,7 +26,7 @@ import Subscription
 import os.log
 import Freemium
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import SwiftUI
 
 protocol OptionsButtonMenuDelegate: AnyObject {

@@ -17,7 +17,7 @@
 //
 
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import Foundation
 import AppKit
 import Common

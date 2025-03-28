@@ -24,7 +24,7 @@ import Foundation
 import GRDB
 import SecureStorage
 import Freemium
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 @testable import DataBrokerProtection
 

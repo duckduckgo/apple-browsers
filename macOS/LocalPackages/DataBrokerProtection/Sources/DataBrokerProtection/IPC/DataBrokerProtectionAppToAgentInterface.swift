@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public enum DataBrokerProtectionAppToAgentInterfaceError: Error {
     case loginItemDoesNotHaveNecessaryPermissions

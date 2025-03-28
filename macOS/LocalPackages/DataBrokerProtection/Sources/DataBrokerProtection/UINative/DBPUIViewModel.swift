@@ -22,7 +22,7 @@ import WebKit
 import BrowserServicesKit
 import Common
 import os.log
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 protocol DBPUIScanOps: AnyObject {
     func updateCacheWithCurrentScans() async

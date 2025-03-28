@@ -24,7 +24,7 @@ import Configuration
 import Common
 import Networking
 import PixelKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public extension Logger {
     static var config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()

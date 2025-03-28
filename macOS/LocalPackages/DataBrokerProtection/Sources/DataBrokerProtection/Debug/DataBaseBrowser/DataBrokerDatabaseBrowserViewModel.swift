@@ -18,7 +18,7 @@
 
 import Foundation
 import SecureStorage
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import PixelKit
 
 final class DataBrokerDatabaseBrowserViewModel: ObservableObject {

@@ -22,7 +22,7 @@ import Freemium
 import Combine
 import Common
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 

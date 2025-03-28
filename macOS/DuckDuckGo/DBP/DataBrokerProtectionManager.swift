@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import PixelKit
 import LoginItems
 import Common

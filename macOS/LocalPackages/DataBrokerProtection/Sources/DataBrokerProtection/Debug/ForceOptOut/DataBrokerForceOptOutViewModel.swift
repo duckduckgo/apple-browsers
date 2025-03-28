@@ -18,7 +18,7 @@
 
 import Foundation
 import SecureStorage
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 final class DataBrokerForceOptOutViewModel: ObservableObject {
     private let dataManager: DataBrokerProtectionDataManager

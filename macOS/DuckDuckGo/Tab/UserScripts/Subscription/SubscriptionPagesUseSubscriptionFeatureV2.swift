@@ -26,7 +26,7 @@ import PixelKit
 import os.log
 import Freemium
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import Networking
 
 /// Use Subscription sub-feature

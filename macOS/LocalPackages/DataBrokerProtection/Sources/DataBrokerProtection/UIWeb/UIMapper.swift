@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import os.log
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 struct MapperToUI {
 

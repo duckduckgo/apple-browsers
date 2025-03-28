@@ -5,7 +5,7 @@
       location = "group:SharedPackages/BrowserServicesKit">
    </FileRef>
    <FileRef
-      location = "group:SharedPackages/DataBrokerProtectionShared">
+      location = "group:SharedPackages/DataBrokerProtectionCore">
    </FileRef>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

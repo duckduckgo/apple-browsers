@@ -18,7 +18,7 @@
 
 import Foundation
 import SwiftUI
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import PixelKit
 
 public final class DataBrokerForceOptOutViewController: NSViewController {

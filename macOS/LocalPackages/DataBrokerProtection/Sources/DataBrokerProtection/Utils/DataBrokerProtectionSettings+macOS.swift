@@ -21,7 +21,7 @@ import Combine
 import Common
 import AppKitExtensions
 import BrowserServicesKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 extension DataBrokerProtectionSettings: @retroactive AppRunTypeProviding {
 

@@ -21,7 +21,7 @@ import Combine
 import Common
 import ServiceManagement
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
 import Networking

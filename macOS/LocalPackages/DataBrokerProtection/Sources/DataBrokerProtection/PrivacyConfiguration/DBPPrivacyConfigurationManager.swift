@@ -21,7 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import PixelKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging {
 

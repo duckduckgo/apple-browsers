@@ -18,7 +18,7 @@
 
 import Foundation
 import SwiftUI
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public final class DataBrokerRunCustomJSONViewController: NSViewController {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging

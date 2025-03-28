@@ -24,7 +24,7 @@ import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 @testable import DuckDuckGo_Privacy_Browser
 

@@ -19,7 +19,7 @@
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import DataBrokerProtection
-@testable import DataBrokerProtectionShared
+@testable import DataBrokerProtectionCore
 import Common
 import Freemium
 

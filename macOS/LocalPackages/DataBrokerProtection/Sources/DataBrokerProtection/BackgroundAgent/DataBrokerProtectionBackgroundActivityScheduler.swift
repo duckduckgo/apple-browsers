@@ -20,7 +20,7 @@ import Foundation
 import Common
 import BrowserServicesKit
 import os.log
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public protocol DataBrokerProtectionBackgroundActivityScheduler {
     func startScheduler()

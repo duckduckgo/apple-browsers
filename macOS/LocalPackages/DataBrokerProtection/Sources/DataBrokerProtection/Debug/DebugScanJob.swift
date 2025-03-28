@@ -22,7 +22,7 @@ import BrowserServicesKit
 import UserScript
 import Common
 import os.log
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 struct DebugScanReturnValue {
     let brokerURL: String

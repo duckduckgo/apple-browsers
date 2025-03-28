@@ -23,7 +23,7 @@ import Persistence
 import Common
 import Configuration
 import PixelKit
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 final class ConfigurationStore: ConfigurationStoring {
 

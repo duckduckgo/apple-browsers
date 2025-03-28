@@ -2,17 +2,17 @@ name: DBP - PR Checks
 
 defaults:
   run:
-    working-directory: SharedPackages/DataBrokerProtectionShared
+    working-directory: SharedPackages/DataBrokerProtectionCore
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'SharedPackages/DataBrokerProtectionShared/**'
+      - 'SharedPackages/DataBrokerProtectionCore/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'SharedPackages/DataBrokerProtectionShared/**'
+      - 'SharedPackages/DataBrokerProtectionCore/**'
 
 jobs:
 
@@ -38,7 +38,7 @@ jobs:
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
             # hashFiles does not respect the working directory, so the full path must be specified
-            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionShared/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionCore/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -48,10 +48,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            SharedPackages/DataBrokerProtectionShared/.build/artifacts
-            SharedPackages/DataBrokerProtectionShared/.build/checkouts
-            SharedPackages/DataBrokerProtectionShared/.build/repositories
-            SharedPackages/DataBrokerProtectionShared/.build/workspace-state.json
+            SharedPackages/DataBrokerProtectionCore/.build/artifacts
+            SharedPackages/DataBrokerProtectionCore/.build/checkouts
+            SharedPackages/DataBrokerProtectionCore/.build/repositories
+            SharedPackages/DataBrokerProtectionCore/.build/workspace-state.json
           key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-
@@ -70,7 +70,7 @@ jobs:
         if: always()
         with:
           check_name: Test Report (macOS)
-          report_paths: SharedPackages/DataBrokerProtectionShared/package-tests.xml
+          report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: true
 
@@ -92,7 +92,7 @@ jobs:
         if: always()
         with:
           name: build-log.txt
-          path: SharedPackages/DataBrokerProtectionShared/build-log.txt
+          path: SharedPackages/DataBrokerProtectionCore/build-log.txt
 
       - name: Fetch latest commit author
         if: always() && github.ref_name == 'main'
@@ -122,7 +122,7 @@ jobs:
         run: |
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
-            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionShared/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionCore/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -131,7 +131,7 @@ jobs:
         if: env.cache_key_hash
         uses: actions/cache@v4
         with:
-          path: SharedPackages/DataBrokerProtectionShared/DerivedData/SourcePackages
+          path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
           key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-ios-
@@ -142,7 +142,7 @@ jobs:
       - name: Resolve package dependencies
         run: |
           while xcodebuild -resolvePackageDependencies \
-            -scheme DataBrokerProtectionShared-Package \
+            -scheme DataBrokerProtectionCore-Package \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
             -derivedDataPath DerivedData \
             2>&1 | grep Error; do :; done
@@ -155,7 +155,7 @@ jobs:
       - name: Run tests
         run: |
           set -o pipefail && xcodebuild test \
-            -scheme DataBrokerProtectionShared \
+            -scheme DataBrokerProtectionCore \
             -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
             -derivedDataPath DerivedData \
             -skipPackagePluginValidation \
@@ -171,7 +171,7 @@ jobs:
         if: always()
         with:
           check_name: Test Report (iOS)
-          report_paths: SharedPackages/DataBrokerProtectionShared/bsk-ios-unittests.xml
+          report_paths: SharedPackages/DataBrokerProtectionCore/bsk-ios-unittests.xml
           require_tests: true
 
       - name: Update Asana with failed unit tests
@@ -192,7 +192,7 @@ jobs:
         if: always()
         with:
           name: ios-build-log.txt
-          path: SharedPackages/DataBrokerProtectionShared/ios-build-log.txt
+          path: SharedPackages/DataBrokerProtectionCore/ios-build-log.txt
 
   create-asana-task:
     name: Create Asana Task

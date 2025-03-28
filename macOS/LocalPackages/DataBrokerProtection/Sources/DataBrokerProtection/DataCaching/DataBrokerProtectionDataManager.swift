@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import os.log
-import DataBrokerProtectionShared
+import DataBrokerProtectionCore
 
 public extension Notification.Name {
     /// Notification posted when a profile is saved.

@@ -279,7 +279,7 @@ private final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDat
     var matchesFoundCountValue = (0, 0)
 
     var cache = InMemoryDataCache()
-    var delegate: DataBrokerProtection.DataBrokerProtectionDataManagerDelegate?
+    var delegate: DataBrokerProtectionDataManagerDelegate?
 
     init(database: DataBrokerProtectionRepository,
          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {

@@ -113,7 +113,7 @@ final class MockUserNotificationService: DataBrokerProtectionUserNotificationSer
 
 final class MockDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler {
 
-    var delegate: DataBrokerProtection.DataBrokerProtectionBackgroundActivitySchedulerDelegate?
+    var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
     var lastTriggerTimestamp: Date?
 
     var startSchedulerCompletion: (() -> Void)?
@@ -132,8 +132,8 @@ final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDataManagin
     var profileToReturn: DataBrokerProtectionProfile?
     var shouldReturnHasMatches = false
 
-    var cache: DataBrokerProtection.InMemoryDataCache
-    var delegate: DataBrokerProtection.DataBrokerProtectionDataManagerDelegate?
+    var cache: InMemoryDataCache
+    var delegate: DataBrokerProtectionDataManagerDelegate?
 
     init(database: DataBrokerProtectionRepository,
          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
@@ -172,7 +172,7 @@ final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDataManagin
 
 final class MockIPCServer: DataBrokerProtectionIPCServer {
 
-    var serverDelegate: DataBrokerProtection.DataBrokerProtectionAppToAgentInterface?
+    var serverDelegate: DataBrokerProtectionAppToAgentInterface?
 
     init(machServiceName: String) {
     }
@@ -207,7 +207,7 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
         serverDelegate?.runAllOptOuts(showWebView: showWebView)
     }
 
-    func getDebugMetadata(completion: @escaping (DataBrokerProtection.DBPBackgroundAgentMetadata?) -> Void) {
+    func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void) {
         serverDelegate?.profileSaved()
     }
 }

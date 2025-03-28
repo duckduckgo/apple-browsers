@@ -63,7 +63,6 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
         omniBarView
     }
 
-
     var isTextFieldEditing: Bool { textField.isFirstResponder }
 
     var isBackButtonEnabled: Bool {

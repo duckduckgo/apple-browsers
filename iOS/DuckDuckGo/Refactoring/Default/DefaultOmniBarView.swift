@@ -162,7 +162,6 @@ class DefaultOmniBarView: UIView {
             onAccessoryLongPress?()
         }
     }
-
         
     private func enableInteractionsWithPointer() {
         backButton.isPointerInteractionEnabled = true
@@ -193,18 +192,14 @@ class DefaultOmniBarView: UIView {
             UIPasteboard.general.string = field.text(in: range)
         }
     }
-    
 
     private func configureSeparator() {
             separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
     }
 
-    
     var textFieldBottomSpacing: CGFloat {
         return (bounds.size.height - (searchContainer.frame.origin.y + searchContainer.frame.size.height)) / 2.0
     }
-    
-    
     
     func showSeparator() {
         separatorView.isHidden = false
@@ -222,18 +217,9 @@ class DefaultOmniBarView: UIView {
         separatorToBottom.constant = 0
     }
 
-
-
     func removeTextSelection() {
         textField.selectedTextRange = nil
     }
-
-
-
-    
-    
-    
-    
 
     @IBAction private func onTextEntered(_ sender: Any) {
         onTextEntered?()
@@ -295,14 +281,11 @@ class DefaultOmniBarView: UIView {
         onDismissPressed?()
     }
 
-    
-    
     override func layoutSubviews() {
         super.layoutSubviews()
         NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
     }
 }
-
 
 extension DefaultOmniBarView {
     
@@ -316,7 +299,6 @@ extension DefaultOmniBarView {
         editingBackground?.backgroundColor = theme.searchBarBackgroundColor
         editingBackground?.borderColor = theme.searchBarBackgroundColor
 
-        
         searchStackContainer?.tintColor = theme.barTintColor
         
         textField.textColor = theme.searchBarTextColor

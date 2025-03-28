@@ -132,7 +132,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: SharedPackages/DataBrokerProtectionShared/DerivedData/SourcePackages
-          key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
+          key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-ios-
 

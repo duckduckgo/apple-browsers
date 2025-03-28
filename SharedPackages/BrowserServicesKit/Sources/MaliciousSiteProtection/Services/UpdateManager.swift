@@ -26,7 +26,7 @@ public protocol MaliciousSiteUpdateManaging {
     #if os(iOS)
     var lastHashPrefixSetUpdateDate: Date { get }
     var lastFilterSetUpdateDate: Date { get }
-    func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Error>
+    func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never>
     #elseif os(macOS)
     func startPeriodicUpdates() -> Task<Void, Error>
     #endif
@@ -149,32 +149,30 @@ public struct UpdateManager: InternalUpdateManaging {
     #endif
 
     #if os(iOS)
-    public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, any Error> {
-        Task {
+    public func updateData(datasetType: DataManager.StoredDataType.Kind) -> Task<Void, Never> {
+        Task.detached {
             // run update jobs in background for every data type
-            await withTaskGroup(of: Bool.self) { group in
-                let supportedThreats = supportedThreatsProvider()
-                for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats) {
-                    group.addTask {
-                        do {
-                            try await self.updateData(for: dataType.dataKey)
-                            return true
-                        } catch {
-                            Logger.updateManager.error("Failed to update dataset type: \(datasetType.rawValue) for kind: \(dataType.dataKey.threatKind). Error: \(error)")
-                            return false
-                        }
-                    }
-                }
+            let supportedThreats = supportedThreatsProvider()
 
-                // Check that at least one of the dataset type have updated
-                // swiftlint:disable:next reduce_boolean
-                let success = await group.reduce(false) { partial, newValue in
-                    partial || newValue
-                }
+            var results: [Bool] = []
 
-                if success {
-                    await saveLastUpdateDate(for: datasetType)
+            for dataType in DataManager.StoredDataType.dataTypes(for: datasetType, supportedThreats: supportedThreats) {
+                do {
+                    try await self.updateData(for: dataType.dataKey)
+                    results.append(true)
+                } catch {
+                    Logger.updateManager.error("Failed to update dataset type: \(datasetType.rawValue) for kind: \(dataType.dataKey.threatKind). Error: \(error)")
+                    results.append(false)
                 }
+            }
+
+            // Check that at least one of the dataset type have updated
+            let shouldSaveLastUpdateDate = results.reduce(false) { partial, newValue in
+                partial || newValue
+            }
+
+            if shouldSaveLastUpdateDate {
+                await saveLastUpdateDate(for: datasetType)
             }
         }
     }

@@ -41,13 +41,13 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
         Task { }
     }
     
-    func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, any Error> {
+    func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, Never> {
         updateCallCount += 1
         updateDatasets[datasetType] = true
 
         return Task {
             if updateDataTaskExecutionTime > 0 {
-                try await Task.sleep(interval: updateDataTaskExecutionTime)
+                try? await Task.sleep(interval: updateDataTaskExecutionTime)
             }
         }
     }

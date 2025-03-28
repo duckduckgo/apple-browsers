@@ -44,7 +44,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     private static var registeredTaskIdentifiers: Set<String> = []
 
     @MainActor
-    private(set) var inFlyUpdateTasks: [DataManager.StoredDataType.Kind: Task<Void, any Error>] = [:]
+    private(set) var inFlyUpdateTasks: [DataManager.StoredDataType.Kind: Task<Void, Never>] = [:]
 
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
@@ -95,7 +95,7 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
     func startFetching() -> Task<Void, Error> {
         guard canFetchDatasets else { return Task {} }
 
-        var updateTasksToReturn: [Task<Void, Error>] = []
+        var updateTasksToReturn: [Task<Void, Never>] = []
 
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Feature is On and Enabled in App Settings")
 
@@ -105,7 +105,7 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
             let task = updateManager.updateData(datasetType: .hashPrefixSet)
             inFlyUpdateTasks[.hashPrefixSet] = task
             Task {
-                try? await task.value
+                await task.value
                 inFlyUpdateTasks[.hashPrefixSet] = nil
             }
             updateTasksToReturn.append(task)
@@ -117,7 +117,7 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
             let task = updateManager.updateData(datasetType: .filterSet)
             inFlyUpdateTasks[.filterSet] = task
             Task {
-                try? await task.value
+                await task.value
                 inFlyUpdateTasks[.filterSet] = nil
             }
             updateTasksToReturn.append(task)
@@ -125,7 +125,7 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
 
         return Task {
             for task in updateTasksToReturn {
-                try await task.value
+                await task.value
             }
         }
     }

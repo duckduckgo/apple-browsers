@@ -52,7 +52,7 @@ jobs:
             SharedPackages/DataBrokerProtectionShared/.build/checkouts
             SharedPackages/DataBrokerProtectionShared/.build/repositories
             SharedPackages/DataBrokerProtectionShared/.build/workspace-state.json
-          key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
+          key: ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-
 

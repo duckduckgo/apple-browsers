@@ -23,6 +23,14 @@ import ContentScopeScripts
 import UserScript
 import Common
 
+public protocol ContentScopeUserScriptDelegate: AnyObject {
+    func contentScopeUserScript(_ script: ContentScopeUserScript, didReceiveDebugFlag debugFlag: String)
+}
+
+public protocol UserScriptWithContentScope: UserScript {
+    var delegate: ContentScopeUserScriptDelegate? { get set }
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool = false
@@ -130,20 +138,21 @@ public struct ContentScopeFeatureToggles: Encodable {
 }
 
 public struct ContentScopePlatform: Encodable {
-    #if os(macOS)
+#if os(macOS)
     let name = "macos"
-    #elseif os(iOS)
+#elseif os(iOS)
     let name = "ios"
-    #else
+#else
     let name = "unknown"
-    #endif
+#endif
 }
 
-public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging {
+public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
     public let isIsolated: Bool
     public var messageNames: [String] = []
+    public weak var delegate: ContentScopeUserScriptDelegate?
 
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
@@ -155,15 +164,14 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         broker = UserScriptMessageBroker(context: contextName)
 
-        // dont register any handlers at all if we're not in the isolated context
-        messageNames = isIsolated ? [contextName] : []
+        messageNames = [contextName]
 
         source = ContentScopeUserScript.generateSource(
-                privacyConfigManager,
-                properties: properties,
-                isolated: isIsolated,
-                config: broker.messagingConfig(),
-                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+            privacyConfigManager,
+            properties: properties,
+            isolated: isIsolated,
+            config: broker.messagingConfig(),
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
@@ -201,11 +209,19 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public var requiresRunInPageContentWorld: Bool { !self.isIsolated }
 }
 
-@available(macOS 11.0, iOS 14.0, *)
 extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     @MainActor
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
+        if isIsolated {
+            return await handleIsolatedContextMessages(message)
+        }
+        return handleNonIsolatedContextMessages(message)
+    }
+
+    @MainActor
+    private func handleIsolatedContextMessages(_ message: WKScriptMessage) async -> (Any?, String?) {
+        propagateDebugFlag(message)
         let action = broker.messageHandlerFor(message)
         do {
             let json = try await broker.execute(action: action, original: message)
@@ -215,9 +231,22 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
             return (nil, error.localizedDescription)
         }
     }
+
+    @MainActor
+    private func handleNonIsolatedContextMessages(_ message: WKScriptMessage) -> (Any?, String?) {
+        propagateDebugFlag(message)
+        return (nil, nil)
+    }
+
+    @MainActor
+    private func propagateDebugFlag(_ message: WKScriptMessage) {
+        if let messageDictionary = message.body as? [String: Any], let parameters = messageDictionary["params"] as? [String: String],
+           let flag = parameters["flag"] {
+            delegate?.contentScopeUserScript(self, didReceiveDebugFlag: flag)
+        }
+    }
 }
 
-// MARK: - Fallback for macOS 10.15
 extension ContentScopeUserScript: WKScriptMessageHandler {
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         // unsupported

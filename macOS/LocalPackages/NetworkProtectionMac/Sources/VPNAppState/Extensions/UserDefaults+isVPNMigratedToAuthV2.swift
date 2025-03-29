@@ -43,4 +43,28 @@ extension UserDefaults {
     func resetIsVPNMigratedToAuthV2() {
         removeObject(forKey: #keyPath(isVPNMigratedToAuthV2))
     }
+
+    @objc
+    public dynamic var isAuthV2Enabled: Bool {
+        get {
+            bool(forKey: #keyPath(isAuthV2Enabled))
+        }
+
+        set {
+            guard newValue != bool(forKey: #keyPath(isAuthV2Enabled)) else {
+                return
+            }
+
+            guard newValue else {
+                removeObject(forKey: #keyPath(isAuthV2Enabled))
+                return
+            }
+
+            set(newValue, forKey: #keyPath(isAuthV2Enabled))
+        }
+    }
+
+    func resetIsAuthV2Enabled() {
+        removeObject(forKey: #keyPath(isAuthV2Enabled))
+    }
 }

@@ -110,10 +110,10 @@ public class DataBrokerProtectionAgentManagerProvider {
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
-        let runnerProvider = DataBrokerJobRunnerProvider(privacyConfigManager: privacyConfigurationManager,
-                                                         contentScopeProperties: contentScopeProperties,
-                                                         emailService: emailService,
-                                                         captchaService: captchaService)
+        let runner = DataBrokerJobRunner(privacyConfigManager: privacyConfigurationManager,
+                                         contentScopeProperties: contentScopeProperties,
+                                         emailService: emailService,
+                                         captchaService: captchaService)
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
 
@@ -127,7 +127,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         let operationDependencies = DefaultDataBrokerOperationDependencies(
             database: dataManager.database,
             config: executionConfig,
-            runnerProvider: runnerProvider,
+            runner: runner,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,

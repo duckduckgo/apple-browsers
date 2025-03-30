@@ -37,23 +37,23 @@ public protocol WebJobRunner {
                 shouldRunNextStep: @escaping () -> Bool) async throws
 }
 
-@MainActor
 public final class DataBrokerJobRunner: WebJobRunner {
     let privacyConfigManager: PrivacyConfigurationManaging
     let contentScopeProperties: ContentScopeProperties
     let emailService: EmailServiceProtocol
     let captchaService: CaptchaServiceProtocol
 
-    internal init(privacyConfigManager: PrivacyConfigurationManaging,
-                  contentScopeProperties: ContentScopeProperties,
-                  emailService: EmailServiceProtocol,
-                  captchaService: CaptchaServiceProtocol) {
+    public init(privacyConfigManager: PrivacyConfigurationManaging,
+                contentScopeProperties: ContentScopeProperties,
+                emailService: EmailServiceProtocol,
+                captchaService: CaptchaServiceProtocol) {
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
         self.emailService = emailService
         self.captchaService = captchaService
     }
 
+    @MainActor
     public func scan(_ profileQuery: BrokerProfileQueryData,
                      stageCalculator: StageDurationCalculator,
                      pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -72,6 +72,7 @@ public final class DataBrokerJobRunner: WebJobRunner {
         return try await scan.run(inputValue: (), showWebView: showWebView)
     }
 
+    @MainActor
     public func optOut(profileQuery: BrokerProfileQueryData,
                        extractedProfile: ExtractedProfile,
                        stageCalculator: StageDurationCalculator,

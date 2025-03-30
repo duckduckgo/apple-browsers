@@ -148,7 +148,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private let emailService: EmailService
     private let captchaService: CaptchaService
-    private let runnerProvider: JobRunnerProvider
+    private let runner: WebJobRunner
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         print(event)
@@ -189,11 +189,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                              settings: dbpSettings,
                                              servicePixel: backendServicePixels)
 
-        self.runnerProvider = DataBrokerJobRunnerProvider(
+        self.runner = DataBrokerJobRunner(
             privacyConfigManager: privacyConfigurationManager,
             contentScopeProperties: contentScopeProperties,
             emailService: self.emailService,
             captchaService: self.captchaService)
+
         self.privacyConfigManager = privacyConfigurationManager
         self.contentScopeProperties = contentScopeProperties
 
@@ -370,7 +371,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let dataBroker = try decoder.decode(DataBroker.self, from: data)
                 self.selectedDataBroker = dataBroker
                 let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
-                let runner = runnerProvider.getJobRunner()
                 let group = DispatchGroup()
 
                 for query in brokerProfileQueryData {
@@ -409,7 +409,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     @MainActor
     func runOptOut(scanResult: ScanResult) {
-        let runner = runnerProvider.getJobRunner()
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: scanResult.dataBroker,
             profileQuery: scanResult.profileQuery,

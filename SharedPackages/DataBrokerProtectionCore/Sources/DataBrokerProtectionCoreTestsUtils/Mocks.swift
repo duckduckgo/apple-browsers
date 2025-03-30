@@ -1105,15 +1105,6 @@ public final class MockDataBrokerProtectionBackendServicePixels: DataBrokerProte
     }
 }
 
-public final class MockRunnerProvider: JobRunnerProvider {
-
-    public init() { }
-
-    public func getJobRunner() -> any WebJobRunner {
-        MockWebJobRunner()
-    }
-}
-
 public final class MockPixelHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
     public var lastFiredEvent: DataBrokerProtectionSharedPixels?
@@ -1444,7 +1435,7 @@ public extension DefaultDataBrokerOperationDependencies {
     static var mock: DefaultDataBrokerOperationDependencies {
         DefaultDataBrokerOperationDependencies(database: MockDatabase(),
                                                config: DataBrokerExecutionConfig(),
-                                               runnerProvider: MockRunnerProvider(),
+                                               runner: MockWebJobRunner(),
                                                notificationCenter: .default,
                                                pixelHandler: MockPixelHandler(),
                                                eventsHandler: MockOperationEventsHandler(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))

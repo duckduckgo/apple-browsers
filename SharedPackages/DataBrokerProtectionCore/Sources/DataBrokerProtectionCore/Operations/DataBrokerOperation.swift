@@ -23,7 +23,7 @@ import os.log
 public protocol DataBrokerOperationDependencies {
     var database: DataBrokerProtectionRepository { get }
     var config: DataBrokerExecutionConfig { get }
-    var runnerProvider: JobRunnerProvider { get }
+    var runner: WebJobRunner { get }
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<OperationEvent> { get }
@@ -34,7 +34,7 @@ public protocol DataBrokerOperationDependencies {
 public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
     public let database: DataBrokerProtectionRepository
     public var config: DataBrokerExecutionConfig
-    public let runnerProvider: JobRunnerProvider
+    public let runner: WebJobRunner
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<OperationEvent>
@@ -43,7 +43,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
 
     public init(database: any DataBrokerProtectionRepository,
                 config: DataBrokerExecutionConfig,
-                runnerProvider: any JobRunnerProvider,
+                runner: any WebJobRunner,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<OperationEvent>,
@@ -51,7 +51,7 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
                 vpnBypassService: VPNBypassFeatureProvider? = nil) {
         self.database = database
         self.config = config
-        self.runnerProvider = runnerProvider
+        self.runner = runner
         self.notificationCenter = notificationCenter
         self.pixelHandler = pixelHandler
         self.eventsHandler = eventsHandler
@@ -200,7 +200,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                                                                                 brokerProfileQueryData: brokerProfileData,
                                                                                 database: operationDependencies.database,
                                                                                 notificationCenter: operationDependencies.notificationCenter,
-                                                                                runner: operationDependencies.runnerProvider.getJobRunner(),
+                                                                                runner: operationDependencies.runner,
                                                                                 pixelHandler: operationDependencies.pixelHandler,
                                                                                 showWebView: showWebView,
                                                                                 isImmediateOperation: operationType == .manualScan,

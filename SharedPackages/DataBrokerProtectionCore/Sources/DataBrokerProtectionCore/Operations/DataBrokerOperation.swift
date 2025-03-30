@@ -19,46 +19,7 @@
 import Foundation
 import Common
 import os.log
-
-public protocol DataBrokerOperationDependencies {
-    var database: DataBrokerProtectionRepository { get }
-    var config: DataBrokerExecutionConfig { get }
-    var runner: WebJobRunner { get }
-    var notificationCenter: NotificationCenter { get }
-    var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var eventsHandler: EventMapping<OperationEvent> { get }
-    var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
-    var vpnBypassService: VPNBypassFeatureProvider? { get }
-}
-
-public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
-    public let database: DataBrokerProtectionRepository
-    public var config: DataBrokerExecutionConfig
-    public let runner: WebJobRunner
-    public let notificationCenter: NotificationCenter
-    public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public let eventsHandler: EventMapping<OperationEvent>
-    public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
-    public let vpnBypassService: VPNBypassFeatureProvider?
-
-    public init(database: any DataBrokerProtectionRepository,
-                config: DataBrokerExecutionConfig,
-                runner: any WebJobRunner,
-                notificationCenter: NotificationCenter,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                eventsHandler: EventMapping<OperationEvent>,
-                dataBrokerProtectionSettings: DataBrokerProtectionSettings,
-                vpnBypassService: VPNBypassFeatureProvider? = nil) {
-        self.database = database
-        self.config = config
-        self.runner = runner
-        self.notificationCenter = notificationCenter
-        self.pixelHandler = pixelHandler
-        self.eventsHandler = eventsHandler
-        self.dataBrokerProtectionSettings = dataBrokerProtectionSettings
-        self.vpnBypassService = vpnBypassService
-    }
-}
+import BrowserServicesKit
 
 public enum OperationType {
     case manualScan
@@ -196,21 +157,22 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
             do {
                 Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
 
-                try await DataBrokerProfileQueryOperationManager(vpnBypassService: operationDependencies.vpnBypassService).runOperation(operationData: operationData,
-                                                                                brokerProfileQueryData: brokerProfileData,
-                                                                                database: operationDependencies.database,
-                                                                                notificationCenter: operationDependencies.notificationCenter,
-                                                                                runner: operationDependencies.runner,
-                                                                                pixelHandler: operationDependencies.pixelHandler,
-                                                                                showWebView: showWebView,
-                                                                                isImmediateOperation: operationType == .manualScan,
-                                                                                                                                                                                     eventsHandler: operationDependencies.eventsHandler,
-                                                                                shouldRunNextStep: { [weak self] in
-                    guard let self = self else { return false }
-                    return !self.isCancelled
-                })
+                try await DataBrokerProfileQueryOperationManager(vpnBypassService: operationDependencies.vpnBypassService).runOperation(
+                    dependencies: operationDependencies,
+                    operationData: operationData,
+                    brokerProfileQueryData: brokerProfileData,
+                    database: operationDependencies.database,
+                    notificationCenter: operationDependencies.notificationCenter,
+                    pixelHandler: operationDependencies.pixelHandler,
+                    showWebView: showWebView,
+                    isImmediateOperation: operationType == .manualScan,
+                    eventsHandler: operationDependencies.eventsHandler,
+                    shouldRunNextStep: { [weak self] in
+                        guard let self = self else { return false }
+                        return !self.isCancelled
+                    })
 
-                let sleepInterval = operationDependencies.config.intervalBetweenSameBrokerOperations
+                let sleepInterval = operationDependencies.executionConfig.intervalBetweenSameBrokerOperations
                 Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                 try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
             } catch {

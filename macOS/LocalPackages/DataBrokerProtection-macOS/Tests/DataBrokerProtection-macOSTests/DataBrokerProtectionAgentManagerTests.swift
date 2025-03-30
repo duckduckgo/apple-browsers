@@ -35,7 +35,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockIPCServer: MockIPCServer!
     private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
     private var mockPixelHandler: MockPixelHandler!
-    private var mockDependencies: DefaultDataBrokerOperationDependencies!
+    private var mockDependencies: MockDataBrokerOperationDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
     private var mockAgentStopper: MockAgentStopper!
     private var mockConfigurationManager: MockConfigurationManager!
@@ -68,13 +68,10 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         mockDataManager = MockDataBrokerProtectionDataManager(database: mockDatabase)
 
-        mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  config: DataBrokerExecutionConfig(),
-                                                                  runner: MockWebJobRunner(),
-                                                                  notificationCenter: .default,
-                                                                  pixelHandler: mockSharedPixelsHandler,
-                                                                  eventsHandler: mockEventsHandler,
-                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+        mockDependencies = MockDataBrokerOperationDependencies()
+        mockDependencies.database = mockDatabase
+        mockDependencies.pixelHandler = mockSharedPixelsHandler
+        mockDependencies.eventsHandler = mockEventsHandler
 
         mockProfile = DataBrokerProtectionProfile(
             names: [],

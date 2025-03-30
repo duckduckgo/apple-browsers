@@ -261,7 +261,7 @@ private extension DefaultDataBrokerProtectionQueueManager {
                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                        completion: (() -> Void)?) {
 
-        operationQueue.maxConcurrentOperationCount = operationDependencies.config.concurrentOperationsFor(type)
+        operationQueue.maxConcurrentOperationCount = operationDependencies.executionConfig.concurrentOperationsFor(type)
 
         // Use builder to build operations
         let operations: [DataBrokerOperation]

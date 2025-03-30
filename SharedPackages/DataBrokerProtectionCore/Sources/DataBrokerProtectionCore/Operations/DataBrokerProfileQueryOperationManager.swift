@@ -29,11 +29,11 @@ protocol OperationsManager {
     // We want to refactor this to return a NSOperation in the future
     // so we have more control of stopping/starting the queue
     // for the time being, shouldRunNextStep: @escaping () -> Bool is being used
-    func runOperation(operationData: BrokerJobData,
+    func runOperation(dependencies: DataBrokerOperationDependencies,
+                      operationData: BrokerJobData,
                       brokerProfileQueryData: BrokerProfileQueryData,
                       database: DataBrokerProtectionRepository,
                       notificationCenter: NotificationCenter,
-                      runner: WebJobRunner,
                       pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                       showWebView: Bool,
                       isImmediateOperation: Bool,
@@ -57,11 +57,11 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         vpnBypassService?.bypassStatus.rawValue ?? "unknown"
     }
 
-    internal func runOperation(operationData: BrokerJobData,
+    internal func runOperation(dependencies: DataBrokerOperationDependencies,
+                               operationData: BrokerJobData,
                                brokerProfileQueryData: BrokerProfileQueryData,
                                database: DataBrokerProtectionRepository,
                                notificationCenter: NotificationCenter = NotificationCenter.default,
-                               runner: WebJobRunner,
                                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                                showWebView: Bool = false,
                                isImmediateOperation: Bool = false,
@@ -69,7 +69,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                shouldRunNextStep: @escaping () -> Bool) async throws {
 
         if operationData as? ScanJobData != nil {
-            try await runScanOperation(on: runner,
+            try await runScanOperation(dependencies: dependencies,
                                        brokerProfileQueryData: brokerProfileQueryData,
                                        database: database,
                                        notificationCenter: notificationCenter,
@@ -80,7 +80,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                        shouldRunNextStep: shouldRunNextStep)
         } else if let optOutJobData = operationData as? OptOutJobData {
             try await runOptOutOperation(for: optOutJobData.extractedProfile,
-                                         on: runner,
+                                         dependencies: dependencies,
                                          brokerProfileQueryData: brokerProfileQueryData,
                                          database: database,
                                          notificationCenter: notificationCenter,
@@ -93,7 +93,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
 
     // MARK: - Scan Jobs
 
-    internal func runScanOperation(on runner: WebJobRunner,
+    internal func runScanOperation(dependencies: DataBrokerOperationDependencies,
                                    brokerProfileQueryData: BrokerProfileQueryData,
                                    database: DataBrokerProtectionRepository,
                                    notificationCenter: NotificationCenter,
@@ -134,13 +134,13 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             try database.add(event)
 
             // 4. Get extracted profiles from the runner:
-            let profilesFoundDuringCurrentScanJob = try await runner.scan(
-                brokerProfileQueryData,
-                stageCalculator: stageCalculator,
-                pixelHandler: pixelHandler,
-                showWebView: showWebView,
-                shouldRunNextStep: shouldRunNextStep
-            )
+            let runner = dependencies.createScanRunner(profileQuery: brokerProfileQueryData,
+                                                       stageDurationCalculator: stageCalculator,
+                                                       shouldRunNextStep: shouldRunNextStep)
+
+            let profilesFoundDuringCurrentScanJob = try await runner.scan(brokerProfileQueryData,
+                                                                          showWebView: showWebView,
+                                                                          shouldRunNextStep: shouldRunNextStep)
 
             Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob, privacy: .public)")
 
@@ -369,7 +369,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
     // MARK: - Opt-Out Jobs
 
     internal func runOptOutOperation(for extractedProfile: ExtractedProfile,
-                                     on runner: WebJobRunner,
+                                     dependencies: DataBrokerOperationDependencies,
                                      brokerProfileQueryData: BrokerProfileQueryData,
                                      database: DataBrokerProtectionRepository,
                                      notificationCenter: NotificationCenter,
@@ -428,10 +428,14 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
 
             // 7b. Perform the opt-out itself:
+            let runner = dependencies.createOptOutRunner(
+                profileQuery: brokerProfileQueryData,
+                stageDurationCalculator: stageDurationCalculator,
+                shouldRunNextStep: shouldRunNextStep
+            )
+
             try await runner.optOut(profileQuery: brokerProfileQueryData,
                                     extractedProfile: extractedProfile,
-                                    stageCalculator: stageDurationCalculator,
-                                    pixelHandler: pixelHandler,
                                     showWebView: showWebView,
                                     shouldRunNextStep: shouldRunNextStep)
 

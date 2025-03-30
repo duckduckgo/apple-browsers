@@ -17,6 +17,7 @@
 //
 
 @testable import DataBrokerProtectionCore
+import BrowserServicesKit
 import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
@@ -27,24 +28,25 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
     // Dependencies
     private var mockDatabase: MockDatabase!
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
-    private var mockRunner: MockWebJobRunner!
     private var mockPixelHandler: MockPixelHandler!
     private var mockEventsHandler: MockOperationEventsHandler!
     var mockDependencies: DefaultDataBrokerOperationDependencies!
 
     override func setUpWithError() throws {
         mockDatabase = MockDatabase()
-        mockRunner = MockWebJobRunner()
         mockPixelHandler = MockPixelHandler()
         mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  config: mockSchedulerConfig,
-                                                                  runner: mockRunner,
+                                                                  contentScopeProperties: ContentScopeProperties.mock,
+                                                                  privacyConfig: PrivacyConfigurationManagingMock(),
+                                                                  executionConfig: mockSchedulerConfig,
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
                                                                   eventsHandler: mockEventsHandler,
-                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+                                                                  emailService: EmailServiceMock(),
+                                                                  captchaService: CaptchaServiceMock())
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {

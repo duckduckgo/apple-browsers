@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import BrowserServicesKit
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -31,7 +32,8 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockUpdater: MockDataBrokerProtectionBrokerUpdater!
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
-    private var mockRunner: MockWebJobRunner!
+    private var mockScanRunner: MockScanSubJobWebRunner!
+    private var mockOptOutRunner: MockOptOutSubJobWebRunner!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockOperationErrorDelegate: MockDataBrokerOperationErrorDelegate!
     private var mockDependencies: DefaultDataBrokerOperationDependencies!
@@ -43,16 +45,20 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockPixelHandler = MockPixelHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockUpdater = MockDataBrokerProtectionBrokerUpdater()
-        mockRunner = MockWebJobRunner()
+        mockScanRunner = MockScanSubJobWebRunner()
+        mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  config: DataBrokerExecutionConfig(),
-                                                                  runner: mockRunner,
+                                                                  contentScopeProperties: ContentScopeProperties.mock,
+                                                                  privacyConfig: PrivacyConfigurationManagingMock(),
+                                                                  executionConfig: DataBrokerExecutionConfig(),
                                                                   notificationCenter: .default,
                                                                   pixelHandler: mockPixelHandler,
                                                                   eventsHandler: mockEventsHandler,
-                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+                                                                  emailService: EmailServiceMock(),
+                                                                  captchaService: CaptchaServiceMock())
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
@@ -65,9 +71,9 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateScanOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies,
+                                                    operationDependencies: mockDependencies,
                                                     errorHandler: nil,
-                                                   completion: nil)
+                                                    completion: nil)
 
         // Then
         XCTAssertEqual(mockOperationsCreator.createdType, .manualScan)
@@ -83,7 +89,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies,
+                                                   operationDependencies: mockDependencies,
                                                    errorHandler: nil,
                                                    completion: nil)
 
@@ -101,9 +107,9 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledScanOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies,
+                                                    operationDependencies: mockDependencies,
                                                     errorHandler: nil,
-                                                   completion: nil)
+                                                    completion: nil)
 
         // Then
         XCTAssertEqual(mockOperationsCreator.createdType, .scheduledScan)

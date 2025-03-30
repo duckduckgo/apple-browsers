@@ -1,5 +1,5 @@
 //
-//  DataBrokerJob.swift
+//  SubJobWebRunner.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import BrowserServicesKit
 import UserScript
 import Common
 
-public protocol DataBrokerJob: CCFCommunicationDelegate {
+public protocol SubJobWebRunning: CCFCommunicationDelegate {
     associatedtype ReturnValue
     associatedtype InputValue
 
@@ -53,7 +53,7 @@ public protocol DataBrokerJob: CCFCommunicationDelegate {
     func executeCurrentAction() async
 }
 
-public extension DataBrokerJob {
+public extension SubJobWebRunning {
 
     // MARK: - Shared functions
 
@@ -190,7 +190,7 @@ public extension DataBrokerJob {
                 try await webViewHandler?.load(url: url)
                 await successNextSteps()
             } catch let error as DataBrokerProtectionError {
-                guard error == error404 && self is ScanJob else {
+                guard error == error404 && self is BrokerProfileScanSubJobWebRunner else {
                     throw error
                 }
 
@@ -289,9 +289,11 @@ public protocol CookieHandler {
     func getAllCookiesFromDomain(_ url: URL) async -> [HTTPCookie]?
 }
 
-struct BrokerCookieHandler: CookieHandler {
+public struct BrokerCookieHandler: CookieHandler {
 
-    func getAllCookiesFromDomain(_ url: URL) async -> [HTTPCookie]? {
+    public init() {}
+
+    public func getAllCookiesFromDomain(_ url: URL) async -> [HTTPCookie]? {
         guard let domainURL = extractSchemeAndHostAsURL(from: url.absoluteString) else { return nil }
         do {
             let (_, response) = try await URLSession.shared.data(from: domainURL)

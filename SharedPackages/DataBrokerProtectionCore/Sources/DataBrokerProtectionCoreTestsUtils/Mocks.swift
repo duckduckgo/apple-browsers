@@ -1333,7 +1333,7 @@ public final class MockDataBrokerOperation: DataBrokerOperation, @unchecked Send
                   operationType: operationType,
                   showWebView: false,
                   errorDelegate: errorDelegate,
-                  operationDependencies: DefaultDataBrokerOperationDependencies.mock)
+                  operationDependencies: MockDataBrokerOperationDependencies())
 
         self.shouldError = shouldError
     }
@@ -1431,15 +1431,47 @@ public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
     }
 }
 
-public extension DefaultDataBrokerOperationDependencies {
-    static var mock: DefaultDataBrokerOperationDependencies {
-        DefaultDataBrokerOperationDependencies(database: MockDatabase(),
-                                               config: DataBrokerExecutionConfig(),
-                                               runner: MockWebJobRunner(),
-                                               notificationCenter: .default,
-                                               pixelHandler: MockPixelHandler(),
-                                               eventsHandler: MockOperationEventsHandler(), dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard))
+public final class MockDataBrokerOperationDependencies: DataBrokerOperationDependencies {
+    public var database: any DataBrokerProtectionRepository
+    public var contentScopeProperties: ContentScopeProperties
+    public var privacyConfig: any PrivacyConfigurationManaging
+    public var executionConfig: DataBrokerExecutionConfig
+    public var notificationCenter: NotificationCenter
+    public var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    public var eventsHandler: EventMapping<OperationEvent>
+    public var dataBrokerProtectionSettings: DataBrokerProtectionSettings
+    public var emailService: any EmailServiceProtocol
+    public var captchaService: any CaptchaServiceProtocol
+    public var vpnBypassService: (any VPNBypassFeatureProvider)?
+
+    public var mockScanRunner = MockScanSubJobWebRunner()
+    public var mockOptOutRunner = MockOptOutSubJobWebRunner()
+
+    public init() {
+        self.database = MockDatabase()
+        self.contentScopeProperties = ContentScopeProperties.mock
+        self.privacyConfig = PrivacyConfigurationManagingMock()
+        self.executionConfig = DataBrokerExecutionConfig()
+        self.notificationCenter = .default
+        self.pixelHandler = MockPixelHandler()
+        self.eventsHandler = MockOperationEventsHandler()
+        self.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .standard)
+        self.emailService = EmailServiceMock()
+        self.captchaService = CaptchaServiceMock()
     }
+
+    public func createScanRunner(profileQuery: BrokerProfileQueryData,
+                                 stageDurationCalculator: any StageDurationCalculator,
+                                 shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileScanSubJobWebRunning {
+        return mockScanRunner
+    }
+
+    public func createOptOutRunner(profileQuery: BrokerProfileQueryData,
+                                   stageDurationCalculator: any StageDurationCalculator,
+                                   shouldRunNextStep: @escaping () -> Bool) -> any BrokerProfileOptOutSubJobWebRunning {
+        return mockOptOutRunner
+    }
+
 }
 
 public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator {
@@ -1878,16 +1910,16 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     }
 }
 
-public final class MockWebJobRunner: WebJobRunner {
+public final class MockScanSubJobWebRunner: BrokerProfileScanSubJobWebRunning {
     public var shouldScanThrow = false
-    public var shouldOptOutThrow = false
     public var scanResults = [ExtractedProfile]()
     public var wasScanCalled = false
-    public var wasOptOutCalled = false
 
     public init() { }
 
-    public func scan(_ profileQuery: BrokerProfileQueryData, stageCalculator: StageDurationCalculator, pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>, showWebView: Bool, shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
+    public func scan(_ profileQuery: BrokerProfileQueryData,
+                     showWebView: Bool,
+                     shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         wasScanCalled = true
 
         if shouldScanThrow {
@@ -1897,7 +1929,23 @@ public final class MockWebJobRunner: WebJobRunner {
         }
     }
 
-    public func optOut(profileQuery: BrokerProfileQueryData, extractedProfile: ExtractedProfile, stageCalculator: StageDurationCalculator, pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>, showWebView: Bool, shouldRunNextStep: @escaping () -> Bool) async throws {
+    public func clear() {
+        shouldScanThrow = false
+        scanResults.removeAll()
+        wasScanCalled = false
+    }
+}
+
+public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebRunning {
+    public var shouldOptOutThrow = false
+    public var wasOptOutCalled = false
+
+    public init() { }
+
+    public func optOut(profileQuery: BrokerProfileQueryData,
+                       extractedProfile: ExtractedProfile,
+                       showWebView: Bool,
+                       shouldRunNextStep: @escaping () -> Bool) async throws {
         wasOptOutCalled = true
 
         if shouldOptOutThrow {
@@ -1906,10 +1954,6 @@ public final class MockWebJobRunner: WebJobRunner {
     }
 
     public func clear() {
-        shouldScanThrow = false
-        shouldOptOutThrow = false
-        scanResults.removeAll()
-        wasScanCalled = false
         wasOptOutCalled = false
     }
 }

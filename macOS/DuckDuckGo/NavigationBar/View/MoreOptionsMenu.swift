@@ -521,27 +521,26 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             addItem(withTitle: title, action: #selector(toggleFireproofing(_:)), keyEquivalent: "")
                 .targetting(self)
                 .withImage(image)
+        } else {
+            addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
+                .withImage(.fireproof)
         }
 
-        if tabViewModel.canFindInPage {
-            addItem(withTitle: UserText.findInPageMenuItem, action: #selector(findInPage(_:)), keyEquivalent: "f")
-                .targetting(self)
-                .withImage(.findSearch)
-                .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
-        }
+        addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
+            .targetting(self)
+            .withImage(.findSearch)
+            .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
-        if tabViewModel.canReload {
-            addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
-                .targetting(self)
-                .withImage(.share)
-                .withSubmenu(sharingMenu)
-        }
+        let shareItem = NSMenuItem(title: UserText.shareMenuItem, action: nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.share)
+            .withSubmenu(sharingMenu)
+        addItem(shareItem)
+        shareItem.isEnabled = tabViewModel.canReload
 
-        if tabViewModel.canPrint {
-            addItem(withTitle: UserText.printMenuItem, action: #selector(doPrint(_:)), keyEquivalent: "")
-                .targetting(self)
-                .withImage(.print)
-        }
+        addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.print)
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())

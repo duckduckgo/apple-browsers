@@ -473,24 +473,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-            // The SysExt handles only dead token pixels
-            switch type {
-            case .deadToken:
-                PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
-            case .subscriptionIsActive: // handled by the main app only
-                break
-            case .v1MigrationFailed:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-            case .v1MigrationSuccessful:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
-            }
-        }
-
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
                                                              subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                              subscriptionEnvironment: subscriptionEnvironment,
-                                                             pixelHandler: pixelHandler,
                                                              tokenRecoveryHandler: nil,
                                                              initForPurchase: false)
 

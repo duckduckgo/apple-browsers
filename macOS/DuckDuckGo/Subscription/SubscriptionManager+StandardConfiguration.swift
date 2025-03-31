@@ -166,14 +166,16 @@ extension DefaultSubscriptionManagerV2 {
         if canHandlePixels {
             pixelHandler = { type in
                 switch type {
-                case .deadToken:
-                    PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
+                case .invalidRefreshToken:
+                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected, frequency: .dailyAndCount)
                 case .subscriptionIsActive:
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
-                case .v1MigrationFailed:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-                case .v1MigrationSuccessful:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
+                case .migrationStarted:
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationStarted, frequency: .dailyAndCount)
+                case .migrationFailed(let error):
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(error), frequency: .dailyAndCount)
+                case .migrationSucceeded:
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded, frequency: .dailyAndCount)
                 }
             }
         } else {

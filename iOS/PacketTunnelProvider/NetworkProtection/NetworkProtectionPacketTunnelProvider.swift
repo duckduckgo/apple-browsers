@@ -484,20 +484,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
 
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .deadToken:
-                    // handled by the main app: Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                    break
-                case .subscriptionIsActive, .v1MigrationFailed, .v1MigrationSuccessful: // handled by the main app only
-                    break
-                }
-            }
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
                                                                    tokenRecoveryHandler: {
                 Logger.networkProtection.error("Expired refresh token detected")
             },

@@ -21,12 +21,16 @@ import Networking
 
 public struct APIServiceFactory {
 
+    /// Creates an APIService for the main app flow. This service stores cookies or use any cache.
     public static func makeAPIServiceForAuthV2() -> APIService {
         let configuration = URLSessionConfiguration.ephemeral
+        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+        configuration.httpCookieStorage = nil
         let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
         return DefaultAPIService(urlSession: urlSession)
     }
 
+    /// Creates an APIService for the subscription flow. This service should not store cookies.
     public static func makeAPIServiceForSubscription() -> APIService {
         let configuration = URLSessionConfiguration.default
         configuration.httpCookieStorage = nil

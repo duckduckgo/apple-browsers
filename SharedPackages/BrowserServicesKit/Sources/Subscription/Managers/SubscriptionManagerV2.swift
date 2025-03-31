@@ -140,6 +140,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// - Returns: An auth v2 TokenContainer
     func exchange(tokenV1: String) async throws -> TokenContainer
 
+    func adopt(accessToken: String, refreshToken: String) async throws
+
     /// Used only from the Mac Packet Tunnel Provider when a token is received during configuration
     func adopt(tokenContainer: TokenContainer)
 
@@ -252,7 +254,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
 
-        // Fetching fresh subscription
         do {
             _ = try await currentSubscriptionFeatures(forceRefresh: true)
             let subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
@@ -441,6 +442,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         let tokenContainer = try await oAuthClient.exchange(accessTokenV1: tokenV1)
         NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
         return tokenContainer
+    }
+
+    public func adopt(accessToken: String, refreshToken: String) async throws {
+        let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken)
+        oAuthClient.adopt(tokenContainer: tokenContainer)
+        NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
     }
 
     public func adopt(tokenContainer: TokenContainer) {

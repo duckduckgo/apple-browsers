@@ -753,6 +753,7 @@
 		982995A22CE64DC1004126D2 /* WebViewWarmupHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9853D6F72CE6434D0044326C /* WebViewWarmupHelper.swift */; };
 		982C87C42255559A00919035 /* UITableViewCellExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982C87C32255559A00919035 /* UITableViewCellExtension.swift */; };
 		982E5630222C3D5B008D861B /* FeedbackPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982E562F222C3D5B008D861B /* FeedbackPickerViewController.swift */; };
+		982F28DE2D82C090003E05A2 /* KeyValueFileStorePerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 982F28DD2D82C080003E05A2 /* KeyValueFileStorePerformanceTests.swift */; };
 		9830A06325ED0DB900DB64DE /* BrowsingMenu.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9830A06225ED0DB900DB64DE /* BrowsingMenu.xcassets */; };
 		9833913727AC400800DAF119 /* AppTrackerDataSetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833913627AC400800DAF119 /* AppTrackerDataSetProvider.swift */; };
 		9838059F2228208E00385F1A /* PositiveFeedbackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9838059E2228208E00385F1A /* PositiveFeedbackViewController.swift */; };
@@ -787,6 +788,7 @@
 		984D036124AF49B80066CFB8 /* TabPreviewsSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984D035F24AF49160066CFB8 /* TabPreviewsSourceTests.swift */; };
 		984D60B2222A1284003B9E3B /* FeedbackFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984D60B1222A1284003B9E3B /* FeedbackFormViewController.swift */; };
 		9856A1992933D2EB00ACB44F /* BookmarksModelsErrorHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9856A1982933D2EB00ACB44F /* BookmarksModelsErrorHandling.swift */; };
+		985818A02D8C297300993B04 /* KeyValueFileStoreTestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9858189F2D8C296D00993B04 /* KeyValueFileStoreTestService.swift */; };
 		985892522260B1B200EEB31B /* ProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985892512260B1B200EEB31B /* ProgressView.swift */; };
 		985AAE4524899369007A43EC /* HomeScreenTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985AAE4424899369007A43EC /* HomeScreenTransition.swift */; };
 		98629D312C21765A001E6031 /* BookmarksStateValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98629D302C21765A001E6031 /* BookmarksStateValidation.swift */; };
@@ -809,6 +811,7 @@
 		9875E00722316B8400B1373F /* Instruments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9875E00622316B8400B1373F /* Instruments.swift */; };
 		9876B75E2232B36900D81D9F /* TabInstrumentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9876B75D2232B36900D81D9F /* TabInstrumentation.swift */; };
 		98788E9A2521DA1E00D55218 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = 98788E9C2521DA1E00D55218 /* Localizable.stringsdict */; };
+		987DA29E2D936330002E03B7 /* KeyValueFileStoreServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 987DA29D2D93632A002E03B7 /* KeyValueFileStoreServiceTests.swift */; };
 		9880722A25FA497B0039EF4B /* MenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9880722925FA497B0039EF4B /* MenuButton.swift */; };
 		9880723725FA4E450039EF4B /* menu_dark.json in Resources */ = {isa = PBXBuildFile; fileRef = 9880723525FA4E440039EF4B /* menu_dark.json */; };
 		9880723825FA4E450039EF4B /* menu_light.json in Resources */ = {isa = PBXBuildFile; fileRef = 9880723625FA4E450039EF4B /* menu_light.json */; };
@@ -2330,6 +2333,7 @@
 		982C87C32255559A00919035 /* UITableViewCellExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITableViewCellExtension.swift; sourceTree = "<group>"; };
 		982E562D222C39F8008D861B /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		982E562F222C3D5B008D861B /* FeedbackPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPickerViewController.swift; sourceTree = "<group>"; };
+		982F28DD2D82C080003E05A2 /* KeyValueFileStorePerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueFileStorePerformanceTests.swift; sourceTree = "<group>"; };
 		982F402C251EAC4A009D48CD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		982F402D251EAC4A009D48CD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		982F402F251EAC4A009D48CD /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -2384,6 +2388,7 @@
 		9852CD91251EABCC001A1575 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9853D6F72CE6434D0044326C /* WebViewWarmupHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWarmupHelper.swift; sourceTree = "<group>"; };
 		9856A1982933D2EB00ACB44F /* BookmarksModelsErrorHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksModelsErrorHandling.swift; sourceTree = "<group>"; };
+		9858189F2D8C296D00993B04 /* KeyValueFileStoreTestService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueFileStoreTestService.swift; sourceTree = "<group>"; };
 		985892512260B1B200EEB31B /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 		9858AF7B251EAC0300025687 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9858AF7C251EAC0300025687 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -2786,6 +2791,7 @@
 		98788EC22521DA3800D55218 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = es; path = es.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		98788EC32521DA3900D55218 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = sv; path = sv.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
 		98788EC42521DA3900D55218 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = tr; path = tr.lproj/Localizable.stringsdict; sourceTree = "<group>"; };
+		987DA29D2D93632A002E03B7 /* KeyValueFileStoreServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyValueFileStoreServiceTests.swift; sourceTree = "<group>"; };
 		9880722925FA497B0039EF4B /* MenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuButton.swift; sourceTree = "<group>"; };
 		9880723525FA4E440039EF4B /* menu_dark.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = menu_dark.json; sourceTree = "<group>"; };
 		9880723625FA4E450039EF4B /* menu_light.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = menu_light.json; sourceTree = "<group>"; };
@@ -5490,6 +5496,7 @@
 		9825F9D9293F2E5F00F220F2 /* PerformanceTests */ = {
 			isa = PBXGroup;
 			children = (
+				982F28DD2D82C080003E05A2 /* KeyValueFileStorePerformanceTests.swift */,
 				98BFA910294A2086004EA636 /* bookmarks_3k.html */,
 				98D4B7E22949C4270068814D /* bookmarks_30k.html */,
 				9825F9DA293F2E8700F220F2 /* BookmarksTestData.swift */,
@@ -6518,6 +6525,7 @@
 		CBAD0F0E2D006291006267B8 /* AppServices */ = {
 			isa = PBXGroup;
 			children = (
+				9858189F2D8C296D00993B04 /* KeyValueFileStoreTestService.swift */,
 				CBF259572D3AA85600AC63E4 /* VPNService.swift */,
 				CBF259552D3A960600AC63E4 /* SyncService.swift */,
 				CBF259532D3A4C1200AC63E4 /* CrashCollectionService.swift */,
@@ -7249,6 +7257,7 @@
 			isa = PBXGroup;
 			children = (
 				CB3B4D572D64AA9C006DAD63 /* Mocks */,
+				987DA29D2D93632A002E03B7 /* KeyValueFileStoreServiceTests.swift */,
 				85BA58561F34F61C00C6E8CA /* AppUserDefaultsTests.swift */,
 				4B62C4B925B930DD008912C6 /* AppConfigurationFetchTests.swift */,
 				85AFA1202B45D14F0028A504 /* BookmarksMigrationAssertionTests.swift */,
@@ -8702,6 +8711,7 @@
 				C1CDA3162AFB9C7F006D1476 /* AutofillNeverPromptWebsitesManager.swift in Sources */,
 				D668D9272B6937D2008E2FF2 /* SubscriptionITPViewModel.swift in Sources */,
 				F1CA3C371F045878005FADB3 /* PrivacyStore.swift in Sources */,
+				985818A02D8C297300993B04 /* KeyValueFileStoreTestService.swift in Sources */,
 				31DE43C42C2C60E800F8C51F /* DuckPlayerModalPresenter.swift in Sources */,
 				37FCAAC029930E26000E420A /* FailedAssertionView.swift in Sources */,
 				4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */,
@@ -9589,6 +9599,7 @@
 				4B27FBB12C9252F4007E21A7 /* DefaultPersistentPixelStorageTests.swift in Sources */,
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
 				C174CE602BD6A6CE00AED2EA /* MockDDGSyncing.swift in Sources */,
+				987DA29E2D936330002E03B7 /* KeyValueFileStoreServiceTests.swift in Sources */,
 				9F4CC51F2C48D758006A96EB /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				8521FDE6238D414B00A44CC3 /* FileStoreTests.swift in Sources */,
 				F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */,
@@ -9728,6 +9739,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				98D4B7E52949EFCE0068814D /* BookmarksExportPerformanceTests.swift in Sources */,
+				982F28DE2D82C090003E05A2 /* KeyValueFileStorePerformanceTests.swift in Sources */,
 				98D4B7DA294407AC0068814D /* BookmarksSearchPerformanceTests.swift in Sources */,
 				986B45CB299D5EF50089D2D7 /* BookmarksLookupPerformanceTests.swift in Sources */,
 				98D4B7E12949C3E80068814D /* BookmarksImportPerformanceTests.swift in Sources */,
@@ -11453,7 +11465,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "IntegrationTests copy-Info.plist";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -11483,7 +11496,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "IntegrationTests copy-Info.plist";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -12152,7 +12166,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "IntegrationTests copy-Info.plist";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -12549,7 +12564,8 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
-				INFOPLIST_FILE = "IntegrationTests copy-Info.plist";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

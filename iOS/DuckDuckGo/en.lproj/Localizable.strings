@@ -1227,6 +1227,12 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Never";
 
+/* Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
+
+/* Button on Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message.button" = "Open Settings";
+
 /* Caption for Duck Player entry point */
 "duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
 

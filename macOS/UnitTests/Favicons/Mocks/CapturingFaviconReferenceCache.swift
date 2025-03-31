@@ -19,7 +19,6 @@
 import Common
 @testable import DuckDuckGo_Privacy_Browser
 
-@MainActor
 final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
 
     init() {}
@@ -28,6 +27,7 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
 
     var loaded: Bool = false
 
+    @MainActor
     func load() async throws {
         loadCallsCount += 1
     }
@@ -35,6 +35,7 @@ final class CapturingFaviconReferenceCache: FaviconReferenceCaching {
     var hostReferences: [String: FaviconHostReference] = [:]
     var urlReferences: [URL: FaviconUrlReference] = [:]
 
+    @MainActor
     func insert(faviconUrls: (smallFaviconUrl: URL?, mediumFaviconUrl: URL?), documentUrl: URL) {
         insertCalls.append(.init(faviconUrls.smallFaviconUrl, faviconUrls.mediumFaviconUrl, documentUrl))
     }

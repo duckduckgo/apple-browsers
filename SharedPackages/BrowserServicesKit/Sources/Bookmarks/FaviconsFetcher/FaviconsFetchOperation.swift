@@ -100,21 +100,27 @@ final class FaviconsFetchOperation: Operation, @unchecked Sendable {
     }
 
     func fetchFavicons() async throws {
-        var idsToProcess = try stateStore.getBookmarkIDs()
+        var (bookmarkDomains, idsToProcess) = try await MainActor.run { () -> (BookmarkDomains?, Set<String>) in
+            let idsToProcess = try stateStore.getBookmarkIDs()
 
-        guard !idsToProcess.isEmpty else {
-            Logger.bookmarks.debug("No new Favicons to fetch")
-            return
+            guard !idsToProcess.isEmpty else {
+                Logger.bookmarks.debug("No new Favicons to fetch")
+                return (nil, [])
+            }
+            Logger.bookmarks.debug("Favicons Fetch Operation started")
+
+            var bookmarkDomains = mapBookmarkDomainsToUUIDs(for: idsToProcess)
+            bookmarkDomains.filterDomains { [weak self] domain in
+                self?.faviconStore.hasFavicon(for: domain) == false
+            }
+            return (bookmarkDomains, idsToProcess)
         }
 
-        Logger.bookmarks.debug("Favicons Fetch Operation started")
         defer {
             Logger.bookmarks.debug("Favicons Fetch Operation finished")
         }
-
-        var bookmarkDomains = mapBookmarkDomainsToUUIDs(for: idsToProcess)
-        bookmarkDomains.filterDomains { [weak self] domain in
-            self?.faviconStore.hasFavicon(for: domain) == false
+        guard let bookmarkDomains else {
+            return
         }
 
         idsToProcess = bookmarkDomains.allUUIDs

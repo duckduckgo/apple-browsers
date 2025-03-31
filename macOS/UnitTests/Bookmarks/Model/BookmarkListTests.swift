@@ -269,19 +269,17 @@ final class BookmarkListTests: XCTestCase {
 
 fileprivate extension Bookmark {
 
-    @MainActor(unsafe)
     static var aBookmark: Bookmark = Bookmark(id: UUID().uuidString,
                                               url: URL.duckDuckGo.absoluteString,
                                               title: "Title",
                                               isFavorite: false,
-                                              faviconManagement: FaviconManagerMock())
+                                              faviconManagement: { FaviconManagerMock() })
 
-    @MainActor(unsafe)
     static var aCaseSensitiveBookmark: Bookmark = Bookmark(id: UUID().uuidString,
-                                              url: "www.DuckDuckGo.com",
-                                              title: "Title",
-                                              isFavorite: false,
-                                              faviconManagement: FaviconManagerMock())
+                                                           url: "www.DuckDuckGo.com",
+                                                           title: "Title",
+                                                           isFavorite: false,
+                                                           faviconManagement: { FaviconManagerMock() })
 
     var identifiableBookmark: BookmarkList.IdentifiableBookmark {
         return BookmarkList.IdentifiableBookmark(from: self)

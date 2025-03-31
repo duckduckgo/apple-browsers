@@ -191,7 +191,10 @@ struct DuckPlayerView: View {
             } label: {
                 ZStack {
                     Image(Constants.duckPlayerSettingsImage)
+                        .resizable()
                         .foregroundColor(.white)
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
                 }
             }
 
@@ -216,7 +219,7 @@ struct DuckPlayerView: View {
                 label: {
                     Image(systemName: "xmark")
                         .foregroundColor(.white)
-                        .font(.system(size: 20, weight: .black))
+                        .font(.system(size: 20, weight: .semibold))
                         .frame(width: 44, height: 44)  // Larger touch target
                 })
         }

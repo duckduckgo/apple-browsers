@@ -123,6 +123,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
+            Logger.subscription.error("Unknown web message: \(methodName, privacy: .public)")
             return nil
         }
     }

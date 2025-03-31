@@ -69,14 +69,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
 
-    case killswitchExampleCrossPlatformFeature
-    case killswitchExamplePlatformSpecificSubfeature
+    case failsafeExampleCrossPlatformFeature
+    case failsafeExamplePlatformSpecificSubfeature
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .killswitchExampleCrossPlatformFeature, .killswitchExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
             true
         default:
             false
@@ -114,8 +114,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .killswitchExampleCrossPlatformFeature,
-                .killswitchExamplePlatformSpecificSubfeature:
+                .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -175,10 +175,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
-        case .killswitchExampleCrossPlatformFeature:
-            return .remoteReleasable(.feature(.killswitchExample))
-        case .killswitchExamplePlatformSpecificSubfeature:
-            return .remoteReleasable(.subfeature(macOSBrowserConfigSubfeature.killswitchExample))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         }
     }
 }

@@ -88,16 +88,15 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
 
+    case failsafeExampleCrossPlatformFeature
 
-    case killswitchExampleCrossPlatformFeature
-
-    case killswitchExamplePlatformSpecificSubfeature
+    case failsafeExamplePlatformSpecificSubfeature
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .killswitchExampleCrossPlatformFeature, .killswitchExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
             true
         default:
             false
@@ -225,10 +224,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
-        case .killswitchExampleCrossPlatformFeature:
-            return .remoteReleasable(.feature(.killswitchExample))
-        case .killswitchExamplePlatformSpecificSubfeature:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.killswitchExample))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         }
     }
 }

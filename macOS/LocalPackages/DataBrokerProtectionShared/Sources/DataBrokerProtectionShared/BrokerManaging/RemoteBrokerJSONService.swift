@@ -22,22 +22,6 @@ import ZIPFoundation
 import Common
 import os.log
 
-public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & BrokerJSONFallbackProvider
-
-public protocol RemoteBrokerJSONServiceProvider: AnyObject {
-    func checkForUpdates() async throws
-    func checkForUpdates(skipsLimiter: Bool) async throws
-}
-
-public protocol BrokerJSONFallbackProvider {
-    func fallbackBrokers() throws -> [DataBroker]?
-}
-
-public protocol FallbackBrokerJSONServiceProvider {
-    func bundledBrokers() throws -> [DataBroker]?
-    func checkForUpdates()
-}
-
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
         case missingAccessToken
@@ -105,7 +89,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private static let updateCheckInterval = TimeInterval.hours(1)
 
     private let settings: DataBrokerProtectionSettings
-    private let vault: any DataBrokerProtectionSecureVault
+    public let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let fallbackService: FallbackBrokerJSONServiceProvider?
@@ -288,59 +272,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         guard let uncompressedBrokerJSONDirectoryURL else { return }
         try FileManager.default.removeItem(at: uncompressedBrokerJSONDirectoryURL)
         Logger.dataBrokerProtection.log("Temporary directory removed")
-    }
-
-    func upsertBroker(_ broker: DataBroker) throws {
-        guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
-            try addBroker(broker)
-            return
-        }
-
-        guard shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else {
-            Logger.dataBrokerProtection.log("False positive (changed eTag but same version): \(broker.url, privacy: .public)")
-            return
-        }
-
-        guard let savedBrokerId = savedBroker.id else { return }
-
-        Logger.dataBrokerProtection.log("Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
-
-        try vault.update(broker, with: savedBrokerId)
-        try updateAttemptCount(broker)
-    }
-
-    func addBroker(_ broker: DataBroker) throws {
-        Logger.dataBrokerProtection.log("New broker found: \(broker.url, privacy: .public)")
-
-        /// 1. We save the broker into the database
-        let brokerId = try vault.save(broker: broker)
-
-        /// 2. We fetch the user profile and obtain the profile queries
-        let profileQueries = try vault.fetchAllProfileQueries(for: 1)
-        let profileQueryIDs = profileQueries.compactMap({ $0.id })
-
-        /// 3. We create the new scans operations for the profile queries and the new broker id
-        for profileQueryId in profileQueryIDs {
-            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: nil, preferredRunDate: Date())
-        }
-    }
-
-    func shouldUpdate(incoming: String, storedVersion: String) -> Bool {
-        let result = incoming.compare(storedVersion, options: .numeric)
-
-        return result == .orderedDescending
-    }
-
-    /// Reset attempt count to 0 when broker JSON is updated
-    func updateAttemptCount(_ broker: DataBroker) throws {
-        guard let brokerId = broker.id else { return }
-
-        let optOutJobs = try vault.fetchOptOuts(brokerId: brokerId)
-        for optOutJob in optOutJobs {
-            if let extractedProfileId = optOutJob.extractedProfile.id {
-                try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
-            }
-        }
     }
 }
 

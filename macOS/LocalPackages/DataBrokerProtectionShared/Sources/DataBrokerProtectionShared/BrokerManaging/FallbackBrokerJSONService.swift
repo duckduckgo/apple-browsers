@@ -116,11 +116,11 @@ public final class AppVersionNumber: AppVersionNumberProvider {
     }
 }
 
-public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider {
+public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider, BrokerManaging {
 
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
-    private let vault: any DataBrokerProtectionSecureVault
+    public let vault: any DataBrokerProtectionSecureVault
     private let appVersion: AppVersionNumberProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
@@ -149,7 +149,7 @@ public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider {
 
         for broker in brokers {
             do {
-                try update(broker)
+                try upsertBroker(broker)
             } catch {
                 Logger.dataBrokerProtection.log("Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
                 pixelHandler.fire(.databaseError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
@@ -176,56 +176,6 @@ public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider {
     private func updateBrokersAndSaveLatestVersion() {
         repository.saveLatestAppVersionCheck(version: appVersion.versionNumber)
         updateBrokers()
-    }
-
-    // Here we check if we need to update broker files
-    //
-    // 1. We check if the broker exists in the database
-    // 2. If does exist, we check the number version, if the version number is new, we update it
-    // 3. If it does not exist, we add it, and we create the scan operations related to it
-    private func update(_ broker: DataBroker) throws {
-        guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
-            // The broker does not exist in the current storage. We need to add it.
-            try add(broker)
-            return
-        }
-
-        if shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) {
-            guard let savedBrokerId = savedBroker.id else { return }
-
-            try vault.update(broker, with: savedBrokerId)
-            try updateAttemptCount(broker)
-        }
-    }
-
-    private func updateAttemptCount(_ broker: DataBroker) throws {
-        guard broker.type == .parent, let brokerId = broker.id else { return }
-
-        let optOutJobs = try vault.fetchOptOuts(brokerId: brokerId)
-        for optOutJob in optOutJobs {
-            if let extractedProfileId = optOutJob.extractedProfile.id {
-                try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
-            }
-        }
-    }
-
-    // 1. We save the broker into the database
-    // 2. We fetch the user profile and obtain the profile queries
-    // 3. We create the new scans operations for the profile queries and the new broker id
-    private func add(_ broker: DataBroker) throws {
-        let brokerId = try vault.save(broker: broker)
-        let profileQueries = try vault.fetchAllProfileQueries(for: 1)
-        let profileQueryIDs = profileQueries.compactMap({ $0.id })
-
-        for profileQueryId in profileQueryIDs {
-            try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: nil, preferredRunDate: Date())
-        }
-    }
-
-    private func shouldUpdate(incoming: String, storedVersion: String) -> Bool {
-        let result = incoming.compare(storedVersion, options: .numeric)
-
-        return result == .orderedDescending
     }
 }
 

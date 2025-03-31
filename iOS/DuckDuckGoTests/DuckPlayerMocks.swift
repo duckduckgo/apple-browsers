@@ -275,7 +275,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         // Mock implementation
     }
 
-    func dismissPill(reset: Bool, animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
         // Mock implementation
     }
 
@@ -368,7 +368,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     }
     
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
         // Mock implementation
     }
     

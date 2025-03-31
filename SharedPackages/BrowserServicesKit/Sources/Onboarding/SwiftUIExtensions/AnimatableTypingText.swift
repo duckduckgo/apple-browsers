@@ -80,7 +80,7 @@ public struct AnimatableTypingText: View {
             if shouldAnimate {
                 model.startAnimating()
             } else {
-                model.stopAnimating(skipped: false)
+                model.stopAnimating()
             }
         })
         .onChange(of: skipAnimation.wrappedValue, perform: { shouldSkip in
@@ -133,7 +133,7 @@ final class AnimatableTypingTextModel: ObservableObject {
         })
     }
 
-    func stopAnimating(skipped: Bool) {
+    func stopAnimating() {
         timer?.invalidate()
         timer = nil
 
@@ -148,7 +148,7 @@ final class AnimatableTypingTextModel: ObservableObject {
     private func handleTimerEvent() {
         if typingIndex >= text.length {
             onTypingFinished?()
-            stopAnimating(skipped: false)
+            stopAnimating()
             return
         }
 

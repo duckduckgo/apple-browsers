@@ -135,6 +135,7 @@ final class FaviconManager: FaviconManagement {
         imageCache.loaded && referenceCache.loaded
     }
 
+    @MainActor
     private func awaitFaviconsLoaded() async {
         if faviconsLoaded { return }
         await withCheckedContinuation { continuation in

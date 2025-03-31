@@ -29,7 +29,6 @@ protocol FaviconImageCaching {
     @MainActor
     var loaded: Bool { get }
 
-    @MainActor
     func load() async throws
 
     @MainActor
@@ -59,12 +58,14 @@ final class FaviconImageCache: FaviconImageCaching {
 
     private let storing: FaviconStoring
 
+    @MainActor
     private var entries = [URL: Favicon]()
 
     init(faviconStoring: FaviconStoring) {
         storing = faviconStoring
     }
 
+    @MainActor
     private(set) var loaded = false
 
     func load() async throws {
@@ -77,10 +78,12 @@ final class FaviconImageCache: FaviconImageCaching {
             throw error
         }
 
-        for favicon in favicons {
-            entries[favicon.url] = favicon
+        await MainActor.run {
+            for favicon in favicons {
+                entries[favicon.url] = favicon
+            }
+            loaded = true
         }
-        loaded = true
     }
 
     func insert(_ favicons: [Favicon]) {

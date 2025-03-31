@@ -241,7 +241,10 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///   - webView: The `WKWebView` where navigation is occurring.
     @MainActor
     func handleDuckNavigation(_ navigationAction: WKNavigationAction, webView: WKWebView) {
-        // NOOP
+        let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
+        let youtubeURL = URL.youtube(videoID)
+        webView.load(URLRequest(url: youtubeURL))
+        return
     }
 
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.

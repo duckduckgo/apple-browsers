@@ -43,6 +43,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         case missingAccessToken
         case serverError
         case clientError
+        case invalidDestinationURL
     }
 
     enum Endpoint {
@@ -109,13 +110,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let fallbackService: FallbackBrokerJSONServiceProvider?
 
-    private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    private var uncompressedBrokerJSONDirectoryURL: URL?
 
     public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
-                fallbackService: FallbackBrokerJSONServiceProvider? = nil) {
+                fallbackService: FallbackBrokerJSONServiceProvider?) {
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
@@ -191,6 +192,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
                                testBrokers: mainConfig.testDataBrokers)
+        try cleanUp()
     }
 
     private func checkForFallbackBrokerJSONs() async throws {
@@ -238,8 +240,14 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             }
         }
 
-        try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
-        Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
+        uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
+        if let uncompressedBrokerJSONDirectoryURL {
+            try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
+            Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
+        } else {
+            fatalError("This should never happen")
+        }
     }
 
     /// brokerFileNames might contain both active and test brokers
@@ -248,12 +256,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                             eTagMapping: [String: String],
                             activeBrokers: [String],
                             testBrokers: [String]) throws {
-        let directoryURL: URL
-        if #available(macOS 13.0, iOS 16.0, *) {
-            directoryURL = uncompressedBrokerJSONDirectoryURL.appending(path: "json", directoryHint: .isDirectory)
-        } else {
-            directoryURL = uncompressedBrokerJSONDirectoryURL.appendingPathComponent("json", isDirectory: true)
+        guard let uncompressedBrokerJSONDirectoryURL else {
+            throw Error.invalidDestinationURL
         }
+
+        let directoryURL = uncompressedBrokerJSONDirectoryURL.appendingPathComponent("json", isDirectory: true)
         let fileURLs = try FileManager.default.contentsOfDirectory(at: directoryURL,
                                                                    includingPropertiesForKeys: nil,
                                                                    options: [.skipsHiddenFiles])
@@ -274,6 +281,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 #endif
             }
         }
+    }
+
+    private func cleanUp() throws {
+        guard let uncompressedBrokerJSONDirectoryURL else { return }
+        try FileManager.default.removeItem(at: uncompressedBrokerJSONDirectoryURL)
+        Logger.dataBrokerProtection.log("Temporary directory removed")
     }
 
     func upsertBroker(_ broker: DataBroker) throws {

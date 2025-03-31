@@ -37,8 +37,16 @@ public enum FeatureFlag: String {
     case autoconsentOnByDefault
     case history
     case newTabPageSections
+        
+    // Duckplayer 'Web based' UI
     case duckPlayer
+    // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
+    
+    // Duckplayer 'Native' UI
+    // https://app.asana.com/0/1204099484721401/1209255140870410/f
+    case duckPlayerNativeUI
+
     case sslCertificatesBypass
     case syncPromotionBookmarks
     case syncPromotionPasswords
@@ -165,6 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
         case .duckPlayerOpenInNewTab:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.openInNewTab))
+        case .duckPlayerNativeUI:
+            return .remoteReleasable(.subfeature(DuckPlayerSubfeature.nativeUI))
         case .sslCertificatesBypass:
             return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .syncPromotionBookmarks:

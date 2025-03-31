@@ -23,7 +23,7 @@ import SwiftUIExtensions
 struct LoginFaviconView: View {
     let domain: String
     let generatedIconLetters: String
-    let faviconManagement: FaviconManagement = FaviconManager.shared
+    let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     var body: some View {
         Group {
@@ -41,7 +41,6 @@ struct LoginFaviconView: View {
         }
     }
 
-    @MainActor(unsafe)
     var favicon: NSImage? {
         return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image ?? .login
     }

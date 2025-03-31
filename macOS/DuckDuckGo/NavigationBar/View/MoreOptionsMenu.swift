@@ -831,6 +831,7 @@ final class BookmarksSubMenu: NSMenu {
 
     }
 
+    @MainActor
     private func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
         var menuItems = [NSMenuItem]()
 

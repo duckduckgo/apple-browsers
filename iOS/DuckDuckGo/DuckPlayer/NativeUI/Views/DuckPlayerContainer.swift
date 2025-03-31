@@ -133,6 +133,7 @@ public enum DuckPlayerContainer {
                 // Use a fixed container height for offset calculations
                 sheet(containerHeight: Constants.initialOffsetValue)
                     .frame(alignment: .bottom)
+                    .opacity(viewModel.isKeyboardVisible ? 0 : 1)
             }
         }
     }

@@ -519,6 +519,23 @@ class AppPrivacyConfigurationTests: XCTestCase {
         XCTAssertEqual(config.stateFor(featureKey: .gpc), .disabled(.limitedToInternalUsers))
     }
 
+    func testWhenCheckingFeatureState_featureNotDefined_ThenDefaultValueIsReturned() {
+
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleInternalConfig, etag: "test")
+        let mockInternalUserStore = MockInternalUserStoring()
+
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStore))
+        let config = manager.privacyConfig
+
+        mockInternalUserStore.isInternalUser = false
+        XCTAssertFalse(config.isEnabled(featureKey: .intentionallyLocalOnlyFeatureForTests, defaultValue: false))
+        XCTAssertTrue(config.isEnabled(featureKey: .intentionallyLocalOnlyFeatureForTests, defaultValue: true))
+    }
+
     let exampleSubfeaturesConfig =
     """
     {
@@ -699,6 +716,21 @@ class AppPrivacyConfigurationTests: XCTestCase {
         "unprotectedTemporary": []
     }
     """.data(using: .utf8)!
+    }
+
+    func testWhenCheckingSubfeatureState_whenNoFeatureDefinedOnConfig_defaultValueReturned() {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: exampleSubfeaturesConfig, etag: "test")
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: MockDomainsProtectionStore(),
+                                                  internalUserDecider: DefaultInternalUserDecider())
+
+        let config = manager.privacyConfig
+
+        let currentVersionProvider = MockAppVersionProvider(appVersion: "1.36.0")
+        XCTAssertFalse(config.isSubfeatureEnabled(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: false))
+        XCTAssertTrue(config.isSubfeatureEnabled(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests, versionProvider: currentVersionProvider, randomizer: Double.random(in:), defaultValue: true))
     }
 
     let exampleSubfeatureWithRolloutsConfig = exampleSubfeatureWithRolloutsConfigTemplate(percent: 5.0)

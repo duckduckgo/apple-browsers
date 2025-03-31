@@ -170,29 +170,6 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     func tapped() {
         isSkipped = true
-        // Do whatever you need to do here to support tapping to quickly show the full content of the dialog
-        switch state.intro?.type {
-        case .startOnboardingDialog:
-            introState.showIntroButton = true
-            introState.animateIntroText = false
-        case .browsersComparisonDialog:
-            browserComparisonState.showComparisonButton = true
-            browserComparisonState.animateComparisonText = false
-        case .chooseAppIconDialog:
-            appIconPickerContentState.animateTitle = false
-            appIconPickerContentState.animateMessage = false
-            appIconPickerContentState.showContent = true
-        case .chooseAddressBarPositionDialog:
-            addressBarPositionContentState.animateTitle = false
-            addressBarPositionContentState.showContent = true
-        case .addToDockPromoDialog:
-            addToDockState.isAnimating = false
-
-        // Forces new cases.
-        case .none:
-            break
-        }
-
     }
 
 #if DEBUG || ALPHA

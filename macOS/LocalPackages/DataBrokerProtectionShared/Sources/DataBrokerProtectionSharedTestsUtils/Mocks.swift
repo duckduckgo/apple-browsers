@@ -1517,10 +1517,10 @@ public final class MockRemoteJSONBrokerService: BrokerJSONServiceProvider {
         nil
     }
 
-    public func checkForBrokerJSONUpdates() async throws {
+    public func checkForUpdates() async throws {
     }
 
-    public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
+    public func checkForUpdates(skipsLimiter: Bool) async throws {
     }
 }
 

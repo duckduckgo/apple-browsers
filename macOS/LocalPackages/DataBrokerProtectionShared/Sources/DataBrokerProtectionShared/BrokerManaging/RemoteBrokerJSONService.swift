@@ -22,10 +22,20 @@ import ZIPFoundation
 import Common
 import os.log
 
-public protocol BrokerJSONServiceProvider: AnyObject {
+public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & BrokerJSONFallbackProvider
+
+public protocol RemoteBrokerJSONServiceProvider: AnyObject {
+    func checkForUpdates() async throws
+    func checkForUpdates(skipsLimiter: Bool) async throws
+}
+
+public protocol BrokerJSONFallbackProvider {
     func fallbackBrokers() throws -> [DataBroker]?
-    func checkForBrokerJSONUpdates() async throws
-    func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws
+}
+
+public protocol FallbackBrokerJSONServiceProvider {
+    func bundledBrokers() throws -> [DataBroker]?
+    func checkForUpdates()
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
@@ -97,7 +107,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    private let fallbackService: DataBrokerProtectionBrokerUpdater?
+    private let fallbackService: FallbackBrokerJSONServiceProvider?
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
@@ -105,7 +115,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
-                fallbackService: DataBrokerProtectionBrokerUpdater? = nil) {
+                fallbackService: FallbackBrokerJSONServiceProvider? = nil) {
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
@@ -119,11 +129,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         try fallbackService?.bundledBrokers()
     }
 
-    public func checkForBrokerJSONUpdates() async throws {
-        try await checkForBrokerJSONUpdates(skipsLimiter: false)
+    public func checkForUpdates() async throws {
+        try await checkForUpdates(skipsLimiter: false)
     }
 
-    public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
+    public func checkForUpdates(skipsLimiter: Bool) async throws {
         do {
             /// 1. Ensure we're due for an update
             let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
@@ -185,7 +195,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private func checkForFallbackBrokerJSONs() async throws {
         guard let fallbackService, try await authenticationManager.hasValidEntitlement() else { return }
-        fallbackService.checkForUpdatesInBrokerJSONFiles()
+        fallbackService.checkForUpdates()
     }
 
     // MARK: - File handling

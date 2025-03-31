@@ -82,12 +82,14 @@ public class DataBrokerProtectionAgentManagerProvider {
             fatalError("Failed to make secure storage vault")
         }
 
+        let fallbackService = FallbackBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
-                                                    pixelHandler: sharedPixelsHandler)
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    fallbackService: fallbackService)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerUpdater: brokerUpdater)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, fallbackService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()

@@ -116,12 +116,7 @@ public final class AppVersionNumber: AppVersionNumberProvider {
     }
 }
 
-public protocol DataBrokerProtectionBrokerUpdater {
-    func bundledBrokers() throws -> [DataBroker]?
-    func checkForUpdatesInBrokerJSONFiles()
-}
-
-public struct FallbackBrokerJSONService: DataBrokerProtectionBrokerUpdater {
+public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider {
 
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
@@ -166,7 +161,7 @@ public struct FallbackBrokerJSONService: DataBrokerProtectionBrokerUpdater {
         try resources.fetchBrokerFromResourceFiles()
     }
 
-    public func checkForUpdatesInBrokerJSONFiles() {
+    public func checkForUpdates() {
         if let lastCheckedVersion = repository.getLastCheckedVersion() {
             if shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
                 updateBrokersAndSaveLatestVersion()

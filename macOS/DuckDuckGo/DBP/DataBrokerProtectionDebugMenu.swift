@@ -64,7 +64,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
         return RemoteBrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
                                        vault: vault,
-                                       authenticationManager: authenticationManager)
+                                       authenticationManager: authenticationManager,
+                                       fallbackService: nil)
     }()
 
     init() {
@@ -239,7 +240,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showDatabaseBrowser() {
-        let viewController = DataBrokerDatabaseBrowserViewController(brokerUpdater: brokerUpdater)
+        let viewController = DataBrokerDatabaseBrowserViewController(fallbackService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -258,7 +259,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showForceOptOutWindow() {
-        let viewController = DataBrokerForceOptOutViewController(brokerUpdater: brokerUpdater)
+        let viewController = DataBrokerForceOptOutViewController(fallbackService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -290,7 +291,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func forceBrokerJSONFilesUpdate() {
         Task {
-            try await brokerUpdater.checkForBrokerJSONUpdates(skipsLimiter: true)
+            try await brokerUpdater.checkForUpdates(skipsLimiter: true)
         }
     }
 

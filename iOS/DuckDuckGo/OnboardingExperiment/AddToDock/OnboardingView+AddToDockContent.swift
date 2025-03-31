@@ -43,7 +43,6 @@ extension OnboardingView {
             self.dismissAction = dismissAction
         }
 
-        // TODO support animation binding
         var body: some View {
             if showAddToDockTutorial {
                 OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {

@@ -119,8 +119,9 @@ struct SettingsCellView: View, Identifiable {
                 }
                 .contentShape(Rectangle())
             }
-        }.frame(maxWidth: .infinity)
-
+        }
+        .frame(maxWidth: .infinity)
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var cellContent: some View {
@@ -256,6 +257,7 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
                 }
             }
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private func getButtonWithAction(action: @escaping () -> Void,
@@ -296,22 +298,25 @@ struct SettingsCustomCell<Content: View>: View {
     }
 
     var body: some View {
-        if isButton {
-            ZStack {
-                Button(action: action) {
-                    cellContent
+        Group {
+            if isButton {
+                ZStack {
+                    Button(action: action) {
+                        cellContent
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity)
+                    .onTapGesture {
+                        action() // We need this to make sure tap target is expanded to frame
+                    }
                 }
-                .buttonStyle(PlainButtonStyle())
-                .contentShape(Rectangle())
                 .frame(maxWidth: .infinity)
-                .onTapGesture {
-                    action() // We need this to make sure tap target is expanded to frame
-                }
+            } else {
+                cellContent
             }
-            .frame(maxWidth: .infinity)
-        } else {
-            cellContent
         }
+        .listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var cellContent: some View {

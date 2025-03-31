@@ -33,25 +33,6 @@ struct OnboardingDebugView: View {
     var body: some View {
         List {
             Section {
-                Picker(
-                    selection: $viewModel.onboardingAddToDockLocalFlagState,
-                    content: {
-                        ForEach(OnboardingAddToDockState.allCases) { state in
-                            Text(verbatim: state.description).tag(state)
-                        }
-                    },
-                    label: {
-                        Text(verbatim: "Onboarding Add to Dock local setting enabled")
-                    }
-                )
-                .disabled(!viewModel.isIphone)
-            } header: {
-                Text(verbatim: "Onboarding Add to Dock settings")
-            } footer: {
-                Text(verbatim: viewModel.isIphone ? "Requires internal user flag set to have an effect." : "Requires internal user flag set to have an effect. iPhone only feature.")
-            }
-
-            Section {
                 Button(action: {
                     viewModel.resetDaxDialogs()
                     isShowingResetDaxDialogsAlert = true
@@ -73,26 +54,15 @@ struct OnboardingDebugView: View {
 }
 
 final class OnboardingDebugViewModel: ObservableObject {
-
-    @Published var onboardingAddToDockLocalFlagState: OnboardingAddToDockState {
-        didSet {
-            manager.addToDockLocalFlagState = onboardingAddToDockLocalFlagState
-        }
-    }
-
-    private let manager: OnboardingAddToDockDebugging
     private var settings: DaxDialogsSettings
     let isIphone: Bool
 
     init(
-        manager: OnboardingAddToDockDebugging = OnboardingManager(),
         settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
     ) {
-        self.manager = manager
         self.settings = settings
         self.isIphone = isIphone
-        onboardingAddToDockLocalFlagState = manager.addToDockLocalFlagState
     }
 
     func resetDaxDialogs() {

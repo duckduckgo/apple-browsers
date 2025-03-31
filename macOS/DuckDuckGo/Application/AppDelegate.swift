@@ -42,11 +42,12 @@ import NetworkProtection
 import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import RemoteMessaging
 import os.log
 import Freemium
+import VPNAppState
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -86,6 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
@@ -137,6 +139,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     public let vpnSettings = VPNSettings(defaults: .netP)
 
+    private lazy var vpnAppEventsHandler = VPNAppEventsHandler(
+        featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge),
+        featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler,
+        defaults: .netP)
     private var networkProtectionSubscriptionEventHandler: NetworkProtectionSubscriptionEventHandler?
 
     private var vpnXPCClient: VPNControllerXPCClient {
@@ -259,7 +265,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.appConfiguration,
-                actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+                actionHandler: featureFlagOverridesPublishingHandler
             ),
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
@@ -319,7 +325,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -423,6 +429,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
+
+            vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
         HistoryCoordinator.shared.loadHistory {
@@ -532,7 +540,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
 
-        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge)).applicationDidFinishLaunching()
         UNUserNotificationCenter.current().delegate = self
 
         dataBrokerProtectionSubscriptionEventHandler.registerForSubscriptionAccountManagerEvents()
@@ -590,7 +597,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelExperiment.fireOnboardingTestPixels()
         initializeSync()
 
-        NetworkProtectionAppEvents(featureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge)).applicationDidBecomeActive()
+        vpnAppEventsHandler.applicationDidBecomeActive()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
@@ -682,7 +689,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG
+#if DEBUG || REVIEW
             Self.setUpPixelKit(dryRun: true)
 #else
             Self.setUpPixelKit(dryRun: false)

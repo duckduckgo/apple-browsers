@@ -8,12 +8,12 @@ on:
   push:
     branches: [ main, "release/ios/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
   workflow_call:
     inputs:

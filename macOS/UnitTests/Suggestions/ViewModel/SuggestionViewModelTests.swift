@@ -183,7 +183,7 @@ final class SuggestionViewModelTests: XCTestCase {
 
     func testWhenSuggestionIsOpenTabSettings_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.settings
-        let title = "Settings"
+        let title = UserText.settings
         let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
@@ -194,7 +194,7 @@ final class SuggestionViewModelTests: XCTestCase {
 
     func testWhenSuggestionIsOpenTabBookmarks_ThenSuggestionViewModelValuesAreCorrect() {
         let url = URL.bookmarks
-        let title = "Bookmarks"
+        let title = UserText.bookmarks
         let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
         let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
 
@@ -203,6 +203,16 @@ final class SuggestionViewModelTests: XCTestCase {
         XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
     }
 
+    func testWhenSuggestionIsOpenTabHistory_ThenSuggestionViewModelValuesAreCorrect() {
+        let url = URL.history
+        let title = UserText.mainMenuHistory
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: nil)
+        let suggestionViewModel = SuggestionViewModel(suggestion: suggestion, userStringValue: "")
+
+        XCTAssertEqual(suggestionViewModel.string, title)
+        XCTAssertEqual(suggestionViewModel.title, title)
+        XCTAssertEqual(suggestionViewModel.suffix, UserText.duckDuckGo)
+    }
 }
 
 extension SuggestionViewModel {

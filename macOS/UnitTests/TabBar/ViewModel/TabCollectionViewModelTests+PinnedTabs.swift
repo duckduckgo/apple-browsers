@@ -298,6 +298,7 @@ extension TabCollectionViewModelTests {
         let childTab1 = Tab(parentTab: parentTab)
         tabCollectionViewModel.append(tab: childTab1, selected: false)
 
+        tabCollectionViewModel.select(at: .unpinned(2))
         tabCollectionViewModel.remove(at: .unpinned(2))
 
         XCTAssertIdentical(tabCollectionViewModel.selectedTabViewModel?.tab, parentTab)

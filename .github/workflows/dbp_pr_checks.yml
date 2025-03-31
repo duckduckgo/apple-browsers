@@ -1,0 +1,232 @@
+name: DBP - PR Checks
+
+defaults:
+  run:
+    working-directory: SharedPackages/DataBrokerProtectionCore
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'SharedPackages/DataBrokerProtectionCore/**'
+  pull_request:
+    paths:
+      - '.github/**'
+      - 'SharedPackages/DataBrokerProtectionCore/**'
+
+jobs:
+
+  unit-tests:
+
+      name: Run unit tests (macOS)
+
+      runs-on: macos-15
+      timeout-minutes: 30
+
+      outputs:
+        commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
+
+      steps:
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set cache key hash
+        run: |
+          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
+          if [[ "$has_only_tags" == "true" ]]; then
+            # hashFiles does not respect the working directory, so the full path must be specified
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionCore/Package.resolved') }}" >> $GITHUB_ENV
+          else
+            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+          fi
+
+      - name: Cache SPM
+        if: env.cache_key_hash
+        uses: actions/cache@v4
+        with:
+          path: |
+            SharedPackages/DataBrokerProtectionCore/.build/artifacts
+            SharedPackages/DataBrokerProtectionCore/.build/checkouts
+            SharedPackages/DataBrokerProtectionCore/.build/repositories
+            SharedPackages/DataBrokerProtectionCore/.build/workspace-state.json
+          key: ${{ runner.os }}-dbp-spm-${{ env.cache_key_hash }}
+          restore-keys: |
+            ${{ runner.os }}-dbp-spm-
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+
+      - name: Build BSK
+        run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
+
+      - name: Run tests
+        run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Publish Unit Tests Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          check_name: Test Report (macOS)
+          report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
+          require_tests: true
+          check_retries: true
+
+      - name: Update Asana with failed unit tests
+        if: always() # always run even if the previous step fails
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+        run: |
+          # Extract failed tests from the junit report
+          # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
+          yq < tests.xml -p xml -o json -r \
+            $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
+            | sort -u -k 1,2 \
+            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log.txt
+          path: SharedPackages/DataBrokerProtectionCore/build-log.txt
+
+      - name: Fetch latest commit author
+        if: always() && github.ref_name == 'main'
+        id: fetch_commit_author
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head_commit=$(git rev-parse HEAD)
+          author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
+          echo "commit_author=${author}" >> $GITHUB_OUTPUT
+
+  unit-tests-ios:
+
+      name: Run unit tests (iOS)
+
+      runs-on: macos-15
+      timeout-minutes: 30
+
+      steps:
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set cache key hash
+        run: |
+          has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
+          if [[ "$has_only_tags" == "true" ]]; then
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/DataBrokerProtectionCore/Package.resolved') }}" >> $GITHUB_ENV
+          else
+            echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+          fi
+
+      - name: Cache SPM
+        if: env.cache_key_hash
+        uses: actions/cache@v4
+        with:
+          path: SharedPackages/DataBrokerProtectionCore/DerivedData/SourcePackages
+          key: ${{ runner.os }}-dbp-spm-ios-${{ env.cache_key_hash }}
+          restore-keys: |
+            ${{ runner.os }}-dbp-spm-ios-
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+
+      - name: Resolve package dependencies
+        run: |
+          while xcodebuild -resolvePackageDependencies \
+            -scheme DataBrokerProtectionCore-Package \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -derivedDataPath DerivedData \
+            2>&1 | grep Error; do :; done
+
+          # you just can't have good things
+          # set -o pipefail && swift package resolve | tee ios-build-log.txt | xcbeautify
+          # mkdir -p DerivedData/SourcePackages
+          # mv .build/* DerivedData/SourcePackages
+
+      - name: Run tests
+        run: |
+          set -o pipefail && xcodebuild test \
+            -scheme DataBrokerProtectionCore \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -derivedDataPath DerivedData \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            -test-iterations 3 \
+            -retry-tests-on-failure \
+            CODE_SIGNING_ALLOWED=NO \
+            | tee -a ios-build-log.txt \
+            | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+
+      - name: Publish Unit Tests Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          check_name: Test Report (iOS)
+          report_paths: SharedPackages/DataBrokerProtectionCore/bsk-ios-unittests.xml
+          require_tests: true
+
+      - name: Update Asana with failed unit tests
+        if: always() # always run even if the previous step fails
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+        run: |
+          # Extract failed tests from the junit report
+          # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
+          yq < ios-unittests.xml -p xml -o json -r \
+            $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
+            | sort -u -k 1,2 \
+            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_FAILED_TESTS_SECTION_ID }}
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-build-log.txt
+          path: SharedPackages/DataBrokerProtectionCore/ios-build-log.txt
+
+  create-asana-task:
+    name: Create Asana Task
+    needs: [unit-tests, unit-tests-ios]
+
+    if: failure() && github.ref_name == 'main' && github.run_attempt == 1
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Create Asana Task
+        uses: ./.github/actions/asana-failed-pr-checks
+        with:
+          action: create-task
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
+          commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+
+  close-asana-task:
+    name: Close Asana Task
+    needs: [unit-tests, unit-tests-ios]
+
+    if: success() && github.ref_name == 'main' && github.run_attempt > 1
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Close Asana Task
+        uses: ./.github/actions/asana-failed-pr-checks
+        with:
+          action: close-task
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}

@@ -19,6 +19,7 @@
 
 import UIKit
 import Testing
+import Core
 @testable import DuckDuckGo
 
 final class MockURLHandler: URLHandling {
@@ -68,11 +69,17 @@ final class LaunchActionHandlerTests {
     let urlHandler = MockURLHandler()
     let shortcutItemHandler = MockShortcutItemHandler()
     let keyboardPresenter = MockKeyboardPresenter()
+    let pixelFiringMock = PixelFiringMock.self
     lazy var launchActionHandler = LaunchActionHandler(
         urlHandler: urlHandler,
         shortcutItemHandler: shortcutItemHandler,
-        keyboardPresenter: keyboardPresenter
+        keyboardPresenter: keyboardPresenter,
+        pixelFiring: pixelFiringMock
     )
+
+    deinit {
+        pixelFiringMock.tearDown()
+    }
 
     @Test("Open URL when LaunchAction is .openURL")
     func openURL() {
@@ -117,6 +124,48 @@ final class LaunchActionHandlerTests {
 
         #expect(keyboardPresenter.showKeyboardOnLaunchCalled)
         #expect(keyboardPresenter.lastBackgroundDate == date)
+    }
+
+    @Test(
+        "Fire App Launched From external pixel when scheme is http or https",
+        arguments: [
+            "http://www.example.com",
+            "https://www.example.com",
+        ]
+    )
+    func fireAppLaunchedFromExternalPixelWhenSchemeIsHttpOrHttps(_ path: String) throws {
+        // GIVEN
+        let url = try #require(URL(string: path))
+        let action = LaunchAction.openURL(url)
+        #expect(pixelFiringMock.allPixelsFired.count == 0)
+
+        // WHEN
+        launchActionHandler.handleLaunchAction(action)
+
+        // THEN
+        #expect(pixelFiringMock.allPixelsFired.count == 1)
+        #expect(pixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.appLaunchFromExternalLink.name)
+    }
+
+    @Test(
+        "Fire App Launched From external pixel when scheme is http or https",
+        arguments: [
+            "ddgQuickLink://http://www.example.com",
+            "ddgQuickLink:/https://www.example.com",
+        ]
+    )
+    func fireAppLaunchedFromExternalPixelWhenSchemeIsDDGQuickLink(_ path: String) throws {
+        // GIVEN
+        let url = try #require(URL(string: path))
+        let action = LaunchAction.openURL(url)
+        #expect(pixelFiringMock.allPixelsFired.count == 0)
+
+        // WHEN
+        launchActionHandler.handleLaunchAction(action)
+
+        // THEN
+        #expect(pixelFiringMock.allPixelsFired.count == 1)
+        #expect(pixelFiringMock.allPixelsFired.first?.pixelName == Pixel.Event.appLaunchFromShareExtension.name)
     }
 
 }

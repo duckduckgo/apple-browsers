@@ -900,50 +900,6 @@ final class DaxDialog: XCTestCase {
 
     // MARK: - States
 
-    func testWhenIsShowingAddToDockDialogCalledAndHomeSpecIsFinalAndAddToDockIsEnabledThenReturnTrue() {
-        // GIVEN
-        let onboardingManagerMock = OnboardingManagerMock()
-        onboardingManagerMock.addToDockEnabledState = .contextual
-        settings.fireMessageExperimentShown = true
-        let sut = makeSUT(settings: settings, onboardingManager: onboardingManagerMock)
-        _ = sut.nextHomeScreenMessageNew()
-
-        // WHEN
-        let result = sut.isShowingAddToDockDialog
-
-        // THEN
-        XCTAssertTrue(result)
-    }
-
-    func testWhenIsShowingAddToDockDialogCalledAndHomeSpecIsNotFinalThenReturnFalse() {
-        // GIVEN
-        let onboardingManagerMock = OnboardingManagerMock()
-        onboardingManagerMock.addToDockEnabledState = .contextual
-        let sut = makeSUT(settings: settings, onboardingManager: onboardingManagerMock)
-        _ = sut.nextHomeScreenMessageNew()
-
-        // WHEN
-        let result = sut.isShowingAddToDockDialog
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
-    func testWhenIsShowingAddToDockDialogCalledAndHomeSpeciIsFinalAndAddToDockIsNotEnabledReturnFalse() {
-        // GIVEN
-        let onboardingManagerMock = OnboardingManagerMock()
-        onboardingManagerMock.addToDockEnabledState = .disabled
-        settings.fireMessageExperimentShown = true
-        let sut = makeSUT(settings: settings, onboardingManager: onboardingManagerMock)
-        _ = sut.nextHomeScreenMessageNew()
-
-        // WHEN
-        let result = sut.isShowingAddToDockDialog
-
-        // THEN
-        XCTAssertFalse(result)
-    }
-
     func testWhenUserIsInTreatmentCohortAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
@@ -1094,11 +1050,10 @@ final class DaxDialog: XCTestCase {
                            protectionStatus: protectionStatus)
     }
 
-    private func makeSUT(settings: DaxDialogsSettings, onboardingManager: OnboardingAddToDockManaging = OnboardingManagerMock(), onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
+    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
         DaxDialogs(settings: settings,
                    entityProviding: entityProvider,
                    variantManager: MockVariantManager(),
-                   onboardingManager: onboardingManager,
                    onboardingPrivacyProPromoExperiment: onboardingPrivacyProPromoExperiment)
     }
 }

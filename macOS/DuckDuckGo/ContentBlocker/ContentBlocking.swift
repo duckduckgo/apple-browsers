@@ -111,7 +111,7 @@ final class AppContentBlocking {
         switch event {
         case .trackerDataParseFailed:
             domainEvent = .trackerDataParseFailed
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
                 finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
             }
@@ -166,7 +166,7 @@ final class AppContentBlocking {
             let timeBucket = GeneralPixel.CompileTimeBucketAggregation(number: timeBucketAggregation)
             domainEvent = .contentBlockingCompilationTaskPerformance(iterationCount: iterationCount,
                                                                      timeBucketAggregation: timeBucket)
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
                 finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
             }

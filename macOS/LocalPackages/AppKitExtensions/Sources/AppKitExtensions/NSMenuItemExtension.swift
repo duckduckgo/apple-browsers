@@ -76,12 +76,6 @@ public extension NSMenuItem {
     }
 
     @discardableResult
-    func enabled(_ isEnabled: Bool = true) -> NSMenuItem {
-        self.isEnabled = isEnabled
-        return self
-    }
-
-    @discardableResult
     func submenu(_ submenu: NSMenu) -> NSMenuItem {
         self.submenu = submenu
         return self

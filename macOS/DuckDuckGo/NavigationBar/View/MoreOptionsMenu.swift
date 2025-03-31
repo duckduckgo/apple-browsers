@@ -527,24 +527,21 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         } else {
             addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
                 .withImage(.fireproof)
-                .enabled(false)
         }
 
-        addItem(withTitle: UserText.findInPageMenuItem, action: #selector(findInPage(_:)), keyEquivalent: "f")
+        addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
             .targetting(self)
-            .enabled(tabViewModel.canFindInPage)
             .withImage(.findSearch)
             .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
-        addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
+        let shareItem = addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
             .targetting(self)
-            .enabled(tabViewModel.canReload)
             .withImage(.share)
             .withSubmenu(sharingMenu)
+        shareItem.isEnabled = tabViewModel.canShare
 
-        addItem(withTitle: UserText.printMenuItem, action: #selector(doPrint(_:)), keyEquivalent: "")
+        addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
             .targetting(self)
-            .enabled(tabViewModel.canPrint)
             .withImage(.print)
 
         if items.count > oldItemsCount {

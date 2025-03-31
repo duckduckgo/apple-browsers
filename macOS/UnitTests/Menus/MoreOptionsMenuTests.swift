@@ -385,6 +385,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
 
         setupMoreOptionsMenu()
+        moreOptionsMenu.update()
 
         let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
         XCTAssertTrue(fireproofingItem.isEnabled)
@@ -399,6 +400,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
 
         setupMoreOptionsMenu()
+        moreOptionsMenu.update()
 
         let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.removeFireproofing })
         XCTAssertTrue(fireproofingItem.isEnabled)
@@ -412,6 +414,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
 
         setupMoreOptionsMenu()
+        moreOptionsMenu.update()
 
         let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
         XCTAssertFalse(fireproofingItem.isEnabled)
@@ -431,6 +434,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
             tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
             setupMoreOptionsMenu()
+            moreOptionsMenu.update()
 
             let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.findInPageMenuItem })
             XCTAssertTrue(findInPageItem.isEnabled)
@@ -455,6 +459,7 @@ final class MoreOptionsMenuTests: XCTestCase {
             tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
             tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
             setupMoreOptionsMenu()
+            moreOptionsMenu.update()
 
             let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.findInPageMenuItem })
             XCTAssertFalse(findInPageItem.isEnabled)

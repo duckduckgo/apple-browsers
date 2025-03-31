@@ -102,7 +102,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureToolbarButtons() {
-        viewCoordinator.toolbarFireButton.action = #selector(buttonPressed(sender:))
+        viewCoordinator.toolbarFireBarButtonItem.action = #selector(buttonPressed(sender:))
         viewCoordinator.menuToolbarButton.action = #selector(buttonPressed(sender:))
     }
 

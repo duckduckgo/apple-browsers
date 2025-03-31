@@ -132,6 +132,10 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
 // MARK: - UIPopoverPresentationControllerDelegate
 extension MainViewController: UIPopoverPresentationControllerDelegate {
 
+    func popoverPresentationControllerDidDismissPopover(_ popoverPresentationController: UIPopoverPresentationController) {
+        
+    }
+
     func adaptivePresentationStyle(for controller: UIPresentationController, traitCollection: UITraitCollection) -> UIModalPresentationStyle {
         return .none
     }

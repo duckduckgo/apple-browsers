@@ -38,8 +38,10 @@ class MainViewCoordinator {
     var suggestionTrayContainer: UIView!
     var tabBarContainer: UIView!
     var toolbar: UIToolbar!
+    var toolbarSpacer: UIView!
     var toolbarBackButton: UIBarButtonItem { toolbarHandler.backButton }
-    var toolbarFireButton: UIBarButtonItem { toolbarHandler.fireButton }
+    var toolbarFireButton: UIButton { toolbarHandler.fireButton }
+    var toolbarFireBarButtonItem: UIBarButtonItem { toolbarHandler.fireBarButtonItem }
     var toolbarForwardButton: UIBarButtonItem { toolbarHandler.forwardButton }
     var toolbarTabSwitcherButton: UIBarButtonItem { toolbarHandler.tabSwitcherButton }
     var menuToolbarButton: UIBarButtonItem { toolbarHandler.browserMenuButton }
@@ -63,13 +65,14 @@ class MainViewCoordinator {
     }
 
     func hideToolbarSeparator() {
-        self.toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
+        toolbar.setShadowImage(UIImage(), forToolbarPosition: .any)
     }
 
     class Constraints {
 
         var navigationBarContainerTop: NSLayoutConstraint!
         var navigationBarContainerBottom: NSLayoutConstraint!
+        var navigationBarContainerKeyboardHeight: NSLayoutConstraint!
         var navigationBarContainerHeight: NSLayoutConstraint!
         var toolbarBottom: NSLayoutConstraint!
         var contentContainerTop: NSLayoutConstraint!
@@ -85,6 +88,7 @@ class MainViewCoordinator {
         var topSlideContainerTopToNavigationBar: NSLayoutConstraint!
         var topSlideContainerTopToStatusBackground: NSLayoutConstraint!
         var topSlideContainerHeight: NSLayoutConstraint!
+        var toolbarSpacerHeight: NSLayoutConstraint!
 
     }
 
@@ -116,7 +120,6 @@ class MainViewCoordinator {
         case .top:
             setAddressBarBottomActive(false)
             setAddressBarTopActive(true)
-
         case .bottom:
             setAddressBarTopActive(false)
             setAddressBarBottomActive(true)

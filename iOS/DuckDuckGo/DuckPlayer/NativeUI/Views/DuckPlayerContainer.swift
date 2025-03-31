@@ -127,14 +127,12 @@ public enum DuckPlayerContainer {
                 if hasBackground {
                     Color.black
                         .ignoresSafeArea()
-                        .opacity(viewModel.sheetVisible && !viewModel.isKeyboardVisible ? 1 : 0)
                         .animation(viewModel.springAnimation, value: viewModel.sheetVisible)
                 }
 
                 // Use a fixed container height for offset calculations
                 sheet(containerHeight: Constants.initialOffsetValue)
-                    .frame(alignment: .bottom)
-                    .opacity(viewModel.isKeyboardVisible ? 0 : 1)
+                    .frame(alignment: .bottom)                    
             }
         }
     }
@@ -271,14 +269,11 @@ private struct SheetView<Content: View>: View {
         .border(Color(designSystemColor: .border), width: 0.5)
         .frame(maxWidth: .infinity)
         .offset(y: sheetOffset)
-        .opacity(opacity)
-        .animation(.easeInOut(duration: DuckPlayerContainer.Constants.easeInOutDuration), value: opacity)
 
         .onAppear {
 
             // Always start with the initial large offset value
             sheetOffset = DuckPlayerContainer.Constants.initialOffsetValue
-            opacity = viewModel.sheetVisible ? 1 : 0
 
             // If the sheet should be visible, animate it into view after a tiny delay
             if viewModel.sheetVisible {
@@ -289,19 +284,11 @@ private struct SheetView<Content: View>: View {
         }
 
         .onChange(of: viewModel.sheetVisible) { sheetVisible in
-            animateOffset(to: sheetVisible)
-
-            withAnimation(viewModel.springAnimation) {
-                opacity = sheetVisible ? 1 : 0
-            }
+            animateOffset(to: sheetVisible)         
         }
 
         .onChange(of: containerHeight) { _ in
             animateOffset(to: viewModel.sheetVisible)
-
-            withAnimation(viewModel.springAnimation) {
-                opacity = viewModel.sheetVisible ? 1 : 0
-            }
         }
 
         .onHeightChange { newHeight in

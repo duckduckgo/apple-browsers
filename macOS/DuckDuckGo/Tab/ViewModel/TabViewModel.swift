@@ -127,10 +127,10 @@ final class TabViewModel {
         switch tab.content {
         case .url(let url, _, _):
             return !(url.isDuckPlayer || url.isDuckURLScheme)
-        case .subscription, .identityTheftRestoration, .releaseNotes, .webExtensionUrl, .bookmarks, .history:
+        case .subscription, .identityTheftRestoration, .releaseNotes, .webExtensionUrl:
             return true
 
-        case .newtab, .settings, .onboardingDeprecated, .onboarding, .dataBrokerProtection, .none:
+        case .newtab, .settings, .bookmarks, .history, .onboardingDeprecated, .onboarding, .dataBrokerProtection, .none:
             return false
         }
     }

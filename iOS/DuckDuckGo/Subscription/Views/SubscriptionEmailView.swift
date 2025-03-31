@@ -144,16 +144,15 @@ struct SubscriptionEmailView: View {
 
     @ViewBuilder
     private var baseView: some View {
-        if #available(iOS 16.0, *),
-           viewModel.state.currentFlow == .activationFlow {
-            // For activation flow hide the toolbar background
+        if #available(iOS 16.0, *) {
+            // For activation/restore flow hide the toolbar background
             ZStack {
                 VStack {
                     AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
                         .background()
                 }
             }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbarBackground(navigationBarVisibility, for: .navigationBar)
         } else {
             ZStack {
                 VStack {
@@ -163,8 +162,16 @@ struct SubscriptionEmailView: View {
             }
         }
     }
-    
-    @ViewBuilder
+
+    private var navigationBarVisibility: Visibility {
+        switch viewModel.state.currentFlow {
+        case .activationFlow, .restoreFlow:
+            return .hidden
+        case .manageEmailFlow:
+            return .visible
+        }
+    }
+
     private var browserBackButton: some View {
         Button(action: {
             Task { await viewModel.navigateBack() }

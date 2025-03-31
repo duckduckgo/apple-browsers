@@ -134,6 +134,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         try await checkForUpdates(skipsLimiter: false)
     }
 
+    /// TODO: First scan should check for updates (needs double checking)
     public func checkForUpdates(skipsLimiter: Bool) async throws {
         do {
             /// 1. Ensure we're due for an update

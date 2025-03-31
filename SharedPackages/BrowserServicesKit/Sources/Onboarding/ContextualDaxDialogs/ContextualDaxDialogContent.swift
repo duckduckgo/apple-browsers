@@ -115,12 +115,6 @@ public struct ContextualDaxDialogContent: View {
                 startAnimating()
             }
         }
-        .gesture(
-            TapGesture()
-                .onEnded {
-                    completeAnimations()
-                }
-        )
     }
 
     @ViewBuilder var typingElements: some View {
@@ -209,9 +203,8 @@ struct NonTypingAnimatableItems: OptionSet {
 // MARK: - Auxiliary Functions
 
 extension ContextualDaxDialogContent {
+    
     private func completeAnimations() {
-        print("***", #function)
-
         // Immediately set all states to their final values
         skipAnimations.wrappedValue = true
         startTypingTitle = false

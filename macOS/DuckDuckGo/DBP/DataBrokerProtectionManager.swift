@@ -65,8 +65,10 @@ public final class DataBrokerProtectionManager {
 
     lazy var dataManager: DataBrokerProtectionDataManager = {
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
-
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    vault: vault,
+                                                    brokerUpdater: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database,
                                                           profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
 
@@ -75,10 +77,10 @@ public final class DataBrokerProtectionManager {
     }()
 
     lazy var brokerUpdater: BrokerJSONServiceProvider = {
-        let brokerUpdater = BrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
-                                              vault: vault,
-                                              authenticationManager: authenticationManager,
-                                              pixelHandler: sharedPixelsHandler)
+        let brokerUpdater = RemoteBrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler)
         return brokerUpdater
     }()
 

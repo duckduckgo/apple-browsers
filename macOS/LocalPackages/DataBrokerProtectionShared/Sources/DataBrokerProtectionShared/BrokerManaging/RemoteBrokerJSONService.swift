@@ -1,5 +1,5 @@
 //
-//  BrokerJSONService.swift
+//  RemoteBrokerJSONService.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -23,11 +23,12 @@ import Common
 import os.log
 
 public protocol BrokerJSONServiceProvider: AnyObject {
+    func fallbackBrokers() throws -> [DataBroker]?
     func checkForBrokerJSONUpdates() async throws
     func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws
 }
 
-public final class BrokerJSONService: BrokerJSONServiceProvider {
+public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
         case missingAccessToken
         case serverError
@@ -96,20 +97,27 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
     private let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
+    private let fallbackService: DataBrokerProtectionBrokerUpdater?
 
     private let uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 
     public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
+                fallbackService: DataBrokerProtectionBrokerUpdater? = nil) {
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
+        self.fallbackService = fallbackService
     }
 
     // MARK: - Main flow
+
+    public func fallbackBrokers() throws -> [DataBroker]? {
+        try fallbackService?.bundledBrokers()
+    }
 
     public func checkForBrokerJSONUpdates() async throws {
         try await checkForBrokerJSONUpdates(skipsLimiter: false)
@@ -117,6 +125,7 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
 
     public func checkForBrokerJSONUpdates(skipsLimiter: Bool) async throws {
         do {
+            /// 1. Ensure we're due for an update
             let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)
             if !skipsLimiter,
                Date().timeIntervalSince(lastBrokerJSONUpdateCheck) < Self.updateCheckInterval {
@@ -124,6 +133,10 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
+            /// 2. Use bundled JSONs to populate/update the database
+            try await checkForFallbackBrokerJSONs()
+
+            /// 3. Hit main_config.json endpoint for ETag and active broker changes
             guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
             let request = try Endpoint.request(for: .mainConfig,
@@ -142,7 +155,10 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
 
             guard response.statusCode == 200 else { throw Error.serverError }
 
+            /// 4. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
+
+            /// 5. Update main_config ETag and last successful update timestamp
             settings.mainConfigETag = response.etag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
         } catch {
@@ -165,6 +181,11 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
                                testBrokers: mainConfig.testDataBrokers)
+    }
+
+    private func checkForFallbackBrokerJSONs() async throws {
+        guard let fallbackService, try await authenticationManager.hasValidEntitlement() else { return }
+        fallbackService.checkForUpdatesInBrokerJSONFiles()
     }
 
     // MARK: - File handling
@@ -264,16 +285,17 @@ public final class BrokerJSONService: BrokerJSONServiceProvider {
         try updateAttemptCount(broker)
     }
 
-    /// 1. We save the broker into the database
-    /// 2. We fetch the user profile and obtain the profile queries
-    /// 3. We create the new scans operations for the profile queries and the new broker id
     func addBroker(_ broker: DataBroker) throws {
         Logger.dataBrokerProtection.log("New broker found: \(broker.url, privacy: .public)")
 
+        /// 1. We save the broker into the database
         let brokerId = try vault.save(broker: broker)
+
+        /// 2. We fetch the user profile and obtain the profile queries
         let profileQueries = try vault.fetchAllProfileQueries(for: 1)
         let profileQueryIDs = profileQueries.compactMap({ $0.id })
 
+        /// 3. We create the new scans operations for the profile queries and the new broker id
         for profileQueryId in profileQueryIDs {
             try vault.save(brokerId: brokerId, profileQueryId: profileQueryId, lastRunDate: nil, preferredRunDate: Date())
         }

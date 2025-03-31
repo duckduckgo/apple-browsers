@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionBrokerUpdater.swift
+//  FallbackBrokerJSONService.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,6 @@ import SecureStorage
 import os.log
 
 public protocol ResourcesRepository {
-    @available(*, deprecated, message: "Use remote broker delivery instead")
     func fetchBrokerFromResourceFiles() throws -> [DataBroker]?
 }
 
@@ -118,11 +117,11 @@ public final class AppVersionNumber: AppVersionNumberProvider {
 }
 
 public protocol DataBrokerProtectionBrokerUpdater {
-    func updateBrokers()
+    func bundledBrokers() throws -> [DataBroker]?
     func checkForUpdatesInBrokerJSONFiles()
 }
 
-public struct DefaultDataBrokerProtectionBrokerUpdater: DataBrokerProtectionBrokerUpdater {
+public struct FallbackBrokerJSONService: DataBrokerProtectionBrokerUpdater {
 
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
@@ -161,6 +160,10 @@ public struct DefaultDataBrokerProtectionBrokerUpdater: DataBrokerProtectionBrok
                 pixelHandler.fire(.databaseError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
             }
         }
+    }
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        try resources.fetchBrokerFromResourceFiles()
     }
 
     public func checkForUpdatesInBrokerJSONFiles() {

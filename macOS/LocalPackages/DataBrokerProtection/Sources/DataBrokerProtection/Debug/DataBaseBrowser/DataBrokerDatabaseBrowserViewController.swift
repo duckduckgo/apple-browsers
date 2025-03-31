@@ -18,10 +18,22 @@
 
 import Foundation
 import SwiftUI
+import DataBrokerProtectionShared
 
 public final class DataBrokerDatabaseBrowserViewController: NSViewController {
+    private let brokerUpdater: BrokerJSONServiceProvider
+
+    public init(brokerUpdater: BrokerJSONServiceProvider) {
+        self.brokerUpdater = brokerUpdater
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(type(of: self)): Bad initializer")
+    }
+
     public override func loadView() {
-        let viewModel = DataBrokerDatabaseBrowserViewModel()
+        let viewModel = DataBrokerDatabaseBrowserViewModel(brokerUpdater: brokerUpdater)
         let contentView = DataBrokerDatabaseBrowserView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
         hostingController.view.autoresizingMask = [.width, .height]

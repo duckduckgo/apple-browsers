@@ -76,13 +76,17 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let fakeBrokerFlag: DataBrokerDebugFlag
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let vault: (any DataBrokerProtectionSecureVault)
+    private let brokerUpdater: BrokerJSONServiceProvider
 
+    /// TODO: We don't need full broker updater here, just the fallbackBrokers part
     public init(fakeBrokerFlag: DataBrokerDebugFlag,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: (any DataBrokerProtectionSecureVault)) {
+                vault: (any DataBrokerProtectionSecureVault),
+                brokerUpdater: BrokerJSONServiceProvider) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
+        self.brokerUpdater = brokerUpdater
     }
 
     public func save(_ profile: DataBrokerProtectionProfile) async throws {
@@ -494,16 +498,17 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
-        /// TODO: Make sure brokers are ready here
-        let brokers = try vault.fetchAllBrokers()
-        let brokerIDs = brokers.compactMap(\.id)
+        let storedBrokers = try vault.fetchAllBrokers()
+        if let brokers = storedBrokers.isEmpty ? try brokerUpdater.fallbackBrokers() : storedBrokers {
+            let brokerIDs = brokers.compactMap(\.id)
 
-        try initializeDatabaseForProfile(
-            profileId: Self.profileId,
-            vault: vault,
-            brokerIDs: brokerIDs,
-            profileQueries: newProfileQueries
-        )
+            try initializeDatabaseForProfile(
+                profileId: Self.profileId,
+                vault: vault,
+                brokerIDs: brokerIDs,
+                profileQueries: newProfileQueries
+            )
+        }
     }
 
     // https://app.asana.com/0/481882893211075/1205574642847432/f

@@ -19,10 +19,25 @@
 import Foundation
 import SwiftUI
 import DataBrokerProtectionShared
+import Subscription
+import Common
+import LoginItems
+import BrowserServicesKit
 import PixelKit
 
 public final class DataBrokerForceOptOutViewController: NSViewController {
 
+    private let brokerUpdater: BrokerJSONServiceProvider
+
+    public init(brokerUpdater: BrokerJSONServiceProvider) {
+        self.brokerUpdater = brokerUpdater
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("\(type(of: self)): Bad initializer")
+    }
+    
     public override func loadView() {
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
@@ -38,7 +53,7 @@ public final class DataBrokerForceOptOutViewController: NSViewController {
             fatalError("Failed to make secure storage vault")
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerUpdater: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let viewModel = DataBrokerForceOptOutViewModel(dataManager: dataManager)

@@ -27,7 +27,7 @@ import CoreImage
 protocol FaviconManagement: AnyObject {
 
     @MainActor
-    var isFaviconsLoaded: Bool { get }
+    var isCacheLoaded: Bool { get }
 
     var faviconsLoadedPublisher: Published<Bool>.Publisher { get }
 
@@ -131,7 +131,7 @@ final class FaviconManager: FaviconManagement {
         faviconsLoaded = true
     }
 
-    var isFaviconsLoaded: Bool {
+    var isCacheLoaded: Bool {
         imageCache.loaded && referenceCache.loaded
     }
 

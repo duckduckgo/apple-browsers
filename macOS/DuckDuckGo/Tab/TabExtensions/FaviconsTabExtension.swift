@@ -72,7 +72,7 @@ final class FaviconsTabExtension {
             return
         }
 
-        guard faviconManagement.isFaviconsLoaded else { return }
+        guard faviconManagement.isCacheLoaded else { return }
 
         if let cachedFavicon = faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image {
             if cachedFavicon != favicon {

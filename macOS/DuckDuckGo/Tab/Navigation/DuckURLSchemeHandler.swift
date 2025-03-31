@@ -188,7 +188,7 @@ private extension DuckURLSchemeHandler {
     }
 
     func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
-        guard faviconManager.isFaviconsLoaded,
+        guard faviconManager.isCacheLoaded,
               let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
               let imagePNGData = favicon.image?.pngData
         else {

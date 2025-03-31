@@ -50,7 +50,7 @@ struct FaviconView: View {
             return
         }
 
-        if faviconManagement.isFaviconsLoaded, let url = url {
+        if faviconManagement.isCacheLoaded, let url = url {
             let image = faviconManagement.getCachedFavicon(for: url, sizeCategory: .medium)?.image
             if image?.size.isSmaller(than: CGSize(width: 16, height: 16)) == false {
                 self.image = image
@@ -81,7 +81,7 @@ struct FaviconView: View {
         }.onAppear {
             refreshImage()
         }.onReceive(timer) { _ in
-            guard faviconManagement.isFaviconsLoaded else { return }
+            guard faviconManagement.isCacheLoaded else { return }
             timer.upstream.connect().cancel()
             refreshImage()
         }

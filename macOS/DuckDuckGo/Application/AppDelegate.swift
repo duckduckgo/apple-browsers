@@ -391,7 +391,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if DEBUG
-        faviconManager = FaviconManager(cacheType: AppVersion.runType == .normal ? .standard : .inMemory)
+        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory)
 #else
         faviconManager = FaviconManager(cacheType: .standard)
 #endif

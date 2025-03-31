@@ -106,7 +106,6 @@ final class DefaultOmniBarView: UIView {
         }
     }
 
-
     // Set up a view to add a custom icon to the Omnibar
     private(set) var customIconView: UIImageView = UIImageView(frame: CGRect(x: 4, y: 8, width: 26, height: 26))
 
@@ -126,14 +125,10 @@ final class DefaultOmniBarView: UIView {
     override func awakeFromNib() {
         super.awakeFromNib()
         configureMenuButton()
-        configureTextField()
         configureSettingsLongPressButton()
         configureShareLongPressButton()
 
         configureSeparator()
-        enableInteractionsWithPointer()
-        
-        privacyInfoContainer.isHidden = true
 
         decorate()
     }
@@ -161,39 +156,15 @@ final class DefaultOmniBarView: UIView {
             onAccessoryLongPress?()
         }
     }
-        
-    private func enableInteractionsWithPointer() {
-        backButton.isPointerInteractionEnabled = true
-        forwardButton.isPointerInteractionEnabled = true
-        settingsButton.isPointerInteractionEnabled = true
-        cancelButton.isPointerInteractionEnabled = true
-        bookmarksButton.isPointerInteractionEnabled = true
-        accessoryButton.isPointerInteractionEnabled = true
-        menuButton.isPointerInteractionEnabled = true
 
-        refreshButton.isPointerInteractionEnabled = true
-        refreshButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
-            return .init(effect: .lift(.init(view: button)))
-        }
-    }
-    
     private func configureMenuButton() {
         menuButton.addSubview(menuButtonContent)
         menuButton.isAccessibilityElement = true
         menuButton.accessibilityTraits = .button
     }
-    
-    private func configureTextField() {
-        textField.textDragInteraction?.isEnabled = false
-        
-        textField.onCopyAction = { field in
-            guard let range = field.selectedTextRange else { return }
-            UIPasteboard.general.string = field.text(in: range)
-        }
-    }
 
     private func configureSeparator() {
-            separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
+        separatorHeightConstraint.constant = 1.0 / UIScreen.main.scale
     }
 
     var textFieldBottomSpacing: CGFloat {
@@ -214,10 +185,6 @@ final class DefaultOmniBarView: UIView {
 
     func moveSeparatorToBottom() {
         separatorToBottom.constant = 0
-    }
-
-    func removeTextSelection() {
-        textField.selectedTextRange = nil
     }
 
     @IBAction private func onTextEntered(_ sender: Any) {
@@ -292,8 +259,6 @@ extension DefaultOmniBarView {
         let theme = ThemeManager.shared.currentTheme
         backgroundColor = theme.omniBarBackgroundColor
         tintColor = theme.barTintColor
-        
-        configureTextField()
 
         editingBackground?.backgroundColor = theme.searchBarBackgroundColor
         editingBackground?.borderColor = theme.searchBarBackgroundColor
@@ -306,47 +271,21 @@ extension DefaultOmniBarView {
         clearButton.tintColor = UIColor(designSystemColor: .icons)
         voiceSearchButton.tintColor = UIColor(designSystemColor: .icons)
         
-        searchLoupe.tintColor = UIColor(designSystemColor: .icons)
-        searchLoupe.alpha = 0.5
+        searchLoupe.tintColor = UIColor(designSystemColor: .iconsSecondary)
         cancelButton.setTitleColor(theme.barTintColor, for: .normal)
     }
 }
 
 extension DefaultOmniBarView: OmniBarView {
-    
+
     var text: String? {
         get { textField.text }
         set { textField.text = newValue }
     }
     
-    var backButtonMenu: UIMenu? {
-        get { backButton.menu }
-        set { backButton.menu = newValue }
-    }
-    
-    var forwardButtonMenu: UIMenu? {
-        get { forwardButton.menu }
-        set { forwardButton.menu = newValue }
-    }
-    
-    var menuButtonView: UIButton {
-        menuButton
-    }
-
-    var bookmarksButtonView: UIButton {
-        bookmarksButton
-    }
-    
-    var accessoryButtonView: UIButton {
-        accessoryButton
-    }
-    
     var searchContainerWidth: CGFloat {
-        searchStackContainer.frame.width
-    }
-
-    var searchContainerView: UIView {
-        searchContainer
+        // 24 is accomodating for the padding
+        searchStackContainer.frame.width + 24
     }
 
     var privacyIconView: UIView? {
@@ -355,5 +294,90 @@ extension DefaultOmniBarView: OmniBarView {
 
     var progressView: ProgressView? {
         nil
+    }
+}
+
+// MARK: - OmniBarStatusUpdateable conformance
+extension DefaultOmniBarView {
+
+    var isPrivacyInfoContainerHidden: Bool {
+        get { privacyInfoContainer.isHidden }
+        set { setVisibility(privacyInfoContainer, hidden: newValue) }
+    }
+
+    var isClearButtonHidden: Bool {
+        get { clearButton.isHidden }
+        set { setVisibility(clearButton, hidden: newValue) }
+    }
+
+    var isMenuButtonHidden: Bool {
+        get { menuButton.isHidden }
+        set { setVisibility(menuButton, hidden: newValue) }
+    }
+
+    var isSettingsButtonHidden: Bool {
+        get { settingsButton.isHidden }
+        set { setVisibility(settingsButton, hidden: newValue) }
+    }
+
+    var isCancelButtonHidden: Bool {
+        get { cancelButton.isHidden }
+        set { setVisibility(cancelButton, hidden: newValue) }
+    }
+
+    var isRefreshButtonHidden: Bool {
+        get { refreshButton.isHidden }
+        set { setVisibility(refreshButton, hidden: newValue) }
+    }
+
+    var isVoiceSearchButtonHidden: Bool {
+        get { voiceSearchButton.isHidden }
+        set { setVisibility(voiceSearchButton, hidden: newValue) }
+    }
+
+    var isAbortButtonHidden: Bool {
+        get { abortButton.isHidden }
+        set { setVisibility(abortButton, hidden: newValue) }
+    }
+
+    var isBackButtonHidden: Bool {
+        get { backButton.isHidden }
+        set { setVisibility(backButton, hidden: newValue) }
+    }
+
+    var isForwardButtonHidden: Bool {
+        get { forwardButton.isHidden }
+        set { setVisibility(forwardButton, hidden: newValue) }
+    }
+
+    var isBookmarksButtonHidden: Bool {
+        get { bookmarksButton.isHidden }
+        set { setVisibility(bookmarksButton, hidden: newValue) }
+    }
+
+    var isAccessoryButtonHidden: Bool {
+        get { accessoryButton.isHidden }
+        set { setVisibility(accessoryButton, hidden: newValue) }
+    }
+
+    var isSearchLoupeHidden: Bool {
+        get { searchLoupe.isHidden }
+        set { setVisibility(searchLoupe, hidden: newValue) }
+    }
+
+    var isDismissButtonHidden: Bool {
+        get { dismissButton.isHidden }
+        set { setVisibility(dismissButton, hidden: newValue) }
+    }
+
+    /*
+     Superfluous check to overcome apple bug in stack view where setting value more than
+     once causes issues, related to http://www.openradar.me/22819594
+     Kill this method when radar is fixed - burn it with fire ;-)
+     */
+    private func setVisibility(_ view: UIView, hidden: Bool) {
+        if view.isHidden != hidden {
+            view.isHidden = hidden
+        }
     }
 }

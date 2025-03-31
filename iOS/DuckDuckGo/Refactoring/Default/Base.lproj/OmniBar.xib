@@ -463,7 +463,7 @@
                 <outlet property="separatorToBottom" destination="nfs-pA-DD4" id="hfJ-iR-yz8"/>
                 <outlet property="separatorView" destination="hD7-j4-fpl" id="xlg-WZ-peq"/>
                 <outlet property="settingsButton" destination="1rB-5w-de3" id="KCF-tv-9xx"/>
-                <outlet property="textField" destination="fqM-N4-jNd" id="wRU-Ha-HpH"/>
+                <outlet property="textField" destination="fqM-N4-jNd" id="GPH-ya-Acx"/>
                 <outlet property="voiceSearchButton" destination="ita-iD-8ad" id="6ms-wg-lln"/>
             </connections>
             <point key="canvasLocation" x="-229.06295754026354" y="-108.3984375"/>

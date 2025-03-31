@@ -22,16 +22,23 @@ import DesignResourcesKit
 
 final class UpdatedOmniBarSearchView: UIView {
 
-    private let leftIconView = UIImageView()
+    let loupeIconView = UIImageView()
+    let customIconView = UIImageView()
+    let dismissButtonView = UIButton(type: .custom)
 
-    private let leadingItemsContainer = UIStackView()
+    let leftIconContainer = UIView()
 
-    let textField = UITextField()
-    let progressView = ProgressView()
+    let textField = TextFieldWithInsets()
 
     private let trailingItemsContainer = UIStackView()
-    private let contextActionButton = UIButton()
-    private let auxiliaryActionButton = UIButton()
+
+    let reloadButton = UIButton(type: .custom)
+    let clearButton = UIButton(type: .custom)
+
+    let shareButton = UIButton(type: .custom)
+    let cancelButton = UIButton(type: .custom)
+    let voiceSearchButton = UIButton(type: .custom)
+    let accessoryButton = UIButton(type: .custom)
 
     private let mainStackView = UIStackView()
 
@@ -51,67 +58,92 @@ final class UpdatedOmniBarSearchView: UIView {
     private func setUpSubviews() {
         addSubview(mainStackView)
 
-        mainStackView.addArrangedSubview(leadingItemsContainer)
+        mainStackView.addArrangedSubview(leftIconContainer)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
-        trailingItemsContainer.addArrangedSubview(contextActionButton)
+        trailingItemsContainer.addArrangedSubview(voiceSearchButton)
+        trailingItemsContainer.addArrangedSubview(reloadButton)
+        trailingItemsContainer.addArrangedSubview(clearButton)
+        trailingItemsContainer.addArrangedSubview(cancelButton)
         trailingItemsContainer.addArrangedSubview(URLSeparatorView())
-        trailingItemsContainer.addArrangedSubview(auxiliaryActionButton)
+        trailingItemsContainer.addArrangedSubview(accessoryButton)
 
-        leadingItemsContainer.addArrangedSubview(OmniBarItemView(leftIconView))
-
-        addSubview(progressView)
+        leftIconContainer.addSubview(loupeIconView)
+        leftIconContainer.addSubview(dismissButtonView)
+        leftIconContainer.addSubview(customIconView)
     }
 
     private func setUpConstraints() {
+        mainStackView.translatesAutoresizingMaskIntoConstraints = false
+
         NSLayoutConstraint.activate([
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             mainStackView.topAnchor.constraint(equalTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-
-            contextActionButton.widthAnchor.constraint(equalTo: contextActionButton.heightAnchor),
-            auxiliaryActionButton.widthAnchor.constraint(equalTo: auxiliaryActionButton.heightAnchor),
-
-            progressView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            progressView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
-            progressView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
-            progressView.heightAnchor.constraint(equalToConstant: 2),
+            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
+
+        UpdatedOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: reloadButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: clearButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: cancelButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: accessoryButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: leftIconContainer)
+
+        // Use autoresizing mask here so it's less code
+        loupeIconView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        dismissButtonView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        loupeIconView.frame = leftIconContainer.bounds
+        dismissButtonView.frame = leftIconContainer.bounds
     }
 
     private func setUpProperties() {
-        backgroundColor = UIColor(designSystemColor: .surface)
-        layer.cornerRadius = Metrics.cornerRadius
-        layer.cornerCurve = .circular
+        backgroundColor = .clear
         clipsToBounds = true
         tintColor = UIColor(designSystemColor: .icons)
 
         textField.textAlignment = .left
         textField.contentVerticalAlignment = .center
-        textField.font = UIFont.systemFont(ofSize: 16)
+        textField.font = UIFont.daxBodyRegular()//(ofSize: 16)
         textField.returnKeyType = .go
         textField.textColor = UIColor(designSystemColor: .textPrimary)
+        textField.tintColor = UIColor(designSystemColor: .textSelectionFill)
 
-        mainStackView.translatesAutoresizingMaskIntoConstraints = false
+        accessoryButton.setImage(UIImage(resource: .aiChat24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
 
-        auxiliaryActionButton.setImage(UIImage(resource: .aiChat24), for: .normal)
-        contextActionButton.setImage(UIImage(resource: .reload24), for: .normal)
+        reloadButton.setImage(UIImage(resource: .reload24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
 
-        progressView.translatesAutoresizingMaskIntoConstraints = false
+        clearButton.setImage(UIImage(resource: .closeCircleSmall24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
+        clearButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
 
-        leftIconView.image = UIImage(resource: .globe24)
-        leftIconView.tintColor = tintColor
-        leftIconView.contentMode = .scaleAspectFit
+        shareButton.setImage(UIImage(resource: .shareApple24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
+
+        cancelButton.setImage(UIImage(resource: .close24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
+        cancelButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
+
+        voiceSearchButton.setImage(UIImage(resource: .microphone24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: voiceSearchButton)
+
+        dismissButtonView.setImage(UIImage(resource: .arrowLeft24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
+
+        loupeIconView.image = UIImage(resource: .findSearch24E)
+        loupeIconView.tintColor = tintColor
+        loupeIconView.contentMode = .center
+
+        customIconView.tintColor = tintColor
+        customIconView.contentMode = .center
     }
 
     private struct Metrics {
-        static let cornerRadius = 12.0
-
-        static let buttonSize: CGFloat = 44
+//        static let buttonSize: CGFloat = 44
         static let height: CGFloat = 60
-        static let textAreaHeight: CGFloat = 44
+//        static let textAreaHeight: CGFloat = 44
     }
-
 }

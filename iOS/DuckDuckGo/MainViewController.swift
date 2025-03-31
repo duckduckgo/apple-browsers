@@ -162,7 +162,7 @@ class MainViewController: UIViewController {
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
-        return viewCoordinator.omniBar.barView.searchContainerView.convert(viewCoordinator.omniBar.barView.searchContainerView.bounds, to: view)
+        return viewCoordinator.omniBar.barView.convert(viewCoordinator.omniBar.barView.searchContainer.bounds, to: view)
     }
 
     var keyModifierFlags: UIKeyModifierFlags?
@@ -707,7 +707,7 @@ class MainViewController: UIViewController {
         case .top:
             newTabPageViewController?.additionalSafeAreaInsets = .zero
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: 52, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.frame.height, right: 0)
         }
     }
 
@@ -775,7 +775,7 @@ class MainViewController: UIViewController {
     }
     
     private func initBookmarksButton() {
-        viewCoordinator.omniBar.barView.bookmarksButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
+        viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
         gestureBookmarksButton.image = UIImage(named: "Bookmarks")
@@ -1325,7 +1325,7 @@ class MainViewController: UIViewController {
 
     func refreshMenuButtonState() {
         if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.bookmarksButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
 
@@ -1336,7 +1336,7 @@ class MainViewController: UIViewController {
             } else {
                 expectedState = .menuImage
             }
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.menuButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
 
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
@@ -1347,7 +1347,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 24)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -2233,7 +2233,7 @@ extension MainViewController: OmniBarDelegate {
         case .share:
             guard let link = currentTab?.link else { return }
             Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButtonView)
+            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
         }
     }
 
@@ -3171,11 +3171,11 @@ extension MainViewController {
         }
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
-        viewCoordinator.omniBar.barView.backButtonMenu = backMenu
+        viewCoordinator.omniBar.barView.backButton.menu = backMenu
         viewCoordinator.toolbarBackButton.menu = backMenu
         
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
-        viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
+        viewCoordinator.omniBar.barView.forwardButton.menu = forwardMenu
         viewCoordinator.toolbarForwardButton.menu = forwardMenu
     }
 

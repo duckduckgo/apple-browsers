@@ -26,7 +26,7 @@ enum OmniBarNotificationType {
 
 final class OmniBarNotificationAnimator: NSObject {
     
-    func showNotification(_ type: OmniBarNotificationType, in omniBar: DefaultOmniBarView, viewController: UIViewController) {
+    func showNotification(_ type: OmniBarNotificationType, in omniBar: any OmniBarView, viewController: UIViewController) {
 
         omniBar.notificationContainer.alpha = 0
         omniBar.notificationContainer.prepareAnimation(type, in: viewController)
@@ -62,7 +62,7 @@ final class OmniBarNotificationAnimator: NSObject {
         }
     }
     
-    func cancelAnimations(in omniBar: DefaultOmniBarView) {
+    func cancelAnimations(in omniBar: any OmniBarView) {
         omniBar.privacyInfoContainer.alpha = 0
         omniBar.notificationContainer.removePreviousNotification()
         omniBar.textField.alpha = 1

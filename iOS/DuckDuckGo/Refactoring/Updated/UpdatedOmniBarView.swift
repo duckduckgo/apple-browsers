@@ -22,6 +22,125 @@ import DesignResourcesKit
 import SwiftUI
 
 final class UpdatedOmniBarView: UIView, OmniBarView {
+
+    var textField: TextFieldWithInsets! { searchAreaView.textField }
+    var privacyInfoContainer: PrivacyInfoContainerView! = PrivacyInfoContainerView()
+    var notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
+    var searchLoupe: UIView! { searchAreaView.loupeIconView }
+    var dismissButton: UIButton! { searchAreaView.dismissButtonView }
+    var leftIconContainerView: UIView! { searchAreaView.leftIconContainer }
+    var customIconView: UIImageView { searchAreaView.customIconView }
+    var clearButton: UIButton! { searchAreaView.clearButton }
+    var backButton: UIButton! { backButtonView }
+    var forwardButton: UIButton! { forwardButtonView }
+    var settingsButton: UIButton! { settingsButtonView }
+    var cancelButton: UIButton! { searchAreaView.cancelButton }
+    var bookmarksButton: UIButton! { bookmarksButtonView }
+    var accessoryButton: UIButton! { searchAreaView.accessoryButton }
+    var menuButton: UIButton! { menuButtonView }
+    var refreshButton: UIButton! { searchAreaView.reloadButton }
+    var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
+    var searchContainer: UIView! { searchAreaContainerView }
+
+    var accessoryType: OmniBarAccessoryType = .share {
+        didSet {
+            switch accessoryType {
+            case .chat:
+                searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChat24E), for: .normal)
+            case .share:
+                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareApple24E), for: .normal)
+            }
+        }
+    }
+
+    private var searchAreaTopPaddingConstraint: NSLayoutConstraint?
+    private var searchAreaBottomPaddingConstraint: NSLayoutConstraint?
+
+    // iPad elements
+
+    var isBackButtonHidden: Bool {
+        get { backButtonView.isHidden }
+        set { backButtonView.isHidden = newValue }
+    }
+
+    var isForwardButtonHidden: Bool {
+        get { forwardButtonView.isHidden }
+        set { forwardButtonView.isHidden = newValue }
+    }
+
+    var isBookmarksButtonHidden: Bool {
+        get { bookmarksButtonView.isHidden }
+        set { bookmarksButtonView.isHidden = newValue }
+    }
+
+    var isMenuButtonHidden: Bool {
+        get { menuButtonView.isHidden }
+        set { menuButtonView.isHidden = newValue }
+    }
+
+    var isSettingsButtonHidden: Bool {
+        get { settingsButtonView.isHidden }
+        set { settingsButtonView.isHidden = newValue }
+    }
+
+    // Universal elements
+
+    var isPrivacyInfoContainerHidden: Bool {
+        get { privacyInfoContainer.isHidden }
+        set { privacyInfoContainer.isHidden = newValue }
+    }
+
+    var isClearButtonHidden: Bool {
+        get { searchAreaView.clearButton.isHidden }
+        set { searchAreaView.clearButton.isHidden = newValue }
+    }
+
+    var isCancelButtonHidden: Bool {
+        get { searchAreaView.cancelButton.isHidden }
+        set { searchAreaView.cancelButton.isHidden = newValue }
+    }
+    var isRefreshButtonHidden: Bool {
+        get { searchAreaView.reloadButton.isHidden }
+        set { searchAreaView.reloadButton.isHidden = newValue }
+    }
+    var isVoiceSearchButtonHidden: Bool {
+        get { searchAreaView.voiceSearchButton.isHidden }
+        set { searchAreaView.voiceSearchButton.isHidden = newValue }
+    }
+    var isAbortButtonHidden: Bool {
+        get { searchAreaView.cancelButton.isHidden }
+        set { searchAreaView.cancelButton.isHidden = newValue }
+    }
+
+    var isAccessoryButtonHidden: Bool {
+        get { searchAreaView.accessoryButton.isHidden }
+        set { searchAreaView.accessoryButton.isHidden = newValue }
+    }
+
+    var isSearchLoupeHidden: Bool = false
+//    {
+//        get { searchLoupe.isHidden }
+//        set { searchLoupe.isHidden = newValue }
+//    }
+
+    var isDismissButtonHidden: Bool {
+        get { searchAreaView.dismissButtonView.isHidden }
+        set { searchAreaView.dismissButtonView.isHidden = newValue }
+    }
+
+    var isUsingCompactLayout: Bool = false {
+        didSet {
+            leadingButtonsContainer.isHidden = isUsingCompactLayout
+            trailingButtonsContainer.isHidden = isUsingCompactLayout
+        }
+    }
+
+    var isActiveState: Bool = false {
+        didSet {
+            updateActiveState()
+        }
+    }
+
     var onTextEntered: (() -> Void)?
     var onVoiceSearchButtonPressed: (() -> Void)?
     var onAbortButtonPressed: (() -> Void)?
@@ -40,37 +159,42 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var onSettingsLongPress: (() -> Void)?
     var onAccessoryLongPress: (() -> Void)?
 
+    // MARK: - Properties
+
     var text: String? {
         get { textField.text }
         set { textField.text = newValue }
     }
 
-    var searchContainerView: UIView = UIView()
-    var bookmarksButtonView: UIButton = UIButton()
-    var accessoryButtonView: UIButton = UIButton()
-    var menuButtonView: UIButton = UIButton()
-    var privacyIconView: UIView?
+    var backButtonMenu: UIMenu? {
+        get { backButton.menu }
+        set { backButton.menu = newValue }
+    }
 
-    var backButtonMenu: UIMenu?
+    var forwardButtonMenu: UIMenu? {
+        get { forwardButton.menu }
+        set { forwardButton.menu = newValue }
+    }
 
-    var forwardButtonMenu: UIMenu?
+    let settingsButtonView = UIButton()
+    let bookmarksButtonView = UIButton()
+    let menuButtonView = UIButton()
+    let forwardButtonView = UIButton()
+    let backButtonView = UIButton()
 
-    var searchContainerWidth: CGFloat { searchContainerView.frame.width }
-    var progressView: ProgressView? { searchAreaView.progressView }
     var menuButtonContent: MenuButton = MenuButton()
+
+    private let _progressView: ProgressView = ProgressView()
+
+    var searchContainerWidth: CGFloat { searchAreaView.frame.width }
+    var progressView: ProgressView? { _progressView }
 
     private let leadingButtonsContainer = UIStackView()
     private let trailingButtonsContainer = UIStackView()
-    private let searchAlignmentContainer = UIView()
 
     private let searchAreaView = UpdatedOmniBarSearchView()
     private let searchAreaContainerView = UIView()
     private let shadowBackdropView = UIView()
-
-    var textField: UITextField { searchAreaView.textField }
-
-    private let leftImage = UIImageView()
-    private let rightImage = UIImageView()
 
     private let stackView = UIStackView()
 
@@ -84,6 +208,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpSubviews()
         setUpConstraints()
         setUpProperties()
+        setUpCallbacks()
+        setUpAccessibility()
     }
 
     @available(*, unavailable)
@@ -96,79 +222,275 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaContainerView.addSubview(shadowBackdropView)
         searchAreaContainerView.addSubview(searchAreaView)
+        searchAreaContainerView.addSubview(_progressView)
 
         stackView.addArrangedSubview(leadingButtonsContainer)
         stackView.addArrangedSubview(searchAreaContainerView)
         stackView.addArrangedSubview(trailingButtonsContainer)
+
+        leadingButtonsContainer.addArrangedSubview(backButtonView)
+        leadingButtonsContainer.addArrangedSubview(forwardButtonView)
+
+        trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
+        trailingButtonsContainer.addArrangedSubview(menuButtonView)
+        trailingButtonsContainer.addArrangedSubview(settingsButtonView)
+
+//        searchAreaView.leftIconContainer.addArrangedSubview(UIImageView(image: UIImage(resource: .shield)))
+//        searchAreaView.leadingItemsContainer.addArrangedSubview(privacyInfoContainer)
     }
 
     private func setUpConstraints() {
+        _progressView.translatesAutoresizingMaskIntoConstraints = false
+
+        let readableSearchAreaWidth = searchAreaView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
+        readableSearchAreaWidth.priority = .defaultHigh
+
+        let searchAreaTopPadding = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaTopPadding)
+        let searchAreaBottomPadding = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaBottomPadding)
+
+        searchAreaTopPaddingConstraint = searchAreaTopPadding
+        searchAreaBottomPaddingConstraint = searchAreaBottomPadding
 
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
+            stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
+            searchAreaTopPadding,
+            searchAreaBottomPadding,
 
-            searchAreaView.heightAnchor.constraint(equalToConstant: 44),
-            searchAreaView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: 14),
-            searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -14),
-            searchAreaView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: 6),
-            searchAreaView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: -10),
+            searchAreaView.topAnchor.constraint(greaterThanOrEqualTo: searchAreaContainerView.topAnchor),
+            searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
+            searchAreaView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
-            shadowBackdropView.leadingAnchor.constraint(equalTo: searchAreaView.leadingAnchor),
-            shadowBackdropView.trailingAnchor.constraint(equalTo: searchAreaView.trailingAnchor),
-            shadowBackdropView.topAnchor.constraint(equalTo: searchAreaView.topAnchor),
-            shadowBackdropView.bottomAnchor.constraint(equalTo: searchAreaView.bottomAnchor)
+            searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            readableSearchAreaWidth,
 
+            shadowBackdropView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -1),
+            shadowBackdropView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: 1),
+            shadowBackdropView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -1),
+            shadowBackdropView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: 1),
+
+            _progressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
+            _progressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: 4),
+            _progressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -4),
+            _progressView.heightAnchor.constraint(equalToConstant: 2)
         ])
+
+        UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: forwardButtonView)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: bookmarksButtonView)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: menuButtonView)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: settingsButtonView)
     }
 
     private func setUpProperties() {
-        leadingButtonsContainer.isHidden = true
-        trailingButtonsContainer.isHidden = true
 
         setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         backgroundColor = UIColor(designSystemColor: .background)
 
-        searchAreaView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        searchAreaView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+        searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+        searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
+        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+
         searchAreaView.translatesAutoresizingMaskIntoConstraints = false
+//        searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+//        searchAreaView.layer.cornerCurve = .continuous
 
         shadowBackdropView.translatesAutoresizingMaskIntoConstraints = false
-        shadowBackdropView.layer.shadowColor = UIColor(Color.shade(0.24)).cgColor
-        shadowBackdropView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        shadowBackdropView.layer.shadowRadius = 4
-        shadowBackdropView.layer.shadowOpacity = 1
-        shadowBackdropView.layer.cornerRadius = searchAreaView.layer.cornerRadius
-        shadowBackdropView.backgroundColor = .red
+        searchAreaContainerView.layer.shadowColor = UIColor(Color.shade(0.24)).cgColor
+        searchAreaContainerView.layer.shadowOffset = CGSize(width: 0, height: 2)
+        searchAreaContainerView.layer.shadowRadius = 4
+        searchAreaContainerView.layer.shadowOpacity = 1
+        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+//        shadowBackdropView.layer.cornerCurve = .continuous
 
         stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .horizontal
-        stackView.alignment = .center
+        stackView.alignment = .fill
         stackView.distribution = .fill
-        stackView.backgroundColor = .clear
 
-        rightImage.tintColor = UIColor(designSystemColor: .icons)
-        leftImage.tintColor = UIColor(designSystemColor: .icons)
+        trailingButtonsContainer.isLayoutMarginsRelativeArrangement = true
+        trailingButtonsContainer.directionalLayoutMargins = Metrics.expandedSizeMargins
+        trailingButtonsContainer.spacing = Metrics.expandedSizeSpacing
+        trailingButtonsContainer.isHidden = true
 
-        leftImage.image = UIImage(resource: .searchLoupe)
-        leftImage.setContentCompressionResistancePriority(.required, for: .horizontal)
-        leftImage.setContentCompressionResistancePriority(.required, for: .vertical)
+        leadingButtonsContainer.isLayoutMarginsRelativeArrangement = true
+        leadingButtonsContainer.directionalLayoutMargins = Metrics.expandedSizeMargins
+        leadingButtonsContainer.isHidden = true
 
-        rightImage.image = UIImage(resource: .aiChat24)
-        rightImage.setContentCompressionResistancePriority(.required, for: .horizontal)
-        rightImage.setContentCompressionResistancePriority(.required, for: .vertical)
+        backButtonView.setImage(UIImage(resource: .arrowLeft24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
-        leftImage.contentMode = .scaleAspectFit
-        rightImage.contentMode = .scaleAspectFit
+        forwardButtonView.setImage(UIImage(resource: .arrowRight24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
+
+        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
+
+        menuButtonView.setImage(UIImage(resource: .menuHamburger24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
+
+        settingsButtonView.setImage(UIImage(resource: .settings24E), for: .normal)
+        UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
+    }
+
+    private func setUpCallbacks() {
+        searchAreaView.dismissButtonView.addTarget(self, action: #selector(dismissButtonTap), for: .touchUpInside)
+        searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
+        searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
+        searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
+        searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
+        searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
+        searchAreaView.dismissButtonView.addTarget(self, action: #selector(dismissButtonViewTap), for: .touchUpInside)
+
+        forwardButtonView.addTarget(self, action: #selector(forwardButtonTap), for: .touchUpInside)
+        backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
+        settingsButtonView.addTarget(self, action: #selector(settingsButtonTap), for: .touchUpInside)
+        bookmarksButtonView.addTarget(self, action: #selector(bookmarksButtonTap), for: .touchUpInside)
+        menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
+
+        searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
+    }
+
+    private func setUpAccessibility() {
+        
+    }
+
+    private func updateActiveState() {
+        searchAreaTopPaddingConstraint?.constant = isActiveState ? Metrics.activeTextAreaTopPadding : Metrics.textAreaTopPadding
+        searchAreaBottomPaddingConstraint?.constant = isActiveState ? -Metrics.activeTextAreaBottomPadding : -Metrics.textAreaBottomPadding
+
+        let cornerRadius = isActiveState ? Metrics.activeCornerRadius : Metrics.cornerRadius
+
+//        searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.borderColor = isActiveState ? UIColor(Color(designSystemColor: .accent)).cgColor : nil
+        searchAreaContainerView.layer.borderWidth = isActiveState ? Metrics.activeBorderWidth : 0
+        searchAreaContainerView.layer.cornerRadius = cornerRadius
+
+        shadowBackdropView.layer.cornerRadius = cornerRadius
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            searchAreaContainerView.layer.borderColor = isActiveState ? UIColor(Color(designSystemColor: .accent)).cgColor : nil
+        }
+    }
+
+    @objc private func textFieldTextEntered() {
+        onTextEntered?()
+    }
+
+    @objc private func forwardButtonTap() {
+        onForwardPressed?()
+    }
+
+    @objc private func backButtonTap() {
+        onBackPressed?()
+    }
+
+    @objc private func settingsButtonTap() {
+        onSettingsButtonPressed?()
+    }
+
+    @objc private func bookmarksButtonTap() {
+        onBookmarksPressed?()
+    }
+
+    @objc private func menuButtonTap() {
+        onMenuButtonPressed?()
+    }
+
+    @objc private func dismissButtonTap() {
+        onDismissPressed?()
+    }
+
+    @objc private func voiceSearchButtonTap() {
+        onVoiceSearchButtonPressed?()
+    }
+
+    @objc private func reloadButtonTap() {
+        onRefreshPressed?()
+    }
+
+    @objc private func clearButtonTap() {
+        onClearButtonPressed?()
+    }
+
+    @objc private func cancelButtonTap() {
+        onAbortButtonPressed?()
+    }
+
+    @objc private func accessoryButtonTap() {
+        onAccessoryPressed?()
+    }
+
+    @objc private func dismissButtonViewTap() {
+        onDismissPressed?()
     }
 
     private struct Metrics {
-        static let buttonSize: CGFloat = 24
+        static let itemSize: CGFloat = 44
         static let height: CGFloat = 60
-        static let textAreaHeight: CGFloat = 44
+
+        static let cornerRadius: CGFloat = 16
+        static let activeCornerRadius: CGFloat = 18
+
+        static let activeBorderWidth: CGFloat = 2
+
+        static let textAreaHorizontalPadding: CGFloat = 14
+
+        static let textAreaTopPadding: CGFloat = 4
+        static let textAreaBottomPadding: CGFloat = 12
+        static let activeTextAreaTopPadding: CGFloat = 2
+        static let activeTextAreaBottomPadding: CGFloat = 8
+
+        static let expandedSizeSpacing: CGFloat = 24.0
+        static let expandedSizeMargins = NSDirectionalEdgeInsets(
+            top: 0,
+            leading: expandedSizeSpacing,
+            bottom: 0,
+            trailing: expandedSizeSpacing
+        )
+    }
+}
+
+extension UpdatedOmniBarView {
+    static func activateItemSizeConstraints(for item: UIView) {
+        item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
+        item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
+//        item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
+//        item.heightAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
+    }
+
+    static func setUpCommonProperties(for button: UIButton) {
+        button.tintColor = UIColor(designSystemColor: .icons)
+        button.adjustsImageWhenDisabled = true
+        button.adjustsImageWhenHighlighted = true
+    }
+}
+
+extension UpdatedOmniBarView {
+    func showSeparator() {
+        // no-op
+    }
+
+    func hideSeparator() {
+        // no-op
+    }
+
+    func moveSeparatorToTop() {
+        // no-op
+    }
+
+    func moveSeparatorToBottom() {
+        // no-op
     }
 }

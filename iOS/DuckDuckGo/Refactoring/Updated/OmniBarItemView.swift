@@ -18,20 +18,32 @@
 //
 
 import UIKit
+import Combine
 
-final class OmniBarItemView: UIView {
-    let customView: UIView
+final class OmniBarItemView<Item: UIView>: UIView {
+    let item: Item
 
-    init(_ customView: UIView) {
-        self.customView = customView
-        customView.translatesAutoresizingMaskIntoConstraints = false
+    private var cancellables = Set<AnyCancellable>()
+
+    init(_ item: Item) {
+        self.item = item
+        item.translatesAutoresizingMaskIntoConstraints = false
 
         super.init(frame: .zero)
 
         backgroundColor = .clear
-        addSubview(customView)
+        addSubview(item)
 
         setUpConstraints()
+
+        self.translatesAutoresizingMaskIntoConstraints = false
+        item.publisher(for: \.isHidden).sink { [weak self] isHidden in
+            self?.isHidden = isHidden
+        }.store(in: &cancellables)
+    }
+
+    deinit {
+        cancellables.removeAll()
     }
 
     @available(*, unavailable)
@@ -41,16 +53,13 @@ final class OmniBarItemView: UIView {
 
     private func setUpConstraints() {
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: 44),
-            heightAnchor.constraint(equalToConstant: 44),
+            item.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor),
+            item.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
+            item.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+            item.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
 
-            customView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor),
-            customView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
-            customView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
-            customView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
-            
-            customView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            customView.centerYAnchor.constraint(equalTo: centerYAnchor)
+            item.centerXAnchor.constraint(equalTo: centerXAnchor),
+            item.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
     }
 }

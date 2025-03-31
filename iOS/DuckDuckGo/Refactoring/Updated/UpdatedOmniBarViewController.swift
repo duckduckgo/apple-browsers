@@ -20,154 +20,68 @@
 import UIKit
 import PrivacyDashboard
 
-final class UpdatedOmniBarViewController: UIViewController, OmniBar {
+final class UpdatedOmniBarViewController: OmniBarViewController {
 
-    private var omniBarView: UpdatedOmniBarView!
-    private let dependencies: OmnibarDependencyProvider
-
-    var barView: any OmniBarView {
-        loadViewIfNeeded()
-        return omniBarView
-    }
-
-    var isBackButtonEnabled: Bool = false
-
-    var isForwardButtonEnabled: Bool = false
-
-    weak var omniDelegate: (any OmniBarDelegate)?
-    
-    var isTextFieldEditing: Bool {
-        omniBarView.textField.isFirstResponder
-    }
-
-    var text: String? {
-        get { omniBarView.textField.text }
-        set { omniBarView.textField.text = newValue }
-    }
-
-    // MARK: -
-
-    init(dependencies: OmnibarDependencyProvider) {
-        self.dependencies = dependencies
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
+    private lazy var omniBarView = UpdatedOmniBarView.create()
 
     override func loadView() {
-        omniBarView = UpdatedOmniBarView()
-
         view = omniBarView
     }
 
-    func updateQuery(_ query: String?) {
-        omniBarView.textField.text = query
-    }
-    
-    func refreshText(forUrl url: URL?, forceFullURL: Bool) {
-        omniBarView.textField.text = url?.absoluteString
-    }
-    
-    func beginEditing() {
-        omniBarView.textField.becomeFirstResponder()
-    }
-    
-    func endEditing() {
-        omniBarView.textField.resignFirstResponder()
-    }
-    
-    func showSeparator() {
-        // no-op
-    }
-    
-    func hideSeparator() {
-        // no-op
-    }
-    
-    func moveSeparatorToTop() {
-        // no-op
-    }
-    
-    func moveSeparatorToBottom() {
-        // no-op
-    }
-    
-    func enterPhoneState() {
+    // MARK: - Initialization
 
-    }
-    
-    func enterPadState() {
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
     }
 
-    func startBrowsing() {
+    override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
+        super.updateInterface(from: oldState, to: state)
+
+        omniBarView.isUsingCompactLayout = !state.hasLargeWidth
+    }
+
+    override func cancelAllAnimations() {
+        // TODO: Implement or remove
+    }
+
+    override func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
 
     }
-    
-    func stopBrowsing() {
+
+    override func hidePrivacyIcon() {
 
     }
-    
-    func startLoading() {
+
+    override func resetPrivacyIcon(for url: URL?) {
+        
+    }
+
+    override func dismissOnboardingPrivacyIconAnimation() {
 
     }
-    
-    func stopLoading() {
 
+    override func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool) {
+        
     }
-    
-    func cancel() {
 
+    override func textFieldDidBeginEditing(_ textField: UITextField) {
+        super.textFieldDidBeginEditing(textField)
+
+        omniBarView.layoutIfNeeded()
+        omniBarView.isActiveState = true
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.layoutIfNeeded()
+        }
     }
-    
-    func removeTextSelection() {
 
-    }
-    
-    func selectTextToEnd(_ offset: Int) {
+    override func textFieldDidEndEditing(_ textField: UITextField) {
+        super.textFieldDidEndEditing(textField)
 
-    }
-    
-    func updateAccessoryType(_ type: OmniBarAccessoryType) {
-
-    }
-    
-    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
-
-    }
-    
-    func showOrScheduleOnboardingPrivacyIconAnimation() {
-
-    }
-    
-    func dismissOnboardingPrivacyIconAnimation() {
-
-    }
-    
-    func startTrackersAnimation(_ privacyInfo: PrivacyDashboard.PrivacyInfo, forDaxDialog: Bool) {
-
-    }
-    
-    func updatePrivacyIcon(for privacyInfo: PrivacyDashboard.PrivacyInfo?) {
-
-    }
-    
-    func hidePrivacyIcon() {
-
-    }
-    
-    func resetPrivacyIcon(for url: URL?) {
-
-    }
-    
-    func cancelAllAnimations() {
-
-    }
-    
-    func completeAnimationForDaxDialog() {
-
+        omniBarView.layoutIfNeeded()
+        omniBarView.isActiveState = false
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.layoutIfNeeded()
+        }
     }
 }

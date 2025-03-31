@@ -375,22 +375,21 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
             cell.omniBar = controller
 
+            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
+                cell.omniBar?.startBrowsing()
+                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+                cell.omniBar?.resetPrivacyIcon(for: url)
+                cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+            }
+            
+            controller.didMove(toParent: coordinator.parentController)
+
             cell.omniBar?.showSeparator()
             if self.appSettings.currentAddressBarPosition.isBottom {
                 cell.omniBar?.moveSeparatorToTop()
             } else {
                 cell.omniBar?.moveSeparatorToBottom()
             }
-
-            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
-                cell.omniBar?.startBrowsing()
-                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-                cell.omniBar?.resetPrivacyIcon(for: url)
-                cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
-
-            }
-
-            controller.didMove(toParent: coordinator.parentController)
         }
 
         cell.setNeedsUpdateConstraints()

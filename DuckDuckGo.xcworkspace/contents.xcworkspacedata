@@ -8,6 +8,9 @@
       location = "group:SharedPackages/DataBrokerProtectionCore">
    </FileRef>
    <FileRef
+      location = "container:../DesignResourcesKit">
+   </FileRef>
+   <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">
    </FileRef>
    <FileRef

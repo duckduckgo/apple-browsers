@@ -326,11 +326,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {
         webView.reload()
-
-        // Pause Videos if needed
-        if duckPlayer.settings.nativeUIYoutubeMode != .never {
-            toggleMediaPlayback(webView, pause: true)
-        }
+        duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
+        
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.

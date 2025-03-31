@@ -203,7 +203,7 @@ struct NonTypingAnimatableItems: OptionSet {
 // MARK: - Auxiliary Functions
 
 extension ContextualDaxDialogContent {
-    
+
     private func completeAnimations() {
         // Immediately set all states to their final values
         skipAnimations.wrappedValue = true

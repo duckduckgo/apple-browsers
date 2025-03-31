@@ -51,6 +51,7 @@ public protocol FaviconStoring {
     /**
      * Returns a boolean value telling whether the store has a cached favicon for a given `domain`.
      */
+    @MainActor
     func hasFavicon(for domain: String) -> Bool
 
     /**

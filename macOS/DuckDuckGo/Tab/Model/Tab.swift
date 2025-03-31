@@ -140,7 +140,7 @@ protocol NewWindowPolicyDecisionMaker {
 
         self.init(id: id,
                   content: content,
-                  faviconManagement: faviconManager ?? FaviconManager.shared,
+                  faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
                   historyCoordinating: historyCoordinating,

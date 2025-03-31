@@ -24,14 +24,9 @@ import XCTest
 class FaviconReferenceCacheTests: XCTestCase {
 
     @MainActor
-    func testWhenFaviconUrlIsAddedToHostCache_ThenFaviconUrlIsUsedForWholeDomain() {
+    func testWhenFaviconUrlIsAddedToHostCache_ThenFaviconUrlIsUsedForWholeDomain() async throws {
         let referenceCache = FaviconReferenceCache(faviconStoring: FaviconStoringMock())
-        let burningExpectation = expectation(description: "Loading")
-        referenceCache.loadReferences { _ in
-            burningExpectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1, handler: nil)
+        try await referenceCache.load()
 
         XCTAssert(URL.aDocumentUrl1.host == URL.aDocumentUrl2.host)
 
@@ -43,14 +38,9 @@ class FaviconReferenceCacheTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFaviconUrlIsAddedToRefeceneCache_ThenFaviconUrlIsUsedForTheSpecialUrl() {
+    func testWhenFaviconUrlIsAddedToRefeceneCache_ThenFaviconUrlIsUsedForTheSpecialUrl() async throws {
         let referenceCache = FaviconReferenceCache(faviconStoring: FaviconStoringMock())
-        let burningExpectation = expectation(description: "Loading")
-        referenceCache.loadReferences { _ in
-            burningExpectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1, handler: nil)
+        try await referenceCache.load()
 
         XCTAssertEqual(URL.aDocumentUrl1.host, URL.aDocumentUrl2.host)
 
@@ -68,14 +58,9 @@ class FaviconReferenceCacheTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUrlIsPartOfHostCacheAndReferenceCache_ThenOldEntryMustBeInvalidated() {
+    func testWhenUrlIsPartOfHostCacheAndReferenceCache_ThenOldEntryMustBeInvalidated() async throws {
         let referenceCache = FaviconReferenceCache(faviconStoring: FaviconStoringMock())
-        let burningExpectation = expectation(description: "Loading")
-        referenceCache.loadReferences { _ in
-            burningExpectation.fulfill()
-        }
-
-        waitForExpectations(timeout: 1, handler: nil)
+        try await referenceCache.load()
 
         XCTAssertEqual(URL.aFaviconUrl1.host, URL.aFaviconUrl2.host)
 

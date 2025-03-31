@@ -362,6 +362,8 @@ extension Pixel {
         case autofillExtensionToggledOff
         case autofillLoginsStacked
         
+        case autofillDeviceCapabilityDeviceAuthDisabled
+        
         case autofillSettingsOpened
 
         case autofillManagementOpened
@@ -1410,6 +1412,8 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+            
+        case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
         case .autofillSettingsOpened: return "autofill_settings_opened"
             

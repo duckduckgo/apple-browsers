@@ -59,7 +59,7 @@ construct_this_release_includes() {
 main() {
 	# 1. Find last internal release tag (last internal release is the second one, because the first one is the release that's just created)
 	local last_release_tag
-	last_release_tag="$(gh api repos/:owner/:repo/releases?per_page=25 --jq '[.[] | select(.tag_name | endswith("+ios"))][1].tag_name')"
+	last_release_tag="$(gh api repos/:owner/:repo/releases?per_page=25 --jq '[.[] | select(.tag_name | endswith("+macos"))][1].tag_name')"
 
 	# 2. Convert Asana task URLs from git commit messages to task IDs
 	local task_ids=()

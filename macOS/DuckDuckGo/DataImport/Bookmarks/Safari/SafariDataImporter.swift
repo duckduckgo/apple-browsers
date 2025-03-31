@@ -43,7 +43,7 @@ final class SafariDataImporter: DataImporter {
         profile.browser.importSource
     }
 
-    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = FaviconManager.shared) {
+    init(profile: DataImport.BrowserProfile, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.profile = profile
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager

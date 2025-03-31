@@ -80,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter = CrashReporter()
 #endif
 
+    let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
     private(set) var stateRestorationManager: AppStateRestorationManager!
@@ -389,6 +390,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
+
+#if DEBUG
+        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory)
+#else
+        faviconManager = FaviconManager(cacheType: .standard)
+#endif
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {
@@ -445,9 +452,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // https://app.asana.com/0/1177771139624306/1207024603216659/f
         LottieConfiguration.shared.renderingEngine = .mainThread
 
-        if case .normal = AppVersion.runType {
-            FaviconManager.shared.loadFavicons()
-        }
         configurationManager.start()
         _ = DownloadListCoordinator.shared
         _ = RecentlyClosedCoordinator.shared

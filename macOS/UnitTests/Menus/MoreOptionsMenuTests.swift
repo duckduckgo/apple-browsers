@@ -465,6 +465,96 @@ final class MoreOptionsMenuTests: XCTestCase {
             XCTAssertFalse(findInPageItem.isEnabled)
         }
     }
+
+    @MainActor
+    func testWhenTabSupportsSharingThenShareItemIsPresentAndEnabled() throws {
+        let tabContentsSupportingSharing: [Tab.TabContent] = [
+            .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+        ]
+        for tabContent in tabContentsSupportingSharing {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.shareMenuItem })
+            XCTAssertTrue(findInPageItem.isEnabled, "\(tabContent) expected to support sharing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabDoesNotSupportSharingThenShareItemIsPresentAndDisabled() throws {
+        let tabContentsNotSupportingSharing: [Tab.TabContent] = [
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .releaseNotes,
+            .webExtensionUrl(.aboutDuckDuckGo),
+            .newtab,
+            .history,
+            .bookmarks,
+            .settings(pane: nil)
+        ]
+        for tabContent in tabContentsNotSupportingSharing {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let shareItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.shareMenuItem })
+            XCTAssertFalse(shareItem.isEnabled, "\(tabContent) expected to not support sharing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabSupportsPrintingThenPrintItemIsPresentAndEnabled() throws {
+        let tabContentsSupportingPrinting: [Tab.TabContent] = [
+            .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+        ]
+        for tabContent in tabContentsSupportingPrinting {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let printItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.printMenuItem })
+            XCTAssertTrue(printItem.isEnabled, "\(tabContent) expected to support printing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabDoesNotSupportPrintingThenPrintItemIsPresentAndDisabled() throws {
+        let tabContentsSupportingPrinting: [Tab.TabContent] = [
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .releaseNotes,
+            .webExtensionUrl(.aboutDuckDuckGo),
+            .newtab,
+            .history,
+            .bookmarks,
+            .settings(pane: nil)
+        ]
+        for tabContent in tabContentsSupportingPrinting {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let printItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.printMenuItem })
+            XCTAssertFalse(printItem.isEnabled, "\(tabContent) expected to not support printing")
+        }
+    }
 }
 
 final class NetworkProtectionVisibilityMock: VPNFeatureGatekeeper {

@@ -96,6 +96,7 @@ final class TabViewModel {
     }
 
     var canPrint: Bool {
+        guard !isShowingErrorPage else { return false }
         switch tab.content {
         case .url(let url, _, _):
             return !(url.isDuckPlayer || url.isDuckURLScheme) && canReload && tab.webView.canPrint

@@ -462,12 +462,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.tokenStoreV1 = tokenStore
 
         // MARK: - V2
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        let apiService = DefaultAPIService(urlSession: urlSession)
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEvents: debugEvents)
@@ -475,7 +471,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
             // The SysExt handles only dead token pixels

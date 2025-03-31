@@ -57,6 +57,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let emailManager: EmailManager
+    private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
@@ -86,6 +87,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          emailManager: EmailManager = EmailManager(),
+         fireproofDomains: FireproofDomains = FireproofDomains.shared,
          passwordManagerCoordinator: PasswordManagerCoordinator,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
@@ -105,6 +107,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
+        self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
         self.vpnFeatureGatekeeper = vpnFeatureGatekeeper
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -514,7 +517,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let oldItemsCount = items.count
 
         if url.canFireproof, let host = url.host {
-            let isFireproof = FireproofDomains.shared.isFireproof(fireproofDomain: host)
+            let isFireproof = fireproofDomains.isFireproof(fireproofDomain: host)
             let title = isFireproof ? UserText.removeFireproofing : UserText.fireproofSite
             let image: NSImage = isFireproof ? .burn : .fireproof
 
@@ -524,22 +527,24 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         } else {
             addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
                 .withImage(.fireproof)
+                .enabled(false)
         }
 
-        addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
+        addItem(withTitle: UserText.findInPageMenuItem, action: #selector(findInPage(_:)), keyEquivalent: "f")
             .targetting(self)
+            .enabled(tabViewModel.canFindInPage)
             .withImage(.findSearch)
             .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
-        let shareItem = NSMenuItem(title: UserText.shareMenuItem, action: nil, keyEquivalent: "")
+        addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
             .targetting(self)
+            .enabled(tabViewModel.canReload)
             .withImage(.share)
             .withSubmenu(sharingMenu)
-        addItem(shareItem)
-        shareItem.isEnabled = tabViewModel.canReload
 
-        addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
+        addItem(withTitle: UserText.printMenuItem, action: #selector(doPrint(_:)), keyEquivalent: "")
             .targetting(self)
+            .enabled(tabViewModel.canPrint)
             .withImage(.print)
 
         if items.count > oldItemsCount {

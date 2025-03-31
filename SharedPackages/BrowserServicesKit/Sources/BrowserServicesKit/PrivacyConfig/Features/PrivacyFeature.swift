@@ -74,6 +74,7 @@ public enum PrivacyFeature: String {
     case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
+    // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
 }
 
@@ -91,6 +92,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .macOSBrowserConfig
     }
 
+    // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 }
 
@@ -99,6 +101,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
+    // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 }
 

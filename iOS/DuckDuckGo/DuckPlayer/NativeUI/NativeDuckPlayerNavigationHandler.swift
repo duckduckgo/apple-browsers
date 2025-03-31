@@ -244,6 +244,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
         let youtubeURL = URL.youtube(videoID)
         webView.load(URLRequest(url: youtubeURL))
+        _ = handleURLChange(webView: webView, previousURL: nil, newURL: youtubeURL)
         return
     }
 

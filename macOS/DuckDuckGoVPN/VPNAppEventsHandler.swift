@@ -33,7 +33,7 @@ final class VPNAppEventsHandler {
         self.appState = appState
         self.tunnelController = tunnelController
 
-        if !tunnelController.settings.isAuthV2Enabled {
+        if !appState.isAuthV2Enabled {
             appState.resetIsMigratedToAuthV2()
         }
     }
@@ -49,7 +49,7 @@ final class VPNAppEventsHandler {
             self.tunnelController.ensureRiskyDomainsEnabledIfNeeded()
             Logger.networking.info("App updated from \(versionStore.lastAgentVersionRun ?? "null", privacy: .public) to \(currentVersion, privacy: .public): updating login items")
 
-            if tunnelController.settings.isAuthV2Enabled && !appState.isMigratedToAuthV2 {
+            if appState.isAuthV2Enabled && !appState.isMigratedToAuthV2 {
                 Task {
                     await tunnelController.stop()
                     await tunnelController.start()

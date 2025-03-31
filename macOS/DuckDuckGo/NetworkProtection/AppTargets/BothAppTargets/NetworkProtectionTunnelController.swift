@@ -33,6 +33,7 @@ import Subscription
 import SystemExtensionManager
 import SystemExtensions
 import VPNExtensionManagement
+import VPNAppState
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
 typealias NetworkProtectionConfigChangeHandler = () -> Void
@@ -43,6 +44,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
     private let featureFlagger: FeatureFlagger
     let settings: VPNSettings
+    let vpnAppState: VPNAppState
     let defaults: UserDefaults
 
     // MARK: - Combine Cancellables
@@ -163,7 +165,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
          defaults: UserDefaults,
          notificationCenter: NotificationCenter = .default,
          accessTokenStorage: SubscriptionTokenKeychainStorage,
-         subscriptionManagerV2: any SubscriptionManagerV2) {
+         subscriptionManagerV2: any SubscriptionManagerV2,
+         vpnAppState: VPNAppState) {
 
         self.availableExtensions = availableExtensions
         self.featureFlagger = featureFlagger
@@ -173,6 +176,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         self.defaults = defaults
         self.accessTokenStorage = accessTokenStorage
         self.subscriptionManagerV2 = subscriptionManagerV2
+        self.vpnAppState = vpnAppState
         subscribeToSettingsChanges()
         subscribeToStatusChanges()
         subscribeToConfigurationChanges()
@@ -280,8 +284,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 .setSelectedLocation,
                 .setDNSSettings,
                 .setShowInMenuBar,
-                .setDisableRekeying,
-                .setIsAuthV2Enabled:
+                .setDisableRekeying:
             // Intentional no-op as this is handled by the extension or the agent's app delegate
             break
         }
@@ -666,8 +669,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         var options = [String: NSObject]()
 
         options[NetworkProtectionOptionKey.activationAttemptId] = UUID().uuidString as NSString
-        options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: settings.isAuthV2Enabled)
-        if !settings.isAuthV2Enabled {
+        options[NetworkProtectionOptionKey.isAuthV2Enabled] = NSNumber(value: vpnAppState.isAuthV2Enabled)
+        if !vpnAppState.isAuthV2Enabled {
             Logger.networkProtection.log("Using Auth V1")
             let authToken = try fetchAuthToken()
             options[NetworkProtectionOptionKey.authToken] = authToken

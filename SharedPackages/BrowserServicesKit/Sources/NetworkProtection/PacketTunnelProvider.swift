@@ -272,7 +272,15 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                                                                   errorEvents: debugEvents)
 
     private let tokenHandlerProvider: () -> any SubscriptionTokenHandling
-    public static var isAuthV2Enabled: Bool = false
+    @objc
+    public static var isAuthV2Enabled: Bool {
+        get {
+            UserDefaults.standard.bool(forKey: #keyPath(isAuthV2Enabled))
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: #keyPath(isAuthV2Enabled))
+        }
+    }
 
     private func resetRegistrationKey() {
         Logger.networkProtectionKeyManagement.log("Resetting the current registration key")
@@ -591,14 +599,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         switch options.isAuthV2Enabled {
         case .set(let newAuthVersion):
             Logger.networkProtection.log("Set new isAuthV2Enabled")
-            settings.isAuthV2Enabled = newAuthVersion
+            Self.isAuthV2Enabled = newAuthVersion
         case .useExisting:
             Logger.networkProtection.log("Use existing isAuthV2Enabled")
         case .reset:
             Logger.networkProtection.log("Reset isAuthV2Enabled")
         }
-        PacketTunnelProvider.isAuthV2Enabled = settings.isAuthV2Enabled
-        Logger.networkProtection.log("Load isAuthV2Enabled: \(self.settings.isAuthV2Enabled, privacy: .public)")
+        Logger.networkProtection.log("Load isAuthV2Enabled: \(Self.isAuthV2Enabled, privacy: .public)")
     }
 
     private func loadAuthToken(from options: StartupOptions) async throws {
@@ -1148,12 +1155,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
     }
 
     private func handleSettingChangeAppRequest(_ change: VPNSettings.Change, completionHandler: ((Data?) -> Void)? = nil) {
-        switch change {
-        case .setIsAuthV2Enabled:
-            return
-        default:
-            settings.apply(change: change)
-        }
+        settings.apply(change: change)
     }
 
     @MainActor
@@ -1198,8 +1200,7 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 .setRegistrationKeyValidity,
                 .setSelectedEnvironment,
                 .setShowInMenuBar,
-                .setDisableRekeying,
-                .setIsAuthV2Enabled:
+                .setDisableRekeying:
             // Intentional no-op
             // Some of these don't require further action
             // Some may require an adapter restart, but it's best if that's taken care of by

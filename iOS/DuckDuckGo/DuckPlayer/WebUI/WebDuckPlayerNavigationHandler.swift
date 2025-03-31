@@ -600,8 +600,9 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func setupYoutubeNavigationRequestObserver(webView: WKWebView) {
         duckPlayerNavigationRequestCancellable = duckPlayer.youtubeNavigationRequest
-            .sink { [weak self] url in
-                self?.redirectToYouTubeVideo(url: url, webView: webView)
+            .sink { [weak self, weak webView] url in
+                guard let self, let webView else { return }
+                self.redirectToYouTubeVideo(url: url, webView: webView)
             }
     }
 

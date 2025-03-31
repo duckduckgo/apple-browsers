@@ -167,16 +167,16 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         super.init()
 
         var tokenFound: Bool
-        if !tunnelSettings.isAuthV2Enabled {
+        if !vpnAppState.isAuthV2Enabled {
             tokenFound = accountManager.accessToken != nil
         } else {
             tokenFound = subscriptionManagerV2.isUserAuthenticated
         }
 
         if tokenFound {
-            Logger.networkProtection.debug("🟢 VPN Agent found \(self.tunnelSettings.isAuthV2Enabled ? "Token Container (V2)" : "Token (V1)", privacy: .public)")
+            Logger.networkProtection.debug("🟢 VPN Agent found \(self.vpnAppState.isAuthV2Enabled ? "Token Container (V2)" : "Token (V1)", privacy: .public)")
         } else {
-            Logger.networkProtection.error("🔴 VPN Agent found no \(self.tunnelSettings.isAuthV2Enabled ? "Token Container (V2)" : "Token (V1)", privacy: .public)")
+            Logger.networkProtection.error("🔴 VPN Agent found no \(self.vpnAppState.isAuthV2Enabled ? "Token Container (V2)" : "Token (V1)", privacy: .public)")
         }
     }
 
@@ -273,7 +273,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         settings: tunnelSettings,
         defaults: userDefaults,
         accessTokenStorage: accessTokenStorage,
-        subscriptionManagerV2: subscriptionManagerV2)
+        subscriptionManagerV2: subscriptionManagerV2,
+        vpnAppState: vpnAppState)
 
     /// An IPC server that provides access to the tunnel controller.
     ///
@@ -573,7 +574,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         var isUserAuthenticated: Bool
         let entitlementsCheck: () async -> Swift.Result<Bool, Error>
-        if !tunnelSettings.isAuthV2Enabled {
+        if !vpnAppState.isAuthV2Enabled {
             isUserAuthenticated = accountManager.isUserAuthenticated
             entitlementsCheck = {
                 await self.accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .reloadIgnoringLocalCacheData)

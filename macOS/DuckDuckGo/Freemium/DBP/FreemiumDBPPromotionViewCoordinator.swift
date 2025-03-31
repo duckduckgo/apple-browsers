@@ -20,8 +20,8 @@ import Combine
 import Foundation
 import Freemium
 import OSLog
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Common
 
 /// Default implementation of `FreemiumDBPPromotionViewCoordinating`, responsible for managing

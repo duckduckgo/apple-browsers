@@ -248,7 +248,6 @@ final class AppDependencyProvider: DependencyProvider {
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
 
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,

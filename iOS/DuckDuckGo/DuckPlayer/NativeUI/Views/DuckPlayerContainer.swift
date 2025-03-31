@@ -143,7 +143,7 @@ public enum DuckPlayerContainer {
 // MARK: - Private
 
 private func calculateSheetOffset(for visible: Bool, containerHeight: Double) -> Double {
-    visible ? 90 : containerHeight
+    visible ? 10 : containerHeight
 }
 
 @MainActor
@@ -179,7 +179,6 @@ private struct SheetView<Content: View>: View {
     @State private var sheetOffset = DuckPlayerContainer.Constants.initialOffsetValue
     @GestureState private var dragStartOffset: Double?
     @State private var isDragging = false
-    @State private var isAnimatingToTop = false
 
     // Animate the sheet offset with a spring animation
     private func animateOffset(to visible: Bool) {
@@ -228,16 +227,17 @@ private struct SheetView<Content: View>: View {
                                     }
                                     .onChanged { value in
                                         guard let dragStartOffset else { return }
-
+                                        
                                         let offsetY = value.translation.height
                                         if offsetY > 0 {
                                             withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
                                                 sheetOffset = dragStartOffset + offsetY
                                             }
                                         } else if offsetY < 0 {
+                                            // Add some resistance for upward drag
                                             let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
                                             withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                                                sheetOffset = dragStartOffset + y * max(offsetY, -50)
+                                                sheetOffset = dragStartOffset + y * max(offsetY, -20)
                                             }
                                         }
                                     }
@@ -248,18 +248,9 @@ private struct SheetView<Content: View>: View {
                                         if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
                                             onDismiss(false) // User dismissed the pill
                                         } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
-                                            isAnimatingToTop = true
-
                                             // Start presenting DuckPlayer immediately
                                             onPresentDuckPlayer()
 
-                                            // Animate the pill to top and fade out
-                                            withAnimation(.easeOut(duration: 0.3)) {
-                                                opacity = 0
-                                            }
-                                            withAnimation(.spring(duration: 0.5, bounce: 0.2)) {
-                                                sheetOffset = -containerHeight
-                                            }
                                         } else {
                                             withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
                                                 sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
@@ -275,7 +266,7 @@ private struct SheetView<Content: View>: View {
         .onWidthChange { newWidth in
             sheetWidth = newWidth
         }
-        .padding(.bottom, 100)
+        .padding(.bottom, 20)
         .background(Color(designSystemColor: .panel))
         .border(Color(designSystemColor: .border), width: 0.5)
         .frame(maxWidth: .infinity)

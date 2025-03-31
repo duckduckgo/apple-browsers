@@ -60,6 +60,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// isLinkPreview is true when the DuckPlayer is opened from a link preview
     var isLinkPreview = false
 
+    /// lastHandledVideoID is the last video ID that was handled by the DuckPlayer
+    var lastHandledVideoID: String?
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -281,6 +284,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.disabledForVideo)
         }
 
+        // Get video ID from URL        
+        guard videoID != lastHandledVideoID else {
+            return .notHandled(.disabledForVideo)
+        }
+
+        // Register handled video ID
+        lastHandledVideoID = videoID
+
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
             duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
@@ -326,6 +337,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {
         webView.reload()
+        lastHandledVideoID = nil
         duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
         

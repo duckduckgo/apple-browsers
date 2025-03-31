@@ -351,9 +351,6 @@ final class DuckPlayerNativeUIPresenter {
 
     @MainActor
     private func presentDismissCountToast() {
-        // Reset the dismiss count
-        appSettings.duckPlayerPillDismissCount = 0
-
         var message = AttributedString(UserText.duckPlayerNativePillDismissCountToastMessage)
         message.foregroundColor = Color(designSystemColor: .buttonsWhite)
         displayToast(
@@ -489,6 +486,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // If was dismissed by the user, increment the dismiss count
         if !programatic {
+            
             appSettings.duckPlayerPillDismissCount += 1
 
             if appSettings.duckPlayerPillDismissCount >= 3 {
@@ -522,8 +520,10 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Increase the presentation event count
         appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1
 
-        // Reset the dismiss count
-        appSettings.duckPlayerPillDismissCount = 0
+        // Reset the dismiss count if toast not already presented
+        if appSettings.duckPlayerPillDismissCount < 3 {
+            appSettings.duckPlayerPillDismissCount = 0
+        }
 
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()

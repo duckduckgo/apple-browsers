@@ -132,7 +132,7 @@ public enum DuckPlayerContainer {
 
                 // Use a fixed container height for offset calculations
                 sheet(containerHeight: Constants.initialOffsetValue)
-                    .frame(alignment: .bottom)                    
+                    .frame(alignment: .bottom)
             }
         }
     }
@@ -266,7 +266,21 @@ private struct SheetView<Content: View>: View {
         }
         .padding(.bottom, 20)
         .background(Color(designSystemColor: .panel))
-        .border(Color(designSystemColor: .border), width: 0.5)
+        .overlay(
+            Rectangle()
+                .fill(Color(uiColor: UIColor { traitCollection in
+                    switch traitCollection.userInterfaceStyle {
+                    case .dark:
+                        return .black
+                    default:
+                        return UIColor(designSystemColor: .border)
+                    }
+                }))
+                .frame(height: 0.5)
+                .frame(maxWidth: .infinity)
+                .alignmentGuide(.top) { _ in 0 },
+            alignment: .top
+        )
         .frame(maxWidth: .infinity)
         .offset(y: sheetOffset)
 
@@ -284,7 +298,7 @@ private struct SheetView<Content: View>: View {
         }
 
         .onChange(of: viewModel.sheetVisible) { sheetVisible in
-            animateOffset(to: sheetVisible)         
+            animateOffset(to: sheetVisible)
         }
 
         .onChange(of: containerHeight) { _ in

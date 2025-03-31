@@ -45,7 +45,7 @@ extension OnboardingView {
 
         var body: some View {
             if showAddToDockTutorial {
-                OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
                     dismissAction(true)
                 }
             } else {
@@ -73,6 +73,7 @@ extension OnboardingView {
                     title: UserText.AddToDockOnboarding.Buttons.tutorial,
                     action: {
                         showTutorialAction()
+                        isSkipped.wrappedValue = false
                         showAddToDockTutorial = true
                     }
                 )

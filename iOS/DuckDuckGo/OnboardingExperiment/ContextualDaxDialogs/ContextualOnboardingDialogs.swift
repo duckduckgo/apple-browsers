@@ -305,6 +305,7 @@ struct OnboardingAddToDockTutorialContent: View {
     let message = UserText.AddToDockOnboarding.Tutorial.message
 
     let cta: String
+    let isSkipped: Binding<Bool>
     let dismissAction: () -> Void
 
     var body: some View {
@@ -312,6 +313,7 @@ struct OnboardingAddToDockTutorialContent: View {
             title: title,
             message: message,
             cta: cta,
+            isSkipped: isSkipped,
             action: dismissAction
         )
     }
@@ -377,11 +379,11 @@ struct OnboardingAddToDockTutorialContent: View {
 }
 
 #Preview("Add To Dock Tutorial - Light") {
-    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, dismissAction: {})
+    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, isSkipped: .constant(false), dismissAction: {})
         .preferredColorScheme(.light)
 }
 
 #Preview("Add To Dock Tutorial - Dark") {
-    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, dismissAction: {})
+    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, isSkipped: .constant(false), dismissAction: {})
         .preferredColorScheme(.dark)
 }

@@ -20,8 +20,10 @@ import Foundation
 import Common
 @testable import Networking
 @testable import Subscription
+import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
+
     public var email: String?
 
     public init() {}
@@ -214,5 +216,13 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
                 return nil
             }
         }
+    }
+
+    public func isSubscriptionPresent() -> Bool {
+        resultSubscription != nil
+    }
+
+    public func adopt(accessToken: String, refreshToken: String) async throws {
+        resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer() // NOTE: It isn't possible to create a valid token made with the input values, we would need to hit the API to get a valid token
     }
 }

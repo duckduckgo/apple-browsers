@@ -75,7 +75,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PurchaseUpdate, StripePurchaseFlowError> {
         Logger.subscription.log("Preparing subscription purchase")
 
-        subscriptionManager.clearSubscriptionCache()
+        await subscriptionManager.signOut(notifyUI: false)
 
         if subscriptionManager.isUserAuthenticated {
             if let subscriptionExpired = await isSubscriptionExpired(),

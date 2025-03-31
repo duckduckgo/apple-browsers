@@ -28,6 +28,7 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     func signOut(notifyUI: Bool) async
     var canPurchase: Bool { get }
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    func isSubscriptionPresent() -> Bool
     func url(for type: SubscriptionURL) -> URL
     var email: String? { get }
     var currentEnvironment: SubscriptionEnvironment { get }
@@ -109,6 +110,10 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     public var email: String? {
         accountManager.email
+    }
+
+    public func isSubscriptionPresent() -> Bool {
+        accountManager.isUserAuthenticated
     }
 }
 

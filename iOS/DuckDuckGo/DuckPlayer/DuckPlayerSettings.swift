@@ -151,7 +151,7 @@ protocol DuckPlayerSettings: AnyObject {
     var nativeUIPrimingModalPresentedCount: Int { get }
 
     /// Determines the number of seconds since the last priming modal was presented
-    var nativeUIPrimingModalTimeSinceLastPresented: Int { get }
+    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get }
 
     /// Autoplay Videos when opening
     var autoplay: Bool { get }
@@ -279,10 +279,10 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     }
 
     /// Determines if the priming modal has been presented
-    var nativeUIPrimingModalPresentedCount: Int { return appSettings.duckPlayerNativeUIPrimingModalPresentedCount }
+    var nativeUIPrimingModalPresentedCount: Int { return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount }
 
     /// Determines the number of seconds since the last priming modal was presented
-    var nativeUIPrimingModalTimeSinceLastPresented: Int { return appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented }
+    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { return appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented }
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {

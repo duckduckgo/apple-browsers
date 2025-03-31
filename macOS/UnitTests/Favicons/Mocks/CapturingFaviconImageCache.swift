@@ -19,7 +19,6 @@
 import Common
 @testable import DuckDuckGo_Privacy_Browser
 
-@MainActor
 final class CapturingFaviconImageCache: FaviconImageCaching {
 
     init() {}
@@ -28,10 +27,12 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
 
     var loaded: Bool = false
 
+    @MainActor
     func load() async throws {
         loadCallsCount += 1
     }
 
+    @MainActor
     func insert(_ favicons: [Favicon]) {
         insertCalls.append(favicons)
     }
@@ -47,21 +48,18 @@ final class CapturingFaviconImageCache: FaviconImageCaching {
     }
 
     @MainActor
-    func cleanOldExcept(fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, completion: @escaping @MainActor () -> Void) {
+    func cleanOld(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager) async {
         cleanCallsCount += 1
-        completion()
     }
 
     @MainActor
-    func burnExcept(fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, savedLogins: Set<String>, completion: @escaping @MainActor () -> Void) {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: any BookmarkManager, savedLogins: Set<String>) async {
         burnCallsCount += 1
-        completion()
     }
 
     @MainActor
-    func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+    func burnDomains(_ baseDomains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins logins: Set<String>, exceptHistoryDomains history: Set<String>, tld: Common.TLD) async {
         burnDomainsCallsCount += 1
-        completion()
     }
 
     var loadCallsCount: Int = 0

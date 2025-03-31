@@ -24,16 +24,19 @@ struct DuckPlayerPrimingModalView: View {
     @ObservedObject var viewModel: DuckPlayerPrimingModalViewModel
     @Environment(\.colorScheme) var colorScheme
 
+    @State private var isAnimating: Bool = true
+
     private enum Constants {
         static let cornerRadius: CGFloat = 12
         static let spacing: CGFloat = 16
         static let buttonHeight: CGFloat = 50
         static let closeButtonSize: CGFloat = 14
         static let maxWidth: CGFloat = 500
-        static let imageHeight: CGFloat = 96
+        static let imageWidth: CGFloat = 40
+        static let imageHeight: CGFloat = 200
         static let contentHorizontalPadding: CGFloat = 32
         static let headerPadding: CGFloat = 16
-        static let primingImageName: String = "DuckPlayerPrimingImage"
+        static let primingImageName: String = "DuckPlayer-PrimingAnimation"
         static let closeButtonImageName: String = "xmark"
     }
 
@@ -42,11 +45,13 @@ struct DuckPlayerPrimingModalView: View {
             headerView
 
             VStack(spacing: Constants.spacing) {
-                Image(Constants.primingImageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(height: Constants.imageHeight)
-                    .cornerRadius(Constants.cornerRadius)
+                LottieView(
+                    lottieFile: Constants.primingImageName,
+                    loopMode: .mode(.loop),
+                    isAnimating: $isAnimating
+                )
+                .frame(width: Constants.imageWidth, height: Constants.imageHeight)
+                .aspectRatio(contentMode: .fit)
 
                 Text(UserText.duckPlayerNativeModalTitle)
                     .daxTitle3()
@@ -72,6 +77,7 @@ struct DuckPlayerPrimingModalView: View {
                     })
             }
             .padding(.horizontal, Constants.contentHorizontalPadding)
+            Spacer()
         }
         .background(Color(designSystemColor: .backgroundSheets))
     }

@@ -47,6 +47,10 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
         }
     }
 
+    func copyLink(_ favorite: Bookmark) {
+        favorite.copyUrlToPasteboard()
+    }
+
     func removeFavorite(_ favorite: Bookmark) {
         favorite.isFavorite = false
         bookmarkManager.update(bookmark: favorite)

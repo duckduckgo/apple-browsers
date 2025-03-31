@@ -22,6 +22,8 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
 
     private(set) var urlRequest: URLRequest
 
+    /// This is the retry policy for the request, if the request fails for some network error it will be retried up to `maxRetries` times with a delay of `delay` between each retry
+    /// The retry is not used for DDG API requests error like .badRequest or .unauthorized but only for network errors thrown by `urlSession.data(for: ...)` like .timedOut or .cannotConnectToHost
     public struct RetryPolicy: Hashable, CustomDebugStringConvertible {
         public let maxRetries: Int
         public let delay: TimeInterval
@@ -48,6 +50,7 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
     ///   - headers: HTTP headers
     ///   - body: The request body
     ///   - timeoutInterval: The request timeout interval, default is `60`s
+    ///   - retryPolicy: The request retry policy, see `RetryPolicy` for more information
     ///   - cachePolicy: The request cache policy, default is `.useProtocolCachePolicy`
     ///   - responseRequirements: The response requirements
     ///   - allowedQueryReservedCharacters: The characters in this character set will not be URL encoded in the query parameters

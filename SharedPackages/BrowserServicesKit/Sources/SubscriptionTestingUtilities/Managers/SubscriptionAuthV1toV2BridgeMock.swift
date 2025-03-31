@@ -21,6 +21,7 @@ import Common
 @testable import Subscription
 
 public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridge {
+
     public init() {}
 
     public var enabledFeatures: [Subscription.Entitlement.ProductName] = []
@@ -79,6 +80,15 @@ public final class SubscriptionAuthV1toV2BridgeMock: SubscriptionAuthV1toV2Bridg
 
     public var isUserAuthenticated: Bool {
         switch accessTokenResult {
+        case .success:
+            return true
+        case .failure:
+            return false
+        }
+    }
+
+    public func isSubscriptionPresent() -> Bool {
+        switch returnSubscription! {
         case .success:
             return true
         case .failure:

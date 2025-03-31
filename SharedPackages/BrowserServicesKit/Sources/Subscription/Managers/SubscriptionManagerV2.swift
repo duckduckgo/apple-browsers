@@ -75,6 +75,8 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     // Subscription
     @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
 
+    func isSubscriptionPresent() -> Bool
+
     /// Tries to activate a subscription using a platform signature
     /// - Parameter lastTransactionJWSRepresentation: A platform signature coming from the AppStore
     /// - Returns: A subscription if found
@@ -239,12 +241,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         do {
             if (try await oAuthClient.migrateV1Token()) != nil {
                 pixelHandler(.v1MigrationSuccessful)
-
-                // cleaning up old data
-                clearSubscriptionCache()
-
-                v1MigrationNeeded = false
             }
+            v1MigrationNeeded = false
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler(.v1MigrationFailed)
@@ -295,6 +293,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             return try await subscriptionEndpointService.getSubscription(accessToken: "",
                                                                          cachePolicy: .returnCacheDataDontLoad)
         }
+    }
+
+    public func isSubscriptionPresent() -> Bool {
+        subscriptionEndpointService.getCachedSubscription() != nil
     }
 
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> PrivacyProSubscription? {

@@ -21,8 +21,8 @@ import SwiftUI
 
 private enum Constants {
     static let cornerRadius: CGFloat = 8
-    static let backgroundColor: Color = .shade(0.9)
-    static let textColor: Color = Color(designSystemColor: .buttonsWhite)
+    static let backgroundColor: Color = .black.opacity(0.9)    
+    static let buttonColor: Color = .white.opacity(0.76)
     static let horizontalPadding: CGFloat = 20
     static let verticalPadding: CGFloat = 100
     static let height: CGFloat = 50
@@ -164,7 +164,7 @@ struct DuckPlayerToastView: View {
                             label: {
                                 Text(buttonTitle)
                                     .daxBodyBold()
-                                    .foregroundColor(Constants.textColor)
+                                    .foregroundColor(Constants.buttonColor)
                             })
                     }
                 }

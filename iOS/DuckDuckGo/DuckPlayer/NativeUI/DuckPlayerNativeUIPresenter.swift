@@ -352,7 +352,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func presentDismissCountToast() {
         var message = AttributedString(UserText.duckPlayerNativePillDismissCountToastMessage)
-        message.foregroundColor = Color(designSystemColor: .buttonsWhite)
+        message.foregroundColor = .white
         displayToast(
             with: message,
             buttonTitle: UserText.duckPlayerNativePillDismissCountToastMessageButton

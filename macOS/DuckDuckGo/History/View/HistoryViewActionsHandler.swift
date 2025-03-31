@@ -176,8 +176,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
                 NSMenuItem(title: UserText.showAllHistoryFromThisSite, action: #selector(showAllHistoryFromThisSite(_:)), target: self)
                     .withAccessibilityIdentifier("HistoryView.showAllHistoryFromThisSite")
                 NSMenuItem.separator()
-                NSMenuItem(title: UserText.copy, action: #selector(copy(_:)), target: self, representedObject: url)
-                    .withAccessibilityIdentifier("HistoryView.copy")
+                NSMenuItem(title: UserText.copyLink, action: #selector(copy(_:)), target: self, representedObject: url)
+                    .withAccessibilityIdentifier("HistoryView.copyLink")
                 if !bookmarksHandler.isUrlBookmarked(url: url) {
                     NSMenuItem(title: UserText.addToBookmarks, action: #selector(addBookmarks(_:)), target: self, representedObject: [url])
                         .withAccessibilityIdentifier("HistoryView.addBookmark")

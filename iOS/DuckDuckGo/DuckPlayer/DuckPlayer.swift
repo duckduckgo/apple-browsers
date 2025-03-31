@@ -245,7 +245,8 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - reset: Whether to reset the pill state
     ///   - animated: Whether to animate the dismissal
-    @MainActor func dismissPill(reset: Bool, animated: Bool)
+    ///   - programatic: Whether the dismissal was triggered programatically
+    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
     @MainActor func hidePillForHiddenChrome()
@@ -785,9 +786,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - reset: Whether to reset the pill state
     ///   - animated: Whether to animate the dismissal
+    ///   - programatic: Whether the dismissal was triggered programatically
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool) {
-        nativeUIPresenter.dismissPill(reset: reset, animated: animated)
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated, programatic: programatic)
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {

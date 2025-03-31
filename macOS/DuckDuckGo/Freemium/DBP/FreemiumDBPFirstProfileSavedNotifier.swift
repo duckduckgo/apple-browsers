@@ -18,7 +18,7 @@
 
 import Foundation
 import Freemium
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Subscription
 import OSLog
 

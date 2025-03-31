@@ -99,6 +99,10 @@ public struct OAuthRequest {
         let error: BodyErrorCode
     }
 
+    private struct Defaults {
+        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .seconds(2))
+    }
+
     static func ddgAuthSessionCookie(domain: String, path: String, authSessionID: String) -> HTTPCookie? {
         return HTTPCookie(properties: [
             .domain: domain,
@@ -135,7 +139,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
                                          queryItems: queryItems,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -231,7 +235,7 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie],
                                                                          contentType: .json),
                                          body: jsonBody,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 2)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
@@ -258,7 +262,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
                                          queryItems: queryItems,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
 
@@ -346,8 +350,7 @@ public struct OAuthRequest {
     // MARK: Exchange token
 
     static func exchangeToken(baseURL: URL, accessTokenV1: String, authSessionID: String) -> OAuthRequest? {
-        guard accessTokenV1.isEmpty == false,
-              authSessionID.isEmpty == false else { return nil }
+        guard !accessTokenV1.isEmpty, !authSessionID.isEmpty else { return nil }
 
         let path = "/api/auth/v2/exchange"
         guard let domain = baseURL.host,
@@ -357,7 +360,7 @@ public struct OAuthRequest {
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .post,
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie], authToken: accessTokenV1),
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request,
@@ -373,7 +376,7 @@ public struct OAuthRequest {
 
         guard let request = APIRequestV2(url: baseURL.appendingPathComponent(path),
                                          method: .get,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 2, delay: 1)) else {
+                                         retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
         return OAuthRequest(apiRequest: request,

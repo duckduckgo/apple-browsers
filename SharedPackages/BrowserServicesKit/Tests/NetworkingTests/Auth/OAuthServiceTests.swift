@@ -35,7 +35,7 @@ final class AuthServiceTests: XCTestCase {
     }
 
     var realAPISService: APIService {
-        let configuration = URLSessionConfiguration.default
+        let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieStorage = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         let urlSession = URLSession(configuration: configuration,

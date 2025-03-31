@@ -47,17 +47,37 @@ public class DefaultAPIService: APIService {
         var request = request
 
         Logger.networking.debug("Fetching: \(request.debugDescription)")
-        let (data, response) = try await fetch(for: request.urlRequest)
+
+        var result: (data: Data, response: URLResponse)
+        do {
+            result = try await urlSession.data(for: request.urlRequest)
+        } catch {
+            Logger.networking.error("Request failed: \(error.localizedDescription)\nrequest: \(request.url?.absoluteString ?? "unknown URL")")
+
+            if let retryPolicy = request.retryPolicy,
+               failureRetryCount < retryPolicy.maxRetries {
+                // It's a failure and the request must be retried
+
+                if retryPolicy.delay > 0 {
+                    Logger.networking.debug("Retrying after \(retryPolicy.delay) seconds")
+                    try? await Task.sleep(interval: retryPolicy.delay)
+                }
+                // Try again
+                return try await fetch(request: request, authAlreadyRefreshed: authAlreadyRefreshed, failureRetryCount: failureRetryCount + 1)
+            } else {
+                throw APIRequestV2.Error.urlSession(error)
+            }
+        }
 
         try Task.checkCancellation()
 
         // Check response code
-        let httpResponse = try response.asHTTPURLResponse()
+        let httpResponse = try result.response.asHTTPURLResponse()
         let responseHTTPStatus = httpResponse.httpStatus
 
-        Logger.networking.debug("Response: [\(responseHTTPStatus.rawValue, privacy: .public)] \(response.debugDescription) Data size: \(data.count) bytes")
+        Logger.networking.debug("Response: [\(responseHTTPStatus.description, privacy: .public)] \(result.response.debugDescription) Data size: \(result.data.count) bytes")
 #if DEBUG
-        if let bodyString = String(data: data, encoding: .utf8),
+        if let bodyString = String(data: result.data, encoding: .utf8),
            !bodyString.isEmpty {
             Logger.networking.debug("Response body: \(bodyString, privacy: .public)")
         }
@@ -77,26 +97,11 @@ public class DefaultAPIService: APIService {
             return try await fetch(request: request, authAlreadyRefreshed: true, failureRetryCount: failureRetryCount)
         }
 
-        // It's a failure and the request must be retried
-        if  let retryPolicy = request.retryPolicy,
-            responseHTTPStatus.isFailure,
-            responseHTTPStatus != .unauthorized, // No retries needed is unauthorised
-            failureRetryCount < retryPolicy.maxRetries {
-
-            if retryPolicy.delay > 0 {
-                Logger.networking.debug("Retrying after \(retryPolicy.delay) seconds")
-                try? await Task.sleep(interval: retryPolicy.delay)
-            }
-
-            // Try again
-            return try await fetch(request: request, authAlreadyRefreshed: authAlreadyRefreshed, failureRetryCount: failureRetryCount + 1)
-        }
-
         // It's not a failure, we check the constraints
         if !responseHTTPStatus.isFailure {
             try checkConstraints(in: httpResponse, for: request)
         }
-        return APIResponseV2(data: data, httpResponse: httpResponse)
+        return APIResponseV2(data: result.data, httpResponse: httpResponse)
     }
 
     /// Check if the response satisfies the required constraints
@@ -132,16 +137,5 @@ public class DefaultAPIService: APIService {
             }
         }
 
-    }
-
-    /// Fetch data using the class URL session, in case of error wraps it in a `APIRequestV2.Error.urlSession` error
-    /// - Parameter request: The URLRequest to fetch
-    /// - Returns: The Data fetched and the URLResponse
-    private func fetch(for request: URLRequest) async throws -> (Data, URLResponse) {
-        do {
-            return try await urlSession.data(for: request)
-        } catch let error {
-            throw APIRequestV2.Error.urlSession(error)
-        }
     }
 }

@@ -59,14 +59,6 @@ final class AIChatViewControllerManager {
         inspectableWebView = AppUserDefaults().inspectableWebViewEnabled
 #endif
 
-        // Check if the viewController is already presenting a RoundedPageSheetContainerViewController with AIChatViewController inside
-        if let presentedVC = viewController.presentedViewController as? RoundedPageSheetContainerViewController,
-           presentedVC.contentViewController is AIChatViewController {
-            return
-        } else {
-            viewController.dismiss(animated: true)
-        }
-
         let webviewConfiguration = WKWebViewConfiguration.persistent()
         let userContentController = UserContentController()
         userContentController.delegate = self

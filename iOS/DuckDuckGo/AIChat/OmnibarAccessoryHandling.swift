@@ -27,16 +27,10 @@ protocol OmnibarAccessoryHandling {
 
 struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
     let settings: AIChatSettingsProvider
-    let featureFlagger: FeatureFlagger
 
     func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        guard settings.isAIChatFeatureEnabled,
-              settings.isAIChatAddressBarUserSettingsEnabled else {
+        guard settings.isAIChatAddressBarUserSettingsEnabled else {
             return .share
-        }
-
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            return (url?.isDuckDuckGoSearch == false) ? .share : .chat
         }
 
         return (url?.isDuckDuckGoSearch == true) ? .chat : .share

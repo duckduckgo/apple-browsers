@@ -79,7 +79,7 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
 
     // MARK: - Pinned Tabs Setting Migration
 
-    @UserDefaultsWrapper(key: .pinnedTabsMigrated, defaultValue: true)
+    @UserDefaultsWrapper(key: .pinnedTabsMigrated, defaultValue: false)
     var pinnedTabsMigrated: Bool
 
     func migratePinnedTabsSettingIfNecessary(_ collection: TabCollection?) {

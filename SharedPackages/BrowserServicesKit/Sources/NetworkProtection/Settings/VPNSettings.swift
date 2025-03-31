@@ -381,7 +381,7 @@ public final class VPNSettings {
         }
     }
 #endif
-    
+
     // MARK: - DNS Settings
 
     public var dnsSettingsPublisher: AnyPublisher<NetworkProtectionDNSSettings, Never> {

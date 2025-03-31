@@ -136,6 +136,7 @@ extension TabCollectionViewModelTests {
 
         tabCollectionViewModel.remove(at: .unpinned(5)) /// We remove the parent tab
         tabCollectionViewModel.select(at: .unpinned(0)) /// We select the first normal tab
+        tabCollectionViewModel.select(at: .unpinned(5)) /// We select the first 'orphan' child tab (Tab A)
         tabCollectionViewModel.remove(at: .unpinned(5)) /// We remove the first 'orphan' child tab (Tab A)
 
         /// The selected tab should be Child B given that is the child tab next to the closed one that shared the same parent
@@ -143,7 +144,7 @@ extension TabCollectionViewModelTests {
     }
 
     @MainActor
-    func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyOpenedTab() {
+    func testFindNextTabWhenNoParentOrChildIsInvoled_shouldReturnToPreviouslyActiveTab() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
 
@@ -160,12 +161,78 @@ extension TabCollectionViewModelTests {
         /// So the previous child tab should be selected.
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, firstTab)
     }
+
+    @MainActor
+    func testWhenRecentlyOpenedTabIsClosedAfterMoving_thenItReturnsToPreviouslyActiveTab() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+
+        for _ in 1..<100 {
+            tabCollectionViewModel.append(tab: Tab(), selected: false)
+        }
+
+        let lastTab = Tab()
+        tabCollectionViewModel.append(tab: lastTab, selected: true)
+        tabCollectionViewModel.moveTab(at: 100, to: 50)
+
+        tabCollectionViewModel.remove(at: .unpinned(50))
+
+        /// We have a tab and we open 99 tabs more without selecting them.
+        /// So the previous child tab should be selected.
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, firstTab)
+    }
+
+    @MainActor
+    func testWhenRecentlyOpenedTabIsClosedAfterAnotherTabIsSelected_thenItSelectsTheNextAvailableTab() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let firstTab = tabCollectionViewModel.tabCollection.tabs[0]
+
+        for _ in 1..<100 {
+            tabCollectionViewModel.append(tab: Tab(), selected: false)
+        }
+
+        let lastTab = Tab()
+        tabCollectionViewModel.append(tab: lastTab, selected: true)
+
+        /// We select another tab
+        tabCollectionViewModel.select(at: .unpinned(20))
+        /// We go back to the last opened tab and we remove it
+        tabCollectionViewModel.select(at: .unpinned(100))
+        tabCollectionViewModel.remove(at: .unpinned(100))
+
+        /// We have a tab and we open 99 tabs more without selecting them.
+        /// So the previous child tab should be selected.
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(99))
+    }
+
+    @MainActor
+    func testWhenWeCloseATabThatIsNotActive_thenTheSelectedTabShouldNotChange() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let parentTab = tabCollectionViewModel.tabCollection.tabs[0]
+        let childTab1 = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childTab1, selected: false)
+        let childTab2 = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childTab2, selected: false)
+        let childTab3 = Tab(parentTab: parentTab)
+        tabCollectionViewModel.append(tab: childTab3, selected: false)
+
+        let noRelatedTab = Tab()
+        tabCollectionViewModel.append(tab: noRelatedTab, selected: true)
+
+        tabCollectionViewModel.remove(at: .unpinned(2))
+        tabCollectionViewModel.remove(at: .unpinned(1))
+
+        /// We create a parent tab with three children. Then we create a normal tab and we close two child tabs without
+        /// selecting them. Giving that the two child tabs are not active, we shouldn't apply any logic, because we need to
+        /// stay in the current active tab.
+        XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, noRelatedTab)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {
 
     static func aTabCollectionViewModel() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
-        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManager: nil)
+        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
     }
 }

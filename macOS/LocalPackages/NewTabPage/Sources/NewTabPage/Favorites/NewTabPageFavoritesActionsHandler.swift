@@ -33,6 +33,8 @@ public protocol FavoritesActionsHandling {
     @MainActor func addNewFavorite()
     @MainActor func edit(_ favorite: FavoriteType)
 
+    func copyLink(_ favorite: FavoriteType)
+
     func removeFavorite(_ favorite: FavoriteType)
     func deleteBookmark(for favorite: FavoriteType)
     func move(_ favoriteID: String, toIndex: Int)

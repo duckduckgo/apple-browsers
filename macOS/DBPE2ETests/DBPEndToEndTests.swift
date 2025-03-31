@@ -16,8 +16,8 @@
 //  limitations under the License.
 //
 
-@testable import DataBrokerProtection
-@testable import DataBrokerProtectionShared
+@testable import DataBrokerProtection_macOS
+@testable import DataBrokerProtectionCore
 import BrowserServicesKit
 import LoginItems
 import XCTest

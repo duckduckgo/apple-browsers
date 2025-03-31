@@ -49,10 +49,10 @@ PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckdu
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct com.duckduckgo.macos.vpn macos
 
-FEATURE_FLAGS[arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=CI][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=Debug][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=Review][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
+FEATURE_FLAGS[arch=*][sdk=*] =
+FEATURE_FLAGS[config=CI][arch=*][sdk=*] =
+FEATURE_FLAGS[config=Debug][arch=*][sdk=*] =
+FEATURE_FLAGS[config=Review][arch=*][sdk=*] =
 
 SWIFT_OBJC_BRIDGING_HEADER =
 SKIP_INSTALL = YES

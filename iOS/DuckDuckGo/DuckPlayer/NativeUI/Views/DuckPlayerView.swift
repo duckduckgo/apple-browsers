@@ -17,18 +17,18 @@
 //  limitations under the License.
 //
 
-import SwiftUI
-import Foundation
 import DesignResourcesKit
+import Foundation
+import SwiftUI
 
 struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
-    
+
     // Local state for auto open on Youtube toggle
     @State private var autoOpenOnYoutube: Bool = false
-    
+
     // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
@@ -37,7 +37,7 @@ struct DuckPlayerView: View {
         static let headerHeight: CGFloat = 56
         static let iconSize: CGFloat = 32
         static let cornerRadius: CGFloat = 12
-        static let horizontalPadding: CGFloat = 12
+        static let horizontalPadding: CGFloat = 16
         static let daxLogoSize: CGFloat = 24.0
         static let daxLogo = "Home"
         static let duckPlayerImage: String = "DuckPlayer"
@@ -53,7 +53,7 @@ struct DuckPlayerView: View {
         ZStack {
             // Background with blur effect
             Color(.black)
-            .edgesIgnoringSafeArea(.all)
+                .edgesIgnoringSafeArea(.all)
 
             VStack(spacing: 0) {
                 // Grab Handle
@@ -89,12 +89,11 @@ struct DuckPlayerView: View {
                 // Show only if the source is youtube and the toggle should be visible
                 if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
                     ZStack {
-                         RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 8)
                             .fill(Color.gray.opacity(0.2))
                         HStack(spacing: 8) {
                             Text(UserText.duckPlayerNativeAutoOpenLabel)
-                                .daxButton()
-                                .daxBodyBold()
+                                .daxBodyRegular()
                                 .foregroundColor(.white)
                             Spacer()
                             Toggle(isOn: $autoOpenOnYoutube) {}
@@ -112,24 +111,23 @@ struct DuckPlayerView: View {
                 }
 
                 if viewModel.shouldShowYouTubeButton {
-                    HStack(spacing: 8) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.gray.opacity(0.2))
                         Button {
                             viewModel.openInYouTube()
                         } label: {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.2))
-                                HStack(spacing: 8) {
-                                    Image(Constants.duckPlayerYoutubeImage)
-                                        .renderingMode(.template)
-                                        .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
-                                    Text(UserText.duckPlayerNativeWatchOnYouTube)
-                                        .daxButton()
-                                        .daxBodyRegular()
-                                        .foregroundColor(.white)
-                                }
+                            HStack(spacing: 8) {
+                                Text(UserText.duckPlayerNativeWatchOnYouTube)
+                                    .daxBodyRegular()
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(Constants.duckPlayerYoutubeImage)
+                                    .renderingMode(.template)
+                                    .foregroundColor(.white)
+                                    .frame(width: 24, height: 24)
                             }
+                            .padding(.horizontal, Constants.horizontalPadding)
                         }
                     }
                     .frame(height: Constants.bottomButtonHeight)
@@ -139,7 +137,6 @@ struct DuckPlayerView: View {
                 } else {
                     Spacer()
                 }
-
             }
         }
         .gesture(
@@ -194,7 +191,7 @@ struct DuckPlayerView: View {
             } label: {
                 ZStack {
                     Image(Constants.duckPlayerSettingsImage)
-                    .foregroundColor(.white)
+                        .foregroundColor(.white)
                 }
             }
 
@@ -214,12 +211,14 @@ struct DuckPlayerView: View {
             Spacer()
 
             // Close Button
-            Button(action: { dismiss() }, label: {
-                Image(systemName: "xmark")
-                    .foregroundColor(.white)
-                    .font(.system(size: 20, weight: .medium))
-                    .frame(width: 44, height: 44) // Larger touch target
-            })
+            Button(
+                action: { dismiss() },
+                label: {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.white)
+                        .font(.system(size: 20, weight: .black))
+                        .frame(width: 44, height: 44)  // Larger touch target
+                })
         }
         .padding(.horizontal, Constants.horizontalPadding)
     }

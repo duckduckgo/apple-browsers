@@ -2,17 +2,17 @@ name: BSK - PR Checks
 
 defaults:
   run:
-    working-directory: BrowserServicesKit
+    working-directory: SharedPackages/BrowserServicesKit
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
 
 jobs:
 
@@ -38,7 +38,7 @@ jobs:
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
             # hashFiles does not respect the working directory, so the full path must be specified
-            echo "cache_key_hash=${{ hashFiles('BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -48,10 +48,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            BrowserServicesKit/.build/artifacts
-            BrowserServicesKit/.build/checkouts
-            BrowserServicesKit/.build/repositories
-            BrowserServicesKit/.build/workspace-state.json
+            SharedPackages/BrowserServicesKit/.build/artifacts
+            SharedPackages/BrowserServicesKit/.build/checkouts
+            SharedPackages/BrowserServicesKit/.build/repositories
+            SharedPackages/BrowserServicesKit/.build/workspace-state.json
           key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-
@@ -70,7 +70,7 @@ jobs:
         if: always()
         with:
           check_name: Test Report (macOS)
-          report_paths: BrowserServicesKit/package-tests.xml
+          report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: true
 
@@ -92,7 +92,7 @@ jobs:
         if: always()
         with:
           name: build-log.txt
-          path: BrowserServicesKit/build-log.txt
+          path: SharedPackages/BrowserServicesKit/build-log.txt
 
       - name: Fetch latest commit author
         if: always() && github.ref_name == 'main'
@@ -122,7 +122,7 @@ jobs:
         run: |
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
-            echo "cache_key_hash=${{ hashFiles('BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -131,7 +131,7 @@ jobs:
         if: env.cache_key_hash
         uses: actions/cache@v4
         with:
-          path: BrowserServicesKit/DerivedData/SourcePackages
+          path: SharedPackages/BrowserServicesKit/DerivedData/SourcePackages
           key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-ios-
@@ -171,7 +171,7 @@ jobs:
         if: always()
         with:
           check_name: Test Report (iOS)
-          report_paths: BrowserServicesKit/bsk-ios-unittests.xml
+          report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
 
       - name: Update Asana with failed unit tests
@@ -192,7 +192,7 @@ jobs:
         if: always()
         with:
           name: ios-build-log.txt
-          path: BrowserServicesKit/ios-build-log.txt
+          path: SharedPackages/BrowserServicesKit/ios-build-log.txt
 
   create-asana-task:
     name: Create Asana Task

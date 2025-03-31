@@ -268,7 +268,8 @@ extension TabSwitcherViewController {
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
                            totalTabsCount: tabsModel.count,
-                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }))
+                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
+                           showAIChatButton: aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
 
         topBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
@@ -332,7 +333,7 @@ extension TabSwitcherViewController {
             ].compactMap { $0 })
         ]
 
-        barsHandler.canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
+        canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
 
         let deferredElement = UIDeferredMenuElement.uncached { completion in
             Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
@@ -470,12 +471,18 @@ extension TabSwitcherViewController {
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
-        barsHandler.menuButton.isEnabled = barsHandler.canShowSelectionMenu
+        barsHandler.menuButton.isEnabled = canShowSelectionMenu
 
         barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
             self?.closeSelectedTabs()
         }
+
+        barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
+        barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
+            Pixel.fire(pixel: .openAIChatFromTabManager)
+            self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
+        })
     }
 
 }

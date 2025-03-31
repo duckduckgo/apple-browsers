@@ -42,6 +42,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209150117333883/f
     case networkProtectionAppExclusions
 
+    /// https://app.asana.com/0/0/1209402073283584
+    case networkProtectionAppStoreSysex
+
+    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    case networkProtectionAppStoreSysexMessage
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -59,6 +65,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
+
+    /// https://app.asana.com/0/72649045549333/1209633877674689/f
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -82,6 +91,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autofillPartialFormSaves,
                 .autcompleteTabs,
                 .networkProtectionAppExclusions,
+                .networkProtectionAppStoreSysex,
+                .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection,
                 .syncSeamlessAccountSwitching,
                 .historyView,
@@ -89,7 +100,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autoUpdateInDEBUG,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
-                .scamSiteProtection:
+                .scamSiteProtection,
+                .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -123,6 +135,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
+        case .networkProtectionAppStoreSysex:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
+        case .networkProtectionAppStoreSysexMessage:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
@@ -143,6 +159,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         case .privacyProAuthV2:
             return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         }
     }
 }

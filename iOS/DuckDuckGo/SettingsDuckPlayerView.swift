@@ -101,7 +101,7 @@ struct SettingsDuckPlayerView: View {
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                     }
 
-                    Section {
+                    Section(footer: Text(UserText.duckPlayerNativeAutoplayVideosDescription)) {
                         SettingsCellView(label: UserText.duckPlayerNativeAutoplayVideos,
                                         accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)

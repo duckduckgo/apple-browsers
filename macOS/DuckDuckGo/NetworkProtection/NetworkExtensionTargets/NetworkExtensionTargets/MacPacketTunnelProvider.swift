@@ -434,7 +434,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         subscriptionEnvironment.purchasePlatform = .stripe
         Logger.networkProtection.debug("Subscription ServiceEnvironment: \(subscriptionEnvironment.serviceEnvironment.rawValue, privacy: .public)")
 
-        let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
         let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
         let controllerErrorStore = NetworkProtectionTunnelErrorStore(notificationCenter: notificationCenter)
         let debugEvents = Self.networkProtectionDebugEvents(controllerErrorStore: controllerErrorStore)
@@ -448,6 +447,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             assertionFailure("Should not be called")
             return nil
         })
+        let subscriptionUserDefaults = UserDefaults(suiteName: MacPacketTunnelProvider.subscriptionsAppGroup)!
         let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
@@ -506,9 +506,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             } else {
                 Logger.networkProtection.log("Using Auth V2")
                 do {
-                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
-                    Logger.networkProtection.log("Network protection is \( isNetworkProtectionEnabled ? "🟢 Enabled" : "⚫️ Disabled", privacy: .public)")
-                    return .success(isNetworkProtectionEnabled)
+                    let token = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    return .success(token.decodedAccessToken.hasEntitlement(.networkProtection))
                 } catch {
                     return .failure(error)
                 }
@@ -717,8 +716,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let source: String
 
-#if NETP_SYSTEM_EXTENSION
+#if NETP_SYSTEM_EXTENSION && !APPSTORE
         source = "vpnSystemExtension"
+#elseif NETP_SYSTEM_EXTENSION && APPSTORE
+        source = "vpnSystemExtensionAppStore"
 #else
         source = "vpnAppExtension"
 #endif

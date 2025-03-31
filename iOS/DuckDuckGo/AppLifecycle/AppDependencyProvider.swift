@@ -56,6 +56,7 @@ protocol DependencyProvider {
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
+    var isAuthV2Enabled: Bool { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -82,7 +83,8 @@ final class AppDependencyProvider: DependencyProvider {
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     var subscriptionManager: (any SubscriptionManager)?
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
-
+    let isAuthV2Enabled: Bool
+    
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
     let networkProtectionTunnelController: NetworkProtectionTunnelController
@@ -93,7 +95,6 @@ final class AppDependencyProvider: DependencyProvider {
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let isAuthV2Enabled: Bool
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -247,7 +248,6 @@ final class AppDependencyProvider: DependencyProvider {
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
 
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
         vpnFeatureVisibility = DefaultNetworkProtectionVisibility(authenticationStateProvider: authenticationStateProvider)
         networkProtectionKeychainTokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,

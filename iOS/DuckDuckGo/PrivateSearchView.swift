@@ -35,7 +35,9 @@ struct PrivateSearchView: View {
     var body: some View {
         List {
             PrivacyProtectionDescriptionView(content: description)
+                .listRowBackground(Color(designSystemColor: .surface))
             PrivateSearchViewSettings()
+                .listRowBackground(Color(designSystemColor: .surface))
         }
         .applySettingsListModifiers(title: UserText.privateSearch,
                                     displayMode: .inline,

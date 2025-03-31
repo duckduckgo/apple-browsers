@@ -48,14 +48,14 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     private let contextualOnboardingSettings: ContextualOnboardingSettings
     private let contextualOnboardingPixelReporter: OnboardingPixelReporting
     private let contextualOnboardingSiteSuggestionsProvider: OnboardingSuggestionsItemsProviding
-    private let onboardingManager: OnboardingAddToDockManaging
+    private let onboardingManager: OnboardingManaging
 
     init(
         contextualOnboardingLogic: ContextualOnboardingLogic,
         contextualOnboardingSettings: ContextualOnboardingSettings = DefaultDaxDialogsSettings(),
         contextualOnboardingPixelReporter: OnboardingPixelReporting,
         contextualOnboardingSiteSuggestionsProvider: OnboardingSuggestionsItemsProviding = OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-        onboardingManager: OnboardingAddToDockManaging = OnboardingManager()
+        onboardingManager: OnboardingManaging = OnboardingManager()
     ) {
         self.contextualOnboardingSettings = contextualOnboardingSettings
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -176,47 +176,20 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     }
 
     private func endOfJourneyDialog(delegate: ContextualOnboardingDelegate, pixelName: Pixel.Event) -> some View {
-        let shouldShowAddToDock = onboardingManager.addToDockEnabledState == .contextual
-
-        let (message, cta) = if shouldShowAddToDock {
-            (UserText.AddToDockOnboarding.Promo.contextualMessage, UserText.AddToDockOnboarding.Buttons.startBrowsing)
-        } else {
-            (
-                UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-                UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton
-            )
-        }
-
-        let showAddToDockTutorialAction: () -> Void = { [weak self] in
-            self?.contextualOnboardingPixelReporter.measureAddToDockPromoShowTutorialCTAAction()
-        }
-
-        let dismissAction = { [weak delegate, weak self] isDismissedFromAddToDockTutorial in
+        let dismissAction = { [weak delegate, weak self] in
             delegate?.didTapDismissContextualOnboardingAction()
-            if isDismissedFromAddToDockTutorial {
-                self?.contextualOnboardingPixelReporter.measureAddToDockTutorialDismissCTAAction()
-            } else {
-                self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                if shouldShowAddToDock {
-                    self?.contextualOnboardingPixelReporter.measureAddToDockPromoDismissCTAAction()
-                }
-            }
+            self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
         }
 
         return OnboardingFinalDialog(
             logoPosition: .left,
-            message: message,
-            cta: cta,
-            canShowAddToDockTutorial: shouldShowAddToDock,
-            showAddToDockTutorialAction: showAddToDockTutorialAction,
+            message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+            cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
             dismissAction: dismissAction
         )
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()
             self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
-            if shouldShowAddToDock {
-                self?.contextualOnboardingPixelReporter.measureAddToDockPromoImpression()
-            }
         }
     }
 

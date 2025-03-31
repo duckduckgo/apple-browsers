@@ -119,7 +119,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        variantManager: variantManager,
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
-                                                       appTheme: appSettings.currentThemeName.rawValue,
+                                                       appTheme: appSettings.currentThemeStyle.rawValue,
                                                        isWidgetInstalled: await appSettings.isWidgetInstalled(),
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
                                                        isPrivacyProEligibleUser: isPrivacyProEligibleUser,

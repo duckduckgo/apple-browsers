@@ -266,13 +266,13 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill(reset: true, animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             return .notHandled(.invalidURL)
         }
 
         // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill(reset: true, animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -283,7 +283,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
-            duckPlayer.dismissPill(reset: true, animated: false)
+            duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
             return .notHandled(.duckPlayerDisabled)
         }
 
@@ -454,7 +454,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles DuckPlayer Updates when WebView dissapears
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
-        duckPlayer.dismissPill(reset: false, animated: false)
+        duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
     }
 
 }

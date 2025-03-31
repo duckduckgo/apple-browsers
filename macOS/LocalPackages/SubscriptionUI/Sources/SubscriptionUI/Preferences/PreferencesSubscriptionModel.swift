@@ -553,12 +553,20 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
 
         return Publishers.CombineLatest3($isUserAuthenticated, isSubscriptionActivePublisher, hasAnyEntitlementPublisher)
             .map { isUserAuthenticated, isSubscriptionActive, hasAnyEntitlement in
+                Logger.subscription.debug("""
+Update subscription state:
+isUserAuthenticated: \(isUserAuthenticated)
+isSubscriptionActive: \(isSubscriptionActive)
+hasAnyEntitlement: \(hasAnyEntitlement)
+""")
                 switch (isUserAuthenticated, isSubscriptionActive, hasAnyEntitlement) {
                 case (false, _, _): return PreferencesSubscriptionState.noSubscription
                 case (true, false, _):
                     switch self.subscriptionStatus {
                     case .expired, .inactive:
                         return PreferencesSubscriptionState.subscriptionExpired
+                    case .unknown:
+                        return PreferencesSubscriptionState.noSubscription
                     default:
                         return PreferencesSubscriptionState.subscriptionPendingActivation
                     }

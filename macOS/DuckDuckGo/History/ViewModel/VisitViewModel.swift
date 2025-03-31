@@ -24,8 +24,7 @@ final class VisitViewModel {
     let visit: Visit
     let faviconManager: FaviconManagement
 
-    init(visit: Visit,
-         faviconManager: FaviconManagement = FaviconManager.shared) {
+    init(visit: Visit, faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.visit = visit
         self.faviconManager = faviconManager
     }
@@ -43,7 +42,7 @@ final class VisitViewModel {
         title.truncated(length: MainMenu.Constants.maxTitleLength)
     }
 
-    @MainActor(unsafe)
+    @MainActor
     var smallFaviconImage: NSImage? {
         guard let historyEntry = visit.historyEntry else {
             assertionFailure("History entry already deallocated")

@@ -45,7 +45,7 @@ enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
 protocol AppSettings: AnyObject {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
-    var currentThemeName: ThemeName { get set }
+    var currentThemeStyle: ThemeStyle { get set }
     
     var autoClearAction: AutoClearSettingsModel.Action { get set }
     var autoClearTiming: AutoClearSettingsModel.Timing { get set }
@@ -92,6 +92,7 @@ protocol AppSettings: AnyObject {
     var duckPlayerAutoplay: Bool { get set }
     var duckPlayerNativeUISERPEnabled: Bool { get set }
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
-    var duckPlayerNativeUIPrimingModalPresentedCount: Int { get set }
+    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get set }
+    var duckPlayerPillDismissCount: Int { get set }
 }

@@ -97,7 +97,7 @@ final class Fire {
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
          windowControllerManager: WindowControllersManager? = nil,
-         faviconManagement: FaviconManagement = FaviconManager.shared,
+         faviconManagement: FaviconManagement? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
@@ -116,7 +116,7 @@ final class Fire {
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
         self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
-        self.faviconManagement = faviconManagement
+        self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
         self.bookmarkManager = bookmarkManager
@@ -477,24 +477,25 @@ final class Fire {
         return Set(accounts.compactMap { $0.domain })
     }
 
-    @MainActor
     private func burnFavicons(completion: @escaping () -> Void) {
-        let autofillDomains = autofillDomains()
-        self.faviconManagement.burnExcept(fireproofDomains: FireproofDomains.shared,
-                                          bookmarkManager: LocalBookmarkManager.shared,
-                                          savedLogins: autofillDomains,
-                                          completion: completion)
+        Task { @MainActor in
+            await self.faviconManagement.burn(except: FireproofDomains.shared,
+                                              bookmarkManager: LocalBookmarkManager.shared,
+                                              savedLogins: autofillDomains())
+            completion()
+        }
     }
 
     @MainActor
     private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
-        let autofillDomains = autofillDomains()
-        self.faviconManagement.burnDomains(baseDomains,
-                                           exceptBookmarks: LocalBookmarkManager.shared,
-                                           exceptSavedLogins: autofillDomains,
-                                           exceptExistingHistory: historyCoordinating.history ?? [],
-                                           tld: tld,
-                                           completion: completion)
+        Task { @MainActor in
+            await self.faviconManagement.burnDomains(baseDomains,
+                                                     exceptBookmarks: LocalBookmarkManager.shared,
+                                                     exceptSavedLogins: autofillDomains(),
+                                                     exceptExistingHistory: historyCoordinating.history ?? [],
+                                                     tld: tld)
+            completion()
+        }
     }
 
     // MARK: - Tabs

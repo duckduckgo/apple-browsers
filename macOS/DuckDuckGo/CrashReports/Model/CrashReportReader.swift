@@ -33,14 +33,12 @@ final class CrashReportReader {
             return []
         }
 
-#if NETP_SYSTEM_EXTENSION
         do {
             let systemPaths = try FileManager.default.contentsOfDirectory(at: FileManager.systemDiagnosticReports, includingPropertiesForKeys: nil)
             allPaths.append(contentsOf: systemPaths)
         } catch {
             assertionFailure("Failed to read system crash reports: \(error)")
         }
-#endif
 
         let filteredPaths = allPaths.filter({
             isCrashReportPath($0) && belongsToThisApp($0) && isFile(at: $0, newerThan: lastCheckDate)

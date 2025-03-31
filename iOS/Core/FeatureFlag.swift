@@ -50,10 +50,6 @@ public enum FeatureFlag: String {
     case autcompleteTabs
     case textZoom
     case adAttributionReporting
-    case aiChat
-    case aiChatBrowsingToolbarShortcut
-    case aiChatAddressBarShortcut
-    case aiChatDeepLink
     case tabManagerMultiSelection
     
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
@@ -68,12 +64,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/72649045549333/1208944782348823/f
     case syncSeamlessAccountSwitching
 
-    /// https://app.asana.com/0/1204167627774280/1209205869217377
-    case aiChatNewTabPage
-
-    /// https://app.asana.com/0/1204167627774280/1209370532515589
-    case aiChatVoiceSearch
-
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
@@ -87,8 +77,6 @@ public enum FeatureFlag: String {
     /// Umbrella flag for experimental browser theming and appearance
     /// https://app.asana.com/0/1206226850447395/1209291055975934
     case experimentalBrowserTheming
-
-    case alternativeColorScheme
 
     /// https://app.asana.com/0/1206488453854252/1208706841336530
     case privacyProOnboardingCTAMarch25
@@ -122,7 +110,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-                .alternativeColorScheme,
                 .experimentalBrowserTheming,
                 .privacyProOnboardingCTAMarch25,
                 .networkProtectionRiskyDomainsProtection,
@@ -208,24 +195,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProFreeTrialJan25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .aiChat:
-            return .remoteReleasable(.feature(.aiChat))
-        case .aiChatDeepLink:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.deepLink))
         case .tabManagerMultiSelection:
             return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-        case .aiChatNewTabPage:
-            return .enabled
-        case .aiChatVoiceSearch:
-            return .enabled
-        case .aiChatBrowsingToolbarShortcut:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.browsingToolbarShortcut))
-        case .aiChatAddressBarShortcut:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.addressBarShortcut))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
         case .scamSiteProtection:
@@ -234,8 +209,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
-        case .alternativeColorScheme:
-            return .internalOnly()
         case .privacyProOnboardingCTAMarch25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
 

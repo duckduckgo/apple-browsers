@@ -124,7 +124,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
-    case otherPlatforms = "https://duckduckgo.com/app?origin=funnel_app_macos"
+    case otherPlatforms = "https://duckduckgo.com/app/devices?origin=funnel_app_macos"
     case aiChat = "aichat"
     case about
 

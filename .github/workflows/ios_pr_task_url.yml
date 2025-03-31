@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, edited, closed, synchronize, review_requested, ready_for_review]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
 
 jobs:

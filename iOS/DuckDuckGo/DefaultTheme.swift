@@ -24,8 +24,6 @@ import DesignResourcesKit
 //  * and it uses the design system, please put it in Theme+DesignSystem instead
 //  * and it doesn't use the design, please only do so with designer approval
 struct DefaultTheme: Theme {
-    let name = ThemeName.systemDefault
-
     let statusBarStyle: UIStatusBarStyle = .default
     let keyboardAppearance: UIKeyboardAppearance = .default
     let activityStyle: UIActivityIndicatorView.Style = .medium

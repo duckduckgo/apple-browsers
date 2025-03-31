@@ -205,9 +205,9 @@ public struct UserText {
     // Accessibility label - DO NOT LOCALISE
     public static let bookmarkAllTabs = NotLocalizedString("bookmarkAll.tabs.label", value: "Add all tabs as bookmarks", comment: "Accessibility label")
 
-    public static let themeNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
-    public static let themeNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
-    public static let themeNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
+    public static let themeStyleNameDefault = NSLocalizedString("theme.name.default", value: "System Default", comment: "Entry for Default System theme")
+    public static let themeStyleNameLight = NSLocalizedString("theme.name.light", value: "Light", comment: "Light Theme entry")
+    public static let themeStyleNameDark = NSLocalizedString("theme.name.dark", value: "Dark", comment: "Dark Theme entry")
     
     public static let themeAccessoryDefault = NSLocalizedString("theme.acc.default", value: "System", comment: "Short entry for Default System theme")
     public static let themeAccessoryLight = NSLocalizedString("theme.acc.light", value: "Light", comment: "Light Theme entry")
@@ -1252,8 +1252,13 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsAddressBar = NSLocalizedString("settings.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let settingsExperimentalSection = NotLocalizedString("settings.experimental.section.title", value: "Experimental theming (internal only) ", comment: "Settings screen section title for experimental features")
+    public static let settingsExperimentalSectionFooter = NotLocalizedString(
+        "settings.experimental.section.footer",
+        value: "App restart is required to apply changes",
+        comment: "Settings screen section footer text for experimental features"
+    )
     public static let settingsExperimentalMainSwitch = NotLocalizedString("settings.experimental.main.switch", value: "Experimental appearance", comment: "Settings screen cell title for experimental main switch")
-    public static let settingsExperimentalColorsSwitch = NotLocalizedString("settings.experimental.colors.switch", value: "Alternative colors", comment: "Settings screen cell title for experimental colors switch")
+    public static let settingsExperimentalWarmColorsSwitch = NotLocalizedString("settings.experimental.warm.colors.switch", value: "Use warm colors set", comment: "Settings screen cell title for experimental warm colors switch")
 
     // Privacy Section
     public static let settingsPrivacySection = NSLocalizedString("settings.privacy", value: "Privacy", comment: "Settings title for the privacy section")
@@ -1545,22 +1550,26 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
     // Duck Player Native UI
-    static let duckPlayerNativeWatchOnYouTube = NSLocalizedString("duck-player.native-watch-on-youtube", value: "Watch in Youtube", comment: "Text for the button to watch a video on YouTube")
-    static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
-    static let duckPlayerNativeOpenInDuckPlayer = NSLocalizedString("duck-player.native-open-in-duckplayer", value: "Duck Player", comment: "Text for the button to watch a video on DuckPlayer")
-    public static let duckPlayerTapToWatchWithoutAds = NSLocalizedString("duckplayer.pill.watch.without.ads", value: "Tap to watch without targeted ads", comment: "Caption for Duck Player entry point")
-    public static let duckPlayerNativeUseOnSERPLabel = NSLocalizedString("duckPlayerNative.use.on.serp.label", value: "Use on Search Results", comment: "Label for the use DuckPlayer on SERP toggle")
-    public static let duckPlayerNativeUseOnSERPFooter = NSLocalizedString("duckPlayerNative.use.on.serp.footer", value: "YouTube videos on DuckDuckGo search results will open in Duck Player.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    static let duckPlayerNativeWatchOnYouTube = NSLocalizedString("duck-player.native-watch-on-youtube", value: "Watch in Youtube", comment: "Text for the button to watch a video on YouTube")    
+    static let duckPlayerNativeOpenInDuckPlayer = NSLocalizedString("duck-player.native-open-in-duckplayer", value: "Play this video in Duck Player", comment: "Text for the button to watch a video on DuckPlayer")
+    static let duckPlayerNativeResumeInDuckPlayer = NSLocalizedString("duck-player.native-resume-in-duckplayer", value: "Resume in Duck Player", comment: "Text for the button to resume watching a video on DuckPlayer")
+    public static let duckPlayerTapToWatchWithoutAds = NSLocalizedString("duckplayer.pill.watch.without.ads", value: "No targeted ads, always private", comment: "Caption for Duck Player entry point")
+    public static let duckPlayerNativeUseOnSERPLabel = NSLocalizedString("duckPlayerNative.use.on.serp.label", value: "DuckDuckGo Search Results", comment: "Label for the use DuckPlayer on SERP toggle")
+    public static let duckPlayerNativeUseOnSERPFooter = NSLocalizedString("duckPlayerNative.use.on.serp.footer", value: "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
     public static let duckPlayerNativeUseOnYoutubeLabel = NSLocalizedString("duckPlayerNative.use.on.youtube.label", value: "Use on Youtube.com", comment: "Label for the use DuckPlayer on Youtube toggle")
-    public static let duckPlayerNativeUseOnYoutubeFooter = NSLocalizedString("duckPlayerNative.use.on.youtube.footer", value: "Makes Duck Player available on Youtube video pages.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
+    public static let duckPlayerNativeUseOnYoutubeFooter = NSLocalizedString("duckPlayerNative.use.on.youtube.footer", value: "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.", comment: "Label for the use DuckPlayer on Youtube toggle footer")
     public static let duckPlayerNativeYoutubeAutoLabel = NSLocalizedString("duckPlayerNative.auto.label", value: "Automatically", comment: "Text displayed when DuckPlayer is automatically enabled for Youtube")
     public static let duckPlayerNativeYoutubeAskLabel = NSLocalizedString("duckPlayerNative.ask.label", value: "Let me choose", comment: "Text displayed when DuckPlayer is in 'Ask' mode for Youtube.")
     public static let duckPlayerNativeYoutubeNeverLabel = NSLocalizedString("duckPlayerNative.never.label", value: "Don't Show", comment: "Text displayed when DuckPlayer is in off for youtube.")
     public static let duckPlayerNativeAutoOpenLabel = NSLocalizedString("duckPlayerNative.auto.open.label", value: "Auto-open Duck Player on Youtube", comment: "Label for the automatic youtube video opening")
-    
-    public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Try Duck Player Mode for a private YouTube experience with DuckDuckGo", comment: "Title for DuckPlayer priming modal")
-    public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Watch YouTube without targeted ads or influencing your recommendations.", comment: "Description for DuckPlayer priming modal")
+    static let duckPlayerNativeAutoplayVideos = NSLocalizedString("duck-player.native-autoplay-videos", value: "Autoplay Videos", comment: "Text for the toggle to autoplay videos")
+    static let duckPlayerNativeAutoplayVideosDescription = NSLocalizedString("duck-player.native-autoplay-videos.description", value: "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.", comment: "Text for the description about autoplay videos")
+
+    public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Play this video in Duck Player to watch without targeted ads!", comment: "Title for DuckPlayer priming modal")
+    public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.", comment: "Description for DuckPlayer priming modal")
     public static let duckPlayerNativeModalCTA = NSLocalizedString("duckPlayerNative.modal.cta", value: "Watch Now Privately", comment: "CTA for DuckPlayer priming modal")
+    public static let duckPlayerNativePillDismissCountToastMessage = NSLocalizedString("duckPlayer.pill.dismiss.count.toast.message", value: "Want to turn off Duck Player appearing on Youtube?", comment: "Toast message for the Duck Player entry pill dismiss count")
+    public static let duckPlayerNativePillDismissCountToastMessageButton = NSLocalizedString("duckPlayer.pill.dismiss.count.toast.message.button", value: "Open Settings", comment: "Button on Toast message for the Duck Player entry pill dismiss count")
 
     // MARK: - AI Chat
 
@@ -1578,6 +1587,8 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
     public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Show Duck.ai in Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
 
     public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Show Duck.ai in Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
+
+    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Show Duck.ai on the Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

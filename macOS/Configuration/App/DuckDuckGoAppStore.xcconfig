@@ -41,4 +41,9 @@ PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckdu
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios macos
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match AppStore com.duckduckgo.mobile.ios.review macos
 
+// Install to /Applications/DEBUG/
+DEPLOYMENT_LOCATION[config=Debug] = YES;
+DSTROOT[config=Debug] = ${BUILT_PRODUCTS_DIR}
+INSTALL_PATH[config=Debug] = Applications/DEBUG
+
 #include? "../../LocalOverridesAppStore.xcconfig"

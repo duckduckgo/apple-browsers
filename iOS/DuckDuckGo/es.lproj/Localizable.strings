@@ -1223,6 +1223,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Mostrar Duck.ai en el menú del navegador";
 
+/* Toggle text to enable/disable Duck.ai in tab manager */
+"duckai.settings.enable.tab-switcher-toggle" = "Mostrar Duck.ai en la pantalla de pestañas";
+
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Mostrar Duck.ai en la búsqueda por voz";
 

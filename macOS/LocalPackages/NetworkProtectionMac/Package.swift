@@ -31,10 +31,12 @@ let package = Package(
         .library(name: "NetworkProtectionProxy", targets: ["NetworkProtectionProxy"]),
         .library(name: "NetworkProtectionUI", targets: ["NetworkProtectionUI"]),
         .library(name: "VPNAppLauncher", targets: ["VPNAppLauncher"]),
+        .library(name: "VPNAppState", targets: ["VPNAppState"]),
+        .library(name: "VPNExtensionManagement", targets: ["VPNExtensionManagement"]),
     ],
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.4.3"),
-        .package(path: "../../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
@@ -43,6 +45,19 @@ let package = Package(
         .package(path: "../LoginItems"),
     ],
     targets: [
+
+        .target(
+            name: "VPNAppState",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]),
+
+        .target(
+            name: "VPNExtensionManagement",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]),
+
         // MARK: - NetworkProtectionIPC
 
         .target(
@@ -64,6 +79,8 @@ let package = Package(
             name: "NetworkProtectionProxy",
             dependencies: [
                 "AppInfoRetriever",
+                "VPNAppState",
+                "VPNExtensionManagement",
                 .product(name: "NetworkProtection", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],
@@ -104,8 +121,9 @@ let package = Package(
         .target(
             name: "NetworkProtectionUI",
             dependencies: [
-                "VPNPixels",
                 "NetworkProtectionProxy",
+                "VPNAppState",
+                "VPNPixels",
                 .product(name: "NetworkProtection", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),

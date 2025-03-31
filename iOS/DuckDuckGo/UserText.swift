@@ -1561,6 +1561,8 @@ Take back control of your personal information with the browser designed for dat
     public static let duckPlayerNativeModalTitle = NSLocalizedString("duckPlayerNative.modal.title", value: "Play this video in Duck Player to watch without targeted ads!", comment: "Title for DuckPlayer priming modal")
     public static let duckPlayerNativeModalDescription = NSLocalizedString("duckPlayerNative.modal.description", value: "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.", comment: "Description for DuckPlayer priming modal")
     public static let duckPlayerNativeModalCTA = NSLocalizedString("duckPlayerNative.modal.cta", value: "Watch Now Privately", comment: "CTA for DuckPlayer priming modal")
+    public static let duckPlayerNativePillDismissCountToastMessage = NSLocalizedString("duckPlayer.pill.dismiss.count.toast.message", value: "Want to turn off Duck Player appearing on Youtube?", comment: "Toast message for the Duck Player entry pill dismiss count")
+    public static let duckPlayerNativePillDismissCountToastMessageButton = NSLocalizedString("duckPlayer.pill.dismiss.count.toast.message.button", value: "Open Settings", comment: "Button on Toast message for the Duck Player entry pill dismiss count")
 
     // MARK: - AI Chat
 

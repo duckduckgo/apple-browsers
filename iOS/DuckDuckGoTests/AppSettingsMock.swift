@@ -104,7 +104,8 @@ class AppSettingsMock: AppSettings {
     
     var duckPlayerNativeUISERPEnabled: Bool = true
     var duckPlayerNativeYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
-    var duckPlayerNativeUIPrimingModalPresentedCount: Int = 0
+    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int = 0
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    var duckPlayerPillDismissCount: Int = 0
 
 }

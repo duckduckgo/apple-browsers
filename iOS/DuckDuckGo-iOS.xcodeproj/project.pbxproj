@@ -361,6 +361,7 @@
 		652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652CEDE52D89B70C00235B4C /* FaviconsHelperTests.swift */; };
 		653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */; };
 		654244122D6DDD030087A9EE /* mediaControl.js in Resources */ = {isa = PBXBuildFile; fileRef = 654244112D6DDD030087A9EE /* mediaControl.js */; };
+		6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = 6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */; };
 		6562F7792D7F9C7100205677 /* serpNotify.js in Resources */ = {isa = PBXBuildFile; fileRef = 6562F7782D7F9C7100205677 /* serpNotify.js */; };
 		6566A5D02D775D560033283C /* DuckPlayerMiniPillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA6A2D70CAAD0048819E /* DuckPlayerMiniPillViewModel.swift */; };
 		6594CCEA2D4A3E1200188B1A /* DuckPlayerSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */; };
@@ -373,6 +374,7 @@
 		65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */; };
 		65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */; };
 		65D091262D47DF2A00226164 /* DuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091252D47DF2500226164 /* DuckPlayerView.swift */; };
+		65DE1D722D9558070013CA0B /* DuckPlayerToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65DE1D712D9558010013CA0B /* DuckPlayerToastView.swift */; };
 		65EBA0B42D7F489700E34997 /* NativeDuckPlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */; };
 		65F4CB422D7A082400E89416 /* getCurrentTimestamp.js in Resources */ = {isa = PBXBuildFile; fileRef = 65F4CB412D7A082400E89416 /* getCurrentTimestamp.js */; };
 		65F4CB462D7A0EFF00E89416 /* DuckPlayerWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F4CB452D7A0EFF00E89416 /* DuckPlayerWebView.swift */; };
@@ -1891,6 +1893,7 @@
 		652CEDE52D89B70C00235B4C /* FaviconsHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsHelperTests.swift; sourceTree = "<group>"; };
 		653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DuckPlayer.swift"; sourceTree = "<group>"; };
 		654244112D6DDD030087A9EE /* mediaControl.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = mediaControl.js; sourceTree = "<group>"; };
+		6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "DuckPlayer-PrimingAnimation.json"; sourceTree = "<group>"; };
 		6562F7782D7F9C7100205677 /* serpNotify.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = serpNotify.js; sourceTree = "<group>"; };
 		6594CCE92D4A3E1200188B1A /* DuckPlayerSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerSettingsTests.swift; sourceTree = "<group>"; };
 		659AD5B02D76160500420D1D /* YoutubeOembedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeOembedService.swift; sourceTree = "<group>"; };
@@ -1902,6 +1905,7 @@
 		65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerDebugSettingsView.swift; sourceTree = "<group>"; };
 		65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerViewModel.swift; sourceTree = "<group>"; };
 		65D091252D47DF2500226164 /* DuckPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerView.swift; sourceTree = "<group>"; };
+		65DE1D712D9558010013CA0B /* DuckPlayerToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerToastView.swift; sourceTree = "<group>"; };
 		65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDuckPlayerNavigationHandler.swift; sourceTree = "<group>"; };
 		65F4CB412D7A082400E89416 /* getCurrentTimestamp.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = getCurrentTimestamp.js; sourceTree = "<group>"; };
 		65F4CB452D7A0EFF00E89416 /* DuckPlayerWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerWebView.swift; sourceTree = "<group>"; };
@@ -4266,6 +4270,7 @@
 		31DE43C72C2DAA7F00F8C51F /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */,
 				31BC5F402C2B0B540004DF37 /* DuckPlayer.xcassets */,
 				31DE43C52C2DA70A00F8C51F /* DuckPlayer-ModalAnimation.json */,
 			);
@@ -4494,6 +4499,7 @@
 		659AD5AF2D7615E800420D1D /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				65DE1D712D9558010013CA0B /* DuckPlayerToastView.swift */,
 				6526CA702D70E0BB0048819E /* DuckPlayerViewUtils.swift */,
 				65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */,
 				65D091252D47DF2500226164 /* DuckPlayerView.swift */,
@@ -8295,6 +8301,7 @@
 				85DFEDF724CB1CAB00973FE7 /* ShareSheet.xcassets in Resources */,
 				98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */,
 				1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */,
+				6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,
@@ -8879,6 +8886,7 @@
 				1EE7C299294227EC0026C8CB /* AutoconsentSettingsViewController.swift in Sources */,
 				1E8AD1D527C2E22900ABA377 /* DownloadsListSectionViewModel.swift in Sources */,
 				EE0798C52B179936000A4F64 /* NetworkProtectionVPNCountryLabelsModel.swift in Sources */,
+				65DE1D722D9558070013CA0B /* DuckPlayerToastView.swift in Sources */,
 				31584616281AFB46004ADB8B /* AutofillLoginDetailsViewController.swift in Sources */,
 				9FA5E44B2BF1AF3400BDEF02 /* SubscriptionContainerViewFactory.swift in Sources */,
 				C1F341C72A6924100032057B /* EmailAddressPromptViewModel.swift in Sources */,

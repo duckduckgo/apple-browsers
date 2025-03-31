@@ -427,6 +427,8 @@ final class MoreOptionsMenuTests: XCTestCase {
             .subscription(.aboutDuckDuckGo),
             .identityTheftRestoration(.aboutDuckDuckGo),
             .releaseNotes,
+            .bookmarks,
+            .history,
             .webExtensionUrl(.aboutDuckDuckGo)
         ]
         for tabContent in tabContentsSupportingFindInPage {
@@ -448,8 +450,6 @@ final class MoreOptionsMenuTests: XCTestCase {
             .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
             .newtab,
             .settings(pane: nil),
-            .bookmarks,
-            .history,
             .onboarding,
             .onboardingDeprecated,
             .dataBrokerProtection

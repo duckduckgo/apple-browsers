@@ -29,7 +29,7 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
     enum Error: Swift.Error {
         case readFailure(Swift.Error)
         case writeFailure(Swift.Error)
-        case wrongFormat
+        case invalidFormat
         case fileAlreadyInUse
     }
 
@@ -44,6 +44,10 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
         self.name = name
 
         try Self.ensureSingleAccessTo(fileURL: fileURL)
+    }
+
+    deinit {
+        Self.relinquish(fileURL: fileURL)
     }
 
     public var fileURL: URL {
@@ -67,7 +71,7 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
         do {
             let data = try Data(contentsOf: location)
             guard let dictionary = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any] else {
-                throw Error.wrongFormat
+                throw Error.invalidFormat
             }
 
             self.internalRepresentation = dictionary
@@ -164,7 +168,7 @@ extension KeyValueFileStore.Error: CustomNSError {
             return 0
         case .writeFailure:
             return 1
-        case .wrongFormat:
+        case .invalidFormat:
             return 2
         case .fileAlreadyInUse:
             return 3
@@ -178,7 +182,7 @@ extension KeyValueFileStore.Error: CustomNSError {
             return [NSUnderlyingErrorKey: error]
         case .writeFailure(let error):
             return [NSUnderlyingErrorKey: error]
-        case .wrongFormat, .fileAlreadyInUse:
+        case .invalidFormat, .fileAlreadyInUse:
             return [:]
         }
     }

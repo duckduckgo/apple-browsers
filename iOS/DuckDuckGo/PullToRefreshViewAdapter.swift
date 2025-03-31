@@ -104,7 +104,7 @@ final class PullToRefreshViewAdapter: NSObject {
         setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
-        refreshControl.tintColor = .label
+        refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {

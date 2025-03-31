@@ -110,7 +110,8 @@ public struct AppPrivacyConfiguration: PrivacyConfiguration {
     }
 
     public func isEnabled(featureKey: PrivacyFeature,
-                          versionProvider: AppVersionProvider = AppVersionProvider(), defaultValue: Bool = false) -> Bool {
+                          versionProvider: AppVersionProvider = AppVersionProvider(),
+                          defaultValue: Bool = false) -> Bool {
         switch stateFor(featureKey: featureKey, versionProvider: versionProvider) {
         case .enabled:
             return true

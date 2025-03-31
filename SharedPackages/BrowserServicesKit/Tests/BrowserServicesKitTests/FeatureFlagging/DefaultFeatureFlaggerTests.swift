@@ -417,6 +417,10 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
 }
 
 extension FeatureFlagSource: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        false
+    }
+    
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
     public static let allCases: [FeatureFlagSource]  = []
     public var supportsLocalOverriding: Bool { false }
@@ -441,7 +445,11 @@ private enum FakeExperimentFlags: String, CaseIterable {
     case remoteReleasableFeature
 }
 
-extension  FakeExperimentFlags: FeatureFlagDescribing {
+extension FakeExperimentFlags: FeatureFlagDescribing {
+    var defaultValue: Bool {
+        false
+    }
+    
     var supportsLocalOverriding: Bool { true }
 
     var cohortType: (any FeatureFlagCohortDescribing.Type)? { FakeExperimentFlagsCohort.self}

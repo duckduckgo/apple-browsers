@@ -11,12 +11,12 @@ on:
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'macOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'macOS/**'
 
 jobs:

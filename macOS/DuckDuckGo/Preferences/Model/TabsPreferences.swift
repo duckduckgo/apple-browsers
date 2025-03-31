@@ -22,6 +22,7 @@ protocol TabsPreferencesPersistor {
     var switchToNewTabWhenOpened: Bool { get set }
     var preferNewTabsToWindows: Bool { get set }
     var newTabPosition: NewTabPosition { get set }
+    var sharedPinnedTabs: Bool { get set }
 }
 
 struct TabsPreferencesUserDefaultsPersistor: TabsPreferencesPersistor {
@@ -33,6 +34,9 @@ struct TabsPreferencesUserDefaultsPersistor: TabsPreferencesPersistor {
 
     @UserDefaultsWrapper(key: .newTabPosition, defaultValue: .atEnd)
     var newTabPosition: NewTabPosition
+
+    @UserDefaultsWrapper(key: .sharedPinnedTabs, defaultValue: false)
+    var sharedPinnedTabs: Bool
 }
 
 final class TabsPreferences: ObservableObject, PreferencesTabOpening {
@@ -57,11 +61,18 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
         }
     }
 
+    @Published var pinnedTabsMode: PinnedTabsMode {
+        didSet {
+            persistor.sharedPinnedTabs = pinnedTabsMode == .shared
+        }
+    }
+
     init(persistor: TabsPreferencesPersistor = TabsPreferencesUserDefaultsPersistor()) {
         self.persistor = persistor
         preferNewTabsToWindows = persistor.preferNewTabsToWindows
         switchToNewTabWhenOpened = persistor.switchToNewTabWhenOpened
         newTabPosition = persistor.newTabPosition
+        pinnedTabsMode = persistor.sharedPinnedTabs ? .shared : .separate
     }
 
     private var persistor: TabsPreferencesPersistor
@@ -70,4 +81,9 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
 enum NewTabPosition: String, CaseIterable {
     case atEnd
     case nextToCurrent
+}
+
+enum PinnedTabsMode: String, CaseIterable {
+    case shared
+    case separate
 }

@@ -20,8 +20,8 @@ import Cocoa
 import Combine
 import Common
 import ServiceManagement
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import BrowserServicesKit
 import PixelKit
 import Networking

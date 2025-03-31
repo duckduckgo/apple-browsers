@@ -67,6 +67,9 @@ extension DebugScreensViewModel {
             .view(title: "Crashes", { _ in
                 CrashDebugScreen()
             }),
+            .view(title: "DuckPlayer", { _ in
+                DuckPlayerDebugSettingsView()
+            }),
             .view(title: "New Tab Page", { _ in
                 NewTabPageSectionsDebugView()
             }),

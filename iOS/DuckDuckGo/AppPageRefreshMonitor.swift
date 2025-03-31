@@ -30,14 +30,16 @@ extension PageRefreshMonitor {
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
         switch numberOfRefreshes {
         case 2:
-            TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
+            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             })
+            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh2X)
         case 3:
             Pixel.fire(pixel: .pageRefreshThreeTimesWithin20Seconds)
-            TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
+            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             })
+            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh3X)
         default:
             return
         }

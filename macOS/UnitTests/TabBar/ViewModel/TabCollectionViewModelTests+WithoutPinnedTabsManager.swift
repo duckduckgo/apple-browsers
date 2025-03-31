@@ -325,7 +325,7 @@ extension TabCollectionViewModelTests {
     @MainActor
     func test_WithoutPinnedTabsManager_WhenInsertOrAppendCalledPreferencesAreRespected() {
         let persistor = MockTabsPreferencesPersistor()
-        var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManager: nil,
+        var tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: nil,
                                                             tabsPreferences: TabsPreferences(persistor: persistor))
 
         let index = tabCollectionViewModel.tabCollection.tabs.count
@@ -333,7 +333,7 @@ extension TabCollectionViewModelTests {
         XCTAssert(tabCollectionViewModel.selectedTabViewModel === tabCollectionViewModel.tabViewModel(at: index))
 
         persistor.newTabPosition = .nextToCurrent
-        tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManager: nil,
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: nil,
                                                             tabsPreferences: TabsPreferences(persistor: persistor))
 
         tabCollectionViewModel.appendNewTab()
@@ -511,6 +511,6 @@ fileprivate extension TabCollectionViewModel {
 
     static func aTabCollectionViewModel() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
-        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManager: nil)
+        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
     }
 }

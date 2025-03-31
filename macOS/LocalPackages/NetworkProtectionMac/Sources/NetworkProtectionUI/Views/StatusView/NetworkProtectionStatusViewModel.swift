@@ -51,6 +51,25 @@ extension NetworkProtectionStatusView {
             }
         }
 
+        /// Reason why the VPN is being uninstalled
+        ///
+        /// This is useful for the VPN update for App Store users, but it might make sense
+        /// to remove this enum once that's no longer necessary.
+        ///
+        public enum UninstallReason {
+            /// The subscription expired and the user is given an option to uninstall the VPN.
+            ///
+            case expiration
+
+            /// The user chose to update their VPN.
+            ///
+            /// Currently used for the App Store VPN update that restores exclusions.
+            ///
+            case update
+        }
+
+        public typealias UninstallHandler = (UninstallReason) async -> Void
+
         /// The NetP service.
         ///
         private let tunnelController: TunnelController
@@ -81,6 +100,10 @@ extension NetworkProtectionStatusView {
         private let statusReporter: NetworkProtectionStatusReporter
 
         public let agentLoginItem: LoginItem?
+
+        @Published
+        var isExtensionUpdateOffered: Bool
+
         private let isMenuBarStatusView: Bool
 
         // MARK: - Extra Menu Items
@@ -95,7 +118,7 @@ extension NetworkProtectionStatusView {
 
         private let uiActionHandler: VPNUIActionHandling
 
-        private let uninstallHandler: () async -> Void
+        private let uninstallHandler: UninstallHandler
 
         private var cancellables = Set<AnyCancellable>()
 
@@ -115,17 +138,19 @@ extension NetworkProtectionStatusView {
                     uiActionHandler: VPNUIActionHandling,
                     menuItems: @escaping () -> [MenuItem],
                     agentLoginItem: LoginItem?,
+                    isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never>,
                     isMenuBarStatusView: Bool,
                     runLoopMode: RunLoop.Mode? = nil,
                     userDefaults: UserDefaults,
                     locationFormatter: VPNLocationFormatting,
-                    uninstallHandler: @escaping () async -> Void) {
+                    uninstallHandler: @escaping UninstallHandler) {
 
             self.tunnelController = controller
             self.onboardingStatusPublisher = onboardingStatusPublisher
             self.statusReporter = statusReporter
             self.menuItems = menuItems
             self.agentLoginItem = agentLoginItem
+            self.isExtensionUpdateOffered = isExtensionUpdateOfferedPublisher.value
             self.isMenuBarStatusView = isMenuBarStatusView
             self.runLoopMode = runLoopMode
             self.uiActionHandler = uiActionHandler
@@ -134,6 +159,7 @@ extension NetworkProtectionStatusView {
             tunnelControllerViewModel = TunnelControllerViewModel(controller: tunnelController,
                                                                   onboardingStatusPublisher: onboardingStatusPublisher,
                                                                   statusReporter: statusReporter,
+                                                                  vpnAppState: .init(defaults: userDefaults),
                                                                   vpnSettings: .init(defaults: userDefaults),
                                                                   proxySettings: .init(defaults: userDefaults),
                                                                   locationFormatter: locationFormatter,
@@ -148,6 +174,8 @@ extension NetworkProtectionStatusView {
             // Particularly useful when unit testing with an initial status of our choosing.
             subscribeToStatusChanges()
             subscribeToConnectivityIssues()
+            subscribeToIsExtensionUpdateOfferedPublisher(
+                isExtensionUpdateOfferedPublisher.eraseToAnyPublisher())
             subscribeToTunnelErrorMessages()
             subscribeToControllerErrorMessages()
             subscribeToKnownFailures()
@@ -194,7 +222,7 @@ extension NetworkProtectionStatusView {
 
         func uninstallVPN() {
             Task {
-                await uninstallHandler()
+                await uninstallHandler(.expiration)
             }
         }
 
@@ -209,6 +237,14 @@ extension NetworkProtectionStatusView {
             statusReporter.connectivityIssuesObserver.publisher
                 .receive(on: DispatchQueue.main)
                 .assign(to: \.isHavingConnectivityIssues, onWeaklyHeld: self)
+                .store(in: &cancellables)
+        }
+
+        private func subscribeToIsExtensionUpdateOfferedPublisher(_ isExtensionUpdateOfferedPublisher: AnyPublisher<Bool, Never>) {
+
+            isExtensionUpdateOfferedPublisher
+                .receive(on: DispatchQueue.main)
+                .assign(to: \.isExtensionUpdateOffered, onWeaklyHeld: self)
                 .store(in: &cancellables)
         }
 
@@ -320,31 +356,64 @@ extension NetworkProtectionStatusView {
         var promptActionViewModel: PromptActionView.Model? {
 #if !APPSTORE && !DEBUG
             guard Bundle.main.isInApplicationDirectory else {
-                return PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
-                    self?.tunnelControllerViewModel.moveToApplications()
-                }
+                return moveToApplicationsActionPromptModel
             }
 #endif
 
             guard !loginItemNeedsApproval else {
-                return PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in
-                    self?.openLoginItemSettings()
-                }
+                return loginItemsActionPromptModel
             }
 
             switch onboardingStatus {
-            case .completed:
-                return nil
             case .isOnboarding(let step):
                 switch step {
-
                 case .userNeedsToAllowExtension, .userNeedsToAllowVPNConfiguration:
-                    return PromptActionView.Model(onboardingStep: step, isMenuBar: self.isMenuBarStatusView) { [weak self] in
-                        self?.tunnelControllerViewModel.startNetworkProtection()
-                    }
+                    return onboardingActionPromptModel(forStep: step)
+                }
+            case .completed:
+                if isExtensionUpdateOffered {
+                    return updateVPNActionPromptModel
                 }
 
+                return nil
             }
+        }
+
+#if !APPSTORE && !DEBUG
+        private var moveToApplicationsActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(presentationData: MoveToApplicationsPromptPresentationData()) { [weak self] in
+                self?.tunnelControllerViewModel.moveToApplications()
+            }
+        }
+#endif
+
+        private var loginItemsActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(presentationData: LoginItemsPromptPresentationData()) { [weak self] in
+                self?.openLoginItemSettings()
+            }
+        }
+
+        private func onboardingActionPromptModel(forStep step: OnboardingStep) -> PromptActionView.Model {
+            PromptActionView.Model(onboardingStep: step, isMenuBar: self.isMenuBarStatusView) { [weak self] in
+                self?.tunnelControllerViewModel.startNetworkProtection()
+            }
+        }
+
+        private var updateVPNActionPromptModel: PromptActionView.Model {
+            PromptActionView.Model(
+                icon: .giftNew96,
+                title: UserText.vpnAppStoreSysexUpdatePromptTitle,
+                description: [
+                    .init(text: UserText.vpnAppStoreSysexUpdatePromptMessage)
+                ],
+                actionTitle: UserText.vpnAppStoreSysexUpdatePromptActionButtonTitle,
+                actionScreenshot: nil) { [weak self] in
+                    guard let strongSelf = self else { return }
+
+                    Task {
+                        await strongSelf.uninstallHandler(.update)
+                    }
+                }
         }
 
         @Published

@@ -147,6 +147,12 @@ protocol DuckPlayerSettings: AnyObject {
     /// Determines if the native UI should be used for Youtube
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get }
 
+    /// Determines if the priming modal has been presented
+    var nativeUIPrimingModalPresentedCount: Int { get }
+
+    /// Determines the number of seconds since the last priming modal was presented
+    var nativeUIPrimingModalTimeSinceLastPresented: Int { get }
+
     /// Autoplay Videos when opening
     var autoplay: Bool { get }
 
@@ -271,6 +277,12 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             return .never
         }
     }
+
+    /// Determines if the priming modal has been presented
+    var nativeUIPrimingModalPresentedCount: Int { return appSettings.duckPlayerNativeUIPrimingModalPresentedCount }
+
+    /// Determines the number of seconds since the last priming modal was presented
+    var nativeUIPrimingModalTimeSinceLastPresented: Int { return appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented }
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {

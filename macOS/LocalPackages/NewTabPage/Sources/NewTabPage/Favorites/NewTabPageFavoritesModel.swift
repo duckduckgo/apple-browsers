@@ -147,6 +147,8 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
 
             NSMenuItem(title: UserText.edit, action: #selector(editBookmark(_:)), target: self, representedObject: favorite)
                 .withAccessibilityIdentifier("HomePage.Views.editBookmark")
+            NSMenuItem(title: UserText.copyLink, action: #selector(copyLink(_:)), target: self, representedObject: favorite)
+                .withAccessibilityIdentifier("HomePage.Views.copyBookmarkLink")
             NSMenuItem(title: UserText.removeFavorite, action: #selector(removeFavorite(_:)), target: self, representedObject: favorite)
                 .withAccessibilityIdentifier("HomePage.Views.removeFavorite")
             NSMenuItem(title: UserText.deleteBookmark, action: #selector(deleteBookmark(_:)), target: self, representedObject: favorite)
@@ -172,6 +174,12 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
     @objc public func editBookmark(_ sender: NSMenuItem) {
         guard let bookmark = sender.representedObject as? FavoriteType else { return }
         actionsHandler.edit(bookmark)
+    }
+
+    @MainActor
+    @objc public func copyLink(_ sender: NSMenuItem) {
+        guard let bookmark = sender.representedObject as? FavoriteType else { return }
+        actionsHandler.copyLink(bookmark)
     }
 
     @MainActor

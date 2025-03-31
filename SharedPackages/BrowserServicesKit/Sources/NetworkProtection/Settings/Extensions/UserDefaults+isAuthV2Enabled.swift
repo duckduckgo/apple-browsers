@@ -27,24 +27,11 @@ extension UserDefaults {
         }
 
         set {
-            guard newValue != bool(forKey: #keyPath(networkProtectionSettingIsAuthV2Enabled)) else {
-                return
-            }
-
-            guard newValue else {
-                removeObject(forKey: #keyPath(networkProtectionSettingIsAuthV2Enabled))
-                return
-            }
-
             set(newValue, forKey: #keyPath(networkProtectionSettingIsAuthV2Enabled))
         }
     }
 
     var networkProtectionSettingIsAuthV2EnabledPublisher: AnyPublisher<Bool, Never> {
         publisher(for: \.networkProtectionSettingIsAuthV2Enabled).eraseToAnyPublisher()
-    }
-
-    func resetNetworkProtectionSettingIsAuthV2Enabled() {
-        removeObject(forKey: #keyPath(networkProtectionSettingIsAuthV2Enabled))
     }
 }

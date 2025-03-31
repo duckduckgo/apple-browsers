@@ -18,8 +18,8 @@
 
 import Foundation
 import BrowserServicesKit
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import PixelKit
 import LoginItems
 import Common

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 enum LaunchAction {
 
@@ -51,13 +52,16 @@ final class LaunchActionHandler: LaunchActionHandling {
     private let urlHandler: URLHandling
     private let shortcutItemHandler: ShortcutItemHandling
     private let keyboardPresenter: KeyboardPresenting
+    private let pixelFiring: PixelFiring.Type
 
     init(urlHandler: URLHandling,
          shortcutItemHandler: ShortcutItemHandling,
-         keyboardPresenter: KeyboardPresenting) {
+         keyboardPresenter: KeyboardPresenting,
+         pixelFiring: PixelFiring.Type = Pixel.self) {
         self.urlHandler = urlHandler
         self.shortcutItemHandler = shortcutItemHandler
         self.keyboardPresenter = keyboardPresenter
+        self.pixelFiring = pixelFiring
     }
 
     func handleLaunchAction(_ action: LaunchAction) {
@@ -73,6 +77,7 @@ final class LaunchActionHandler: LaunchActionHandling {
 
     private func openURL(_ url: URL) {
         Logger.sync.debug("App launched with url \(url.absoluteString)")
+        fireAppLaunchedWithExternalLinkPixel(url: url)
         guard urlHandler.shouldProcessDeepLink(url) else { return }
         NotificationCenter.default.post(name: AutofillLoginListAuthenticator.Notifications.invalidateContext, object: nil)
         urlHandler.handleURL(url)
@@ -81,6 +86,16 @@ final class LaunchActionHandler: LaunchActionHandling {
     private func handleShortcutItem(_ shortcutItem: UIApplicationShortcutItem) {
         Logger.general.debug("Handling shortcut item: \(shortcutItem.type)")
         shortcutItemHandler.handleShortcutItem(shortcutItem)
+    }
+
+    private func fireAppLaunchedWithExternalLinkPixel(url: URL) {
+        // Websites or searches opened via share extensions have `ddgQuickLink` scheme.
+        // If scheme is either `http` or `https` we know the app has been opened by clicking directly an external link.
+        if url.scheme == "http" || url.scheme == "https" {
+            pixelFiring.fire(.appLaunchFromExternalLink, withAdditionalParameters: [:])
+        } else if url.scheme == AppDeepLinkSchemes.quickLink.rawValue {
+            pixelFiring.fire(.appLaunchFromShareExtension, withAdditionalParameters: [:])
+        }
     }
 
 }

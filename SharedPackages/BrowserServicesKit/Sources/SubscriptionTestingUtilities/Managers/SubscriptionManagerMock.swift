@@ -144,4 +144,8 @@ public final class SubscriptionManagerMock: SubscriptionManager {
             throw SubscriptionEndpointServiceError.noData
         }
     }
+
+    public func isSubscriptionPresent() -> Bool {
+        isUserAuthenticated
+    }
 }

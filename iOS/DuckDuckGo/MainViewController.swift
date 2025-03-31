@@ -199,7 +199,7 @@ class MainViewController: UIViewController {
     private lazy var omnibarAccessoryHandler: OmnibarAccessoryHandler = {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
-        return OmnibarAccessoryHandler(settings: settings, featureFlagger: featureFlagger)
+        return OmnibarAccessoryHandler(settings: settings)
     }()
 
     let isAuthV2Enabled: Bool
@@ -2027,9 +2027,7 @@ extension MainViewController: OmniBarDelegate {
         let menuEntries: [BrowsingMenuEntry]
         let headerEntries: [BrowsingMenuEntry]
 
-        let isNewTabPageEnabled = homeTabManager.isNewTabPageSectionsEnabled || featureFlagger.isFeatureOn(.aiChatNewTabPage)
-
-        if isNewTabPageEnabled && newTabPageViewController != nil {
+        if newTabPageViewController != nil {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
         } else {
@@ -2050,7 +2048,7 @@ extension MainViewController: OmniBarDelegate {
         self.presentedMenuButton.setState(.closeImage, animated: true)
         tab.didLaunchBrowsingMenu()
 
-        if isNewTabPageEnabled && newTabPageViewController != nil {
+        if newTabPageViewController != nil {
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
         } else {
             Pixel.fire(pixel: .browsingMenuOpened)
@@ -2250,16 +2248,12 @@ extension MainViewController: OmniBarDelegate {
 
     /// We always want to show the AI Chat button if the keyboard is on focus
     func onDidBeginEditing() {
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            omniBar.updateAccessoryType(.chat)
-        }
+        omniBar.updateAccessoryType(.chat)
     }
 
     /// When the keyboard is dismissed we'll apply the previous rule to define the accessory button back to whatever it was
     func onDidEndEditing() {
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
-        }
+        omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
     }
 }
 
@@ -2768,6 +2762,10 @@ extension MainViewController: TabSwitcherDelegate {
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
     }
 
+    func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+    }
+
 }
 
 extension MainViewController: BookmarksDelegate {
@@ -3181,6 +3179,12 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
-        segueToSettingsAIChat()
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsAIChat()
+            }
+        } else {
+            segueToSettingsAIChat()
+        }
     }
 }

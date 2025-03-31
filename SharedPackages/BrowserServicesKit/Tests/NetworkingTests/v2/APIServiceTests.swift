@@ -223,7 +223,7 @@ final class APIServiceTests: XCTestCase {
 
         MockURLProtocol.requestHandler = { request in
             requestCountExpectation.fulfill()
-            return ( HTTPURLResponse.internalServerError, nil)
+            throw URLError(.cannotConnectToHost)
         }
 
         let apiService = DefaultAPIService(urlSession: mockURLSession)

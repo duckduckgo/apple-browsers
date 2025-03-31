@@ -683,16 +683,11 @@ extension DefaultOmniBarView {
 extension DefaultOmniBarView {
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
-        if state.dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            if oldState.showSearchLoupe && newState.showDismiss {
-                animateTransition(from: searchLoupe, to: dismissButton)
-            } else if oldState.showDismiss && newState.showSearchLoupe {
-                animateTransition(from: dismissButton, to: searchLoupe)
-            } else if dismissButtonAnimator == nil || dismissButtonAnimator?.isRunning == false {
-                updateLeftContainerVisibility(state: newState)
-            }
-
-        } else {
+        if oldState.showSearchLoupe && newState.showDismiss {
+            animateTransition(from: searchLoupe, to: dismissButton)
+        } else if oldState.showDismiss && newState.showSearchLoupe {
+            animateTransition(from: dismissButton, to: searchLoupe)
+        } else if dismissButtonAnimator == nil || dismissButtonAnimator?.isRunning == false {
             updateLeftContainerVisibility(state: newState)
         }
 

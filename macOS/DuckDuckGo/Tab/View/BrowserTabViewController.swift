@@ -31,7 +31,7 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
@@ -192,6 +192,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
+        self.newTabPageWebViewModel.removeUserScripts()
     }
 
     @objc

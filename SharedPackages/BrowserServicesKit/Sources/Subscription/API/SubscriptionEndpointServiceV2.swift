@@ -68,6 +68,7 @@ public enum SubscriptionCachePolicy {
 public protocol SubscriptionEndpointServiceV2 {
     func ingestSubscription(_ subscription: PrivacyProSubscription) async throws
     func getSubscription(accessToken: String, cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    func getCachedSubscription() -> PrivacyProSubscription?
     func clearSubscription()
     func getProducts() async throws -> [GetProductsItem]
     func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponseV2
@@ -208,7 +209,7 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    private func getCachedSubscription() -> PrivacyProSubscription? {
+    public func getCachedSubscription() -> PrivacyProSubscription? {
         var result: PrivacyProSubscription?
         cacheSerialQueue.sync {
             result = subscriptionCache.get()

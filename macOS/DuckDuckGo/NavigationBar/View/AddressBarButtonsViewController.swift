@@ -205,6 +205,17 @@ final class AddressBarButtonsViewController: NSViewController {
         setupButtons()
     }
 
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+
+        // The permission popover leaks when its parent window is closed while it's still visible, so this workaround
+        // forces it to deallocate when the window is closing. This workaround can be removed if the true source of
+        // the leak is found.
+        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+            permissionAuthorizationPopover.close()
+        }
+    }
+
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
         if !isAnyShieldAnimationPlaying {
             buttonsBadgeAnimator.showNotification(withType: type,

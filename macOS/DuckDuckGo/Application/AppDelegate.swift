@@ -42,11 +42,12 @@ import NetworkProtection
 import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import RemoteMessaging
 import os.log
 import Freemium
+import VPNAppState
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -325,7 +326,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -692,7 +693,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG
+#if DEBUG || REVIEW
             Self.setUpPixelKit(dryRun: true)
 #else
             Self.setUpPixelKit(dryRun: false)

@@ -19,8 +19,8 @@
 import Combine
 import Foundation
 import Subscription
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import PixelKit
 import Common
 import Networking

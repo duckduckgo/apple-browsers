@@ -154,23 +154,28 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
             guard let brokerProfileData = brokerProfileData else {
                 continue
             }
+
             do {
                 Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
 
-                try await DataBrokerProfileQueryOperationManager(vpnBypassService: operationDependencies.vpnBypassService).runOperation(
-                    dependencies: operationDependencies,
-                    operationData: operationData,
-                    brokerProfileQueryData: brokerProfileData,
-                    database: operationDependencies.database,
-                    notificationCenter: operationDependencies.notificationCenter,
-                    pixelHandler: operationDependencies.pixelHandler,
-                    showWebView: showWebView,
-                    isImmediateOperation: operationType == .manualScan,
-                    eventsHandler: operationDependencies.eventsHandler,
-                    shouldRunNextStep: { [weak self] in
-                        guard let self = self else { return false }
-                        return !self.isCancelled
-                    })
+                if operationData is ScanJobData {
+                    try await BrokerProfileScanSubJob(dependencies: operationDependencies).runScanOperation(
+                        brokerProfileQueryData: brokerProfileData,
+                        shouldRunNextStep: { [weak self] in
+                            guard let self = self else { return false }
+                            return !self.isCancelled
+                        })
+                } else if let optOutJobData = operationData as? OptOutJobData {
+                    try await BrokerProfileOptOutSubJob(dependencies: operationDependencies).runOptOutOperation(
+                        for: optOutJobData.extractedProfile,
+                        brokerProfileQueryData: brokerProfileData,
+                        shouldRunNextStep: { [weak self] in
+                            guard let self = self else { return false }
+                            return !self.isCancelled
+                        })
+                } else {
+                    assertionFailure("Unsupported job data type")
+                }
 
                 let sleepInterval = operationDependencies.executionConfig.intervalBetweenSameBrokerOperations
                 Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")

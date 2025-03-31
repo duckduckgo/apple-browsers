@@ -1322,7 +1322,6 @@ public final class MockDataBrokerOperation: DataBrokerOperation, @unchecked Send
     private var _isExecuting = false
     private var _isFinished = false
     private var _isCancelled = false
-    private var operationsManager: OperationsManager!
 
     public convenience init(id: Int64,
                             operationType: OperationType,

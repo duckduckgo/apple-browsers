@@ -1,7 +1,7 @@
 //
-//  DataBrokerProfileQueryOperationManagerTests.swift
+//  BrokerProfileScanSubJobTests.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@ import PixelKit
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
-    let sut = DataBrokerProfileQueryOperationManager(vpnBypassService: nil)
+final class BrokerProfileScanSubJobTests: XCTestCase {
+    var sut: BrokerProfileScanSubJob!
 
     var mockScanRunner: MockScanSubJobWebRunner!
     var mockOptOutRunner: MockOptOutSubJobWebRunner!
@@ -44,6 +44,8 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
         mockDependencies.mockOptOutRunner = self.mockOptOutRunner
         mockDependencies.database = self.mockDatabase
         mockDependencies.eventsHandler = self.mockEventsHandler
+
+        sut = BrokerProfileScanSubJob(dependencies: mockDependencies)
     }
 
     // MARK: - Notification tests
@@ -75,17 +77,12 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
 
             mockScanRunner.scanResults = []
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: extractedProfileSaved)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockEventsHandler.allProfilesRemovedFired)
@@ -125,18 +122,13 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
 
             mockScanRunner.scanResults = [extractedProfileSaved1]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: extractedProfileSaved1),
-                                           OptOutJobData.mock(with: extractedProfileSaved2)]
+                                    OptOutJobData.mock(with: extractedProfileSaved2)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockEventsHandler.allProfilesRemovedFired)
@@ -176,18 +168,13 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
 
             mockScanRunner.scanResults = [extractedProfileSaved1, extractedProfileSaved2]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: extractedProfileSaved1),
-                                           OptOutJobData.mock(with: extractedProfileSaved2)]
+                                    OptOutJobData.mock(with: extractedProfileSaved2)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockEventsHandler.allProfilesRemovedFired)
@@ -202,21 +189,16 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
     func testWhenProfileQueryIdIsNil_thenRunScanOperationThrows() async {
         do {
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mockWithoutId,
                     scanJobData: .mock
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
         } catch {
-            XCTAssertEqual(error as? OperationsError, OperationsError.idsMissingForBrokerOrProfileQuery)
+            XCTAssertEqual(error as? BrokerProfileSubJobError, BrokerProfileSubJobError.idsMissingForBrokerOrProfileQuery)
             XCTAssertFalse(mockScanRunner.wasScanCalled)
         }
     }
@@ -224,37 +206,27 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
     func testWhenBrokerIdIsNil_thenRunScanOperationThrows() async {
         do {
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mockWithoutId,
                     profileQuery: .mock,
                     scanJobData: .mock
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTFail("Scan should fail when brokerProfileQueryData has no id for broker")
         } catch {
-            XCTAssertEqual(error as? OperationsError, OperationsError.idsMissingForBrokerOrProfileQuery)
+            XCTAssertEqual(error as? BrokerProfileSubJobError, BrokerProfileSubJobError.idsMissingForBrokerOrProfileQuery)
         }
     }
 
     func testWhenScanStarts_thenScanStartedEventIsAddedToTheDatabase() async {
         do {
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertEqual(mockDatabase.scanEvents.first?.type, .scanStarted)
@@ -266,16 +238,11 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
     func testWhenScanDoesNotFoundProfiles_thenNoMatchFoundEventIsAddedToTheDatabase() async {
         do {
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.scanEvents.contains(where: { $0.type == .noMatchFound }))
@@ -289,17 +256,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             mockDatabase.extractedProfilesFromBroker = [.mockWithoutRemovedDate]
             mockScanRunner.scanResults = [.mockWithoutRemovedDate]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockDatabase.wasUpdateRemoveDateCalled)
@@ -315,17 +277,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             mockDatabase.extractedProfilesFromBroker = [.mockWithRemovedDate]
             mockScanRunner.scanResults = [.mockWithRemovedDate]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.wasUpdateRemoveDateCalled)
@@ -339,17 +296,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         do {
             mockScanRunner.scanResults = []
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.wasUpdateRemoveDateCalled)
@@ -363,17 +315,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         do {
             mockScanRunner.scanResults = [.mockWithoutId]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.wasSaveOptOutOperationCalled)
@@ -386,17 +333,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         do {
             mockScanRunner.scanResults = [.mockWithoutId]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutConfirmed }))
@@ -411,17 +353,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         do {
             mockScanRunner.scanResults = [.mockWithoutRemovedDate]
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTAssertFalse(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutConfirmed }))
@@ -437,17 +374,12 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         do {
             mockScanRunner.shouldScanThrow = true
             _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
                     scanJobData: .mock,
                     optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
                 ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
                 shouldRunNextStep: { true }
             )
             XCTFail("Should throw!")
@@ -457,351 +389,6 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             XCTAssertFalse(mockDatabase.scanEvents.contains(where: { $0.type == .matchesFound(count: 1) }))
             XCTAssertFalse(mockDatabase.scanEvents.contains(where: { $0.type == .noMatchFound }))
             XCTAssertFalse(mockDatabase.wasSaveOptOutOperationCalled)
-        }
-    }
-
-    // MARK: - Run opt-out operation tests
-
-    func testWhenNoBrokerIdIsPresent_thenOptOutOperationThrows() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mockWithoutId,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
-        } catch {
-            XCTAssertEqual(error as? OperationsError, OperationsError.idsMissingForBrokerOrProfileQuery)
-            XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
-        }
-    }
-
-    func testWhenNoProfileQueryIdIsPresent_thenOptOutOperationThrows() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mockWithoutId,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
-        } catch {
-            XCTAssertEqual(error as? OperationsError, OperationsError.idsMissingForBrokerOrProfileQuery)
-            XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
-        }
-    }
-
-    func testWhenNoExtractedProfileIdIsPresent_thenOptOutOperationThrows() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutId,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutId)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTFail("Scan should fail when brokerProfileQueryData has no id profile query")
-        } catch {
-            XCTAssertEqual(error as? OperationsError, OperationsError.idsMissingForBrokerOrProfileQuery)
-            XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
-        }
-    }
-
-    func testWhenExtractedProfileHasRemovedDate_thenNothingHappens() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTAssertFalse(mockDatabase.wasDatabaseCalled)
-            XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testWhenBrokerHasParentOptOut_thenNothingHappens() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mockWithParentOptOut,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTAssertFalse(mockDatabase.wasDatabaseCalled)
-            XCTAssertFalse(mockOptOutRunner.wasOptOutCalled)
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testOptOutStartedEventIsAdded_whenExtractedProfileOptOutStarts() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutStarted }))
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testOptOutRequestedEventIsAdded_whenExtractedProfileOptOutFinishesWithoutError() async {
-        do {
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutRequested }))
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testErrorEventIsAdded_whenWebRunnerFails() async {
-        do {
-            mockOptOutRunner.shouldOptOutThrow = true
-            _ = try await sut.runOptOutOperation(
-                for: .mockWithoutRemovedDate,
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-            XCTFail("Should throw!")
-        } catch {
-            XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutStarted }))
-            XCTAssertFalse(mockDatabase.optOutEvents.contains(where: { $0.type == .optOutRequested }))
-            XCTAssertTrue(mockDatabase.optOutEvents.contains(where: { $0.type == .error(error: DataBrokerProtectionError.unknown("Test error")) }))
-        }
-    }
-
-    func testCorrectDataBrokerTypeIsSent_whenOptOutIsDoneInChildSite() async {
-        do {
-            mockDatabase.attemptInformation = .mock
-            mockScanRunner.scanResults = [.mockWithoutId]
-            _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mockWithParentOptOut,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
-                switch lastPixelFired {
-                case .optOutSuccess(_, _, _, let type, _, _):
-                    XCTAssertEqual(type, .child)
-                default: XCTFail("We should be firing the opt-out submit pixel last")
-                }
-            } else {
-                XCTFail("We should be firing the opt-out submit pixel")
-            }
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testCorrectDataBrokerTypeIsSent_whenOptOutIsDoneInParentSite() async {
-        do {
-            mockDatabase.attemptInformation = .mock
-            mockScanRunner.scanResults = [.mockWithoutId]
-            _ = try await sut.runScanOperation(
-                dependencies: mockDependencies,
-                brokerProfileQueryData: .init(
-                    dataBroker: .mock,
-                    profileQuery: .mock,
-                    scanJobData: .mock,
-                    optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-                ),
-                database: mockDatabase,
-                notificationCenter: .default,
-                pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-                eventsHandler: mockEventsHandler,
-                shouldRunNextStep: { true }
-            )
-
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
-                switch lastPixelFired {
-                case .optOutSuccess(_, _, _, let type, _, _):
-                    XCTAssertEqual(type, .parent)
-                default: XCTFail("We should be firing the opt-out submit pixel last")
-                }
-            } else {
-                XCTFail("We should be firing the opt-out submit pixel")
-            }
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    private func runOptOutOperation(shouldThrow: Bool = false) async throws {
-        mockOptOutRunner.shouldOptOutThrow = shouldThrow
-        _ = try await sut.runOptOutOperation(
-            for: .mockWithoutRemovedDate,
-            dependencies: mockDependencies,
-            brokerProfileQueryData: .init(
-                dataBroker: .mock,
-                profileQuery: .mock,
-                scanJobData: .mock,
-                optOutJobData: [OptOutJobData.mock(with: .mockWithoutRemovedDate)]
-            ),
-            database: mockDatabase,
-            notificationCenter: .default,
-            pixelHandler: MockDataBrokerProtectionPixelsHandler(),
-            eventsHandler: mockEventsHandler,
-            shouldRunNextStep: { true }
-        )
-    }
-
-    func testCorrectNumberOfTriesIsFired_whenOptOutSucceeds() async {
-        try? await runOptOutOperation(shouldThrow: true)
-        try? await runOptOutOperation(shouldThrow: true)
-        try? await runOptOutOperation()
-
-        if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
-            switch lastPixelFired {
-            case .optOutSubmitSuccess(_, _, _, let tries, _, _, _):
-                XCTAssertEqual(tries, 3)
-            default: XCTFail("We should be firing the opt-out submit-success pixel last")
-            }
-        } else {
-            XCTFail("We should be firing the opt-out submit-success pixel")
-        }
-    }
-
-    func testCorrectNumberOfTriesIsFired_whenOptOutFails() async {
-        do {
-            try? await runOptOutOperation(shouldThrow: true)
-            try? await runOptOutOperation(shouldThrow: true)
-            try await runOptOutOperation(shouldThrow: true)
-            XCTFail("The code above should throw")
-        } catch {
-            if let lastPixelFired = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last {
-                switch lastPixelFired {
-                case .optOutFailure(_, _, _, _, _, let tries, _, _, _, _):
-                    XCTAssertEqual(tries, 3)
-                default: XCTFail("We should be firing the opt-out submit-success pixel last")
-                }
-            } else {
-                XCTFail("We should be firing the opt-out submit-success pixel")
-            }
-        }
-    }
-
-    func testAttemptCountNotIncreased_whenOptOutFails() async {
-        do {
-            try await runOptOutOperation(shouldThrow: true)
-            XCTFail("The code above should throw")
-        } catch {
-            XCTAssertEqual(mockDatabase.attemptCount, 0)
-        }
-    }
-
-    func testAttemptCountIncreased_whenOptOutSucceeds() async {
-        do {
-            try await runOptOutOperation()
-            XCTAssertEqual(mockDatabase.attemptCount, 1)
-        } catch {
-            XCTFail("Should not throw")
-        }
-    }
-
-    func testAttemptCountIncreasedWithEachSuccessfulOptOut() async {
-        do {
-            for attempt in 0..<10 {
-                try await runOptOutOperation()
-                XCTAssertEqual(mockDatabase.attemptCount, Int64(attempt) + 1)
-                try? await runOptOutOperation(shouldThrow: true)
-                XCTAssertEqual(mockDatabase.attemptCount, Int64(attempt) + 1)
-            }
-        } catch {
-            XCTFail("Should not throw")
         }
     }
 
@@ -953,4 +540,5 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(config.hoursUntilNextOptOutAttempt.hoursToSeconds)))
     }
+
 }

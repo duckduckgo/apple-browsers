@@ -74,7 +74,7 @@ public enum PrivacyFeature: String {
     case extendedOnboarding
     case macOSBrowserConfig
     case iOSBrowserConfig
-    case killswitchExample
+    case intentionallyLocalOnlyFeatureForTests
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -86,12 +86,12 @@ public protocol PrivacySubfeature: RawRepresentable where RawValue == String {
 
 // MARK: Subfeature definitions
 
-public enum macOSBrowserConfigSubfeature: String, PrivacySubfeature {
+public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .macOSBrowserConfig
     }
 
-    case killswitchExample
+    case intentionallyLocalOnlySubfeatureForTests
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -99,7 +99,7 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
         .iOSBrowserConfig
     }
 
-    case killswitchExample
+    case intentionallyLocalOnlySubfeatureForTests
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

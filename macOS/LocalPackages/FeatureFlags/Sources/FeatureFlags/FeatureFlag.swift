@@ -82,7 +82,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             false
         }
     }
-    
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .popoverVsBannerExperiment:
@@ -114,7 +114,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .killswitchExampleCrossPlatformFeature, 
+                .killswitchExampleCrossPlatformFeature,
                 .killswitchExamplePlatformSpecificSubfeature:
             return true
         case .debugMenu,

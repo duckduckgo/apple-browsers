@@ -500,7 +500,7 @@ extension FeatureFlagSource: FeatureFlagDescribing {
     public var defaultValue: Bool {
         false
     }
-    
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
     public static let allCases: [FeatureFlagSource]  = []
     public var supportsLocalOverriding: Bool { false }
@@ -529,7 +529,7 @@ extension FakeExperimentFlags: FeatureFlagDescribing {
     var defaultValue: Bool {
         false
     }
-    
+
     var supportsLocalOverriding: Bool { true }
 
     var cohortType: (any FeatureFlagCohortDescribing.Type)? { FakeExperimentFlagsCohort.self}

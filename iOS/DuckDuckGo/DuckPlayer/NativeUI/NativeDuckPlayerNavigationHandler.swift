@@ -274,12 +274,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
             duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
+            lastHandledVideoID = nil
             return .notHandled(.invalidURL)
         }
 
         // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
             duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
+            lastHandledVideoID = nil
             return .notHandled(.isNotYoutubeWatch)
         }
 

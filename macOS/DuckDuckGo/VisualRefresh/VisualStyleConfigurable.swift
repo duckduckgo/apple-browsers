@@ -21,18 +21,88 @@ import BrowserServicesKit
 import FeatureFlags
 
 protocol VisualStyleConfigurable {
-    var toolbarHeight: CGFloat { get }
+    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat
+}
+
+enum AddressBarSizeClass {
+    case `default`
+    case homePage
+    case popUpWindow
+
+    var logoWidth: CGFloat {
+        switch self {
+        case .homePage: 44
+        case .popUpWindow, .default: 0
+        }
+    }
+
+    var isLogoVisible: Bool {
+        switch self {
+        case .homePage: true
+        case .popUpWindow, .default: false
+        }
+    }
 }
 
 struct VisualStyle {
-    let toolbarHeight: CGFloat
+    private let addressBarHeightForDefault: CGFloat
+    private let addressBarHeightForHomePage: CGFloat
+    private let addressBarHeightForPopUpWindow: CGFloat
+    private let addressBarTopPaddingForDefault: CGFloat
+    private let addressBarTopPaddingForHomePage: CGFloat
+    private let addressBarTopPaddingForPopUpWindow: CGFloat
+    private let addressBarBottomPaddingForDefault: CGFloat
+    private let addressBarBottomPaddingForHomePage: CGFloat
+    private let addressBarBottomPaddingForPopUpWindow: CGFloat
+
+    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+        switch type {
+        case .default: return addressBarHeightForDefault
+        case .homePage: return addressBarHeightForHomePage
+        case .popUpWindow: return addressBarHeightForPopUpWindow
+        }
+    }
+
+    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat {
+        switch type {
+        case .default: return addressBarTopPaddingForDefault
+        case .homePage: return addressBarTopPaddingForHomePage
+        case .popUpWindow: return addressBarTopPaddingForPopUpWindow
+        }
+    }
+
+    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat {
+        switch type {
+        case .default: return addressBarBottomPaddingForDefault
+        case .homePage: return addressBarBottomPaddingForHomePage
+        case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
+        }
+    }
 
     static var old: VisualStyle {
-        return VisualStyle(toolbarHeight: 44)
+        return VisualStyle(addressBarHeightForDefault: 48,
+                           addressBarHeightForHomePage: 52,
+                           addressBarHeightForPopUpWindow: 42,
+                           addressBarTopPaddingForDefault: 6,
+                           addressBarTopPaddingForHomePage: 10,
+                           addressBarTopPaddingForPopUpWindow: 0,
+                           addressBarBottomPaddingForDefault: 6,
+                           addressBarBottomPaddingForHomePage: 8,
+                           addressBarBottomPaddingForPopUpWindow: 0)
     }
 
     static var new: VisualStyle {
-        return VisualStyle(toolbarHeight: 64)
+        return VisualStyle(addressBarHeightForDefault: 52,
+                           addressBarHeightForHomePage: 52,
+                           addressBarHeightForPopUpWindow: 52,
+                           addressBarTopPaddingForDefault: 6,
+                           addressBarTopPaddingForHomePage: 6,
+                           addressBarTopPaddingForPopUpWindow: 6,
+                           addressBarBottomPaddingForDefault: 6,
+                           addressBarBottomPaddingForHomePage: 6,
+                           addressBarBottomPaddingForPopUpWindow: 6)
     }
 }
 
@@ -41,18 +111,30 @@ final class VisualStyleManager: VisualStyleConfigurable {
 
     private var cancellables: Set<AnyCancellable> = []
 
-    private var isEnabled: Bool {
-        featureFlagger.isFeatureOn(.visualRefresh)
-    }
-
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
 
         subscribeToLocalOverride()
     }
 
-    var toolbarHeight: CGFloat {
-        currentStyle.toolbarHeight
+    // MARK: - VisualStyleConfigurable implementation
+
+    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+        return currentStyle.addressBarHeight(for: type)
+    }
+
+    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat {
+        return currentStyle.addressBarTopPaddig(for: type)
+    }
+
+    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat {
+        return currentStyle.addressBarBottomPaddig(for: type)
+    }
+
+    // MARK: - Private properties
+
+    private var isEnabled: Bool {
+        featureFlagger.isFeatureOn(.visualRefresh)
     }
 
     private var currentStyle: VisualStyle {
@@ -67,7 +149,7 @@ final class VisualStyleManager: VisualStyleConfigurable {
         overridesHandler.flagDidChangePublisher
             .filter { $0.0 == .visualRefresh }
             .sink { (_, enabled) in
-                /// Here I need to apply the visual changes. Should I restart the app?
+                /// Here I need to apply the visual changes. The easier way should be to restart the app.
                 print("Visual refresh feature flag changed to \(enabled ? "enabled" : "disabled")")
             }
             .store(in: &cancellables)

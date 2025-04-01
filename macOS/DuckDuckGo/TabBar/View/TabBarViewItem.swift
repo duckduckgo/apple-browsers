@@ -1013,7 +1013,6 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
-            func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool { false }
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title

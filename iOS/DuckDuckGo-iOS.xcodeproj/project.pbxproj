@@ -672,6 +672,7 @@
 		859DB81C2CE6268C001F7210 /* MockTextZoomCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 859DB81A2CE6268C001F7210 /* MockTextZoomCoordinator.swift */; };
 		859DB81E2CE62766001F7210 /* TextZoomTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 859DB81B2CE6268C001F7210 /* TextZoomTests.swift */; };
 		85A1B3B220C6CD9900C18F15 /* MigratableCookieStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A1B3B120C6CD9900C18F15 /* MigratableCookieStorage.swift */; };
+		85A2A7782D9AECC5008998C5 /* Customisation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A2A7772D9AECBC008998C5 /* Customisation.swift */; };
 		85A313972028E78A00327D00 /* release_notes.txt in Resources */ = {isa = PBXBuildFile; fileRef = 85A313962028E78A00327D00 /* release_notes.txt */; };
 		85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85A9C37820E0E00C00073340 /* HomeRow.xcassets */; };
 		85AB84C12CF5DDB4007E679F /* WebsiteDataStoreCleaning.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85AB84C02CF5DDAF007E679F /* WebsiteDataStoreCleaning.swift */; };
@@ -2204,6 +2205,7 @@
 		859DB81A2CE6268C001F7210 /* MockTextZoomCoordinator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockTextZoomCoordinator.swift; sourceTree = "<group>"; };
 		859DB81B2CE6268C001F7210 /* TextZoomTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextZoomTests.swift; sourceTree = "<group>"; };
 		85A1B3B120C6CD9900C18F15 /* MigratableCookieStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MigratableCookieStorage.swift; sourceTree = "<group>"; };
+		85A2A7772D9AECBC008998C5 /* Customisation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customisation.swift; sourceTree = "<group>"; };
 		85A313962028E78A00327D00 /* release_notes.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = release_notes.txt; path = fastlane/metadata/default/release_notes.txt; sourceTree = "<group>"; };
 		85A53EC9200D1FA20010D13F /* FileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileStore.swift; sourceTree = "<group>"; };
 		85A9C37820E0E00C00073340 /* HomeRow.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = HomeRow.xcassets; sourceTree = "<group>"; };
@@ -5320,6 +5322,14 @@
 			name = TextZoom;
 			sourceTree = "<group>";
 		};
+		85A2A7762D9AEC8D008998C5 /* Customisation */ = {
+			isa = PBXGroup;
+			children = (
+				85A2A7772D9AECBC008998C5 /* Customisation.swift */,
+			);
+			path = Customisation;
+			sourceTree = "<group>";
+		};
 		85AE668C20971FCA0014CF04 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
@@ -7572,6 +7582,7 @@
 		F1D796ED1E7AE4090019D451 /* UserInterface */ = {
 			isa = PBXGroup;
 			children = (
+				85A2A7762D9AEC8D008998C5 /* Customisation */,
 				6FC9059A2D65E2DE00E90A0B /* ExperimentalThemingManager */,
 				317DF6092D01E7C400DE0145 /* RoundedPageContainer */,
 				859872221F5743AF00041CB8 /* FireAnimation */,
@@ -9240,6 +9251,7 @@
 				D6E83C562B21ECC1006C8AFB /* SettingsLegacyViewProvider.swift in Sources */,
 				650552A22D67768E0067D4F2 /* DuckPlayerEntryPillViewModel.swift in Sources */,
 				CBF259C32D4EC10400AC63E4 /* CrashHandlersConfiguration.swift in Sources */,
+				85A2A7782D9AECC5008998C5 /* Customisation.swift in Sources */,
 				98B31292218CCB8C00E54DE1 /* AppDependencyProvider.swift in Sources */,
 				D6ACEA322BBD55BF008FADDF /* TabURLInterceptor.swift in Sources */,
 				C13F3F6A2B7F883A0083BE40 /* AuthConfirmationPromptViewController.swift in Sources */,

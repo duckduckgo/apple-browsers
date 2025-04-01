@@ -20,7 +20,7 @@
 import Foundation
 import PrivacyDashboard
 
-enum OmniBarAccessoryType {
+enum OmniBarAccessoryType: String {
      case share
      case chat
  }

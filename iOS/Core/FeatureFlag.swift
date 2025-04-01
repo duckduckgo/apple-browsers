@@ -87,6 +87,8 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+    case customizableActionButton
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -211,6 +213,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+
+        case .customizableActionButton:
+            return .internalOnly()
         }
     }
 }

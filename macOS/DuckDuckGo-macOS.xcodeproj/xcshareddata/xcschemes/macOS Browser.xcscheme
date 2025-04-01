@@ -133,6 +133,9 @@
                   Identifier = "CBRCompileTimeReporterTests">
                </Test>
                <Test
+                  Identifier = "FreemiumDBPPromotionViewCoordinatorTests/testCloseAction_dismissesPromotion_andFiresPixel()">
+               </Test>
+               <Test
                   Identifier = "PixelExperimentTests">
                </Test>
                <Test

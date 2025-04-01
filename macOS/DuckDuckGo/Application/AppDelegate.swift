@@ -180,6 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    // swiftlint:disable cyclomatic_complexity
     @MainActor
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
@@ -396,7 +397,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         faviconManager = FaviconManager(cacheType: .standard)
 #endif
+
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
+            Task { @MainActor in
+                await WebExtensionManager.shared.loadWebExtensions()
+            }
+        }
+#endif
     }
+    // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())

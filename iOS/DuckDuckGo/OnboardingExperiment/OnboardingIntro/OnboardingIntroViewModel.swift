@@ -24,11 +24,48 @@ import class UIKit.UIApplication
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
+
+    struct IntroState {
+        var showDaxDialogBox = false
+        var showIntroViewContent = true
+        var showIntroButton = false
+        var animateIntroText = false
+    }
+
+    struct BrowserComparisonState {
+        var showComparisonButton = false
+        var animateComparisonText = false
+    }
+
+    struct AppIconPickerContentState {
+        var animateTitle = true
+        var animateMessage = false
+        var showContent = false
+    }
+
+    struct AddressBarPositionContentState {
+        var animateTitle = true
+        var showContent = false
+    }
+
+    struct AddToDockState {
+        var isAnimating = true
+    }
+
     @Published private(set) var state: OnboardingView.ViewState = .landing {
         didSet {
             measureScreenImpression()
         }
     }
+
+    @Published var appIconPickerContentState = AppIconPickerContentState()
+    @Published var addressBarPositionContentState = AddressBarPositionContentState()
+    @Published var addToDockState = AddToDockState()
+    @Published var browserComparisonState = BrowserComparisonState()
+    @Published var introState = IntroState()
+
+    /// Set to true when the view controller is tapped
+    @Published var isSkipped = false
 
     let copy: Copy
     var onCompletingOnboardingIntro: (() -> Void)?
@@ -131,6 +168,10 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeNextViewState()
     }
 
+    func tapped() {
+        isSkipped = true
+    }
+
 #if DEBUG || ALPHA
     public func overrideOnboardingCompleted() {
         LaunchOptionsHandler().overrideOnboardingCompleted()
@@ -186,7 +227,9 @@ private extension OnboardingIntroViewModel {
             onCompletingOnboardingIntro?()
             return
         }
+
         // Otherwise advance to the next onboarding step
+        isSkipped = false
         currentIntroStep = nextIntroStep
         setViewState(introStep: currentIntroStep)
     }

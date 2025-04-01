@@ -82,7 +82,7 @@ jobs:
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < tests.xml -p xml -o json -r \
+          yq < package-tests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
@@ -182,10 +182,10 @@ jobs:
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < ios-unittests.xml -p xml -o json -r \
+          yq < bsk-ios-unittests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4

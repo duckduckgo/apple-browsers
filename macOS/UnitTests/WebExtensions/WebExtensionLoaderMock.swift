@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)
@@ -31,3 +33,5 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         return mockWebExtensions
     }
 }
+
+#endif

@@ -35,10 +35,6 @@ protocol TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
-
-    @discardableResult
-    @MainActor
-    func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -47,11 +43,6 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
-
-    @MainActor
-    func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool {
-        tabCollectionViewModel.select(tab: tab)
-    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {

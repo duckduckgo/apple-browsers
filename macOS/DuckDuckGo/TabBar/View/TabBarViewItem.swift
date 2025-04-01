@@ -28,6 +28,7 @@ struct OtherTabBarViewItemsState {
 
 protocol TabBarViewModel {
     var tabContent: Tab.TabContent { get }
+    var title: String { get }
     var titlePublisher: Published<String>.Publisher { get }
     var faviconPublisher: Published<NSImage?>.Publisher { get }
     var tabContentPublisher: AnyPublisher<Tab.TabContent, Never> { get }

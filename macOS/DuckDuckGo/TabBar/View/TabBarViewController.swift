@@ -881,11 +881,11 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
     }
 
     private func addBookmark(for tabViewModel: any TabBarViewModel) {
-        // Activate the Tab being bookmarked and open Add Bookmark Popover
-        tabViewModel.selectTab(in: tabCollectionViewModel)
-        DispatchQueue.main.async {
-            NSApp.sendAction(#selector(MainViewController.bookmarkThisPage), to: nil, from: self)
-        }
+        // open Add Bookmark modal dialog
+        guard let url = tabViewModel.tabContent.userEditableUrl else { return }
+
+        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: WebsiteInfo(url: url, title: tabViewModel.title))
+        dialog.show(in: view.window)
     }
 
     private func deleteBookmark(with url: URL) {

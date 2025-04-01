@@ -99,9 +99,8 @@ class AppSettingsMock: AppSettings {
     var newTabPageIntroMessageEnabled: Bool?
     var newTabPageIntroMessageSeenCount: Int = 0
 
-    var onboardingHighlightsEnabled: Bool = false
-    var onboardingAddToDockState: OnboardingAddToDockState = .disabled
-    
+    var onboardingUserType: OnboardingUserType = .notSet
+
     var duckPlayerNativeUISERPEnabled: Bool = true
     var duckPlayerNativeYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int = 0

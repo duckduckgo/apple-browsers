@@ -92,7 +92,7 @@ public class AppUserDefaults: AppSettings {
     private struct DebugKeys {
         static let inspectableWebViewsEnabledKey = "com.duckduckgo.ios.debug.inspectableWebViewsEnabled"
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
-        static let onboardingAddToDockStateKey = "com.duckduckgo.ios.debug.onboardingAddToDockState"
+        static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
     }
 
     private var userDefaults: UserDefaults? {
@@ -501,16 +501,13 @@ public class AppUserDefaults: AppSettings {
     @UserDefaultsWrapper(key: .duckPlayerPillDismissCount, defaultValue: 0)
     var duckPlayerPillDismissCount: Int
 
-    @UserDefaultsWrapper(key: .debugOnboardingHighlightsEnabledKey, defaultValue: false)
-    var onboardingHighlightsEnabled: Bool
-
-    var onboardingAddToDockState: OnboardingAddToDockState {
+    var onboardingUserType: OnboardingUserType {
         get {
-            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingAddToDockStateKey) else { return .disabled }
-            return OnboardingAddToDockState(rawValue: rawValue) ?? .disabled
+            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingIsNewUserKey) else { return .notSet }
+            return OnboardingUserType(rawValue: rawValue) ?? .notSet
         }
         set {
-            userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingAddToDockStateKey)
+            userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
         }
     }
 }

@@ -22,12 +22,26 @@ import XCTest
 final class FullscreenControllerTests: XCTestCase {
 
     @MainActor
-    func testWhenSetShouldPreventFullscreenExitIsCalledThenFlagIsUpdated() {
+    func testWhenHandleEscapePressIsCalledWithAllowedHostThenFlagIsSet() {
         let controller = FullscreenController()
-        controller.setShouldPreventFullscreenExit(true)
+        controller.handleEscapePress(host: "docs.google.com")
+        XCTAssertTrue(controller.shouldPreventFullscreenExit)
+    }
+
+    @MainActor
+    func testWhenHandleEscapePressIsCalledWithNonMatchingHostThenFlagIsNotSet() {
+        let controller = FullscreenController()
+        controller.handleEscapePress(host: "example.com")
+        XCTAssertFalse(controller.shouldPreventFullscreenExit)
+    }
+
+    @MainActor
+    func testWhenResetFullscreenExitFlagIsCalledThenFlagIsReset() {
+        let controller = FullscreenController()
+        controller.handleEscapePress(host: "docs.google.com")
         XCTAssertTrue(controller.shouldPreventFullscreenExit)
 
-        controller.setShouldPreventFullscreenExit(false)
+        controller.resetFullscreenExitFlag()
         XCTAssertFalse(controller.shouldPreventFullscreenExit)
     }
 
@@ -38,7 +52,6 @@ final class FullscreenControllerTests: XCTestCase {
         try? await Task.sleep(interval: 3)
 
         controller.manuallyExitFullscreen(window: window)
-
         try? await Task.sleep(interval: 3)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
@@ -50,41 +63,8 @@ final class FullscreenControllerTests: XCTestCase {
         let window = try XCTUnwrap(WindowsManager.openNewWindow(isFullscreen: false))
 
         controller.manuallyExitFullscreen(window: window)
-
         try? await Task.sleep(interval: 3)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
-    }
-
-    @MainActor
-    func testWhenHandleEscapePressIsCalledAndWebsiteHandlesEscapeThenWindowStaysInFullscreen() async throws {
-        let controller = FullscreenController()
-        controller.setShouldPreventFullscreenExit(true)
-
-        let window = try XCTUnwrap(WindowsManager.openNewWindow(isFullscreen: true))
-        try? await Task.sleep(interval: 3)
-
-        controller.handleEscapePress(handledByWebsite: true, window: window)
-
-        try? await Task.sleep(interval: 3)
-
-        XCTAssertTrue(window.styleMask.contains(.fullScreen))
-        XCTAssertTrue(controller.shouldPreventFullscreenExit)
-    }
-
-    @MainActor
-    func testWhenHandleEscapePressIsCalledAndWebsiteDoesNotHandleEscapeThenWindowExitsFullscreenAndFlagResets() async throws {
-        let controller = FullscreenController()
-        controller.setShouldPreventFullscreenExit(true)
-
-        let window = try XCTUnwrap(WindowsManager.openNewWindow(isFullscreen: true))
-        try? await Task.sleep(interval: 3)
-
-        controller.handleEscapePress(handledByWebsite: false, window: window)
-
-        try? await Task.sleep(interval: 3)
-
-        XCTAssertFalse(window.styleMask.contains(.fullScreen))
-        XCTAssertFalse(controller.shouldPreventFullscreenExit)
     }
 }

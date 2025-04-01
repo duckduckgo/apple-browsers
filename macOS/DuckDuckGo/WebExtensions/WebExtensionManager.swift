@@ -16,16 +16,21 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 import Foundation
 import Common
 import WebKit
 import os.log
 import BrowserServicesKit
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 protocol WebExtensionManaging {
 
     var areExtenstionsEnabled: Bool { get }
+
+    @MainActor
+    func loadWebExtensions() async
 
     // Adding and removing extensions
     var webExtensionPaths: [String] { get }
@@ -44,7 +49,7 @@ protocol WebExtensionManaging {
 }
 
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     static let shared = WebExtensionManager()
@@ -60,19 +65,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         super.init()
 
         internalSiteHandler.dataSource = self
-
-        do {
-            try loadWebExtensions()
-        } catch {
-            assertionFailure("Failed to load web extensions")
-        }
     }
 
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
 
     var areExtenstionsEnabled: Bool {
-        internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
+        return internalUserDecider.isInternalUser && featureFlagger.isFeatureOn(.webExtensions)
     }
 
     // Caches paths to selected web extensions
@@ -114,18 +113,19 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     func extensionName(from path: String) -> String? {
         if let extensionURL = URL(string: path) {
-            return try? WKWebExtension(resourceBaseURL: extensionURL).displayName
+            return extensionURL.lastPathComponent
         }
         return nil
     }
 
     // MARK: - Lifecycle
 
-    private func loadWebExtensions() throws {
+    @MainActor
+    func loadWebExtensions() async {
         guard areExtenstionsEnabled else { return }
 
         // Load extensions
-        extensions = loader.loadWebExtensions(from: pathsCache.cache)
+        extensions = await loader.loadWebExtensions(from: pathsCache.cache)
 
         // Make contexts
         contexts = extensions.compactMap {
@@ -133,9 +133,14 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         }
 
         // Make controller and load extension contexts
-        guard let controller = WKWebExtensionController() else { return }
-        try contexts.forEach {
-            try controller.load($0)
+        let controller = WKWebExtensionController()
+        do {
+            try contexts.forEach {
+                try controller.load($0)
+            }
+        } catch {
+            assertionFailure("Failed to load extension context: \(error)")
+            return
         }
 
         controller.delegate = self
@@ -144,27 +149,21 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     }
 
     private func makeContext(for webExtension: WKWebExtension) -> WKWebExtensionContext? {
-        guard let context = WKWebExtensionContext(for: webExtension) else {
-            assertionFailure("Failed to create context")
-            return nil
-        }
+        let context = WKWebExtensionContext(for: webExtension)
 
         // Temporary fix to have the same state on multiple browser sessions
         context.uniqueIdentifier = UUID(uuidString: "36dbd1f8-27c7-43fd-a206-726958a1018d")!.uuidString
 
         // In future, we should grant only what the extension requests.
-        guard let matchPatterns = context.webExtension.allRequestedMatchPatterns else {
-            assertionFailure("Failed get all requested match patterns")
-            return nil
-        }
+        let matchPatterns = context.webExtension.allRequestedMatchPatterns
         for pattern in matchPatterns {
             context.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: nil)
         }
-        let permissions: [WKWebExtensionPermission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtensionPermission($0)
+        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
+            WKWebExtension.Permission($0)
         }
         for permission in permissions {
-            context.setPermissionStatus(.grantedExplicitly, forPermission: permission, expirationDate: nil)
+            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
         }
 
         // For debugging purposes
@@ -228,15 +227,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 @MainActor
-extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate {
+extension WebExtensionManager: WKWebExtensionControllerDelegate {
 
     enum WKWebExtensionControllerDelegateError: Error {
         case notSupported
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, openWindowsFor extensionContext: WKWebExtensionContext!) -> [any WKWebExtensionWindow]! {
+    func webExtensionController(_ controller: WKWebExtensionController, openWindowsFor extensionContext: WKWebExtensionContext) -> [any WKWebExtensionWindow] {
         var windows = WindowControllersManager.shared.mainWindowControllers
         if let focusedWindow = WindowControllersManager.shared.lastKeyMainWindowController {
             // Ensure focusedWindow is the first item
@@ -246,7 +245,7 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         return windows
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, focusedWindowFor extensionContext: WKWebExtensionContext!) -> (any WKWebExtensionWindow)? {
+    func webExtensionController(_ controller: WKWebExtensionController, focusedWindowFor extensionContext: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
         return WindowControllersManager.shared.lastKeyMainWindowController
     }
 
@@ -297,7 +296,7 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         }
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, openNewTabUsing configuration: WKWebExtension.TabConfiguration!, for extensionContext: WKWebExtensionContext!) async throws -> any WKWebExtensionTab {
+    func webExtensionController(_ controller: WKWebExtensionController, openNewTabUsing configuration: WKWebExtension.TabConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
         if let tabCollectionViewModel = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
            let url = configuration.url {
 
@@ -312,23 +311,23 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         return Tab(content: .newtab)
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, openOptionsPageFor extensionContext: WKWebExtensionContext!) async throws {
+    func webExtensionController(_ controller: WKWebExtensionController, openOptionsPageFor extensionContext: WKWebExtensionContext) async throws {
         throw WKWebExtensionControllerDelegateError.notSupported
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissions permissions: Set<WKWebExtensionPermission>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtensionPermission>?, Date?) {
+    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissions permissions: Set<WKWebExtension.Permission>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtension.Permission>?, Date?) {
         return (permissions, nil)
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionToAccessURLs urls: Set<URL>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<URL>?, Date?) {
+    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionToAccessURLs urls: Set<URL>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<URL>?, Date?) {
         return (urls, nil)
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionMatchPatterns matchPatterns: Set<WKWebExtensionMatchPattern>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtensionMatchPattern>?, Date?) {
+    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionMatchPatterns matchPatterns: Set<WKWebExtension.MatchPattern>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtension.MatchPattern>?, Date?) {
         return (matchPatterns, nil)
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, presentPopupFor action: WKWebExtension.Action!, for context: WKWebExtensionContext!) async throws {
+    private func webExtensionController(_ controller: WKWebExtensionController!, presentPopupFor action: WKWebExtension.Action!, for context: WKWebExtensionContext!) async throws {
         guard let button = buttonForContext(context) else {
             return
         }
@@ -347,7 +346,7 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         popupWebView.reload()
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController!, sendMessage message: Any!, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext!, replyHandler: ((Any?, (any Error)?) -> Void)!) {
+    func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext, replyHandler: ((Any?, (any Error)?) -> Void)) {
         // Uncomment when sending messages is implemented in the NativeMessagingHandler
 //        try nativeMessagingHandler.webExtensionController(controller,
 //                                                          sendMessage: message,
@@ -356,13 +355,13 @@ extension WebExtensionManager: @preconcurrency WKWebExtensionControllerDelegate 
         replyHandler(nil, nil)
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, connectUsingMessagePort port: WKWebExtensionMessagePort!, for extensionContext: WKWebExtensionContext!) async throws {
+    private func webExtensionController(_ controller: WKWebExtensionController!, connectUsingMessagePort port: WKWebExtension.MessagePort!, for extensionContext: WKWebExtensionContext!) async throws {
         try await nativeMessagingHandler.webExtensionController(controller, connectUsingMessagePort: port, for: extensionContext)
     }
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
 
     func webExtensionContextForUrl(_ url: URL) -> WKWebExtensionContext? {
@@ -377,3 +376,5 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
     }
 
 }
+
+#endif

@@ -129,6 +129,7 @@ final class AppStateRestorationManager: NSObject {
             let state = restoreLastSessionState(interactive: false, includeRegularTabs: restoreRegularTabs)
             cleanTabSnapshots(state: state)
         } else {
+            migratePinnedTabsSettingIfNecessary()
             restorePinnedTabs()
             cleanTabSnapshots()
         }
@@ -152,5 +153,9 @@ final class AppStateRestorationManager: NSObject {
     @MainActor
     private func persistAppState(sync: Bool = false) {
         service.persistState(using: WindowControllersManager.shared.encodeState(with:), sync: sync)
+    }
+
+    private func migratePinnedTabsSettingIfNecessary() {
+        TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(nil)
     }
 }

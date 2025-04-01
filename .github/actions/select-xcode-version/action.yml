@@ -17,29 +17,4 @@ runs:
     - id: select-xcode
       shell: bash
       run: |
-        # Check if the caller provided an overridden version, otherwise use the
-        # contents of .xcode-version instead:
-        if [ -n "${{ inputs.xcode-version }}" ]; then
-          XCODE_VERSION="${{ inputs.xcode-version }}"
-          echo "Using provided Xcode version: $XCODE_VERSION"
-        else
-          VERSION_FILE="$GITHUB_WORKSPACE/.xcode-version"
-          if [ ! -f "$VERSION_FILE" ]; then
-            echo "::error::No version provided and .xcode-version file not found"
-            exit 1
-          fi
-          
-          XCODE_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
-          echo "Using Xcode version from file: $XCODE_VERSION"
-        fi
-        
-        echo "xcode-version=$XCODE_VERSION" >> $GITHUB_OUTPUT
-        
-        XCODE_PATH="/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
-        if [ ! -d "$XCODE_PATH" ]; then
-          echo "::error::Xcode version $XCODE_VERSION not found at $XCODE_PATH"
-          exit 1
-        fi
-        
-        echo "Selecting Xcode version $XCODE_VERSION"
-        sudo xcode-select -s "$XCODE_PATH"
+        ${{ github.action_path }}/select_xcode_version.sh "${{ inputs.xcode-version }}"

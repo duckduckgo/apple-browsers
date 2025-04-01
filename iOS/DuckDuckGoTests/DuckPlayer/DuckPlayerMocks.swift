@@ -50,6 +50,7 @@ class MockWebView: WKWebView {
     var loadedRequests: [URLRequest] = []
     var loadCallCount = 0
     var evaluateJavaScriptCalled = false
+    var reloadCalled = false
 
     var loadCompletionHandler: (() -> Void)?
 
@@ -86,6 +87,7 @@ class MockWebView: WKWebView {
     }
 
     override func reload() -> WKNavigation? {
+        reloadCalled = true
         // Simulate reload behavior if needed
         return nil
     }
@@ -205,6 +207,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     
     // MARK: - Testing Properties
     var presentPillCalled = false
+    var dismissPillCalled = false
     var loadNativeDuckPlayerVideoCalled = false
 
     // MARK: - Private Properties
@@ -283,6 +286,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
 
     func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
+        dismissPillCalled = true
         // Mock implementation
     }
 

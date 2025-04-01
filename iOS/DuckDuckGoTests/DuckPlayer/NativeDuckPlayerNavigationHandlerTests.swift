@@ -429,4 +429,106 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
     }
    
+    // MARK: - handleGoBack Tests
+    func testHandleGoBack_CallsWebViewGoBack() {
+        // Given
+        let firstURL = URL(string: "https://www.example.com/first")!
+        let secondURL = URL(string: "https://www.example.com/second")!
+        mockWebView.navigate(to: firstURL)
+        mockWebView.navigate(to: secondURL)
+        
+        // When
+        sut.handleGoBack(webView: mockWebView)
+        
+        // Then
+        XCTAssertEqual(mockWebView.url, firstURL, "handleGoBack should navigate to the previous URL in history")
+    }
+
+    // MARK: - handleReload Tests
+    func testHandleReload_WithValidYouTubeURL_HandlesCorrectly() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let videoURLAsk = URL(string: "https://www.youtube.com/watch?v=1a2b3c4d5e6")!
+        let videoURLAuto = URL(string: "https://www.youtube.com/watch?v=2b3c4d5e6f7")!
+        
+        // Test with .ask mode
+        playerSettings.nativeUIYoutubeMode = .ask
+        sut.lastHandledVideoID = "previousVideoID"
+        
+        // When
+        mockWebView.navigate(to: videoURLAsk)
+        sut.handleReload(webView: mockWebView)
+        
+        // Then
+        XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
+        XCTAssertTrue(mockDuckPlayer.presentPillCalled, "Pill should be presented in ask mode")
+        mockDelayHandler.completeDelay()
+        XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded in ask mode")
+        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(sut.lastHandledVideoID, "1a2b3c4d5e6")
+        
+        // Reset state for .auto mode test
+        mockDuckPlayer.presentPillCalled = false
+        mockDuckPlayer.dismissPillCalled = false
+        mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
+        mockWebView.reloadCalled = false
+        sut.lastHandledVideoID = "previousVideoID"
+        
+        // Test with .auto mode
+        playerSettings.nativeUIYoutubeMode = .auto
+        
+        // When
+        mockWebView.navigate(to: videoURLAuto)
+        sut.handleReload(webView: mockWebView)
+        
+        // Then
+        XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
+        XCTAssertTrue(mockDuckPlayer.presentPillCalled, "Pill should be presented in auto mode")
+        mockDelayHandler.completeDelay()
+        XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should be loaded in auto mode")
+        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(sut.lastHandledVideoID, "2b3c4d5e6f7")
+    }
+    
+    func testHandleReload_WithNonWatchYouTubeURL_OnlyReloadsPage() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let nonWatchURL = URL(string: "https://www.youtube.com/feed")!
+        
+        // Test with .ask mode
+        playerSettings.nativeUIYoutubeMode = .ask
+        sut.lastHandledVideoID = "previousVideoID"
+        
+        // When
+        mockWebView.navigate(to: nonWatchURL)
+        sut.handleReload(webView: mockWebView)
+        
+        // Then
+        XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
+        XCTAssertFalse(mockDuckPlayer.presentPillCalled, "Pill should not be presented")
+        XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded")
+        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(sut.lastHandledVideoID, nil, "lastHandledVideoID should be reset")
+        
+        // Reset state for .auto mode test
+        mockDuckPlayer.presentPillCalled = false
+        mockDuckPlayer.dismissPillCalled = false
+        mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
+        mockWebView.reloadCalled = false
+        sut.lastHandledVideoID = "previousVideoID"
+        
+        // Test with .auto mode
+        playerSettings.nativeUIYoutubeMode = .auto
+        
+        // When
+        mockWebView.navigate(to: nonWatchURL)
+        sut.handleReload(webView: mockWebView)
+        
+        // Then
+        XCTAssertTrue(mockDuckPlayer.dismissPillCalled, "Pill should be dismissed")
+        XCTAssertFalse(mockDuckPlayer.presentPillCalled, "Pill should not be presented")
+        XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded")
+        XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
+        XCTAssertEqual(sut.lastHandledVideoID, nil, "lastHandledVideoID should be reset")
+    }
 }

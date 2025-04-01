@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 import Foundation
 import Common
 import WebKit
@@ -374,3 +376,5 @@ extension WebExtensionManager: WebExtensionInternalSiteHandlerDataSource {
     }
 
 }
+
+#endif

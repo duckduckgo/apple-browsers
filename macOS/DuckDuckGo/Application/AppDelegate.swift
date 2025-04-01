@@ -398,11 +398,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard)
 #endif
 
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             Task { @MainActor in
                 await WebExtensionManager.shared.loadWebExtensions()
             }
         }
+#endif
     }
     // swiftlint:enable cyclomatic_complexity
 

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 @available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
 
@@ -129,3 +131,5 @@ extension NSAlert {
     }
 
 }
+
+#endif

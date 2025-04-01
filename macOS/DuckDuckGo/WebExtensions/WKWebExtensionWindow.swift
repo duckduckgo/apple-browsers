@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 @available(macOS 15.4, *)
 @MainActor
 extension MainWindowController: WKWebExtensionWindow {
@@ -72,3 +74,5 @@ extension MainWindowController: WKWebExtensionWindow {
     }
 
 }
+
+#endif

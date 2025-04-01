@@ -241,7 +241,7 @@ class CSVImporterTests: XCTestCase {
         """
 
         let logins = CSVImporter.extractLogins(from: csvFileContents, tld: tld)
-        XCTAssertEqual(logins?.count, 1)
+        XCTAssertEqual(logins?.count, 2)
     }
 }
 

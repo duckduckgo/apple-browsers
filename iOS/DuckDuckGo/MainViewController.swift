@@ -199,7 +199,7 @@ class MainViewController: UIViewController {
     private lazy var omnibarAccessoryHandler: OmnibarAccessoryHandler = {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
-        return OmnibarAccessoryHandler(settings: settings)
+        return OmnibarAccessoryHandler(settings: settings, customisation: nil)
     }()
 
     let isAuthV2Enabled: Bool

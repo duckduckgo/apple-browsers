@@ -21,6 +21,8 @@ import Persistence
 import BrowserServicesKit
 import Core
 
+/// The intention is that this becomes a central location for customisation / personalisation configuration, but it's only for a PoC so
+///   am trying to minimise the amount of code touched as this could well get yeeted.
 final class Customisation {
 
     protocol Storage {
@@ -31,13 +33,15 @@ final class Customisation {
         guard featureFlagger.isFeatureOn(.customizableActionButton) else {
             return .share
         }
-        return .share
+        return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
     }
 
     let storage: Storage
     let featureFlagger: FeatureFlagger
 
-    init(storage: Storage = DefaultCustomisationStorage(), featureFlagger: FeatureFlagger) {
+    init?(storage: Storage = DefaultCustomisationStorage(), featureFlagger: FeatureFlagger) {
+        guard featureFlagger.isFeatureOn(.customizableActionButton) else { return nil }
+
         self.storage = storage
         self.featureFlagger = featureFlagger
     }

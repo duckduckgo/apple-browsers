@@ -63,6 +63,12 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// lastHandledVideoID is the last video ID that was handled by the DuckPlayer
     var lastHandledVideoID: String?
 
+    /// DelayHandler for delaying actions
+    private let delayHandler: DuckPlayerDelayHandling
+
+    /// Cancellables for delaying actions
+    private var cancellables = Set<AnyCancellable>()
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -120,11 +126,13 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
-         tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil) {
+         tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
+         delayHandler: DuckPlayerDelayHandling = DuckPlayerDelayHandler()) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.tabNavigationHandler = tabNavigationHandler
+        self.delayHandler = delayHandler
         super.init()
     }
 
@@ -132,6 +140,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         duckPlayerNavigationRequestCancellable?.cancel()
         duckPlayerSettingsCancellable?.cancel()
         duckPlayerDismissalCancellable?.cancel()
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
     }
 
     /// Sets the referrer based on the current web view 
@@ -230,6 +240,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
             }
         }
     }
+
 }
 
 extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
@@ -297,32 +308,31 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.disabledForVideo)
         }
 
-        // Register handled video ID
-        lastHandledVideoID = videoID
-
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
             duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
+            lastHandledVideoID = nil
             return .notHandled(.duckPlayerDisabled)
-        }
-
-        // Pause Video if needed
-        if duckPlayer.settings.nativeUIYoutubeMode != .never {
-            Task { await pauseVideoStart(webView: webView) }
         }
 
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
+            lastHandledVideoID = videoID
+            Task { await pauseVideoStart(webView: webView) }
             duckPlayer.presentPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }
 
         // Present Duck Player
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
+            lastHandledVideoID = videoID
+            Task { await pauseVideoStart(webView: webView) }
             self.duckPlayer.presentPill(for: videoID, timestamp: nil)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.loadNativeDuckPlayerVideo(videoID: videoID)
-            }
+            delayHandler.delay(seconds: 1.0)
+                .sink { [weak self] _ in
+                    self?.loadNativeDuckPlayerVideo(videoID: videoID)
+                }
+                .store(in: &cancellables)
             return .handled(.duckPlayerEnabled)
         }
 

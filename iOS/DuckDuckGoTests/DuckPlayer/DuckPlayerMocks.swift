@@ -394,3 +394,16 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
         // Mock implementation
     }
 }
+
+class MockDelayHandler: DuckPlayerDelayHandling {
+    private var delaySubject = PassthroughSubject<Void, Never>()
+    private var delayCancellable: AnyCancellable?
+    
+    func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never> {
+        delaySubject.eraseToAnyPublisher()
+    }
+    
+    func completeDelay() {
+        delaySubject.send()
+    }
+}

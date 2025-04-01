@@ -255,6 +255,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
+
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
 
@@ -343,6 +345,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {
         webView.reload()
+        
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
+        
         lastHandledVideoID = nil
         duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
@@ -354,6 +359,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` being attached.
     @MainActor
     func handleAttach(webView: WKWebView) {
+        
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         setReferrer(webView: webView)
 
@@ -372,6 +379,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` that finished loading.
     @MainActor
     func handleDidFinishLoading(webView: WKWebView) {
+
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         // Update referrer
         setReferrer(webView: webView)
@@ -416,6 +425,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleDelegateNavigation(navigationAction: WKNavigationAction, webView: WKWebView) -> Bool {
 
+      
         setReferrer(webView: webView)
 
         guard let url = navigationAction.request.url else {
@@ -427,10 +437,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return false
         }
 
-        // Only if DuckPlayer is enabled
-        guard featureFlagger.isFeatureOn(.duckPlayer) else {
-            return false
-        }
+        // Only account for MainFrame navigation
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return false }
 
         // Stop navigation if we are on SERP and DuckPlayer is enabled for it
         if referrer == .serp &&
@@ -452,6 +460,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         isLinkPreview = hostViewController.isLinkPreview
         duckPlayer.setHostViewController(hostViewController)
     }
@@ -461,6 +470,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
         setHostViewController(hostViewController)
+
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
             if !disableDuckPlayerForNextVideo && !isLinkPreview {
                 self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
@@ -470,6 +481,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles DuckPlayer Updates when WebView dissapears
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
+        guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
     }
 

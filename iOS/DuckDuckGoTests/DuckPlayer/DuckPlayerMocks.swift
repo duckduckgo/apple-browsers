@@ -49,6 +49,7 @@ class MockWebView: WKWebView {
     var lastLoadedRequest: URLRequest?
     var loadedRequests: [URLRequest] = []
     var loadCallCount = 0
+    var evaluateJavaScriptCalled = false
 
     var loadCompletionHandler: (() -> Void)?
 
@@ -201,6 +202,10 @@ final class MockDuckPlayer: DuckPlayerControlling {
     var hostView: TabViewController?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
+    
+    // MARK: - Testing Properties
+    var presentPillCalled = false
+    var loadNativeDuckPlayerVideoCalled = false
 
     // MARK: - Private Properties
     private var featureFlagger: FeatureFlagger
@@ -231,6 +236,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     }
 
     func loadNativeDuckPlayerVideo(videoID: String, source: DuckPlayer.VideoNavigationSource, timestamp: TimeInterval?) {
+        loadNativeDuckPlayerVideoCalled = true
         // Mock implementation
     }
 
@@ -272,6 +278,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
 
     // MARK: - Pill UI Methods
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
+        presentPillCalled = true
         // Mock implementation
     }
 

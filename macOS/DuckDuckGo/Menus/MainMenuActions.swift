@@ -363,6 +363,17 @@ extension AppDelegate {
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
         newTabPageCustomizationModel.resetAllCustomizations()
     }
+
+    // MARK: Activate the app before acting
+
+    @MainActor
+    @objc func bookmarkThisPage(_ sender: Any) {
+        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+            assertionFailure("No main window controller")
+            return
+        }
+        windowController.mainViewController.bookmarkThisPage(sender)
+    }
 }
 
 extension MainViewController {

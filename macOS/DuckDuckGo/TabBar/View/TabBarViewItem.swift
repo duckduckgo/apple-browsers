@@ -34,6 +34,10 @@ protocol TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
+
+    @discardableResult
+    @MainActor
+    func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -42,6 +46,11 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+
+    @MainActor
+    func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool {
+        tabCollectionViewModel.select(tab: tab)
+    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -421,7 +430,6 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     override func loadView() {
         view = TabBarItemCellView()
-
     }
 
     override func viewDidLoad() {
@@ -1013,6 +1021,7 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
+            func selectTab(in tabCollectionViewModel: TabCollectionViewModel) -> Bool { false }
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title

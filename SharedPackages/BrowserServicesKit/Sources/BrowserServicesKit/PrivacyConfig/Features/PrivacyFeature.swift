@@ -72,7 +72,6 @@ public enum PrivacyFeature: String {
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
-    case visualRefresh
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

@@ -166,7 +166,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .visualRefresh:
-            return .remoteDevelopment(.feature(.visualRefresh))
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
         }
     }
 }

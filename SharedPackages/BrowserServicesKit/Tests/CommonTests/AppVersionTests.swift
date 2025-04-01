@@ -45,7 +45,7 @@ final class AppVersionTests: XCTestCase {
 
     func testMajorNumber() {
         mockBundle.add(name: Bundle.Key.versionNumber, value: Constants.version)
-        XCTAssertEqual("2", testee.majorVersionNumber)
+        XCTAssertEqual("3", testee.majorVersionNumber)
     }
 
     func testVersionNumber() {

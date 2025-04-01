@@ -25,9 +25,25 @@ import Subscription
 import PixelKit
 import os.log
 import Freemium
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Networking
+
+// https://app.asana.com/0/0/1209325145462549
+struct SubscriptionValuesV2: Decodable {
+    let accessToken: String
+    let refreshToken: String
+}
+
+public struct AccessTokenValue: Encodable {
+    let accessToken: String
+}
+
+// https://app.asana.com/0/1205842942115003/1209254337758531/f
+public struct GetFeatureValue: Encodable {
+    let useUnifiedFeedback: Bool = true
+    let useSubscriptionsAuthV2: Bool
+}
 
 /// Use Subscription sub-feature
 final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
@@ -45,19 +61,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
     let subscriptionManager: SubscriptionManagerV2
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
-
     let stripePurchaseFlow: any StripePurchaseFlowV2
     let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler
-
     let uiHandler: SubscriptionUIHandling
-
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManaging
     private let notificationCenter: NotificationCenter
-
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
 
@@ -86,8 +97,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     struct Handlers {
-        static let getSubscription = "getSubscription"
-        static let setSubscription = "setSubscription"
+        static let setAuthTokens = "setAuthTokens"
+        static let getAuthAccessToken = "getAuthAccessToken"
+        static let getFeatureConfig = "getFeatureConfig"
         static let backToSettings = "backToSettings"
         static let getSubscriptionOptions = "getSubscriptionOptions"
         static let subscriptionSelected = "subscriptionSelected"
@@ -107,8 +119,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         Logger.subscription.debug("WebView handler: \(methodName)")
 
         switch methodName {
-        case Handlers.getSubscription: return getSubscription
-        case Handlers.setSubscription: return setSubscription
+        case Handlers.setAuthTokens: return setAuthTokens
+        case Handlers.getAuthAccessToken: return getAuthAccessToken
+        case Handlers.getFeatureConfig: return getFeatureConfig
         case Handlers.backToSettings: return backToSettings
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
@@ -123,40 +136,18 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
+            Logger.subscription.error("Unknown web message: \(methodName, privacy: .public)")
             return nil
         }
     }
 
-    struct Subscription: Encodable {
-        let token: String
-    }
+    // MARK: - Subscription + Auth
 
-    /// Values that the Frontend can use to determine the current state.
-    struct SubscriptionValues: Codable {
-        enum CodingKeys: String, CodingKey {
-            case token
-        }
-        let token: String
-    }
-
-    func getSubscription(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard subscriptionManager.isUserAuthenticated else { return Subscription(token: "") }
-
-        do {
-            let accessToken = try await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
-            return Subscription(token: accessToken)
-        } catch {
-            Logger.subscription.debug("No subscription available: \(error)")
-            return Subscription(token: "")
-        }
-    }
-
-    func setSubscription(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        // Note: This is called by the web FE when a subscription is retrieved, `params` contains an auth token V1 that will need to be exchanged for a V2. This is a temporary workaround until the FE fully supports v2 auth.
+    func setAuthTokens(params: Any, original: WKScriptMessage) async throws -> Encodable? {
 
         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailSuccess, frequency: .legacyDailyAndCount)
 
-        guard let subscriptionValues: SubscriptionValues = CodableHelper.decode(from: params) else {
+        guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             PixelKit.fire(PrivacyProPixel.setSubscriptionInvalidSubscriptionValues)
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
@@ -166,23 +157,32 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         // Clear subscription Cache
         subscriptionManager.clearSubscriptionCache()
 
-        guard !subscriptionValues.token.isEmpty else {
-            Logger.subscription.fault("Empty token provided, Failed to exchange v1 token for v2")
+        guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
+            Logger.subscription.fault("Empty access token or refresh token provided")
             PixelKit.fire(PrivacyProPixel.setSubscriptionInvalidSubscriptionValues)
             return nil
         }
 
         do {
-            _ = try await subscriptionManager.exchange(tokenV1: subscriptionValues.token)
-            Logger.subscription.log("v1 token exchanged for v2")
-            // forcing subscription refresh
+            try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
             try await subscriptionManager.getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
             Logger.subscription.log("Subscription retrieved")
         } catch {
-            Logger.subscription.error("Failed to exchange v1 token for v2 \(error, privacy: .public)")
+            Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
         }
         return nil
     }
+
+    func getAuthAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let tokenContainer = try? await subscriptionManager.getTokenContainer(policy: .localValid)
+        return AccessTokenValue(accessToken: tokenContainer?.accessToken ?? "")
+    }
+
+    func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        return GetFeatureValue(useSubscriptionsAuthV2: true)
+    }
+
+    // MARK: -
 
     func backToSettings(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)

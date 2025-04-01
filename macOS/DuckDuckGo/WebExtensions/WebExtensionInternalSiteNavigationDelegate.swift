@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+#if WEB_EXTENSIONS_ENABLED
+
+@available(macOS 15.4, *)
 final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
@@ -38,3 +40,5 @@ final class WebExtensionInternalSiteNavigationDelegate: NSObject, WKNavigationDe
     }
 
 }
+
+#endif

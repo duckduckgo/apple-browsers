@@ -26,6 +26,7 @@ extension NSMenuItem {
         return item
     }
 
+    @MainActor
     convenience init(bookmarkViewModel: BookmarkViewModel) {
         self.init()
 

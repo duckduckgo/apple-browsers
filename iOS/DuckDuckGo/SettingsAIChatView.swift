@@ -45,20 +45,17 @@ struct SettingsAIChatView: View {
             .listRowBackground(Color.clear)
 
             Section {
-                if viewModel.state.aiChat.isAIChatBrowsingMenuFeatureFlagEnabled {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
-                }
+                SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                if viewModel.state.aiChat.isAIChatAddressBarFeatureFlagEnabled {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
-                }
+                SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                if viewModel.state.aiChat.isAIChatVoiceSearchFeatureFlagEnabled {
-                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
-                }
+                SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+
+                SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                 accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
             }
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,

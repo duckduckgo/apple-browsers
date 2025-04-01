@@ -28,18 +28,24 @@ extension OnboardingView {
         private let title: String
         private var animateText: Binding<Bool>
         private var showCTA: Binding<Bool>
+        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
-        init(title: String, animateText: Binding<Bool> = .constant(true), showCTA: Binding<Bool> = .constant(false), action: @escaping () -> Void) {
+        init(title: String,
+             animateText: Binding<Bool> = .constant(true),
+             showCTA: Binding<Bool> = .constant(false),
+             isSkipped: Binding<Bool>,
+             action: @escaping () -> Void) {
             self.title = title
             self.animateText = animateText
             self.showCTA = showCTA
+            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: 24.0) {
-                AnimatableTypingText(title, startAnimating: animateText) {
+                AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
                     withAnimation {
                         showCTA.wrappedValue = true
                     }

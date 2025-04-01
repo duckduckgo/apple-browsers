@@ -658,5 +658,25 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT to be cancelled as it's Youtube Internal navigation")
     }
-    
+
+    @MainActor
+    func testWebViewIsNotRetainedStronglyByDuckPlayerHandler() {
+        // Arrange
+        weak var weakWebView: MockWebView?
+
+        autoreleasepool {
+            var webView: MockWebView! = MockWebView()
+            weakWebView = webView
+            handler.handleAttach(webView: webView)
+
+            // Act
+            webView = nil
+        }
+
+        // Assert
+        DispatchQueue.main.async {
+            XCTAssertNil(weakWebView)
+        }
+    }
+
 }

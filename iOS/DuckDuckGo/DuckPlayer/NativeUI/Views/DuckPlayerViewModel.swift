@@ -49,6 +49,11 @@ final class DuckPlayerViewModel: ObservableObject {
         static let disabled = "0"
         // Used to set the start time of the video
         static let startParameter = "start"
+        
+        // Used to force the player to use a stable version of the player
+        // https://app.asana.com/0/1204099484721401/1209718564423105/f
+        static let colorSchemeParameter = "color"
+        static let colorSchemeValue = "white"
     }
 
     /// A publisher to notify when Youtube navigation is required.
@@ -67,7 +72,8 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled
+        Constants.playsInlineParameter: Constants.enabled,
+        Constants.colorSchemeParameter: Constants.colorSchemeValue
     ]
 
     /// The referrer for the DuckPlayer
@@ -229,7 +235,7 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-    
+
     /// Hides the auto-open toggle UI element
     func hideAutoOpenToggle() {
         showAutoOpenOnYoutubeToggle = false

@@ -438,8 +438,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
-
-        if !settings.isAuthV2Enabled {
+        Self.isAuthV2Enabled = settings.isAuthV2Enabled
+        if !Self.isAuthV2Enabled {
             // MARK: Subscription V1
             Logger.networkProtection.log("Configure Subscription V1")
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,

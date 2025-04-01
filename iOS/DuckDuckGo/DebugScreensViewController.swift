@@ -44,6 +44,7 @@ struct DebugScreensView: View {
         List {
             if model.filtered.isEmpty {
                 DebugTogglesView(model: model)
+                    .listRowBackground(Color(designSystemColor: .surface))
 
                 if !model.pinnedScreens.isEmpty {
                     DebugScreensListView(model: model, sectionTitle: "Pinned", screens: model.pinnedScreens)
@@ -62,6 +63,7 @@ struct DebugScreensView: View {
         }
         .searchable(text: $model.filter, prompt: "Filter")
         .navigationTitle("Debug")
+        .applyBackground()
     }
 }
 
@@ -112,6 +114,7 @@ struct DebugScreensListView: View {
                     }
                 }
             }
+            .listRowBackground(Color(designSystemColor: .surface))
         } header: {
             Text(verbatim: sectionTitle)
         }

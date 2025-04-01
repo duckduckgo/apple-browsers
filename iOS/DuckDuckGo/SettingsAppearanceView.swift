@@ -38,8 +38,8 @@ struct SettingsAppearanceView: View {
 
                 // Theme
                 SettingsPickerCellView(label: UserText.settingsTheme,
-                                       options: ThemeName.allCases,
-                                       selectedOption: viewModel.themeBinding)
+                                       options: ThemeStyle.allCases,
+                                       selectedOption: viewModel.themeStyleBinding)
             }
 
             Section(header: Text(UserText.addressBar)) {
@@ -56,15 +56,13 @@ struct SettingsAppearanceView: View {
             }
 
             if viewModel.isInternalUser {
-                Section(header: Text(UserText.settingsExperimentalSection)) {
-
+                Section {
                     SettingsCellView(label: UserText.settingsExperimentalMainSwitch,
                                      accessory: .toggle(isOn: viewModel.experimentalThemingBinding))
-
-                    if viewModel.state.isExperimentalThemingEnabled {
-                        SettingsCellView(label: UserText.settingsExperimentalColorsSwitch,
-                                         accessory: .toggle(isOn: viewModel.alternativeColorsBinding))
-                    }
+                } header: {
+                    Text(UserText.settingsExperimentalSection)
+                } footer: {
+                    Text(UserText.settingsExperimentalSectionFooter)
                 }
             }
         }

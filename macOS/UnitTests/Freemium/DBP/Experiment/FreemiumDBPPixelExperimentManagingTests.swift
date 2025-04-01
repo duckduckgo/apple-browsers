@@ -27,7 +27,6 @@ final class FreemiumDBPPixelExperimentManagingTests: XCTestCase {
     private var mockAccountManager: MockAccountManager!
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockUserDefaults: MockUserDefaults!
-    private var mockPixelHandler: MockFreemiumDBPExperimentPixelHandler!
 
     override func setUp() {
        super.setUp()
@@ -48,9 +47,8 @@ final class FreemiumDBPPixelExperimentManagingTests: XCTestCase {
                                                           canPurchase: false,
                                                           subscriptionFeatureMappingCache: mockSubscriptionFeatureMappingCache)
         mockUserDefaults = MockUserDefaults()
-        mockPixelHandler = MockFreemiumDBPExperimentPixelHandler()
         let testLocale = Locale(identifier: "en_US")
-        sut = FreemiumDBPPixelExperimentManager(subscriptionManager: mockSubscriptionManager, userDefaults: mockUserDefaults, locale: testLocale, freemiumDBPExperimentPixelHandler: mockPixelHandler)
+        sut = FreemiumDBPPixelExperimentManager(subscriptionManager: mockSubscriptionManager, userDefaults: mockUserDefaults, locale: testLocale)
    }
 
    override func tearDown() {
@@ -189,52 +187,6 @@ final class FreemiumDBPPixelExperimentManagingTests: XCTestCase {
 
         // Then
         XCTAssertEqual("2", parameters?["daysEnrolled"])
-    }
-
-    // MARK: - Send One-time Subscription status pixel tests
-
-    func testSendOneTimeCohortSubscriptionStatusPixel_whenUserNotEnrolled_doesNotFirePixel() {
-        // Given
-        mockUserDefaults.removeObject(forKey: MockUserDefaults.Keys.enrollmentDate)
-        mockUserDefaults.removeObject(forKey: MockUserDefaults.Keys.experimentCohort)
-        mockAccountManager.accessToken = "some_token"
-
-        // When
-        sut.sendOneTimeCohortSubscriptionStatusPixel()
-
-        // Then
-        XCTAssertNil(mockPixelHandler.lastFiredEvent)
-    }
-
-    func testSendOneTimeCohortSubscriptionStatusPixel_whenUserNotAuthenticated_doesNotFirePixel() {
-        // Given
-        let enrollmentDate = Date()
-        mockUserDefaults.set(enrollmentDate, forKey: MockUserDefaults.Keys.enrollmentDate)
-        mockUserDefaults.set("treatment", forKey: MockUserDefaults.Keys.experimentCohort)
-        mockAccountManager.accessToken = nil
-
-        // When
-        sut.sendOneTimeCohortSubscriptionStatusPixel()
-
-        // Then
-        XCTAssertNil(mockPixelHandler.lastFiredEvent)
-    }
-
-    func testSendOneTimeCohortSubscriptionStatusPixel_whenUserEnrolledAndAuthenticated_firesPixelWithCorrectParameters() {
-        // Given
-        let calendar = Calendar.current
-        let twoDaysAgo = calendar.date(byAdding: .day, value: -2, to: Date())!
-        mockUserDefaults.set(twoDaysAgo, forKey: MockUserDefaults.Keys.enrollmentDate)
-        mockUserDefaults.set("treatment", forKey: MockUserDefaults.Keys.experimentCohort)
-        mockAccountManager.accessToken = "some_token"
-
-        // When
-        sut.sendOneTimeCohortSubscriptionStatusPixel()
-
-        // Then
-        XCTAssertEqual(mockPixelHandler.lastFiredEvent, .oneTimeCohortSubscriptionStatusPixel)
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["daysEnrolled"], "2")
-        XCTAssertEqual(mockPixelHandler.lastPassedParameters?["experimentCohort"], "treatment")
     }
 }
 

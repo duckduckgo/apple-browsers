@@ -72,7 +72,7 @@ class BookmarksImportPerformanceTests: XCTestCase {
             startMeasuring()
             
             Task {
-                let importer = await BookmarksImporter(coreDataStore: db)
+                let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile))
                 let result = await importer.parseAndSave(html: html)
                 switch result {
                 case .failure:

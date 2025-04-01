@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Core
 
 struct OnboardingDebugView: View {
 
@@ -66,6 +67,8 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 
     func resetDaxDialogs() {
+        UserDefaults().set(false, forKey: LaunchOptionsHandler.isOnboardingCompleted)
+
         settings.isDismissed = false
         settings.tryAnonymousSearchShown = false
         settings.tryVisitASiteShown = false

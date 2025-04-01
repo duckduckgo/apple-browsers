@@ -177,7 +177,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUISERPEnabled: Bool = true
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var nativeUIPrimingModalPresentedCount: Int = 0
-    var nativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
     
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
@@ -275,7 +275,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         // Mock implementation
     }
 
-    func dismissPill(reset: Bool, animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
         // Mock implementation
     }
 
@@ -368,7 +368,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     }
     
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool) {
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
         // Mock implementation
     }
     

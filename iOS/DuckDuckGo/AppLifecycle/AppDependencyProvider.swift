@@ -139,7 +139,22 @@ final class AppDependencyProvider: DependencyProvider {
                                                        subscriptionEndpointService: subscriptionEndpointService,
                                                        authEndpointService: authService)
 
-            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
+                switch feature {
+                case .usePrivacyProUSARegionOverride:
+                    return (internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
+                case .usePrivacyProROWRegionOverride:
+                    return (internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+                }
+            }
+
+            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger)
 
             let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                  accountManager: accountManager,
@@ -203,7 +218,23 @@ final class AppDependencyProvider: DependencyProvider {
             }
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
-            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
+                switch feature {
+                case .usePrivacyProUSARegionOverride:
+                    return (internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
+                case .usePrivacyProROWRegionOverride:
+                    return (internalUserDecider.isInternalUser &&
+                            subscriptionEnvironment.serviceEnvironment == .staging &&
+                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
+                }
+            }
+
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                     subscriptionFeatureFlagger: subscriptionFeatureFlagger)
             let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
                 switch type {
                 case .deadToken:

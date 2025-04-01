@@ -34,7 +34,7 @@
  @end
 
  */
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 protocol WebExtensionEventsListening {
 
     var controller: WKWebExtensionController? { get set }
@@ -52,7 +52,7 @@ protocol WebExtensionEventsListening {
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab)
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     weak var controller: WKWebExtensionController?
@@ -82,17 +82,15 @@ final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
-        let set = NSSet(array: tabs) as Set
-        controller?.didSelectTabs(set)
+        controller?.didSelectTabs(tabs)
     }
 
     func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {
-        let set = NSSet(array: tabs) as Set
-        controller?.didDeselectTabs(set)
+        controller?.didDeselectTabs(tabs)
     }
 
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {
-        controller?.didMoveTab(tab, from: UInt(oldIndex), in: oldWindow)
+        controller?.didMoveTab(tab, from: oldIndex, in: oldWindow)
     }
 
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {

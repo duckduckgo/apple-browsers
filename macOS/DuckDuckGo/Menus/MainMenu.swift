@@ -782,7 +782,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
 
 #if !APPSTORE
-            if #available(macOS 15.3, *) {
+            if #available(macOS 15.4, *) {
                 NSMenuItem.separator()
                 NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu())
                 NSMenuItem.separator()

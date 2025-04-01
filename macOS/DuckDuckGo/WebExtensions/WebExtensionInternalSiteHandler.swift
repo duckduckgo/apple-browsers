@@ -16,14 +16,14 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 protocol WebExtensionInternalSiteHandlerDataSource {
 
     func webExtensionContextForUrl(_ url: URL) -> WKWebExtensionContext?
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionInternalSiteHandler {
 
     let navigationDelegate = WebExtensionInternalSiteNavigationDelegate()

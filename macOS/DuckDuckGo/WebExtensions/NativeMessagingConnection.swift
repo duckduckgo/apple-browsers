@@ -19,21 +19,21 @@
 import Foundation
 import os.log
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 protocol NativeMessagingConnectionDelegate: AnyObject {
 
     func nativeMessagingConnectionProcessDidFail(_ nativeMessagingConnection: NativeMessagingConnection)
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class NativeMessagingConnection {
-    let port: WKWebExtensionMessagePort
+    let port: WKWebExtension.MessagePort
     let communicator: NativeMessagingCommunicator
 
     weak var delegate: NativeMessagingConnectionDelegate?
 
-    internal init(port: WKWebExtensionMessagePort, communicator: NativeMessagingCommunicator) {
+    internal init(port: WKWebExtension.MessagePort, communicator: NativeMessagingCommunicator) {
         self.port = port
         self.communicator = communicator
 

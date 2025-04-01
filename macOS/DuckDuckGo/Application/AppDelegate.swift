@@ -396,6 +396,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         faviconManager = FaviconManager(cacheType: .standard)
 #endif
+
+        if #available(macOS 15.4, *) {
+            Task { @MainActor in
+                await WebExtensionManager.shared.loadWebExtensions()
+            }
+        }
     }
 
     func applicationWillFinishLaunching(_ notification: Notification) {

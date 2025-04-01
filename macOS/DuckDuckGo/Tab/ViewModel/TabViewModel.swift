@@ -88,7 +88,7 @@ final class TabViewModel {
             }
 
 #if !APPSTORE
-            if #available(macOS 15.3, *) {
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.zoomFactor], for: tab)
             }
 #endif

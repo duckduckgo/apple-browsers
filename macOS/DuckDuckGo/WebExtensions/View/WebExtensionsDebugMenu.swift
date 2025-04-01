@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
@@ -73,7 +73,7 @@ final class WebExtensionsDebugMenu: NSMenu {
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionMenuItem: NSMenuItem {
 
     required init(coder: NSCoder) {
@@ -89,7 +89,7 @@ final class WebExtensionMenuItem: NSMenuItem {
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionSubMenu: NSMenu {
 
     private let webExtensionPath: String

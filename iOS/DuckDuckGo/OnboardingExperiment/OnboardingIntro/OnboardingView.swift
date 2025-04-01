@@ -50,7 +50,7 @@ struct OnboardingView: View {
                         Button {
                             model.overrideOnboardingCompleted()
                         } label: {
-                            Text(UserText.Onboarding.Intro.skip)
+                            Text(UserText.Onboarding.Intro.Debug.skip)
                         }
                         .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
                     }

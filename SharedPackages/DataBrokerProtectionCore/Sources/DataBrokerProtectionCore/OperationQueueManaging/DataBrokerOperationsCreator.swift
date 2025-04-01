@@ -20,11 +20,11 @@ import Common
 import Foundation
 
 public protocol DataBrokerOperationsCreator {
-    func operations(forOperationType operationType: OperationType,
+    func operations(for jobType: JobType,
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
                     errorDelegate: DataBrokerOperationErrorDelegate,
-                    operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation]
+                    jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
 public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreator {
@@ -32,31 +32,31 @@ public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreat
     public init() {
     }
 
-    public func operations(forOperationType operationType: OperationType,
+    public func operations(for jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            errorDelegate: DataBrokerOperationErrorDelegate,
-                           operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
+                           jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
-        let brokerProfileQueryData = try operationDependencies.database.fetchAllBrokerProfileQueryData()
-        var operations: [DataBrokerOperation] = []
+        let brokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
+        var jobs: [BrokerProfileJob] = []
         var visitedDataBrokerIDs: Set<Int64> = []
 
         for queryData in brokerProfileQueryData {
             guard let dataBrokerID = queryData.dataBroker.id else { continue }
 
             if !visitedDataBrokerIDs.contains(dataBrokerID) {
-                let collection = DataBrokerOperation(dataBrokerID: dataBrokerID,
-                                                     operationType: operationType,
-                                                     priorityDate: priorityDate,
-                                                     showWebView: showWebView,
-                                                     errorDelegate: errorDelegate,
-                                                     operationDependencies: operationDependencies)
-                operations.append(collection)
+                let collection = BrokerProfileJob(dataBrokerID: dataBrokerID,
+                                                  jobType: jobType,
+                                                  priorityDate: priorityDate,
+                                                  showWebView: showWebView,
+                                                  errorDelegate: errorDelegate,
+                                                  jobDependencies: jobDependencies)
+                jobs.append(collection)
                 visitedDataBrokerIDs.insert(dataBrokerID)
             }
         }
 
-        return operations
+        return jobs
     }
 }

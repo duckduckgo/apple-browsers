@@ -21,9 +21,9 @@ import Common
 import os.log
 
 struct BrokerProfileOptOutSubJob {
-    private let dependencies: DataBrokerOperationDependencies
+    private let dependencies: BrokerProfileJobDependencyProviding
 
-    init(dependencies: DataBrokerOperationDependencies) {
+    init(dependencies: BrokerProfileJobDependencyProviding) {
         dependencies.vpnBypassService?.setUp()
         self.dependencies = dependencies
     }

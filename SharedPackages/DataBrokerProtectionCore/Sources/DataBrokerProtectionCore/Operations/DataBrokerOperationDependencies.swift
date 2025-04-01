@@ -21,7 +21,7 @@ import Common
 import os.log
 import BrowserServicesKit
 
-public protocol DataBrokerOperationDependencies {
+public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
     var contentScopeProperties: ContentScopeProperties { get }
     var privacyConfig: PrivacyConfigurationManaging { get }
@@ -43,7 +43,7 @@ public protocol DataBrokerOperationDependencies {
                             shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 }
 
-public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
+public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding {
     public let database: DataBrokerProtectionRepository
     public let contentScopeProperties: ContentScopeProperties
     public let privacyConfig: PrivacyConfigurationManaging

@@ -66,7 +66,7 @@ public enum DataBrokerProtectionQueueError: Error {
 
 public enum DataBrokerProtectionQueueManagerDebugCommand {
     case startOptOutOperations(showWebView: Bool,
-                               operationDependencies: DataBrokerOperationDependencies,
+                               jobDependencies: BrokerProfileJobDependencyProviding,
                                errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                completion: (() -> Void)?)
 }
@@ -80,15 +80,15 @@ public protocol DataBrokerProtectionQueueManager {
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
-                                                 operationDependencies: DataBrokerOperationDependencies,
+                                                 jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
     func startScheduledAllOperationsIfPermitted(showWebView: Bool,
-                                                operationDependencies: DataBrokerOperationDependencies,
+                                                jobDependencies: BrokerProfileJobDependencyProviding,
                                                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                 completion: (() -> Void)?)
     func startScheduledScanOperationsIfPermitted(showWebView: Bool,
-                                                 operationDependencies: DataBrokerOperationDependencies,
+                                                 jobDependencies: BrokerProfileJobDependencyProviding,
                                                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                  completion: (() -> Void)?)
 
@@ -131,7 +131,7 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     }
 
     public func startImmediateScanOperationsIfPermitted(showWebView: Bool,
-                                                        operationDependencies: DataBrokerOperationDependencies,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
 
@@ -139,7 +139,7 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
         startOperationsIfPermitted(forNewMode: newMode,
                                    type: .manualScan,
                                    showWebView: showWebView,
-                                   operationDependencies: operationDependencies) { [weak self] errors in
+                                   jobDependencies: jobDependencies) { [weak self] errors in
             self?.mismatchCalculator.calculateMismatches()
             errorHandler?(errors)
         } completion: {
@@ -148,23 +148,23 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     }
 
     public func startScheduledAllOperationsIfPermitted(showWebView: Bool,
-                                                       operationDependencies: DataBrokerOperationDependencies,
+                                                       jobDependencies: BrokerProfileJobDependencyProviding,
                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                        completion: (() -> Void)?) {
-        startScheduleOperationsIfPermitted(withOperationType: .all,
+        startScheduleOperationsIfPermitted(for: .all,
                                            showWebView: showWebView,
-                                           operationDependencies: operationDependencies,
+                                           jobDependencies: jobDependencies,
                                            errorHandler: errorHandler,
                                            completion: completion)
     }
 
     public func startScheduledScanOperationsIfPermitted(showWebView: Bool,
-                                                        operationDependencies: DataBrokerOperationDependencies,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
-        startScheduleOperationsIfPermitted(withOperationType: .scheduledScan,
+        startScheduleOperationsIfPermitted(for: .scheduledScan,
                                            showWebView: showWebView,
-                                           operationDependencies: operationDependencies,
+                                           jobDependencies: jobDependencies,
                                            errorHandler: errorHandler,
                                            completion: completion)
     }
@@ -175,9 +175,9 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
                                           let errorHandler,
                                           let completion) = command else { return }
 
-        addOperations(withType: .optOut,
+        addOperations(for: .optOut,
                       showWebView: showWebView,
-                      operationDependencies: operationDependencies,
+                      jobDependencies: operationDependencies,
                       errorHandler: errorHandler,
                       completion: completion)
     }
@@ -185,24 +185,24 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
 
 private extension DefaultDataBrokerProtectionQueueManager {
 
-    func startScheduleOperationsIfPermitted(withOperationType operationType: OperationType,
+    func startScheduleOperationsIfPermitted(for jobType: JobType,
                                             showWebView: Bool,
-                                            operationDependencies: DataBrokerOperationDependencies,
+                                            jobDependencies: BrokerProfileJobDependencyProviding,
                                             errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                             completion: (() -> Void)?) {
         let newMode = DataBrokerProtectionQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
         startOperationsIfPermitted(forNewMode: newMode,
-                                   type: operationType,
+                                   type: jobType,
                                    showWebView: showWebView,
-                                   operationDependencies: operationDependencies,
+                                   jobDependencies: jobDependencies,
                                    errorHandler: errorHandler,
                                    completion: completion)
     }
 
     func startOperationsIfPermitted(forNewMode newMode: DataBrokerProtectionQueueMode,
-                                    type: OperationType,
+                                    type: JobType,
                                     showWebView: Bool,
-                                    operationDependencies: DataBrokerOperationDependencies,
+                                    jobDependencies: BrokerProfileJobDependencyProviding,
                                     errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                     completion: (() -> Void)?) {
 
@@ -220,10 +220,10 @@ private extension DefaultDataBrokerProtectionQueueManager {
 
         updateBrokerData()
 
-        addOperations(withType: type,
+        addOperations(for: type,
                       priorityDate: mode.priorityDate,
                       showWebView: showWebView,
-                      operationDependencies: operationDependencies,
+                      jobDependencies: jobDependencies,
                       errorHandler: errorHandler,
                       completion: completion)
     }
@@ -254,23 +254,23 @@ private extension DefaultDataBrokerProtectionQueueManager {
         brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
     }
 
-    func addOperations(withType type: OperationType,
+    func addOperations(for jobType: JobType,
                        priorityDate: Date? = nil,
                        showWebView: Bool,
-                       operationDependencies: DataBrokerOperationDependencies,
+                       jobDependencies: BrokerProfileJobDependencyProviding,
                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                        completion: (() -> Void)?) {
 
-        operationQueue.maxConcurrentOperationCount = operationDependencies.executionConfig.concurrentOperationsFor(type)
+        operationQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentOperationsFor(jobType)
 
         // Use builder to build operations
-        let operations: [DataBrokerOperation]
+        let operations: [BrokerProfileJob]
         do {
-            operations = try operationsCreator.operations(forOperationType: type,
+            operations = try operationsCreator.operations(for: jobType,
                                                           withPriorityDate: priorityDate,
                                                           showWebView: showWebView,
                                                           errorDelegate: self,
-                                                          operationDependencies: operationDependencies)
+                                                          jobDependencies: jobDependencies)
 
             for collection in operations {
                 operationQueue.addOperation(collection)

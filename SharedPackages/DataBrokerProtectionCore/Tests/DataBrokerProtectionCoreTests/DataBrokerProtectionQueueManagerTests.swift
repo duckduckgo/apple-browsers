@@ -36,7 +36,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockOptOutRunner: MockOptOutSubJobWebRunner!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockOperationErrorDelegate: MockDataBrokerOperationErrorDelegate!
-    private var mockDependencies: DefaultDataBrokerOperationDependencies!
+    private var mockDependencies: BrokerProfileJobDependencies!
 
     override func setUpWithError() throws {
         mockQueue = MockDataBrokerProtectionOperationQueue()
@@ -49,16 +49,16 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockOptOutRunner = MockOptOutSubJobWebRunner()
         mockEventsHandler = MockOperationEventsHandler()
 
-        mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  contentScopeProperties: ContentScopeProperties.mock,
-                                                                  privacyConfig: PrivacyConfigurationManagingMock(),
-                                                                  executionConfig: DataBrokerExecutionConfig(),
-                                                                  notificationCenter: .default,
-                                                                  pixelHandler: mockPixelHandler,
-                                                                  eventsHandler: mockEventsHandler,
-                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                                                  emailService: EmailServiceMock(),
-                                                                  captchaService: CaptchaServiceMock())
+        mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,
+                                                        contentScopeProperties: ContentScopeProperties.mock,
+                                                        privacyConfig: PrivacyConfigurationManagingMock(),
+                                                        executionConfig: DataBrokerExecutionConfig(),
+                                                        notificationCenter: .default,
+                                                        pixelHandler: mockPixelHandler,
+                                                        eventsHandler: mockEventsHandler,
+                                                        dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+                                                        emailService: EmailServiceMock(),
+                                                        captchaService: CaptchaServiceMock())
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
@@ -71,7 +71,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateScanOperationsIfPermitted(showWebView: false,
-                                                    operationDependencies: mockDependencies,
+                                                    jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
 
@@ -89,7 +89,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                   operationDependencies: mockDependencies,
+                                                   jobDependencies: mockDependencies,
                                                    errorHandler: nil,
                                                    completion: nil)
 
@@ -107,7 +107,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledScanOperationsIfPermitted(showWebView: false,
-                                                    operationDependencies: mockDependencies,
+                                                    jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
 
@@ -122,8 +122,8 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let mockOperation = MockDataBrokerOperation(id: 1, operationType: .manualScan, errorDelegate: sut)
-        let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .manualScan, errorDelegate: sut, shouldError: true)
+        let mockOperation = MockBrokerProfileJob(id: 1, jobType: .manualScan, errorDelegate: sut)
+        let mockOperationWithError = MockBrokerProfileJob(id: 2, jobType: .manualScan, errorDelegate: sut, shouldError: true)
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
@@ -131,8 +131,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -156,8 +155,8 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let mockOperation = MockDataBrokerOperation(id: 1, operationType: .all, errorDelegate: sut)
-        let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .all, errorDelegate: sut, shouldError: true)
+        let mockOperation = MockBrokerProfileJob(id: 1, jobType: .all, errorDelegate: sut)
+        let mockOperationWithError = MockBrokerProfileJob(id: 2, jobType: .all, errorDelegate: sut, shouldError: true)
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
@@ -165,8 +164,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -190,8 +188,8 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let mockOperation = MockDataBrokerOperation(id: 1, operationType: .scheduledScan, errorDelegate: sut)
-        let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .scheduledScan, errorDelegate: sut, shouldError: true)
+        let mockOperation = MockBrokerProfileJob(id: 1, jobType: .scheduledScan, errorDelegate: sut)
+        let mockOperationWithError = MockBrokerProfileJob(id: 2, jobType: .scheduledScan, errorDelegate: sut, shouldError: true)
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected errors to be returned in completion")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
@@ -199,8 +197,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -224,13 +221,13 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
-        var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        var mockOperations = (3...4).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -242,11 +239,11 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.operationCount == 2)
 
         // Given
-        mockOperations = (5...8).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        mockOperations = (5...8).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -267,13 +264,13 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        let mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
-        var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        var mockOperations = (3...4).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -285,11 +282,11 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.operationCount == 2)
 
         // Given
-        mockOperations = (5...8).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        mockOperations = (5...8).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -310,13 +307,13 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        var mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
-        var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        var mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        var mockOperations = (3...4).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollectionFirst: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollectionFirst = errors
         } completion: {
             // no-op
@@ -329,12 +326,12 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // Given
         var errorCollectionSecond: DataBrokerProtectionJobsErrorCollection!
-        mockOperationsWithError = (5...6).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
-        mockOperations = (7...8).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
+        mockOperationsWithError = (5...6).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        mockOperations = (7...8).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollectionSecond = errors
         } completion: {
             // no-op
@@ -355,16 +352,16 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        var mockOperations = (1...5).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
-        var mockOperationsWithError = (6...10).map { MockDataBrokerOperation(id: $0,
-                                                                             operationType: .manualScan,
-                                                                             errorDelegate: sut,
-                                                                             shouldError: true) }
+        var mockOperations = (1...5).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        var mockOperationsWithError = (6...10).map { MockBrokerProfileJob(id: $0,
+                                                                          jobType: .manualScan,
+                                                                          errorDelegate: sut,
+                                                                          shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -373,17 +370,17 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.operationCount == 10)
 
         // Given
-        mockOperations = (11...15).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
-        mockOperationsWithError = (16...20).map { MockDataBrokerOperation(id: $0,
-                                                                          operationType: .manualScan,
-                                                                          errorDelegate: sut,
-                                                                          shouldError: true) }
+        mockOperations = (11...15).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        mockOperationsWithError = (16...20).map { MockBrokerProfileJob(id: $0,
+                                                                       jobType: .manualScan,
+                                                                       errorDelegate: sut,
+                                                                       shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
         let expectedError = DataBrokerProtectionQueueError.cannotInterrupt
         var completionCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             completionCalled.toggle()
         } completion: {
@@ -405,16 +402,16 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
                                                       mismatchCalculator: mockMismatchCalculator,
                                                       brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
-        var mockOperations = (1...5).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
-        var mockOperationsWithError = (6...10).map { MockDataBrokerOperation(id: $0,
-                                                                             operationType: .manualScan,
-                                                                             errorDelegate: sut,
-                                                                             shouldError: true) }
+        var mockOperations = (1...5).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        var mockOperationsWithError = (6...10).map { MockBrokerProfileJob(id: $0,
+                                                                          jobType: .manualScan,
+                                                                          errorDelegate: sut,
+                                                                          shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { _ in } completion: {
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in } completion: {
             // no-op
         }
 
@@ -422,17 +419,17 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.operationCount == 10)
 
         // Given
-        mockOperations = (11...15).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
-        mockOperationsWithError = (16...20).map { MockDataBrokerOperation(id: $0,
-                                                                          operationType: .manualScan,
-                                                                          errorDelegate: sut,
-                                                                          shouldError: true) }
+        mockOperations = (11...15).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        mockOperationsWithError = (16...20).map { MockBrokerProfileJob(id: $0,
+                                                                       jobType: .manualScan,
+                                                                       errorDelegate: sut,
+                                                                       shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
         let expectedError = DataBrokerProtectionQueueError.cannotInterrupt
         var completionCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, operationDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             completionCalled.toggle()
@@ -458,8 +455,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
-                                                operationDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             expectation.fulfill()
@@ -482,7 +478,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
 
         // When
         sut.execute(.startOptOutOperations(showWebView: false,
-                                           operationDependencies: mockDependencies,
+                                           jobDependencies: mockDependencies,
                                            errorHandler: nil,
                                            completion: nil))
 

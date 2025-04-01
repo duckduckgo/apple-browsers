@@ -118,7 +118,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
         let executionConfig = DataBrokerExecutionConfig()
-        let operationDependencies = DefaultDataBrokerOperationDependencies(
+        let jobDependencies = BrokerProfileJobDependencies(
             database: dataManager.database,
             contentScopeProperties: contentScopeProperties,
             privacyConfig: privacyConfigurationManager,
@@ -137,7 +137,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             ipcServer: ipcServer,
             queueManager: queueManager,
             dataManager: dataManager,
-            operationDependencies: operationDependencies,
+            jobDependencies: jobDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
             pixelHandler: pixelHandler,
             agentStopper: agentstopper,
@@ -155,7 +155,7 @@ public final class DataBrokerProtectionAgentManager {
     private var ipcServer: DataBrokerProtectionIPCServer
     private let queueManager: DataBrokerProtectionQueueManager
     private let dataManager: DataBrokerProtectionDataManaging
-    private let operationDependencies: DataBrokerOperationDependencies
+    private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
@@ -174,7 +174,7 @@ public final class DataBrokerProtectionAgentManager {
          ipcServer: DataBrokerProtectionIPCServer,
          queueManager: DataBrokerProtectionQueueManager,
          dataManager: DataBrokerProtectionDataManaging,
-         operationDependencies: DataBrokerOperationDependencies,
+         jobDependencies: BrokerProfileJobDependencyProviding,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
@@ -188,7 +188,7 @@ public final class DataBrokerProtectionAgentManager {
         self.ipcServer = ipcServer
         self.queueManager = queueManager
         self.dataManager = dataManager
-        self.operationDependencies = operationDependencies
+        self.jobDependencies = jobDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.pixelHandler = pixelHandler
         self.agentStopper = agentStopper
@@ -213,7 +213,7 @@ public final class DataBrokerProtectionAgentManager {
             activityScheduler.startScheduler()
             didStartActivityScheduler = true
             fireMonitoringPixels()
-            startFreemiumOrSubscriptionScheduledOperations(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
+            startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
 
             /// Monitors entitlement changes every 60 minutes to optimize system performance and resource utilization by avoiding unnecessary operations when entitlement is invalid.
             /// While keeping the agent active with invalid entitlement has no significant risk, setting the monitoring interval at 60 minutes is a good balance to minimize backend checks.
@@ -229,8 +229,7 @@ extension DataBrokerProtectionAgentManager {
         // Only send pixels for authenticated users
         guard authenticationManager.isUserAuthenticated else { return }
 
-        let database = operationDependencies.database
-
+        let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler)
         let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: sharedPixelsHandler)
         let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler)
@@ -255,17 +254,17 @@ private extension DataBrokerProtectionAgentManager {
     /// Starts either Subscription (scan and opt-out) or Freemium (scan-only) scheduled operations
     /// - Parameters:
     ///   - showWebView: Whether to show the web view or not
-    ///   - operationDependencies: Operation dependencies
+    ///   - jobDependencies: Operation dependencies
     ///   - errorHandler: Error handler
     ///   - completion: Completion handler
     func startFreemiumOrSubscriptionScheduledOperations(showWebView: Bool,
-                                                        operationDependencies: DataBrokerOperationDependencies,
+                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
         if authenticationManager.isUserAuthenticated {
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, operationDependencies: operationDependencies, errorHandler: errorHandler, completion: completion)
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
         } else {
-            queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, operationDependencies: operationDependencies, errorHandler: errorHandler, completion: completion)
+            queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
         }
     }
 }
@@ -278,7 +277,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
 
     func startScheduledOperations(completion: (() -> Void)?) {
         fireMonitoringPixels()
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
             completion?()
         }
     }
@@ -290,7 +289,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
         eventsHandler.fire(.profileSaved)
         fireMonitoringPixels()
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies) { [weak self] errors in
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
@@ -330,9 +329,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
 
     public func appLaunched() {
         fireMonitoringPixels()
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: false,
-                                                         operationDependencies:
-                                                        operationDependencies, errorHandler: { [weak self] errors in
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: { [weak self] errors in
             guard let self = self else { return }
 
             if let errors = errors {
@@ -381,24 +378,15 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
     public func startImmediateOperations(showWebView: Bool) {
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView,
-                                                         operationDependencies: operationDependencies,
-                                                         errorHandler: nil,
-                                                         completion: nil)
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
     }
 
     public func startScheduledOperations(showWebView: Bool) {
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: showWebView,
-                                                         operationDependencies: operationDependencies,
-                                                         errorHandler: nil,
-                                                         completion: nil)
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
     }
 
     public func runAllOptOuts(showWebView: Bool) {
-        queueManager.execute(.startOptOutOperations(showWebView: showWebView,
-                                                    operationDependencies: operationDependencies,
-                                                    errorHandler: nil,
-                                                    completion: nil))
+        queueManager.execute(.startOptOutOperations(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil))
     }
 
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {

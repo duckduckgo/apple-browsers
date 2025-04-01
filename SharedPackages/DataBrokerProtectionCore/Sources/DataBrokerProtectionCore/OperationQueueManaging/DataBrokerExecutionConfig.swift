@@ -25,8 +25,8 @@ public struct DataBrokerExecutionConfig {
     private let concurrentOperationsDifferentBrokers: Int = 2
     // https://app.asana.com/0/481882893211075/1206981742767469/f
     private let concurrentOperationsOnManualScans: Int = 6
-    func concurrentOperationsFor(_ operation: OperationType) -> Int {
-        switch operation {
+    func concurrentOperationsFor(_ jobType: JobType) -> Int {
+        switch jobType {
         case .all, .optOut, .scheduledScan:
             return concurrentOperationsDifferentBrokers
         case .manualScan:

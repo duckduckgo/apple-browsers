@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperation.swift
+//  BrokerProfileJob.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import Common
 import os.log
 import BrowserServicesKit
 
-public enum OperationType {
+public enum JobType {
     case manualScan
     case scheduledScan
     case optOut
@@ -33,14 +33,14 @@ public protocol DataBrokerOperationErrorDelegate: AnyObject {
 }
 
 // swiftlint:disable explicit_non_final_class
-public class DataBrokerOperation: Operation, @unchecked Sendable {
+public class BrokerProfileJob: Operation, @unchecked Sendable {
 
     private let dataBrokerID: Int64
-    private let operationType: OperationType
+    private let jobType: JobType
     private let priorityDate: Date? // The date to filter and sort operations priorities
     private let showWebView: Bool
     private(set) weak var errorDelegate: DataBrokerOperationErrorDelegate? // Internal read-only to enable mocking
-    private let operationDependencies: DataBrokerOperationDependencies
+    private let jobDependencies: BrokerProfileJobDependencyProviding
 
     private let id = UUID()
     private var _isExecuting = false
@@ -51,18 +51,18 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
     }
 
     init(dataBrokerID: Int64,
-         operationType: OperationType,
+         jobType: JobType,
          priorityDate: Date? = nil,
          showWebView: Bool,
          errorDelegate: DataBrokerOperationErrorDelegate,
-         operationDependencies: DataBrokerOperationDependencies) {
+         jobDependencies: BrokerProfileJobDependencyProviding) {
 
         self.dataBrokerID = dataBrokerID
         self.priorityDate = priorityDate
-        self.operationType = operationType
+        self.jobType = jobType
         self.showWebView = showWebView
         self.errorDelegate = errorDelegate
-        self.operationDependencies = operationDependencies
+        self.jobDependencies = jobDependencies
         super.init()
     }
 
@@ -98,10 +98,10 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
         }
     }
 
-    static func filterAndSortOperationsData(brokerProfileQueriesData: [BrokerProfileQueryData], operationType: OperationType, priorityDate: Date?) -> [BrokerJobData] {
+    static func filterAndSortOperationsData(brokerProfileQueriesData: [BrokerProfileQueryData], jobType: JobType, priorityDate: Date?) -> [BrokerJobData] {
         let operationsData: [BrokerJobData]
 
-        switch operationType {
+        switch jobType {
         case .optOut:
             operationsData = brokerProfileQueriesData.flatMap { $0.optOutJobData }
         case .manualScan, .scheduledScan:
@@ -127,7 +127,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
         let allBrokerProfileQueryData: [BrokerProfileQueryData]
 
         do {
-            allBrokerProfileQueryData = try operationDependencies.database.fetchAllBrokerProfileQueryData()
+            allBrokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerOperationsCollection error: runOperation, error: \(error.localizedDescription, privacy: .public)")
             return
@@ -136,7 +136,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
         let brokerProfileQueriesData = allBrokerProfileQueryData.filter { $0.dataBroker.id == dataBrokerID }
 
         let filteredAndSortedOperationsData = Self.filterAndSortOperationsData(brokerProfileQueriesData: brokerProfileQueriesData,
-                                                                               operationType: operationType,
+                                                                               jobType: jobType,
                                                                                priorityDate: priorityDate)
 
         Logger.dataBrokerProtection.log("filteredAndSortedOperationsData count: \(filteredAndSortedOperationsData.count, privacy: .public) for brokerID \(self.dataBrokerID, privacy: .public)")
@@ -159,14 +159,14 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                 Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
 
                 if operationData is ScanJobData {
-                    try await BrokerProfileScanSubJob(dependencies: operationDependencies).runScanOperation(
+                    try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScanOperation(
                         brokerProfileQueryData: brokerProfileData,
                         shouldRunNextStep: { [weak self] in
                             guard let self = self else { return false }
                             return !self.isCancelled
                         })
                 } else if let optOutJobData = operationData as? OptOutJobData {
-                    try await BrokerProfileOptOutSubJob(dependencies: operationDependencies).runOptOutOperation(
+                    try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOutOperation(
                         for: optOutJobData.extractedProfile,
                         brokerProfileQueryData: brokerProfileData,
                         shouldRunNextStep: { [weak self] in
@@ -177,7 +177,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                     assertionFailure("Unsupported job data type")
                 }
 
-                let sleepInterval = operationDependencies.executionConfig.intervalBetweenSameBrokerOperations
+                let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerOperations
                 Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                 try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
             } catch {

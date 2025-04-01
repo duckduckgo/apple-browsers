@@ -1244,19 +1244,19 @@ public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProt
 
     }
 
-    public func startImmediateScanOperationsIfPermitted(showWebView: Bool, operationDependencies: DataBrokerOperationDependencies, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startImmediateScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
         errorHandler?(startImmediateScanOperationsIfPermittedCompletionError)
         completion?()
         startImmediateScanOperationsIfPermittedCalledCompletion?()
     }
 
-    public func startScheduledAllOperationsIfPermitted(showWebView: Bool, operationDependencies: DataBrokerOperationDependencies, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startScheduledAllOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
         errorHandler?(startScheduledAllOperationsIfPermittedCompletionError)
         completion?()
         startScheduledAllOperationsIfPermittedCalledCompletion?()
     }
 
-    public func startScheduledScanOperationsIfPermitted(showWebView: Bool, operationDependencies: DataBrokerOperationDependencies, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
+    public func startScheduledScanOperationsIfPermitted(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding, errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?) {
         errorHandler?(startScheduledScanOperationsIfPermittedCompletionError)
         completion?()
         startScheduledScanOperationsIfPermittedCalledCompletion?()
@@ -1316,7 +1316,7 @@ public final class MockDataBrokerProtectionOperationQueue: DataBrokerProtectionO
     }
 }
 
-public final class MockDataBrokerOperation: DataBrokerOperation, @unchecked Sendable {
+public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     private var shouldError = false
     private var _isExecuting = false
@@ -1324,15 +1324,15 @@ public final class MockDataBrokerOperation: DataBrokerOperation, @unchecked Send
     private var _isCancelled = false
 
     public convenience init(id: Int64,
-                            operationType: OperationType,
+                            jobType: JobType,
                             errorDelegate: DataBrokerOperationErrorDelegate,
                             shouldError: Bool = false) {
 
         self.init(dataBrokerID: id,
-                  operationType: operationType,
+                  jobType: jobType,
                   showWebView: false,
                   errorDelegate: errorDelegate,
-                  operationDependencies: MockDataBrokerOperationDependencies())
+                  jobDependencies: MockDataBrokerOperationDependencies())
 
         self.shouldError = shouldError
     }
@@ -1430,7 +1430,7 @@ public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
     }
 }
 
-public final class MockDataBrokerOperationDependencies: DataBrokerOperationDependencies {
+public final class MockDataBrokerOperationDependencies: BrokerProfileJobDependencyProviding {
     public var database: any DataBrokerProtectionRepository
     public var contentScopeProperties: ContentScopeProperties
     public var privacyConfig: any PrivacyConfigurationManaging
@@ -1475,22 +1475,22 @@ public final class MockDataBrokerOperationDependencies: DataBrokerOperationDepen
 
 public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator {
 
-    public var operationCollections: [DataBrokerOperation] = []
+    public var operationCollections: [BrokerProfileJob] = []
     public var shouldError = false
     public var priorityDate: Date?
-    public var createdType: OperationType = .manualScan
+    public var createdType: JobType = .manualScan
 
-    public init(operationCollections: [DataBrokerOperation] = []) {
+    public init(operationCollections: [BrokerProfileJob] = []) {
         self.operationCollections = operationCollections
     }
 
-    public func operations(forOperationType operationType: OperationType,
+    public func operations(for jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            errorDelegate: DataBrokerOperationErrorDelegate,
-                           operationDependencies: DataBrokerOperationDependencies) throws -> [DataBrokerOperation] {
+                           jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
         guard !shouldError else { throw DataBrokerProtectionError.unknown("")}
-        self.createdType = operationType
+        self.createdType = jobType
         self.priorityDate = priorityDate
         return operationCollections
     }

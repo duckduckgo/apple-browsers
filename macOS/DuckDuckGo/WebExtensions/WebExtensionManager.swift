@@ -44,8 +44,6 @@ protocol WebExtensionManaging {
     // Listening of events
     var eventsListener: WebExtensionEventsListening { get }
 
-
-
 }
 
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller

@@ -63,8 +63,8 @@ final class MainWindowController: NSWindowController {
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
 #endif
@@ -243,8 +243,8 @@ extension MainWindowController: NSWindowDelegate {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
 #endif
@@ -355,8 +355,8 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         WindowControllersManager.shared.unregister(self)
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }
 #endif

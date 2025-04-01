@@ -467,8 +467,8 @@ protocol NewWindowPolicyDecisionMaker {
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
             }
 #endif
@@ -544,8 +544,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
             }
 #endif
@@ -579,8 +579,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
             }
 #endif
@@ -886,8 +886,8 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
         }
 #endif

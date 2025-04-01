@@ -30,12 +30,12 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockActivityScheduler: MockDataBrokerProtectionBackgroundActivityScheduler!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockNotificationService: MockUserNotificationService!
-    private var mockQueueManager: MockDataBrokerProtectionOperationQueueManager!
+    private var mockQueueManager: MockBrokerProfileJobQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
     private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
     private var mockPixelHandler: MockPixelHandler!
-    private var mockDependencies: MockDataBrokerOperationDependencies!
+    private var mockDependencies: MockBrokerProfileJobDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
     private var mockAgentStopper: MockAgentStopper!
     private var mockConfigurationManager: MockConfigurationManager!
@@ -57,8 +57,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         let mockDatabase = MockDatabase()
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
-        mockQueueManager = MockDataBrokerProtectionOperationQueueManager(
-            operationQueue: MockDataBrokerProtectionOperationQueue(),
+        mockQueueManager = MockBrokerProfileJobQueueManager(
+            jobQueue: MockBrokerProfileJobQueue(),
             operationsCreator: MockDataBrokerOperationsCreator(),
             mismatchCalculator: mockMismatchCalculator,
             brokerUpdater: MockDataBrokerProtectionBrokerUpdater(),
@@ -68,7 +68,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         mockDataManager = MockDataBrokerProtectionDataManager(database: mockDatabase)
 
-        mockDependencies = MockDataBrokerOperationDependencies()
+        mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = mockDatabase
         mockDependencies.pixelHandler = mockSharedPixelsHandler
         mockDependencies.eventsHandler = mockEventsHandler

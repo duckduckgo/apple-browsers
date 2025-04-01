@@ -35,7 +35,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     private var mockScanRunner: MockScanSubJobWebRunner!
     private var mockOptOutRunner: MockOptOutSubJobWebRunner!
     private var mockEventsHandler: MockOperationEventsHandler!
-    private var mockOperationErrorDelegate: MockDataBrokerOperationErrorDelegate!
+    private var mockJobErrorDelegate: MockBrokerProfileJobErrorDelegate!
     private var mockDependencies: BrokerProfileJobDependencies!
 
     override func setUpWithError() throws {
@@ -127,7 +127,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.manualScan)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.manualScan)
         var errorHandlerCalled = false
 
         // When
@@ -160,7 +160,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.all)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.all)
         var errorHandlerCalled = false
 
         // When
@@ -193,7 +193,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected errors to be returned in completion")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.scheduledScan)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.scheduledScan)
         var errorHandlerCalled = false
 
         // When
@@ -250,7 +250,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
 
         // Then
         XCTAssert(errorCollection.operationErrors?.count == 2)
-        let error = errorCollection.oneTimeError as? DataBrokerProtectionQueueError
+        let error = errorCollection.oneTimeError as? BrokerProfileJobQueueError
         XCTAssertEqual(error, .interrupted)
         XCTAssert(mockQueue.didCallCancelCount == 1)
         XCTAssert(mockQueue.operations.filter { !$0.isCancelled }.count == 4)
@@ -293,7 +293,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
 
         // Then
         XCTAssert(errorCollection.operationErrors?.count == 2)
-        let error = errorCollection.oneTimeError as? DataBrokerProtectionQueueError
+        let error = errorCollection.oneTimeError as? BrokerProfileJobQueueError
         XCTAssertEqual(error, .interrupted)
         XCTAssert(mockQueue.didCallCancelCount == 1)
         XCTAssert(mockQueue.operations.filter { !$0.isCancelled }.count == 4)
@@ -376,7 +376,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                                                        errorDelegate: sut,
                                                                        shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
-        let expectedError = DataBrokerProtectionQueueError.cannotInterrupt
+        let expectedError = BrokerProfileJobQueueError.cannotInterrupt
         var completionCalled = false
 
         // When
@@ -391,7 +391,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.didCallCancelCount == 0)
         XCTAssert(mockQueue.operations.filter { !$0.isCancelled }.count == 10)
         XCTAssert(mockQueue.operations.filter { $0.isCancelled }.count == 0)
-        XCTAssertEqual((errorCollection.oneTimeError as? DataBrokerProtectionQueueError), expectedError)
+        XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
         XCTAssert(completionCalled)
     }
 
@@ -425,7 +425,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                                                        errorDelegate: sut,
                                                                        shouldError: true) }
         mockOperationsCreator.operationCollections = mockOperations + mockOperationsWithError
-        let expectedError = DataBrokerProtectionQueueError.cannotInterrupt
+        let expectedError = BrokerProfileJobQueueError.cannotInterrupt
         var completionCalled = false
 
         // When
@@ -439,7 +439,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         XCTAssert(mockQueue.didCallCancelCount == 0)
         XCTAssert(mockQueue.operations.filter { !$0.isCancelled }.count == 10)
         XCTAssert(mockQueue.operations.filter { $0.isCancelled }.count == 0)
-        XCTAssertEqual((errorCollection.oneTimeError as? DataBrokerProtectionQueueError), expectedError)
+        XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
         XCTAssert(completionCalled)
     }
 
@@ -473,7 +473,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.optOut)
+        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.optOut)
         XCTAssert(mockOperationsCreator.createdType == .manualScan)
 
         // When

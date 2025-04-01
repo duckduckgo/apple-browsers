@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionQueueManager.swift
+//  BrokerProfileJobQueueManager.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -33,7 +33,7 @@ extension OperationQueue: BrokerProfileJobQueue {
     }
 }
 
-enum DataBrokerProtectionQueueMode {
+enum BrokerProfileJobQueueMode {
     case idle
     case immediate(errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?)
     case scheduled(errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?, completion: (() -> Void)?)
@@ -47,7 +47,7 @@ enum DataBrokerProtectionQueueMode {
         }
     }
 
-    func canBeInterruptedBy(newMode: DataBrokerProtectionQueueMode) -> Bool {
+    func canBeInterruptedBy(newMode: BrokerProfileJobQueueMode) -> Bool {
         switch (self, newMode) {
         case (.idle, _):
             return true
@@ -59,7 +59,7 @@ enum DataBrokerProtectionQueueMode {
     }
 }
 
-public enum DataBrokerProtectionQueueError: Error {
+public enum BrokerProfileJobQueueError: Error {
     case cannotInterrupt
     case interrupted
 }
@@ -104,7 +104,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    private var mode = DataBrokerProtectionQueueMode.idle
+    private var mode = BrokerProfileJobQueueMode.idle
     private var operationErrors: [Error] = []
 
     public var debugRunningStatusString: String {
@@ -135,7 +135,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
 
-        let newMode = DataBrokerProtectionQueueMode.immediate(errorHandler: errorHandler, completion: completion)
+        let newMode = BrokerProfileJobQueueMode.immediate(errorHandler: errorHandler, completion: completion)
         startOperationsIfPermitted(forNewMode: newMode,
                                    type: .manualScan,
                                    showWebView: showWebView,
@@ -190,7 +190,7 @@ private extension BrokerProfileJobQueueManager {
                                             jobDependencies: BrokerProfileJobDependencyProviding,
                                             errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                             completion: (() -> Void)?) {
-        let newMode = DataBrokerProtectionQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
+        let newMode = BrokerProfileJobQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
         startOperationsIfPermitted(forNewMode: newMode,
                                    type: jobType,
                                    showWebView: showWebView,
@@ -199,7 +199,7 @@ private extension BrokerProfileJobQueueManager {
                                    completion: completion)
     }
 
-    func startOperationsIfPermitted(forNewMode newMode: DataBrokerProtectionQueueMode,
+    func startOperationsIfPermitted(forNewMode newMode: BrokerProfileJobQueueMode,
                                     type: JobType,
                                     showWebView: Bool,
                                     jobDependencies: BrokerProfileJobDependencyProviding,
@@ -207,7 +207,7 @@ private extension BrokerProfileJobQueueManager {
                                     completion: (() -> Void)?) {
 
         guard mode.canBeInterruptedBy(newMode: newMode) else {
-            let error = DataBrokerProtectionQueueError.cannotInterrupt
+            let error = BrokerProfileJobQueueError.cannotInterrupt
             let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: error)
             errorHandler?(errorCollection)
             completion?()
@@ -232,7 +232,7 @@ private extension BrokerProfileJobQueueManager {
         switch mode {
         case .immediate(let errorHandler, let completion), .scheduled(let errorHandler, let completion):
             jobQueue.cancelAllOperations()
-            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: DataBrokerProtectionQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
+            let errorCollection = DataBrokerProtectionJobsErrorCollection(oneTimeError: BrokerProfileJobQueueError.interrupted, operationErrors: operationErrorsForCurrentOperations())
             errorHandler?(errorCollection)
             resetMode(clearErrors: true)
             completion?()
@@ -261,7 +261,7 @@ private extension BrokerProfileJobQueueManager {
                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                        completion: (() -> Void)?) {
 
-        jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentOperationsFor(jobType)
+        jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
 
         // Use builder to build operations
         let operations: [BrokerProfileJob]
@@ -296,7 +296,7 @@ private extension BrokerProfileJobQueueManager {
     }
 }
 
-extension BrokerProfileJobQueueManager: DataBrokerOperationErrorDelegate {
+extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
     public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?) {
         operationErrors.append(error)
 

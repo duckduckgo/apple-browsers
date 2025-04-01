@@ -23,7 +23,7 @@ public protocol DataBrokerOperationsCreator {
     func operations(for jobType: JobType,
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
-                    errorDelegate: DataBrokerOperationErrorDelegate,
+                    errorDelegate: BrokerProfileJobErrorDelegate,
                     jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
@@ -35,7 +35,7 @@ public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreat
     public func operations(for jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
-                           errorDelegate: DataBrokerOperationErrorDelegate,
+                           errorDelegate: BrokerProfileJobErrorDelegate,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
 
         let brokerProfileQueryData = try jobDependencies.database.fetchAllBrokerProfileQueryData()

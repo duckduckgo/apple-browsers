@@ -31,7 +31,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     var mockDatabase: MockDatabase!
     var mockEventsHandler: MockOperationEventsHandler!
     var mockPixelHandler: MockPixelHandler!
-    var mockDependencies: MockDataBrokerOperationDependencies!
+    var mockDependencies: MockBrokerProfileJobDependencies!
 
     override func setUp() {
         super.setUp()
@@ -41,7 +41,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         mockEventsHandler = MockOperationEventsHandler()
         mockPixelHandler = MockPixelHandler()
 
-        mockDependencies = MockDataBrokerOperationDependencies()
+        mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.mockScanRunner = self.mockScanRunner
         mockDependencies.mockOptOutRunner = self.mockOptOutRunner
         mockDependencies.database = self.mockDatabase

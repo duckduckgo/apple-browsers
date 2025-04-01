@@ -47,7 +47,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(config: schedulingConfig)
 
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
-        let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
+        let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
 
         Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
         let configStore = ConfigurationStore()
@@ -92,17 +92,17 @@ public class DataBrokerProtectionAgentManagerProvider {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
-        let operationQueue = OperationQueue()
+        let jobQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
         let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
-        let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
-                                                                    operationsCreator: operationsBuilder,
-                                                                    mismatchCalculator: mismatchCalculator,
-                                                                    brokerUpdater: brokerUpdater,
-                                                                    pixelHandler: sharedPixelsHandler)
+        let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
+                                                         operationsCreator: operationsBuilder,
+                                                         mismatchCalculator: mismatchCalculator,
+                                                         brokerUpdater: brokerUpdater,
+                                                         pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
@@ -150,10 +150,10 @@ public class DataBrokerProtectionAgentManagerProvider {
 
 public final class DataBrokerProtectionAgentManager {
 
-    private let eventsHandler: EventMapping<OperationEvent>
+    private let eventsHandler: EventMapping<JobEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
-    private let queueManager: DataBrokerProtectionQueueManager
+    private let queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -169,10 +169,10 @@ public final class DataBrokerProtectionAgentManager {
 
     private var didStartActivityScheduler = false
 
-    init(eventsHandler: EventMapping<OperationEvent>,
+    init(eventsHandler: EventMapping<JobEvent>,
          activityScheduler: DataBrokerProtectionBackgroundActivityScheduler,
          ipcServer: DataBrokerProtectionIPCServer,
-         queueManager: DataBrokerProtectionQueueManager,
+         queueManager: BrokerProfileJobQueueManaging,
          dataManager: DataBrokerProtectionDataManaging,
          jobDependencies: BrokerProfileJobDependencyProviding,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -295,7 +295,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
             if let errors = errors {
                 if let oneTimeError = errors.oneTimeError {
                     switch oneTimeError {
-                    case DataBrokerProtectionQueueError.interrupted:
+                    case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerImmediateScansInterrupted)
                         Logger.dataBrokerProtection.error("Interrupted during DataBrokerProtectionAgentManager.profileSaved in queueManager.startImmediateOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
                     default:
@@ -335,10 +335,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
             if let errors = errors {
                 if let oneTimeError = errors.oneTimeError {
                     switch oneTimeError {
-                    case DataBrokerProtectionQueueError.interrupted:
+                    case BrokerProfileJobQueueError.interrupted:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansInterrupted)
                         Logger.dataBrokerProtection.log("Interrupted during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted(), error: \(oneTimeError.localizedDescription, privacy: .public)")
-                    case DataBrokerProtectionQueueError.cannotInterrupt:
+                    case BrokerProfileJobQueueError.cannotInterrupt:
                         self.pixelHandler.fire(.ipcServerAppLaunchedScheduledScansBlocked)
                         Logger.dataBrokerProtection.log("Cannot interrupt during DataBrokerProtectionAgentManager.appLaunched in queueManager.startScheduledOperationsIfPermitted()")
                     default:

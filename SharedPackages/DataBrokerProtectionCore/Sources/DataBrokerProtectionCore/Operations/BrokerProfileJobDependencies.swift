@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationDependencies.swift
+//  BrokerProfileJobDependencies.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -28,7 +28,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var executionConfig: DataBrokerExecutionConfig { get }
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var eventsHandler: EventMapping<OperationEvent> { get }
+    var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
     var emailService: EmailServiceProtocol { get }
     var captchaService: CaptchaServiceProtocol { get }
@@ -50,7 +50,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public var executionConfig: DataBrokerExecutionConfig
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public let eventsHandler: EventMapping<OperationEvent>
+    public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
@@ -62,7 +62,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
                 executionConfig: DataBrokerExecutionConfig,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                eventsHandler: EventMapping<OperationEvent>,
+                eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,

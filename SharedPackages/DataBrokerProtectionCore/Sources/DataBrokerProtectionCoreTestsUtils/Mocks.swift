@@ -1325,14 +1325,14 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     public convenience init(id: Int64,
                             jobType: JobType,
-                            errorDelegate: DataBrokerOperationErrorDelegate,
+                            errorDelegate: BrokerProfileJobErrorDelegate,
                             shouldError: Bool = false) {
 
         self.init(dataBrokerID: id,
                   jobType: jobType,
                   showWebView: false,
                   errorDelegate: errorDelegate,
-                  jobDependencies: MockDataBrokerOperationDependencies())
+                  jobDependencies: MockBrokerProfileJobDependencies())
 
         self.shouldError = shouldError
     }
@@ -1377,7 +1377,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
     }
 }
 
-public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErrorDelegate {
+public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDelegate {
 
     public var operationErrors: [Error] = []
 
@@ -1388,7 +1388,7 @@ public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErro
     }
 }
 
-public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
+public final class MockOperationEventsHandler: EventMapping<JobEvent> {
 
     public var profileSavedFired = false
     public var firstScanCompletedFired = false
@@ -1406,7 +1406,7 @@ public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
         }
     }
 
-    private func handle(event: OperationEvent) {
+    private func handle(event: JobEvent) {
         switch event {
         case .profileSaved:
             profileSavedFired = true
@@ -1430,14 +1430,14 @@ public final class MockOperationEventsHandler: EventMapping<OperationEvent> {
     }
 }
 
-public final class MockDataBrokerOperationDependencies: BrokerProfileJobDependencyProviding {
+public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyProviding {
     public var database: any DataBrokerProtectionRepository
     public var contentScopeProperties: ContentScopeProperties
     public var privacyConfig: any PrivacyConfigurationManaging
     public var executionConfig: DataBrokerExecutionConfig
     public var notificationCenter: NotificationCenter
     public var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public var eventsHandler: EventMapping<OperationEvent>
+    public var eventsHandler: EventMapping<JobEvent>
     public var dataBrokerProtectionSettings: DataBrokerProtectionSettings
     public var emailService: any EmailServiceProtocol
     public var captchaService: any CaptchaServiceProtocol
@@ -1487,7 +1487,7 @@ public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator 
     public func operations(for jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
-                           errorDelegate: DataBrokerOperationErrorDelegate,
+                           errorDelegate: BrokerProfileJobErrorDelegate,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
         guard !shouldError else { throw DataBrokerProtectionError.unknown("")}
         self.createdType = jobType

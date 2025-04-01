@@ -244,7 +244,7 @@ struct BrokerProfileScanSubJob {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        eventsHandler: EventMapping<OperationEvent>
+        eventsHandler: EventMapping<JobEvent>
     ) throws {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
@@ -287,7 +287,7 @@ struct BrokerProfileScanSubJob {
         }
     }
 
-    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
+    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),

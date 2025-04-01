@@ -28,7 +28,7 @@ public enum JobType {
     case all
 }
 
-public protocol DataBrokerOperationErrorDelegate: AnyObject {
+public protocol BrokerProfileJobErrorDelegate: AnyObject {
     func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?)
 }
 
@@ -39,7 +39,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
     private let jobType: JobType
     private let priorityDate: Date? // The date to filter and sort operations priorities
     private let showWebView: Bool
-    private(set) weak var errorDelegate: DataBrokerOperationErrorDelegate? // Internal read-only to enable mocking
+    private(set) weak var errorDelegate: BrokerProfileJobErrorDelegate? // Internal read-only to enable mocking
     private let jobDependencies: BrokerProfileJobDependencyProviding
 
     private let id = UUID()
@@ -54,7 +54,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
          jobType: JobType,
          priorityDate: Date? = nil,
          showWebView: Bool,
-         errorDelegate: DataBrokerOperationErrorDelegate,
+         errorDelegate: BrokerProfileJobErrorDelegate,
          jobDependencies: BrokerProfileJobDependencyProviding) {
 
         self.dataBrokerID = dataBrokerID
@@ -177,7 +177,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                     assertionFailure("Unsupported job data type")
                 }
 
-                let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerOperations
+                let sleepInterval = jobDependencies.executionConfig.intervalBetweenSameBrokerJobs
                 Logger.dataBrokerProtection.log("Waiting...: \(sleepInterval, privacy: .public)")
                 try await Task.sleep(nanoseconds: UInt64(sleepInterval) * 1_000_000_000)
             } catch {

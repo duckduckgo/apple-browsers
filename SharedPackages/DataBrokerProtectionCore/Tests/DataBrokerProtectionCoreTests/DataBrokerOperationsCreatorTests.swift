@@ -77,7 +77,7 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
         let result = try! sut.operations(for: .manualScan,
                                          withPriorityDate: Date(),
                                          showWebView: false,
-                                         errorDelegate: MockDataBrokerOperationErrorDelegate(),
+                                         errorDelegate: MockBrokerProfileJobErrorDelegate(),
                                          jobDependencies: mockDependencies)
 
         // Then

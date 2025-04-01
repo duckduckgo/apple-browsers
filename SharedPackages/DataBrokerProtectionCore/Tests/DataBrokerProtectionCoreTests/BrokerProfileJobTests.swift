@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationTests.swift
+//  BrokerProfileJobTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@
 import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
-final class DataBrokerOperationTests: XCTestCase {
+final class BrokerProfileJobTests: XCTestCase {
     lazy var mockOptOutQueryData: [BrokerProfileQueryData] = {
         let brokerId: Int64 = 1
 

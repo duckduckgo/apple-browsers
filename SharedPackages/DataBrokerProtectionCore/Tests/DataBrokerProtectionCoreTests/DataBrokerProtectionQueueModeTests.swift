@@ -24,7 +24,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeIdle_andNewModeImmediate_thenInterruptionAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.idle
+        let sut = BrokerProfileJobQueueMode.idle
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .immediate(errorHandler: nil, completion: nil))
@@ -35,7 +35,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeIdle_andNewModeScheduled_thenInterruptionAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.idle
+        let sut = BrokerProfileJobQueueMode.idle
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .scheduled(errorHandler: nil, completion: nil))
@@ -46,7 +46,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeImmediate_andNewModeImmediate_thenInterruptionAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.immediate(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.immediate(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .immediate(errorHandler: { _ in }, completion: {}))
@@ -57,7 +57,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeImmediate_andNewModeScheduled_thenInterruptionNotAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.immediate(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.immediate(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .scheduled(errorHandler: nil, completion: nil))
@@ -68,7 +68,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeScheduled_andNewModeImmediate_thenInterruptionAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.scheduled(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.scheduled(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .immediate(errorHandler: nil, completion: nil))
@@ -79,7 +79,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testCurrentModeScheduled_andNewModeScheduled_thenInterruptionNotAllowed() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.scheduled(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.scheduled(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.canBeInterruptedBy(newMode: .scheduled(errorHandler: nil, completion: nil))
@@ -90,7 +90,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testWhenModeIsIdle_thenPriorityDateIsNil() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.idle
+        let sut = BrokerProfileJobQueueMode.idle
 
         // When
         let result = sut.priorityDate
@@ -101,7 +101,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testWhenModeIsImmediate_thenPriorityDateIsNil() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.immediate(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.immediate(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.priorityDate
@@ -112,7 +112,7 @@ final class DataBrokerProtectionQueueModeTests: XCTestCase {
 
     func testWhenModeIsScheduled_thenPriorityDateIsNotNil() throws {
         // Given
-        let sut = DataBrokerProtectionQueueMode.scheduled(errorHandler: nil, completion: nil)
+        let sut = BrokerProfileJobQueueMode.scheduled(errorHandler: nil, completion: nil)
 
         // When
         let result = sut.priorityDate

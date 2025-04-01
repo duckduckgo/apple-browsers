@@ -318,6 +318,9 @@ public struct TunnelControllerView: View {
                     .applyTimerAttributes(colorScheme: colorScheme)
                     .fixedSize()
                     .disabled(on: !isEnabled)
+                    .onTapGesture {
+                        model.overrideConnectionStartDate()
+                    }
 
                 Spacer()
                     .frame(width: 8)

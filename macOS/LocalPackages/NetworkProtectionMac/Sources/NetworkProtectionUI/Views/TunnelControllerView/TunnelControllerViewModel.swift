@@ -393,14 +393,27 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
-    private func timeLapsedString(since date: Date) -> String {
-        let secondsLapsed = Date().timeIntervalSince(date)
+    // TODO: TESTING SUPPORT!!! Remove before merging
+    private var timerDateOverride: Date?
 
-        let hours   = Int(secondsLapsed) / 3600
+    // TODO: TESTING SUPPORT!!! Remove before merging
+    func overrideConnectionStartDate() {
+        timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -10))
+    }
+
+    private func timeLapsedString(since date: Date) -> String {
+        let secondsLapsed = Date().timeIntervalSince(timerDateOverride ?? date)
+
+        let days    = Int(secondsLapsed) / 86400
+        let hours   = Int(secondsLapsed) / 3600 % 24
         let minutes = Int(secondsLapsed) / 60 % 60
         let seconds = Int(secondsLapsed) % 60
 
-        return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
+        if days > 0 {
+            return String(format: "%id %ih %im %is", days, hours, minutes, seconds)
+        } else {
+            return String(format: "%ih %im %is", hours, minutes, seconds)
+        }
     }
 
     /// The feature status (ON/OFF) right below the main icon.

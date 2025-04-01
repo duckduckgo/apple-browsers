@@ -180,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable cyclomatic_complexity
     @MainActor
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
@@ -404,6 +404,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+    // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())

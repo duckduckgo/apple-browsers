@@ -182,16 +182,8 @@ final class WebView: WKWebView {
         if Int(event.keyCode) == kVK_Escape,
            let window,
            window.styleMask.contains(.fullScreen),
-           let fullscreenController = (window.windowController as? MainWindowController)?.fullscreenController {
-
-            fullscreenController.setShouldPreventFullscreenExit(true)
-
-            evaluateIfWebsiteHandlesEscape { [weak self] handledByWebsite in
-                guard let self = self,
-                      let fullscreenController = (self.window?.windowController as? MainWindowController)?.fullscreenController else { return }
-
-                fullscreenController.handleEscapePress(handledByWebsite: handledByWebsite, window: self.window)
-            }
+           let fullscreenController {
+            fullscreenController.handleEscapePress(host: url?.host)
         }
 
         super.keyDown(with: event)
@@ -280,6 +272,10 @@ final class WebView: WKWebView {
             return nil
         }
         return fullscreenWindowController
+    }
+
+    var fullscreenController: FullscreenController? {
+        return (window?.windowController as? MainWindowController)?.fullscreenController
     }
 
     // MARK: - NSDraggingDestination
@@ -399,25 +395,6 @@ extension WebView /* _WKFindDelegate */ {
         if let findInPageCompletionHandler {
             self.findInPageCompletionHandler = nil
             findInPageCompletionHandler(.notFound)
-        }
-    }
-
-}
-
-// MARK: - Escape Handling
-
-extension WebView {
-
-    func evaluateIfWebsiteHandlesEscape(completion: @escaping (_ handledByWebsite: Bool) -> Void) {
-        self.evaluateJavaScript("document.activeElement && document.activeElement.tagName") { result, _ in
-            guard let tag = result as? String else {
-                // No active element = not handled
-                completion(false)
-                return
-            }
-
-            let handled = ["INPUT", "TEXTAREA", "DIV"].contains(tag)
-            completion(handled)
         }
     }
 

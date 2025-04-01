@@ -21,10 +21,22 @@ import WebKit
 
 final class FullscreenController {
 
+    // List of hosts where ESC doesn't exit fullscreen
+    static var hosts = [
+        "docs.google.com"
+    ]
+
     private(set) var shouldPreventFullscreenExit: Bool = false
 
-    func setShouldPreventFullscreenExit(_ value: Bool) {
-        shouldPreventFullscreenExit = value
+    func resetFullscreenExitFlag() {
+        shouldPreventFullscreenExit = false
+    }
+
+    func handleEscapePress(host: String?) {
+        if let host, Self.hosts.contains(host) {
+            // Website is handling ESC. Stay in fullscreen.
+            shouldPreventFullscreenExit = true
+        }
     }
 
     func manuallyExitFullscreen(window: NSWindow?) {
@@ -34,16 +46,5 @@ final class FullscreenController {
 
         // Exit full screen
         window.toggleFullScreen(nil)
-    }
-
-    func handleEscapePress(handledByWebsite: Bool, window: NSWindow?) {
-        if handledByWebsite {
-            // Website is handling ESC. Stay in fullscreen.
-        } else {
-            manuallyExitFullscreen(window: window)
-
-            // Reset the flag
-            shouldPreventFullscreenExit = false
-        }
     }
 }

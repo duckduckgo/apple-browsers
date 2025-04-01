@@ -222,7 +222,7 @@ final class MainWindowController: NSWindowController {
     override func cancelOperation(_ sender: Any?) {
         guard let window, !fullscreenController.shouldPreventFullscreenExit else {
             // Just consume the ESC key to prevent exiting from full screen
-            fullscreenController.setShouldPreventFullscreenExit(false)
+            fullscreenController.resetFullscreenExitFlag()
             return
         }
 
@@ -283,7 +283,7 @@ extension MainWindowController: NSWindowDelegate {
             showTabBarAndBookmarksBar()
         }
 
-        fullscreenController.setShouldPreventFullscreenExit(false)
+        fullscreenController.resetFullscreenExitFlag()
     }
 
     private func hideTabBarAndBookmarksBar() {

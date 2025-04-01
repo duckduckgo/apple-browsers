@@ -23,6 +23,7 @@ protocol OmniBarView: UIView {
 
     var text: String? { get set }
 
+    var progressView: ProgressView? { get }
     var searchContainerView: UIView { get }
     var bookmarksButtonView: UIButton { get }
     var accessoryButtonView: UIButton { get }
@@ -37,6 +38,22 @@ protocol OmniBarView: UIView {
 
     var menuButtonContent: MenuButton { get }
 
-    func updateOmniBarPadding(left: CGFloat, right: CGFloat)
-    func refreshOmnibarPaddingConstraintsForAccessoryButton()
+    var onTextEntered: (() -> Void)? { get set }
+    var onVoiceSearchButtonPressed: (() -> Void)? { get set }
+    var onAbortButtonPressed: (() -> Void)? { get set }
+    var onClearButtonPressed: (() -> Void)? { get set }
+    var onPrivacyIconPressed: (() -> Void)? { get set }
+    var onMenuButtonPressed: (() -> Void)? { get set }
+    var onTrackersViewPressed: (() -> Void)? { get set }
+    var onSettingsButtonPressed: (() -> Void)? { get set }
+    var onCancelPressed: (() -> Void)? { get set }
+    var onRefreshPressed: (() -> Void)? { get set }
+    var onBackPressed: (() -> Void)? { get set }
+    var onForwardPressed: (() -> Void)? { get set }
+    var onBookmarksPressed: (() -> Void)? { get set }
+    var onAccessoryPressed: (() -> Void)? { get set }
+    var onDismissPressed: (() -> Void)? { get set }
+
+    var onSettingsLongPress: (() -> Void)? { get set }
+    var onAccessoryLongPress: (() -> Void)? { get set }
 }

@@ -29,16 +29,16 @@ final class OmniBarNotificationContainerView: UIView {
 
     var currentNotificationController: UIHostingController<OmniBarNotification>?
     
-    func prepareAnimation(_ type: OmniBarNotificationType) {
+    func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController) {
         removePreviousNotification()
         
         let viewModel = makeNotificationViewModel(for: type)
         let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel),
                                                              ignoreSafeArea: true)
         
-        window?.rootViewController?.addChild(notificationViewController)
+        controller.addChild(notificationViewController)
         addSubview(notificationViewController.view)
-        notificationViewController.didMove(toParent: window?.rootViewController)
+        notificationViewController.didMove(toParent: controller)
         
         currentNotificationController = notificationViewController
         setupConstraints()

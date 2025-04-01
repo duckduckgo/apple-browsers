@@ -1170,7 +1170,7 @@ class MainViewController: UIViewController {
         addToContentContainer(controller: tab)
 
         viewCoordinator.logoContainer.isHidden = true
-        
+
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
         tab.chromeDelegate = self
@@ -1663,7 +1663,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
+                self?.omniBar.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &aiChatCancellables)
     }

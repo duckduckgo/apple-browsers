@@ -26,10 +26,10 @@ enum OmniBarNotificationType {
 
 final class OmniBarNotificationAnimator: NSObject {
     
-    func showNotification(_ type: OmniBarNotificationType, in omniBar: DefaultOmniBarView) {
-        
+    func showNotification(_ type: OmniBarNotificationType, in omniBar: DefaultOmniBarView, viewController: UIViewController) {
+
         omniBar.notificationContainer.alpha = 0
-        omniBar.notificationContainer.prepareAnimation(type)
+        omniBar.notificationContainer.prepareAnimation(type, in: viewController)
         omniBar.textField.alpha = 0
         
         let fadeDuration = Constants.Duration.fade

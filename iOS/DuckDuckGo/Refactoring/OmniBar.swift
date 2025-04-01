@@ -75,4 +75,6 @@ protocol OmniBar: AnyObject {
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
 
+    func refreshOmnibarPaddingConstraintsForAccessoryButton()
+    func updatePadding(left: CGFloat, right: CGFloat)
 }

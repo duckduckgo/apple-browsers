@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import BrowserServicesKit
 import FeatureFlags
 
@@ -26,11 +27,11 @@ protocol VisualStyleConfigurable {
 struct VisualStyle {
     let toolbarHeight: CGFloat
 
-    static func oldStyle() -> VisualStyle {
+    static var old: VisualStyle {
         return VisualStyle(toolbarHeight: 44)
     }
 
-    static func newStyle() -> VisualStyle {
+    static var new: VisualStyle {
         return VisualStyle(toolbarHeight: 64)
     }
 }
@@ -38,12 +39,16 @@ struct VisualStyle {
 final class VisualStyleManager: VisualStyleConfigurable {
     private let featureFlagger: FeatureFlagger
 
+    private var cancellables: Set<AnyCancellable> = []
+
     private var isEnabled: Bool {
         featureFlagger.isFeatureOn(.visualRefresh)
     }
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
+
+        subscribeToLocalOverride()
     }
 
     var toolbarHeight: CGFloat {
@@ -51,6 +56,20 @@ final class VisualStyleManager: VisualStyleConfigurable {
     }
 
     private var currentStyle: VisualStyle {
-        return isEnabled ? .newStyle() : .oldStyle()
+        return isEnabled ? .new : .old
+    }
+
+    private func subscribeToLocalOverride() {
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .visualRefresh }
+            .sink { (_, enabled) in
+                /// Here I need to apply the visual changes. Should I restart the app?
+                print("Visual refresh feature flag changed to \(enabled ? "enabled" : "disabled")")
+            }
+            .store(in: &cancellables)
     }
 }

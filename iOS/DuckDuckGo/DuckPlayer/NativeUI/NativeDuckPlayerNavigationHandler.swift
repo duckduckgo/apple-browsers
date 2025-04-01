@@ -455,6 +455,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             duckPlayer.settings.nativeUISERPEnabled &&
             url.isYoutubeWatch {
                 let (videoID, _) = url.youtubeVideoParams ?? ("", nil)
+                lastHandledVideoID = videoID
                 loadNativeDuckPlayerVideo(videoID: videoID)
                 return true
         }

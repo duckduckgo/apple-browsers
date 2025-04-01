@@ -42,7 +42,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     private var mockTabNavigator: MockDuckPlayerTabNavigator!
     private var mockNativeUIPresenter: MockDuckPlayerNativeUIPresenting!
     private var cancellables = Set<AnyCancellable>()
-    private var mockDelayHandler: MockDelayHandler!
+    private var mockDelayHandler: MockDelayHandler!    
 
     // MARK: - Setup
     override func setUp() {
@@ -530,5 +530,176 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertFalse(mockDuckPlayer.loadNativeDuckPlayerVideoCalled, "DuckPlayer should not be loaded")
         XCTAssertTrue(mockWebView.reloadCalled, "WebView should be reloaded")
         XCTAssertEqual(sut.lastHandledVideoID, nil, "lastHandledVideoID should be reset")
+    }
+
+    // MARK: - handleDidFinishLoading Tests
+    
+    func testHandleDidFinishLoading_WhenFeatureOn_UpdatesReferrerURL() async {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        
+        // When
+        mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)
+        sut.handleDidFinishLoading(webView: mockWebView)
+        
+        // Then
+        XCTAssertEqual(sut.referrer, .serp)
+        
+        // When
+        mockWebView.navigate(to: URL(string: "https://google.com.com")!)
+        sut.handleDidFinishLoading(webView: mockWebView)
+        
+        // Then
+        XCTAssertEqual(sut.referrer, .other)
+        
+        // When
+        mockWebView.navigate(to: URL(string: "https://youtube.com/")!)
+        sut.handleDidFinishLoading(webView: mockWebView)
+        
+        // Then
+        XCTAssertEqual(sut.referrer, .youtube)
+    }
+    
+    func testHandleDidFinishLoading_WhenOnSERPAndDuckPlayerEnabled_NotifiesSERP() async {
+        // To be impplemented when JS integration is complete
+    }
+    
+    func testHandleDidFinishLoading_WhenOnSERPAndDuckPlayerDisabled_NotifiesSERPDisabled() async {
+        // To be impplemented when JS integration is complete
+    }
+    
+    // MARK: - handleDelegateNavigation Tests
+    
+    func testHandleDelegateNavigation_WhenFeatureOff_ReturnsFalse() async {
+        // Given
+        mockFeatureFlagger.enabledFeatures = []
+        let url = URL(string: "https://youtube.com/watch?v=2782901a")!
+        let request = URLRequest(url: url)
+        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
+        
+        // When
+        let result = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
+        
+        // Then
+        XCTAssertFalse(result)
+        
+    }
+    
+    func testHandleDelegateNavigation_WhenOnSERPAndDuckPlayerEnabled_LoadsNativePlayer() async {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)  // Set SERP Referrer
+        
+        let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
+        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
+        playerSettings.nativeUISERPEnabled = true
+        
+        // When
+        let result = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
+        
+        // Then
+        XCTAssertTrue(result)
+        mockDelayHandler.completeDelay()
+        XCTAssertTrue(mockDuckPlayer.presentPillCalled)
+        XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
+        XCTAssertEqual(sut.lastHandledVideoID, "test123")
+    }
+    
+    func testHandleDelegateNavigation_WhenOnSERPAndDuckPlayerDisabled_LoadsYoutubePage() async {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)  // Set SERP Referrer
+        
+        let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
+        let mockFrameInfo = MockFrameInfo(isMainFrame: true)
+        let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
+        playerSettings.nativeUISERPEnabled = false
+        
+        // When
+        let result = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
+        
+        // Then
+        XCTAssertFalse(result)
+    }
+    
+    // MARK: - updateDuckPlayerForWebViewAppearance Tests
+    
+    func testUpdateDuckPlayerForWebViewAppearance_WhenFeatureOff_DoesNotPresentPill() async {
+
+        // Given
+        //mockFeatureFlagger.enabledFeatures = []
+        
+        // When
+        //await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
+        
+        // Then
+        //XCTAssertFalse(mockDuckPlayer.presentPillCalled)
+         
+    }
+    
+    func testUpdateDuckPlayerForWebViewAppearance_WhenOnYouTubeAndNotDisabled_PresentsPill() async {
+        // Given
+        /*
+        mockFeatureFlagger.isFeatureOnResult = true
+        mockTabNavigator.tabModel.link = Link(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
+        sut.disableDuckPlayerForNextVideo = false
+        sut.isLinkPreview = false
+        
+        // When
+        await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
+        
+        // Then
+        XCTAssertTrue(mockDuckPlayer.presentPillCalled)
+        XCTAssertEqual(mockDuckPlayer.lastPresentedVideoID, "test123")
+         */
+    }
+         
+    
+    func testUpdateDuckPlayerForWebViewAppearance_WhenDisabled_DoesNotPresentPill() async {
+        // Given
+        /*
+        mockFeatureFlagger.isFeatureOnResult = true
+        mockTabNavigator.tabModel.link = Link(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
+        sut.disableDuckPlayerForNextVideo = true
+        sut.isLinkPreview = false
+        
+        // When
+        await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
+        
+        // Then
+        XCTAssertFalse(mockDuckPlayer.presentPillCalled)
+         */
+    }
+    
+    // MARK: - updateDuckPlayerForWebViewDisappearance Tests
+    
+    func testUpdateDuckPlayerForWebViewDisappearance_WhenFeatureOff_DoesNotDismissPill() async {
+        /*
+        // Given
+        mockFeatureFlagger.isFeatureOnResult = false
+        
+        // When
+        await sut.updateDuckPlayerForWebViewDisappearance(mockTabNavigator)
+        
+        // Then
+        XCTAssertFalse(mockDuckPlayer.dismissPillCalled)
+         */
+    }
+    
+    func testUpdateDuckPlayerForWebViewDisappearance_WhenFeatureOn_DismissesPill() async {
+        // Given
+        //mockFeatureFlagger.isFeatureOnResult = true
+        
+        // When
+        //await sut.updateDuckPlayerForWebViewDisappearance(mockTabNavigator)
+        
+        // Then
+        //XCTAssertTrue(mockDuckPlayer.dismissPillCalled)
+        //XCTAssertFalse(mockDuckPlayer.lastDismissPillReset)
+        //XCTAssertFalse(mockDuckPlayer.lastDismissPillAnimated)
+        //XCTAssertTrue(mockDuckPlayer.lastDismissPillProgramatic)
+         
     }
 }

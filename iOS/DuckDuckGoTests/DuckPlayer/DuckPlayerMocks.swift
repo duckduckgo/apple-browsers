@@ -130,6 +130,7 @@ class MockNavigationAction: WKNavigationAction {
     private let _request: URLRequest
     private let _navigationType: WKNavigationType
     private let _targetFrame: WKFrameInfo?
+    var isTargetingMainFrameResult = true
 
     init(request: URLRequest, navigationType: WKNavigationType = .linkActivated, targetFrame: WKFrameInfo? = nil) {
         self._request = request
@@ -209,6 +210,10 @@ final class MockDuckPlayer: DuckPlayerControlling {
     var presentPillCalled = false
     var dismissPillCalled = false
     var loadNativeDuckPlayerVideoCalled = false
+    var lastPresentedVideoID: String?
+    var lastDismissPillReset = false
+    var lastDismissPillAnimated = false
+    var lastDismissPillProgramatic = false
 
     // MARK: - Private Properties
     private var featureFlagger: FeatureFlagger
@@ -282,12 +287,14 @@ final class MockDuckPlayer: DuckPlayerControlling {
     // MARK: - Pill UI Methods
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
         presentPillCalled = true
-        // Mock implementation
+        lastPresentedVideoID = videoID
     }
 
     func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
         dismissPillCalled = true
-        // Mock implementation
+        lastDismissPillReset = reset
+        lastDismissPillAnimated = animated
+        lastDismissPillProgramatic = programatic
     }
 
     func hidePillForHiddenChrome() {
@@ -411,3 +418,4 @@ class MockDelayHandler: DuckPlayerDelayHandling {
         delaySubject.send()
     }
 }
+

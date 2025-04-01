@@ -206,11 +206,17 @@ final class AppDependencyProvider: DependencyProvider {
                     DailyPixel.fire(pixel: .privacyProAuthV2MigrationStarted)
                     Pixel.fire(pixel: .privacyProAuthV2MigrationStarted)
                 case .migrationFailed(let error):
-                    DailyPixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription])
-                    Pixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription])
+                    let param = ["error": error.localizedDescription]
+                    DailyPixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: param)
+                    Pixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: param)
                 case .migrationSucceeded:
                     DailyPixel.fire(pixel: .privacyProAuthV2MigrationSucceeded)
                     Pixel.fire(pixel: .privacyProAuthV2MigrationSucceeded)
+                case .getTokensError(let policy, let error):
+                    let param = ["error": error.localizedDescription,
+                                 "policycache": policy.description]
+                    DailyPixel.fire(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: param)
+                    Pixel.fire(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: param)
                 }
             }
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,

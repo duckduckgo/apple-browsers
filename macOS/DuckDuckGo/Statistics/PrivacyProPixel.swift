@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import PixelKit
+import Networking
 
 // swiftlint:disable private_over_fileprivate
 #if APPSTORE
@@ -75,7 +76,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAuthV2MigrationStarted
     case privacyProAuthV2MigrationFailed(Error)
     case privacyProAuthV2MigrationSucceeded
-    case privacyProAuthV2TokenRefreshError(Error)
+    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, Error)
 
     var name: String {
         switch self {
@@ -124,7 +125,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationStarted:return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
-        case .privacyProAuthV2TokenRefreshError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_token_refresh_error"
+        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokenerror"
         }
     }
 
@@ -134,14 +135,11 @@ enum PrivacyProPixel: PixelKitEventV2 {
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProAuthV2TokenRefreshError(let error):
-            return [
-                "error": error.localizedDescription
-            ]
+        case .privacyProAuthV2GetTokensError(let policy, let error):
+            return ["error": error.localizedDescription,
+                    "policycache": policy.description]
         case .privacyProAuthV2MigrationFailed(let error):
-            return [
-                "error": error.localizedDescription
-            ]
+            return ["error": error.localizedDescription]
         default:
             return nil
         }

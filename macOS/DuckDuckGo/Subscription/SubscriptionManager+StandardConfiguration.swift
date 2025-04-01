@@ -176,6 +176,8 @@ extension DefaultSubscriptionManagerV2 {
                     PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(error), frequency: .dailyAndCount)
                 case .migrationSucceeded:
                     PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded, frequency: .dailyAndCount)
+                case .getTokensError(let policy, let error):
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2GetTokensError(policy, error), frequency: .dailyAndCount)
                 }
             }
         } else {

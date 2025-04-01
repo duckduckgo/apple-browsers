@@ -61,6 +61,7 @@ public enum SubscriptionPixelType {
     case migrationSucceeded
     case migrationFailed(Error)
     case subscriptionIsActive
+    case getTokensError(AuthTokensCachePolicy, Error)
 }
 
 public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
@@ -414,14 +415,21 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             return resultTokenContainer
-        } catch OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest {
-            do {
-                return try await attemptTokenRecovery()
-            } catch {
-                throw error
-            }
         } catch {
-            throw SubscriptionManagerError.tokenUnavailable(error: error)
+            switch error {
+            case OAuthClientError.missingTokens: // Expected when no tokens are available
+                throw SubscriptionManagerError.tokenUnavailable(error: error)
+            case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
+                pixelHandler?(.getTokensError(policy, error))
+                do {
+                    return try await attemptTokenRecovery()
+                } catch {
+                    throw error
+                }
+            default:
+                pixelHandler?(.getTokensError(policy, error))
+                throw SubscriptionManagerError.tokenUnavailable(error: error)
+            }
         }
     }
 

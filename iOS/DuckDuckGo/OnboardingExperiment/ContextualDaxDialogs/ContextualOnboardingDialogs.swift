@@ -22,14 +22,17 @@ import SwiftUI
 import Onboarding
 import DuckUI
 
+// MARK: - Try Anonymous Search
+
 struct OnboardingTrySearchDialog: View {
     let title = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchTitle
     let message: String
     let viewModel: OnboardingSearchSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .top) {
+            DaxDialogView(logoPosition: .top, onManualDismiss: onManualDismiss) {
                 ContextualDaxDialogContent(
                     title: title,
                     titleFont: Font(UIFont.daxTitle3()),
@@ -44,13 +47,16 @@ struct OnboardingTrySearchDialog: View {
     }
 }
 
+// MARK: - Try Visiting Site
+
 struct OnboardingTryVisitingSiteDialog: View {
     let logoPosition: DaxDialogLogoPosition
     let viewModel: OnboardingSiteSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        ScrollView(.vertical) {
-            DaxDialogView(logoPosition: logoPosition) {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
                 OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
             }
             .padding()
@@ -74,20 +80,29 @@ struct OnboardingTryVisitingSiteDialogContent: View {
     }
 }
 
+// MARK: - Fire Dialog
+
+struct OnboardingFireDialog: View {
+    let onManualDismiss: () -> Void
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+                VStack {
+                    OnboardingFireButtonDialogContent()
+                }
+            }
+            .padding()
+        }
+    }
+}
+
 struct OnboardingFireButtonDialogContent: View {
     private let attributedMessage: NSAttributedString = {
-        let firstString = UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
         let boldString = "Fire Button."
-        let attributedString = NSMutableAttributedString(string: firstString)
-        let boldFontAttribute: [NSAttributedString.Key: Any] = [
-            .font: UIFont.daxBodyBold()
-        ]
-        if let boldRange = firstString.range(of: boldString) {
-            let nsBoldRange = NSRange(boldRange, in: firstString)
-            attributedString.addAttributes(boldFontAttribute, range: nsBoldRange)
-        }
-
-        return attributedString
+        return UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
+            .attributed
+            .withFont(.daxBodyBold(), forText: boldString)
     }()
 
     var body: some View {
@@ -98,6 +113,8 @@ struct OnboardingFireButtonDialogContent: View {
     }
 }
 
+// MARK: - SERP
+
 struct OnboardingFirstSearchDoneDialog: View {
     let cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
     let message: NSAttributedString
@@ -107,10 +124,11 @@ struct OnboardingFirstSearchDoneDialog: View {
     let shouldFollowUp: Bool
     let viewModel: OnboardingSiteSuggestionsViewModel
     let gotItAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
                 VStack {
                     if showNextScreen {
                         OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
@@ -137,19 +155,7 @@ struct OnboardingFirstSearchDoneDialog: View {
     }
 }
 
-struct OnboardingFireDialog: View {
-   
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
-                VStack {
-                    OnboardingFireButtonDialogContent()
-                }
-            }
-            .padding()
-        }
-    }
-}
+// MARK: - Trackers
 
 struct OnboardingTrackersDoneDialog: View {
     let cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
@@ -159,10 +165,11 @@ struct OnboardingTrackersDoneDialog: View {
     let shouldFollowUp: Bool
     let message: NSAttributedString
     let blockedTrackersCTAAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
                 VStack {
                     if showNextScreen {
                         OnboardingFireButtonDialogContent()
@@ -189,17 +196,20 @@ struct OnboardingTrackersDoneDialog: View {
     }
 }
 
+// MARK: - End of Journey Dialog
+
 struct OnboardingFinalDialog: View {
     let logoPosition: DaxDialogLogoPosition
     let message: String
     let cta: String
     let dismissAction: () -> Void
+    let onManualDismiss: () -> Void
 
     @State private var showAddToDockTutorial = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: logoPosition) {
+            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
                 ContextualDaxDialogContent(
                     title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
                     titleFont: Font(UIFont.daxTitle3()),
@@ -225,6 +235,8 @@ struct OnboardingFinalDialog: View {
 
 }
 
+// MARK: - Privacy Pro Promo
+
 struct PrivacyProPromotionView: View {
 
     let title: String
@@ -233,10 +245,11 @@ struct PrivacyProPromotionView: View {
     let dismissText: String
     let proceedAction: () -> Void
     let dismissAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .top) {
+            DaxDialogView(logoPosition: .top, onManualDismiss: onManualDismiss) {
                 ContextualDaxDialogContent(
                     title: title,
                     titleFont: Font(UIFont.daxTitle3()),
@@ -245,7 +258,6 @@ struct PrivacyProPromotionView: View {
                     customView: nil,
                     customActionView: AnyView(customActionView)
                 )
-
             }
             .padding()
         }
@@ -300,6 +312,8 @@ struct OnboardingCTAButton: View {
 
 }
 
+// MARK: - Add To Dock
+
 struct OnboardingAddToDockTutorialContent: View {
     let title = UserText.AddToDockOnboarding.Tutorial.title
     let message = UserText.AddToDockOnboarding.Tutorial.message
@@ -322,24 +336,48 @@ struct OnboardingAddToDockTutorialContent: View {
 // MARK: - Preview
 
 #Preview("Try Search") {
-    OnboardingTrySearchDialog(message: UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage, viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), pixelReporter: OnboardingPixelReporter()))
+    OnboardingTrySearchDialog(
+        message: UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage,
+        viewModel: OnboardingSearchSuggestionsViewModel(
+            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {})
         .padding()
 }
 
 #Preview("Try Site Top") {
-    OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()))
-        .padding()
+    OnboardingTryVisitingSiteDialog(
+        logoPosition: .top,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(
+                surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            ),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {}
+    )
+    .padding()
 }
 
 #Preview("Try Site Left") {
-    OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()))
-        .padding()
+    OnboardingTryVisitingSiteDialog(
+        logoPosition: .left,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(
+                surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            ),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {}
+    )
+    .padding()
 }
 
 #Preview("Try Fire Button") {
-    DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent()
-    }
+    OnboardingFireDialog(onManualDismiss: {})
         .padding()
 }
 
@@ -350,8 +388,18 @@ struct OnboardingAddToDockTutorialContent: View {
         return message.attributed.with(attribute: .font, value: UIFont.daxBodyBold(), in: boldRange)
     }()
 
-    return OnboardingFirstSearchDoneDialog(message: attributedMessage, shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()), gotItAction: {})
-        .padding()
+    return OnboardingFirstSearchDoneDialog(
+        message: attributedMessage,
+        shouldFollowUp: true,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        gotItAction: {},
+        onManualDismiss: {}
+    )
+    .padding()
 }
 
 #Preview("Final Dialog") {
@@ -359,7 +407,8 @@ struct OnboardingAddToDockTutorialContent: View {
         logoPosition: .top,
         message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
         cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-        dismissAction: { }
+        dismissAction: { },
+        onManualDismiss: {}
     )
     .padding()
 }
@@ -373,7 +422,8 @@ struct OnboardingAddToDockTutorialContent: View {
             I’ll block Facebook from seeing your activity on those sites.
             """
         ),
-        blockedTrackersCTAAction: { }
+        blockedTrackersCTAAction: { },
+        onManualDismiss: {}
     )
     .padding()
 }

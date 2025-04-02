@@ -311,7 +311,12 @@ extension NewTabPageViewController {
                 self.launchNewSearch()
             }
         }
-        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onDismiss: onDismiss))
+
+        let onManualDismiss: () -> Void = { [weak self] in
+            self?.dismissHostingController(didFinishNTPOnboarding: false)
+        }
+
+        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onDismiss: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
 

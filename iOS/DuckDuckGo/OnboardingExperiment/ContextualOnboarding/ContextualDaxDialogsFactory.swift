@@ -40,7 +40,7 @@ typealias ContextualOnboardingDelegate = OnboardingNavigationDelegate & Contextu
 // MARK: - Contextual Dialogs Factory
 
 protocol ContextualDaxDialogsFactory {
-    func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView>
+    func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onManualDismiss: @escaping () -> Void, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView>
 }
 
 final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
@@ -64,7 +64,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         self.onboardingManager = onboardingManager
     }
 
-    func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView> {
+    func makeView(for spec: DaxDialogs.BrowsingSpec, delegate: ContextualOnboardingDelegate, onManualDismiss: @escaping () -> Void, onSizeUpdate: @escaping () -> Void) -> UIHostingController<AnyView> {
         let rootView: AnyView
         switch spec.type {
         case .afterSearch:
@@ -73,24 +73,42 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
                     shouldFollowUpToWebsiteSearch: !contextualOnboardingSettings.userHasSeenTrackersDialog && !contextualOnboardingSettings.userHasSeenTryVisitSiteDialog,
                     delegate: delegate,
                     afterSearchPixelEvent: spec.pixelName,
+                    onManualDismiss: onManualDismiss,
                     onSizeUpdate: onSizeUpdate
                 )
             )
         case .visitWebsite:
-            rootView = AnyView(tryVisitingSiteDialog(delegate: delegate))
+            rootView = AnyView(
+                tryVisitingSiteDialog(
+                    delegate: delegate,
+                    onManualDismiss: onManualDismiss
+                )
+            )
         case .siteIsMajorTracker, .siteOwnedByMajorTracker, .withMultipleTrackers, .withOneTracker, .withoutTrackers:
             rootView = AnyView(
                 withTrackersDialog(
                     for: spec,
                     shouldFollowUpToFireDialog: !contextualOnboardingSettings.userHasSeenFireDialog,
                     delegate: delegate,
+                    onManualDismiss: onManualDismiss,
                     onSizeUpdate: onSizeUpdate
                 )
             )
         case .fire:
-            rootView = AnyView(fireDialog(pixelName: spec.pixelName))
+            rootView = AnyView(
+                fireDialog(
+                    pixelName: spec.pixelName,
+                    onManualDismiss: onManualDismiss
+                )
+            )
         case .final:
-            rootView = AnyView(endOfJourneyDialog(delegate: delegate, pixelName: spec.pixelName))
+            rootView = AnyView(
+                endOfJourneyDialog(
+                    delegate: delegate,
+                    pixelName: spec.pixelName,
+                    onManualDismiss: onManualDismiss
+                )
+            )
         }
 
         let viewWithBackground = rootView
@@ -108,6 +126,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         shouldFollowUpToWebsiteSearch: Bool,
         delegate: ContextualOnboardingDelegate,
         afterSearchPixelEvent: Pixel.Event,
+        onManualDismiss: @escaping () -> Void,
         onSizeUpdate: @escaping () -> Void
     ) -> some View {
 
@@ -133,33 +152,61 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             }
         }
 
-        return OnboardingFirstSearchDoneDialog(message: dialogMessage(), shouldFollowUp: shouldFollowUpToWebsiteSearch, viewModel: viewModel, gotItAction: gotItAction)
-            .onFirstAppear { [weak self] in
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
-            }
+        return OnboardingFirstSearchDoneDialog(
+            message: dialogMessage(),
+            shouldFollowUp: shouldFollowUpToWebsiteSearch,
+            viewModel: viewModel,
+            gotItAction: gotItAction,
+            onManualDismiss: onManualDismiss
+        )
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: afterSearchPixelEvent)
+        }
     }
 
-    private func tryVisitingSiteDialog(delegate: ContextualOnboardingDelegate) -> some View {
-        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate, pixelReporter: contextualOnboardingPixelReporter)
-        return OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: viewModel)
-            .onFirstAppear { [weak self] in
-                self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
-            }
+    private func tryVisitingSiteDialog(delegate: ContextualOnboardingDelegate, onManualDismiss: @escaping () -> Void) -> some View {
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
+            delegate: delegate,
+            pixelReporter: contextualOnboardingPixelReporter
+        )
+
+        return OnboardingTryVisitingSiteDialog(
+            logoPosition: .left,
+            viewModel: viewModel,
+            onManualDismiss: onManualDismiss
+        )
+        .onFirstAppear { [weak self] in
+            self?.contextualOnboardingLogic.setTryVisitSiteMessageSeen()
+            self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .onboardingContextualTryVisitSiteUnique)
+        }
     }
 
-    private func withTrackersDialog(for spec: DaxDialogs.BrowsingSpec, shouldFollowUpToFireDialog: Bool, delegate: ContextualOnboardingDelegate, onSizeUpdate: @escaping () -> Void) -> some View {
+    private func withTrackersDialog(
+        for spec: DaxDialogs.BrowsingSpec,
+        shouldFollowUpToFireDialog: Bool,
+        delegate: ContextualOnboardingDelegate,
+        onManualDismiss: @escaping () -> Void,
+        onSizeUpdate: @escaping () -> Void
+    ) -> some View {
         let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
-        return OnboardingTrackersDoneDialog(shouldFollowUp: shouldFollowUpToFireDialog, message: attributedMessage, blockedTrackersCTAAction: { [weak self, weak delegate] in
-            // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
-            if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
-                delegate?.didTapDismissContextualOnboardingAction()
-            } else {
-                onSizeUpdate()
-                delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
-                self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
-            }
-        })
+
+        return OnboardingTrackersDoneDialog(
+            shouldFollowUp: shouldFollowUpToFireDialog,
+            message: attributedMessage,
+            blockedTrackersCTAAction: { [weak self, weak delegate] in
+                // If the user has not seen the fire dialog yet proceed to the fire dialog, otherwise dismiss the dialog.
+                if self?.contextualOnboardingSettings.userHasSeenFireDialog == true {
+                    delegate?.didTapDismissContextualOnboardingAction()
+                } else {
+                    onSizeUpdate()
+                    delegate?.didAcknowledgeContextualOnboardingTrackersDialog()
+                    self?.contextualOnboardingPixelReporter.measureScreenImpression(event: .daxDialogsFireEducationShownUnique)
+                }
+            },
+            onManualDismiss: onManualDismiss
+        )
         .onAppear { [weak delegate] in
             delegate?.didShowContextualOnboardingTrackersDialog()
         }
@@ -168,14 +215,18 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         }
     }
 
-    private func fireDialog(pixelName: Pixel.Event) -> some View {
-        OnboardingFireDialog()
+    private func fireDialog(pixelName: Pixel.Event, onManualDismiss: @escaping () -> Void) -> some View {
+        OnboardingFireDialog(onManualDismiss: onManualDismiss)
             .onFirstAppear { [weak self] in
                 self?.contextualOnboardingPixelReporter.measureScreenImpression(event: pixelName)
             }
     }
 
-    private func endOfJourneyDialog(delegate: ContextualOnboardingDelegate, pixelName: Pixel.Event) -> some View {
+    private func endOfJourneyDialog(
+        delegate: ContextualOnboardingDelegate,
+        pixelName: Pixel.Event,
+        onManualDismiss: @escaping () -> Void
+    ) -> some View {
         let dismissAction = { [weak delegate, weak self] in
             delegate?.didTapDismissContextualOnboardingAction()
             self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
@@ -185,7 +236,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             logoPosition: .left,
             message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
             cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-            dismissAction: dismissAction
+            dismissAction: dismissAction,
+            onManualDismiss: onManualDismiss
         )
         .onFirstAppear { [weak self] in
             self?.contextualOnboardingLogic.setFinalOnboardingDialogSeen()

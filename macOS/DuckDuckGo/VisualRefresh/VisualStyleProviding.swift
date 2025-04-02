@@ -22,8 +22,8 @@ import FeatureFlags
 
 protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat
-    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
 }
 
 enum AddressBarSizeClass {
@@ -123,11 +123,11 @@ final class VisualStyleProvider: VisualStyleProviding {
         return currentStyle.addressBarHeight(for: type)
     }
 
-    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat {
         return currentStyle.addressBarTopPaddig(for: type)
     }
 
-    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat {
         return currentStyle.addressBarBottomPaddig(for: type)
     }
 

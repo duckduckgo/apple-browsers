@@ -118,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
-    let visualStyleManager: VisualStyleManager
+    let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge

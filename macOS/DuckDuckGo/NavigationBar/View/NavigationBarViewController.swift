@@ -115,7 +115,7 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
-    private let visualStyleManager: VisualStyleManager
+    private let visualStyleManager: VisualStyleManagerProviding
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -133,7 +133,7 @@ final class NavigationBarViewController: NSViewController {
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManager = NSApp.delegateTyped.visualStyleManager
+                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -163,7 +163,7 @@ final class NavigationBarViewController: NSViewController {
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyleManager: VisualStyleManager
+        visualStyleManager: VisualStyleManagerProviding
     ) {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)

@@ -26,6 +26,10 @@ protocol VisualStyleProviding {
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
 }
 
+protocol VisualStyleManagerProviding {
+    var style: any VisualStyleProviding { get }
+}
+
 enum AddressBarSizeClass {
     case `default`
     case homePage
@@ -106,7 +110,7 @@ struct VisualStyle: VisualStyleProviding {
     }
 }
 
-final class VisualStyleManager {
+final class VisualStyleManager: VisualStyleManagerProviding {
     private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []

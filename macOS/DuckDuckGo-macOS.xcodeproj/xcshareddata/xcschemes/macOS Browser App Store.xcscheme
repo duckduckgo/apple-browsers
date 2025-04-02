@@ -161,6 +161,9 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
+               </Test>
+               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test

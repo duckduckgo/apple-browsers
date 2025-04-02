@@ -306,7 +306,7 @@ private struct EditableCreditCardNumberCell: View {
             private var isEditingActive: Bool = false
             private var isPasteOperation = false
             private var needsEndCursorPositioning = false
-            
+
             init(_ parent: CreditCardNumberField) {
                 self.parent = parent
             }

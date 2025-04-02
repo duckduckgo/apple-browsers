@@ -44,33 +44,9 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         omniBarView.isShowingSeparator = isShowingSeparator
     }
 
-    override func cancelAllAnimations() {
-        // TODO: Implement or remove
-    }
-
-    override func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
-
-    }
-
-    override func hidePrivacyIcon() {
-
-    }
-
-    override func resetPrivacyIcon(for url: URL?) {
-        
-    }
-
-    override func dismissOnboardingPrivacyIconAnimation() {
-
-    }
-
-    override func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool) {
-        
-    }
-
     override func textFieldDidBeginEditing(_ textField: UITextField) {
         super.textFieldDidBeginEditing(textField)
-
+        
         omniBarView.layoutIfNeeded()
         UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
             self.omniBarView.isActiveState = true

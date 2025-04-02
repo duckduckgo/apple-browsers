@@ -22,14 +22,21 @@ import DesignResourcesKit
 
 final class UpdatedOmniBarSearchView: UIView {
 
+    let privacyInfoContainer: PrivacyInfoContainerView! = {
+        // This view is constructed inside an original OmniBar xib, so let's extract it from it.
+        let omniBarNib = DefaultOmniBarView.create()
+        return omniBarNib.privacyInfoContainer
+    }()
+    let notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
+
     let loupeIconView = UIImageView()
     let customIconView = UIImageView()
     let dismissButtonView = UIButton(type: .custom)
 
     let leftIconContainer = UIView()
-
     let textField = TextFieldWithInsets()
 
+    private let leftIconContainerPlaceholder = UIView()
     private let trailingItemsContainer = UIStackView()
 
     let separatorView = URLSeparatorView()
@@ -60,7 +67,11 @@ final class UpdatedOmniBarSearchView: UIView {
     private func setUpSubviews() {
         addSubview(mainStackView)
 
-        mainStackView.addArrangedSubview(leftIconContainer)
+        leftIconContainerPlaceholder.addSubview(leftIconContainer)
+
+        mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
+        mainStackView.addSubview(notificationContainer)
+        mainStackView.addSubview(privacyInfoContainer)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
@@ -78,12 +89,27 @@ final class UpdatedOmniBarSearchView: UIView {
 
     private func setUpConstraints() {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
+        notificationContainer.translatesAutoresizingMaskIntoConstraints = false
+        leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             mainStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             mainStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             mainStackView.topAnchor.constraint(equalTo: topAnchor),
-            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor)
+            mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+
+            notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
+            notificationContainer.trailingAnchor.constraint(lessThanOrEqualTo: textField.trailingAnchor),
+            notificationContainer.topAnchor.constraint(equalTo: leftIconContainerPlaceholder.topAnchor),
+            notificationContainer.bottomAnchor.constraint(equalTo: leftIconContainerPlaceholder.bottomAnchor),
+
+            leftIconContainerPlaceholder.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
+            leftIconContainerPlaceholder.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
+            leftIconContainerPlaceholder.topAnchor.constraint(equalTo: leftIconContainer.topAnchor),
+            leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
+
+            privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor)
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)

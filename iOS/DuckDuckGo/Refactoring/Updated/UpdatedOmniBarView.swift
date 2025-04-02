@@ -24,8 +24,8 @@ import SwiftUI
 final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var textField: TextFieldWithInsets! { searchAreaView.textField }
-    var privacyInfoContainer: PrivacyInfoContainerView! = PrivacyInfoContainerView()
-    var notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
+    var privacyInfoContainer: PrivacyInfoContainerView! { searchAreaView.privacyInfoContainer }
+    var notificationContainer: OmniBarNotificationContainerView! { searchAreaView.notificationContainer }
     var searchLoupe: UIView! { searchAreaView.loupeIconView }
     var dismissButton: UIButton! { searchAreaView.dismissButtonView }
     var leftIconContainerView: UIView! { searchAreaView.leftIconContainer }
@@ -41,6 +41,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
+    let expectedHeight: CGFloat = Metrics.height
 
     var accessoryType: OmniBarAccessoryType = .share {
         didSet {
@@ -368,6 +369,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         menuButtonView.addTarget(self, action: #selector(menuButtonTap), for: .touchUpInside)
 
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
+
+        privacyInfoContainer.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
     }
 
     private func setUpAccessibility() {
@@ -394,6 +397,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             searchAreaContainerView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         }
+    }
+
+    @objc private func privacyIconPressed() {
+        onPrivacyIconPressed?()
     }
 
     @objc private func textFieldTextEntered() {
@@ -457,7 +464,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         static let activeBorderWidth: CGFloat = 2
 
-        static let textAreaHorizontalPadding: CGFloat = 14
+        static let textAreaHorizontalPadding: CGFloat = 16
 
         static let textAreaTopPadding: CGFloat = 4
         static let textAreaBottomPadding: CGFloat = 12

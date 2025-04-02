@@ -176,10 +176,10 @@ final class SubscriptionEmailViewModel: ObservableObject {
                     self.state.selectedFeature = .netP
                 case .dataBrokerProtection:
                     UniquePixel.fire(pixel: .privacyProWelcomePersonalInformationRemoval)
-                    self.state.selectedFeature = .itr
+                    self.state.selectedFeature = .dbp
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
-                    self.state.selectedFeature = .dbp
+                    self.state.selectedFeature = .itr
                 case .unknown:
                     break
                 }

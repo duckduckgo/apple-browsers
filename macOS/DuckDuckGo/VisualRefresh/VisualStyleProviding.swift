@@ -133,12 +133,8 @@ final class VisualStyleProvider: VisualStyleProviding {
 
     // MARK: - Private properties
 
-    private var isEnabled: Bool {
-        featureFlagger.isFeatureOn(.visualRefresh)
-    }
-
     private var currentStyle: VisualStyle {
-        return isEnabled ? .current : .legacy
+        return featureFlagger.isFeatureOn(.visualRefresh) ? .current : .legacy
     }
 
     private func subscribeToLocalOverride() {

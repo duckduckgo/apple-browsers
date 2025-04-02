@@ -405,6 +405,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
 
         updateInterface(from: oldState, to: state)
+
+        UIView.animate(withDuration: 0.0) { [weak self] in
+            self?.view.layoutIfNeeded()
+        }
     }
 
     func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {

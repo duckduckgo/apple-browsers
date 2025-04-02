@@ -51,10 +51,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
             oldState.hasLargeWidth != state.hasLargeWidth {
             updatePadding()
         }
-
-        UIView.animate(withDuration: 0.0) { [weak self] in
-            self?.view.layoutIfNeeded()
-        }
     }
 
     // MARK: - Private

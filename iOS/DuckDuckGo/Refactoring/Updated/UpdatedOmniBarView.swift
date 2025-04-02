@@ -56,6 +56,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private var searchAreaTopPaddingConstraint: NSLayoutConstraint?
     private var searchAreaBottomPaddingConstraint: NSLayoutConstraint?
+    private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
 
     // iPad elements
 
@@ -132,6 +133,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             leadingButtonsContainer.isHidden = isUsingCompactLayout
             trailingButtonsContainer.isHidden = isUsingCompactLayout
+
+            readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
         }
     }
 
@@ -209,7 +212,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     init() {
-        super.init(frame: .zero)
+        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: 68))
 
         setUpSubviews()
         setUpConstraints()
@@ -251,12 +254,14 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         let readableSearchAreaWidth = searchAreaView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
         readableSearchAreaWidth.priority = .defaultHigh
+        readableSearchAreaWidth.isActive = false
 
         let searchAreaTopPadding = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaTopPadding)
         let searchAreaBottomPadding = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaBottomPadding)
 
         searchAreaTopPaddingConstraint = searchAreaTopPadding
         searchAreaBottomPaddingConstraint = searchAreaBottomPadding
+        readableSearchAreaWidthConstraint = readableSearchAreaWidth
 
         omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
@@ -275,7 +280,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
-            searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -457,7 +461,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private struct Metrics {
         static let itemSize: CGFloat = 44
-        static let height: CGFloat = 60
+        static let height: CGFloat = 68
 
         static let cornerRadius: CGFloat = 16
         static let activeCornerRadius: CGFloat = 18
@@ -466,10 +470,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         static let textAreaHorizontalPadding: CGFloat = 16
 
-        static let textAreaTopPadding: CGFloat = 4
+        static let textAreaTopPadding: CGFloat = 12
         static let textAreaBottomPadding: CGFloat = 12
-        static let activeTextAreaTopPadding: CGFloat = 2
-        static let activeTextAreaBottomPadding: CGFloat = 8
+        static let activeTextAreaTopPadding: CGFloat = 10
+        static let activeTextAreaBottomPadding: CGFloat = 10
 
         static let expandedSizeSpacing: CGFloat = 24.0
         static let expandedSizeMargins = NSDirectionalEdgeInsets(

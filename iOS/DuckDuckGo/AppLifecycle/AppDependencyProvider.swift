@@ -198,25 +198,18 @@ final class AppDependencyProvider: DependencyProvider {
             let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
                 switch type {
                 case .invalidRefreshToken:
-                    DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenDetected)
-                    Pixel.fire(pixel: .privacyProInvalidRefreshTokenDetected)
+                    DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected)
                 case .subscriptionIsActive:
                     DailyPixel.fire(pixel: .privacyProSubscriptionActive)
                 case .migrationStarted:
-                    DailyPixel.fire(pixel: .privacyProAuthV2MigrationStarted)
-                    Pixel.fire(pixel: .privacyProAuthV2MigrationStarted)
+                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationStarted)
                 case .migrationFailed(let error):
-                    let param = ["error": error.localizedDescription]
-                    DailyPixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: param)
-                    Pixel.fire(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: param)
+                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription])
                 case .migrationSucceeded:
-                    DailyPixel.fire(pixel: .privacyProAuthV2MigrationSucceeded)
-                    Pixel.fire(pixel: .privacyProAuthV2MigrationSucceeded)
+                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationSucceeded)
                 case .getTokensError(let policy, let error):
-                    let param = ["error": error.localizedDescription,
-                                 "policycache": policy.description]
-                    DailyPixel.fire(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: param)
-                    Pixel.fire(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: param)
+                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: ["error": error.localizedDescription,
+                                                                                                                    "policycache": policy.description])
                 }
             }
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,

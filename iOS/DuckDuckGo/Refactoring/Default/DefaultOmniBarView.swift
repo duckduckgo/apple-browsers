@@ -811,7 +811,7 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
                 }
             }
 
-            return UIMenu(title: "", children: children)
+            return UIMenu(title: "Choose your Website Action Button", children: children)
         }
     }
 

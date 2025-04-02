@@ -28,18 +28,19 @@ struct ClearTextField: View {
     var secure = false
 
     @State private var closeButtonVisible = false
+    @FocusState private var isFieldFocused: Bool
 
     var body: some View {
         HStack {
-            TextField(placeholderText, text: $text) { editing in
-                closeButtonVisible = editing
-            } onCommit: {
-                closeButtonVisible = false
-            }
+            TextField(placeholderText, text: $text)
             .autocapitalization(autoCapitalizationType)
             .disableAutocorrection(disableAutoCorrection)
             .keyboardType(keyboardType)
             .label4Style(design: secure && text.count > 0 ? .monospaced : .default)
+            .focused($isFieldFocused)
+            .onChange(of: isFieldFocused) { focused in
+                closeButtonVisible = focused
+            }
 
             Spacer()
             Image("Clear-16")

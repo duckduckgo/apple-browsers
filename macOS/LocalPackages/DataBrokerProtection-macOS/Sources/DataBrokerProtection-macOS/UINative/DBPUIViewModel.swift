@@ -67,10 +67,10 @@ public final class DBPUIViewModel {
         let configuration = WKWebViewConfiguration()
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
-                                              delegate: dataManager.communicationHandler,
+                                              delegate: dataManager.communicator,
                                               webUISettings: webUISettings,
                                               vpnBypassService: vpnBypassService)
-        dataManager.communicationHandler.scanDelegate = self
+        dataManager.communicator.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {

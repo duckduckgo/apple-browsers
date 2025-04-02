@@ -99,8 +99,7 @@ final class UpdatedOmniBarSearchView: UIView {
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
             notificationContainer.trailingAnchor.constraint(lessThanOrEqualTo: textField.trailingAnchor),
-            notificationContainer.topAnchor.constraint(equalTo: leftIconContainerPlaceholder.topAnchor),
-            notificationContainer.bottomAnchor.constraint(equalTo: leftIconContainerPlaceholder.bottomAnchor),
+            notificationContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
 
             leftIconContainerPlaceholder.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
             leftIconContainerPlaceholder.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),

@@ -29,7 +29,7 @@ struct DuckPlayerModalPresenter {
 
     var context: PresentationContext = .SERP
 
-    func presentDuckPlayerFeatureModal(on viewController: TabViewController) {
+    func presentDuckPlayerFeatureModal(on viewController: UIViewController) {
         let hostingController = createHostingController()
         configurePresentationStyle(for: hostingController, on: viewController)
         viewController.present(hostingController, animated: true, completion: nil)
@@ -47,10 +47,17 @@ struct DuckPlayerModalPresenter {
         return hostingController
     }
 
-    private func configurePresentationStyle(for hostingController: UIHostingController<DuckPlayerFeaturePresentationView>, on viewController: TabViewController) {
-        hostingController.modalPresentationStyle = .pageSheet
-        hostingController.modalTransitionStyle = .coverVertical
-    }
+    private func configurePresentationStyle(for hostingController: UIHostingController<DuckPlayerFeaturePresentationView>, on viewController: UIViewController) {
+        if let sheet = hostingController.presentationController as? UISheetPresentationController {
+
+            if #available(iOS 16.0, *) {
+                let targetSize = getTargetSizeForPresentationView(on: viewController)
+                sheet.detents = [.custom { _ in targetSize.height }]
+            } else {
+                sheet.detents = [.large()]
+
+            }
+        }
 
     @available(iOS 16.0, *)
     private func getTargetSizeForPresentationView(on viewController: UIViewController) -> CGSize {

@@ -284,7 +284,6 @@ class OmniBarViewController: UIViewController, OmniBar {
     func updateAccessoryType(_ type: OmniBarAccessoryType) {
         DispatchQueue.main.async {
             self.barView.accessoryType = type
-            //            self.updatePadding()
         }
     }
 
@@ -494,8 +493,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         newView.transform = CGAffineTransform(translationX: -animationOffset, y: 0)
         newView.isHidden = false
         oldView.isHidden = false
-
-//        let targetAlpha: CGFloat = (newView == barView.searchLoupe) ? 0.5 : 1.0
 
         dismissButtonAnimator = UIViewPropertyAnimator(duration: animationDuration, dampingRatio: animationDampingRatio) {
             oldView.alpha = 0

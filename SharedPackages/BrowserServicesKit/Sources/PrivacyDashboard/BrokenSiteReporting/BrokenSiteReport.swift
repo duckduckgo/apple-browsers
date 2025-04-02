@@ -277,7 +277,7 @@ public struct BrokenSiteReport {
             let perf = jsPerformance.map { String($0) }.joined(separator: ",")
             result["jsPerformance"] = perf
         }
-        
+
         for (key, value) in privacyExperiments {
             result[key] = value
         }

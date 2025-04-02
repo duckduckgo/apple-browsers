@@ -154,13 +154,18 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
     public var messageNames: [String] = []
     public weak var delegate: ContentScopeUserScriptDelegate?
 
+    enum MessageName: String {
+        case contentScopeScriptsIsolated
+        case contentScopeScripts
+    }
+
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
                 isIsolated: Bool = false,
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
-        let contextName = self.isIsolated ? "contentScopeScriptsIsolated" : "contentScopeScripts"
+        let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
         broker = UserScriptMessageBroker(context: contextName)
 
@@ -214,11 +219,12 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     @MainActor
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
-        print("C-S-S MESSAGE: \(message.body)")
         propagateDebugFlag(message)
-        if message.name == "contentScopeScripts" {
+        // Don't propagate the message for ContentScopeScript non isolated context
+        if message.name == MessageName.contentScopeScripts.rawValue {
             return (nil, nil)
         }
+        // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
         let action = broker.messageHandlerFor(message)
         do {
             let json = try await broker.execute(action: action, original: message)
@@ -231,7 +237,8 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
 
     @MainActor
     private func propagateDebugFlag(_ message: WKScriptMessage) {
-        if let messageDictionary = message.body as? [String: Any], let parameters = messageDictionary["params"] as? [String: String],
+        if let messageDictionary = message.body as? [String: Any],
+           let parameters = messageDictionary["params"] as? [String: String],
            let flag = parameters["flag"] {
             delegate?.contentScopeUserScript(self, didReceiveDebugFlag: flag)
         }

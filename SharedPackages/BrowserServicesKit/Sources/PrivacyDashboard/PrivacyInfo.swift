@@ -66,11 +66,11 @@ public final class PrivacyInfo {
     public var domain: String? {
         return url.host
     }
-    
+
     public func isFor(_ url: URL?) -> Bool {
         return self.url.host == url?.host
     }
-    
+
     public func addDebugFlag(_ flag: String) {
         if debugFlags.isEmpty {
             debugFlags = flag

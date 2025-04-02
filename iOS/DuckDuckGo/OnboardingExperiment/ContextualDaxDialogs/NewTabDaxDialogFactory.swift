@@ -36,7 +36,7 @@ protocol NewTabDaxDialogProvider {
     ///     - `activateSearch`: A Boolean value indicating whether the search should be activated after dismissal (i.e if the omnibar should become the first responder)
     ///
     /// - Returns: A view conforming to `DaxDialog` that represents the Dax dialog.
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> DaxDialog
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
@@ -58,28 +58,28 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     }
 
     @ViewBuilder
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         switch homeDialog {
         case .initial:
-            createInitialDialog()
+            createInitialDialog(onManualDismiss: onManualDismiss)
         case .addFavorite:
             createAddFavoriteDialog(message: homeDialog.message)
         case .subsequent:
-            createSubsequentDialog()
+            createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            createFinalDialog(onDismiss: onDismiss)
+            createFinalDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss)
         case .privacyProPromotion:
-            createPrivacyProPromoDialog(onDismiss: onDismiss)
+            createPrivacyProPromoDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss)
         default:
             EmptyView()
         }
     }
 
-    private func createInitialDialog() -> some View {
+    private func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), delegate: delegate, pixelReporter: onboardingPixelReporter)
         let message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
         return FadeInView {
-            OnboardingTrySearchDialog(message: message, viewModel: viewModel)
+            OnboardingTrySearchDialog(message: message, viewModel: viewModel, onManualDismiss: onManualDismiss)
                 .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
@@ -89,10 +89,10 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         }
     }
 
-    private func createSubsequentDialog() -> some View {
+    private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), delegate: delegate, pixelReporter: onboardingPixelReporter)
         return FadeInView {
-            OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: viewModel)
+            OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: viewModel, onManualDismiss: onManualDismiss)
                 .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
@@ -114,7 +114,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
     }
 
-    private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         let dismissAction = { [weak self] in
             self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
             onDismiss(true)
@@ -125,7 +125,8 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                 logoPosition: .top,
                 message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: dismissAction
+                dismissAction: dismissAction,
+                onManualDismiss: onManualDismiss
             )
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
@@ -137,27 +138,31 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
 
         return FadeInView {
-            PrivacyProPromotionView(title: UserText.PrivacyProPromotionOnboarding.Promo.title,
-                                    message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
-                                    proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
-                                    dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
-                                    proceedAction: { [weak self] in
-                self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
-                let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
-                NotificationCenter.default.post(
-                    name: .settingsDeepLinkNotification,
-                    object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
-                    userInfo: nil
-                )
-                onDismiss(false)
-            },
-                                    dismissAction: { [weak self] in
-                self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
-                onDismiss(true)
-            })
+            PrivacyProPromotionView(
+                title: UserText.PrivacyProPromotionOnboarding.Promo.title,
+                message: UserText.PrivacyProPromotionOnboarding.Promo.message(),
+                proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
+                dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
+                proceedAction: { [weak self] in
+                    self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
+                    let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
+                    NotificationCenter.default.post(
+                        name: .settingsDeepLinkNotification,
+                        object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
+                        userInfo: nil
+                    )
+                    onDismiss(false)
+                },
+                dismissAction: { [weak self] in
+                    self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
+                    onDismiss(true)
+                }, onManualDismiss: {
+                    onManualDismiss()
+                }
+            )
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in

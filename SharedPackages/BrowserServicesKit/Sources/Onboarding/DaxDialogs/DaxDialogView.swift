@@ -50,6 +50,7 @@ public struct DaxDialogView<Content: View>: View {
     private let cornerRadius: CGFloat
     private let arrowSize: CGSize
     private let onTapGesture: (() -> Void)?
+    private let onManualDismiss: (() -> Void)?
     private let content: Content
 
     public init(
@@ -59,6 +60,7 @@ public struct DaxDialogView<Content: View>: View {
         cornerRadius: CGFloat = 16.0,
         arrowSize: CGSize = .init(width: 16.0, height: 8.0),
         onTapGesture: (() -> Void)? = nil,
+        onManualDismiss: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         _logoPosition = State(initialValue: logoPosition)
@@ -67,6 +69,7 @@ public struct DaxDialogView<Content: View>: View {
         self.cornerRadius = cornerRadius
         self.arrowSize = arrowSize
         self.onTapGesture = onTapGesture
+        self.onManualDismiss = onManualDismiss
         self.content = content()
     }
 
@@ -122,13 +125,14 @@ public struct DaxDialogView<Content: View>: View {
         }
     }
 
+    @ViewBuilder
     private var wrappedContent: some View {
         let backgroundColor = Color(designSystemColor: .surface)
         let shadowColors: (Color, Color) = colorScheme == .light ?
         (.black.opacity(0.08), .black.opacity(0.1)) :
         (.black.opacity(0.20), .black.opacity(0.16))
 
-        return content
+        content
             .padding(.all, DaxDialogMetrics.contentPadding)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -143,6 +147,13 @@ public struct DaxDialogView<Content: View>: View {
                 ,
                 alignment: .topLeading
             )
+            .ifLet(onManualDismiss) { view, onDismiss in
+                view.overlay(alignment: .topTrailing) {
+                    OnboardingDismissButton(action: onDismiss)
+                        .alignmentGuide(.top) { $0.height/2 - 8 }
+                        .alignmentGuide(.trailing) { $0.width/2 + 8 }
+                }
+            }
     }
 
     private var arrowOffset: CGSize {
@@ -191,4 +202,33 @@ public struct DaxDialogView<Content: View>: View {
         }
         .padding()
     }
+}
+
+struct OnboardingDismissButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(.close16)
+                .padding(8)
+                .background(.white.opacity(0.72))
+                .clipShape(Circle())
+        }
+        .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
+        .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
+        .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
+        .frame(width: 44, height: 44)
+    }
+}
+
+extension View {
+
+    @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
+        if let value = value {
+            transform(self, value)
+        } else {
+            self
+        }
+    }
+
 }

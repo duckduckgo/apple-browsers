@@ -384,15 +384,21 @@ class TabViewController: UIViewController {
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
         if duckPlayer.settings.nativeUI && featureFlagger.isFeatureOn(.duckPlayerNativeUI) {
-            return NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
+            let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
+            
+            // Set up constraint handling if using native UI
+            if let presenter = duckPlayer.nativeUIPresenter as? DuckPlayerNativeUIPresenter {
+                setupDuckPlayerConstraintHandling(publisher: presenter.constraintUpdates)
+            }
+            
+            return handler
         } else {
             return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
         }
-        
     }()
 
     let contextualOnboardingPresenter: ContextualOnboardingPresenting
@@ -1309,6 +1315,8 @@ class TabViewController: UIViewController {
         temporaryDownloadForPreviewedFile?.cancel()
         cleanUpBeforeClosing()
     }
+
+    private var cancellables = Set<AnyCancellable>()
 }
 
 // MARK: - LoginFormDetectionDelegate
@@ -3327,4 +3335,46 @@ extension TabViewController: Navigatable {
         return webViewCanGoForward && !isError
     }
 
+}
+
+extension TabViewController: DuckPlayerHosting {
+    var contentBottomConstraint: NSLayoutConstraint? {
+        return webViewBottomAnchorConstraint
+    }
+    
+    var persistentBottomBarHeight: CGFloat {
+        return chromeDelegate?.barsMaxHeight ?? 0.0
+    }
+    
+    var webView: WKWebView {
+        return webView
+    }
+}
+
+extension TabViewController {
+    func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
+        publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] update in
+                guard let self = self else { return }
+                
+                switch update {
+                case .showPill(let height):
+                    if self.appSettings.currentAddressBarPosition == .bottom {
+                        let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                        self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
+                    } else {
+                        self.webViewBottomAnchorConstraint?.constant = -height
+                    }
+                    
+                case .reset:
+                    let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                    self.webViewBottomAnchorConstraint?.constant = 
+                        self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                }
+                
+                self.view.layoutIfNeeded()
+            }
+            .store(in: &cancellables)
+    }
 }

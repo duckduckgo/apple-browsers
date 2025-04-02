@@ -135,13 +135,13 @@ protocol DuckPlayerNavigationHandling: AnyObject {
     func handleDelegateNavigation(navigationAction: WKNavigationAction, webView: WKWebView) -> Bool
 
     /// Sets the host view controller for the navigation handler.
-    func setHostViewController(_ hostViewController: DuckPlayerHostingViewControlling)
+    func setHostViewController(_ hostViewController: TabViewController)
 
     /// Handles DuckPlayer Updates when WebView appears
-    func updateDuckPlayerForWebViewAppearance(_ hostViewController: DuckPlayerHostingViewControlling)
+    func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController)
 
     /// Handles DuckPlayer Updates when WebView dissapears
-    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: DuckPlayerHostingViewControlling)
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController)
 
 }
 

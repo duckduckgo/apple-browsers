@@ -202,7 +202,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
 
     // MARK: - Required Properties
     var settings: DuckPlayerSettings
-    var hostView: DuckPlayerHostingViewControlling?
+    var hostView: TabViewControllerMock?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
     
@@ -257,7 +257,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         nil
     }
 
-    func setHostViewController(_ vc: DuckPlayerHostingViewControlling) {
+    func setHostViewController(_ vc: TabViewControllerMock?) {
         self.hostView = vc
     }
 
@@ -381,7 +381,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var lastTimestampValue: TimeInterval?
 
     @MainActor
-    func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHostingViewControlling, timestamp: TimeInterval?) {
+    func presentPill(for videoID: String, in hostViewController: TabViewControllerMock, timestamp: TimeInterval?) {
         presentPillCalled = true
         lastTimestampValue = timestamp
     }
@@ -390,7 +390,8 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {}
     
     @MainActor
-    func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHostingViewControlling, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+    func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: TabViewControllerMock, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+        presentDuckPlayerCalled = true
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
     
@@ -398,11 +399,6 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
 
     init() {
         self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
-    }
-    
-    @MainActor
-    func presentDuckPlayer(videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
-        return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
     
     @MainActor
@@ -425,47 +421,53 @@ class MockDelayHandler: DuckPlayerDelayHandling {
     }
 }
 
-final class MockDuckPlayerHostingViewControlling: DuckPlayerHostingViewControlling {
+// MARK: - TabViewController Test Protocol
+
+// MARK: - DuckPlayerTabViewControllerMock
+
+final class DuckPlayerTabViewControllerMock: UIViewController {
     
-    var isLinkPreview: Bool = false
-    var tabModel: DuckDuckGo.Tab = .init()
-    var webView: WKWebView!
-    var view: UIView!
-    var duckPlayerTabDelegate: (any DuckDuckGo.DuckPlayerTabDelegate)?
-    var url: URL?
-    
+    var webViewContainerView: UIView = UIView()
+    var chromeDelegate: DuckPlayerBrowserChromeDelegateMock?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
-    var duckPlayerChromeDelegate: DuckPlayerBrowserChromeDelegate?
-    var presentCalled = false
-    var dismissCalled = false
-    var lastPresentedViewController: UIViewController?
-    var lastPresentedAnimated: Bool?
-    var lastPresentedCompletion: (() -> Void)?
-    var presentedViewController: UIViewController?
     
-    init(notificationCenter: NotificationCenter = .default) {
-        // Initialize required properties
-        view = UIView()
+    // Track presentation state
+    private(set) var presentCalled = false
+    private(set) var dismissCalled = false
+    private(set) var lastPresentedViewController: UIViewController?
+    private(set) var lastPresentedAnimated: Bool?
+    private(set) var lastPresentedCompletion: (() -> Void)?
+
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         webViewBottomAnchorConstraint = NSLayoutConstraint()
         webViewBottomAnchorConstraint?.constant = 0
     }
-    
-    func present(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func present(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
         presentCalled = true
         lastPresentedViewController = viewController
         lastPresentedAnimated = animated
         lastPresentedCompletion = completion
-        presentedViewController = viewController
-        completion?()
+        super.present(viewController, animated: animated, completion: completion)
     }
-    
-    func dismiss(animated: Bool, completion: (() -> Void)?) {
+
+    override func dismiss(animated: Bool, completion: (() -> Void)?) {
         dismissCalled = true
-        completion?()
+        super.dismiss(animated: animated, completion: completion)
     }
-    
-    func setupWebViewForLandscapeVideo() {}
-    func setupWebViewForPortraitVideo() {}
+
+    func setupWebViewForPortraitVideo() {
+        // Implementation not needed for tests
+    }
+
+    func setupWebViewForLandscapeVideo() {
+        // Implementation not needed for tests
+    }
 }
 
 // Add MockNotificationCenter
@@ -479,9 +481,51 @@ final class MockNotificationCenter {
     }
 }
 
-final class MockDuckPlayerChromeDelegate: DuckPlayerBrowserChromeDelegate {
-    
-    var omniBar: any DuckDuckGo.OmniBar = DefaultOmniBarViewController(
+// MARK: - DuckPlayerChromeDelegateMock
+
+final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
+    func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?) {
+        setBarsHidden(hidden, animated: animated)
+    }
+
+    func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
+        setBarsVisibility(percent, animated: animated)
+    }
+
+    enum Message: Equatable {
+        case setBarsHidden(Bool)
+        case setNavigationBarHidden(Bool)
+        case setBarsVisibility(CGFloat)
+        case setRefreshControlEnabled(Bool)
+    }
+
+    var receivedMessages: [Message] = []
+
+    func setBarsHidden(_ hidden: Bool, animated: Bool) {
+        receivedMessages.append(.setBarsHidden(hidden))
+    }
+
+    func setNavigationBarHidden(_ hidden: Bool) {
+        receivedMessages.append(.setNavigationBarHidden(hidden))
+    }
+
+    func setBarsVisibility(_ percent: CGFloat, animated: Bool) {
+        receivedMessages.append(.setBarsVisibility(percent))
+    }
+
+    func setRefreshControlEnabled(_ isEnabled: Bool) {
+        receivedMessages.append(.setRefreshControlEnabled(isEnabled))
+    }
+
+    var canHideBars: Bool = false
+
+    var isToolbarHidden: Bool = false
+
+    var toolbarHeight: CGFloat = 0.0
+
+    var barsMaxHeight: CGFloat = 30
+
+    var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(
             voiceSearchHelper: MockVoiceSearchHelper(
                 isSpeechRecognizerAvailable: true,
@@ -489,20 +533,6 @@ final class MockDuckPlayerChromeDelegate: DuckPlayerBrowserChromeDelegate {
             )
         )
     )
-    
-    var setBarsHiddenCalled = false
-    var setBarsvisibleCalled = false
-    
-    func setBarsHidden(_ hidden: Bool, animated: Bool, customAnimationDuration: CGFloat?) {
-        setBarsHiddenCalled = true
-    }
-    
-    func setBarsVisibility(_ percent: CGFloat, animated: Bool, animationDuration: CGFloat?) {
-        setBarsvisibleCalled = true
-    }
-        
-    var barsMaxHeight: CGFloat = 44
-    
- 
-}
 
+    var tabBarContainer: UIView = UIView()
+}

@@ -134,7 +134,7 @@ protocol DuckPlayerControlling: AnyObject {
     var settings: DuckPlayerSettings { get }
 
     /// The host view controller, if any.
-    var hostView: DuckPlayerHostingViewControlling? { get }
+    var hostView: TabViewController? { get }
 
     // Navigation Request Publisher to notify when DuckPlayer needs direct Youtube Nav
     var youtubeNavigationRequest: PassthroughSubject<URL, Never> { get }
@@ -225,7 +225,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    func setHostViewController(_ vc: DuckPlayerHostingViewControlling)
+    func setHostViewController(_ vc: TabViewController)
 
     /// Loads a native DuckPlayerView
     ///
@@ -279,7 +279,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     private(set) var settings: DuckPlayerSettings
-    private(set) weak var hostView: DuckPlayerHostingViewControlling?
+    private(set) weak var hostView: TabViewController?
 
     private var featureFlagger: FeatureFlagger
     private var hideBrowserChromeTimer: Timer?
@@ -339,7 +339,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
-        super.init()
+        super.init()        
         setupSubscriptions()
 
         NotificationCenter.default.addObserver(self,
@@ -372,14 +372,14 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         // Clear cancellables
         nativePlayerCancellables.removeAll()
         nativeUIPresenterCancellables.removeAll()
-
+    
         hostView = nil
     }
 
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    public func setHostViewController(_ vc: DuckPlayerHostingViewControlling) {
+    public func setHostViewController(_ vc: TabViewController) {
         hostView = vc
     }
 
@@ -409,7 +409,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if let url = hostView?.url, url.isDuckPlayer {
             let orientation = UIDevice.current.orientation
             if orientation.isLandscape {
-                hostView?.duckPlayerChromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
                 Task { await showPillForVisibleChrome() }
             }
         }
@@ -424,7 +424,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.duckPlayerChromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                    weakHostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
                 }
             }
         }
@@ -494,11 +494,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     @objc private func orientationDidChange() {
         let orientation = UIDevice.current.orientation
 
-        // We need to cast to TabVC for now
-        guard let hostView = hostView as? TabViewController else { return }
-        
         // Only proceed with orientation change if DuckPlayer is visible
-        guard let hostViewDelegate = hostView.duckPlayerTabDelegate,
+        guard let hostView = hostView,
+              let hostViewDelegate = hostView.delegate,
               hostViewDelegate.tabCheckIfItsBeingCurrentlyPresented(hostView),
               let url = hostView.url,
               url.isDuckPlayer else {
@@ -529,7 +527,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Portrait rotation
     private func handlePortraitOrientation() {
-        hostView?.duckPlayerChromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
         hideBrowserChromeTimer?.invalidate()
         hideBrowserChromeTimer = nil
         hostView?.setupWebViewForPortraitVideo()
@@ -538,7 +536,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Handle Landscape rotation
     private func handleLandscapeOrientation() {
         hostView?.setupWebViewForLandscapeVideo()
-        hostView?.duckPlayerChromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+        hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
     }
 
     /// Default rotation should be portrait mode

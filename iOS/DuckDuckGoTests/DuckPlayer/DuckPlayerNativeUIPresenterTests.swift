@@ -50,9 +50,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     // MARK: - Properties
     
     private var sut: DuckPlayerNativeUIPresenter!
-    private var mockHostViewController: MockDuckPlayerHostingViewControlling!
+    private var mockHostViewController: DuckPlayerTabViewControllerMock!
     private var mockAppSettings: AppSettingsMock!
-    private var mockChromeDelegate: MockDuckPlayerChromeDelegate!
+    private var mockChromeDelegate: DuckPlayerBrowserChromeDelegateMock!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
     private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
     private var cancellables: Set<AnyCancellable>!
@@ -63,15 +63,10 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     override func setUp() {
         super.setUp()
         testNotificationCenter = TestNotificationCenter()
-        mockHostViewController = MockDuckPlayerHostingViewControlling()
-        mockChromeDelegate = MockDuckPlayerChromeDelegate()
+        mockHostViewController = DuckPlayerTabViewControllerMock()
+        mockChromeDelegate = DuckPlayerBrowserChromeDelegateMock()
         mockChromeDelegate.barsMaxHeight = 44.0 // Set a standard address bar height
-        mockHostViewController.duckPlayerChromeDelegate = mockChromeDelegate
-        
-        // Initialize the web view constraint with a default value
-        let constraint = NSLayoutConstraint()
-        constraint.constant = 0
-        mockHostViewController.webViewBottomAnchorConstraint = constraint
+        mockHostViewController.chromeDelegate = mockChromeDelegate
         
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
@@ -189,7 +184,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let (navigation, settings) = sut.presentDuckPlayer(
             videoID: videoID,
             source: source,
-            in: mockHostViewController,
+            in: mockHostViewController as? TabViewController,
             title: nil,
             timestamp: timestamp
         )

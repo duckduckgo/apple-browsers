@@ -21,15 +21,33 @@ import Combine
 import Foundation
 import SwiftUI
 import UIKit
+import WebKit
+
+/// Protocol that defines the requirements for view controllers that can host DuckPlayer UI elements
+public protocol DuckPlayerHosting: UIViewController {
+    var webView: WKWebView { get }
+
+    /// The constraint that controls the bottom spacing of the main content
+    var contentBottomConstraint: NSLayoutConstraint? { get }
+    
+    /// Returns the height of any persistent UI bars at the bottom of the screen (e.g. toolbars, tab bars)
+    var persistentBottomBarHeight: CGFloat { get }
+}
+
+/// Represents different types of constraint updates for DuckPlayer UI
+public enum DuckPlayerConstraintUpdate {
+    case showPill(height: CGFloat)
+    case reset
+}
 
 protocol DuckPlayerNativeUIPresenting {
 
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never> { get }
 
-    @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHostingViewControlling, timestamp: TimeInterval?)
+    @MainActor func presentPill(for videoID: String, in hostViewController: UIViewController, timestamp: TimeInterval?)
     @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
     @MainActor func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHostingViewControlling, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: UIViewController, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>)
     @MainActor func showBottomSheetForVisibleChrome()
     @MainActor func hideBottomSheetForHiddenChrome()
@@ -80,7 +98,7 @@ final class DuckPlayerNativeUIPresenter {
     private(set) var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
-    private(set) weak var hostView: DuckPlayerHostingViewControlling?
+    private(set) weak var hostView: UIViewController?
     private(set) var source: DuckPlayer.VideoNavigationSource?
     private(set) var state: DuckPlayerState
 
@@ -118,6 +136,14 @@ final class DuckPlayerNativeUIPresenter {
 
         return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount < Constants.primingModalEventCountThreshold
             && timeSinceLastShown > Constants.primingModalTimeSinceLastPresentedThreshold && appSettings.duckPlayerNativeYoutubeMode == .ask
+    }
+
+    /// Publisher for constraint updates
+    private let constraintUpdatePublisher = PassthroughSubject<DuckPlayerConstraintUpdate, Never>()
+    
+    /// Public access to the constraint update publisher
+    var constraintUpdates: AnyPublisher<DuckPlayerConstraintUpdate, Never> {
+        constraintUpdatePublisher.eraseToAnyPublisher()
     }
 
     // MARK: - Public Methods
@@ -222,15 +248,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Updates the webView constraint based on the current pill height
     @MainActor
     private func updateWebViewConstraintForPillHeight() {
-        if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
-            if self.appSettings.currentAddressBarPosition == .bottom {
-                let targetHeight = hostView.duckPlayerChromeDelegate?.barsMaxHeight ?? 0.0
-                webViewBottomConstraint.constant = -targetHeight - self.pillHeight
-            } else {
-                webViewBottomConstraint.constant = -self.pillHeight
-            }
-            hostView.view.layoutIfNeeded()
-        }
+        constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
 
     /// Updates the content of an existing hosting controller with the appropriate pill view
@@ -253,12 +271,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Resets the webView constraint to its default value
     @MainActor
     private func resetWebViewConstraint() {
-        if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
-            // Reset to the default value based on address bar position
-            let targetHeight = hostView.duckPlayerChromeDelegate?.barsMaxHeight ?? 0.0
-            webViewBottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
-            hostView.view.layoutIfNeeded()
-        }
+        constraintUpdatePublisher.send(.reset)
     }
 
     /// Removes the pill controller
@@ -285,7 +298,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func presentPrimingModal(
         for videoID: String,
-        in hostViewController: DuckPlayerHostingViewControlling,
+        in hostViewController: UIViewController,
         timestamp: TimeInterval?
     ) {
         let viewModel = DuckPlayerPrimingModalViewModel()
@@ -391,7 +404,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video
     @MainActor
-    func presentPill(for videoID: String, in hostViewController: DuckPlayerHostingViewControlling, timestamp: TimeInterval?) {
+    func presentPill(for videoID: String, in hostViewController: UIViewController, timestamp: TimeInterval?) {
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -522,7 +535,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     @MainActor
     func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHostingViewControlling, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: UIViewController, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
 
         // Increase the presentation event count
@@ -601,4 +614,14 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         postPillVisibilityNotification(isVisible: true)
     }
 
+}
+
+extension TabViewController: DuckPlayerHosting {
+    var contentBottomConstraint: NSLayoutConstraint? {
+        return webViewBottomAnchorConstraint
+    }
+    
+    var persistentBottomBarHeight: CGFloat {
+        return chromeDelegate?.barsMaxHeight ?? 0.0
+    }
 }

@@ -22,6 +22,7 @@ import UIKit
 protocol OmniBarView: UIView, OmniBarStatusUpdateable {
 
     var text: String? { get set }
+    var expectedHeight: CGFloat { get }
 
     // Original omnibar accessors
     var textField: TextFieldWithInsets! { get }

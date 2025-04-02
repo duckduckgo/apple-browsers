@@ -229,14 +229,14 @@ extension MainViewFactory {
 
         coordinator.constraints.navigationBarContainerTop = container.constrainView(superview.safeAreaLayoutGuide, by: .top)
         coordinator.constraints.navigationBarContainerBottom = container.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: 52, relatedBy: .equal)
+        coordinator.constraints.navigationBarContainerHeight = container.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight, relatedBy: .equal)
 
         NSLayoutConstraint.activate([
             coordinator.constraints.navigationBarContainerTop,
             container.constrainView(superview, by: .leading),
             container.constrainView(superview, by: .trailing),
             coordinator.constraints.navigationBarContainerHeight,
-            navigationBarCollectionView.constrainAttribute(.height, to: 52),
+            navigationBarCollectionView.constrainAttribute(.height, to: coordinator.omniBar.barView.expectedHeight),
             navigationBarCollectionView.constrainView(container, by: .top),
             navigationBarCollectionView.constrainView(container, by: .leading),
             navigationBarCollectionView.constrainView(container, by: .trailing),

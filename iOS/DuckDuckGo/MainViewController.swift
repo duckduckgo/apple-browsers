@@ -707,7 +707,7 @@ class MainViewController: UIViewController {
         case .top:
             newTabPageViewController?.additionalSafeAreaInsets = .zero
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.frame.height, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
         }
     }
 
@@ -730,29 +730,32 @@ class MainViewController: UIViewController {
 
         var keyboardHeight = keyboardFrame.size.height
 
+        let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-        keyboardHeight = intersection.height
+        keyboardHeight = keyboardFrameInView.height
 
-        findInPageBottomLayoutConstraint.constant = keyboardHeight
-        let omniBarHeight = viewCoordinator.navigationBarCollectionView.frame.height
+        findInPageBottomLayoutConstraint.constant = intersection.height
 
-        let y = self.view.frame.height - keyboardHeight
+        let y = self.view.frame.height - intersection.height
         let frame = self.findInPageView.frame
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
             self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
         }, completion: nil)
 
         if self.appSettings.currentAddressBarPosition.isBottom {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, keyboardHeight)
+            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeight > 0 ? omniBarHeight : 0, right: 0)
+            let keyboardHeightInWebView = self.currentTab?.webView.convert(keyboardFrame, from: nil).height ?? 0
+            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeightInWebView > 0 ? omniBarHeight : 0, right: 0)
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, keyboardHeight), right: 0)
+                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, keyboardHeightInWebView), right: 0)
             }
         }
 

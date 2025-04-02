@@ -26,7 +26,7 @@ struct AutofillLoginDetailsView: View {
     @State private var actionSheetConfirmDeletePresented: Bool = false
 
     var body: some View {
-        listWithBackground
+        list
             .alert(isPresented: $viewModel.isShowingAddressUpdateConfirmAlert) {
                 let btnLabel = Text(viewModel.toggleConfirmationAlert.button)
                 let btnAction = viewModel.togglePrivateEmailStatus
@@ -43,19 +43,6 @@ struct AutofillLoginDetailsView: View {
 
     }
 
-    
-    @ViewBuilder
-    private var listWithBackground: some View {
-        if #available(iOS 16.0, *) {
-            list
-                .scrollContentBackground(.hidden)
-                .background(Color(designSystemColor: .background))
-        } else {
-            list
-                .background(Color(designSystemColor: .background))
-        }
-    }
-    
     private var list: some View {
         List {
             switch viewModel.viewMode {
@@ -73,49 +60,58 @@ struct AutofillLoginDetailsView: View {
             DragGesture().onChanged({_ in
                 viewModel.selectedCell = nil
             }))
-        .listStyle(.insetGrouped)
+        .applyInsetGroupedListStyle()
         .animation(.easeInOut, value: viewModel.viewMode)
     }
     
     private var editingContentView: some View {
         Group {
             Section {
-                editableCell(UserText.autofillLoginDetailsLoginName,
-                             subtitle: $viewModel.title,
-                             placeholderText: UserText.autofillLoginDetailsEditTitlePlaceholder,
-                             autoCapitalizationType: .words,
-                             disableAutoCorrection: false)
+                AutofillEditableCell(title: UserText.autofillLoginDetailsLoginName,
+                                     text: $viewModel.title,
+                                     placeholderText: UserText.autofillLoginDetailsEditTitlePlaceholder,
+                                     autoCapitalizationType: .words,
+                                     disableAutoCorrection: false,
+                                     inEditMode: viewModel.viewMode == .edit,
+                                     selectedCell: $viewModel.selectedCell)
                 .accessibilityIdentifier("Field_PasswordName")
             }
-
+            
             Section {
-                editableCell(UserText.autofillLoginDetailsUsername,
-                             subtitle: $viewModel.username,
-                             placeholderText: UserText.autofillLoginDetailsEditUsernamePlaceholder,
-                             keyboardType: .emailAddress)
+                AutofillEditableCell(title: UserText.autofillLoginDetailsUsername,
+                                     text: $viewModel.username,
+                                     placeholderText: UserText.autofillLoginDetailsEditUsernamePlaceholder,
+                                     keyboardType: .emailAddress,
+                                     inEditMode: viewModel.viewMode == .edit,
+                                     selectedCell: $viewModel.selectedCell)
                 .accessibilityIdentifier("Field_Username")
-
+                
                 if viewModel.viewMode == .new {
-                    editableCell(UserText.autofillLoginDetailsPassword,
-                                 subtitle: $viewModel.password,
-                                 placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
-                                 secure: true)
+                    AutofillEditableCell(title: UserText.autofillLoginDetailsPassword,
+                                         text: $viewModel.password,
+                                         placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
+                                         secure: true,
+                                         inEditMode: viewModel.viewMode == .edit,
+                                         selectedCell: $viewModel.selectedCell)
                     .accessibilityIdentifier("Field_Password")
                 } else {
-                    EditablePasswordCell(title: UserText.autofillLoginDetailsPassword,
-                                         placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
-                                         password: $viewModel.password,
-                                         userVisiblePassword: .constant(viewModel.userVisiblePassword),
-                                         isPasswordHidden: $viewModel.isPasswordHidden)
+                    AutofillEditableMaskedCell(title: UserText.autofillLoginDetailsPassword,
+                                               placeholderText: UserText.autofillLoginDetailsEditPasswordPlaceholder,
+                                               unmaskedString: $viewModel.password,
+                                               maskedString: .constant(viewModel.userVisiblePassword),
+                                               isMasked: $viewModel.isPasswordHidden,
+                                               selectedCell: $viewModel.selectedCell)
                     .accessibilityIdentifier("Field_Password")
                 }
             }
             
             Section {
-                editableCell(UserText.autofillLoginDetailsAddress,
-                             subtitle: $viewModel.address,
-                             placeholderText: UserText.autofillLoginDetailsEditURLPlaceholder,
-                             keyboardType: .URL)
+                AutofillEditableCell(title: UserText.autofillLoginDetailsAddress,
+                                     text: $viewModel.address,
+                                     placeholderText: UserText.autofillLoginDetailsEditURLPlaceholder,
+                                     keyboardType: .URL,
+                                     inEditMode: viewModel.viewMode == .edit,
+                                     selectedCell: $viewModel.selectedCell)
                 .accessibilityIdentifier("Field_Address")
             }
             
@@ -124,7 +120,7 @@ struct AutofillLoginDetailsView: View {
                                       subtitle: $viewModel.notes)
                 .accessibilityIdentifier("Field_Notes")
             }
-
+            
             if viewModel.viewMode == .edit {
                 deleteCell()
             }
@@ -144,7 +140,7 @@ struct AutofillLoginDetailsView: View {
             }
 
             Section {
-                CopyableCell(title: UserText.autofillLoginDetailsAddress,
+                AutofillCopyableRow(title: UserText.autofillLoginDetailsAddress,
                              subtitle: viewModel.address,
                              selectedCell: $viewModel.selectedCell,
                              truncationMode: .middle,
@@ -158,7 +154,7 @@ struct AutofillLoginDetailsView: View {
             }
 
             Section {
-                CopyableCell(title: UserText.autofillLoginDetailsNotes,
+                AutofillCopyableRow(title: UserText.autofillLoginDetailsNotes,
                              subtitle: viewModel.notes,
                              selectedCell: $viewModel.selectedCell,
                              truncationMode: .middle,
@@ -233,37 +229,6 @@ struct AutofillLoginDetailsView: View {
         }
     }
     
-    private func editableCell(_ title: String,
-                              subtitle: Binding<String>,
-                              placeholderText: String,
-                              secure: Bool = false,
-                              autoCapitalizationType: UITextAutocapitalizationType = .none,
-                              disableAutoCorrection: Bool = true,
-                              keyboardType: UIKeyboardType = .default) -> some View {
-        
-        VStack(alignment: .leading, spacing: Constants.verticalPadding) {
-            Text(title)
-                .label4Style()
-            
-            HStack {
-                if secure && viewModel.viewMode == .edit {
-                    SecureField(placeholderText, text: subtitle)
-                        .label4Style(design: .monospaced)
-                } else {
-                    ClearTextField(placeholderText: placeholderText,
-                                   text: subtitle,
-                                   autoCapitalizationType: autoCapitalizationType,
-                                   disableAutoCorrection: disableAutoCorrection,
-                                   keyboardType: keyboardType,
-                                   secure: secure)
-                }
-            }
-        }
-        .frame(minHeight: Constants.minRowHeight)
-        .listRowInsets(Constants.insets)
-    }
-    
-    // This is seperate from editableCell() because TextEditor doesn't support placeholders, and we don't need placeholders for notes at the moment
     private func editableMultilineCell(_ title: String,
                                        subtitle: Binding<String>,
                                        autoCapitalizationType: UITextAutocapitalizationType = .none,
@@ -281,55 +246,46 @@ struct AutofillLoginDetailsView: View {
     }
 
     private func deleteCell() -> some View {
-        HStack {
-            Button(UserText.autofillLoginDetailsDeleteButton) {
-                actionSheetConfirmDeletePresented.toggle()
-            }
-            .actionSheet(isPresented: $actionSheetConfirmDeletePresented, content: {
-                 let deleteAction = ActionSheet.Button.destructive(Text(UserText.autofillLoginDetailsDeleteConfirmationButtonTitle)) {
-                     viewModel.delete()
-                 }
-                 return ActionSheet(title: Text(UserText.autofillDeleteAllPasswordsActionTitle(for: 1)),
-                                    message: Text(viewModel.deleteMessage()),
-                                    buttons: [deleteAction, ActionSheet.Button.cancel()])
-             })
-             .foregroundColor(Color.red)
-        }
-        .listRowBackground(Color(designSystemColor: .surface))
+        AutofillDeleteButtonCell(deleteButtonText: UserText.autofillLoginDetailsDeleteButton,
+                                 confirmationTitle: UserText.autofillDeleteAllPasswordsActionTitle(for: 1),
+                                 confirmationMessage: viewModel.deleteMessage(),
+                                 confirmationButtonTitle: UserText.autofillLoginDetailsDeleteButton,
+                                 onDelete: {
+            viewModel.delete()
+        })
     }
 
     private func usernameCell() -> some View {
-        CopyableCell(title: UserText.autofillLoginDetailsUsername,
-                     subtitle: viewModel.usernameDisplayString,
-                     selectedCell: $viewModel.selectedCell,
-                     actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
-                     action: { viewModel.copyToPasteboard(.username) },
-                     buttonImageName: "Copy-24",
-                     buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
-                     buttonAction: { viewModel.copyToPasteboard(.username) })
+        AutofillCopyableRow(title: UserText.autofillLoginDetailsUsername,
+                            subtitle: viewModel.usernameDisplayString,
+                            selectedCell: $viewModel.selectedCell,
+                            actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
+                            action: { viewModel.copyToPasteboard(.username) },
+                            buttonImageName: "Copy-24",
+                            buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
+                            buttonAction: { viewModel.copyToPasteboard(.username) })
 
     }
 
     private func passwordCell() -> some View {
-        CopyableCell(title: UserText.autofillLoginDetailsPassword,
-                     subtitle: viewModel.userVisiblePassword,
-                     selectedCell: $viewModel.selectedCell,
-                     isMonospaced: true,
-                     actionTitle: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
-                     action: { viewModel.isPasswordHidden.toggle() },
-                     secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
-                     secondaryAction: { viewModel.copyToPasteboard(.password) },
-                     buttonImageName: viewModel.isPasswordHidden ? "Eye-24" : "Eye-Closed-24",
-                     buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
-                     buttonAction: { viewModel.isPasswordHidden.toggle() },
-                     secondaryButtonImageName: "Copy-24",
-                     secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
-                     secondaryButtonAction: { viewModel.copyToPasteboard(.password) })
+        AutofillCopyableRow(title: UserText.autofillLoginDetailsPassword,
+                            subtitle: viewModel.userVisiblePassword,
+                            selectedCell: $viewModel.selectedCell,
+                            isMonospaced: true,
+                            actionTitle: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
+                            action: { viewModel.isPasswordHidden.toggle() },
+                            secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
+                            secondaryAction: { viewModel.copyToPasteboard(.password) },
+                            buttonImageName: viewModel.isPasswordHidden ? "Eye-24" : "Eye-Closed-24",
+                            buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
+                            buttonAction: { viewModel.isPasswordHidden.toggle() },
+                            secondaryButtonImageName: "Copy-24",
+                            secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
+                            secondaryButtonAction: { viewModel.copyToPasteboard(.password) })
     }
 
 
     private func privateEmailCell() -> some View {
-
         HStack {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Duck Address").label4Style()
@@ -364,274 +320,9 @@ private struct MultilineTextEditor: View {
     }
 }
 
-private struct EditablePasswordCell: View {
-    @State private var id = UUID()
-    let title: String
-    let placeholderText: String
-    @Binding var password: String
-    @Binding var userVisiblePassword: String
-    @Binding var isPasswordHidden: Bool
-
-    @State private var closeButtonVisible = false
-
-    var body: some View {
-
-        VStack(alignment: .leading, spacing: Constants.verticalPadding) {
-            Text(title)
-                .label4Style()
-
-            HStack {
-                TextField(placeholderText, text: isPasswordHidden ? $userVisiblePassword : $password) { editing in
-                    closeButtonVisible = editing
-                    isPasswordHidden = false
-                } onCommit: {
-                    closeButtonVisible = false
-                }
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-                .keyboardType(.default)
-                .label4Style(design: password.count > 0 ? .monospaced : .default)
-
-                Spacer()
-
-                if password.count > 0 {
-                    if closeButtonVisible {
-                        Image("Clear-16")
-                            .onTapGesture {
-                                self.password = ""
-                            }
-                    }
-                }
-            }
-        }
-        .frame(minHeight: Constants.minRowHeight)
-        .listRowInsets(Constants.insets)
-    }
-}
-
-private struct CopyableCell: View {
-    @State private var id = UUID()
-    let title: String
-    let subtitle: String
-    @Binding var selectedCell: UUID?
-    var truncationMode: Text.TruncationMode = .tail
-    var multiLine: Bool = false
-    var isMonospaced: Bool = false
-    
-    var actionTitle: String
-    let action: () -> Void
-    
-    var secondaryActionTitle: String?
-    var secondaryAction: (() -> Void)?
-    
-    var buttonImageName: String?
-    var buttonAccessibilityLabel: String?
-    var buttonAction: (() -> Void)?
-
-    var secondaryButtonImageName: String?
-    var secondaryButtonAccessibilityLabel: String?
-    var secondaryButtonAction: (() -> Void)?
-
-    var body: some View {
-        ZStack {
-            HStack {
-                VStack(alignment: .leading, spacing: Constants.verticalPadding) {
-                    Text(title)
-                        .label4Style()
-                    HStack {
-                        if multiLine {
-                            Text(subtitle)
-                                .label4Style(design: isMonospaced ? .monospaced : .default,
-                                             foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
-                                .truncationMode(truncationMode)
-                                .frame(maxHeight: .greatestFiniteMagnitude)
-                        } else {
-                            Text(subtitle)
-                                .label4Style(design: isMonospaced ? .monospaced : .default,
-                                             foregroundColorLight: ForegroundColor(isSelected: selectedCell == id).color,
-                                             foregroundColorDark: Color(baseColor: .gray30))
-                                .truncationMode(truncationMode)
-                        }
-                    }
-                }
-                .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 8))
-                
-                if secondaryButtonImageName != nil {
-                    Spacer(minLength: Constants.textFieldImageSize * 2 + 8)
-                } else {
-                    Spacer(minLength: buttonImageName != nil ? Constants.textFieldImageSize : 8)
-                }
-            }
-            .copyable(isSelected: selectedCell == id,
-                      menuTitle: actionTitle,
-                      menuAction: action,
-                      menuSecondaryTitle: secondaryActionTitle,
-                      menuSecondaryAction: secondaryAction) {
-                self.selectedCell = self.id
-            } menuClosedAction: {
-                self.selectedCell = nil
-            }
-            
-            if let buttonImageName = buttonImageName, let buttonAccessibilityLabel = buttonAccessibilityLabel {
-                let differenceBetweenImageSizeAndTapAreaPerEdge = (Constants.textFieldTapSize - Constants.textFieldImageSize) / 2.0
-                HStack(alignment: .center, spacing: 0) {
-                    Spacer()
-                    
-                    Button {
-                        buttonAction?()
-                        self.selectedCell = nil
-                    } label: {
-                        VStack(alignment: .trailing) {
-                            Spacer()
-                            HStack {
-                                Spacer()
-                                Image(buttonImageName)
-                                    .resizable()
-                                    .frame(width: Constants.textFieldImageSize, height: Constants.textFieldImageSize)
-                                    .foregroundColor(Color(UIColor.label).opacity(Constants.textFieldImageOpacity))
-                                    .opacity(subtitle.isEmpty ? 0 : 1)
-                                Spacer()
-                            }
-                            Spacer()
-                        }
-                    }
-                    .buttonStyle(.plain) // Prevent taps from being forwarded to the container view
-                    // can't use .clear here or else both button padded area and container both respond to tap events
-                    .background(BackgroundColor(isSelected: selectedCell == id).color.opacity(0))
-                    .accessibilityLabel(buttonAccessibilityLabel)
-                    .contentShape(Rectangle())
-                    .frame(width: Constants.textFieldTapSize, height: Constants.textFieldTapSize)
-
-                    if let secondaryButtonImageName = secondaryButtonImageName,
-                        let secondaryButtonAccessibilityLabel = secondaryButtonAccessibilityLabel {
-                        Button {
-                            secondaryButtonAction?()
-                            self.selectedCell = nil
-                        } label: {
-                            VStack(alignment: .trailing) {
-                                Spacer()
-                                HStack {
-                                    Spacer()
-                                    Image(secondaryButtonImageName)
-                                        .resizable()
-                                        .frame(width: Constants.textFieldImageSize, height: Constants.textFieldImageSize)
-                                        .foregroundColor(Color(UIColor.label).opacity(Constants.textFieldImageOpacity))
-                                        .opacity(subtitle.isEmpty ? 0 : 1)
-                                    Spacer()
-                                }
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.plain) // Prevent taps from being forwarded to the container view
-                        .background(BackgroundColor(isSelected: selectedCell == id).color.opacity(0))
-                        .accessibilityLabel(secondaryButtonAccessibilityLabel)
-                        .contentShape(Rectangle())
-                        .frame(width: Constants.textFieldTapSize, height: Constants.textFieldTapSize)
-                    }
-
-                }
-                .padding(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: -differenceBetweenImageSizeAndTapAreaPerEdge))
-            }
-        }
-        .selectableBackground(isSelected: selectedCell == id)
-    }
-}
-
-private struct SelectableBackground: ViewModifier {
-    var isSelected: Bool
-    
-    public func body(content: Content) -> some View {
-        content
-            .listRowBackground(BackgroundColor(isSelected: isSelected).color)
-            .listRowInsets(.init(top: 0, leading: 16, bottom: 0, trailing: 16))
-    }
-}
-
-private struct Copyable: ViewModifier {
-    var isSelected: Bool
-    var menuTitle: String
-    let menuSecondaryTitle: String?
-    let menuAction: () -> Void
-    let menuSecondaryAction: (() -> Void)?
-    let menuOpenedAction: () -> Void
-    let menuClosedAction: () -> Void
-    
-    internal init(isSelected: Bool, menuTitle: String, menuSecondaryTitle: String?, menuAction: @escaping () -> Void, menuSecondaryAction: (() -> Void)?, menuOpenedAction: @escaping () -> Void, menuClosedAction: @escaping () -> Void) {
-        self.isSelected = isSelected
-        self.menuTitle = menuTitle
-        self.menuSecondaryTitle = menuSecondaryTitle
-        self.menuAction = menuAction
-        self.menuSecondaryAction = menuSecondaryAction
-        self.menuOpenedAction = menuOpenedAction
-        self.menuClosedAction = menuClosedAction
-    }
-    
-    public func body(content: Content) -> some View {
-        ZStack {
-            content
-                .allowsHitTesting(false)
-                .contentShape(Rectangle())
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: Constants.minRowHeight)
-            Rectangle()
-                .foregroundColor(.clear)
-                .menuController(menuTitle,
-                                secondaryTitle: menuSecondaryTitle,
-                                action: menuAction,
-                                secondaryAction: menuSecondaryAction,
-                                onOpen: menuOpenedAction,
-                                onClose: menuClosedAction)
-
-        }
-    }
-}
-
-private extension View {
-    func copyable(isSelected: Bool, menuTitle: String, menuAction: @escaping () -> Void, menuSecondaryTitle: String? = "", menuSecondaryAction: (() -> Void)? = nil, menuOpenedAction: @escaping () -> Void, menuClosedAction: @escaping () -> Void) -> some View {
-        modifier(Copyable(isSelected: isSelected,
-                          menuTitle: menuTitle,
-                          menuSecondaryTitle: menuSecondaryTitle,
-                          menuAction: menuAction,
-                          menuSecondaryAction: menuSecondaryAction,
-                          menuOpenedAction: menuOpenedAction,
-                          menuClosedAction: menuClosedAction))
-    }
-    
-    func selectableBackground(isSelected: Bool) -> some View {
-        modifier(SelectableBackground(isSelected: isSelected))
-    }
-}
-
-private struct BackgroundColor {
-    let isSelected: Bool
-    
-    var color: Color {
-        if isSelected {
-            return Color("AutofillCellSelectedBackground")
-        } else {
-            return Color(designSystemColor: .surface)
-        }
-    }
-}
-
-private struct ForegroundColor {
-    let isSelected: Bool
-
-    var color: Color {
-        if isSelected {
-            return Color(baseColor: .gray90)
-        } else {
-            return Color(baseColor: .gray50)
-        }
-    }
-}
-
 private struct Constants {
     static let verticalPadding: CGFloat = 4
     static let minRowHeight: CGFloat = 60
-    static let textFieldImageOpacity: CGFloat = 0.84
     static let textFieldImageSize: CGFloat = 24
-    static let textFieldTapSize: CGFloat = 36
     static let insets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 }

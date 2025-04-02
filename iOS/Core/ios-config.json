@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1742989406131,
+    "version": 1743428841598,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -552,6 +552,9 @@
                     "domain": "nature.scot"
                 },
                 {
+                    "domain": "royalmail.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -733,7 +736,7 @@
                     }
                 }
             },
-            "hash": "8ddd036890b60fc33a4e39c37eb9c3c6"
+            "hash": "9584c66b688ad66b18f768c4f592a8f8"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -1993,7 +1996,8 @@
                                 "#video-title-link",
                                 "#video-title",
                                 "video.video-stream.html5-main-video"
-                            ]
+                            ],
+                            "drawerContainer": "body"
                         },
                         "thumbnailOverlays": {
                             "state": "enabled"
@@ -2002,6 +2006,9 @@
                             "state": "enabled"
                         },
                         "videoOverlays": {
+                            "state": "enabled"
+                        },
+                        "videoDrawer": {
                             "state": "enabled"
                         }
                     },
@@ -2043,7 +2050,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "51ef6e4978292d995e2ab92a21b001b6"
+            "hash": "231c343e47f7a482a22bacfb809954dd"
         },
         "elementHiding": {
             "exceptions": [
@@ -4377,6 +4384,10 @@
                             {
                                 "selector": ".ad",
                                 "type": "closest-empty"
+                            },
+                            {
+                                "selector": "div#side_navi > div:has(> div > div.ad)",
+                                "type": "hide"
                             }
                         ]
                     },
@@ -4501,6 +4512,19 @@
                             },
                             {
                                 "selector": "[id*='native_index_desktop_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "news.de",
+                        "rules": [
+                            {
+                                "selector": "[class*='-ad']",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": "div[id^='news_content_']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5838,7 +5862,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "7dc378e1d439d5a9bba78ba1f6cd243d"
+            "hash": "e345ef96e7f68daa6575641eb0180ee5"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6525,6 +6549,9 @@
                             },
                             {
                                 "percent": 25
+                            },
+                            {
+                                "percent": 50
                             }
                         ]
                     }
@@ -6534,7 +6561,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "a6aedcfaa4d1f648ec19e42014174606"
+            "hash": "eb15e20058390f13e79300b54cd26549"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -6775,7 +6802,7 @@
                     "minSupportedVersion": "7.148.0"
                 },
                 "privacyProFreeTrialJan25": {
-                    "state": "enabled",
+                    "state": "disabled",
                     "targets": [
                         {
                             "localeCountry": "US"
@@ -6813,7 +6840,7 @@
                     "minSupportedVersion": "7.163.0"
                 }
             },
-            "hash": "7ef9f8b719d411e6760c7ba17ad66cda"
+            "hash": "335b250465ba839de95695d5ccb1e9f1"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",

@@ -70,6 +70,7 @@ struct AppConfiguration {
             onVariantAssigned(reportingService: reportingService)
         }
         CrashHandlersConfiguration.handleCrashDuringCrashHandlersSetup()
+        startAutomationServerIfNeeded(mainViewController: mainViewController)
         configureUserBrowsingUserAgent() // Called at launch end to avoid IPC race when spawning WebView for content blocking.
     }
 
@@ -80,6 +81,16 @@ struct AppConfiguration {
     private func removeLeftoverStatesIfNeeded(autoClearService: AutoClearService, mainViewController: MainViewController) {
         if !autoClearService.isClearingEnabled {
             mainViewController.tabManager.removeLeftoverInteractionStates()
+        }
+    }
+
+    private func startAutomationServerIfNeeded(mainViewController: MainViewController) {
+        let launchOptionsHandler = LaunchOptionsHandler()
+        guard launchOptionsHandler.automationPort != nil else {
+            return
+        }
+        Task { @MainActor in
+            _ = AutomationServer(main: mainViewController, port: launchOptionsHandler.automationPort)
         }
     }
 

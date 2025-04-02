@@ -287,7 +287,7 @@ private struct RoundedCardView: View {
                     self.buttonAction()
                 }, label: {
                     Text(buttonTitle)
-                        .daxButton()
+                        .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .accent))
                 })
             }

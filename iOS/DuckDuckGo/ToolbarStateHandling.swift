@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import SwiftUICore
 
 enum ToolbarContentState: Equatable {
     case newTab
@@ -56,7 +57,7 @@ final class ToolbarHandler: ToolbarStateHandling {
         button.tintColor = .label
 
         button.frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-        button.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.09)
+        button.backgroundColor = UIColor(Color.shade(0.09))
         button.layer.cornerRadius = 14
 
         button.imageView?.contentMode = .scaleAspectFit

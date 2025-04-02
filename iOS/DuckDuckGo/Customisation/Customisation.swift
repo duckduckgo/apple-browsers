@@ -21,13 +21,19 @@ import Persistence
 import BrowserServicesKit
 import Core
 
+protocol BrowserCustomising {
+
+    var omnibarAccessoryType: OmniBarAccessoryType { get set }
+
+}
+
+protocol BrowserCustomisationPersisting {
+    var omnibarAccessoryType: String { get set }
+}
+
 /// The intention is that this becomes a central location for customisation / personalisation configuration, but it's only for a PoC for one
 /// item right now, so  am trying to minimise the amount of code touched as this could well get yeeted.
-final class Customisation {
-
-    protocol Storage {
-        var omnibarAccessoryType: String { get set }
-    }
+final class Customisation: BrowserCustomising {
 
     var isAvailable: Bool {
         return featureFlagger.isFeatureOn(.customizableActionButton)
@@ -45,11 +51,11 @@ final class Customisation {
         }
     }
 
-    var storage: Storage
+    var storage: BrowserCustomisationPersisting
     let notificationCenter: NotificationCenter
     let featureFlagger: FeatureFlagger
 
-    init(storage: Storage = DefaultCustomisationStorage(),
+    init(storage: BrowserCustomisationPersisting = DefaultCustomisationStorage(),
           notificationCenter: NotificationCenter = .default,
           featureFlagger: FeatureFlagger) {
         self.storage = storage
@@ -62,7 +68,7 @@ final class Customisation {
     }
 }
 
-class DefaultCustomisationStorage: Customisation.Storage {
+class DefaultCustomisationStorage: BrowserCustomisationPersisting {
 
     static let omnibarAccessoryTypeKey = "customisationOmnibarAccessory"
 

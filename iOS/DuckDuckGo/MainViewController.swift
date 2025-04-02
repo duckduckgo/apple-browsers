@@ -1217,7 +1217,6 @@ class MainViewController: UIViewController {
         }
 
         viewCoordinator.omniBar.startBrowsing()
-        viewCoordinator.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
     }
 
     private func updateOmniBarLoadingState() {
@@ -1649,6 +1648,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &cancellables)
     }
@@ -1658,6 +1658,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &cancellables)
     }
@@ -1668,6 +1669,7 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
+                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &cancellables)
     }

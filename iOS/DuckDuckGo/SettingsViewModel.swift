@@ -49,7 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
-    let customisation: Customisation
+    private(set) var customisation: BrowserCustomising
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -471,7 +471,7 @@ final class SettingsViewModel: ObservableObject {
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
-         customisation: Customisation
+         customisation: BrowserCustomising
     ) {
 
         self.state = SettingsState.defaults

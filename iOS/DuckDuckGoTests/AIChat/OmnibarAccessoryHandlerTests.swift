@@ -30,7 +30,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
     func testOmnibarAccessoryWhenAIChatFeatureEnabledAndUserSettingsDisabled() {
         let settings = MockAIChatSettingsProvider()
         settings.isAIChatAddressBarUserSettingsEnabled = false
-        let handler = OmnibarAccessoryHandler(settings: settings)
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
 
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
@@ -40,27 +40,60 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoURL() {
         let settings = MockAIChatSettingsProvider()
         settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings)
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
         XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 
-    func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithNonDuckDuckGoURL() {
+    func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithNonDuckDuckGoURLDelegatesToCustomisation() {
         let settings = MockAIChatSettingsProvider()
         settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings)
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
+        let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
+
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.newTab)
+    }
+
+    func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoHomeURLDelegatesToCustomisation() {
+        let settings = MockAIChatSettingsProvider()
+        settings.isAIChatAddressBarUserSettingsEnabled = true
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
+        let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGHomeURL)
+
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.newTab)
+    }
+
+    func testOmnibarAccessoryWhenOnWebpageUsesCustomisation() {
+        let settings = MockAIChatSettingsProvider()
+        settings.isAIChatAddressBarUserSettingsEnabled = true
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
+        let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
+
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.newTab)
+    }
+
+    func testOmnibarAccessoryWhenOnNewTabPageUsesDuckChatSetting() {
+        let settings = MockAIChatSettingsProvider()
+        settings.isAIChatAddressBarUserSettingsEnabled = true
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: MockBrowserCustomising())
+        let accessoryType = handler.omnibarAccessory(for: nil)
+
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
+    }
+
+    func testCustomisationDefaultsToShareWhenFeatureNotEnabled() {
+        let settings = MockAIChatSettingsProvider()
+        settings.isAIChatAddressBarUserSettingsEnabled = true
+        let handler = OmnibarAccessoryHandler(settings: settings, customisation: Customisation(featureFlagger: MockFeatureFlagger()))
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
 
         XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
+}
 
-    func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoHomeURL() {
-        let settings = MockAIChatSettingsProvider()
-        settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings)
-        let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGHomeURL)
+class MockBrowserCustomising: BrowserCustomising {
 
-        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
-    }
+    var omnibarAccessoryType: DuckDuckGo.OmniBarAccessoryType = .newTab
+
 }

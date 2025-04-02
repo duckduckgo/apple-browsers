@@ -28,7 +28,7 @@ protocol OmnibarAccessoryHandling {
 struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
 
     let settings: AIChatSettingsProvider
-    let customisation: Customisation
+    let customisation: BrowserCustomising
 
     func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
         guard settings.isAIChatAddressBarUserSettingsEnabled else {

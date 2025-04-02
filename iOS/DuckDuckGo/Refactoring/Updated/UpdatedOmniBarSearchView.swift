@@ -84,7 +84,6 @@ final class UpdatedOmniBarSearchView: UIView {
 
         leftIconContainer.addSubview(loupeIconView)
         leftIconContainer.addSubview(dismissButtonView)
-        leftIconContainer.addSubview(customIconView)
     }
 
     private func setUpConstraints() {
@@ -167,5 +166,7 @@ final class UpdatedOmniBarSearchView: UIView {
 
         customIconView.tintColor = tintColor
         customIconView.contentMode = .center
+        customIconView.isHidden = true
+        customIconView.image = nil
     }
 }

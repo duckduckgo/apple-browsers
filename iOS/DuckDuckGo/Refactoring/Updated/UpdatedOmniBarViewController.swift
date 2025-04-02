@@ -35,6 +35,22 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     }
 
+    override func showCustomIcon(icon: OmniBarIcon) {
+        // This causes constraints to be removed...
+        barView.customIconView.removeFromSuperview()
+
+        super.showCustomIcon(icon: icon)
+
+        guard let customIconSuperview = barView.customIconView.superview else { return }
+
+        // ... so we can reapply them here
+        barView.customIconView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            barView.customIconView.centerYAnchor.constraint(equalTo: customIconSuperview.centerYAnchor),
+            barView.customIconView.leadingAnchor.constraint(equalTo: customIconSuperview.leadingAnchor),
+        ])
+    }
+
     override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
         super.updateInterface(from: oldState, to: state)
 

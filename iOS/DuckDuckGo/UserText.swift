@@ -1634,7 +1634,7 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
 
         public enum Skip {
             public static let title = NSLocalizedString("onboarding.skip.title", value: "Got it! I’ll skip the other tips.", comment: "The title of the skip onboarding dialog popup")
-            public static let message = NSLocalizedString("onboarding.skip.message", value: "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥.", comment: "The message of the skip onboarding dialog popup.")
+            public static let message = NSLocalizedString("onboarding.skip.message", value: "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥", comment: "The message of the skip onboarding dialog popup.")
             public static let confirmSkipOnboardingCTA = NSLocalizedString("onboarding.skip.cta.confirmSkip", value: "Start Browsing", comment: "The title of the button to skip the onboarding and start browsing.")
             public static let resumeOnboardingCTA = NSLocalizedString("onboarding.skip.cta.resumeOnboarding", value: "Show Tutorial", comment: "The title of the button to resume the onboarding.")
         }

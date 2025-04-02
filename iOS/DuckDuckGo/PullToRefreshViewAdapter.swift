@@ -104,7 +104,7 @@ final class PullToRefreshViewAdapter: NSObject {
         setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
-        refreshControl.tintColor = .label
+        refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {
@@ -184,7 +184,19 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private func calculatePullDistance(translationY: CGFloat) -> CGFloat {
         let adjustedTranslation = max(0, translationY - initialTranslationY)
-        return min(adjustedTranslation, pullLimit)
+        // Allow full movement up to the refresh trigger threshold
+        if adjustedTranslation <= refreshTriggerThreshold {
+            return adjustedTranslation
+        } else {
+            // Apply gradually increasing resistance beyond the refresh trigger threshold
+            let extraPull = adjustedTranslation - refreshTriggerThreshold
+
+            // Quadratic resistance curve - starts gentle but increases rapidly
+            let resistanceFactor = 0.4 / (1 + 0.3 * pow(extraPull / refreshTriggerThreshold, 2))
+            let resistedExtraPull = extraPull * resistanceFactor
+
+            return refreshTriggerThreshold + resistedExtraPull
+        }
     }
 
     private func handlePullEffect(pullDistance: CGFloat) {

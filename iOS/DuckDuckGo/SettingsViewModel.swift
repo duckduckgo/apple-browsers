@@ -178,7 +178,7 @@ final class SettingsViewModel: ObservableObject {
         Binding<OmniBarAccessoryType>(
             get: { self.state.customisationOmniBarAccessoryType },
             set: {
-                self.customisation.omnibarAccessoryType = $0
+                self.customisation.updateOmnibarAccessoryType($0)
                 self.state.customisationOmniBarAccessoryType = $0
             }
         )

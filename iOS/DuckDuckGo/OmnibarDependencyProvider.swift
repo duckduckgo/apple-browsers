@@ -24,10 +24,12 @@ protocol OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol { get }
     var featureFlagger: FeatureFlagger { get }
     var aiChatSettings: AIChatSettingsProvider { get }
+    var customisation: BrowserCustomising { get }
 }
 
 struct OmnibarDependencies: OmnibarDependencyProvider {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let featureFlagger: FeatureFlagger
     let aiChatSettings: AIChatSettingsProvider
+    let customisation: BrowserCustomising
 }

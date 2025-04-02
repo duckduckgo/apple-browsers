@@ -26,12 +26,15 @@ struct MockOmnibarDependency: OmnibarDependencyProvider {
     var voiceSearchHelper: VoiceSearchHelperProtocol
     var featureFlagger: FeatureFlagger
     var aiChatSettings: AIChatSettingsProvider
+    var customisation: BrowserCustomising
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
          featureFlagger: FeatureFlagger = MockFeatureFlagger(),
-         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider() ) {
+         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
+         customisation: BrowserCustomising = MockBrowserCustomising()) {
         self.voiceSearchHelper = voiceSearchHelper
         self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
+        self.customisation = customisation
     }
 }

@@ -78,7 +78,11 @@ class DefaultOmniBarView: UIView {
     @IBOutlet weak var leftIconContainerView: UIView!
 
     weak var omniDelegate: OmniBarDelegate?
-    fileprivate var state: OmniBarState!
+    fileprivate var state: OmniBarState! {
+        didSet {
+            configureAccessoryLongPressButton()
+        }
+    }
     private(set) var accessoryType: OmniBarAccessoryType = .share {
         didSet {
             switch accessoryType {
@@ -122,7 +126,6 @@ class DefaultOmniBarView: UIView {
         configureMenuButton()
         configureTextField()
         configureSettingsLongPressButton()
-        configureShareLongPressButton()
         registerNotifications()
 
         configureSeparator()
@@ -140,10 +143,19 @@ class DefaultOmniBarView: UIView {
         settingsButton.addGestureRecognizer(longPressGesture)
     }
 
-    private func configureShareLongPressButton() {
-        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleShareLongPress(_:)))
-        longPressGesture.minimumPressDuration = 0.7
-        accessoryButton.addGestureRecognizer(longPressGesture)
+    private func configureAccessoryLongPressButton() {
+
+        if state.dependencies.featureFlagger.isFeatureOn(.customizableActionButton) &&
+            state.showPrivacyIcon {
+            let interaction = UIContextMenuInteraction(delegate: self)
+            accessoryButton.addInteraction(interaction)
+            accessoryButton.layer.cornerRadius = 8
+        } else {
+            let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleShareLongPress(_:)))
+            longPressGesture.minimumPressDuration = 0.7
+            accessoryButton.addGestureRecognizer(longPressGesture)
+        }
+
     }
 
     @objc private func handleSettingsLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -779,4 +791,28 @@ extension DefaultOmniBarView: OmniBarView {
     var privacyIconView: UIView? {
         privacyInfoContainer.privacyIcon
     }
+}
+
+extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+
+            let children = OmniBarAccessoryType.allCases.map { accessoryType in
+                let image = switch accessoryType {
+                case .chat: UIImage(resource: .aiChat24)
+                case .newTab: UIImage(resource: .newTab)
+                case .share: UIImage(resource: .share24)
+                }
+
+                return UIAction(title: accessoryType.description, image: image) { _ in
+                    self.state.dependencies.customisation.updateOmnibarAccessoryType(accessoryType)
+                }
+            }
+
+            return UIMenu(title: "", children: children)
+        }
+    }
+
 }

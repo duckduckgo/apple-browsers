@@ -23,7 +23,8 @@ import Core
 
 protocol BrowserCustomising {
 
-    var omnibarAccessoryType: OmniBarAccessoryType { get set }
+    var omnibarAccessoryType: OmniBarAccessoryType { get }
+    func updateOmnibarAccessoryType(_ omnibarAccessoryType: OmniBarAccessoryType)
 
 }
 
@@ -40,15 +41,8 @@ final class Customisation: BrowserCustomising {
     }
 
     var omnibarAccessoryType: OmniBarAccessoryType {
-        get {
-            guard isAvailable else { return .share }
-            return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
-        }
-
-        set {
-            storage.omnibarAccessoryType = newValue.rawValue
-            triggerSettingsChangedNotification()
-        }
+        guard isAvailable else { return .share }
+        return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
     }
 
     var storage: BrowserCustomisationPersisting
@@ -61,6 +55,11 @@ final class Customisation: BrowserCustomising {
         self.storage = storage
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
+    }
+
+    func updateOmnibarAccessoryType(_ omnibarAccessoryType: OmniBarAccessoryType) {
+        storage.omnibarAccessoryType = omnibarAccessoryType.rawValue
+        triggerSettingsChangedNotification()
     }
 
     private func triggerSettingsChangedNotification() {

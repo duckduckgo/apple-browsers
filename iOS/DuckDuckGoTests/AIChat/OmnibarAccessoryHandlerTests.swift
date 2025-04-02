@@ -94,6 +94,10 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
 
 class MockBrowserCustomising: BrowserCustomising {
 
+    func updateOmnibarAccessoryType(_ omnibarAccessoryType: DuckDuckGo.OmniBarAccessoryType) {
+        self.omnibarAccessoryType = omnibarAccessoryType
+    }
+
     var omnibarAccessoryType: DuckDuckGo.OmniBarAccessoryType = .newTab
 
 }

@@ -408,7 +408,8 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      customisation: Customisation(featureFlagger: featureFlagger))
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,

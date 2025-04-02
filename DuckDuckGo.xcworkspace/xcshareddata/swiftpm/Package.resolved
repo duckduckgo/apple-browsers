@@ -37,6 +37,15 @@
       }
     },
     {
+      "identity" : "designresourceskit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
+      "state" : {
+        "branch" : "mariusz/add-new-colors",
+        "revision" : "efa77d69884c45ca96d87e5c046903ce93c52c24"
+      }
+    },
+    {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",

@@ -25,7 +25,7 @@ public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
     var contentScopeProperties: ContentScopeProperties { get }
     var privacyConfig: PrivacyConfigurationManaging { get }
-    var executionConfig: DataBrokerExecutionConfig { get }
+    var executionConfig: BrokerJobExecutionConfig { get }
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var eventsHandler: EventMapping<JobEvent> { get }
@@ -47,7 +47,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public let database: DataBrokerProtectionRepository
     public let contentScopeProperties: ContentScopeProperties
     public let privacyConfig: PrivacyConfigurationManaging
-    public var executionConfig: DataBrokerExecutionConfig
+    public var executionConfig: BrokerJobExecutionConfig
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public let eventsHandler: EventMapping<JobEvent>
@@ -59,7 +59,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
                 privacyConfig: PrivacyConfigurationManaging,
-                executionConfig: DataBrokerExecutionConfig,
+                executionConfig: BrokerJobExecutionConfig,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 eventsHandler: EventMapping<JobEvent>,

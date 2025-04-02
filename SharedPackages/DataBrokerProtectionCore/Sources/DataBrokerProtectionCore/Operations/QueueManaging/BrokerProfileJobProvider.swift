@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationsCreator.swift
+//  BrokerProfileJobProvider.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,20 +19,19 @@
 import Common
 import Foundation
 
-public protocol DataBrokerOperationsCreator {
-    func operations(for jobType: JobType,
+public protocol BrokerProfileJobProviding {
+    func createJobs(with jobType: JobType,
                     withPriorityDate priorityDate: Date?,
                     showWebView: Bool,
                     errorDelegate: BrokerProfileJobErrorDelegate,
                     jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob]
 }
 
-public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreator {
+public final class BrokerProfileJobProvider: BrokerProfileJobProviding {
 
-    public init() {
-    }
+    public init() {}
 
-    public func operations(for jobType: JobType,
+    public func createJobs(with jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            errorDelegate: BrokerProfileJobErrorDelegate,
@@ -46,13 +45,13 @@ public final class DefaultDataBrokerOperationsCreator: DataBrokerOperationsCreat
             guard let dataBrokerID = queryData.dataBroker.id else { continue }
 
             if !visitedDataBrokerIDs.contains(dataBrokerID) {
-                let collection = BrokerProfileJob(dataBrokerID: dataBrokerID,
-                                                  jobType: jobType,
-                                                  priorityDate: priorityDate,
-                                                  showWebView: showWebView,
-                                                  errorDelegate: errorDelegate,
-                                                  jobDependencies: jobDependencies)
-                jobs.append(collection)
+                let job = BrokerProfileJob(dataBrokerID: dataBrokerID,
+                                           jobType: jobType,
+                                           priorityDate: priorityDate,
+                                           showWebView: showWebView,
+                                           errorDelegate: errorDelegate,
+                                           jobDependencies: jobDependencies)
+                jobs.append(job)
                 visitedDataBrokerIDs.insert(dataBrokerID)
             }
         }

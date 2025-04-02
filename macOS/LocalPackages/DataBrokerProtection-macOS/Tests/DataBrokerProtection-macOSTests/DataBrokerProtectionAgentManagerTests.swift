@@ -59,7 +59,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
         mockQueueManager = MockBrokerProfileJobQueueManager(
             jobQueue: MockBrokerProfileJobQueue(),
-            operationsCreator: MockDataBrokerOperationsCreator(),
+            jobProvider: MockDataBrokerOperationsCreator(),
             mismatchCalculator: mockMismatchCalculator,
             brokerUpdater: MockDataBrokerProtectionBrokerUpdater(),
             pixelHandler: mockSharedPixelsHandler)

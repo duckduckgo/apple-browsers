@@ -31,7 +31,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     private var mockPixelHandler: MockPixelHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockUpdater: MockDataBrokerProtectionBrokerUpdater!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig()
+    private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockScanRunner: MockScanSubJobWebRunner!
     private var mockOptOutRunner: MockOptOutSubJobWebRunner!
     private var mockEventsHandler: MockOperationEventsHandler!
@@ -52,7 +52,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,
                                                         contentScopeProperties: ContentScopeProperties.mock,
                                                         privacyConfig: PrivacyConfigurationManagingMock(),
-                                                        executionConfig: DataBrokerExecutionConfig(),
+                                                        executionConfig: BrokerJobExecutionConfig(),
                                                         notificationCenter: .default,
                                                         pixelHandler: mockPixelHandler,
                                                         eventsHandler: mockEventsHandler,
@@ -64,7 +64,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -82,7 +82,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledAllOperations_thenCreatorIsCalledWithAllOperationType() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -100,7 +100,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledScanOperations_thenCreatorIsCalledWithScheduledScanOperationType() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -118,7 +118,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartImmediateScan_andScanCompletesWithErrors_thenCompletionIsCalledWithErrors() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -127,7 +127,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.manualScan)
+        let expectedConcurrentOperations = BrokerJobExecutionConfig().concurrentJobsFor(.manualScan)
         var errorHandlerCalled = false
 
         // When
@@ -151,7 +151,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledAllOperations_andOperationsCompleteWithErrors_thenErrorHandlerIsCalledWithErrors_followedByCompletionBlock() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -160,7 +160,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.all)
+        let expectedConcurrentOperations = BrokerJobExecutionConfig().concurrentJobsFor(.all)
         var errorHandlerCalled = false
 
         // When
@@ -184,7 +184,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledScanOperations_andOperationsCompleteWithErrors_thenCompletionIsCalledWithErrors() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -193,7 +193,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = [mockOperation, mockOperationWithError]
         let expectation = expectation(description: "Expected errors to be returned in completion")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.scheduledScan)
+        let expectedConcurrentOperations = BrokerJobExecutionConfig().concurrentJobsFor(.scheduledScan)
         var errorHandlerCalled = false
 
         // When
@@ -217,7 +217,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartImmediateScan_andCurrentModeIsScheduled_thenCurrentOperationsAreInterrupted_andCurrentCompletionIsCalledWithErrors() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -260,7 +260,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartImmediateScan_andCurrentModeIsImmediate_thenCurrentOperationsAreInterrupted_andCurrentCompletionIsCalledWithErrors() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -303,7 +303,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenSecondImmedateScanInterruptsFirst_andFirstHadErrors_thenSecondCompletesOnlyWithNewErrors() async throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -348,7 +348,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledAllOperations_andCurrentModeIsImmediate_thenCurrentOperationsAreNotInterrupted_andNewCompletionIsCalledWithError() throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -398,7 +398,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenStartScheduledScanOperations_andCurrentModeIsImmediate_thenCurrentOperationsAreNotInterrupted_andNewCompletionIsCalledWithError() throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -447,7 +447,7 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
         // Given
         mockOperationsCreator.shouldError = true
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
@@ -469,11 +469,11 @@ final class BrokerProfileJobQueueManagerTests: XCTestCase {
     func testWhenCallDebugOptOutCommand_thenOptOutOperationsAreCreated() throws {
         // Given
         sut = BrokerProfileJobQueueManager(jobQueue: mockQueue,
-                                           operationsCreator: mockOperationsCreator,
+                                           jobProvider: mockOperationsCreator,
                                            mismatchCalculator: mockMismatchCalculator,
                                            brokerUpdater: mockUpdater,
                                            pixelHandler: mockPixelHandler)
-        let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentJobsFor(.optOut)
+        let expectedConcurrentOperations = BrokerJobExecutionConfig().concurrentJobsFor(.optOut)
         XCTAssert(mockOperationsCreator.createdType == .manualScan)
 
         // When

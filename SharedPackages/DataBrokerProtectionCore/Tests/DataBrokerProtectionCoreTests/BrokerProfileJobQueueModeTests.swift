@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionQueueModeTests.swift
+//  BrokerProfileJobQueueModeTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@
 import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
-final class DataBrokerProtectionQueueModeTests: XCTestCase {
+final class BrokerProfileJobQueueModeTests: XCTestCase {
 
     func testCurrentModeIdle_andNewModeImmediate_thenInterruptionAllowed() throws {
         // Given

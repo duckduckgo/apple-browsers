@@ -38,10 +38,10 @@ struct BrokerProfileScanSubJob {
 
     // MARK: - Scan Jobs
 
-    public func runScanOperation(brokerProfileQueryData: BrokerProfileQueryData,
-                                 showWebView: Bool = false,
-                                 isManual: Bool = false,
-                                 shouldRunNextStep: @escaping () -> Bool) async throws {
+    public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
+                        showWebView: Bool = false,
+                        isManual: Bool = false,
+                        shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:

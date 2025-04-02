@@ -1,5 +1,5 @@
 //
-//  DataBrokerExecutionConfig.swift
+//  BrokerJobExecutionConfig.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public struct DataBrokerExecutionConfig {
+public struct BrokerJobExecutionConfig {
 
     let intervalBetweenSameBrokerJobs: TimeInterval = 2
 

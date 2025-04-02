@@ -1240,7 +1240,7 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(jobQueue: BrokerProfileJobQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, brokerUpdater: DataBrokerProtectionBrokerUpdater?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, mismatchCalculator: MismatchCalculator, brokerUpdater: DataBrokerProtectionBrokerUpdater?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -1434,7 +1434,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
     public var database: any DataBrokerProtectionRepository
     public var contentScopeProperties: ContentScopeProperties
     public var privacyConfig: any PrivacyConfigurationManaging
-    public var executionConfig: DataBrokerExecutionConfig
+    public var executionConfig: BrokerJobExecutionConfig
     public var notificationCenter: NotificationCenter
     public var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var eventsHandler: EventMapping<JobEvent>
@@ -1450,7 +1450,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.database = MockDatabase()
         self.contentScopeProperties = ContentScopeProperties.mock
         self.privacyConfig = PrivacyConfigurationManagingMock()
-        self.executionConfig = DataBrokerExecutionConfig()
+        self.executionConfig = BrokerJobExecutionConfig()
         self.notificationCenter = .default
         self.pixelHandler = MockPixelHandler()
         self.eventsHandler = MockOperationEventsHandler()
@@ -1473,7 +1473,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
 
 }
 
-public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator {
+public final class MockDataBrokerOperationsCreator: BrokerProfileJobProviding {
 
     public var operationCollections: [BrokerProfileJob] = []
     public var shouldError = false
@@ -1484,7 +1484,7 @@ public final class MockDataBrokerOperationsCreator: DataBrokerOperationsCreator 
         self.operationCollections = operationCollections
     }
 
-    public func operations(for jobType: JobType,
+    public func createJobs(with jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
                            errorDelegate: BrokerProfileJobErrorDelegate,

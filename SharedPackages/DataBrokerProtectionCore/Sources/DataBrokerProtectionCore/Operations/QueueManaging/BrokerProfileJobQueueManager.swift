@@ -74,7 +74,7 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
 public protocol BrokerProfileJobQueueManaging {
 
     init(jobQueue: BrokerProfileJobQueue,
-         operationsCreator: DataBrokerOperationsCreator,
+         jobProvider: BrokerProfileJobProviding,
          mismatchCalculator: MismatchCalculator,
          brokerUpdater: DataBrokerProtectionBrokerUpdater?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
@@ -99,7 +99,7 @@ public protocol BrokerProfileJobQueueManaging {
 public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
 
     private var jobQueue: BrokerProfileJobQueue
-    private let operationsCreator: DataBrokerOperationsCreator
+    private let jobProvider: BrokerProfileJobProviding
     private let mismatchCalculator: MismatchCalculator
     private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -118,13 +118,13 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     }
 
     public init(jobQueue: BrokerProfileJobQueue,
-                operationsCreator: DataBrokerOperationsCreator,
+                jobProvider: BrokerProfileJobProviding,
                 mismatchCalculator: MismatchCalculator,
                 brokerUpdater: DataBrokerProtectionBrokerUpdater?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
-        self.operationsCreator = operationsCreator
+        self.jobProvider = jobProvider
         self.mismatchCalculator = mismatchCalculator
         self.brokerUpdater = brokerUpdater
         self.pixelHandler = pixelHandler
@@ -264,16 +264,16 @@ private extension BrokerProfileJobQueueManager {
         jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
 
         // Use builder to build operations
-        let operations: [BrokerProfileJob]
+        let jobs: [BrokerProfileJob]
         do {
-            operations = try operationsCreator.operations(for: jobType,
-                                                          withPriorityDate: priorityDate,
-                                                          showWebView: showWebView,
-                                                          errorDelegate: self,
-                                                          jobDependencies: jobDependencies)
+            jobs = try jobProvider.createJobs(with: jobType,
+                                                    withPriorityDate: priorityDate,
+                                                    showWebView: showWebView,
+                                                    errorDelegate: self,
+                                                    jobDependencies: jobDependencies)
 
-            for collection in operations {
-                jobQueue.addOperation(collection)
+            for job in jobs {
+                jobQueue.addOperation(job)
             }
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerProtectionProcessor error: addOperations, error: \(error.localizedDescription, privacy: .public)")

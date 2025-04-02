@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationsCreatorTests.swift
+//  BrokerProfileJobProviderTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,13 +21,13 @@ import BrowserServicesKit
 import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
-final class DataBrokerOperationsCreatorTests: XCTestCase {
+final class BrokerProfileJobProviderTests: XCTestCase {
 
-    private let sut: DataBrokerOperationsCreator = DefaultDataBrokerOperationsCreator()
+    private let sut: BrokerProfileJobProviding = BrokerProfileJobProvider()
 
     // Dependencies
     private var mockDatabase: MockDatabase!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig()
+    private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockPixelHandler: MockPixelHandler!
     private var mockEventsHandler: MockOperationEventsHandler!
     var mockDependencies: BrokerProfileJobDependencies!
@@ -74,7 +74,7 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
         mockDatabase.brokerProfileQueryDataToReturn = dataBrokerProfileQueries
 
         // When
-        let result = try! sut.operations(for: .manualScan,
+        let result = try! sut.createJobs(with: .manualScan,
                                          withPriorityDate: Date(),
                                          showWebView: false,
                                          errorDelegate: MockBrokerProfileJobErrorDelegate(),

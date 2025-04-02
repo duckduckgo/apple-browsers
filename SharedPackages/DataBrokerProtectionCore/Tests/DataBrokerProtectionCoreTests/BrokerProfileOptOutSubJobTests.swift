@@ -55,7 +55,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testWhenNoBrokerIdIsPresent_thenOptOutOperationThrows() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mockWithoutId,
@@ -74,7 +74,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testWhenNoProfileQueryIdIsPresent_thenOptOutOperationThrows() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -93,7 +93,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testWhenNoExtractedProfileIdIsPresent_thenOptOutOperationThrows() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutId,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -112,7 +112,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testWhenExtractedProfileHasRemovedDate_thenNothingHappens() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -131,7 +131,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testWhenBrokerHasParentOptOut_thenNothingHappens() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mockWithParentOptOut,
@@ -150,7 +150,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testOptOutStartedEventIsAdded_whenExtractedProfileOptOutStarts() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -168,7 +168,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testOptOutRequestedEventIsAdded_whenExtractedProfileOptOutFinishesWithoutError() async {
         do {
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -187,7 +187,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     func testErrorEventIsAdded_whenWebRunnerFails() async {
         do {
             mockOptOutRunner.shouldOptOutThrow = true
-            _ = try await sut.runOptOutOperation(
+            _ = try await sut.runOptOut(
                 for: .mockWithoutRemovedDate,
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
@@ -205,9 +205,9 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         }
     }
 
-    private func runOptOutOperation(shouldThrow: Bool = false) async throws {
+    private func runOptOut(shouldThrow: Bool = false) async throws {
         mockOptOutRunner.shouldOptOutThrow = shouldThrow
-        _ = try await sut.runOptOutOperation(
+        _ = try await sut.runOptOut(
             for: .mockWithoutRemovedDate,
             brokerProfileQueryData: .init(
                 dataBroker: .mock,
@@ -220,9 +220,9 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     }
 
     func testCorrectNumberOfTriesIsFired_whenOptOutSucceeds() async {
-        try? await runOptOutOperation(shouldThrow: true)
-        try? await runOptOutOperation(shouldThrow: true)
-        try? await runOptOutOperation()
+        try? await runOptOut(shouldThrow: true)
+        try? await runOptOut(shouldThrow: true)
+        try? await runOptOut()
 
         if let lastPixelFired = mockPixelHandler.lastFiredEvent {
             switch lastPixelFired {
@@ -237,9 +237,9 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testCorrectNumberOfTriesIsFired_whenOptOutFails() async {
         do {
-            try? await runOptOutOperation(shouldThrow: true)
-            try? await runOptOutOperation(shouldThrow: true)
-            try await runOptOutOperation(shouldThrow: true)
+            try? await runOptOut(shouldThrow: true)
+            try? await runOptOut(shouldThrow: true)
+            try await runOptOut(shouldThrow: true)
             XCTFail("The code above should throw")
         } catch {
             if let lastPixelFired = mockPixelHandler.lastFiredEvent {
@@ -256,7 +256,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testAttemptCountNotIncreased_whenOptOutFails() async {
         do {
-            try await runOptOutOperation(shouldThrow: true)
+            try await runOptOut(shouldThrow: true)
             XCTFail("The code above should throw")
         } catch {
             XCTAssertEqual(mockDatabase.attemptCount, 0)
@@ -265,7 +265,7 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
 
     func testAttemptCountIncreased_whenOptOutSucceeds() async {
         do {
-            try await runOptOutOperation()
+            try await runOptOut()
             XCTAssertEqual(mockDatabase.attemptCount, 1)
         } catch {
             XCTFail("Should not throw")
@@ -275,9 +275,9 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
     func testAttemptCountIncreasedWithEachSuccessfulOptOut() async {
         do {
             for attempt in 0..<10 {
-                try await runOptOutOperation()
+                try await runOptOut()
                 XCTAssertEqual(mockDatabase.attemptCount, Int64(attempt) + 1)
-                try? await runOptOutOperation(shouldThrow: true)
+                try? await runOptOut(shouldThrow: true)
                 XCTAssertEqual(mockDatabase.attemptCount, Int64(attempt) + 1)
             }
         } catch {

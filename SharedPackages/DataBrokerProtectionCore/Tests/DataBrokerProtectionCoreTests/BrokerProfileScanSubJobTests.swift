@@ -76,7 +76,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = []
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -121,7 +121,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = [extractedProfileSaved1]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -167,7 +167,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = [extractedProfileSaved1, extractedProfileSaved2]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -186,9 +186,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
     // MARK: - Run scan operation tests
 
-    func testWhenProfileQueryIdIsNil_thenRunScanOperationThrows() async {
+    func testWhenProfileQueryIdIsNil_thenRunScanThrows() async {
         do {
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mockWithoutId,
@@ -203,9 +203,9 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
-    func testWhenBrokerIdIsNil_thenRunScanOperationThrows() async {
+    func testWhenBrokerIdIsNil_thenRunScanThrows() async {
         do {
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mockWithoutId,
                     profileQuery: .mock,
@@ -221,7 +221,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
     func testWhenScanStarts_thenScanStartedEventIsAddedToTheDatabase() async {
         do {
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -237,7 +237,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
 
     func testWhenScanDoesNotFoundProfiles_thenNoMatchFoundEventIsAddedToTheDatabase() async {
         do {
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -255,7 +255,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         do {
             mockDatabase.extractedProfilesFromBroker = [.mockWithoutRemovedDate]
             mockScanRunner.scanResults = [.mockWithoutRemovedDate]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -276,7 +276,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         do {
             mockDatabase.extractedProfilesFromBroker = [.mockWithRemovedDate]
             mockScanRunner.scanResults = [.mockWithRemovedDate]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -295,7 +295,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenScannedProfileIsAlreadyInTheDatabaseAndWasNotFoundInBroker_thenTheRemovedDateIsSet() async {
         do {
             mockScanRunner.scanResults = []
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -314,7 +314,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenNewExtractedProfileIsNotInDatabase_thenIsAddedToTheDatabaseAndOptOutOperationIsCreated() async {
         do {
             mockScanRunner.scanResults = [.mockWithoutId]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -332,7 +332,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenRemovedProfileIsFound_thenOptOutConfirmedIsAddedRemoveDateIsUpdated() async {
         do {
             mockScanRunner.scanResults = [.mockWithoutId]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -352,7 +352,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenNoRemovedProfilesAreFound_thenNoOtherEventIsAdded() async {
         do {
             mockScanRunner.scanResults = [.mockWithoutRemovedDate]
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,
@@ -373,7 +373,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
     func testWhenErrorIsCaught_thenEventIsAddedToTheDatabase() async {
         do {
             mockScanRunner.shouldScanThrow = true
-            _ = try await sut.runScanOperation(
+            _ = try await sut.runScan(
                 brokerProfileQueryData: .init(
                     dataBroker: .mock,
                     profileQuery: .mock,

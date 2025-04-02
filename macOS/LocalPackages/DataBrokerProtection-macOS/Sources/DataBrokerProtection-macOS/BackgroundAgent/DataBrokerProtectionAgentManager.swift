@@ -93,13 +93,13 @@ public class DataBrokerProtectionAgentManagerProvider {
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let jobQueue = OperationQueue()
-        let operationsBuilder = DefaultDataBrokerOperationsCreator()
+        let jobProvider = BrokerProfileJobProvider()
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
         let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
-                                                         operationsCreator: operationsBuilder,
+                                                         jobProvider: jobProvider,
                                                          mismatchCalculator: mismatchCalculator,
                                                          brokerUpdater: brokerUpdater,
                                                          pixelHandler: sharedPixelsHandler)
@@ -117,7 +117,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                    pixelHandler: pixelHandler,
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
-        let executionConfig = DataBrokerExecutionConfig()
+        let executionConfig = BrokerJobExecutionConfig()
         let jobDependencies = BrokerProfileJobDependencies(
             database: dataManager.database,
             contentScopeProperties: contentScopeProperties,

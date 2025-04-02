@@ -21,7 +21,7 @@ import SwiftUI
 
 private enum Constants {
     static let cornerRadius: CGFloat = 8
-    static let backgroundColor: Color = .black.opacity(0.9)    
+    static let backgroundColor: Color = .black.opacity(0.9)
     static let buttonColor: Color = .white.opacity(0.76)
     static let horizontalPadding: CGFloat = 20
     static let verticalPadding: CGFloat = 100

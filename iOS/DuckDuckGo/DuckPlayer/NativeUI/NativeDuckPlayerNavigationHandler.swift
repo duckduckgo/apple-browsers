@@ -355,13 +355,13 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleReload(webView: WKWebView) {
         webView.reload()
-        
+
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
-        
+
         lastHandledVideoID = nil
         duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
-        
+
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.
@@ -369,7 +369,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` being attached.
     @MainActor
     func handleAttach(webView: WKWebView) {
-        
+
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         setReferrer(webView: webView)
@@ -435,7 +435,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     @MainActor
     func handleDelegateNavigation(navigationAction: WKNavigationAction, webView: WKWebView) -> Bool {
 
-      
         setReferrer(webView: webView)
 
         guard let url = navigationAction.request.url else {

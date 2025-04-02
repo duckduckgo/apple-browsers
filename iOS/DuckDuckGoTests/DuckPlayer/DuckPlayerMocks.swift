@@ -164,7 +164,7 @@ class MockFrameInfo: WKFrameInfo {
 }
 
 final class MockDuckPlayerSettings: DuckPlayerSettings {
-            
+
     private let duckPlayerSettingsSubject = PassthroughSubject<Void, Never>()
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> {
         duckPlayerSettingsSubject.eraseToAnyPublisher()
@@ -182,7 +182,6 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var nativeUIPrimingModalPresentedCount: Int = 0
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
-    
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 
@@ -201,7 +200,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
 final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
     var chromeVisible: Bool = false
     var chromeHidden: Bool = false
-    
+
     var url: URL?
     var delegate: (any DuckDuckGo.TabDelegate)?
     var webView: WKWebView!
@@ -209,42 +208,42 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
     var persistentBottomBarHeight: CGFloat = 0
     var presentCalled = false
     private var _presentedVC: UIViewController?
-    
+
     override var presentedViewController: UIViewController? {
         get { return _presentedVC }
     }
-    
+
     override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
         _presentedVC = viewControllerToPresent
         presentCalled = true
         super.present(viewControllerToPresent, animated: flag, completion: completion)
     }
-    
+
     override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
         _presentedVC = nil
         super.dismiss(animated: flag, completion: completion)
     }
-    
+
     func showChrome() {
         chromeVisible = true
     }
-    
+
     func hideChrome() {
         chromeVisible = false
     }
-    
+
     func setupWebViewForPortraitVideo() {
         // NOOP
     }
-    
+
     func setupWebViewForLandscapeVideo() {
         // NOOP
     }
-    
+
     func isTabCurrentlyPresented() -> Bool {
         return true
     }
-    
+
 }
 
 final class MockDuckPlayer: DuckPlayerControlling {
@@ -254,7 +253,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     var hostView: DuckPlayerHosting?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
-    
+
     // MARK: - Testing Properties
     var presentPillCalled = false
     var dismissPillCalled = false
@@ -353,7 +352,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func showPillForVisibleChrome() {
         // Mock implementation
     }
-    
+
 }
 
 enum MockFeatureFlag: Hashable {
@@ -423,7 +422,7 @@ final class MockDuckPlayerInternalUserDecider: InternalUserDecider {
 }
 
 final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
-    
+
     var presentPillCalled = false
     var dismissPillCalled = false
     var presentDuckPlayerCalled = false
@@ -434,25 +433,25 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
         presentPillCalled = true
         lastTimestampValue = timestamp
     }
-    
+
     @MainActor
     func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {}
-    
+
     @MainActor
     func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHosting, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
         presentDuckPlayerCalled = true
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
-    
+
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
 
     init() {
         self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
     }
-    
+
     @MainActor
     func showBottomSheetForVisibleChrome() {}
-    
+
     @MainActor
     func hideBottomSheetForHiddenChrome() {}
 }
@@ -460,11 +459,11 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
 class MockDelayHandler: DuckPlayerDelayHandling {
     private var delaySubject = PassthroughSubject<Void, Never>()
     private var delayCancellable: AnyCancellable?
-    
+
     func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never> {
         delaySubject.eraseToAnyPublisher()
     }
-    
+
     func completeDelay() {
         delaySubject.send()
     }
@@ -475,11 +474,11 @@ class MockDelayHandler: DuckPlayerDelayHandling {
 // MARK: - DuckPlayerTabViewControllerMock
 
 final class DuckPlayerTabViewControllerMock: UIViewController {
-    
+
     var webViewContainerView: UIView = UIView()
     var chromeDelegate: DuckPlayerBrowserChromeDelegateMock?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
-    
+
     // Track presentation state
     private(set) var presentCalled = false
     private(set) var dismissCalled = false
@@ -523,7 +522,7 @@ final class DuckPlayerTabViewControllerMock: UIViewController {
 final class MockNotificationCenter {
     var postCalled = false
     var lastPostedNotification: Notification?
-    
+
     func post(name: Notification.Name, object: Any?, userInfo: [AnyHashable: Any]?) {
         postCalled = true
         lastPostedNotification = Notification(name: name, object: object, userInfo: userInfo)
@@ -585,4 +584,3 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var tabBarContainer: UIView = UIView()
 }
-

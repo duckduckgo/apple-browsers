@@ -24,16 +24,16 @@ import UIKit
 
 /// A protocol that defines the requirements for view controllers that can host DuckPlayer UI
 protocol DuckPlayerHosting: UIViewController {
-    
+
     /// The web view that is hosting the DuckPlayer
     var webView: WKWebView! { get }
 
     /// The constraint that controls the bottom spacing of the main content
     var contentBottomConstraint: NSLayoutConstraint? { get }
-    
+
     /// Returns the height of any persistent UI bars at the bottom of the screen (e.g. toolbars, tab bars)
     var persistentBottomBarHeight: CGFloat { get }
-    
+
     /// The URL of the current page
     var url: URL? { get }
 
@@ -46,4 +46,3 @@ protocol DuckPlayerHosting: UIViewController {
     func setupWebViewForLandscapeVideo()
     func isTabCurrentlyPresented() -> Bool
 }
-

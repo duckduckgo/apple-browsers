@@ -85,7 +85,7 @@ public enum DuckPlayerContainer {
             sheetAnimationCompleted = false
             sheetVisible = false
         }
-        
+
         public func setDragging(_ dragging: Bool) {
             isDragging = dragging
         }
@@ -225,7 +225,7 @@ private struct SheetView<Content: View>: View {
                                     }
                                     .onChanged { value in
                                         guard let dragStartOffset else { return }
-                                        
+
                                         let offsetY = value.translation.height
                                         if offsetY > 0 {
                                             withAnimation(.spring(duration: 0.3, bounce: 0.2)) {

@@ -22,7 +22,7 @@ import Foundation
 struct DuckPlayerState {
     var videoID: String?
     var hasBeenShown: Bool = false
-    var timestamp: TimeInterval?    
+    var timestamp: TimeInterval?
 
     mutating func reset() {
         videoID = nil

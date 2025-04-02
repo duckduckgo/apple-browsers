@@ -129,7 +129,7 @@ final class DuckPlayerNativeUIPresenter {
 
     /// Publisher for constraint updates
     private let constraintUpdatePublisher = PassthroughSubject<DuckPlayerConstraintUpdate, Never>()
-    
+
     /// Public access to the constraint update publisher
     var constraintUpdates: AnyPublisher<DuckPlayerConstraintUpdate, Never> {
         constraintUpdatePublisher.eraseToAnyPublisher()
@@ -488,7 +488,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true) {
         // First reset constraints immediately
         resetWebViewConstraint()
-        
+
         postPillVisibilityNotification(isVisible: false)
 
         // If was dismissed by the user, increment the dismiss count

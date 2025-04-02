@@ -25,9 +25,6 @@ protocol DuckPlayerDelayHandling {
     func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never>
 }
 
-import Foundation
-import Combine
-
 class DuckPlayerDelayHandler: DuckPlayerDelayHandling {
     func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never> {
         Just(())

@@ -339,7 +339,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
-        super.init()        
+        super.init()
         setupSubscriptions()
 
         NotificationCenter.default.addObserver(self,
@@ -372,7 +372,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         // Clear cancellables
         nativePlayerCancellables.removeAll()
         nativeUIPresenterCancellables.removeAll()
-    
+
         hostView = nil
     }
 
@@ -654,7 +654,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameter context: The presentation context for the modal.
     @MainActor
     public func presentDuckPlayerInfo(context: DuckPlayerModalPresenter.PresentationContext) {
-        
+
         // Need to cast to TabVC for now - Will be remove once DuckPlayer NativeUI is released
         guard let view = hostView as? TabViewController else { return }
         DuckPlayerModalPresenter(context: context).presentDuckPlayerFeatureModal(on: view)

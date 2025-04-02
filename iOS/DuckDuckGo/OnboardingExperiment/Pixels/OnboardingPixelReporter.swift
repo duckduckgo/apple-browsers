@@ -205,7 +205,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
     
-    func measureSearchSuggetionOptionTapped() {
+    func measureSearchSuggestionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
@@ -213,7 +213,7 @@ extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
     
-    func measureSiteSuggetionOptionTapped() {
+    func measureSiteSuggestionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 

@@ -27,9 +27,12 @@ struct AutofillCreditCardListView: View {
     
     var body: some View {
         Group {
-            if viewModel.creditCards.isEmpty {
+            switch viewModel.viewState {
+            case .authLocked:
+                LockScreenView()
+            case .empty, .noAuthAvailable:
                 EmptyStateView()
-            } else {
+            case .showItems:
                 List {
                     Section {
                         ForEach(viewModel.creditCards, id: \.self) { cardItem in

@@ -19,12 +19,15 @@
 
 import UIKit
 import BrowserServicesKit
+import Combine
 import SwiftUI
 
 final class AutofillCreditCardListViewController: UIViewController {
     
     private var viewModel: AutofillCreditCardListViewModel
     private let secureVault: (any AutofillSecureVault)?
+    private var cancellables: Set<AnyCancellable> = []
+    
     private lazy var addBarButtonItem: UIBarButtonItem = {
         UIBarButtonItem(image: UIImage(named: "Add-24"),
                         style: .plain,
@@ -37,6 +40,10 @@ final class AutofillCreditCardListViewController: UIViewController {
         self.viewModel = AutofillCreditCardListViewModel(secureVault: secureVault)
         
         super.init(nibName: nil, bundle: nil)
+        
+        setupCancellables()
+        setupObsservers()
+        authenticate()
     }
     
     required init?(coder: NSCoder) {
@@ -51,6 +58,28 @@ final class AutofillCreditCardListViewController: UIViewController {
         title = UserText.autofillCreditCardListTitle
     }
     
+    private func setupCancellables() {
+        viewModel.$viewState
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateNavigationBarButtons()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func setupObsservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActiveCallback), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActiveCallback), name: UIApplication.willResignActiveNotification, object: nil)
+    }
+    
+    @objc private func appDidBecomeActiveCallback() {
+        authenticate()
+    }
+
+    @objc private func appWillResignActiveCallback() {
+        viewModel.lockUI()
+    }
+    
     private func setupView() {
         viewModel.delegate = self
         
@@ -62,9 +91,26 @@ final class AutofillCreditCardListViewController: UIViewController {
     }
     
     private func updateNavigationBarButtons() {
-        navigationItem.rightBarButtonItems = [addBarButtonItem]
+        switch viewModel.viewState {
+        case .authLocked, .noAuthAvailable:
+            navigationItem.rightBarButtonItems = []
+        case .empty, .showItems:
+            navigationItem.rightBarButtonItems = [addBarButtonItem]
+        }
     }
 
+    private func authenticate() {
+        viewModel.authenticate {[weak self] error in
+            guard let self = self else { return }
+
+            if error != nil {
+                if error != .noAuthAvailable {
+                    dismiss(animated: true)
+                }
+            }
+        }
+    }
+    
     @objc
     private func addButtonPressed() {
         let viewController = AutofillCreditCardDetailsViewController(secureVault: secureVault)

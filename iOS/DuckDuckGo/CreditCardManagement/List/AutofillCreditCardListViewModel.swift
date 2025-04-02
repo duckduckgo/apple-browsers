@@ -20,6 +20,7 @@
 import Foundation
 import BrowserServicesKit
 import SwiftUI
+import Combine
 import Core
 
 
@@ -29,10 +30,27 @@ protocol AutofillCreditCardListViewModelDelegate: AnyObject {
 
 final class AutofillCreditCardListViewModel: ObservableObject {
 
+    enum ViewState {
+        case authLocked
+        case noAuthAvailable
+        case empty
+        case showItems
+    }
+    
     @Published var creditCards: [CreditCardItem] = []
-
+    @Published var showingModal: Bool = false
+    @Published private(set) var viewState: AutofillCreditCardListViewModel.ViewState = .authLocked
+    
     weak var delegate: AutofillCreditCardListViewModelDelegate?
 
+    let authenticator = AutofillLoginListAuthenticator(reason: "Unlock device to access payment methods",
+                                                       cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)
+    var authenticationNotRequired = false
+
+    var hasCreditCardsSaved: Bool {
+        return !creditCards.isEmpty
+    }
+    
     private var secureVault: (any AutofillSecureVault)?
     private var cachedDeletedCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
@@ -46,9 +64,13 @@ final class AutofillCreditCardListViewModel: ObservableObject {
     init(secureVault: (any AutofillSecureVault)? = nil) {
         self.secureVault = secureVault
         
-        fetchCreditCards()
+        if let count = try? secureVault?.creditCardsCount() {
+            authenticationNotRequired = count == 0
+        }
+        refreshData()
+        setupCancellables()
     }
-            
+ 
     func cardSelected(_ cardItem: CreditCardItem) {
         delegate?.autofillCreditCardListViewModelDidSelectCard(self, card: cardItem.card)
     }
@@ -57,12 +79,74 @@ final class AutofillCreditCardListViewModel: ObservableObject {
         fetchCreditCards()
     }
 
+    func deleteCard(_ card: SecureVaultModels.CreditCard) {
+        guard let cardId = card.id else {
+            return
+        }
+
+        do {
+            cachedDeletedCard = card
+            try secureVault?.deleteCreditCardFor(cardId: cardId)
+            fetchCreditCards()
+            presentDeleteConfirmation()
+        } catch {
+            Pixel.fire(pixel: .secureVaultError, error: error)
+        }
+    }
+
+    func lockUI() {
+        authenticationNotRequired = !hasCreditCardsSaved
+        authenticator.logOut()
+    }
+    
+    func authenticate(completion: @escaping (AutofillLoginListAuthenticator.AuthError?) -> Void) {
+        if !authenticator.canAuthenticate() {
+            viewState = .noAuthAvailable
+            completion(nil)
+            return
+        }
+
+        if viewState != .authLocked {
+            completion(nil)
+            return
+        }
+        
+        authenticator.authenticate(completion: completion)
+    }
+    
     // MARK: - Private methods
+    
+    private func setupCancellables() {
+        authenticator.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateViewState()
+            }
+            .store(in: &cancellables)
+    }
+    
+    private func updateViewState() {
+        var newViewState: AutofillCreditCardListViewModel.ViewState
+        
+        if !authenticator.canAuthenticate() {
+            newViewState = .noAuthAvailable
+        } else if authenticator.state == .loggedOut && !authenticationNotRequired {
+            newViewState = .authLocked
+        } else {
+            newViewState = creditCards.count > 0 ? .showItems : .empty
+        }
+        
+        // Avoid unnecessary updates
+        if newViewState != viewState {
+            viewState = newViewState
+        }
+    }
     
     private func fetchCreditCards() {
         do {
             let cards = try self.secureVault?.creditCards() ?? []
             creditCards = cards.asCardItems
+            updateViewState()
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")
         }

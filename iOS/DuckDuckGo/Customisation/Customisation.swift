@@ -78,11 +78,11 @@ class DefaultCustomisationStorage: BrowserCustomisationPersisting {
     }
 
     var omnibarAccessoryType: String {
-        set {
-            storage.set(newValue, forKey: Self.omnibarAccessoryTypeKey)
-        }
         get {
             (storage.object(forKey: Self.omnibarAccessoryTypeKey) as? String) ?? OmniBarAccessoryType.share.rawValue
+        }
+        set {
+            storage.set(newValue, forKey: Self.omnibarAccessoryTypeKey)
         }
     }
 

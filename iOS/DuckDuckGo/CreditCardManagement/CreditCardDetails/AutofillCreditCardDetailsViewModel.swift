@@ -74,7 +74,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
     }
     
     var creditCard: SecureVaultModels.CreditCard?
-    
+
     var navigationTitle: String {
         switch viewMode {
         case .edit:
@@ -110,11 +110,11 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
         dateFormatter.dateFormat = "MM / yy"
         return dateFormatter
     }()
-    
+
     private let authenticator: UserAuthenticator
     private var secureVault: (any AutofillSecureVault)?
     private var cancellables = Set<AnyCancellable>()
-    
+
     internal init(authenticator: UserAuthenticator, secureVault: (any AutofillSecureVault)? = nil, creditCard: SecureVaultModels.CreditCard? = nil) {
         self.authenticator = authenticator
         self.secureVault = secureVault
@@ -143,20 +143,20 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
         authenticationRequired = true
         authenticator.logOut()
     }
-    
+
     func authenticate(completion: @escaping (AutofillLoginListAuthenticator.AuthError?) -> Void) {
         if cancellables.isEmpty {
             setupCancellables()
         }
-        
+
         if !authenticator.canAuthenticate() || !authenticationRequired {
             completion(nil)
             return
         }
-        
+
         authenticator.authenticate(completion: completion)
     }
-    
+
     func copyToPasteboard(_ action: PasteboardCopyAction) {
         var message = ""
         switch action {

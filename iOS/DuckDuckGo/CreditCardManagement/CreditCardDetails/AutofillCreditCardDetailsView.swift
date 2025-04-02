@@ -193,7 +193,7 @@ struct AutofillCreditCardDetailsView: View {
 
 private struct EditableCreditCardNumberCell: View {
     @Environment(\.sizeCategory) private var sizeCategory
-    
+
     @State private var id = UUID()
     let title: String
     let placeholderText: String
@@ -253,7 +253,7 @@ private struct EditableCreditCardNumberCell: View {
             return 20
         }
     }
-    
+
     private struct CreditCardNumberField: UIViewRepresentable {
         var id: UUID
         var placeholder: String?
@@ -262,7 +262,7 @@ private struct EditableCreditCardNumberCell: View {
         @Binding var isCardValid: Bool
         @Binding var isEditing: Bool?
         @Binding var selectedCell: UUID?
-        
+
         func makeUIView(context: Context) -> UITextField {
             let textField = UITextField(frame: .zero)
             textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -289,7 +289,7 @@ private struct EditableCreditCardNumberCell: View {
                     uiView.selectedTextRange = position
                 }
             }
-            
+
             if selectedCell != id && uiView.isFirstResponder {
                 DispatchQueue.main.async {
                     uiView.resignFirstResponder()
@@ -317,20 +317,20 @@ private struct EditableCreditCardNumberCell: View {
             ) {
                 isPasteOperation = true
                 needsEndCursorPositioning = true
-                
+
                 // Allow paste to proceed normally
                 item.setDefaultResult()
             }
-            
+
             @objc func textFieldDidChange(_ textField: UITextField) {
                 let text = textField.text ?? ""
                 let currentSelectedRange = textField.selectedTextRange
                 var digitsOnly = CreditCardValidation.extractDigits(from: text)
-                
+
                 if digitsOnly.count > 19 {
                     digitsOnly = String(digitsOnly.prefix(19))
                 }
-                
+
                 let formatted = CreditCardValidation.formattedCardNumber(digitsOnly)
                 
                 parent.cardNumber = digitsOnly
@@ -339,7 +339,7 @@ private struct EditableCreditCardNumberCell: View {
                 parent.isCardValid = CreditCardValidation.isValidCardNumber(digitsOnly)
                 
                 updateCursorPosition(textField, oldText: text, newText: formatted, currentSelection: currentSelectedRange)
-                
+
                 if needsEndCursorPositioning {
                     DispatchQueue.main.async {
                         if let newPosition = textField.position(from: textField.beginningOfDocument, offset: formatted.count) {

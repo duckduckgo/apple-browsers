@@ -900,6 +900,37 @@ public struct UserText {
     public static let autofillCreditCardCopyToastCopiedCVV = NSLocalizedString("autofill.creditcard.details.copy-toast.cvv-copied", value:"CVV copied", comment: "Title for toast when copying the credit card cvv (security code)")
     public static let autofillCreditCardCopyToastCopiedCardName = NSLocalizedString("autofill.creditcard.details.copy-toast.card-name-copied", value:"Name copied", comment: "Title for toast when copying the credit card name")
 
+    // Credit card details
+    public static let autofillCreditCardDetailsDefaultTitle = NSLocalizedString("autofill.creditcard.details.default-title", value:"Card", comment: "Title for autofill credit card details")
+    public static let autofillCreditCardDetailsEditTitle = NSLocalizedString("autofill.creditcard.details.edit-title", value:"Edit Card", comment: "Title when editing autofill credit card details")
+    public static let autofillCreditCardDetailsNewTitle = NSLocalizedString("autofill.creditcard.details.new-title", value:"Add Card", comment: "Title when adding new autofill credit card")
+
+    public static let autofillCreditCardDetailsCardNumber = NSLocalizedString("autofill.creditcard.details.card-number", value:"Card number", comment: "Card number label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardNumberEditing = NSLocalizedString("autofill.creditcard.details.card-number.required", value:"Card number (required)", comment: "Card number label for credit card details on autofill when editing")
+    public static let autofillCreditCardDetailsExpirationDate = NSLocalizedString("autofill.creditcard.details.exp-date", value:"Expiration date", comment: "Expiration date label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCVV = NSLocalizedString("autofill.creditcard.details.cvv", value:"CVV", comment: "CVV (security code) label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardName = NSLocalizedString("autofill.creditcard.details.card-name", value:"Name on card", comment: "Card name label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardNickname = NSLocalizedString("autofill.creditcard.details.card-nickname", value:"Card nickname", comment: "Card nickname label for credit card details on autofill")
+
+    public static let autofillCreditCardDetailsDeleteButton = NSLocalizedString("autofill.creditcard.details.delete", value:"Delete Card", comment: "Delete button when deleting an autofill credit card")
+    public static let autofillCreditCardDetailsDeleteConfirmationButtonTitle = NSLocalizedString("autofill.creditcard.details.delete-confirmation.button", value:"Delete Card", comment: "Autofill alert button confirming delete credit card")
+    public static let autofillCreditCardDetailsDeleteConfirmationMessage = NSLocalizedString("autofill.creditcard.details.delete-confirmation.message", value:"Are you sure you want to delete this card?", comment: "Autofill message confirming delete credit card")
+    public static let autofillCreditCardDeletedToastMessage = NSLocalizedString("autofill.creditcard.deleted-message-no-title", value: "Card deleted", comment: "Toast message when a credit card item is deleted")
+
+    public static let autofillCreditCardDetailsEditCardNumberPlaceholder = NSLocalizedString("autofill.creditcard.details.edit.card-number-placeholder", value:"1234 5678 1234 5678", comment: "Placeholder for card number field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditExpirationDatePlaceholder = NSLocalizedString("autofill.creditcard.details.edit.exp-date-placeholder", value:"MM / YY", comment: "Placeholder for expiration date field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCVVPlaceholder = NSLocalizedString("autofill.creditcard.details.edit.cvv-placeholder", value:"Security code", comment: "Placeholder for CVV security code field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCardNamePlaceholder = NSLocalizedString("autofill.creditcard.edit.card-name-placeholder", value:"Name on card", comment: "Placeholder for card name field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCardNicknamePlaceholder = NSLocalizedString("autofill.creditcard.edit.card-nickname-placeholder", value:"(e.g. Work)", comment: "Placeholder for card nickname field on autofill credit card details")
+
+    public static let autofillShowCreditCardCVV = NSLocalizedString("autofill.show-card-cvv", value: "Show CVV", comment: "Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of ***")
+    public static let autofillHideCreditCardCVV = NSLocalizedString("autofill.hide-card-cvv", value: "Hide CVV", comment: "Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with ***")
+
+    public static let autofillCreditCardCopyToastCopiedCardNumber = NSLocalizedString("autofill.creditcard.details.copy-toast.card-number-copied", value:"Card number copied", comment: "Title for toast when copying the credit card number")
+    public static let autofillCreditCardCopyToastCopiedExpirationDate = NSLocalizedString("autofill.creditcard.details.copy-toast.exp-date-copied", value:"Expiration date copied", comment: "Title for toast when copying the credit card expiration date")
+    public static let autofillCreditCardCopyToastCopiedCVV = NSLocalizedString("autofill.creditcard.details.copy-toast.cvv-copied", value:"CVV copied", comment: "Title for toast when copying the credit card cvv (security code)")
+    public static let autofillCreditCardCopyToastCopiedCardName = NSLocalizedString("autofill.creditcard.details.copy-toast.card-name-copied", value:"Name copied", comment: "Title for toast when copying the credit card name")
+
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
     public static let aboutText = NSLocalizedString("settings.about.text.new", value: """

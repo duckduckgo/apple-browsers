@@ -26,7 +26,6 @@ import PixelKit
 import Subscription
 import os.log
 import WireGuard
-
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     static var isAppex: Bool {
@@ -462,12 +461,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.tokenStoreV1 = tokenStore
 
         // MARK: - V2
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        let apiService = DefaultAPIService(urlSession: urlSession)
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEvents: debugEvents)
@@ -475,26 +470,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-            // The SysExt handles only dead token pixels
-            switch type {
-            case .deadToken:
-                PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
-            case .subscriptionIsActive: // handled by the main app only
-                break
-            case .v1MigrationFailed:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-            case .v1MigrationSuccessful:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
-            }
-        }
-
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
                                                              subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                              subscriptionEnvironment: subscriptionEnvironment,
-                                                             pixelHandler: pixelHandler,
                                                              tokenRecoveryHandler: nil,
                                                              initForPurchase: false)
 

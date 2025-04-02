@@ -354,11 +354,11 @@ final class DuckPlayerNativeUIPresenter {
         // Reset the dismiss count
         appSettings.duckPlayerPillDismissCount = 0
 
-        var message = AttributedString(UserText.duckPlayerNativePillDismissCountToastMessage)
+        var message = AttributedString("Want to turn off Duck Player appearing on Youtube?")
         message.foregroundColor = Color(designSystemColor: .buttonsWhite)
         displayToast(
             with: message,
-            buttonTitle: UserText.duckPlayerNativePillDismissCountToastMessageButton
+            buttonTitle: "Open Settings"
         ) {
             NotificationCenter.default.post(
                 name: .settingsDeepLinkNotification,

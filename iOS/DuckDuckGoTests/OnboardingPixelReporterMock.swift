@@ -100,11 +100,11 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
         didCallMeasureEndOfJourneyDialogDismiss = true
     }
 
-    func measureSiteSuggetionOptionTapped() {
+    func measureSiteSuggestionOptionTapped() {
         didCallMeasureSiteOptionTapped = true
     }
 
-    func measureSearchSuggetionOptionTapped() {
+    func measureSearchSuggestionOptionTapped() {
         didCallMeasureSearchOptionTapped = true
     }
 

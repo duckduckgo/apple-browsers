@@ -43,20 +43,21 @@ enum UserText {
         case (true, _):
             return NSLocalizedString("subscription.preferences.subscription.activate.with.email.caption",
                                      bundle: Bundle.module,
-                                     value: "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > Privacy Pro > I Have a Subscription. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)",
+                                     value: "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > Privacy Pro > I Have a Subscription.",
                                      comment: "Caption for the subscription preferences activate section when email is added to subscription")
         case (false, .appStore):
             return NSLocalizedString("subscription.preferences.subscription.add.to.device.no.email.app.store.caption",
                                      bundle: Bundle.module,
-                                     value: "Add Privacy Pro to your other devices via Apple Account or by linking an email. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)",
+                                     value: "Add Privacy Pro to your other devices via Apple Account or by linking an email.",
                                      comment: "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription")
         case (false, _):
             return NSLocalizedString("subscription.preferences.subscription.add.to.device.no.email.stripe.caption",
                                      bundle: Bundle.module,
-                                     value: "Add Privacy Pro to your other devices by linking an email. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)",
+                                     value: "Add Privacy Pro to your other devices by linking an email.",
                                      comment: "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription")
         }
     }
+    static let activateSectionLearnMoreButton = NSLocalizedString("subscription.preferences.subscription.activate.learn.more.button", bundle: Bundle.module, value: "Learn more", comment: "Button that opens help pages explaining subscription activation via email")
 
     static let editEmailButton = NSLocalizedString("subscription.preferences.subscription.activate.edit.email.button", bundle: Bundle.module, value: "Edit", comment: "Button for editing email address added to subscription")
     static let addToDeviceButtonTitle = NSLocalizedString("subscription.preferences.subscription.add.to.device.button.title", bundle: Bundle.module, value: "Add to Device...", comment: "Button for adding subscription to other devices")

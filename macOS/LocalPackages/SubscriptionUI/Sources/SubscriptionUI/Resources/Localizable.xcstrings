@@ -3532,6 +3532,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.activate.learn.more.button" : {
+      "comment" : "Button that opens help pages explaining subscription activation via email",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Learn more"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.activate.no.email.caption" : {
       "comment" : "Caption for the subscription preferences activate section when email is not added to subscription",
       "extractionState" : "stale",
@@ -3658,55 +3670,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Verwende diese E-Mail-Adresse, um dein Abonnement auf andere Geräte zu übertragen. Gehe im DuckDuckGo-Browser zu Einstellungen > Privacy Pro > Ich habe ein Abonnement. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > Privacy Pro > I Have a Subscription. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
+            "value" : "Use this email to add your subscription to other devices. In the DuckDuckGo browser, go to Settings > Privacy Pro > I Have a Subscription."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usa este correo electrónico para añadir tu suscripción a otros dispositivos. En el navegador DuckDuckGo, dirígete a Ajustes > Privacy Pro > Tengo una suscripción. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Servez-vous de cet e-mail pour ajouter votre abonnement à d'autres appareils. Dans le navigateur DuckDuckGo, accédez à Paramètres > Privacy Pro > J'ai un abonnement. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Usa questa email per aggiungere l'abbonamento ad altri dispositivi. Nel browser DuckDuckGo, vai su Impostazioni > Privacy Pro > Ho un abbonamento. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gebruik dit e-mailadres om je abonnement toe te voegen aan andere apparaten. Ga in de DuckDuckGo-browser naar Instellingen > Privacy Pro > Ik heb een abonnement. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Użyj tego adresu e-mail, aby dodać subskrypcję na innych urządzeniach. W przeglądarce DuckDuckGo wybierz kolejno Ustawienia > Privacy Pro > Mam subskrypcję. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Utiliza este e-mail para adicionar a tua subscrição a outros dispositivos. No navegador DuckDuckGo, acede a Definições > Privacy Pro > Tenho uma subscrição. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Чтобы добавить подписку на других устройствах, используйте этот адрес электронной почты. Откройте в браузере DuckDuckGo раздел «Настройки > Privacy Pro > У меня уже есть подписка». [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         }
@@ -4198,55 +4210,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Füge Privacy Pro über dein Apple-Konto oder durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add Privacy Pro to your other devices via Apple Account or by linking an email. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
+            "value" : "Add Privacy Pro to your other devices via Apple Account or by linking an email."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Añade Privacy Pro a tus otros dispositivos mediante la cuenta de Apple o vinculando un correo electrónico. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ajoutez Privacy Pro à vos autres appareils via un compte Apple ou en associant un e-mail. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aggiungi Privacy Pro agli altri dispositivi tramite l'account Apple o collegando un'e-mail. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Voeg Privacy Pro toe aan je andere apparaten via een Apple-account of door een e-mailadres te koppelen. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dodaj Privacy Pro do innych urządzeń za pośrednictwem konta Apple lub poprzez połączenie adresu e-mail. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adiciona o Privacy Pro aos teus outros dispositivos através da tua Conta Apple ou associando um e-mail. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Подписку Privacy Pro можно добавить на другие устройства с помощью аккаунта Apple или путем привязки адреса электронной почты. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         }
@@ -4258,55 +4270,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Füge Privacy Pro durch Verknüpfung einer E-Mail-Adresse zu deinen anderen Geräten hinzu. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add Privacy Pro to your other devices by linking an email. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
+            "value" : "Add Privacy Pro to your other devices by linking an email."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Añade Privacy Pro a tus otros dispositivos vinculando un correo electrónico. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ajoutez Privacy Pro à vos autres appareils en associant un e-mail. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aggiungi Privacy Pro agli altri dispositivi collegando un indirizzo e-mail. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Voeg Privacy Pro toe aan je andere apparaten door een e-mailadres te koppelen. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dodaj Privacy Pro do innych urządzeń poprzez połączenie adresu e-mail. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adiciona o Privacy Pro aos teus outros dispositivos associando um endereço de e-mail. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Подписку Privacy Pro можно добавить на другие устройства путем привязки электронной почты. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
           }
         }

@@ -20,6 +20,7 @@ import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
+import DesignResourcesKit
 
 public struct PreferencesSubscriptionViewV1: View {
 
@@ -251,12 +252,15 @@ public struct PreferencesSubscriptionViewV1: View {
     private var activateSection: some View {
         PreferencePaneSection {
             TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
-            Text(.init(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))) // required to parse markdown formatting
-                .onURLTap(onTap: { url in
-                    model.openLearnMore(url)
-                })
+
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
                 .foregroundColor(Color(.textSecondary))
 
+            TextButton(UserText.activateSectionLearnMoreButton) {
+                model.openLearnMore()
+            }
+            .padding(.top, -4)
+            
             if model.hasEmail {
                 emailView
                     .padding(.top, 2)
@@ -614,11 +618,14 @@ public struct PreferencesSubscriptionViewV2: View {
     private var activateSection: some View {
         PreferencePaneSection {
             TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
-            Text(.init(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))) // required to parse markdown formatting
-                .onURLTap(onTap: { url in
-                    model.openLearnMore(url)
-                })
+
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
                 .foregroundColor(Color(.textSecondary))
+
+            TextButton(UserText.activateSectionLearnMoreButton) {
+                model.openLearnMore()
+            }
+            .padding(.top, -4)
 
             if model.hasEmail {
                 emailView

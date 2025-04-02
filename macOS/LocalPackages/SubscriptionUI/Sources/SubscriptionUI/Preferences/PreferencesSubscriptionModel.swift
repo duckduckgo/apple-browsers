@@ -273,8 +273,9 @@ public final class PreferencesSubscriptionModel: ObservableObject {
     }
 
     @MainActor
-    func openLearnMore(_ url: URL) {
-        openURLHandler(url)
+    func openLearnMore() {
+        let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
+        openURLHandler(learnMoreURL)
     }
 
     @MainActor
@@ -756,8 +757,9 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }
 
     @MainActor
-    func openLearnMore(_ url: URL) {
-        openURLHandler(url)
+    func openLearnMore() {
+        let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
+        openURLHandler(learnMoreURL)
     }
 
     @MainActor

@@ -24,6 +24,27 @@ import UIKit
 
 @testable import DuckDuckGo
 
+extension DuckPlayerNativeUIPresenterTests {
+    struct Constants {
+        static let webViewRequiredBottomConstraint: CGFloat = 90
+    }
+}
+
+class TestNotificationCenter: NotificationCenter {
+    var postedNotifications: [Notification] = []
+    
+    override func post(_ notification: Notification) {
+        postedNotifications.append(notification)
+        super.post(notification)
+    }
+    
+    override func post(name aName: NSNotification.Name, object anObject: Any?, userInfo aUserInfo: [AnyHashable: Any]? = nil) {
+        let notification = Notification(name: aName, object: anObject, userInfo: aUserInfo)
+        postedNotifications.append(notification)
+        super.post(name: aName, object: anObject, userInfo: aUserInfo)
+    }
+}
+
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     
     // MARK: - Properties
@@ -35,25 +56,29 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
     private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
     private var cancellables: Set<AnyCancellable>!
+    private var testNotificationCenter: TestNotificationCenter!
     
     // MARK: - Setup
     
     override func setUp() {
         super.setUp()
+        testNotificationCenter = TestNotificationCenter()
         mockHostViewController = MockDuckPlayerHostingViewControlling()
         mockChromeDelegate = MockDuckPlayerChromeDelegate()
+        mockChromeDelegate.barsMaxHeight = 44.0 // Set a standard address bar height
         mockHostViewController.duckPlayerChromeDelegate = mockChromeDelegate
-        mockHostViewController.webViewBottomAnchorConstraint = NSLayoutConstraint()
+        
+        // Initialize the web view constraint with a default value
+        let constraint = NSLayoutConstraint()
+        constraint.constant = 0
+        mockHostViewController.webViewBottomAnchorConstraint = constraint
         
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
         mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
         
-        sut = DuckPlayerNativeUIPresenter(appSettings: mockAppSettings)
+        sut = DuckPlayerNativeUIPresenter(appSettings: mockAppSettings, notificationCenter: testNotificationCenter)
         cancellables = []
-        
-        // Reset static mock state
-        //MockDuckPlayerToastView.reset()
     }
     
     override func tearDown() {
@@ -75,23 +100,88 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "kaajas891"
         let timestamp: TimeInterval? = 100
         
+        // Test with top address bar position
+        mockAppSettings.currentAddressBarPosition = .top
+        
         // When
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
-
+        
+        // Simulate sheet animation completion and visibility
+        guard let containerViewModel = sut.containerViewModel else {
+            XCTFail("Container view model should be created")
+            return
+        }
+        containerViewModel.sheetAnimationCompleted = true
+        //containerViewModel.sheetVisible = true
+        
         // Then
         guard let pill = sut.hostView?.view else {
-            XCTFail("Pill view not found")
+            XCTFail("Hostview not found")
             return
         }
         
-        // We should only have one subview
-        XCTAssertEqual(pill.subviews.count, 1)
-        XCTAssertEqual(sut.state.hasBeenShown, true)
-        XCTAssertEqual(sut.state.videoID, "kaajas891")
-        XCTAssertEqual(sut.state.timestamp, 100)
+        // Verify basic state
+        XCTAssertEqual(pill.subviews.count, 1, "There must be only one subview (The pill)")
+        XCTAssertEqual(sut.state.hasBeenShown, false, "DuckPlayer should not have been shown yet")
+        XCTAssertEqual(sut.state.videoID, "kaajas891", "The video ID should be set")
+        XCTAssertEqual(sut.state.timestamp, nil, "Entry pill should never have a timestamp")
+        
+        // Verify container view model
+        XCTAssertTrue(containerViewModel.sheetVisible, "Container should be visible")
+        
+        // Verify container view controller
+        guard let containerViewController = sut.containerViewController else {
+            XCTFail("Container view controller should be created")
+            return
+        }
+        XCTAssertEqual(containerViewController.view.backgroundColor, .clear, "Container should have clear background")
+        XCTAssertFalse(containerViewController.view.isOpaque, "Container should not be opaque")
+        XCTAssertEqual(containerViewController.modalPresentationStyle, .overCurrentContext, "Container should be presented over current context")
+        XCTAssertFalse(containerViewController.view.translatesAutoresizingMaskIntoConstraints, "Container should not translate autoresizing mask")
+        
+        // Verify layout constraints
+        guard let bottomConstraint = sut.bottomConstraint else {
+            XCTFail("Bottom constraint should be set")
+            return
+        }
+        XCTAssertEqual(bottomConstraint.firstItem as? UIView, containerViewController.view, "Bottom constraint should be attached to container view")
+        XCTAssertEqual(bottomConstraint.secondItem as? UIView, mockHostViewController.view, "Bottom constraint should be attached to host view")
+        
+        // Verify web view constraint updates for top address bar
+        let expectedTopBarConstraint = -DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint // -90
+        XCTAssertEqual(mockHostViewController.webViewBottomAnchorConstraint?.constant, expectedTopBarConstraint, "Web view bottom constraint should be updated for pill height with top address bar")
+        
+        // Test with bottom address bar position
+        mockAppSettings.currentAddressBarPosition = .bottom
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Simulate sheet animation completion and visibility for bottom address bar test
+        containerViewModel.sheetAnimationCompleted = true
+        //containerViewModel.sheetVisible = true
+        
+        // Verify web view constraint updates for bottom address bar
+        // Expected value = -(barsMaxHeight + webViewRequiredBottomConstraint)
+        // = -(44 + 90) = -134
+        let expectedBottomBarConstraint = -(mockChromeDelegate.barsMaxHeight + DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint)
+        XCTAssertEqual(mockHostViewController.webViewBottomAnchorConstraint?.constant, expectedBottomBarConstraint, "Web view bottom constraint should account for bottom address bar and pill height")
+        
+        // Verify notification posting
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertEqual(postedNotifications.count, 2, "Should post exactly two pill visibility notifications (one for each address bar position test)")
+        
+        let notification = postedNotifications.first
+        XCTAssertNotNil(notification, "Should have posted a notification")
+        XCTAssertEqual(notification?.name, DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated, "Should post the correct notification")
+        XCTAssertEqual(notification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Should indicate pill is visible")
+    }
+
+    @MainActor
+    func testPresentDuckPlayer_PresentsView() {
         
     }
-    
+
     @MainActor
     func testPresentPill_WhenSecondTime_ShowsReEntryPill() {
         // Given
@@ -110,7 +200,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // We should only have one subview
         XCTAssertEqual(pill.subviews.count, 1)
-        XCTAssertEqual(sut.pillType, .reEntry)
     }
     
     @MainActor

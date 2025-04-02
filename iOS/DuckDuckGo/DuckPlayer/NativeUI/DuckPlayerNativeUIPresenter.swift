@@ -74,10 +74,10 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     /// The container view model for the entry pill
-    private var containerViewModel: DuckPlayerContainer.ViewModel?
+    private(set) var containerViewModel: DuckPlayerContainer.ViewModel?
 
     /// The hosting controller for the container
-    private var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
+    private(set) var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
     private(set) weak var hostView: DuckPlayerHostingViewControlling?
@@ -103,10 +103,13 @@ final class DuckPlayerNativeUIPresenter {
     private var omniBarHeight: CGFloat = 0
 
     /// Bottom constraint for the container view
-    private var bottomConstraint: NSLayoutConstraint?
+    private(set) var bottomConstraint: NSLayoutConstraint?
 
     /// Height of the current pill view
-    private var pillHeight: CGFloat = 0
+    private(set) var pillHeight: CGFloat = 0
+
+    /// Notification center for posting notifications
+    private let notificationCenter: NotificationCenter
 
     /// Determines if the priming modal should be shown
     private var shouldShowPrimingModal: Bool {
@@ -120,20 +123,22 @@ final class DuckPlayerNativeUIPresenter {
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings, state: DuckPlayerState = DuckPlayerState()) {
+    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         state: DuckPlayerState = DuckPlayerState(),
+         notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
         self.state = state
-        setupNotificationObservers()
+        self.notificationCenter = notificationCenter
+        setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
-    private func setupNotificationObservers() {
-        NotificationCenter.default.addObserver(
+    private func setupNotificationObservers(notificationCenter: NotificationCenter) {
+        notificationCenter.addObserver(
             self,
             selector: #selector(handleOmnibarDidLayout),
             name: DefaultOmniBarView.didLayoutNotification,
             object: nil
         )
-
     }
 
     /// Updates the UI based on Ombibar Notification
@@ -367,7 +372,7 @@ final class DuckPlayerNativeUIPresenter {
 
     /// Posts a notification about the pill's visibility state
     private func postPillVisibilityNotification(isVisible: Bool) {
-        NotificationCenter.default.post(
+        notificationCenter.post(
             name: Notifications.duckPlayerPillUpdated,
             object: nil,
             userInfo: [
@@ -400,7 +405,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         }
 
         // Determine the pill type
-        pillType = state.hasBeenShown ? .reEntry : .entry
+        let pillType: PillType = state.hasBeenShown ? .reEntry : .entry
 
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0

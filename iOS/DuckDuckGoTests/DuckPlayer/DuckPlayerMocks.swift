@@ -440,14 +440,12 @@ final class MockDuckPlayerHostingViewControlling: DuckPlayerHostingViewControlli
     var lastPresentedViewController: UIViewController?
     var lastPresentedAnimated: Bool?
     var lastPresentedCompletion: (() -> Void)?
-
-    func setupWebViewForLandscapeVideo() {}
-    func setupWebViewForPortraitVideo() {}
     
-    init() {
+    init(notificationCenter: NotificationCenter = .default) {
         // Initialize required properties
         view = UIView()
         webViewBottomAnchorConstraint = NSLayoutConstraint()
+        webViewBottomAnchorConstraint?.constant = 0
     }
     
     func present(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
@@ -456,6 +454,20 @@ final class MockDuckPlayerHostingViewControlling: DuckPlayerHostingViewControlli
         lastPresentedAnimated = animated
         lastPresentedCompletion = completion
         completion?()
+    }
+    
+    func setupWebViewForLandscapeVideo() {}
+    func setupWebViewForPortraitVideo() {}
+}
+
+// Add MockNotificationCenter
+final class MockNotificationCenter {
+    var postCalled = false
+    var lastPostedNotification: Notification?
+    
+    func post(name: Notification.Name, object: Any?, userInfo: [AnyHashable: Any]?) {
+        postCalled = true
+        lastPostedNotification = Notification(name: name, object: object, userInfo: userInfo)
     }
 }
 

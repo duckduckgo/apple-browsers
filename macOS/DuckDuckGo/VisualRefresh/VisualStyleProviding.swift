@@ -81,7 +81,7 @@ struct VisualStyle {
         }
     }
 
-    static var old: VisualStyle {
+    static var legacy: VisualStyle {
         return VisualStyle(addressBarHeightForDefault: 48,
                            addressBarHeightForHomePage: 52,
                            addressBarHeightForPopUpWindow: 42,
@@ -93,7 +93,7 @@ struct VisualStyle {
                            addressBarBottomPaddingForPopUpWindow: 0)
     }
 
-    static var new: VisualStyle {
+    static var current: VisualStyle {
         return VisualStyle(addressBarHeightForDefault: 52,
                            addressBarHeightForHomePage: 52,
                            addressBarHeightForPopUpWindow: 52,
@@ -138,7 +138,7 @@ final class VisualStyleProvider: VisualStyleProviding {
     }
 
     private var currentStyle: VisualStyle {
-        return isEnabled ? .new : .old
+        return isEnabled ? .current : .legacy
     }
 
     private func subscribeToLocalOverride() {

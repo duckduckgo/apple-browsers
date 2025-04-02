@@ -56,10 +56,12 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 }
 
 public enum SubscriptionPixelType {
-    case deadToken
-    case v1MigrationSuccessful
-    case v1MigrationFailed
+    case invalidRefreshToken
+    case migrationStarted
+    case migrationSucceeded
+    case migrationFailed(Error)
     case subscriptionIsActive
+    case getTokensError(AuthTokensCachePolicy, Error)
 }
 
 public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
@@ -155,7 +157,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManagerV2?
     private let subscriptionEndpointService: SubscriptionEndpointServiceV2
-    private let pixelHandler: PixelHandler
+    private let pixelHandler: PixelHandler?
     public var tokenRecoveryHandler: TokenRecoveryHandler?
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
@@ -166,7 +168,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 oAuthClient: any OAuthClient,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
-                pixelHandler: @escaping PixelHandler,
+                pixelHandler: PixelHandler? = nil,
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
@@ -241,13 +243,22 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         // Attempting V1 token migration
         do {
+            pixelHandler?(.migrationStarted)
             if (try await oAuthClient.migrateV1Token()) != nil {
-                pixelHandler(.v1MigrationSuccessful)
+                pixelHandler?(.migrationSucceeded)
             }
             v1MigrationNeeded = false
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
-            pixelHandler(.v1MigrationFailed)
+            pixelHandler?(.migrationFailed(error))
+            switch error {
+            case OAuthServiceError.authAPIError(let code) where code ==  OAuthRequest.BodyErrorCode.invalidToken:
+                // Case where the token is not valid anymore, probably because the BE deleted the account: https://app.asana.com/0/1205842942115003/1209427500692943/f
+                v1MigrationNeeded = false
+                await signOut(notifyUI: true)
+            default:
+                break
+            }
         }
     }
 
@@ -259,7 +270,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             let subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
             if subscription.isActive {
-                pixelHandler(.subscriptionIsActive)
+                pixelHandler?(.subscriptionIsActive)
             }
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.log("No Subscription available")
@@ -412,14 +423,21 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             return resultTokenContainer
-        } catch OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest {
-            do {
-                return try await attemptTokenRecovery()
-            } catch {
-                throw error
-            }
         } catch {
-            throw SubscriptionManagerError.tokenUnavailable(error: error)
+            switch error {
+            case OAuthClientError.missingTokens: // Expected when no tokens are available
+                throw SubscriptionManagerError.tokenUnavailable(error: error)
+            case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
+                pixelHandler?(.getTokensError(policy, error))
+                do {
+                    return try await attemptTokenRecovery()
+                } catch {
+                    throw error
+                }
+            default:
+                pixelHandler?(.getTokensError(policy, error))
+                throw SubscriptionManagerError.tokenUnavailable(error: error)
+            }
         }
     }
 
@@ -430,7 +448,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         }
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
-        pixelHandler(.deadToken)
+        pixelHandler?(.invalidRefreshToken)
         await signOut(notifyUI: false)
 
         try await tokenRecoveryHandler()

@@ -468,17 +468,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         } else {
             // MARK: Subscription V2
             Logger.networkProtection.log("Configure Subscription V2")
-            let configuration = URLSessionConfiguration.default
-            configuration.httpCookieStorage = nil
-            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-            let urlSession = URLSession(configuration: configuration,
-                                        delegate: SessionDelegate(),
-                                        delegateQueue: nil)
-            let apiService = DefaultAPIService(urlSession: urlSession)
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
-            
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
@@ -488,24 +480,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .deadToken:
-                    // handled by the main app: Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                    break
-                case .subscriptionIsActive, .v1MigrationFailed, .v1MigrationSuccessful: // handled by the main app only
-                    break
-                }
-            }
+
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
                                                                    tokenRecoveryHandler: {
                 Logger.networkProtection.error("Expired refresh token detected")
             },

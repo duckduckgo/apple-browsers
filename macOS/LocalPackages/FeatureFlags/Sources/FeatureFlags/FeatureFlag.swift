@@ -162,7 +162,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popoverVsBannerExperiment:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         case .privacyProAuthV2:
-            return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .visualRefresh:

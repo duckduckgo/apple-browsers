@@ -151,7 +151,6 @@ extension MainViewFactory {
     }
 
     private func createToolbar() {
-
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
         superview.addSubview(coordinator.toolbar)

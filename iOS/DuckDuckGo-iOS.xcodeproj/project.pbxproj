@@ -374,7 +374,7 @@
 		65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */; };
 		65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */; };
 		65D091262D47DF2A00226164 /* DuckPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D091252D47DF2500226164 /* DuckPlayerView.swift */; };
-		65D7483F2D9C3EDB00554B1D /* DuckPlayerHostingViewControlling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D7483E2D9C3EDB00554B1D /* DuckPlayerHostingViewControlling.swift */; };
+		65D7483F2D9C3EDB00554B1D /* DuckPlayerHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D7483E2D9C3EDB00554B1D /* DuckPlayerHosting.swift */; };
 		65D748412D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D748402D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift */; };
 		65DE1D722D9558070013CA0B /* DuckPlayerToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65DE1D712D9558010013CA0B /* DuckPlayerToastView.swift */; };
 		65EBA0B42D7F489700E34997 /* NativeDuckPlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */; };
@@ -1909,7 +1909,7 @@
 		65BD16382D8DA439000795DE /* DuckPlayerDebugSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerDebugSettingsView.swift; sourceTree = "<group>"; };
 		65D091232D47DF1B00226164 /* DuckPlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerViewModel.swift; sourceTree = "<group>"; };
 		65D091252D47DF2500226164 /* DuckPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerView.swift; sourceTree = "<group>"; };
-		65D7483E2D9C3EDB00554B1D /* DuckPlayerHostingViewControlling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerHostingViewControlling.swift; sourceTree = "<group>"; };
+		65D7483E2D9C3EDB00554B1D /* DuckPlayerHosting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerHosting.swift; sourceTree = "<group>"; };
 		65D748402D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerNativeUIPresenterTests.swift; sourceTree = "<group>"; };
 		65DE1D712D9558010013CA0B /* DuckPlayerToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerToastView.swift; sourceTree = "<group>"; };
 		65EBA0B32D7F489100E34997 /* NativeDuckPlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDuckPlayerNavigationHandler.swift; sourceTree = "<group>"; };
@@ -6583,7 +6583,7 @@
 				653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */,
 				D63FF8972C1B6A45006DE24D /* DuckPlayer.swift */,
 				D6037E682C32F2E7009AAEC0 /* DuckPlayerSettings.swift */,
-				65D7483E2D9C3EDB00554B1D /* DuckPlayerHostingViewControlling.swift */,
+				65D7483E2D9C3EDB00554B1D /* DuckPlayerHosting.swift */,
 				D62EC3C12C248AF800FC9D04 /* DuckPlayerNavigationHandling.swift */,
 				31860A5A2C57ED2D005561F5 /* DuckPlayerStorage.swift */,
 			);
@@ -9202,7 +9202,7 @@
 				AA4D6A6A23DB87B1007E8790 /* AppIconManager.swift in Sources */,
 				8563A03C1F9288D600F04442 /* BrowserChromeManager.swift in Sources */,
 				317DF6082D01E7B900DE0145 /* RoundedPageSheetContainerViewController.swift in Sources */,
-				65D7483F2D9C3EDB00554B1D /* DuckPlayerHostingViewControlling.swift in Sources */,
+				65D7483F2D9C3EDB00554B1D /* DuckPlayerHosting.swift in Sources */,
 				980891A32237146B00313A70 /* Feedback.swift in Sources */,
 				F1D796F01E7B07610019D451 /* BookmarksViewControllerCells.swift in Sources */,
 				9F9EE4D42C37BB1300D4118E /* OnboardingView+Landing.swift in Sources */,

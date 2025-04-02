@@ -57,7 +57,7 @@ enum UserText {
                                      comment: "Caption for the subscription preferences section for activating subscription on other devices while email is not yet added to subscription")
         }
     }
-    static let activateSectionLearnMoreButton = NSLocalizedString("subscription.preferences.subscription.activate.learn.more.button", bundle: Bundle.module, value: "Learn more", comment: "Button that opens help pages explaining subscription activation via email")
+    static let activateSectionLearnMoreButton = NSLocalizedString("subscription.preferences.subscription.activate.learn.more.button", bundle: Bundle.module, value: "Learn More", comment: "Button that opens help pages explaining subscription activation via email")
 
     static let editEmailButton = NSLocalizedString("subscription.preferences.subscription.activate.edit.email.button", bundle: Bundle.module, value: "Edit", comment: "Button for editing email address added to subscription")
     static let addToDeviceButtonTitle = NSLocalizedString("subscription.preferences.subscription.add.to.device.button.title", bundle: Bundle.module, value: "Add to Device...", comment: "Button for adding subscription to other devices")

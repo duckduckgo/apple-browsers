@@ -244,13 +244,11 @@ final class SubscriptionDebugViewController: UITableViewController {
                 cell.textLabel?.text = "Current override"
 
                 var cfg = UIButton.Configuration.plain()
-//                cfg.titleAlignment = .leading
                 let button = UIButton(configuration: cfg)
 
                 let adjustMenuButtonWidth = {
                     button.frame = CGRect(x: 0, y: 0, width: 200, height: 40)
                     button.sizeToFit()
-//                    cell.layoutIfNeeded()
                 }
 
                 let currentRegionOverride = subscriptionUserDefaults.storefrontRegionOverride

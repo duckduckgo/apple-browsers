@@ -137,14 +137,14 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
     }
 
-    func testWhenCancelSkipOnboardingActionIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
+    func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIphoneFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
 
         // WHEN
-        sut.cancelSkipOnboardingAction()
+        sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
         XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 4))))
@@ -276,14 +276,14 @@ final class OnboardingIntroViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: true), step: .hidden)))
     }
 
-    func testWhenCancelSkipOnboardingActionIsCalled_AndIsIpadFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
+    func testWhenStartOnboardingActionResumingTrueIsCalled_AndIsIpadFlow_ThenViewStateChangesToBrowsersComparisonDialogAndProgressIs2of4() throws {
         // GIVEN
         onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: false)
         let currentStep = try XCTUnwrap(onboardingManagerMock.onboardingSteps.first)
         let sut = makeSUT(currentOnboardingStep: currentStep)
 
         // WHEN
-        sut.cancelSkipOnboardingAction()
+        sut.startOnboardingAction(isResumingOnboarding: true)
 
         // THEN
         XCTAssertEqual(sut.state, .onboarding(.init(type: .browsersComparisonDialog, step: .init(currentStep: 1, totalSteps: 2))))
@@ -476,6 +476,47 @@ final class OnboardingIntroViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertFalse(pixelReporterMock.didCallMeasureChooseBottomAddressBarPosition)
+    }
+
+    // MARK: - Pixels Skip Onboarding
+
+    func testWhenSkipOnboardingActionIsCalledThenPixelReporterTrackSkipOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
+
+        // WHEN
+        sut.skipOnboardingAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureSkipOnboardingCTAAction)
+    }
+
+    func testWhenConfirmSkipOnboardingActionIsCalledThenPixelReporterTrackConfirmSkipOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureConfirmSkipOnboardingCTAAction)
+
+        // WHEN
+        sut.confirmSkipOnboardingAction()
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureConfirmSkipOnboardingCTAAction)
+    }
+
+    func testWhenStartOnboardingActionResumingTrueIsCalledThenPixelReporterTrackResumeOnboardingCTA() {
+        // GIVEN
+        onboardingManagerMock.onboardingSteps = OnboardingIntroStep.returningUserSteps(isIphone: true)
+        let sut = makeSUT(currentOnboardingStep: .introDialog(isReturningUser: true))
+        XCTAssertFalse(pixelReporterMock.didCallMeasureResumeOnboardingCTAAction)
+
+        // WHEN
+        sut.startOnboardingAction(isResumingOnboarding: true)
+
+        // THEN
+        XCTAssertTrue(pixelReporterMock.didCallMeasureResumeOnboardingCTAAction)
     }
 
     // MARK: - Copy

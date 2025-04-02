@@ -24,6 +24,9 @@ import Onboarding
 
 final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, OnboardingSiteSuggestionsPixelReporting, OnboardingSearchSuggestionsPixelReporting, OnboardingCustomInteractionPixelReporting, OnboardingDaxDialogsReporting, OnboardingAddToDockReporting, OnboardingSetAsDefaultBrowserExperimentReporting {
     private(set) var didCallMeasureOnboardingIntroImpression = false
+    private(set) var didCallMeasureSkipOnboardingCTAAction = false
+    private(set) var didCallMeasureConfirmSkipOnboardingCTAAction = false
+    private(set) var didCallMeasureResumeOnboardingCTAAction = false
     private(set) var didCallMeasureBrowserComparisonImpression = false
     private(set) var didCallMeasureChooseBrowserCTAAction = false
     private(set) var didCallMeasureChooseAppIconImpression = false
@@ -55,6 +58,18 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureOnboardingIntroImpression() {
         didCallMeasureOnboardingIntroImpression = true
+    }
+
+    func measureSkipOnboardingCTAAction() {
+        didCallMeasureSkipOnboardingCTAAction = true
+    }
+
+    func measureConfirmSkipOnboardingCTAAction() {
+        didCallMeasureConfirmSkipOnboardingCTAAction = true
+    }
+
+    func measureResumeOnboardingCTAAction() {
+        didCallMeasureResumeOnboardingCTAAction = true
     }
 
     func measureBrowserComparisonImpression() {

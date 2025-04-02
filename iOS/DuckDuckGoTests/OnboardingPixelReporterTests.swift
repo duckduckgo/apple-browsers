@@ -70,6 +70,63 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingUniquePixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
+    func testWhenMeasureSkipOnboardingCTAIsCalledThenSkipOnboardingCTAEventFires() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingIntroSkipOnboardingCTAPressed
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureSkipOnboardingCTAAction()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, "m_preonboarding_skip-onboarding-pressed")
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureConfirmSkipOnboardingCTAIsCalledThenConfirmSkipOnboardingCTAEventFires() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingIntroConfirmSkipOnboardingCTAPressed
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureConfirmSkipOnboardingCTAAction()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, "m_preonboarding_confirm-skip-onboarding-pressed")
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureCancelSkipOnboardingCTAIsCalledThenResumeOnboardingCTAEventFires() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingIntroResumeOnboardingCTAPressed
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureResumeOnboardingCTAAction()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, "m_preonboarding_resume-onboarding-pressed")
+        XCTAssertEqual(OnboardingPixelFireMock.capturedParams, [:])
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
     func testWhenMeasureBrowserComparisonImpressionThenOnboardingIntroComparisonChartShownEventFires() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingIntroComparisonChartShownUnique

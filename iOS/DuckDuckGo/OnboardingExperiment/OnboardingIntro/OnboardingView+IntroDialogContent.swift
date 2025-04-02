@@ -83,6 +83,7 @@ extension OnboardingView {
                         }, action: {
                             isSkipped.wrappedValue = false
                             showSkipOnboarding = true
+                            skipAction()
                         })
                     }
                 }

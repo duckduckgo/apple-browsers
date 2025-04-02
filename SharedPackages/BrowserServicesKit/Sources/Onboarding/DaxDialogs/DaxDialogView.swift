@@ -25,6 +25,7 @@ private enum DaxDialogMetrics {
     static let contentPadding: CGFloat = 24.0
     static let shadowRadius: CGFloat = 5.0
     static let stackSpacing: CGFloat = 8
+    static let dismissButtonPadding: CGFloat = 8
 
     enum DaxLogo {
         static let size: CGFloat = 54.0
@@ -150,8 +151,8 @@ public struct DaxDialogView<Content: View>: View {
             .ifLet(onManualDismiss) { view, onDismiss in
                 view.overlay(alignment: .topTrailing) {
                     OnboardingDismissButton(action: onDismiss)
-                        .alignmentGuide(.top) { $0.height/2 - 8 }
-                        .alignmentGuide(.trailing) { $0.width/2 + 8 }
+                        .alignmentGuide(.top) { $0.height/2 - DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.trailing) { $0.width/2 + DaxDialogMetrics.dismissButtonPadding }
                 }
             }
     }
@@ -210,7 +211,7 @@ struct OnboardingDismissButton: View {
     var body: some View {
         Button(action: action) {
             Image(.close16)
-                .padding(8)
+                .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(.white.opacity(0.72))
                 .clipShape(Circle())
         }
@@ -221,6 +222,7 @@ struct OnboardingDismissButton: View {
     }
 }
 
+// TODO: Onboarding - Move to BSK
 extension View {
 
     @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {

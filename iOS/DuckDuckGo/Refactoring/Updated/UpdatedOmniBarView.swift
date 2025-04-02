@@ -374,7 +374,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
 
-        privacyInfoContainer.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
+        privacyInfoContainer.privacyIcon.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
     }
 
     private func setUpAccessibility() {

@@ -270,12 +270,25 @@ private struct EditableCreditCardNumberCell: View {
             Coordinator(self)
         }
         
-        class Coordinator: NSObject, UITextFieldDelegate {
+        class Coordinator: NSObject, UITextFieldDelegate, UITextPasteDelegate {
             let parent: CreditCardNumberField
             private var isEditingActive: Bool = false
+            private var isPasteOperation = false
+            private var needsEndCursorPositioning = false
             
             init(_ parent: CreditCardNumberField) {
                 self.parent = parent
+            }
+            
+            func textPasteConfigurationSupporting(
+                _ supportingPasteboard: UITextPasteConfigurationSupporting,
+                transform item: UITextPasteItem
+            ) {
+                isPasteOperation = true
+                needsEndCursorPositioning = true
+                
+                // Allow paste to proceed normally
+                item.setDefaultResult()
             }
             
             @objc func textFieldDidChange(_ textField: UITextField) {
@@ -295,6 +308,16 @@ private struct EditableCreditCardNumberCell: View {
                 parent.isCardValid = CreditCardValidation.isValidCardNumber(digitsOnly)
                 
                 updateCursorPosition(textField, oldText: text, newText: formatted, currentSelection: currentSelectedRange)
+                
+                if needsEndCursorPositioning {
+                    DispatchQueue.main.async {
+                        if let newPosition = textField.position(from: textField.beginningOfDocument, offset: formatted.count) {
+                            textField.selectedTextRange = textField.textRange(from: newPosition, to: newPosition)
+                        }
+                        self.isPasteOperation = false
+                        self.needsEndCursorPositioning = false
+                    }
+                }
             }
             
             private func updateCursorPosition(_ textField: UITextField, oldText: String, newText: String, currentSelection: UITextRange?) {
@@ -304,8 +327,6 @@ private struct EditableCreditCardNumberCell: View {
                 
                 let oldTextPrefix = oldText.prefix(cursorPosition)
                 let oldSpacesBeforeCursor = oldTextPrefix.filter { $0 == " " }.count
-                
-                // Calculate adjustment for new cursor position
                 var newCursorPosition = cursorPosition
                 
                 if newCursorPosition < newText.count {

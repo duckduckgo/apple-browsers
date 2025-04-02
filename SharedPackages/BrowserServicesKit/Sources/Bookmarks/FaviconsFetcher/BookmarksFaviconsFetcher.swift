@@ -183,13 +183,12 @@ public final class BookmarksFaviconsFetcher {
      * This function cancels any pending fetch operation and schedules a new operation.
      */
     public func startFetching() async {
-        let faviconStore = await faviconStore()
         cancelOngoingFetchingIfNeeded()
         let operation = FaviconsFetchOperation(
             database: database,
             stateStore: stateStore,
             fetcher: fetcher,
-            faviconStore: faviconStore
+            faviconStore: await faviconStore()
         )
         operation.didStart = { [weak self] in
             self?.fetchingDidStartSubject.send()

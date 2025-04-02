@@ -25,7 +25,8 @@ import WebKit
 
 /// Protocol that defines the requirements for view controllers that can host DuckPlayer UI elements
 public protocol DuckPlayerHosting: UIViewController {
-    var webView: WKWebView { get }
+    
+    var webView: WKWebView! { get }
 
     /// The constraint that controls the bottom spacing of the main content
     var contentBottomConstraint: NSLayoutConstraint? { get }
@@ -614,14 +615,4 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         postPillVisibilityNotification(isVisible: true)
     }
 
-}
-
-extension TabViewController: DuckPlayerHosting {
-    var contentBottomConstraint: NSLayoutConstraint? {
-        return webViewBottomAnchorConstraint
-    }
-    
-    var persistentBottomBarHeight: CGFloat {
-        return chromeDelegate?.barsMaxHeight ?? 0.0
-    }
 }

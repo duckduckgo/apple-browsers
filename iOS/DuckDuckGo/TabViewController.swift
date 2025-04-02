@@ -3346,12 +3346,10 @@ extension TabViewController: DuckPlayerHosting {
         return chromeDelegate?.barsMaxHeight ?? 0.0
     }
     
-    var webView: WKWebView {
-        return webView
-    }
 }
 
 extension TabViewController {
+    
     func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
         publisher
             .receive(on: DispatchQueue.main)
@@ -3369,8 +3367,7 @@ extension TabViewController {
                     
                 case .reset:
                     let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                    self.webViewBottomAnchorConstraint?.constant = 
-                        self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
                 }
                 
                 self.view.layoutIfNeeded()

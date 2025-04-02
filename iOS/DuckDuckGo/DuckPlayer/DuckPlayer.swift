@@ -322,7 +322,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
 
     /// Native UI Presenter
-    private let nativeUIPresenter: DuckPlayerNativeUIPresenting
+    let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.

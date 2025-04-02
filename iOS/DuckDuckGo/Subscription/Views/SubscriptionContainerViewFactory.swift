@@ -64,6 +64,7 @@ enum SubscriptionContainerViewFactory {
                                                                        appStoreAccountManagementFlow: appStoreAccountManagementFlow,
                                                                        privacyProDataReporter: privacyProDataReporter)
         )
+        viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
             .environmentObject(navigationCoordinator)
     }
@@ -174,6 +175,7 @@ enum SubscriptionContainerViewFactory {
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
                                                                          privacyProDataReporter: privacyProDataReporter)
         )
+        viewModel.email.setEmailFlowMode(.restoreFlow)
         return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
             .environmentObject(navigationCoordinator)
     }

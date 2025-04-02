@@ -133,6 +133,7 @@ struct SubscriptionSettingsView: View {
                 viewModel.displayLearnMoreView(true)
                 return .handled
             })
+            .tint(Color(designSystemColor: .accent))
     }
 
     private var manageSection: some View {
@@ -516,6 +517,7 @@ struct SubscriptionSettingsViewV2: View {
                 viewModel.displayLearnMoreView(true)
                 return .handled
             })
+            .tint(Color(designSystemColor: .accent))
     }
 
     private var manageSection: some View {

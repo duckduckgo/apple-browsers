@@ -92,6 +92,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.privacyInfoContainer.isHidden = true
 
         decorate()
+
+        refreshState(state)
     }
 
     private func enableInteractionsWithPointer() {

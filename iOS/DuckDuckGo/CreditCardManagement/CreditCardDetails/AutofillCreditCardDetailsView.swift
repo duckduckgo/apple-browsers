@@ -281,7 +281,12 @@ private struct EditableCreditCardNumberCell: View {
             @objc func textFieldDidChange(_ textField: UITextField) {
                 let text = textField.text ?? ""
                 let currentSelectedRange = textField.selectedTextRange
-                let digitsOnly = CreditCardValidation.extractDigits(from: text)
+                var digitsOnly = CreditCardValidation.extractDigits(from: text)
+                
+                if digitsOnly.count > 19 {
+                    digitsOnly = String(digitsOnly.prefix(19))
+                }
+                
                 let formatted = CreditCardValidation.formattedCardNumber(digitsOnly)
                 
                 parent.cardNumber = digitsOnly

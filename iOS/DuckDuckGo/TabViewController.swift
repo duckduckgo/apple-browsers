@@ -383,7 +383,7 @@ class TabViewController: UIViewController {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
                                    featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
-        if duckPlayer.settings.nativeUI && featureFlagger.isFeatureOn(.duckPlayerNativeUI) {
+        if duckPlayer.settings.nativeUI {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)

@@ -21,6 +21,7 @@ import XCTest
 import Combine
 import SwiftUI
 import UIKit
+import WebKit
 
 @testable import DuckDuckGo
 
@@ -45,14 +46,36 @@ class TestNotificationCenter: NotificationCenter {
     }
 }
 
+final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
+    var webView: WKWebView!
+    var contentBottomConstraint: NSLayoutConstraint?
+    var persistentBottomBarHeight: CGFloat = 0
+    var presentCalled = false
+    private var _presentedVC: UIViewController?
+    
+    override var presentedViewController: UIViewController? {
+        get { return _presentedVC }
+    }
+    
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        _presentedVC = viewControllerToPresent
+        presentCalled = true
+        super.present(viewControllerToPresent, animated: flag, completion: completion)
+    }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        _presentedVC = nil
+        super.dismiss(animated: flag, completion: completion)
+    }
+}
+
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     
     // MARK: - Properties
     
     private var sut: DuckPlayerNativeUIPresenter!
-    private var mockHostViewController: DuckPlayerTabViewControllerMock!
+    private var mockHostViewController: MockDuckPlayerHosting!
     private var mockAppSettings: AppSettingsMock!
-    private var mockChromeDelegate: DuckPlayerBrowserChromeDelegateMock!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
     private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
     private var cancellables: Set<AnyCancellable>!
@@ -63,10 +86,9 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     override func setUp() {
         super.setUp()
         testNotificationCenter = TestNotificationCenter()
-        mockHostViewController = DuckPlayerTabViewControllerMock()
-        mockChromeDelegate = DuckPlayerBrowserChromeDelegateMock()
-        mockChromeDelegate.barsMaxHeight = 44.0 // Set a standard address bar height
-        mockHostViewController.chromeDelegate = mockChromeDelegate
+        mockHostViewController = MockDuckPlayerHosting()
+        mockHostViewController.webView = WKWebView(frame: .zero, configuration: .nonPersistent())
+        mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
         
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
@@ -80,7 +102,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         sut = nil
         mockHostViewController = nil
         mockAppSettings = nil
-        mockChromeDelegate = nil
         mockPrivacyConfig = nil
         mockInternalUserDecider = nil
         cancellables = nil
@@ -143,7 +164,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Verify web view constraint updates for top address bar
         let expectedTopBarConstraint = -DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint // -90
-        XCTAssertEqual(mockHostViewController.webViewBottomAnchorConstraint?.constant, expectedTopBarConstraint, "Web view bottom constraint should be updated for pill height with top address bar")
+        XCTAssertEqual(mockHostViewController.contentBottomConstraint?.constant, expectedTopBarConstraint, "Web view bottom constraint should be updated for pill height with top address bar")
         
         // Test with bottom address bar position
         mockAppSettings.currentAddressBarPosition = .bottom
@@ -151,13 +172,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Simulate sheet animation completion and visibility for bottom address bar test
         containerViewModel.sheetAnimationCompleted = true
-        //containerViewModel.sheetVisible = true
         
         // Verify web view constraint updates for bottom address bar
-        // Expected value = -(barsMaxHeight + webViewRequiredBottomConstraint)
+        // Expected value = -(persistentBottomBarHeight + webViewRequiredBottomConstraint)
         // = -(44 + 90) = -134
-        let expectedBottomBarConstraint = -(mockChromeDelegate.barsMaxHeight + DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint)
-        XCTAssertEqual(mockHostViewController.webViewBottomAnchorConstraint?.constant, expectedBottomBarConstraint, "Web view bottom constraint should account for bottom address bar and pill height")
+        let expectedBottomBarConstraint = -(mockHostViewController.persistentBottomBarHeight + DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint)
+        XCTAssertEqual(mockHostViewController.contentBottomConstraint?.constant, expectedBottomBarConstraint, "Web view bottom constraint should account for bottom address bar and pill height")
         
         // Verify notification posting
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
@@ -184,7 +204,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let (navigation, settings) = sut.presentDuckPlayer(
             videoID: videoID,
             source: source,
-            in: mockHostViewController as? TabViewController,
+            in: mockHostViewController,
             title: nil,
             timestamp: timestamp
         )
@@ -225,8 +245,8 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Verify presentation event count was incremented
         XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 1, "Presentation event count should be incremented")
         
-        // Validate state updatest
-        XCTAssertEqual(sut.state.hasBeenShown, true, "DuckPlayer should not have been shown yet")        
+        // Validate state updates
+        XCTAssertEqual(sut.state.hasBeenShown, true, "DuckPlayer should have been shown")
     }
 
     @MainActor
@@ -235,14 +255,13 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = 30
         let source: DuckPlayer.VideoNavigationSource = .youtube
-        var pillPresentedAfterDismiss = false
         
         // When
         // First present the pill
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
         
         // Present DuckPlayer
-        let (navigation, settings) = sut.presentDuckPlayer(
+        let (_, _) = sut.presentDuckPlayer(
             videoID: videoID,
             source: source,
             in: mockHostViewController,

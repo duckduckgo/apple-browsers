@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import SwiftUICore
 
 enum ToolbarContentState: Equatable {
     case newTab
@@ -43,14 +44,63 @@ protocol ToolbarStateHandling {
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
     private let featureFlagger: FeatureFlagger
+    let isExperimentalThemingEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
 
-   lazy var backButton = createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: "BrowsePrevious")
-   lazy var fireButton = createBarButtonItem(title: UserText.actionForgetAll, imageName: "Fire")
-   lazy var forwardButton = createBarButtonItem(title: UserText.keyCommandBrowserForward, imageName: "BrowseNext")
-   lazy var tabSwitcherButton = createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageName: "Add-24")
-   lazy var bookmarkButton = createBarButtonItem(title: UserText.actionOpenBookmarks, imageName: "Book-24")
-   lazy var passwordsButton = createBarButtonItem(title: UserText.actionOpenPasswords, imageName: "Key-24")
-   lazy var browserMenuButton = createBarButtonItem(title: UserText.menuButtonHint, imageName: "Menu-Horizontal-24")
+    lazy var backButton = {
+        let imageName = isExperimentalThemingEnabled ? "Arrow-Left-New-24" : "BrowsePrevious"
+        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
+    }()
+
+    let fireButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(named: "Fire-New-24"), for: .normal)
+        button.tintColor = .label
+
+        button.frame = CGRect(x: 0, y: 0, width: 84, height: 44)
+        button.backgroundColor = UIColor(Color.shade(0.09))
+        button.layer.cornerRadius = 14
+
+        button.imageView?.contentMode = .scaleAspectFit
+        button.contentVerticalAlignment = .center
+        button.contentHorizontalAlignment = .center
+
+        return button
+    }()
+
+    lazy var fireBarButtonItem = {
+        if isExperimentalThemingEnabled {
+            let barButtonItem = UIBarButtonItem(customView: fireButton)
+            barButtonItem.title = UserText.actionForgetAll
+            return barButtonItem
+        } else {
+            return createBarButtonItem(title: UserText.actionForgetAll, imageName: "Fire")
+        }
+    }()
+
+    lazy var forwardButton = {
+        let imageName = isExperimentalThemingEnabled ? "Arrow-Right-New-24" : "BrowseNext"
+        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageName: imageName)
+    }()
+
+    lazy var tabSwitcherButton = {
+        let imageName = isExperimentalThemingEnabled ? "Tab-New-24" : "Add-24"
+        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageName: imageName)
+    }()
+
+    lazy var bookmarkButton = {
+        let imageName = isExperimentalThemingEnabled ? "Bookmarks-Stacked-24" : "Book-24"
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageName: imageName)
+    }()
+
+    lazy var passwordsButton = {
+        let imageName = isExperimentalThemingEnabled ? "Key-New-24" : "Key-24"
+        return createBarButtonItem(title: UserText.actionOpenPasswords, imageName: imageName)
+    }()
+
+    lazy var browserMenuButton = {
+        let imageName = isExperimentalThemingEnabled ? "Menu-Hamburger-New-24" : "Menu-Horizontal-24"
+        return createBarButtonItem(title: UserText.menuButtonHint, imageName: imageName)
+    }()
 
     private var state: ToolbarContentState?
 
@@ -106,7 +156,7 @@ final class ToolbarHandler: ToolbarStateHandling {
             .flexibleSpace(),
             forwardButton,
             .flexibleSpace(),
-            fireButton,
+            fireBarButtonItem,
             .flexibleSpace(),
             tabSwitcherButton,
             .flexibleSpace(),
@@ -115,17 +165,30 @@ final class ToolbarHandler: ToolbarStateHandling {
     }
 
     private func createNewTabButtons() -> [UIBarButtonItem] {
-        return [
-            bookmarkButton,
-            .flexibleSpace(),
-            passwordsButton,
-            .flexibleSpace(),
-            fireButton,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
-            browserMenuButton
-        ]
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            return [
+                passwordsButton,
+                .flexibleSpace(),
+                bookmarkButton,
+                .flexibleSpace(),
+                fireBarButtonItem,
+                .flexibleSpace(),
+                tabSwitcherButton,
+                .flexibleSpace(),
+                browserMenuButton
+            ]
+        } else {
+            return [
+                bookmarkButton,
+                .flexibleSpace(),
+                passwordsButton,
+                .flexibleSpace(),
+                fireBarButtonItem,
+                .flexibleSpace(),
+                tabSwitcherButton,
+                .flexibleSpace(),
+                browserMenuButton
+            ]
+        }
     }
-
 }

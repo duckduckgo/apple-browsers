@@ -46,7 +46,7 @@ enum AddressBarSizeClass {
     }
 }
 
-struct VisualStyle {
+struct VisualStyle: VisualStyleProviding {
     private let addressBarHeightForDefault: CGFloat
     private let addressBarHeightForHomePage: CGFloat
     private let addressBarHeightForPopUpWindow: CGFloat
@@ -65,7 +65,7 @@ struct VisualStyle {
         }
     }
 
-    func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default: return addressBarTopPaddingForDefault
         case .homePage: return addressBarTopPaddingForHomePage
@@ -73,7 +73,7 @@ struct VisualStyle {
         }
     }
 
-    func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default: return addressBarBottomPaddingForDefault
         case .homePage: return addressBarBottomPaddingForHomePage
@@ -81,7 +81,7 @@ struct VisualStyle {
         }
     }
 
-    static var legacy: VisualStyle {
+    static var legacy: VisualStyleProviding {
         return VisualStyle(addressBarHeightForDefault: 48,
                            addressBarHeightForHomePage: 52,
                            addressBarHeightForPopUpWindow: 42,
@@ -93,7 +93,7 @@ struct VisualStyle {
                            addressBarBottomPaddingForPopUpWindow: 0)
     }
 
-    static var current: VisualStyle {
+    static var current: VisualStyleProviding {
         return VisualStyle(addressBarHeightForDefault: 52,
                            addressBarHeightForHomePage: 52,
                            addressBarHeightForPopUpWindow: 52,
@@ -106,7 +106,7 @@ struct VisualStyle {
     }
 }
 
-final class VisualStyleProvider: VisualStyleProviding {
+final class VisualStyleManager {
     private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
@@ -117,24 +117,8 @@ final class VisualStyleProvider: VisualStyleProviding {
         subscribeToLocalOverride()
     }
 
-    // MARK: - VisualStyleProviding implementation
-
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
-        return currentStyle.addressBarHeight(for: type)
-    }
-
-    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat {
-        return currentStyle.addressBarTopPaddig(for: type)
-    }
-
-    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat {
-        return currentStyle.addressBarBottomPaddig(for: type)
-    }
-
-    // MARK: - Private properties
-
-    private var currentStyle: VisualStyle {
-        return featureFlagger.isFeatureOn(.visualRefresh) ? .current : .legacy
+    var style: any VisualStyleProviding {
+        return featureFlagger.isFeatureOn(.visualRefresh) ? VisualStyle.current : VisualStyle.legacy
     }
 
     private func subscribeToLocalOverride() {

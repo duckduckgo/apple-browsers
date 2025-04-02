@@ -115,7 +115,7 @@ final class NavigationBarViewController: NSViewController {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
-    private let visualStyleProvider: VisualStyleProviding
+    private let visualStyleManager: VisualStyleManager
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -133,7 +133,7 @@ final class NavigationBarViewController: NSViewController {
                        aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleProvider: VisualStyleProviding = NSApp.delegateTyped.visualStyleProvider
+                       visualStyleManager: VisualStyleManager = NSApp.delegateTyped.visualStyleManager
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -147,7 +147,7 @@ final class NavigationBarViewController: NSViewController {
                 aiChatMenuConfig: aiChatMenuConfig,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyleConfigurable: visualStyleProvider
+                visualStyleManager: visualStyleManager
             )
         }!
     }
@@ -163,7 +163,7 @@ final class NavigationBarViewController: NSViewController {
         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyleConfigurable: VisualStyleProviding
+        visualStyleManager: VisualStyleManager
     ) {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
@@ -174,7 +174,7 @@ final class NavigationBarViewController: NSViewController {
         self.aiChatMenuConfig = aiChatMenuConfig
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
-        self.visualStyleProvider = visualStyleConfigurable
+        self.visualStyleManager = visualStyleManager
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
         super.init(coder: coder)
@@ -716,13 +716,13 @@ final class NavigationBarViewController: NSViewController {
             guard let self else { return }
 
             let height: NSLayoutConstraint = animated ? addressBarHeightConstraint.animator() : addressBarHeightConstraint
-            height.constant = visualStyleProvider.addressBarHeight(for: sizeClass)
+            height.constant = visualStyleManager.style.addressBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
-            barTop.constant = visualStyleProvider.addressBarTopPaddig(for: sizeClass)
+            barTop.constant = visualStyleManager.style.addressBarTopPadding(for: sizeClass)
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
-            bottom.constant = visualStyleProvider.addressBarBottomPaddig(for: sizeClass)
+            bottom.constant = visualStyleManager.style.addressBarBottomPadding(for: sizeClass)
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth

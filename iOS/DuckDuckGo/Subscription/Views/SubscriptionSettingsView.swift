@@ -486,26 +486,26 @@ struct SubscriptionSettingsViewV2: View {
                     SettingsCellView(label: UserText.subscriptionEditEmailButton,
                                      subtitle: email)
                 }.isDetailLink(false)
-
-                NavigationLink(destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
-                    navigationCoordinator: subscriptionNavigationCoordinator,
-                    subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
-                    subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
-                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                    emailFlow: .activationFlow,
-                    onDisappear: {
-                        Task {
-                            await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
-                        }
-                    }),
-                               isActive: $isShowingActivationView) {
-                    SettingsCustomCell(content: {
-                        Text(UserText.subscriptionAddToDeviceButton)
-                            .daxBodyRegular()
-                        .foregroundColor(Color.init(designSystemColor: .accent)) },
-                                       disclosureIndicator: false)
-                }.isDetailLink(false)
             }
+
+            NavigationLink(destination: SubscriptionContainerViewFactory.makeEmailFlowV2(
+                navigationCoordinator: subscriptionNavigationCoordinator,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                emailFlow: .activationFlow,
+                onDisappear: {
+                    Task {
+                        await viewModel.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
+                    }
+                }),
+                           isActive: $isShowingActivationView) {
+                SettingsCustomCell(content: {
+                    Text(UserText.subscriptionAddToDeviceButton)
+                        .daxBodyRegular()
+                    .foregroundColor(Color.init(designSystemColor: .accent)) },
+                                   disclosureIndicator: false)
+            }.isDetailLink(false)
         }
     }
 

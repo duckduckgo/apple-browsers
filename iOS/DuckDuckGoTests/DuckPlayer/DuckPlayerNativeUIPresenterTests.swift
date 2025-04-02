@@ -46,28 +46,7 @@ class TestNotificationCenter: NotificationCenter {
     }
 }
 
-final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
-    var webView: WKWebView!
-    var contentBottomConstraint: NSLayoutConstraint?
-    var persistentBottomBarHeight: CGFloat = 0
-    var presentCalled = false
-    private var _presentedVC: UIViewController?
-    
-    override var presentedViewController: UIViewController? {
-        get { return _presentedVC }
-    }
-    
-    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
-        _presentedVC = viewControllerToPresent
-        presentCalled = true
-        super.present(viewControllerToPresent, animated: flag, completion: completion)
-    }
-    
-    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
-        _presentedVC = nil
-        super.dismiss(animated: flag, completion: completion)
-    }
-}
+
 
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     
@@ -197,8 +176,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = 30
         let source: DuckPlayer.VideoNavigationSource = .youtube
-        var receivedNavigationURL: URL?
-        var settingsRequestReceived = false
         
         // When
         let (navigation, settings) = sut.presentDuckPlayer(
@@ -208,15 +185,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             title: nil,
             timestamp: timestamp
         )
-        
-        // Subscribe to publishers
-        navigation.sink { url in
-            receivedNavigationURL = url
-        }.store(in: &cancellables)
-        
-        settings.sink {
-            settingsRequestReceived = true
-        }.store(in: &cancellables)
         
         // Then
         // Verify view model was created with correct parameters

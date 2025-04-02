@@ -1101,6 +1101,10 @@ class TabViewController: UIViewController {
         chromeDelegate?.setBarsHidden(false, animated: animated, customAnimationDuration: nil)
     }
 
+    private func hideBars(animated: Bool = true) {
+        chromeDelegate?.setBarsHidden(true, animated: animated, customAnimationDuration: nil)
+    }
+
     func showPrivacyDashboard() {
         Pixel.fire(pixel: .privacyDashboardOpened)
         performSegue(withIdentifier: "PrivacyDashboard", sender: self)
@@ -3345,12 +3349,25 @@ extension TabViewController: DuckPlayerHosting {
     var persistentBottomBarHeight: CGFloat {
         return chromeDelegate?.barsMaxHeight ?? 0.0
     }
-    
+
+    func showChrome() {
+        showBars()
+    }
+
+    func hideChrome() {
+        hideBars()
+    }
+
+    func isTabCurrentlyPresented() -> Bool {
+        return delegate?.tabCheckIfItsBeingCurrentlyPresented(self) ?? false
+    }
+
 }
 
 extension TabViewController {
-    
-    func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
+        
+    // This is used to handle the webView constraint changes when DuckPlayer is presented
+    private func setupDuckPlayerConstraintHandling(publisher: AnyPublisher<DuckPlayerConstraintUpdate, Never>) {
         publisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] update in

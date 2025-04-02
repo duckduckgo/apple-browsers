@@ -198,11 +198,60 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
 
 }
 
+final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
+    var chromeVisible: Bool = false
+    var chromeHidden: Bool = false
+    
+    var url: URL?
+    var delegate: (any DuckDuckGo.TabDelegate)?
+    var webView: WKWebView!
+    var contentBottomConstraint: NSLayoutConstraint?
+    var persistentBottomBarHeight: CGFloat = 0
+    var presentCalled = false
+    private var _presentedVC: UIViewController?
+    
+    override var presentedViewController: UIViewController? {
+        get { return _presentedVC }
+    }
+    
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        _presentedVC = viewControllerToPresent
+        presentCalled = true
+        super.present(viewControllerToPresent, animated: flag, completion: completion)
+    }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        _presentedVC = nil
+        super.dismiss(animated: flag, completion: completion)
+    }
+    
+    func showChrome() {
+        chromeVisible = true
+    }
+    
+    func hideChrome() {
+        chromeVisible = false
+    }
+    
+    func setupWebViewForPortraitVideo() {
+        // NOOP
+    }
+    
+    func setupWebViewForLandscapeVideo() {
+        // NOOP
+    }
+    
+    func isTabCurrentlyPresented() -> Bool {
+        return true
+    }
+    
+}
+
 final class MockDuckPlayer: DuckPlayerControlling {
 
     // MARK: - Required Properties
     var settings: DuckPlayerSettings
-    var hostView: TabViewControllerMock?
+    var hostView: DuckPlayerHosting?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
     
@@ -257,7 +306,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         nil
     }
 
-    func setHostViewController(_ vc: TabViewControllerMock?) {
+    func setHostViewController(_ vc: any DuckDuckGo.DuckPlayerHosting) {
         self.hostView = vc
     }
 
@@ -381,7 +430,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var lastTimestampValue: TimeInterval?
 
     @MainActor
-    func presentPill(for videoID: String, in hostViewController: TabViewControllerMock, timestamp: TimeInterval?) {
+    func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHosting, timestamp: TimeInterval?) {
         presentPillCalled = true
         lastTimestampValue = timestamp
     }
@@ -390,7 +439,7 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {}
     
     @MainActor
-    func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: TabViewControllerMock, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+    func presentDuckPlayer(videoID: String, source: DuckDuckGo.DuckPlayer.VideoNavigationSource, in hostViewController: any DuckDuckGo.DuckPlayerHosting, title: String?, timestamp: TimeInterval?) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
         presentDuckPlayerCalled = true
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
@@ -536,3 +585,4 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var tabBarContainer: UIView = UIView()
 }
+

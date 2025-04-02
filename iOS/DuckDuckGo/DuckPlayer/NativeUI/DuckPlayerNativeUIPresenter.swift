@@ -23,18 +23,6 @@ import SwiftUI
 import UIKit
 import WebKit
 
-/// Protocol that defines the requirements for view controllers that can host DuckPlayer UI elements
-public protocol DuckPlayerHosting: UIViewController {
-    
-    var webView: WKWebView! { get }
-
-    /// The constraint that controls the bottom spacing of the main content
-    var contentBottomConstraint: NSLayoutConstraint? { get }
-    
-    /// Returns the height of any persistent UI bars at the bottom of the screen (e.g. toolbars, tab bars)
-    var persistentBottomBarHeight: CGFloat { get }
-}
-
 /// Represents different types of constraint updates for DuckPlayer UI
 public enum DuckPlayerConstraintUpdate {
     case showPill(height: CGFloat)

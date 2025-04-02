@@ -39,6 +39,9 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         super.updateInterface(from: oldState, to: state)
 
         omniBarView.isUsingCompactLayout = !state.hasLargeWidth
+
+        let isShowingSeparator = state.showClear || state.showAbort || state.showRefresh || state.showVoiceSearch
+        omniBarView.isShowingSeparator = isShowingSeparator
     }
 
     override func cancelAllAnimations() {

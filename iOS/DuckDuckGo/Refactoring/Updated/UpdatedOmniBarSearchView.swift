@@ -32,6 +32,8 @@ final class UpdatedOmniBarSearchView: UIView {
 
     private let trailingItemsContainer = UIStackView()
 
+    let separatorView = URLSeparatorView()
+
     let reloadButton = UIButton(type: .custom)
     let clearButton = UIButton(type: .custom)
 
@@ -66,7 +68,7 @@ final class UpdatedOmniBarSearchView: UIView {
         trailingItemsContainer.addArrangedSubview(reloadButton)
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
-        trailingItemsContainer.addArrangedSubview(URLSeparatorView())
+        trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(accessoryButton)
 
         leftIconContainer.addSubview(loupeIconView)

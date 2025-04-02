@@ -134,6 +134,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         }
     }
 
+    var isShowingSeparator: Bool = false {
+        didSet {
+            searchAreaView.separatorView.isHidden = !isShowingSeparator
+        }
+    }
+
     var isActiveState: Bool = false {
         didSet {
             updateActiveState()

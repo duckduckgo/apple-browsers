@@ -1,5 +1,5 @@
 //
-//  VisualStyleConfigurable.swift
+//  VisualStyleProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Combine
 import BrowserServicesKit
 import FeatureFlags
 
-protocol VisualStyleConfigurable {
+protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPaddig(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPaddig(for type: AddressBarSizeClass) -> CGFloat
@@ -106,7 +106,7 @@ struct VisualStyle {
     }
 }
 
-final class VisualStyleManager: VisualStyleConfigurable {
+final class VisualStyleProvider: VisualStyleProviding {
     private let featureFlagger: FeatureFlagger
 
     private var cancellables: Set<AnyCancellable> = []
@@ -117,7 +117,7 @@ final class VisualStyleManager: VisualStyleConfigurable {
         subscribeToLocalOverride()
     }
 
-    // MARK: - VisualStyleConfigurable implementation
+    // MARK: - VisualStyleProviding implementation
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         return currentStyle.addressBarHeight(for: type)

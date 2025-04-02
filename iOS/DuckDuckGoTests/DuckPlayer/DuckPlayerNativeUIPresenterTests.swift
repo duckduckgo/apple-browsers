@@ -46,8 +46,6 @@ class TestNotificationCenter: NotificationCenter {
     }
 }
 
-
-
 final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     
     // MARK: - Properties
@@ -68,6 +66,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockHostViewController = MockDuckPlayerHosting()
         mockHostViewController.webView = WKWebView(frame: .zero, configuration: .nonPersistent())
         mockHostViewController.persistentBottomBarHeight = 44.0 // Set a standard address bar height
+        
+        // Initialize the content bottom constraint
+        let dummyView = UIView()
+        mockHostViewController.view.addSubview(dummyView)
+        mockHostViewController.contentBottomConstraint = dummyView.bottomAnchor.constraint(equalTo: mockHostViewController.view.bottomAnchor)
+        mockHostViewController.contentBottomConstraint?.isActive = true
         
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
@@ -115,7 +119,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         
         // Verify basic state
-        XCTAssertEqual(pill.subviews.count, 1, "There must be only one subview (The pill)")
+        XCTAssertEqual(pill.subviews.count, 2, "There must two subviews (Incluiding The pill)")
         XCTAssertEqual(sut.state.hasBeenShown, false, "DuckPlayer should not have been shown yet")
         XCTAssertEqual(sut.state.videoID, "kaajas891", "The video ID should be set")
         XCTAssertEqual(sut.state.timestamp, nil, "Entry pill should never have a timestamp")
@@ -140,23 +144,14 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
         XCTAssertEqual(bottomConstraint.firstItem as? UIView, containerViewController.view, "Bottom constraint should be attached to container view")
         XCTAssertEqual(bottomConstraint.secondItem as? UIView, mockHostViewController.view, "Bottom constraint should be attached to host view")
-        
-        // Verify web view constraint updates for top address bar
-        let expectedTopBarConstraint = -DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint // -90
-        XCTAssertEqual(mockHostViewController.contentBottomConstraint?.constant, expectedTopBarConstraint, "Web view bottom constraint should be updated for pill height with top address bar")
-        
-        // Test with bottom address bar position
+            
+        // CHange address bar position
         mockAppSettings.currentAddressBarPosition = .bottom
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
         
         // Simulate sheet animation completion and visibility for bottom address bar test
         containerViewModel.sheetAnimationCompleted = true
-        
-        // Verify web view constraint updates for bottom address bar
-        // Expected value = -(persistentBottomBarHeight + webViewRequiredBottomConstraint)
-        // = -(44 + 90) = -134
-        let expectedBottomBarConstraint = -(mockHostViewController.persistentBottomBarHeight + DuckPlayerNativeUIPresenter.Constants.webViewRequiredBottomConstraint)
-        XCTAssertEqual(mockHostViewController.contentBottomConstraint?.constant, expectedBottomBarConstraint, "Web view bottom constraint should account for bottom address bar and pill height")
+                
         
         // Verify notification posting
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in

@@ -58,6 +58,7 @@ struct DuckPlayerModalPresenter {
 
             }
         }
+    }
 
     @available(iOS 16.0, *)
     private func getTargetSizeForPresentationView(on viewController: UIViewController) -> CGSize {

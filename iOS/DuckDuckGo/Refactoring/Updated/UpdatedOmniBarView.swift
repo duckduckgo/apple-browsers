@@ -117,11 +117,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         set { searchAreaView.accessoryButton.isHidden = newValue }
     }
 
-    var isSearchLoupeHidden: Bool = false
-//    {
-//        get { searchLoupe.isHidden }
-//        set { searchLoupe.isHidden = newValue }
-//    }
+    var isSearchLoupeHidden: Bool {
+        get { searchLoupe.isHidden }
+        set { searchLoupe.isHidden = newValue }
+    }
 
     var isDismissButtonHidden: Bool {
         get { searchAreaView.dismissButtonView.isHidden }
@@ -184,17 +183,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var menuButtonContent: MenuButton = MenuButton()
 
-    private let _progressView: ProgressView = ProgressView()
-
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
-    var progressView: ProgressView? { _progressView }
+
+    private let omniBarProgressView = OmniBarProgressView()
+    var progressView: ProgressView? { omniBarProgressView.progressView }
 
     private let leadingButtonsContainer = UIStackView()
     private let trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = UpdatedOmniBarSearchView()
     private let searchAreaContainerView = UIView()
-    private let shadowBackdropView = UIView()
+    private let activeOutlineView = UIView()
 
     private let stackView = UIStackView()
 
@@ -210,6 +209,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpProperties()
         setUpCallbacks()
         setUpAccessibility()
+
+        updateActiveState()
     }
 
     @available(*, unavailable)
@@ -220,9 +221,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func setUpSubviews() {
         addSubview(stackView)
 
-        searchAreaContainerView.addSubview(shadowBackdropView)
         searchAreaContainerView.addSubview(searchAreaView)
-        searchAreaContainerView.addSubview(_progressView)
+        searchAreaContainerView.addSubview(omniBarProgressView)
 
         stackView.addArrangedSubview(leadingButtonsContainer)
         stackView.addArrangedSubview(searchAreaContainerView)
@@ -237,10 +237,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
 //        searchAreaView.leftIconContainer.addArrangedSubview(UIImageView(image: UIImage(resource: .shield)))
 //        searchAreaView.leadingItemsContainer.addArrangedSubview(privacyInfoContainer)
+        addSubview(activeOutlineView)
     }
 
     private func setUpConstraints() {
-        _progressView.translatesAutoresizingMaskIntoConstraints = false
 
         let readableSearchAreaWidth = searchAreaView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
         readableSearchAreaWidth.priority = .defaultHigh
@@ -250,6 +250,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaTopPaddingConstraint = searchAreaTopPadding
         searchAreaBottomPaddingConstraint = searchAreaBottomPadding
+
+        omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
+        activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
+        searchAreaView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
@@ -266,15 +271,16 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             readableSearchAreaWidth,
 
-            shadowBackdropView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -1),
-            shadowBackdropView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: 1),
-            shadowBackdropView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -1),
-            shadowBackdropView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: 1),
+            activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+            activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
 
-            _progressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
-            _progressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: 4),
-            _progressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: -4),
-            _progressView.heightAnchor.constraint(equalToConstant: 2)
+            omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
+            omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+            omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
+            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
+
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
@@ -295,22 +301,22 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .vertical)
+
         searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
-
-        searchAreaView.translatesAutoresizingMaskIntoConstraints = false
-//        searchAreaView.layer.cornerRadius = Metrics.cornerRadius
-//        searchAreaView.layer.cornerCurve = .continuous
-
-        shadowBackdropView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaContainerView.layer.shadowColor = UIColor(Color.shade(0.24)).cgColor
         searchAreaContainerView.layer.shadowOffset = CGSize(width: 0, height: 2)
         searchAreaContainerView.layer.shadowRadius = 4
         searchAreaContainerView.layer.shadowOpacity = 1
-        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
-//        shadowBackdropView.layer.cornerCurve = .continuous
 
-        stackView.translatesAutoresizingMaskIntoConstraints = false
+        searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+
+        activeOutlineView.isUserInteractionEnabled = false
+        activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
+        activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
+        activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
+        activeOutlineView.backgroundColor = .clear
+
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
@@ -368,19 +374,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         let cornerRadius = isActiveState ? Metrics.activeCornerRadius : Metrics.cornerRadius
 
-//        searchAreaView.layer.cornerRadius = Metrics.cornerRadius
-        searchAreaContainerView.layer.borderColor = isActiveState ? UIColor(Color(designSystemColor: .accent)).cgColor : nil
-        searchAreaContainerView.layer.borderWidth = isActiveState ? Metrics.activeBorderWidth : 0
+        // This is needed so progress bar is clipped properly
+        omniBarProgressView.layer.cornerRadius = cornerRadius
         searchAreaContainerView.layer.cornerRadius = cornerRadius
+        activeOutlineView.layer.cornerRadius = cornerRadius
 
-        shadowBackdropView.layer.cornerRadius = cornerRadius
+        activeOutlineView.alpha = isActiveState ? 1 : 0
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            searchAreaContainerView.layer.borderColor = isActiveState ? UIColor(Color(designSystemColor: .accent)).cgColor : nil
+            searchAreaContainerView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         }
     }
 
@@ -466,8 +472,6 @@ extension UpdatedOmniBarView {
     static func activateItemSizeConstraints(for item: UIView) {
         item.widthAnchor.constraint(equalTo: item.heightAnchor).isActive = true
         item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
-//        item.widthAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
-//        item.heightAnchor.constraint(equalToConstant: Metrics.itemSize).isActive = true
     }
 
     static func setUpCommonProperties(for button: UIButton) {

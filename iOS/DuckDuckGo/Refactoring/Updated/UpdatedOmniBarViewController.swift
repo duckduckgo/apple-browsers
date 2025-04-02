@@ -69,8 +69,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         super.textFieldDidBeginEditing(textField)
 
         omniBarView.layoutIfNeeded()
-        omniBarView.isActiveState = true
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut]) {
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = true
             self.omniBarView.layoutIfNeeded()
         }
     }
@@ -79,8 +79,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         super.textFieldDidEndEditing(textField)
 
         omniBarView.layoutIfNeeded()
-        omniBarView.isActiveState = false
-        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.25, delay: 0.0, options: [.curveEaseOut]) {
+        UIViewPropertyAnimator.runningPropertyAnimator(withDuration: 0.2, delay: 0.0, options: [.curveEaseOut]) {
+            self.omniBarView.isActiveState = false
             self.omniBarView.layoutIfNeeded()
         }
     }

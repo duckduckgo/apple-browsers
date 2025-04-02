@@ -140,10 +140,4 @@ final class UpdatedOmniBarSearchView: UIView {
         customIconView.tintColor = tintColor
         customIconView.contentMode = .center
     }
-
-    private struct Metrics {
-//        static let buttonSize: CGFloat = 44
-        static let height: CGFloat = 60
-//        static let textAreaHeight: CGFloat = 44
-    }
 }

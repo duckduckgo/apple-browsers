@@ -105,7 +105,7 @@ public final class BookmarksFaviconsFetcher {
         database: CoreDataDatabase,
         stateStore: BookmarksFaviconsFetcherStateStoring,
         fetcher: FaviconFetching,
-        faviconStore: FaviconStoring,
+        faviconStore: @escaping @MainActor () async -> FaviconStoring,
         errorEvents: EventMapping<BookmarksFaviconsFetcherError>?
     ) {
         self.database = database
@@ -182,7 +182,8 @@ public final class BookmarksFaviconsFetcher {
      *
      * This function cancels any pending fetch operation and schedules a new operation.
      */
-    public func startFetching() {
+    public func startFetching() async {
+        let faviconStore = await faviconStore()
         cancelOngoingFetchingIfNeeded()
         let operation = FaviconsFetchOperation(
             database: database,
@@ -236,7 +237,7 @@ public final class BookmarksFaviconsFetcher {
     private let database: CoreDataDatabase
     private let stateStore: BookmarksFaviconsFetcherStateStoring
     private let fetcher: FaviconFetching
-    private let faviconStore: FaviconStoring
+    private let faviconStore: @MainActor () async -> FaviconStoring
 
     private var isFetchingInProgressCancellable: AnyCancellable?
     private let fetchingDidStartSubject = PassthroughSubject<Void, Never>()

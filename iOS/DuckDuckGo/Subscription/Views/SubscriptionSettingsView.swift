@@ -49,6 +49,7 @@ struct SubscriptionSettingsView: View {
     @State var isShowingManageEmailView = false
     @State var isShowingConnectionError = false
     @State var isShowingSubscriptionError = false
+    @State var isShowingSupportView = false
 
     var body: some View {
         optionsView
@@ -283,19 +284,28 @@ struct SubscriptionSettingsView: View {
 
     @ViewBuilder
     private var supportButton: some View {
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                     apiService: DefaultAPIService(),
-                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                     source: .ppro)
-        NavigationLink(UserText.subscriptionFeedback, destination: UnifiedFeedbackRootView(viewModel: viewModel))
-            .daxBodyRegular()
-            .foregroundColor(.init(designSystemColor: .textPrimary))
+        SettingsCustomCell(content: {
+            Text(UserText.subscriptionFeedback)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accent))
+        },
+                           action: { isShowingSupportView = true },
+                           disclosureIndicator: true,
+                           isButton: true)
     }
 
     @ViewBuilder
     private var optionsView: some View {
         NavigationLink(destination: SubscriptionGoogleView(),
                        isActive: $isShowingGoogleView) {
+            EmptyView()
+        }.hidden()
+
+        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                                                                    apiService: DefaultAPIService(),
+                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    source: .ppro)),
+                       isActive: $isShowingSupportView) {
             EmptyView()
         }.hidden()
 
@@ -433,6 +443,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingManageEmailView = false
     @State var isShowingConnectionError = false
     @State var isShowingSubscriptionError = false
+    @State var isShowingSupportView = false
 
     var body: some View {
         optionsView
@@ -667,19 +678,28 @@ struct SubscriptionSettingsViewV2: View {
 
     @ViewBuilder
     private var supportButton: some View {
-        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                     apiService: DefaultAPIService(),
-                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
-                                                     source: .ppro)
-        NavigationLink(UserText.subscriptionFeedback, destination: UnifiedFeedbackRootView(viewModel: viewModel))
-            .daxBodyRegular()
-            .foregroundColor(.init(designSystemColor: .textPrimary))
+        SettingsCustomCell(content: {
+            Text(UserText.subscriptionFeedback)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accent))
+        },
+                           action: { isShowingSupportView = true },
+                           disclosureIndicator: true,
+                           isButton: true)
     }
 
     @ViewBuilder
     private var optionsView: some View {
         NavigationLink(destination: SubscriptionGoogleView(),
                        isActive: $isShowingGoogleView) {
+            EmptyView()
+        }.hidden()
+        
+        NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                                                                    apiService: DefaultAPIService(),
+                                                                                                    vpnMetadataCollector: DefaultVPNMetadataCollector(),
+                                                                                                    source: .ppro)),
+                       isActive: $isShowingSupportView) {
             EmptyView()
         }.hidden()
 

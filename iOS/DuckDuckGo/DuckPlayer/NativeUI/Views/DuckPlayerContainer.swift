@@ -21,7 +21,6 @@ import Combine
 import SwiftUI
 
 public enum DuckPlayerContainer {
-
     public struct Constants {
         static let easeInOutDuration: Double = 0.3
         static let shortDuration: Double = 0.2
@@ -86,7 +85,7 @@ public enum DuckPlayerContainer {
             sheetAnimationCompleted = false
             sheetVisible = false
         }
-
+        
         public func setDragging(_ dragging: Bool) {
             isDragging = dragging
         }

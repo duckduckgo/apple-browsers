@@ -26,10 +26,10 @@ protocol DuckPlayerNativeUIPresenting {
 
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never> { get }
 
-    @MainActor func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?)
+    @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHostingViewControlling, timestamp: TimeInterval?)
     @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
     @MainActor func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHostingViewControlling, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>)
     @MainActor func showBottomSheetForVisibleChrome()
     @MainActor func hideBottomSheetForHiddenChrome()
@@ -80,9 +80,9 @@ final class DuckPlayerNativeUIPresenter {
     private var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
-    private weak var hostView: TabViewController?
-    private var source: DuckPlayer.VideoNavigationSource?
-    private var state: DuckPlayerState
+    private(set) weak var hostView: DuckPlayerHostingViewControlling?
+    private(set) var source: DuckPlayer.VideoNavigationSource?
+    private(set) var state: DuckPlayerState
 
     /// The DuckPlayer instance
     private weak var duckPlayer: DuckPlayerControlling?
@@ -137,7 +137,7 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     /// Updates the UI based on Ombibar Notification
-    @objc private func handleOmnibarDidLayout(_ notification: Notification) {
+    @objc func handleOmnibarDidLayout(_ notification: Notification) {
         guard let omniBar = notification.object as? DefaultOmniBarView else { return }
         omniBarHeight = omniBar.frame.height
         guard let bottomConstraint = bottomConstraint else { return }
@@ -219,7 +219,7 @@ final class DuckPlayerNativeUIPresenter {
     private func updateWebViewConstraintForPillHeight() {
         if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
             if self.appSettings.currentAddressBarPosition == .bottom {
-                let targetHeight = hostView.chromeDelegate?.barsMaxHeight ?? 0.0
+                let targetHeight = hostView.duckPlayerChromeDelegate?.barsMaxHeight ?? 0.0
                 webViewBottomConstraint.constant = -targetHeight - self.pillHeight
             } else {
                 webViewBottomConstraint.constant = -self.pillHeight
@@ -250,7 +250,7 @@ final class DuckPlayerNativeUIPresenter {
     private func resetWebViewConstraint() {
         if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
             // Reset to the default value based on address bar position
-            let targetHeight = hostView.chromeDelegate?.barsMaxHeight ?? 0.0
+            let targetHeight = hostView.duckPlayerChromeDelegate?.barsMaxHeight ?? 0.0
             webViewBottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
             hostView.view.layoutIfNeeded()
         }
@@ -280,7 +280,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func presentPrimingModal(
         for videoID: String,
-        in hostViewController: TabViewController,
+        in hostViewController: DuckPlayerHostingViewControlling,
         timestamp: TimeInterval?
     ) {
         let viewModel = DuckPlayerPrimingModalViewModel()
@@ -302,7 +302,7 @@ final class DuckPlayerNativeUIPresenter {
             sheet.selectedDetentIdentifier = .medium
         }
 
-        hostViewController.present(hostingController, animated: true)
+        hostViewController.present(hostingController, animated: true, completion: nil)
 
         // Handle "Try DuckPlayer" action
         viewModel.tryDuckPlayerRequest
@@ -386,7 +386,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video
     @MainActor
-    func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
+    func presentPill(for videoID: String, in hostViewController: DuckPlayerHostingViewControlling, timestamp: TimeInterval?) {
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -400,7 +400,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         }
 
         // Determine the pill type
-        let pillType: PillType = state.hasBeenShown ? .reEntry : .entry
+        pillType = state.hasBeenShown ? .reEntry : .entry
 
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0
@@ -514,7 +514,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     @MainActor
     func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHostingViewControlling, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
 
         // Increase the presentation event count
@@ -568,7 +568,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             }
             .store(in: &playerCancellables)
 
-        hostViewController.present(hostingController, animated: true)
+        hostViewController.present(hostingController, animated: true, completion: nil)
 
         // Dismiss the Pill
         dismissPill()

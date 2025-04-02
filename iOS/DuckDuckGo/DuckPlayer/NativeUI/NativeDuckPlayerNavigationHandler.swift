@@ -468,18 +468,19 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// Sets the host view controller for Duck Player.
     ///
     /// - Parameters:
-    ///  - hostViewController: The `TabViewController` to set as the host.
+    ///  - hostViewController: The `DuckPlayerHostingViewControlling` to set as the host.
     @MainActor
-    func setHostViewController(_ hostViewController: TabViewController) {
+    func setHostViewController(_ hostViewController: DuckPlayerHostingViewControlling) {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         isLinkPreview = hostViewController.isLinkPreview
-        duckPlayer.setHostViewController(hostViewController)
+        guard let controller = hostViewController as? TabViewController else { return }
+        duckPlayer.setHostViewController(controller)
     }
 
     /// Handles DuckPlayer Updates when WebView appears
     /// To be implemented based on requested changes
     @MainActor
-    func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
+    func updateDuckPlayerForWebViewAppearance(_ hostViewController: DuckPlayerHostingViewControlling) {
         setHostViewController(hostViewController)
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
@@ -491,7 +492,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     }
 
     /// Handles DuckPlayer Updates when WebView dissapears
-    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
+    @MainActor
+    func updateDuckPlayerForWebViewDisappearance(_ hostViewController: DuckPlayerHostingViewControlling) {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
     }

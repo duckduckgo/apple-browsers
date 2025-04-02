@@ -472,6 +472,14 @@
 		6FE127432C204DF700EB5724 /* FavoriteItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE127422C204DF700EB5724 /* FavoriteItemView.swift */; };
 		6FE127462C2054A900EB5724 /* NewTabPageViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE127452C2054A900EB5724 /* NewTabPageViewController.swift */; };
 		6FE1274B2C20943500EB5724 /* ShortcutItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE1274A2C20943500EB5724 /* ShortcutItemView.swift */; };
+		6FE3AEFB2D9D8933001AE6B8 /* trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */; };
+		6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */; };
+		6FE3AEFD2D9D8933001AE6B8 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */; };
+		6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */; };
+		6FE3AEFF2D9D8933001AE6B8 /* shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF72D9D8933001AE6B8 /* shield-new.json */; };
+		6FE3AF002D9D8933001AE6B8 /* trackers-1-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */; };
+		6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */; };
+		6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */; };
 		6FEC0B852C999352006B4F6E /* FavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B842C999352006B4F6E /* FavoriteItem.swift */; };
 		6FEC0B882C999961006B4F6E /* FavoritesListInteractingAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */; };
 		6FF915822B88E07A0042AC87 /* AdAttributionFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */; };
@@ -2013,6 +2021,14 @@
 		6FE127422C204DF700EB5724 /* FavoriteItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItemView.swift; sourceTree = "<group>"; };
 		6FE127452C2054A900EB5724 /* NewTabPageViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageViewController.swift; sourceTree = "<group>"; };
 		6FE1274A2C20943500EB5724 /* ShortcutItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutItemView.swift; sourceTree = "<group>"; };
+		6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
+		6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-1-new.json"; sourceTree = "<group>"; };
+		6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-2-new.json"; sourceTree = "<group>"; };
+		6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-trackers-3-new.json"; sourceTree = "<group>"; };
+		6FE3AEF72D9D8933001AE6B8 /* shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-new.json"; sourceTree = "<group>"; };
+		6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-1-new.json"; sourceTree = "<group>"; };
+		6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2-new.json"; sourceTree = "<group>"; };
+		6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3-new.json"; sourceTree = "<group>"; };
 		6FEC0B842C999352006B4F6E /* FavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItem.swift; sourceTree = "<group>"; };
 		6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesListInteractingAdapter.swift; sourceTree = "<group>"; };
 		6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionFetcherTests.swift; sourceTree = "<group>"; };
@@ -4027,6 +4043,7 @@
 		1EEF124A2850A92B003DDE57 /* Animations */ = {
 			isa = PBXGroup;
 			children = (
+				6FE3AEF22D9D8901001AE6B8 /* New */,
 				1EE411FB2858B92F0003FE64 /* dark-shield-dot.json */,
 				1EE411F92858B92F0003FE64 /* dark-shield.json */,
 				1EE411FA2858B92F0003FE64 /* dark-trackers-1.json */,
@@ -4776,6 +4793,21 @@
 				6F64AA5E2C49463C00CF4489 /* ShortcutsModel.swift */,
 			);
 			name = Shortcuts;
+			sourceTree = "<group>";
+		};
+		6FE3AEF22D9D8901001AE6B8 /* New */ = {
+			isa = PBXGroup;
+			children = (
+				6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */,
+				6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */,
+				6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */,
+				6FE3AEF62D9D8933001AE6B8 /* dark-trackers-3-new.json */,
+				6FE3AEF72D9D8933001AE6B8 /* shield-new.json */,
+				6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */,
+				6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */,
+				6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */,
+			);
+			path = New;
 			sourceTree = "<group>";
 		};
 		6FF9157F2B88E04F0042AC87 /* AdAttribution */ = {
@@ -8397,6 +8429,14 @@
 				85EE7F55224667DD000FE757 /* WebContainer.storyboard in Resources */,
 				858566E8252E4F56007501B8 /* Debug.storyboard in Resources */,
 				65F4CB422D7A082400E89416 /* getCurrentTimestamp.js in Resources */,
+				6FE3AEFB2D9D8933001AE6B8 /* trackers-2-new.json in Resources */,
+				6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3-new.json in Resources */,
+				6FE3AEFD2D9D8933001AE6B8 /* dark-shield-new.json in Resources */,
+				6FE3AEFE2D9D8933001AE6B8 /* dark-trackers-1-new.json in Resources */,
+				6FE3AEFF2D9D8933001AE6B8 /* shield-new.json in Resources */,
+				6FE3AF002D9D8933001AE6B8 /* trackers-1-new.json in Resources */,
+				6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */,
+				6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */,
 				0A6CC0EF23904D5400E4F627 /* Settings.bundle in Resources */,
 				85A9C37920E0E00C00073340 /* HomeRow.xcassets in Resources */,
 				B6BA95C528894A28004ABA20 /* BrowsingMenuViewController.storyboard in Resources */,

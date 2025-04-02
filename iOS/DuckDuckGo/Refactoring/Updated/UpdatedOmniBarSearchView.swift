@@ -170,5 +170,7 @@ final class UpdatedOmniBarSearchView: UIView {
         customIconView.contentMode = .center
         customIconView.isHidden = true
         customIconView.image = nil
+
+        privacyInfoContainer.isUsingExperimentalAnimations = true
     }
 }

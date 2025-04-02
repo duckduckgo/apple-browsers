@@ -31,7 +31,7 @@ struct ClearTextField: View {
     @FocusState private var isFieldFocused: Bool
     @State private var shouldBeMonospaced: Bool = false
     @State private var closeButtonVisible = false
-    
+
     var body: some View {
         HStack {
             TextField(placeholderText, text: $text)
@@ -57,7 +57,7 @@ struct ClearTextField: View {
                 .onTapGesture { self.text = "" }
         }
     }
-    
+
     private var closeButtonOpacity: Double {
         if text == "" || !closeButtonVisible {
             return 0

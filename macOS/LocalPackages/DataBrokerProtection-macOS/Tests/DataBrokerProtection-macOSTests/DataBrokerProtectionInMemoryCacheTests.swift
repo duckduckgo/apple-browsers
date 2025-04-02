@@ -24,7 +24,7 @@ import DataBrokerProtectionCoreTestsUtils
 final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
 
     func testCacheStoresNewName() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         let result = cache.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "John", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
 
         XCTAssert(result, "Adding name to profile cache failed")
@@ -33,7 +33,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheDoesNotStoreDuplicateNames() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         var result = cache.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "John", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
 
         XCTAssert(result, "Adding name to profile cache failed")
@@ -43,14 +43,14 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheDoesNotStoreEmptyNames() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         let result = cache.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
 
         XCTAssertFalse(result, "Result of adding empty name should be `false`")
     }
 
     func testCacheStoresNewAddress() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         let result = cache.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "Any Town", state: "TX", zipCode: "12345"))
 
         XCTAssert(result, "Adding address to profile cache failed")
@@ -59,7 +59,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheDoesNotStoreDuplicateAddresses() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         var result = cache.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "Any Town", state: "TX", zipCode: "12345"))
 
         XCTAssert(result, "Adding address to profile cache failed")
@@ -69,14 +69,14 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheDoesNotStoreEmptyAddresses() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         let result = cache.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "", state: "TX", zipCode: "12345"))
 
         XCTAssertFalse(result, "Result of adding empty address should be `false`")
     }
 
     func testCacheSetBirthYear() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         let result = cache.setBirthYearForCurrentUserProfile(DBPUIBirthYear(year: 1990))
 
         XCTAssert(result, "Setting birth year was not succcessful")
@@ -84,7 +84,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheRemoveNameFromIndex() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         var result = cache.addNameToCurrentUserProfile(DBPUIUserProfileName(first: "John", middle: "Jacob", last: "JingleHeimerSchmidt", suffix: nil))
 
         XCTAssert(result, "Adding name to profile cache failed")
@@ -97,7 +97,7 @@ final class DataBrokerProtectionInMemoryCacheTests: XCTestCase {
     }
 
     func testCacheRemoveAddressFromIndex() throws {
-        let cache = InMemoryDataCache()
+        let cache = DBPUICommunicationHandler()
         var result = cache.addAddressToCurrentUserProfile(DBPUIUserProfileAddress(street: "123 any street", city: "Any Town", state: "TX", zipCode: "12345"))
 
         XCTAssert(result, "Adding address to profile cache failed")

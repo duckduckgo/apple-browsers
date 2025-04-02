@@ -535,12 +535,12 @@ struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
     let version: Int
 }
 
-/// This isn't me
-
+/// Represents a user request to remove a profile from the dashboard
 struct DBPUIRemoveOptOutFromDashboardRequest: DBPUISendableMessage {
     let recordId: Int64
 }
 
+/// Represents the result of manually removing a profile from the dashboard
 struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
     let success: Bool
     let error: String?

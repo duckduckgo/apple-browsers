@@ -278,7 +278,7 @@ private final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDat
     var didCallMatchesFoundCount = false
     var matchesFoundCountValue = (0, 0)
 
-    var cache = InMemoryDataCache()
+    var cache = DBPUICommunicationHandler()
     var delegate: DataBrokerProtectionDataManagerDelegate?
 
     init(database: DataBrokerProtectionRepository,

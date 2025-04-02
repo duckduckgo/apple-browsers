@@ -31,15 +31,16 @@ struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
     let customisation: Customisation?
 
     func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        if let customisation {
-            return customisation.omnibarAccessoryType
-        }
-
         guard settings.isAIChatAddressBarUserSettingsEnabled else {
             return .share
         }
 
-        return (url?.isDuckDuckGoSearch == true) ? .chat : .share
+        if (url == nil || url?.isDuckDuckGoSearch == true) {
+            return .chat
+        }
+
+        // This new behaviour is only for web pages (and for internal users for now).
+        return customisation?.omnibarAccessoryType ?? .share
     }
 
 }

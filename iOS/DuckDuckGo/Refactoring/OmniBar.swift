@@ -20,9 +20,19 @@
 import Foundation
 import PrivacyDashboard
 
-enum OmniBarAccessoryType: String {
-     case share
-     case chat
+enum OmniBarAccessoryType: String, CaseIterable, CustomStringConvertible {
+    var description: String {
+        // Translations can change so map the constants here.
+        switch self {
+        case .chat: return "AI Chat"
+        case .share: return "Share"
+        case .newTab: return "New Tab"
+        }
+    }
+
+    case share
+    case chat
+    case newTab
  }
 
 protocol OmniBar: AnyObject {

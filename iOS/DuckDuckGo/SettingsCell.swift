@@ -265,10 +265,9 @@ struct SettingsPickerCellView<T: CaseIterable & Hashable & CustomStringConvertib
                                      selected: Bool) -> some View {
         return Group {
             Button(action: action) {
-                HStack {
-                    if selected {
-                        Image(systemName: "checkmark")
-                    }
+                if selected {
+                    Label(option, systemImage: "checkmark")
+                } else {
                     Text(option)
                 }
             }

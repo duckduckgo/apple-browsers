@@ -21,8 +21,8 @@ import Persistence
 import BrowserServicesKit
 import Core
 
-/// The intention is that this becomes a central location for customisation / personalisation configuration, but it's only for a PoC so
-///   am trying to minimise the amount of code touched as this could well get yeeted.
+/// The intention is that this becomes a central location for customisation / personalisation configuration, but it's only for a PoC for one
+/// item right now, so  am trying to minimise the amount of code touched as this could well get yeeted.
 final class Customisation {
 
     protocol Storage {
@@ -30,22 +30,30 @@ final class Customisation {
     }
 
     var omnibarAccessoryType: OmniBarAccessoryType {
-        guard featureFlagger.isFeatureOn(.customizableActionButton) else {
-            return .share
+        get {
+            return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
         }
-        return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
+
+        set {
+            storage.omnibarAccessoryType = newValue.rawValue
+            triggerSettingsChangedNotification()
+        }
     }
 
-    let storage: Storage
-    let featureFlagger: FeatureFlagger
+    var storage: Storage
+    let notificationCenter: NotificationCenter
 
-    init?(storage: Storage = DefaultCustomisationStorage(), featureFlagger: FeatureFlagger) {
+    init?(storage: Storage = DefaultCustomisationStorage(),
+          notificationCenter: NotificationCenter = .default,
+          featureFlagger: FeatureFlagger) {
         guard featureFlagger.isFeatureOn(.customizableActionButton) else { return nil }
-
         self.storage = storage
-        self.featureFlagger = featureFlagger
+        self.notificationCenter = notificationCenter
     }
 
+    private func triggerSettingsChangedNotification() {
+        notificationCenter.post(name: .customisationSettingsChanged, object: nil)
+    }
 }
 
 class DefaultCustomisationStorage: Customisation.Storage {
@@ -67,4 +75,8 @@ class DefaultCustomisationStorage: Customisation.Storage {
         }
     }
 
+}
+
+public extension NSNotification.Name {
+    static let customisationSettingsChanged = Notification.Name("com.duckduckgo.customisation.settings.changed")
 }

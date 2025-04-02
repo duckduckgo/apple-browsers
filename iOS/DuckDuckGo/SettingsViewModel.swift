@@ -49,6 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
+    let customisation: Customisation?
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -173,6 +174,15 @@ final class SettingsViewModel: ObservableObject {
             })
     }
 
+    var omniBarAccessoryTypeBinding: Binding<OmniBarAccessoryType> {
+        Binding<OmniBarAccessoryType>(
+            get: { self.state.customisationOmniBarAccessoryType },
+            set: {
+                self.customisation?.omnibarAccessoryType = $0
+                self.state.customisationOmniBarAccessoryType = $0
+            }
+        )
+    }
 
     var applicationLockBinding: Binding<Bool> {
         Binding<Bool>(
@@ -460,7 +470,8 @@ final class SettingsViewModel: ObservableObject {
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-         experimentalThemingManager: ExperimentalThemingManager
+         experimentalThemingManager: ExperimentalThemingManager,
+         customisation: Customisation?
     ) {
 
         self.state = SettingsState.defaults
@@ -479,6 +490,7 @@ final class SettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
+        self.customisation = customisation
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -506,6 +518,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
+            customisationOmniBarAccessoryType: customisation?.omnibarAccessoryType ?? .share,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

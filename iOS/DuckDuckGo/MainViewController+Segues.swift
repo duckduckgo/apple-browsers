@@ -290,7 +290,8 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger))
+                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
+                                                  customisation: Customisation(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,

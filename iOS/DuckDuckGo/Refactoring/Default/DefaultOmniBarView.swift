@@ -83,9 +83,11 @@ class DefaultOmniBarView: UIView {
         didSet {
             switch accessoryType {
             case .chat:
-                accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
+                accessoryButton.setImage(UIImage(resource: .aiChat24), for: .normal)
             case .share:
-                accessoryButton.setImage(UIImage(named: "Share-24"), for: .normal)
+                accessoryButton.setImage(UIImage(resource: .share24), for: .normal)
+            case .newTab:
+                accessoryButton.setImage(UIImage(resource: .newTab), for: .normal)
             }
         }
     }

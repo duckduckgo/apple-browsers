@@ -114,17 +114,9 @@ class MainViewController: UIViewController {
     @UserDefaultsWrapper(key: .syncDidShowSyncPausedByFeatureFlagAlert, defaultValue: false)
     private var syncDidShowSyncPausedByFeatureFlagAlert: Bool
 
-    private var localUpdatesCancellable: AnyCancellable?
-    private var syncUpdatesCancellable: AnyCancellable?
-    private var syncFeatureFlagsCancellable: AnyCancellable?
-    private var favoritesDisplayModeCancellable: AnyCancellable?
-    private var emailCancellables = Set<AnyCancellable>()
-    private var urlInterceptorCancellables = Set<AnyCancellable>()
-    private var settingsDeepLinkcancellables = Set<AnyCancellable>()
+    private var cancellables = Set<AnyCancellable>()
+
     private let tunnelDefaults = UserDefaults.networkProtectionGroupDefaults
-    private var vpnCancellables = Set<AnyCancellable>()
-    private var feedbackCancellable: AnyCancellable?
-    private var aiChatCancellables = Set<AnyCancellable>()
 
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionCookieManager: SubscriptionCookieManaging
@@ -199,7 +191,8 @@ class MainViewController: UIViewController {
     private lazy var omnibarAccessoryHandler: OmnibarAccessoryHandler = {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
-        return OmnibarAccessoryHandler(settings: settings, customisation: nil)
+        return OmnibarAccessoryHandler(settings: settings,
+                                       customisation: Customisation(featureFlagger: self.featureFlagger))
     }()
 
     let isAuthV2Enabled: Bool
@@ -353,6 +346,7 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
+        subscripeToCustomisationEvents()
 
         findInPageView.delegate = self
         findInPageBottomLayoutConstraint.constant = 0
@@ -586,7 +580,7 @@ class MainViewController: UIViewController {
     }
 
     private func registerForSyncFeatureFlagsUpdates() {
-        syncFeatureFlagsCancellable = syncService.featureFlagsPublisher
+        syncService.featureFlagsPublisher
             .dropFirst()
             .map { $0.contains(.dataSyncing) }
             .receive(on: DispatchQueue.main)
@@ -601,6 +595,7 @@ class MainViewController: UIViewController {
                     self.syncDidShowSyncPausedByFeatureFlagAlert = true
                 }
             }
+            .store(in: &cancellables)
     }
 
     private func showSyncPausedByFeatureFlagAlert(upgradeRequired: Bool = false) {
@@ -780,29 +775,18 @@ class MainViewController: UIViewController {
         gestureBookmarksButton.image = UIImage(named: "Bookmarks")
     }
 
-    private func bindFavoritesDisplayMode() {
-        favoritesDisplayModeCancellable = NotificationCenter.default.publisher(for: AppUserDefaults.Notifications.favoritesDisplayModeChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else {
-                    return
-                }
-                self.menuBookmarksViewModel.favoritesDisplayMode = self.appSettings.favoritesDisplayMode
-                self.favoritesViewModel.favoritesDisplayMode = self.appSettings.favoritesDisplayMode
-                WidgetCenter.shared.reloadAllTimelines()
-            }
-    }
-
     private func bindSyncService() {
-        localUpdatesCancellable = favoritesViewModel.localUpdates
+        favoritesViewModel.localUpdates
             .sink { [weak self] in
                 self?.syncService.scheduler.notifyDataChanged()
             }
+            .store(in: &cancellables)
 
-        syncUpdatesCancellable = syncDataProviders.bookmarksAdapter.syncDidCompletePublisher
+        syncDataProviders.bookmarksAdapter.syncDidCompletePublisher
             .sink { [weak self] _ in
                 self?.favoritesViewModel.reloadData()
             }
+            .store(in: &cancellables)
     }
 
     @objc func quickSaveBookmarkLongPress(gesture: UILongPressGestureRecognizer) {
@@ -1605,14 +1589,14 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 self?.onDuckDuckGoEmailSignIn(notification)
             }
-            .store(in: &emailCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .emailDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onDuckDuckGoEmailSignOut(notification)
             }
-            .store(in: &emailCancellables)
+            .store(in: &cancellables)
     }
 
     private func subscribeToURLInterceptorNotifications() {
@@ -1628,7 +1612,7 @@ class MainViewController: UIViewController {
                 self?.launchSettings(deepLinkTarget: deepLinkTarget)
 
             }
-            .store(in: &urlInterceptorCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .urlInterceptAIChat)
             .receive(on: DispatchQueue.main)
@@ -1636,7 +1620,7 @@ class MainViewController: UIViewController {
                 self?.openAIChat(payload: notification.object)
 
             }
-            .store(in: &urlInterceptorCancellables)
+            .store(in: &cancellables)
     }
 
     private func subscribeToSettingsDeeplinkNotifications() {
@@ -1655,7 +1639,7 @@ class MainViewController: UIViewController {
                     return
                 }
             }
-            .store(in: &settingsDeepLinkcancellables)
+            .store(in: &cancellables)
     }
 
     private func subscribeToAIChatSettingsEvents() {
@@ -1665,7 +1649,17 @@ class MainViewController: UIViewController {
                 self?.refreshOmniBar()
                 self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
-            .store(in: &aiChatCancellables)
+            .store(in: &cancellables)
+    }
+
+    private func subscripeToCustomisationEvents() {
+        NotificationCenter.default.publisher(for: .customisationSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
+                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToNetworkProtectionEvents() {
@@ -1674,35 +1668,35 @@ class MainViewController: UIViewController {
             .sink { [weak self] notification in
                 self?.onNetworkProtectionAccountSignIn(notification)
             }
-            .store(in: &vpnCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .entitlementsDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onEntitlementsChange(notification)
             }
-            .store(in: &vpnCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .accountDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onNetworkProtectionAccountSignOut(notification)
             }
-            .store(in: &vpnCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .vpnEntitlementMessagingDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.onNetworkProtectionEntitlementMessagingChange()
             }
-            .store(in: &vpnCancellables)
+            .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .expiredRefreshTokenDetected)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 self?.onExpiredRefreshTokenDetected(notification)
             }
-            .store(in: &vpnCancellables)
+            .store(in: &cancellables)
 
         let notificationCallback: CFNotificationCallback = { _, _, name, _, _ in
             if let name {
@@ -1719,7 +1713,7 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToUnifiedFeedbackNotifications() {
-        feedbackCancellable = NotificationCenter.default.publisher(for: .unifiedFeedbackNotification)
+        NotificationCenter.default.publisher(for: .unifiedFeedbackNotification)
             .receive(on: DispatchQueue.main)
             .sink { _ in
                 DispatchQueue.main.async { [weak self] in
@@ -1729,6 +1723,7 @@ class MainViewController: UIViewController {
                                               presentationLocation: .withoutBottomBar)
                 }
             }
+            .store(in: &cancellables)
     }
 
     private func onNetworkProtectionEntitlementMessagingChange() {
@@ -2234,6 +2229,8 @@ extension MainViewController: OmniBarDelegate {
             guard let link = currentTab?.link else { return }
             Pixel.fire(pixel: .addressBarShare)
             currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButtonView)
+        case .newTab:
+            newTab()
         }
     }
 

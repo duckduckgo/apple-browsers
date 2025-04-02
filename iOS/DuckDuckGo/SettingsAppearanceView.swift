@@ -20,6 +20,7 @@
 import Core
 import SwiftUI
 import DesignResourcesKit
+import Common
 
 struct SettingsAppearanceView: View {
 
@@ -53,6 +54,15 @@ struct SettingsAppearanceView: View {
                 // Show Full Site Address
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+
+                if viewModel.isInternalUser {
+                    // Website action button
+                    SettingsPickerCellView(label: NotLocalizedString("", value: "Website Action Button", comment: ""),
+                                           options: OmniBarAccessoryType.allCases,
+                                           selectedOption: viewModel.omniBarAccessoryTypeBinding
+                    )
+                }
+
             }
 
             if viewModel.isInternalUser {
@@ -65,6 +75,7 @@ struct SettingsAppearanceView: View {
                     Text(UserText.settingsExperimentalSectionFooter)
                 }
             }
+
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

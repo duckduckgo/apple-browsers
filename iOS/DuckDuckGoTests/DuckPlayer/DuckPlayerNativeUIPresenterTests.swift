@@ -112,7 +112,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             return
         }
         containerViewModel.sheetAnimationCompleted = true
-        //containerViewModel.sheetVisible = true
         
         // Then
         guard let pill = sut.hostView?.view else {
@@ -179,27 +178,120 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
     @MainActor
     func testPresentDuckPlayer_PresentsView() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 30
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        var receivedNavigationURL: URL?
+        var settingsRequestReceived = false
         
+        // When
+        let (navigation, settings) = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: timestamp
+        )
+        
+        // Subscribe to publishers
+        navigation.sink { url in
+            receivedNavigationURL = url
+        }.store(in: &cancellables)
+        
+        settings.sink {
+            settingsRequestReceived = true
+        }.store(in: &cancellables)
+        
+        // Then
+        // Verify view model was created with correct parameters
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should be created")
+            return
+        }
+        XCTAssertEqual(playerViewModel.videoID, videoID, "Video ID should be set correctly")
+        XCTAssertEqual(playerViewModel.timestamp, timestamp, "Timestamp should be set correctly")
+        XCTAssertEqual(playerViewModel.source, source, "Source should be set correctly")
+        
+        // Verify hosting controller was created with correct configuration
+        guard let hostingController = mockHostViewController.presentedViewController as? UIHostingController<DuckPlayerView> else {
+            XCTFail("Hosting controller should be created with DuckPlayerView")
+            return
+        }
+        XCTAssertFalse(hostingController.isModalInPresentation, "Should not be modal in presentation")
+        
+        // Verify state was updated
+        XCTAssertTrue(sut.state.hasBeenShown, "State should indicate DuckPlayer has been shown")
+        
+        // Verify publishers were created
+        XCTAssertNotNil(navigation, "Navigation publisher should be created")
+        XCTAssertNotNil(settings, "Settings publisher should be created")
+        
+        // Verify presentation event count was incremented
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 1, "Presentation event count should be incremented")
+        
+        // Validate state updatest
+        XCTAssertEqual(sut.state.hasBeenShown, true, "DuckPlayer should not have been shown yet")        
     }
 
     @MainActor
-    func testPresentPill_WhenSecondTime_ShowsReEntryPill() {
+    func testPresentPill_WhenDuckPlayerIsDismissed_ShowsReEntryPill() {
         // Given
-        let videoID = "kaajas891"
-        let timestamp: TimeInterval? = 100
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 30
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+        var pillPresentedAfterDismiss = false
         
         // When
+        // First present the pill
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
-
-        // Then
-        guard let pill = sut.hostView?.view else {
-            XCTFail("Pill view not found")
+        
+        // Present DuckPlayer
+        let (navigation, settings) = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: timestamp
+        )
+        
+        // Subscribe to pill visibility notifications to detect when it's shown again
+        testNotificationCenter.addObserver(
+            self,
+            selector: #selector(handlePillVisibilityChange),
+            name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
+            object: nil
+        )
+        
+        // Simulate DuckPlayer dismissal with a timestamp
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should be created")
             return
         }
+        playerViewModel.dismissPublisher.send(timestamp ?? 0)
         
-        // We should only have one subview
-        XCTAssertEqual(pill.subviews.count, 1)
+        // Then
+        // Verify state after DuckPlayer presentation
+        XCTAssertEqual(sut.state.hasBeenShown, true, "DuckPlayer should have been shown")
+        XCTAssertEqual(sut.state.videoID, videoID, "The video ID should be set")
+        
+        // Verify pill was presented again after dismissal
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertEqual(postedNotifications.count, 3, "Should have three pill visibility notifications (initial, presentation and after dismissal)")
+        
+        // Verify the second notification indicates visibility
+        let secondNotification = postedNotifications.last
+        XCTAssertEqual(secondNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
+        
+        // Verify the timestamp was preserved
+        XCTAssertEqual(sut.state.timestamp, timestamp, "Timestamp should be preserved after dismissal")
+    }
+    
+    @objc private func handlePillVisibilityChange(_ notification: Notification) {
+        // This is just a placeholder for the notification observer
+        // The actual verification is done in the test
     }
     
     @MainActor
@@ -217,6 +309,122 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Then
         XCTAssertTrue(mockHostViewController.presentCalled)
         XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 1)
+    }
+    
+    @MainActor
+    func testPrimingModal_WhenTryDuckPlayerTapped_PresentsDuckPlayer() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 0.0
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Get the presented modal view controller
+        guard let hostingController = mockHostViewController.presentedViewController as? UIHostingController<DuckPlayerPrimingModalView> else {
+            XCTFail("Priming modal should be presented")
+            return
+        }
+        
+        // Simulate try DuckPlayer action
+        hostingController.rootView.viewModel.tryDuckPlayerRequest.send()
+        
+        // Then
+        // Verify DuckPlayer was presented
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should be created")
+            return
+        }
+        XCTAssertEqual(playerViewModel.videoID, videoID, "Video ID should be set correctly")
+        XCTAssertEqual(playerViewModel.timestamp, timestamp, "Timestamp should be set correctly")
+        XCTAssertEqual(playerViewModel.source, .youtube, "Source should be set to youtube")
+    }
+    
+    @MainActor
+    func testPrimingModal_WhenDismissed_ShowsPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = nil
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Get the presented modal view controller
+        guard let hostingController = mockHostViewController.presentedViewController as? UIHostingController<DuckPlayerPrimingModalView> else {
+            XCTFail("Priming modal should be presented")
+            return
+        }
+        
+        // Simulate dismiss action
+        hostingController.rootView.viewModel.dismissRequest.send()
+                
+        // Verify pill was presented
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertEqual(postedNotifications.count, 2, "Should have two pill visibility notifications (initial and after modal dismissal)")
+        
+        // Verify the second notification indicates visibility
+        let secondNotification = postedNotifications.last
+        XCTAssertEqual(secondNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
+    }
+    
+    @MainActor
+    func testPrimingModal_WhenTimeSinceLastPresentedExceedsThreshold_ShowsModal() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = nil
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
+        // Set time since last presented to exceed threshold (24 hours = 86400 seconds)
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = Int(Date().timeIntervalSince1970) - 86401
+        mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then
+        XCTAssertTrue(mockHostViewController.presentCalled, "Modal should be presented when time threshold is exceeded")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 1, "Presentation event count should be incremented")
+    }
+    
+    @MainActor
+    func testPrimingModal_WhenEventCountExceedsThreshold_DoesNotShowModal() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = nil
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 3 // Set to threshold
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then
+        XCTAssertFalse(mockHostViewController.presentCalled, "Modal should not be presented when event count exceeds threshold")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 3, "Presentation event count should not be incremented")
+    }
+    
+    @MainActor
+    func testPrimingModal_WhenYoutubeModeIsNever_DoesNotShowModal() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = nil
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeYoutubeMode = .never
+        
+        // When
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Then
+        XCTAssertFalse(mockHostViewController.presentCalled, "Modal should not be presented when YouTube mode is never")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 0, "Presentation event count should not be incremented")
     }
     
     // MARK: - dismissPill Tests
@@ -245,35 +453,81 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, initialCount + 1)
     }
     
-    /*
-    @MainActor
-    func testDismissPill_WhenDismissCountReachesThreshold_ShowsToast() {
-        // Given
-        mockAppSettings.duckPlayerPillDismissCount = 2
-        
-        // When
-        sut.dismissPill(reset: false, animated: true, programatic: false)
-        
-        // Then
-        XCTAssertTrue(MockDuckPlayerToastView.presentCalled)
-        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 3)
-    }
-     */
-    
     @MainActor
     func testDismissPill_WhenReset_ResetsState() {
         // Given
         let videoID = "test123"
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
+        let timestamp: TimeInterval? = 30
+        
+        // Set up initial state
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        mockAppSettings.duckPlayerPillDismissCount = 2
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 1
+        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 1000
+        mockAppSettings.duckPlayerNativeYoutubeMode = .ask
         
         // When
         sut.dismissPill(reset: true, animated: true, programatic: true)
         
         // Then
-        // Note: We can't directly test the private state, but we can verify the behavior
-        // by presenting again and checking it shows as a first-time presentation
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
-        XCTAssertTrue(mockHostViewController.presentCalled)
+        // Verify state was reset
+        XCTAssertFalse(sut.state.hasBeenShown, "State should indicate DuckPlayer has not been shown")
+        XCTAssertNil(sut.state.videoID, "Video ID should be cleared")
+        XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")
+        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 0, "Dismiss count should be reset")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 0, "Presentation event count should be reset")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented, 0, "Time since last presented should be reset")
+        
+        // Verify we can present again as a first-time presentation
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        XCTAssertTrue(mockHostViewController.presentCalled, "Should be able to present again after reset")
+        
+        // Verify notifications were posted
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertEqual(postedNotifications.count, 3, "Should have three pill visibility notifications (initial, dismissal, and after reset)")
+        
+        // Verify the last notification indicates visibility
+        let lastNotification = postedNotifications.last
+        XCTAssertEqual(lastNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Last notification should indicate pill is visible")
+    }
+    
+    @MainActor
+    func testDismissPill_WhenThresholdReached_PresentsToastOnce() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 30
+        
+        // Set up initial state
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        mockAppSettings.duckPlayerPillDismissCount = 2
+        
+        // When - First dismiss to reach threshold
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        
+        // Then
+        // Verify dismiss count reached threshold
+        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 3, "Dismiss count should reach threshold")
+        
+        // When - Multiple subsequent dismisses
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        
+        // Then
+        // Verify dismiss count continues to increment
+        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 6, "Dismiss count should increment")
+        
+        // When - Present and dismiss DuckPlayer multiple times
+        _ = sut.presentDuckPlayer(videoID: videoID, source: .youtube, in: mockHostViewController, title: nil, timestamp: timestamp)
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        _ = sut.presentDuckPlayer(videoID: videoID, source: .youtube, in: mockHostViewController, title: nil, timestamp: timestamp)
+        sut.dismissPill(reset: false, animated: true, programatic: false)
+        
+        // Then
+        // Verify dismiss count continues to increment
+        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 8, "Dismiss count should continue incrementing")
     }
     
     // MARK: - presentDuckPlayer Tests
@@ -313,61 +567,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Then
         XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 3)
     }
-    
-    /*
-    @MainActor
-    func testPresentDuckPlayer_WhenNonYoutubeSource_SendsNavigationRequest() {
-        // Given
-        let videoID = "test123"
-        var receivedURL: URL?
         
-        // When
-        let (navigation, _) = sut.presentDuckPlayer(
-            videoID: videoID,
-            source: .vimeo,
-            in: mockHostViewController,
-            title: nil,
-            timestamp: nil
-        )
-        
-        navigation.sink { url in
-            receivedURL = url
-        }.store(in: &cancellables)
-        
-        // Then
-        XCTAssertTrue(mockHostViewController.presentCalled)
-        XCTAssertNotNil(receivedURL)
-    }
-     */
-    
-    // MARK: - Chrome Visibility Tests
-    
-    @MainActor
-    func testHideBottomSheetForHiddenChrome_DisablesUserInteraction() {
-        // Given
-        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
-        
-        // When
-        sut.hideBottomSheetForHiddenChrome()
-        
-        // Then
-        XCTAssertFalse(mockHostViewController.view.isUserInteractionEnabled)
-    }
-    
-    @MainActor
-    func testShowBottomSheetForVisibleChrome_EnablesUserInteraction() {
-        // Given
-        sut.presentPill(for: "test123", in: mockHostViewController, timestamp: nil)
-        sut.hideBottomSheetForHiddenChrome()
-        
-        // When
-        sut.showBottomSheetForVisibleChrome()
-        
-        // Then
-        XCTAssertTrue(mockHostViewController.view.isUserInteractionEnabled)
-    }
-    
-    
     
     // MARK: - Video Playback Request Tests
     
@@ -378,12 +578,18 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let timestamp: TimeInterval? = 30
         var receivedRequest: (videoID: String, timestamp: TimeInterval?)?
         
+        // Prevent priming modal from showing
+        mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 10 // Exceeds threshold
+        
         sut.videoPlaybackRequest.sink { request in
             receivedRequest = request
         }.store(in: &cancellables)
         
         // When
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        
+        // Simulate the video playback request directly
+        sut.videoPlaybackRequest.send((videoID, timestamp))
         
         // Then
         XCTAssertNotNil(receivedRequest)

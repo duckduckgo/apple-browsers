@@ -114,7 +114,7 @@ struct DuckPlayerToastView: View {
     @State private var opacity: CGFloat = 0
     @State private var dismissTask: Task<Void, Never>?
 
-    private static var activeToast: UIView?
+    private(set) static var activeToast: UIView?
 
     init(
         message: AttributedString,

@@ -88,7 +88,7 @@ final class DuckPlayerNativeUIPresenter {
     private weak var duckPlayer: DuckPlayerControlling?
 
     /// The view model for the player
-    private var playerViewModel: DuckPlayerViewModel?
+    private(set) var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
@@ -164,7 +164,7 @@ final class DuckPlayerNativeUIPresenter {
         if pillType == .entry {
             // Create the pill view model for entry type
             let pillViewModel = DuckPlayerEntryPillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, nil))
+                self?.videoPlaybackRequest.send((videoID, timestamp))
             }
 
             // Create the container view with the pill view
@@ -491,10 +491,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // If was dismissed by the user, increment the dismiss count
         if !programatic {
-            
             appSettings.duckPlayerPillDismissCount += 1
 
-            if appSettings.duckPlayerPillDismissCount >= 3 {
+            if appSettings.duckPlayerPillDismissCount == 3 {
                 // Present toast reminding the user that they can disable DuckPlayer in settings
                 presentDismissCountToast()
             }
@@ -514,6 +513,10 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         if reset {
             self.state = DuckPlayerState()
+            // Reset app settings values
+            appSettings.duckPlayerPillDismissCount = 0
+            appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
+            appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
         }
     }
 

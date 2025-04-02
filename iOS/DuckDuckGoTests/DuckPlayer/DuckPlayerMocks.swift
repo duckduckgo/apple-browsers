@@ -437,9 +437,11 @@ final class MockDuckPlayerHostingViewControlling: DuckPlayerHostingViewControlli
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
     var duckPlayerChromeDelegate: DuckPlayerBrowserChromeDelegate?
     var presentCalled = false
+    var dismissCalled = false
     var lastPresentedViewController: UIViewController?
     var lastPresentedAnimated: Bool?
     var lastPresentedCompletion: (() -> Void)?
+    var presentedViewController: UIViewController?
     
     init(notificationCenter: NotificationCenter = .default) {
         // Initialize required properties
@@ -453,6 +455,12 @@ final class MockDuckPlayerHostingViewControlling: DuckPlayerHostingViewControlli
         lastPresentedViewController = viewController
         lastPresentedAnimated = animated
         lastPresentedCompletion = completion
+        presentedViewController = viewController
+        completion?()
+    }
+    
+    func dismiss(animated: Bool, completion: (() -> Void)?) {
+        dismissCalled = true
         completion?()
     }
     

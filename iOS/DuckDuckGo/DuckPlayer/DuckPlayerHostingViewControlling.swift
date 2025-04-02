@@ -34,8 +34,9 @@ protocol DuckPlayerHostingViewControlling: AnyObject {
     var webViewBottomAnchorConstraint: NSLayoutConstraint? { get }
     
     // UIViewController presentation methods
-    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?)
-    
+    func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)?)    
+    func dismiss(animated: Bool, completion: (() -> Void)?)
+
     // Portrait + Landscape video
     func setupWebViewForLandscapeVideo()
     func setupWebViewForPortraitVideo()

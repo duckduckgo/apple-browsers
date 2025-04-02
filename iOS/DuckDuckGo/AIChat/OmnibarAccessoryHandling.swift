@@ -28,7 +28,7 @@ protocol OmnibarAccessoryHandling {
 struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
 
     let settings: AIChatSettingsProvider
-    let customisation: Customisation?
+    let customisation: Customisation
 
     func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
         guard settings.isAIChatAddressBarUserSettingsEnabled else {
@@ -39,8 +39,7 @@ struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
             return .chat
         }
 
-        // This new behaviour is only for web pages (and for internal users for now).
-        return customisation?.omnibarAccessoryType ?? .share
+        return customisation.omnibarAccessoryType
     }
 
 }

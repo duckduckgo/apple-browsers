@@ -30,7 +30,7 @@ class DebugScreensViewModel: ObservableObject {
 
     @Published var isInternalUser = false {
         didSet {
-            persisteInternalUserState()
+            persistInternalUserState()
         }
     }
 
@@ -66,9 +66,10 @@ class DebugScreensViewModel: ObservableObject {
         refreshToggles()
     }
 
-    func persisteInternalUserState() {
+    func persistInternalUserState() {
         (dependencies.internalUserDecider as? DefaultInternalUserDecider)?
             .debugSetInternalUserState(isInternalUser)
+        NotificationCenter.default.post(name: .internalUserStateChanged, object: nil)
     }
 
     func persistInspectibleWebViewsState() {
@@ -163,4 +164,8 @@ class DebugScreensViewModel: ObservableObject {
         refreshFilter()
     }
 
+}
+
+public extension NSNotification.Name {
+    static let internalUserStateChanged = Notification.Name("com.duckduckgo.internaluserstate.changed")
 }

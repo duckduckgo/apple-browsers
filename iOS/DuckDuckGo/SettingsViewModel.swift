@@ -49,7 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
-    let customisation: Customisation?
+    let customisation: Customisation
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -178,7 +178,7 @@ final class SettingsViewModel: ObservableObject {
         Binding<OmniBarAccessoryType>(
             get: { self.state.customisationOmniBarAccessoryType },
             set: {
-                self.customisation?.omnibarAccessoryType = $0
+                self.customisation.omnibarAccessoryType = $0
                 self.state.customisationOmniBarAccessoryType = $0
             }
         )
@@ -471,7 +471,7 @@ final class SettingsViewModel: ObservableObject {
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
-         customisation: Customisation?
+         customisation: Customisation
     ) {
 
         self.state = SettingsState.defaults
@@ -518,7 +518,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
-            customisationOmniBarAccessoryType: customisation?.omnibarAccessoryType ?? .share,
+            customisationOmniBarAccessoryType: customisation.omnibarAccessoryType,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

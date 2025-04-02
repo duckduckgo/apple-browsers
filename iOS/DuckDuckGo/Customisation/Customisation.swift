@@ -29,8 +29,13 @@ final class Customisation {
         var omnibarAccessoryType: String { get set }
     }
 
+    var isAvailable: Bool {
+        return featureFlagger.isFeatureOn(.customizableActionButton)
+    }
+
     var omnibarAccessoryType: OmniBarAccessoryType {
         get {
+            guard isAvailable else { return .share }
             return OmniBarAccessoryType(rawValue: storage.omnibarAccessoryType) ?? .share
         }
 
@@ -42,13 +47,14 @@ final class Customisation {
 
     var storage: Storage
     let notificationCenter: NotificationCenter
+    let featureFlagger: FeatureFlagger
 
-    init?(storage: Storage = DefaultCustomisationStorage(),
+    init(storage: Storage = DefaultCustomisationStorage(),
           notificationCenter: NotificationCenter = .default,
           featureFlagger: FeatureFlagger) {
-        guard featureFlagger.isFeatureOn(.customizableActionButton) else { return nil }
         self.storage = storage
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
     }
 
     private func triggerSettingsChangedNotification() {

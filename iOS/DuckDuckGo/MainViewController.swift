@@ -346,7 +346,8 @@ class MainViewController: UIViewController {
         subscribeToNetworkProtectionEvents()
         subscribeToUnifiedFeedbackNotifications()
         subscribeToAIChatSettingsEvents()
-        subscripeToCustomisationEvents()
+        subscribeToCustomisationEvents()
+        subscribeToInternalUserStateChangedEvents()
 
         findInPageView.delegate = self
         findInPageBottomLayoutConstraint.constant = 0
@@ -1216,6 +1217,7 @@ class MainViewController: UIViewController {
         }
 
         viewCoordinator.omniBar.startBrowsing()
+        viewCoordinator.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
     }
 
     private func updateOmniBarLoadingState() {
@@ -1647,17 +1649,25 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &cancellables)
     }
 
-    private func subscripeToCustomisationEvents() {
+    private func subscribeToCustomisationEvents() {
         NotificationCenter.default.publisher(for: .customisationSettingsChanged)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// If you have UI state that might change when the internal user state changes, subscribe here
+    private func subscribeToInternalUserStateChangedEvents() {
+        NotificationCenter.default.publisher(for: .internalUserStateChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshOmniBar()
             }
             .store(in: &cancellables)
     }

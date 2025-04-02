@@ -67,9 +67,17 @@ final class AutofillCreditCardListViewController: UIViewController {
 
     @objc
     private func addButtonPressed() {
+        let viewController = AutofillCreditCardDetailsViewController(secureVault: secureVault)
+        viewController.delegate = self
+        let detailsNavigationController = UINavigationController(rootViewController: viewController)
+        detailsNavigationController.navigationBar.tintColor = UIColor(Color(designSystemColor: .textPrimary))
+        navigationController?.present(detailsNavigationController, animated: true)
     }
     
     private func presentCardDetails(for card: SecureVaultModels.CreditCard) {
+        let viewController = AutofillCreditCardDetailsViewController(secureVault: secureVault, card: card)
+        viewController.delegate = self
+        navigationController?.pushViewController(viewController, animated: true)
     }
 }
 
@@ -79,4 +87,16 @@ extension AutofillCreditCardListViewController: AutofillCreditCardListViewModelD
         presentCardDetails(for: card)
     }
     
+}
+
+extension AutofillCreditCardListViewController: AutofillCreditCardDetailsViewControllerDelegate {
+
+    func autofillCreditCardDetailsViewControllerDidSave(_ controller: AutofillCreditCardDetailsViewController, card: SecureVaultModels.CreditCard?) {
+        viewModel.refreshData()
+    }
+
+    func autofillCreditCardDetailsViewControllerDelete(card: SecureVaultModels.CreditCard) {
+        viewModel.deleteCard(card)
+    }
+
 }

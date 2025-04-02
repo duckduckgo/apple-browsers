@@ -34,6 +34,8 @@ final class AutofillCreditCardListViewModel: ObservableObject {
     weak var delegate: AutofillCreditCardListViewModelDelegate?
 
     private var secureVault: (any AutofillSecureVault)?
+    private var cachedDeletedCard: SecureVaultModels.CreditCard?
+    private var cancellables: Set<AnyCancellable> = []
 
     static fileprivate let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
@@ -64,6 +66,51 @@ final class AutofillCreditCardListViewModel: ObservableObject {
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")
         }
+    }
+
+    private func undoLastDelete() {
+        guard let cachedDeletedCard = cachedDeletedCard else {
+            return
+        }
+        undelete(cachedDeletedCard)
+    }
+
+    private func undelete(_ account: SecureVaultModels.CreditCard) {
+        guard let secureVault = secureVault,
+              var cachedDeletedCard = cachedDeletedCard else {
+            return
+        }
+        do {
+            let oldCard = cachedDeletedCard
+            let newCard = SecureVaultModels.CreditCard(
+                title: oldCard.title,
+                cardNumber: oldCard.cardNumber,
+                cardholderName: oldCard.cardholderName,
+                cardSecurityCode: oldCard.cardSecurityCode,
+                expirationMonth: oldCard.expirationMonth,
+                expirationYear: oldCard.expirationYear)
+            cachedDeletedCard = newCard
+            try secureVault.storeCreditCard(cachedDeletedCard)
+            clearUndoCache()
+            fetchCreditCards()
+        } catch {
+            Pixel.fire(pixel: .secureVaultError, error: error)
+        }
+    }
+
+    private func clearUndoCache() {
+        cachedDeletedCard = nil
+    }
+
+    private func presentDeleteConfirmation() {
+        ActionMessageView.present(message: UserText.autofillCreditCardDeletedToastMessage,
+                                  actionTitle: UserText.actionGenericUndo,
+                                  presentationLocation: .withoutBottomBar,
+                                  onAction: {
+            self.undoLastDelete()
+        }, onDidDismiss: {
+            self.clearUndoCache()
+        })
     }
 }
 

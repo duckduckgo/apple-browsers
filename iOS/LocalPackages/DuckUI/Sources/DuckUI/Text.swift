@@ -26,7 +26,7 @@ public struct Label4Style: ViewModifier {
     private let foregroundColorLight: Color
     private let foregroundColorDark: Color
 
-    public init(design: Font.Design = .default, foregroundColorLight: Color = Color(baseColor: .gray90), foregroundColorDark: Color = .white) {
+    public init(design: Font.Design = .default, foregroundColorLight: Color = Color(designSystemColor: .textPrimary), foregroundColorDark: Color = Color(designSystemColor: .textPrimary)) {
         self.design = design
         self.foregroundColorLight = foregroundColorLight
         self.foregroundColorDark = foregroundColorDark
@@ -50,13 +50,13 @@ public struct Label4SubtitleStyle: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .font(.system(.callout, design: design))
-            .foregroundColor(colorScheme == .light ? Color(baseColor: .gray50) : Color(baseColor: .gray30))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
     }
 }
 
 public extension View {
 
-    func label4Style(design: Font.Design = .default, foregroundColorLight: Color = Color(baseColor: .gray90), foregroundColorDark: Color = .white) -> some View {
+    func label4Style(design: Font.Design = .default, foregroundColorLight: Color = Color(designSystemColor: .textPrimary), foregroundColorDark: Color = Color(designSystemColor: .textPrimary)) -> some View {
         modifier(Label4Style(design: design, foregroundColorLight: foregroundColorLight, foregroundColorDark: foregroundColorDark))
     }
 }

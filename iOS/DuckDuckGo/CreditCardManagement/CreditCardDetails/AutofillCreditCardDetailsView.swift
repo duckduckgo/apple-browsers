@@ -1,0 +1,561 @@
+//
+//  AutofillCreditCardDetailsView.swift
+//  DuckDuckGo
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Combine
+import DesignResourcesKit
+import SwiftUI
+import BrowserServicesKit
+
+struct AutofillCreditCardDetailsView: View {
+    
+    @ObservedObject var viewModel: AutofillCreditCardDetailsViewModel
+    
+    var body: some View {
+        list
+    }
+    
+    private var list: some View {
+        List {
+            switch viewModel.viewMode {
+            case .edit:
+                editingContentView
+            case .view:
+                viewingContentView
+            case .new:
+                editingContentView
+            }
+        }
+        .simultaneousGesture(
+            DragGesture().onChanged({_ in
+                viewModel.selectedCell = nil
+            }))
+        .applyInsetGroupedListStyle()
+        .animation(.easeInOut, value: viewModel.viewMode)
+        .navigationTitle(viewModel.navigationTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(
+            viewModel.viewMode == .view ? false : true
+        )        
+    }
+    
+    private var viewingContentView: some View {
+        Group {
+            Section {
+                AutofillCopyableRow(title: UserText.autofillCreditCardDetailsCardNumber,
+                                    subtitle: viewModel.formattedCardNumber,
+                                    selectedCell: $viewModel.selectedCell,
+                                    actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardNumber),
+                                    action: { viewModel.copyToPasteboard(.cardNumber) },
+                                    buttonImageName: "Copy-24",
+                                    buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardNumber),
+                                    buttonAction: { viewModel.copyToPasteboard(.cardNumber) })
+                
+                AutofillCopyableRow(title: UserText.autofillCreditCardDetailsExpirationDate,
+                                    subtitle: viewModel.formattedExpiration,
+                                    selectedCell: $viewModel.selectedCell,
+                                    actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsExpirationDate),
+                                    action: { viewModel.copyToPasteboard(.expirationDate) },
+                                    buttonImageName: "Copy-24",
+                                    buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsExpirationDate),
+                                    buttonAction: { viewModel.copyToPasteboard(.expirationDate) })
+                
+                AutofillCopyableRow(title: UserText.autofillCreditCardDetailsCVV,
+                                    subtitle: viewModel.userVisibleCardSecurityCode,
+                                    selectedCell: $viewModel.selectedCell,
+                                    isMonospaced: true,
+                                    actionTitle: viewModel.isSecurityCodeHidden ? UserText.autofillShowCreditCardCVV : UserText.autofillHideCreditCardCVV,
+                                    action: { viewModel.isSecurityCodeHidden.toggle() },
+                                    secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCVV),
+                                    secondaryAction: { viewModel.copyToPasteboard(.cardSecurityCode) },
+                                    buttonImageName: viewModel.isSecurityCodeHidden ? "Eye-24" : "Eye-Closed-24",
+                                    buttonAccessibilityLabel: viewModel.isSecurityCodeHidden ? UserText.autofillShowCreditCardCVV : UserText.autofillHideCreditCardCVV,
+                                    buttonAction: { viewModel.isSecurityCodeHidden.toggle() },
+                                    secondaryButtonImageName: "Copy-24",
+                                    secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCVV),
+                                    secondaryButtonAction: { viewModel.copyToPasteboard(.cardSecurityCode) })
+                
+                AutofillCopyableRow(title: UserText.autofillCreditCardDetailsCardName,
+                                    subtitle: viewModel.cardholderName,
+                                    selectedCell: $viewModel.selectedCell,
+                                    actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardName),
+                                    action: { viewModel.copyToPasteboard(.cardholderName) },
+                                    buttonImageName: "Copy-24",
+                                    buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardName),
+                                    buttonAction: { viewModel.copyToPasteboard(.cardholderName) })
+            }
+            
+            Section {
+                deleteCell()
+            }
+        }
+    }
+    
+    private var editingContentView: some View {
+        Group {
+            Section {
+                EditableCreditCardNumberCell(title: UserText.autofillCreditCardDetailsCardNumberEditing,
+                                             placeholderText: UserText.autofillCreditCardDetailsEditCardNumberPlaceholder,
+                                             text: $viewModel.cardNumber,
+                                             formattedText: $viewModel.formattedCardNumber,
+                                             isCardValid: $viewModel.isCardValid,
+                                             selectedCell: $viewModel.selectedCell)
+                .accessibilityIdentifier("Field_CardNumber")
+                
+                EditableDateCell(title: UserText.autofillCreditCardDetailsExpirationDate,
+                                 placeholderText: UserText.autofillCreditCardDetailsEditExpirationDatePlaceholder,
+                                 expirationMonth: $viewModel.expirationMonth,
+                                 expirationYear: $viewModel.expirationYear,
+                                 formattedExpiration: $viewModel.formattedExpiration,
+                                 selectedCell: $viewModel.selectedCell,
+                                 formatExpiration: viewModel.expirationDateString)
+                .accessibilityIdentifier("Field_ExpirationDate")
+                
+                if viewModel.viewMode == .new {
+                    AutofillEditableCell(title: UserText.autofillCreditCardDetailsCVV,
+                                         text: $viewModel.cardSecurityCode,
+                                         placeholderText: UserText.autofillCreditCardDetailsEditCVVPlaceholder,
+                                         secure: true,
+                                         keyboardType: .numberPad,
+                                         inEditMode: viewModel.viewMode == .edit,
+                                         selectedCell: $viewModel.selectedCell)
+                    .accessibilityIdentifier("Field_SecurityCode")
+                } else {
+                    AutofillEditableMaskedCell(title: UserText.autofillCreditCardDetailsCVV,
+                                               placeholderText: UserText.autofillCreditCardDetailsEditCVVPlaceholder,
+                                               unmaskedString: $viewModel.cardSecurityCode,
+                                               maskedString: .constant(viewModel.userVisibleCardSecurityCode),
+                                               isMasked: $viewModel.isSecurityCodeHidden,
+                                               keyboardType: .numberPad,
+                                               selectedCell: $viewModel.selectedCell)
+                    .accessibilityIdentifier("Field_SecurityCode")
+                }
+                
+                AutofillEditableCell(title: UserText.autofillCreditCardDetailsCardName,
+                                     text: $viewModel.cardholderName,
+                                     placeholderText: UserText.autofillCreditCardDetailsEditCardNamePlaceholder,
+                                     autoCapitalizationType: .words,
+                                     disableAutoCorrection: true,
+                                     inEditMode: viewModel.viewMode == .edit,
+                                     selectedCell: $viewModel.selectedCell)
+                .accessibilityIdentifier("Field_CardName")
+            }
+            
+            Section {
+                AutofillEditableCell(title: UserText.autofillCreditCardDetailsCardNickname,
+                                     text: $viewModel.cardTitle,
+                                     placeholderText: UserText.autofillCreditCardDetailsEditCardNicknamePlaceholder,
+                                     autoCapitalizationType: .words,
+                                     inEditMode: viewModel.viewMode == .edit,
+                                     selectedCell: $viewModel.selectedCell)
+                .accessibilityIdentifier("Field_CardNickname")
+            }
+            
+            if viewModel.viewMode == .edit {
+                deleteCell()
+            }
+        }
+    }
+    
+    private func deleteCell() -> some View {
+        AutofillDeleteButtonCell(deleteButtonText: UserText.autofillCreditCardDetailsDeleteButton,
+                                 confirmationTitle: UserText.autofillCreditCardDetailsDeleteConfirmationMessage,
+                                 confirmationButtonTitle: UserText.autofillCreditCardDetailsDeleteConfirmationButtonTitle,
+                                 onDelete: {
+            viewModel.delete()
+        })
+    }
+}
+
+private struct EditableCreditCardNumberCell: View {
+    @State private var id = UUID()
+    let title: String
+    let placeholderText: String
+    @Binding var text: String
+    @Binding var formattedText: String
+    @Binding var isCardValid: Bool
+    @Binding var selectedCell: UUID?
+    @State private var closeButtonVisible = false
+    
+    var body: some View {
+        
+        VStack(alignment: .leading, spacing: Constants.verticalPadding) {
+            Text(title)
+                .daxBodyRegular()
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+            
+            HStack {
+                CreditCardNumberField(
+                    id: id,
+                    placeholder: placeholderText,
+                    cardNumber: $text,
+                    formattedCardNumber: $formattedText,
+                    isCardValid: $isCardValid,
+                    isEditing: $closeButtonVisible,
+                    selectedCell: $selectedCell)
+                .frame(height: 20)
+                
+                Spacer()
+                
+                if text.count > 0 {
+                    if closeButtonVisible {
+                        Image(.clear16)
+                            .onTapGesture {
+                                self.text = ""
+                                self.formattedText = ""
+                            }
+                    }
+                    if !isCardValid && !closeButtonVisible {
+                        Image(.exclamationColor16)
+                    }
+                }
+            }
+        }
+        .frame(minHeight: Constants.minRowHeight)
+        .listRowInsets(Constants.insets)
+    }
+    
+    private struct CreditCardNumberField: UIViewRepresentable {
+        var id: UUID
+        var placeholder: String?
+        @Binding var cardNumber: String
+        @Binding var formattedCardNumber: String
+        @Binding var isCardValid: Bool
+        @Binding var isEditing: Bool
+        @Binding var selectedCell: UUID?
+        
+        func makeUIView(context: Context) -> UITextField {
+            let textField = UITextField()
+            textField.keyboardType = .numberPad
+            textField.placeholder = placeholder
+            textField.delegate = context.coordinator
+            textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldDidChange), for: .editingChanged)
+            textField.textColor = UIColor(designSystemColor: .textPrimary)
+            textField.font = .daxBodyRegular()
+            
+            return textField
+        }
+        
+        func updateUIView(_ uiView: UITextField, context: Context) {
+            // Only update text if it's different to avoid cursor jumps
+            if uiView.text != formattedCardNumber {
+                // Store current cursor position
+                let currentPosition = uiView.selectedTextRange
+                
+                uiView.text = formattedCardNumber
+                
+                // Restore cursor position if possible
+                if let position = currentPosition {
+                    uiView.selectedTextRange = position
+                }
+            }
+        }
+        
+        func makeCoordinator() -> Coordinator {
+            Coordinator(self)
+        }
+        
+        class Coordinator: NSObject, UITextFieldDelegate {
+            let parent: CreditCardNumberField
+            private var isEditingActive: Bool = false
+            
+            init(_ parent: CreditCardNumberField) {
+                self.parent = parent
+            }
+            
+            @objc func textFieldDidChange(_ textField: UITextField) {
+                let text = textField.text ?? ""
+                let currentSelectedRange = textField.selectedTextRange
+                let digitsOnly = CreditCardValidation.extractDigits(from: text)
+                let formatted = CreditCardValidation.formattedCardNumber(digitsOnly)
+                
+                parent.cardNumber = digitsOnly
+                textField.text = formatted
+                parent.formattedCardNumber = formatted
+                parent.isCardValid = CreditCardValidation.isValidCardNumber(digitsOnly)
+                
+                updateCursorPosition(textField, oldText: text, newText: formatted, currentSelection: currentSelectedRange)
+            }
+            
+            private func updateCursorPosition(_ textField: UITextField, oldText: String, newText: String, currentSelection: UITextRange?) {
+                guard let selectedRange = currentSelection else { return }
+                
+                let cursorPosition = textField.offset(from: textField.beginningOfDocument, to: selectedRange.start)
+                
+                let oldTextPrefix = oldText.prefix(cursorPosition)
+                let oldSpacesBeforeCursor = oldTextPrefix.filter { $0 == " " }.count
+                
+                // Calculate adjustment for new cursor position
+                var newCursorPosition = cursorPosition
+                
+                if newCursorPosition < newText.count {
+                    let newTextPrefix = newText.prefix(newCursorPosition)
+                    let newSpacesBeforeCursor = newTextPrefix.filter { $0 == " " }.count
+                    
+                    newCursorPosition += (newSpacesBeforeCursor - oldSpacesBeforeCursor)
+                    newCursorPosition = min(newCursorPosition, newText.count)
+                    
+                    if let newCursorLocation = textField.position(from: textField.beginningOfDocument, offset: newCursorPosition) {
+                        textField.selectedTextRange = textField.textRange(from: newCursorLocation, to: newCursorLocation)
+                    }
+                }
+            }
+            
+            func textFieldDidBeginEditing(_ textField: UITextField) {
+                isEditingActive = true
+                parent.isEditing = true
+                parent.selectedCell = parent.id
+                
+                textField.textColor = UIColor(designSystemColor: .textPrimary)
+            }
+            
+            func textFieldDidEndEditing(_ textField: UITextField) {
+                isEditingActive = false
+                parent.isEditing = false
+                parent.selectedCell = nil
+                
+                if !parent.isCardValid && !parent.formattedCardNumber.isEmpty {
+                    textField.textColor = .red
+                } else {
+                    textField.textColor = UIColor(designSystemColor: .textPrimary)
+                }
+            }
+        }
+    }
+}
+
+private struct EditableDateCell: View {
+    @State private var id = UUID()
+    let title: String
+    let placeholderText: String
+    @Binding var expirationMonth: Int?
+    @Binding var expirationYear: Int?
+    @Binding var formattedExpiration: String
+    @Binding var selectedCell: UUID?
+    let formatExpiration: (() -> String)
+    
+    @State private var showingPicker = false
+    @State private var closeButtonVisible = false
+    
+    var body: some View {
+        
+        VStack(alignment: .leading, spacing: Constants.verticalPadding) {
+            Text(title)
+                .daxBodyRegular()
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+            
+            HStack {
+                TextField(placeholderText, text: $formattedExpiration)
+                    .daxBodyRegular()
+                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    .allowsHitTesting(false)
+                    .disabled(true)
+                    .overlay(
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                hideKeyboard()
+                                showingPicker = true
+                                selectedCell = self.id
+                            }
+                    )
+                
+                Spacer()
+                
+                if formattedExpiration.count > 0 {
+                    if selectedCell == id {
+                        Image(.clear16)
+                            .onTapGesture {
+                                self.formattedExpiration = ""
+                                self.expirationMonth = nil
+                                self.expirationYear = nil
+                            }
+                    }
+                }
+            }
+        }
+        .frame(minHeight: Constants.minRowHeight)
+        .listRowInsets(Constants.insets)
+        .sheet(isPresented: $showingPicker) {
+            MonthYearPickerView(
+                expirationMonth: $expirationMonth,
+                expirationYear: $expirationYear,
+                formattedExpiration: $formattedExpiration,
+                isPresented: $showingPicker,
+                formatExpiration: formatExpiration
+            )
+            .setPrestentationDetents(height: 260.0)
+        }
+    }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+private struct MonthYearPickerView: View {
+    @Binding var expirationMonth: Int?
+    @Binding var expirationYear: Int?
+    @Binding var formattedExpiration: String
+    @Binding var isPresented: Bool
+    let formatExpiration: (() -> String)
+    
+    @State private var selectedDate: Date
+    
+    internal init(expirationMonth: Binding<Int?>,
+                  expirationYear: Binding<Int?>,
+                  formattedExpiration: Binding<String>,
+                  isPresented: Binding<Bool>,
+                  formatExpiration: @escaping () -> String) {
+        self._expirationMonth = expirationMonth
+        self._expirationYear = expirationYear
+        self._formattedExpiration = formattedExpiration
+        self._isPresented = isPresented
+        self.formatExpiration = formatExpiration
+        
+        var initialDate: Date
+        
+        // Initialize selectedDate based on the current expirationMonth and expirationYear (if set)
+        if expirationMonth.wrappedValue != nil && expirationYear.wrappedValue != nil {
+            var dateComponents = DateComponents()
+            dateComponents.day = 1
+            dateComponents.month = expirationMonth.wrappedValue
+            dateComponents.year = expirationYear.wrappedValue
+            initialDate = Calendar.current.date(from: dateComponents) ?? Date()
+        } else {
+            // Fallback to current date
+            initialDate = Date()
+        }
+        
+        self._selectedDate = State(initialValue: initialDate)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button {
+                    isPresented = false
+                } label: {
+                    Text(UserText.actionCancel)
+                        .daxBodyRegular()
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
+                }
+                
+                Spacer()
+                
+                Button {
+                    let calendar = Calendar.current
+                    expirationMonth = calendar.component(.month, from: selectedDate)
+                    expirationYear = calendar.component(.year, from: selectedDate)
+                    formattedExpiration = formatExpiration()
+                    isPresented = false
+                } label: {
+                    Text(UserText.navigationTitleDone)
+                        .daxBodyBold()
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            
+            MonthYearPicker(date: $selectedDate)
+                .frame(height: 200)
+                .padding(.top, 0)
+                .padding(.bottom, 0)
+        }
+    }
+    
+    // UIViewRepresentable wrapper for UIDatePicker that only shows month and year
+    private struct MonthYearPicker: UIViewRepresentable {
+        @Binding var date: Date
+        
+        func makeUIView(context: Context) -> UIDatePicker {
+            let picker = UIDatePicker()
+            if #available(iOS 17.4, *) {
+                picker.datePickerMode = .yearAndMonth
+            } else {
+                picker.datePickerMode = .date
+                picker.datePickerMode = .init(rawValue: 4269) ?? .date
+            }
+            picker.preferredDatePickerStyle = .wheels
+            
+            let calendar = Calendar.current
+            let currentDate = Date()
+            
+            // Set minimum date as current date
+            picker.minimumDate = currentDate
+            
+            // Set maximum date (current year + 15 years)
+            if let maxDate = calendar.date(byAdding: .year, value: 15, to: currentDate) {
+                picker.maximumDate = maxDate
+            }
+            
+            picker.addTarget(
+                context.coordinator,
+                action: #selector(Coordinator.dateChanged(_:)),
+                for: .valueChanged
+            )
+            
+            return picker
+        }
+        
+        func updateUIView(_ uiView: UIDatePicker, context: Context) {
+            uiView.date = date
+        }
+        
+        func makeCoordinator() -> Coordinator {
+            Coordinator(self)
+        }
+        
+        class Coordinator: NSObject {
+            var parent: MonthYearPicker
+            
+            init(_ parent: MonthYearPicker) {
+                self.parent = parent
+            }
+            
+            @objc func dateChanged(_ sender: UIDatePicker) {
+                parent.date = sender.date
+            }
+        }
+    }
+}
+
+private extension View {
+    
+    @ViewBuilder
+    func setPrestentationDetents(height: CGFloat) -> some View {
+        if #available(iOS 16.0, *) {
+            presentationDetents([.height(height)])
+        } else {
+            self
+        }
+    }
+    
+}
+
+private struct Constants {
+    static let verticalPadding: CGFloat = 4
+    static let minRowHeight: CGFloat = 60
+    static let insets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+}
+
+#Preview {
+    AutofillCreditCardDetailsView(viewModel: AutofillCreditCardDetailsViewModel())
+}

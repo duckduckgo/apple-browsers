@@ -125,7 +125,7 @@ struct OnboardingView: View {
                     isSkipped: $model.isSkipped,
                     startBrowsingAction: model.confirmSkipOnboardingAction,
                     resumeOnboardingAction: {
-                        animateBrowserComparisonViewState()
+                        animateBrowserComparisonViewState(isResumingOnboarding: true)
                     }
                 )
             )
@@ -140,7 +140,7 @@ struct OnboardingView: View {
             showCTA: $model.introState.showIntroButton,
             isSkipped: $model.isSkipped,
             continueAction: {
-                animateBrowserComparisonViewState()
+                animateBrowserComparisonViewState(isResumingOnboarding: false)
             },
             skipAction: model.skipOnboardingAction
         )
@@ -197,7 +197,7 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func animateBrowserComparisonViewState() {
+    private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
 
@@ -209,13 +209,13 @@ struct OnboardingView: View {
 
         if #available(iOS 17, *) {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             } completion: {
                 model.browserComparisonState.animateComparisonText = true
             }
         } else {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
                 model.browserComparisonState.animateComparisonText = true

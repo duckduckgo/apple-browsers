@@ -128,21 +128,21 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeInitialViewState()
     }
 
-    func startOnboardingAction() {
+    func startOnboardingAction(isResumingOnboarding: Bool = false) {
+        if isResumingOnboarding {
+            pixelReporter.measureResumeOnboardingCTAAction()
+        }
         makeNextViewState()
     }
 
     func skipOnboardingAction() {
-        // Fire Pixel
+        pixelReporter.measureSkipOnboardingCTAAction()
     }
 
     func confirmSkipOnboardingAction() {
+        pixelReporter.measureConfirmSkipOnboardingCTAAction()
         contextualDaxDialogs.disableContextualDaxDialogs()
         onCompletingOnboardingIntro?()
-    }
-
-    func cancelSkipOnboardingAction() {
-        makeNextViewState()
     }
 
     func setDefaultBrowserAction() {

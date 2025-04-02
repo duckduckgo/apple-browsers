@@ -125,7 +125,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProAuthV2MigrationStarted: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
-        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokenerror"
+        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
         }
     }
 

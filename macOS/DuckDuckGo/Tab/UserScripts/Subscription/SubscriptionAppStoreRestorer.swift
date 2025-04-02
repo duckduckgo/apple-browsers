@@ -80,7 +80,7 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
                 PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
             }
             switch error {
-            case .missingAccountOrTransactions, .pastTransactionAuthenticationError:
+            case .missingAccountOrTransactions:
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
@@ -89,6 +89,9 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
                 await showSomethingWentWrongAlert()
+            case .pastTransactionAuthenticationError:
+                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                await showSubscriptionNotFoundAlert()
             }
         }
     }

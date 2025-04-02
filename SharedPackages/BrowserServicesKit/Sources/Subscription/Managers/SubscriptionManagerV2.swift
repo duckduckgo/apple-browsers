@@ -252,11 +252,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler?(.migrationFailed(error))
             switch error {
-                case OAuthServiceError.authAPIError(let code) where code ==  OAuthRequest.BodyErrorCode.invalidToken:
+            case OAuthServiceError.authAPIError(let code) where code ==  OAuthRequest.BodyErrorCode.invalidToken:
                 // Case where the token is not valid anymore, probably because the BE deleted the account: https://app.asana.com/0/1205842942115003/1209427500692943/f
                 v1MigrationNeeded = false
                 await signOut(notifyUI: true)
-                break
             default:
                 break
             }

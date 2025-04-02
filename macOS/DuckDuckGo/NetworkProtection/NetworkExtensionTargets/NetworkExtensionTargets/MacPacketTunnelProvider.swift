@@ -26,7 +26,6 @@ import PixelKit
 import Subscription
 import os.log
 import WireGuard
-
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     static var isAppex: Bool {

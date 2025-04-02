@@ -50,8 +50,8 @@ final class Customisation: BrowserCustomising {
     let featureFlagger: FeatureFlagger
 
     init(storage: BrowserCustomisationPersisting = DefaultCustomisationStorage(),
-          notificationCenter: NotificationCenter = .default,
-          featureFlagger: FeatureFlagger) {
+         notificationCenter: NotificationCenter = .default,
+         featureFlagger: FeatureFlagger) {
         self.storage = storage
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger

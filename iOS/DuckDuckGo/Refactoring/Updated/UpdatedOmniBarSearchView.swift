@@ -133,9 +133,12 @@ final class UpdatedOmniBarSearchView: UIView {
         textField.textAlignment = .left
         textField.contentVerticalAlignment = .center
         textField.font = UIFont.daxBodyRegular()//(ofSize: 16)
-        textField.returnKeyType = .go
         textField.textColor = UIColor(designSystemColor: .textPrimary)
         textField.tintColor = UIColor(designSystemColor: .textSelectionFill)
+        textField.autocapitalizationType = .none
+        textField.autocorrectionType = .no
+        textField.spellCheckingType = .no
+        textField.keyboardType = .webSearch
 
         accessoryButton.setImage(UIImage(resource: .aiChat24E), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)

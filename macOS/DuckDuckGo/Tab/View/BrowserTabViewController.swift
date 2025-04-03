@@ -839,8 +839,8 @@ final class BrowserTabViewController: NSViewController {
 
         case .webExtensionUrl:
             removeAllTabContent()
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 if let tab = tabViewModel?.tab,
                    let url = tab.url,
                    let webExtensionWebView = WebExtensionManager.shared.internalSiteHandler.webViewForExtensionUrl(url) {

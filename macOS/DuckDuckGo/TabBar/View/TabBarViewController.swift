@@ -1238,6 +1238,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
     }
 
+    func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {
+        hideTabPreview()
+    }
+
     func tabBarViewItemCloseAction(_ tabBarViewItem: TabBarViewItem) {
         guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
             assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")

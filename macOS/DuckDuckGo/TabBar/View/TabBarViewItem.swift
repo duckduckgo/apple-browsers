@@ -54,6 +54,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool
     @MainActor func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool
 
+    @MainActor func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemTogglePermissionAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCloseOtherAction(_: TabBarViewItem)
@@ -693,6 +694,12 @@ final class TabBarViewItem: NSCollectionViewItem {
 extension TabBarViewItem: NSMenuDelegate {
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        /// Trigger context menu callback from here.
+        /// It can't be called from `mouseClickView(_:rightMouseDownEvent:)`
+        /// because that one is called after handling the right click,
+        /// which means it would be delivered only after the context menu was closed.
+        delegate?.tabBarViewItemWillOpenContextMenu(self)
+
         // Initial setup
         menu.removeAllItems()
         let otherItemsState = delegate?.otherTabBarViewItemsState(for: self) ?? .init(hasItemsToTheLeft: true,
@@ -1110,6 +1117,7 @@ extension TabBarViewItem {
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemIsAlreadyBookmarked(_: TabBarViewItem) -> Bool { false }
         func tabBarViewAllItemsCanBeBookmarked(_: TabBarViewItem) -> Bool { false }
+        func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {}
         func tabBarViewItemCloseAction(_: TabBarViewItem) {}
         func tabBarViewItemTogglePermissionAction(_ item: TabBarViewItem) {
             // swiftlint:disable:next force_cast

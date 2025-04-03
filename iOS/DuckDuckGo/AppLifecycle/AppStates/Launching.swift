@@ -145,7 +145,12 @@ struct Launching: LaunchingHandling {
                                mainViewController: mainCoordinator.controller)
         setupWindow()
         logAppLaunchTime()
-        startAutomationServerIfNeeded()
+
+        // Keep this init method minimal and think twice before adding anything here.
+        // - Use AppConfiguration for one-time setup.
+        // - Use a service for functionality that persists throughout the app's lifecycle.
+        // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
+        // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
     private func setupWindow() {
@@ -170,17 +175,7 @@ struct Launching: LaunchingHandling {
             services: services
         )
     }
-
-    private func startAutomationServerIfNeeded() {
-        let launchOptionsHandler = LaunchOptionsHandler()
-        guard launchOptionsHandler.automationPort != nil else {
-            return
-        }
-        guard let rootViewController = window.rootViewController as? MainViewController else {
-            return
-        }
-        _ = AutomationServer(main: rootViewController, port: launchOptionsHandler.automationPort)
-    }
+    
 }
 
 extension Launching {

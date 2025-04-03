@@ -87,6 +87,14 @@ class CompositeShadowView: UIView {
         let opacity: Float
         let radius: CGFloat
         let offset: CGSize
+
+        init(id: String = UUID().uuidString, color: UIColor, opacity: Float = 1.0, radius: CGFloat, offset: CGSize) {
+            self.id = id
+            self.color = color
+            self.opacity = opacity
+            self.radius = radius
+            self.offset = offset
+        }
     }
 
     private final class CustomLayer: CALayer {

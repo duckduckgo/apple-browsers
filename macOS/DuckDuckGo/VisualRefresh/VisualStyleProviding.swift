@@ -26,6 +26,15 @@ protocol VisualStyleProviding {
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
 
     var toolbarButtonsCornerRadius: CGFloat { get }
+
+    var backButtonImage: NSImage { get }
+    var forwardButtonImage: NSImage { get }
+    var reloadButtonImage: NSImage { get }
+    var homeButtonImage: NSImage { get }
+    var downloadsButtonImage: NSImage { get }
+    var passwordManagerButtonImage: NSImage { get }
+    var bookmarksButtonImage: NSImage { get }
+    var moreOptionsbuttonImage: NSImage { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -65,6 +74,15 @@ struct VisualStyle: VisualStyleProviding {
 
     let toolbarButtonsCornerRadius: CGFloat
 
+    let backButtonImage: NSImage
+    let forwardButtonImage: NSImage
+    let reloadButtonImage: NSImage
+    let homeButtonImage: NSImage
+    let downloadsButtonImage: NSImage
+    let passwordManagerButtonImage: NSImage
+    let bookmarksButtonImage: NSImage
+    let moreOptionsbuttonImage: NSImage
+
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default: return addressBarHeightForDefault
@@ -99,7 +117,15 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
-                           toolbarButtonsCornerRadius: 4)
+                           toolbarButtonsCornerRadius: 4,
+                           backButtonImage: .back,
+                           forwardButtonImage: .forward,
+                           reloadButtonImage: .refresh,
+                           homeButtonImage: .home16,
+                           downloadsButtonImage: .downloads,
+                           passwordManagerButtonImage: .passwordManagement,
+                           bookmarksButtonImage: .bookmarks,
+                           moreOptionsbuttonImage: .settings)
     }
 
     static var current: VisualStyleProviding {
@@ -112,7 +138,15 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
-                           toolbarButtonsCornerRadius: 9)
+                           toolbarButtonsCornerRadius: 9,
+                           backButtonImage: .backNew,
+                           forwardButtonImage: .forwardNew,
+                           reloadButtonImage: .reloadNew,
+                           homeButtonImage: .homeNew,
+                           downloadsButtonImage: .downloadsNew,
+                           passwordManagerButtonImage: .passwordManagerNew,
+                           bookmarksButtonImage: .bookmarksNew,
+                           moreOptionsbuttonImage: .optionsNew)
     }
 }
 

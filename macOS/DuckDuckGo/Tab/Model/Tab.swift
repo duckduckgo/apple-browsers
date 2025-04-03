@@ -315,17 +315,18 @@ protocol NewWindowPolicyDecisionMaker {
     func addDeallocationChecks(for webView: WKWebView) {
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
+        let timeout: TimeInterval = [AppVersion.AppRunType.unitTests, .integrationTests].contains(AppVersion.runType) ? 10.0 : 1.0
 
         webView.onDeinit { [weak self] in
             // Tab should deallocate with the WebView
-            self?.ensureObjectDeallocated(after: 10.0, do: .interrupt)
+            self?.ensureObjectDeallocated(after: timeout, do: .interrupt)
 
             // unregister WebView from the ProcessPool
             processPool.webViewsUsingProcessPool.remove(webViewValue)
 
             if processPool.webViewsUsingProcessPool.isEmpty {
                 // when the last WebView is deallocated the ProcessPool should be deallocated
-                processPool.ensureObjectDeallocated(after: 10, do: .log)
+                processPool.ensureObjectDeallocated(after: timeout, do: .log)
                 // by the moment the ProcessPool is dead all the UserContentControllers that were using it should be deallocated
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {

@@ -615,7 +615,6 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // GIven
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
         let urlAsk = URL(string: "https://www.youtube.com/watch?v=djd83w3s")!
-        let urlAskAuto = URL(string: "https://www.youtube.com/watch?v=8232q")!
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask
@@ -629,7 +628,6 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // GIven
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
         let urlAsk = URL(string: "https://www.youtube.com/watch?v=djd83w3s")!
-        let urlAskAuto = URL(string: "https://www.youtube.com/watch?v=8232q")!
         
         // When
         playerSettings.nativeUIYoutubeMode = .ask

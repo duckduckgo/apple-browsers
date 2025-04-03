@@ -149,7 +149,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         guard let subscriptionValues: SubscriptionValuesV2 = CodableHelper.decode(from: params) else {
             Logger.subscription.fault("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
-            PixelKit.fire(PrivacyProPixel.setSubscriptionInvalidSubscriptionValues)
             assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionValues")
             return nil
         }
@@ -159,7 +158,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
         guard !subscriptionValues.accessToken.isEmpty, !subscriptionValues.refreshToken.isEmpty else {
             Logger.subscription.fault("Empty access token or refresh token provided")
-            PixelKit.fire(PrivacyProPixel.setSubscriptionInvalidSubscriptionValues)
             return nil
         }
 

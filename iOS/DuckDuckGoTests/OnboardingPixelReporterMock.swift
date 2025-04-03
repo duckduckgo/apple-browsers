@@ -57,7 +57,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDidNotSetDDGAsDefaultBrowser = false
 
     private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
-    private(set) var didCallMeasureTrySearchDialogDismissButtonTapped = false
     private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
     private(set) var didCallMeasureTryVisitSiteDialogNewTabDismissButtonTapped = false
     private(set) var didCallMeasureTryVisitSiteDismissButtonTapped = false
@@ -166,10 +165,6 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
         didCallMeasureTrySearchDialogNewTabDismissButtonTapped = true
-    }
-
-    func measureTrySearchDialogDismissButtonTapped() {
-        didCallMeasureTrySearchDialogDismissButtonTapped = true
     }
 
     func measureSearchResultDialogDismissButtonTapped() {

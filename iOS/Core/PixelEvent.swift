@@ -245,7 +245,6 @@ extension Pixel {
         case daxDialogsEndOfJourneyDismissed
 
         case onboardingTrySearchDialogNewTabDismissButtonTapped
-        case onboardingTrySearchDialogDismissButtonTapped
         case onboardingSearchResultDialogDismissButtonTapped
         case onboardingTryVisitSiteDialogNewTabDismissButtonTapped
         case onboardingTryVisitSiteDialogDismissButtonTapped
@@ -1326,7 +1325,6 @@ extension Pixel.Event {
         case .daxDialogsEndOfJourneyDismissed: return "m_dx_end_dialog_dismissed"
 
         case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab-dismiss-button-tapped"
-        case .onboardingTrySearchDialogDismissButtonTapped: return "m_onboarding_try-search-dialog_dismiss-button-tapped"
         case .onboardingSearchResultDialogDismissButtonTapped: return "m_onboarding_search-result-dialog_dismiss-button-tapped"
         case .onboardingTryVisitSiteDialogNewTabDismissButtonTapped: return "m_onboarding_try-visit-site-dialog-new-tab_dismiss-button-tapped"
         case .onboardingTryVisitSiteDialogDismissButtonTapped: return "m_onboarding_try-visit-site-dialog_dismiss-button-tapped"

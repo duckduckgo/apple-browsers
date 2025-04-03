@@ -69,7 +69,6 @@ protocol OnboardingCustomInteractionPixelReporting {
 protocol OnboardingDaxDialogsReporting {
     func measureScreenImpression(event: Pixel.Event)
     func measureTrySearchDialogNewTabDismissButtonTapped()
-    func measureTrySearchDialogDismissButtonTapped()
     func measureSearchResultDialogDismissButtonTapped()
     func measureTryVisitSiteDialogNewTabDismissButtonTapped()
     func measureTryVisitSiteDialogDismissButtonTapped()
@@ -270,10 +269,6 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
 
     func measureTrySearchDialogNewTabDismissButtonTapped() {
         fire(event: .onboardingTrySearchDialogNewTabDismissButtonTapped, unique: false)
-    }
-
-    func measureTrySearchDialogDismissButtonTapped() {
-        fire(event: .onboardingTrySearchDialogDismissButtonTapped, unique: false)
     }
 
     func measureSearchResultDialogDismissButtonTapped() {

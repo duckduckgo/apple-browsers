@@ -318,14 +318,14 @@ protocol NewWindowPolicyDecisionMaker {
 
         webView.onDeinit { [weak self] in
             // Tab should deallocate with the WebView
-            self?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+            self?.ensureObjectDeallocated(after: 10.0, do: .interrupt)
 
             // unregister WebView from the ProcessPool
             processPool.webViewsUsingProcessPool.remove(webViewValue)
 
             if processPool.webViewsUsingProcessPool.isEmpty {
                 // when the last WebView is deallocated the ProcessPool should be deallocated
-                processPool.ensureObjectDeallocated(after: 1, do: .log)
+                processPool.ensureObjectDeallocated(after: 10, do: .log)
                 // by the moment the ProcessPool is dead all the UserContentControllers that were using it should be deallocated
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {

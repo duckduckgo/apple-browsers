@@ -162,7 +162,7 @@ class MainViewController: UIViewController {
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
-        return viewCoordinator.omniBar.barView.convert(viewCoordinator.omniBar.barView.searchContainer.bounds, to: view)
+        return viewCoordinator.omniBar.barView.searchContainer.convert(viewCoordinator.omniBar.barView.searchContainer.bounds, to: view)
     }
 
     var keyModifierFlags: UIKeyModifierFlags?
@@ -1377,7 +1377,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
+            self.suggestionTrayController?.float(under: self.viewCoordinator.omniBar.barView.searchContainer)
         } else {
             self.suggestionTrayController?.fill()
         }

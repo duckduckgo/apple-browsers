@@ -266,7 +266,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func setUpConstraints() {
 
         let readableSearchAreaWidth = searchAreaContainerView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
-        readableSearchAreaWidth.priority = .defaultHigh
+        readableSearchAreaWidth.priority = .init(999)
         readableSearchAreaWidth.isActive = false
 
         let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)

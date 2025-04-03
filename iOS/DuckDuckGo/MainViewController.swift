@@ -199,8 +199,12 @@ class MainViewController: UIViewController {
     private lazy var omnibarAccessoryHandler: OmnibarAccessoryHandler = {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
-        return OmnibarAccessoryHandler(settings: settings, featureFlagger: featureFlagger)
+        return OmnibarAccessoryHandler(settings: settings)
     }()
+
+    let isAuthV2Enabled: Bool
+
+    private var duckPlayerEntryPointVisible = false
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -279,7 +283,7 @@ class MainViewController: UIViewController {
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
-
+        self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -322,9 +326,16 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarBackButton.action = #selector(onBackPressed)
         viewCoordinator.toolbarForwardButton.action = #selector(onForwardPressed)
-        viewCoordinator.toolbarFireButton.action = #selector(onFirePressed)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
+        } else {
+            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
+        }
         viewCoordinator.toolbarPasswordsButton.action = #selector(onPasswordsPressed)
         viewCoordinator.toolbarBookmarksButton.action = #selector(onToolbarBookmarksPressed)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.menuToolbarButton.action = #selector(onMenuPressed)
+        }
 
         installSwipeTabs()
             
@@ -338,7 +349,9 @@ class MainViewController: UIViewController {
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
         initTabButton()
-        initMenuButton()
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            initMenuButton()
+        }
         initBookmarksButton()
         loadInitialView()
         previewsSource.prepare()
@@ -628,6 +641,11 @@ class MainViewController: UIViewController {
                                                selector: #selector(onShowFullURLAddressChanged),
                                                name: AppUserDefaults.Notifications.showsFullURLAddressSettingChanged,
                                                object: nil)
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(refreshViewsBasedOnDuckPlayerPresentation),
+                                               name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
+                                               object: nil)
+        
     }
 
     @objc func onAddressBarPositionChanged() {
@@ -638,6 +656,12 @@ class MainViewController: UIViewController {
 
     @objc private func onShowFullURLAddressChanged() {
         refreshOmniBar()
+    }
+
+    @objc func refreshViewsBasedOnDuckPlayerPresentation(notification: Notification) {
+        guard let isVisible = notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool else { return }
+        duckPlayerEntryPointVisible = isVisible
+        refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
     }
 
     func refreshViewsBasedOnAddressBarPosition(_ position: AddressBarPosition) {
@@ -651,7 +675,7 @@ class MainViewController: UIViewController {
                 viewCoordinator.showToolbarSeparator()
             }
             viewCoordinator.constraints.navigationBarContainerBottom.isActive = false
-
+                    
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
             viewCoordinator.omniBar.moveSeparatorToTop()
@@ -662,6 +686,29 @@ class MainViewController: UIViewController {
         }
 
         adjustNewTabPageSafeAreaInsets(for: position)
+        updateChromeForDuckPlayer()
+
+    }
+
+    private func updateChromeForDuckPlayer() {
+        let position = appSettings.currentAddressBarPosition
+        switch position {
+        case .top:
+            if duckPlayerEntryPointVisible {
+                viewCoordinator.hideToolbarSeparator()
+            } else {
+                viewCoordinator.showToolbarSeparator()
+            }
+        case .bottom:
+            // Use higher delays then refreshViewsBasedOnAddressBarPosition
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.31) {
+                if self.duckPlayerEntryPointVisible {
+                    self.viewCoordinator.omniBar.hideSeparator()
+                } else {
+                    self.viewCoordinator.omniBar.showSeparator()
+                }
+            }
+        }
     }
 
     private func adjustNewTabPageSafeAreaInsets(for addressBarPosition: AddressBarPosition) {
@@ -720,9 +767,23 @@ class MainViewController: UIViewController {
     }
 
     private func initTabButton() {
-        tabSwitcherButton = TabSwitcherButton()
-        tabSwitcherButton.delegate = self
-        viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            let button = UIButton(type: .system)
+            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+            button.setImage(UIImage(named: "Tab-New-24"), for: .normal)
+            button.contentMode = .center
+            button.imageView?.contentMode = .scaleAspectFit
+            button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
+
+            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(launchNewTab))
+            button.addGestureRecognizer(longPressRecognizer)
+
+            viewCoordinator.toolbarTabSwitcherButton.customView = button
+        } else {
+            tabSwitcherButton = TabSwitcherButton()
+            tabSwitcherButton.delegate = self
+            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+        }
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
     }
@@ -972,7 +1033,7 @@ class MainViewController: UIViewController {
     func loadQueryInNewTab(_ query: String, reuseExisting: ExistingTabReusePolicy? = .none) {
         dismissOmniBar()
         guard let url = URL.makeSearchURL(query: query) else {
-            Logger.lifecycle.error("Couldn‘t form URL for query: \(query, privacy: .public)")
+            Logger.lifecycle.error("Couldn't form URL for query: \(query, privacy: .public)")
             return
         }
 
@@ -1038,7 +1099,7 @@ class MainViewController: UIViewController {
 
     fileprivate func loadQuery(_ query: String) {
         guard let url = URL.makeSearchURL(query: query, queryContext: currentTab?.url) else {
-            Logger.general.error("Couldn‘t form URL for query “\(query, privacy: .public)” with context “\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)”")
+            Logger.general.error("Couldn't form URL for query \"\(query, privacy: .public)\" with context \"\(self.currentTab?.url?.absoluteString ?? "<nil>", privacy: .public)\"")
             return
         }
         // Make sure that once query is submitted, we don't trigger the non-SERP flow
@@ -1165,12 +1226,15 @@ class MainViewController: UIViewController {
         refreshOmniBar()
         refreshBackForwardButtons()
         refreshBackForwardMenuItems()
+        updateChromeForDuckPlayer()
     }
 
     private func refreshTabIcon() {
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-        tabSwitcherButton.tabCount = tabManager.count
-        tabSwitcherButton.hasUnread = tabManager.hasUnread
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
+            tabSwitcherButton.tabCount = tabManager.count
+            tabSwitcherButton.hasUnread = tabManager.hasUnread
+        }
     }
 
     private func refreshOmniBar() {
@@ -1230,6 +1294,7 @@ class MainViewController: UIViewController {
         }
 
         self.showMenuHighlighterIfNeeded()
+        updateChromeForDuckPlayer()
 
         let isKeyboardShowing = omniBar.isTextFieldEditing
         coordinator.animate { _ in
@@ -1277,8 +1342,10 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-            
-            self.refreshMenuButtonState()
+
+            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+                self.refreshMenuButtonState()
+            }
         }
     }
 
@@ -1439,6 +1506,10 @@ class MainViewController: UIViewController {
     }
 
     func showHomeRowReminder() {
+        // Show the reminder only if users have not seen the Add to Dock promo.
+        // iPhone users would have seen Add to Dock promo during the onboarding.
+        // iPad users don't see the Add to Dock promo during the onboarding.
+        guard !OnboardingManager().userHasSeenAddToDockPromoDuringOnboarding else { return }
         let feature = HomeRowReminder()
         if feature.showNow() {
             showNotification(title: UserText.homeRowReminderTitle, message: UserText.homeRowReminderMessage) { tapped in
@@ -1506,7 +1577,7 @@ class MainViewController: UIViewController {
 
     func animateBackgroundTab() {
         showBars()
-        tabSwitcherButton.incrementAnimated()
+        tabSwitcherButton?.incrementAnimated()
         tabsBarController?.backgroundTabAdded()
     }
 
@@ -1994,7 +2065,8 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.showPrivacyDashboard()
     }
 
-    func onMenuPressed() {
+    @objc func onMenuPressed() {
+        viewCoordinator.menuToolbarButton.isEnabled = false
         omniBar.cancel()
 
         // Dismiss privacy icon animation when showing menu
@@ -2007,13 +2079,10 @@ extension MainViewController: OmniBarDelegate {
         }
         performCancel()
         ActionMessageView.dismissAllMessages()
-        Task {
-            await launchBrowsingMenu()
-        }
+        launchBrowsingMenu()
     }
 
-    @MainActor
-    private func launchBrowsingMenu() async {
+    private func launchBrowsingMenu() {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
@@ -2021,9 +2090,7 @@ extension MainViewController: OmniBarDelegate {
         let menuEntries: [BrowsingMenuEntry]
         let headerEntries: [BrowsingMenuEntry]
 
-        let isNewTabPageEnabled = homeTabManager.isNewTabPageSectionsEnabled || featureFlagger.isFeatureOn(.aiChatNewTabPage)
-
-        if isNewTabPageEnabled && newTabPageViewController != nil {
+        if newTabPageViewController != nil {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
         } else {
@@ -2035,6 +2102,11 @@ extension MainViewController: OmniBarDelegate {
                                                                 menuEntries: menuEntries)
 
         controller.modalPresentationStyle = .custom
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            controller.onDismiss = {
+                self.viewCoordinator.menuToolbarButton.isEnabled = true
+            }
+        }
         self.present(controller, animated: true) {
             if self.canDisplayAddFavoriteVisualIndicator {
                 controller.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
@@ -2044,7 +2116,7 @@ extension MainViewController: OmniBarDelegate {
         self.presentedMenuButton.setState(.closeImage, animated: true)
         tab.didLaunchBrowsingMenu()
 
-        if isNewTabPageEnabled && newTabPageViewController != nil {
+        if newTabPageViewController != nil {
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
         } else {
             Pixel.fire(pixel: .browsingMenuOpened)
@@ -2244,16 +2316,12 @@ extension MainViewController: OmniBarDelegate {
 
     /// We always want to show the AI Chat button if the keyboard is on focus
     func onDidBeginEditing() {
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            omniBar.updateAccessoryType(.chat)
-        }
+        omniBar.updateAccessoryType(.chat)
     }
 
     /// When the keyboard is dismissed we'll apply the previous rule to define the accessory button back to whatever it was
     func onDidEndEditing() {
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
-        }
+        omniBar.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: currentTab?.url))
     }
 }
 
@@ -2293,7 +2361,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
             if let url = URL.makeSearchURL(text: phrase) {
                 loadUrl(url)
             } else {
-                Logger.lifecycle.error("Couldn‘t form URL for suggestion: \(phrase, privacy: .public)")
+                Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
             }
 
         case .website(url: let url):
@@ -2508,7 +2576,7 @@ extension MainViewController: TabDelegate {
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton.incrementAnimated()
+            tabSwitcherButton?.incrementAnimated()
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
             self.currentTab?.openingTab = tab
@@ -2762,6 +2830,10 @@ extension MainViewController: TabSwitcherDelegate {
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
     }
 
+    func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
+    }
+
 }
 
 extension MainViewController: BookmarksDelegate {
@@ -2778,7 +2850,10 @@ extension MainViewController: BookmarksDelegate {
 
 extension MainViewController: TabSwitcherButtonDelegate {
     
-    func launchNewTab(_ button: TabSwitcherButton) {
+    @objc func launchNewTab(_ button: TabSwitcherButton) {
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        }
         Pixel.fire(pixel: .tabSwitchLongPressNewTab)
         performCancel()
         newTab()
@@ -2946,7 +3021,7 @@ extension MainViewController: AutoClearWorker {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if KeyboardSettings().onNewTab && !self.contextualOnboardingLogic.isShowingAddToDockDialog { // If we're showing the Add to Dock dialog prevent address bar to become first responder. We want to make sure the user focues on the Add to Dock instructions.
+            } else if KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     self.enterSearch()
                 }
@@ -3027,8 +3102,8 @@ extension MainViewController {
         viewCoordinator.navigationBarContainer.backgroundColor = theme.barBackgroundColor
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
-        viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
-        viewCoordinator.toolbar.tintColor = theme.barTintColor
+        viewCoordinator.toolbar.barTintColor = UIColor(designSystemColor: .background)
+        viewCoordinator.toolbar.tintColor = UIColor(designSystemColor: .icons)
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
         
@@ -3131,7 +3206,7 @@ extension MainViewController {
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
         viewCoordinator.omniBar.barView.backButtonMenu = backMenu
         viewCoordinator.toolbarBackButton.menu = backMenu
-        
+
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
         viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
         viewCoordinator.toolbarForwardButton.menu = forwardMenu
@@ -3175,6 +3250,25 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     }
 
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager) {
-        segueToSettingsAIChat()
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsAIChat()
+            }
+        } else {
+            segueToSettingsAIChat()
+        }
+    }
+}
+
+extension MainViewController {
+    private func updateOmniBarSeparatorForDuckPlayer(addressBarPosition: AddressBarPosition, isDuckPlayerVisible: Bool) {
+        if isDuckPlayerVisible {
+            switch addressBarPosition {
+            case .top, .bottom:
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.viewCoordinator.omniBar.hideSeparator()
+                }
+            }
+        }
     }
 }

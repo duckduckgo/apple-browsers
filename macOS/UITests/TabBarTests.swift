@@ -36,19 +36,6 @@ class TabBarTests: UITestCase {
         UITests.firstRun()
     }
 
-    func testRecentlyClosedTabIsSelected_whenTabIsClosedAndHasNoRelationships() {
-        openThreeSitesOnSameWindow()
-        pinsPageOne()
-
-        /// Move to the last tab
-        app.typeKey("[", modifierFlags: [.command, .shift])
-        /// Closes last tab
-        app.typeKey("w", modifierFlags: [.command])
-
-        /// Asserts that the pinned tab is the one being shown
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
-    }
-
     func testClosesChildTabIsSelected_whenSibilingTabIsClosed() {
         openPrivacyTestPagesSite()
 
@@ -124,22 +111,34 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(app.staticTexts["Privacy Test Pages"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
-    func testCorrectTabIsSelected_whenTabBarIsInOverflowMode() {
-        /// Opens 20 sites
-        for i in 1..<21 {
-            openSite(pageTitle: "Page #\(i)")
-
-            if i != 20 {
-                app.openNewTab()
-            }
-        }
-
-        /// Selects the first tab and closes it
+    func testRecentlyActiveTabIsSelected_whenNewTabIsClosedAndNoOtherTabWasSelected() {
+        /// We open three sites  and then we select the first tab
+        openFourSitesOnSameWindow()
         app.typeKey("1", modifierFlags: [.command])
+
+        /// We open a new tab and we close it
+        app.typeKey("t", modifierFlags: [.command])
         app.menuItems["Close Tab"].tap()
 
-        /// Asserts that the recently used tab is shown
-        XCTAssertTrue(app.staticTexts["Sample text for Page #20"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        /// Asserts that the recently active tab is visible
+        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    func testRecentlyActiveTabIsNotSelected_ifAnotherTabWasSelectedBeforeTheTabWasClosed() {
+        /// We open three sites  and then we select the first tab
+        openFourSitesOnSameWindow()
+        app.typeKey("1", modifierFlags: [.command])
+
+        /// We open a new tab
+        app.typeKey("t", modifierFlags: [.command])
+        /// We move to the third tab
+        app.typeKey("3", modifierFlags: [.command])
+        /// We move to the last tab and we close it
+        app.typeKey("5", modifierFlags: [.command])
+        app.menuItems["Close Tab"].tap()
+
+        /// Asserts that the tab to the right is shown
+        XCTAssertTrue(app.staticTexts["Sample text for Page #4"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
     // MARK: - Utilities
@@ -157,7 +156,7 @@ class TabBarTests: UITestCase {
         sleep(1)
     }
 
-    private func openThreeSitesOnSameWindow() {
+    private func openFourSitesOnSameWindow() {
         openSite(pageTitle: "Page #1")
         app.openNewTab()
         openSite(pageTitle: "Page #2")

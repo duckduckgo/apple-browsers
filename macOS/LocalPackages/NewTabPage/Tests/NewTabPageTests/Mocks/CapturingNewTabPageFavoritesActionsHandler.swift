@@ -20,6 +20,7 @@ import Foundation
 import NewTabPage
 
 final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling {
+
     typealias FavoriteType = MockNewTabPageFavorite
 
     struct OpenCall: Equatable {
@@ -45,6 +46,7 @@ final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling
     var openCalls: [OpenCall] = []
     var addNewFavoriteCallCount: Int = 0
     var editCalls: [MockNewTabPageFavorite] = []
+    var copyLinkCalls: [MockNewTabPageFavorite] = []
     var onFaviconMissingCallCount: Int = 0
     var removeFavoriteCalls: [MockNewTabPageFavorite] = []
     var deleteBookmarkCalls: [MockNewTabPageFavorite] = []
@@ -60,6 +62,10 @@ final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling
 
     func edit(_ favorite: MockNewTabPageFavorite) {
         editCalls.append(favorite)
+    }
+
+    func copyLink(_ favorite: MockNewTabPageFavorite) {
+        copyLinkCalls.append(favorite)
     }
 
     func removeFavorite(_ favorite: MockNewTabPageFavorite) {

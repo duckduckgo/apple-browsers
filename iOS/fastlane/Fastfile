@@ -238,7 +238,8 @@ platform :ios do
     build_release
 
     upload_to_testflight(
-      api_key: get_api_key
+      api_key: get_api_key,
+      skip_waiting_for_build_processing: true
     )
   end
 
@@ -346,11 +347,10 @@ platform :ios do
   end
 
   private_lane :do_sync_signing do |options|
-    is_adhoc = lane_context[SharedValues::LANE_NAME].include?("adhoc")
     sync_code_signing(
       api_key: get_api_key,
       username: get_username(options),
-      readonly: is_ci && !is_adhoc
+      readonly: !is_ci
     )
   end
 

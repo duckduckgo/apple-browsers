@@ -119,7 +119,7 @@ final class LocalBookmarkManager: BookmarkManager {
     var sortModePublisher: Published<BookmarksSortMode>.Publisher { $sortMode }
 
     private lazy var bookmarkStore: BookmarkStore = LocalBookmarkStore(bookmarkDatabase: BookmarkDatabase.shared)
-    private lazy var faviconManagement: FaviconManagement = FaviconManager.shared
+    private lazy var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
     private lazy var sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults()
     private let foldersStore: BookmarkFoldersStore
 

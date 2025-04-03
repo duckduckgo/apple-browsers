@@ -34,6 +34,7 @@ struct AddToDockTutorialView: View {
     private let message: String
     private let cta: String
     private let action: () -> Void
+    private let isSkipped: Binding<Bool>
 
     @State private var animateTitle = true
     @State private var animateMessage = false
@@ -46,17 +47,19 @@ struct AddToDockTutorialView: View {
         title: String,
         message: String,
         cta: String,
+        isSkipped: Binding<Bool>,
         action: @escaping () -> Void
     ) {
         self.title = title
         self.message = message
         self.cta = cta
+        self.isSkipped = isSkipped
         self.action = action
     }
 
     var body: some View {
         VStack(spacing: 24.0) {
-            AnimatableTypingText(title, startAnimating: $animateTitle) {
+            AnimatableTypingText(title, startAnimating: $animateTitle, skipAnimation: isSkipped) {
                 withAnimation {
                     animateMessage = true
                 }
@@ -64,7 +67,7 @@ struct AddToDockTutorialView: View {
             .foregroundColor(.primary)
             .font(Font.system(size: 20, weight: .bold))
             
-            AnimatableTypingText(message, startAnimating: $animateMessage) {
+            AnimatableTypingText(message, startAnimating: $animateMessage, skipAnimation: isSkipped) {
                 withAnimation {
                     showContent = true
                 }
@@ -114,6 +117,7 @@ struct AddToDockTutorial_Previews: PreviewProvider {
                 title: UserText.AddToDockOnboarding.Tutorial.title,
                 message: UserText.AddToDockOnboarding.Tutorial.message,
                 cta: UserText.AddToDockOnboarding.Buttons.startBrowsing,
+                isSkipped: .constant(false),
                 action: {}
             )
             .padding()

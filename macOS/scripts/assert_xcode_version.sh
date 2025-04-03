@@ -1,6 +1,6 @@
 #!/bin/bash
 
-required_xcode_version=$(<"${PWD}/.xcode-version")
+required_xcode_version=$(<"${PWD}/../.xcode-version")
 current_xcode_version=$(xcodebuild -version | grep 'Xcode' | cut -d\  -f2)
 
 verlte() { 

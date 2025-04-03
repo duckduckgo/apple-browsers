@@ -39,7 +39,7 @@ final class Fire {
     let autoconsentManagement: AutoconsentManagement?
     let stateRestorationManager: AppStateRestorationManager?
     let recentlyClosedCoordinator: RecentlyClosedCoordinating?
-    let pinnedTabsManager: PinnedTabsManager
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
     let syncDataProviders: SyncDataProviders?
@@ -97,11 +97,11 @@ final class Fire {
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
          windowControllerManager: WindowControllersManager? = nil,
-         faviconManagement: FaviconManagement = FaviconManager.shared,
+         faviconManagement: FaviconManagement? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
-         pinnedTabsManager: PinnedTabsManager? = nil,
+         pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
          tld: TLD,
          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
          syncService: DDGSyncing? = nil,
@@ -116,9 +116,9 @@ final class Fire {
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
         self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
-        self.faviconManagement = faviconManagement
+        self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
-        self.pinnedTabsManager = pinnedTabsManager ?? WindowControllersManager.shared.pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
         self.bookmarkManager = bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
         self.syncDataProviders = syncDataProviders ?? NSApp.delegateTyped.syncDataProviders
@@ -324,15 +324,19 @@ final class Fire {
         case .none:
             return
         case .tab(tabViewModel: _, selectedDomains: _, parentTabCollectionViewModel: let tabCollectionViewModel):
-            if tabCollectionViewModel.tabs.count == 0 {
+            if tabCollectionViewModel.allTabsCount == 0 {
                 newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
             }
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
-            newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
+            if pinnedTabsManagerProvider.pinnedTabsMode == .shared || tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
+                newWindowDroppingPoint = closeWindow(of: tabCollectionViewModel)
+            }
         case .allWindows(mainWindowControllers: let mainWindowControllers, selectedDomains: _, customURLToOpen: _):
             newWindowDroppingPoint = NSApp.keyWindow?.frame.droppingPoint
             mainWindowControllers.forEach {
-                $0.close()
+                if pinnedTabsManagerProvider.pinnedTabsMode == .shared || $0.mainViewController.tabCollectionViewModel.pinnedTabsManager?.isEmpty ?? false {
+                    $0.close()
+                }
             }
         }
 
@@ -473,24 +477,25 @@ final class Fire {
         return Set(accounts.compactMap { $0.domain })
     }
 
-    @MainActor
     private func burnFavicons(completion: @escaping () -> Void) {
-        let autofillDomains = autofillDomains()
-        self.faviconManagement.burnExcept(fireproofDomains: FireproofDomains.shared,
-                                          bookmarkManager: LocalBookmarkManager.shared,
-                                          savedLogins: autofillDomains,
-                                          completion: completion)
+        Task { @MainActor in
+            await self.faviconManagement.burn(except: FireproofDomains.shared,
+                                              bookmarkManager: LocalBookmarkManager.shared,
+                                              savedLogins: autofillDomains())
+            completion()
+        }
     }
 
     @MainActor
     private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
-        let autofillDomains = autofillDomains()
-        self.faviconManagement.burnDomains(baseDomains,
-                                           exceptBookmarks: LocalBookmarkManager.shared,
-                                           exceptSavedLogins: autofillDomains,
-                                           exceptExistingHistory: historyCoordinating.history ?? [],
-                                           tld: tld,
-                                           completion: completion)
+        Task { @MainActor in
+            await self.faviconManagement.burnDomains(baseDomains,
+                                                     exceptBookmarks: LocalBookmarkManager.shared,
+                                                     exceptSavedLogins: autofillDomains(),
+                                                     exceptExistingHistory: historyCoordinating.history ?? [],
+                                                     tld: tld)
+            completion()
+        }
     }
 
     // MARK: - Tabs
@@ -503,7 +508,18 @@ final class Fire {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
         }
 
-        func burnPinnedTabs() {
+        func selectPinnedTabIfNeeded(in tabCollectionViewModel: TabCollectionViewModel) {
+            if !tabCollectionViewModel.pinnedTabs.isEmpty {
+                tabCollectionViewModel.select(at: .pinned(0), forceChange: true)
+            }
+        }
+
+        func burnPinnedTabs(in tabCollectionViewModel: TabCollectionViewModel) {
+            guard let pinnedTabsManager = tabCollectionViewModel.pinnedTabsManager else {
+                assertionFailure("No pinned tabs manager")
+                return
+            }
+
             for (index, pinnedTab) in pinnedTabsManager.tabCollection.tabs.enumerated() {
                 let newTab = replacementPinnedTab(from: pinnedTab)
                 pinnedTabsManager.tabCollection.replaceTab(at: index, with: newTab)
@@ -517,7 +533,7 @@ final class Fire {
                   selectedDomains: _,
                   parentTabCollectionViewModel: let tabCollectionViewModel):
             assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
-            if pinnedTabsManager.isTabPinned(tabViewModel.tab) {
+            if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
                 let tab = replacementPinnedTab(from: tabViewModel.tab)
                 if let index = tabCollectionViewModel.selectionIndex {
                     tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
@@ -528,15 +544,17 @@ final class Fire {
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
                      selectedDomains: _):
             tabCollectionViewModel.removeAllTabs(forceChange: true)
-            burnPinnedTabs()
+            burnPinnedTabs(in: tabCollectionViewModel)
+            selectPinnedTabIfNeeded(in: tabCollectionViewModel)
 
         case .allWindows(mainWindowControllers: let mainWindowControllers,
                          selectedDomains: _,
                          customURLToOpen: _):
             mainWindowControllers.forEach {
                 $0.mainViewController.tabCollectionViewModel.removeAllTabs(forceChange: true)
+                burnPinnedTabs(in: $0.mainViewController.tabCollectionViewModel)
+                selectPinnedTabIfNeeded(in: $0.mainViewController.tabCollectionViewModel)
             }
-            burnPinnedTabs()
         }
 
         completion()
@@ -564,11 +582,11 @@ final class Fire {
         case .tab(tabViewModel: let tabViewModel, selectedDomains: _, parentTabCollectionViewModel: _):
             return [tabViewModel]
         case .window(tabCollectionViewModel: let tabCollectionViewModel, selectedDomains: _):
-            let pinnedTabViewModels = Array(pinnedTabsManager.tabViewModels.values)
+            let pinnedTabViewModels = Array(tabCollectionViewModel.pinnedTabsManager?.tabViewModels.values ?? Dictionary().values)
             let tabViewModels = Array(tabCollectionViewModel.tabViewModels.values)
             return pinnedTabViewModels + tabViewModels
         case .allWindows:
-            let pinnedTabViewModels = Array(pinnedTabsManager.tabViewModels.values)
+            let pinnedTabViewModels = Array(pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap { $0.tabViewModels.values })
             let tabViewModels = windowControllerManager.allTabViewModels
             return pinnedTabViewModels + tabViewModels
         }

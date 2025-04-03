@@ -71,7 +71,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     private let featureFlagger: FeatureFlagger
-    let pinnedTabsManager: PinnedTabsManager
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
     private let webViewConfiguration: WKWebViewConfiguration
 
@@ -97,7 +97,7 @@ protocol NewWindowPolicyDecisionMaker {
                      webCacheManager: WebCacheManager = WebCacheManager.shared,
                      webViewConfiguration: WKWebViewConfiguration? = nil,
                      historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
-                     pinnedTabsManager: PinnedTabsManager? = nil,
+                     pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
                      duckPlayer: DuckPlayer? = nil,
@@ -140,11 +140,11 @@ protocol NewWindowPolicyDecisionMaker {
 
         self.init(id: id,
                   content: content,
-                  faviconManagement: faviconManager ?? FaviconManager.shared,
+                  faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
                   historyCoordinating: historyCoordinating,
-                  pinnedTabsManager: pinnedTabsManager ?? WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider,
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
                   duckPlayer: duckPlayer,
@@ -182,7 +182,7 @@ protocol NewWindowPolicyDecisionMaker {
          webCacheManager: WebCacheManager,
          webViewConfiguration: WKWebViewConfiguration?,
          historyCoordinating: HistoryCoordinating,
-         pinnedTabsManager: PinnedTabsManager,
+         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          workspace: Workspace,
          privacyFeatures: AnyPrivacyFeatures,
          duckPlayer: DuckPlayer,
@@ -214,7 +214,7 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
         self._id = id
         self.content = content
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
@@ -262,7 +262,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tabGetter: () -> Tab? = { nil }
         self.extensions = extensionsBuilder
             .build(with: (tabIdentifier: instrumentation.currentTabIdentifier,
-                          isTabPinned: { tabGetter().map { tab in pinnedTabsManager.isTabPinned(tab) } ?? false },
+                          isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
                           contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                           setContent: { tabGetter()?.setContent($0) },
@@ -467,8 +467,8 @@ protocol NewWindowPolicyDecisionMaker {
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
             }
 #endif
@@ -544,8 +544,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
             }
 #endif
@@ -579,8 +579,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
             }
 #endif
@@ -633,6 +633,12 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     func getActualInteractionStateData() -> Data? {
+        if let pinnedTabsManager = pinnedTabsManagerProvider.pinnedTabsManager(for: self),
+           pinnedTabsManager.isTabPinned(self) {
+            // To optimize the performance, don't save interaction state data for pinned tabs
+            return nil
+        }
+
         if let interactionStateData = interactionState.data {
             return interactionStateData
         }
@@ -880,8 +886,8 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
         }
 #endif
@@ -1263,8 +1269,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
               !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder */ else { return }
 
         // don‘t show an error page if the error was already handled
-        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`
-        guard self.content.urlForWebView == url
+        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`.
+        // When comparing URL, also try removing text fragment, because WebKit may drop it from the URL on failed loads.
+        guard self.content.urlForWebView == url || self.content.urlForWebView?.removingTextFragment() == url
                 || self.content == .none /* when navigation fails instantly we may have no content set yet */
                 // navigation failure with MaliciousSiteError is achieved by redirecting to a special token-protected
                 // duck://error?.. URL performed in SpecialErrorPageTabExtension.swift

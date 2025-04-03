@@ -28,7 +28,9 @@ import PixelKit
 import SystemExtensions
 
 protocol VPNUninstalling {
-    func uninstall(removeSystemExtension: Bool) async throws
+    func uninstall(
+        removeSystemExtension: Bool,
+        showNotification: Bool) async throws
 }
 
 final class VPNUninstaller: VPNUninstalling {
@@ -164,9 +166,11 @@ final class VPNUninstaller: VPNUninstalling {
     ///
     /// - Parameters:
     ///     - includeSystemExtension: Whether this method should uninstall the system extension.
+    ///     - showNotification: whether the uninstall notification should be shown to the user
     ///
     @MainActor
-    func uninstall(removeSystemExtension: Bool) async throws {
+    func uninstall(removeSystemExtension: Bool,
+                   showNotification: Bool) async throws {
         // We want to check service launcher pre-requisited before firing any pixel,
         // because if our VPN menu app isn't available where we're expecting to find it
         // we want to avoid adding noise to our uninstall attempts and instead fire
@@ -179,7 +183,9 @@ final class VPNUninstaller: VPNUninstalling {
         pixelKit?.fire(IPCUninstallAttempt.begin, frequency: .legacyDailyAndCount)
 
         do {
-            try await executeUninstallSequence(removeSystemExtension: removeSystemExtension)
+            try await executeUninstallSequence(
+                removeSystemExtension: removeSystemExtension,
+                showNotification: showNotification)
             pixelKit?.fire(IPCUninstallAttempt.success, frequency: .legacyDailyAndCount)
         } catch UninstallError.cancelled(let reason) {
             pixelKit?.fire(IPCUninstallAttempt.cancelled(reason), frequency: .legacyDailyAndCount)
@@ -194,7 +200,9 @@ final class VPNUninstaller: VPNUninstalling {
     /// and fires pixels.
     ///
     @MainActor
-    private func executeUninstallSequence(removeSystemExtension: Bool) async throws {
+    private func executeUninstallSequence(removeSystemExtension: Bool,
+                                          showNotification: Bool) async throws {
+
         // We can do this optimistically as it has little if any impact.
         unpinNetworkProtection()
 
@@ -209,7 +217,7 @@ final class VPNUninstaller: VPNUninstalling {
         isDisabling = true
 
         defer {
-            resetUserDefaults(uninstallSystemExtension: removeSystemExtension)
+            isDisabling = false
         }
 
         do {
@@ -223,9 +231,9 @@ final class VPNUninstaller: VPNUninstalling {
 
         do {
             if removeSystemExtension {
-                try await ipcClient.uninstall(.all)
+                try await ipcClient.uninstall(.all, showNotification: showNotification)
             } else {
-                try await ipcClient.uninstall(.configuration)
+                try await ipcClient.uninstall(.configuration, showNotification: showNotification)
             }
         } catch {
             print("Failed to uninstall VPN, with error: \(error.localizedDescription)")
@@ -258,9 +266,6 @@ final class VPNUninstaller: VPNUninstalling {
         // When the agent was started directly (not as a login item) we want to stop it,
         // as the above call won't do anything for it.
         try await stopAgents()
-
-        notifyVPNUninstalled()
-        isDisabling = false
     }
 
     // Stop the VPN agents.
@@ -280,13 +285,11 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
         do {
-            try await ipcClient.uninstall(.all)
+            try await ipcClient.uninstall(.systemExtension, showNotification: false)
         } catch {
             throw UninstallError.systemExtensionError(error)
         }
-#endif
     }
 
     private func unpinNetworkProtection() {
@@ -296,19 +299,9 @@ final class VPNUninstaller: VPNUninstalling {
     func removeVPNConfiguration() async throws {
         // Remove the agent VPN configuration
         do {
-            try await ipcClient.uninstall(.configuration)
+            try await ipcClient.uninstall(.configuration, showNotification: false)
         } catch {
             throw UninstallError.vpnConfigurationError(error)
-        }
-    }
-
-    private func resetUserDefaults(uninstallSystemExtension: Bool) {
-        settings.resetToDefaults()
-
-        if uninstallSystemExtension {
-            userDefaults.networkProtectionOnboardingStatus = .default
-        } else {
-            userDefaults.networkProtectionOnboardingStatus = .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
         }
     }
 

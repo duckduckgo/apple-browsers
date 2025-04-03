@@ -8,12 +8,12 @@ on:
   push:
     branches: [ main, "release/ios/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
   workflow_call:
     inputs:
@@ -111,7 +111,7 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build and test
       run: |
@@ -212,7 +212,7 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Prepare fastlane
       run: bundle install

@@ -41,13 +41,14 @@ final class FreemiumDBPPresenterTests: XCTestCase {
 }
 
 private final class MockWindowControllerManager: WindowControllersManagerProtocol {
+
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
     var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
 
     var showTabContent: Tab.Content = .none
 
-    var pinnedTabsManager: PinnedTabsManager = PinnedTabsManager()
+    var pinnedTabsManagerProvider: DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding = PinnedTabsManagerProvidingMock()
 
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> = PassthroughSubject<(MainWindowController), Never>()
 

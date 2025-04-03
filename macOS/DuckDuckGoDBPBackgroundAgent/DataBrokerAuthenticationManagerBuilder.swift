@@ -17,15 +17,17 @@
 //
 
 import Foundation
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
     static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
         let settings = DataBrokerProtectionSettings(defaults: .dbp)
-        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager, runTypeProvider: settings)
+        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager,
+                                                                          runTypeProvider: settings,
+                                                                          isAuthV2Enabled: settings.isAuthV2Enabled)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
     }
 }

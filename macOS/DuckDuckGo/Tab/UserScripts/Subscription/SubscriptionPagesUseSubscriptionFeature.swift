@@ -25,8 +25,8 @@ import Subscription
 import PixelKit
 import os.log
 import Freemium
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Networking
 
 /// Use Subscription sub-feature
@@ -123,6 +123,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
+            Logger.subscription.error("Unknown web message: \(methodName, privacy: .public)")
             return nil
         }
     }

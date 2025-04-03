@@ -68,9 +68,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
-    private let pinnedTabsViewModel: PinnedTabsViewModel?
-    private let pinnedTabsView: PinnedTabsView?
-    private let pinnedTabsHostingView: PinnedTabsHostingView?
+    private var pinnedTabsViewModel: PinnedTabsViewModel?
+    private var pinnedTabsView: PinnedTabsView?
+    private var pinnedTabsHostingView: PinnedTabsHostingView?
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+    private var pinnedTabsDiscoveryPopover: NSPopover?
 
     var shouldDisplayTabPreviews: Bool = true
     private var selectionIndexCancellable: AnyCancellable?
@@ -136,6 +138,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToTabModeChanges()
         setupAddTabButton()
         setupAsBurnerWindowIfNeeded()
+        subscribeToPinnedTabsSettingChanged()
     }
 
     override func viewWillAppear() {
@@ -186,6 +189,42 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func subscribeToSelectionIndex() {
         selectionIndexCancellable = tabCollectionViewModel.$selectionIndex.receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.reloadSelection()
+        }
+    }
+
+    private func subscribeToPinnedTabsSettingChanged() {
+        pinnedTabsManagerProvider.settingChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+
+                if tabCollectionViewModel.allTabsCount == 0 {
+                    view.window?.performClose(self)
+                    return
+                }
+
+                updatePinnedTabsViewModel()
+            }.store(in: &cancellables)
+    }
+
+    private func updatePinnedTabsViewModel() {
+        guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else {
+            return
+        }
+
+        // Replace collection
+        pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
+
+        // Refresh tab selection
+        if let selectionIndex = tabCollectionViewModel.selectionIndex {
+            tabCollectionViewModel.select(at: selectionIndex)
+        }
+        if tabCollectionViewModel.selectionIndex == nil {
+            if tabCollectionViewModel.tabs.count > 0 {
+                tabCollectionViewModel.select(at: .unpinned(0))
+            } else {
+                tabCollectionViewModel.select(at: .pinned(0))
+            }
         }
     }
 
@@ -724,12 +763,9 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
 
         self.updateTabMode(for: collectionView.numberOfItems(inSection: 0) - 1, updateLayout: false)
 
-        let visibleIndexPaths = collectionView.indexPathsForVisibleItems
-        let selectedIndexPathIsVisible = visibleIndexPaths().contains(where: { $0.item == selectionIndex })
-
         // don't scroll when mouse over and removing non-last Tab
         let shouldScroll = collectionView.isAtEndScrollPosition
-        && (!self.view.isMouseLocationInsideBounds() || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1) || !selectedIndexPathIsVisible
+            && (!self.view.isMouseLocationInsideBounds() || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1)
         let visiRect = collectionView.enclosingScrollView!.contentView.documentVisibleRect
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.15
@@ -1135,6 +1171,35 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         collectionView.clearSelection()
         tabCollectionViewModel.pinTab(at: indexPath.item)
+
+        presentPinnedTabsDiscoveryPopoverIfNecessary()
+    }
+
+    func presentPinnedTabsDiscoveryPopoverIfNecessary() {
+        guard !PinnedTabsDiscoveryPopover.popoverPresented else { return }
+        PinnedTabsDiscoveryPopover.popoverPresented = true
+
+        // Present only in case shared pinned tabs are set
+        guard pinnedTabsManagerProvider.pinnedTabsMode == .shared else { return }
+
+        // Wait until pinned tab change is applied to pinned tabs view
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) { [weak self] in
+            guard let self = self else { return }
+
+            let popover = self.pinnedTabsDiscoveryPopover ?? PinnedTabsDiscoveryPopover(callback: { [weak self ] _ in
+                self?.pinnedTabsDiscoveryPopover?.close()
+            })
+
+            self.pinnedTabsDiscoveryPopover = popover
+
+            guard let view = self.pinnedTabsHostingView else { return }
+            popover.show(relativeTo: NSRect(x: view.bounds.maxX - PinnedTabView.Const.dimension,
+                                            y: view.bounds.minY,
+                                            width: PinnedTabView.Const.dimension,
+                                            height: view.bounds.height),
+                         of: view,
+                         preferredEdge: .maxY)
+        }
     }
 
     func tabBarViewItemCanBeBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {

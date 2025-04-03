@@ -19,7 +19,7 @@
 import Foundation
 import LoginItems
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import os.log
 
 struct DataBrokerProtectionAppEvents {

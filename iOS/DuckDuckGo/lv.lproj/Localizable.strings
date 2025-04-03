@@ -1223,6 +1223,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Rādīt Duck.ai pārlūka izvēlnē";
 
+/* Toggle text to enable/disable Duck.ai in tab manager */
+"duckai.settings.enable.tab-switcher-toggle" = "Rādīt Duck.ai cilņu ekrānā";
+
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Rādīt Duck.ai balss meklēšanā";
 

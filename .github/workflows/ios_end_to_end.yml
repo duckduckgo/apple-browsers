@@ -40,7 +40,7 @@ jobs:
           ${{ runner.os }}-ios-
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build for tests
       run: |

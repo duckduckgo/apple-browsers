@@ -58,7 +58,7 @@ extension NavigationButtonMenuDelegate: NSMenuDelegate {
         }
 
         let listItemViewModel = BackForwardListItemViewModel(backForwardListItem: listItem,
-                                                             faviconManagement: FaviconManager.shared,
+                                                             faviconManagement: NSApp.delegateTyped.faviconManager,
                                                              historyCoordinating: HistoryCoordinator.shared,
                                                              isCurrentItem: index == 0)
 

@@ -31,7 +31,7 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
@@ -52,6 +52,9 @@ final class BrowserTabViewController: NSViewController {
         actionsManager: newTabPageActionsManager,
         activeRemoteMessageModel: activeRemoteMessageModel
     )
+
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+
     private(set) weak var webView: WebView?
     private weak var webViewContainer: NSView?
     private weak var webViewSnapshot: NSView?
@@ -189,6 +192,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
+        self.newTabPageWebViewModel.removeUserScripts()
     }
 
     @objc
@@ -835,8 +839,8 @@ final class BrowserTabViewController: NSViewController {
 
         case .webExtensionUrl:
             removeAllTabContent()
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 if let tab = tabViewModel?.tab,
                    let url = tab.url,
                    let webExtensionWebView = WebExtensionManager.shared.internalSiteHandler.webViewForExtensionUrl(url) {
@@ -1448,7 +1452,7 @@ extension BrowserTabViewController {
     }
 
     private func handleTabSelectedInKeyWindow(_ tabIndex: TabIndex) {
-        if tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
+        if pinnedTabsManagerProvider.pinnedTabsMode == .shared, tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
             makeWebViewSnapshot()
         } else {
             hideWebViewSnapshotIfNeeded()

@@ -25,6 +25,7 @@ import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
 import PixelKit
+import VPNAppState
 
 final class VPNPreferencesModel: ObservableObject {
 
@@ -77,7 +78,11 @@ final class VPNPreferencesModel: ObservableObject {
     }
 
     private var isExclusionsFeatureAvailableInBuild: Bool {
-        proxySettings.proxyAvailable
+#if APPSTORE
+        vpnAppState.isUsingSystemExtension
+#else
+        true
+#endif
     }
 
     /// Whether legacy app exclusions should be shown
@@ -140,6 +145,8 @@ final class VPNPreferencesModel: ObservableObject {
     }
 
     private let vpnXPCClient: VPNControllerXPCClient
+    private let vpnAppState: VPNAppState
+    private let defaults: UserDefaults
     private let settings: VPNSettings
     private let proxySettings: TransparentProxySettings
     private let pinningManager: PinningManager
@@ -153,6 +160,8 @@ final class VPNPreferencesModel: ObservableObject {
          defaults: UserDefaults = .netP,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
 
+        self.vpnAppState = .init(defaults: defaults)
+        self.defaults = defaults
         self.vpnXPCClient = vpnXPCClient
         self.settings = settings
         self.proxySettings = proxySettings
@@ -292,7 +301,9 @@ final class VPNPreferencesModel: ObservableObject {
 
         switch response {
         case .OK:
-            try? await VPNUninstaller().uninstall(removeSystemExtension: true)
+            try? await VPNUninstaller().uninstall(
+                removeSystemExtension: true,
+                showNotification: true)
         default:
             // intentional no-op
             break

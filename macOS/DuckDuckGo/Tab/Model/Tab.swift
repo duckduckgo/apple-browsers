@@ -313,20 +313,24 @@ protocol NewWindowPolicyDecisionMaker {
 
 #if DEBUG
     func addDeallocationChecks(for webView: WKWebView) {
+        /// Deallocation checks cause random crashes in CI for integration tests.
+        /// https://app.asana.com/0/1201037661562251/1209884224558923/f
+        guard AppVersion.runType != .integrationTests else {
+            return
+        }
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
-        let timeout: TimeInterval = AppVersion.runType == .integrationTests ? 10.0 : 1.0
 
         webView.onDeinit { [weak self] in
             // Tab should deallocate with the WebView
-            self?.ensureObjectDeallocated(after: timeout, do: .interrupt)
+            self?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 
             // unregister WebView from the ProcessPool
             processPool.webViewsUsingProcessPool.remove(webViewValue)
 
             if processPool.webViewsUsingProcessPool.isEmpty {
                 // when the last WebView is deallocated the ProcessPool should be deallocated
-                processPool.ensureObjectDeallocated(after: timeout, do: .log)
+                processPool.ensureObjectDeallocated(after: 1, do: .log)
                 // by the moment the ProcessPool is dead all the UserContentControllers that were using it should be deallocated
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {

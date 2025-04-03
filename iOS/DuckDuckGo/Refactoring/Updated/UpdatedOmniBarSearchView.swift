@@ -131,7 +131,7 @@ final class UpdatedOmniBarSearchView: UIView {
 
         textField.textAlignment = .left
         textField.contentVerticalAlignment = .center
-        textField.font = UIFont.daxBodyRegular()//(ofSize: 16)
+        textField.font = UIFont.daxBodyRegular()
         textField.textColor = UIColor(designSystemColor: .textPrimary)
         textField.tintColor = UIColor(designSystemColor: .accent)
         textField.autocapitalizationType = .none

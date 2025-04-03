@@ -46,6 +46,7 @@ class CompositeShadowView: UIView {
     }
 
     private var customLayer: CustomLayer {
+        // swiftlint:disable:next force_cast
         return layer as! CustomLayer
     }
 

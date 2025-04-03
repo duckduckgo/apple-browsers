@@ -25,7 +25,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     // MARK: - OmniBar conformance
 
-    // swiftlint: disable force_cast
+    // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
     var isTextFieldEditing: Bool { false }

@@ -1,5 +1,6 @@
 //
 //  AuthV2PixelHandler.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -48,12 +49,12 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         case .migrationStarted:
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationStarted, withAdditionalParameters: sourceParam)
         case .migrationFailed(let error):
-            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription].merging(sourceParam){ $1 } )
+            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription].merging(sourceParam) { $1 })
         case .migrationSucceeded:
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationSucceeded, withAdditionalParameters: sourceParam)
         case .getTokensError(let policy, let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: ["error": error.localizedDescription,
-                                                                                                            "policycache": policy.description].merging(sourceParam){ $1 } )
+                                                                                                            "policycache": policy.description].merging(sourceParam) { $1 })
         }
     }
 

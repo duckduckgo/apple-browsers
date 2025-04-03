@@ -27,7 +27,7 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         case systemExtension
         case vpnApp
         case dbp
-        
+
         var description: String {
             switch self {
             case .mainApp:

@@ -303,7 +303,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             subscription = try await subscriptionEndpointService.getSubscription(accessToken: "",
                                                                                  cachePolicy: .returnCacheDataDontLoad)
         }
-        
+
         if subscription.isActive {
             pixelHandler.handle(pixelType: .subscriptionIsActive)
         }

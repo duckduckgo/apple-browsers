@@ -467,12 +467,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             spec = searchMessage()
         } else if isFacebookOrGoogle(privacyInfo.url) && shouldShowNetworkTrackerDialog {
             // won't be shown if owned by major tracker message has already been shown
-            spec = majorTrackerMessage(host, isReloadingDialog: false)
+            spec = majorTrackerMessage(host)
         } else if let owner = isOwnedByFacebookOrGoogle(host), shouldShowNetworkTrackerDialog {
             // won't be shown if major tracker message has already been shown
-            spec = majorTrackerOwnerMessage(host, owner, isReloadingDialog: false)
+            spec = majorTrackerOwnerMessage(host, owner)
         } else if let entityNames = blockedEntityNames(privacyInfo.trackerInfo), !settings.browsingWithTrackersShown {
-            spec = trackersBlockedMessage(entityNames, isReloadingDialog: false)
+            spec = trackersBlockedMessage(entityNames)
         } else if !settings.browsingWithoutTrackersShown && !privacyInfo.url.isDuckDuckGoSearch && !hasTrackers(host: host) {
             // if non duck duck go search and no trackers found and no tracker message already shown, show no trackers message
             spec = noTrackersMessage()
@@ -548,8 +548,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         return nil
     }
 
-    func majorTrackerOwnerMessage(_ host: String, _ majorTrackerEntity: Entity, isReloadingDialog: Bool) -> DaxDialogs.BrowsingSpec? {
-        if !isReloadingDialog && settings.browsingMajorTrackingSiteShown { return nil }
+    func majorTrackerOwnerMessage(_ host: String, _ majorTrackerEntity: Entity) -> DaxDialogs.BrowsingSpec? {
+        if settings.browsingMajorTrackingSiteShown { return nil }
         
         guard let entityName = majorTrackerEntity.displayName,
             let entityPrevalence = majorTrackerEntity.prevalence else { return nil }
@@ -560,8 +560,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
                                                            entityPrevalence)
     }
     
-    private func majorTrackerMessage(_ host: String, isReloadingDialog: Bool) -> DaxDialogs.BrowsingSpec? {
-        if !isReloadingDialog && settings.browsingMajorTrackingSiteShown { return nil }
+    private func majorTrackerMessage(_ host: String) -> DaxDialogs.BrowsingSpec? {
+        if settings.browsingMajorTrackingSiteShown { return nil }
 
         guard let entityName = entityProviding.entity(forHost: host)?.displayName else { return nil }
         settings.browsingMajorTrackingSiteShown = true
@@ -580,8 +580,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         return BrowsingSpec.final
     }
 
-    private func trackersBlockedMessage(_ entitiesBlocked: [String], isReloadingDialog: Bool) -> BrowsingSpec? {
-        if !isReloadingDialog && settings.browsingWithTrackersShown { return nil }
+    private func trackersBlockedMessage(_ entitiesBlocked: [String]) -> BrowsingSpec? {
+        if settings.browsingWithTrackersShown { return nil }
 
         var spec: BrowsingSpec?
         switch entitiesBlocked.count {

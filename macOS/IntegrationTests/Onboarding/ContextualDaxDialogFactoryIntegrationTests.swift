@@ -52,7 +52,6 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
         // WHEN
-        view.viewModel.skip()
         view.viewModel.tryFireButton()
 
         // THEN

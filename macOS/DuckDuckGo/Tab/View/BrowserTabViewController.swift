@@ -85,6 +85,8 @@ final class BrowserTabViewController: NSViewController {
 
     private var hoverLabelWorkItem: DispatchWorkItem?
 
+    private var lastURL: URL?
+
     private(set) var transientTabContentViewController: NSViewController?
     private lazy var duckPlayerOnboardingModalManager: DuckPlayerOnboardingModalManager = {
         let modal = DuckPlayerOnboardingModalManager()
@@ -611,7 +613,14 @@ final class BrowserTabViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
 
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
+            // remove dialog on reload
+            if self?.lastURL == tabViewModel?.tab.url && self?.lastURL != nil {
+                self?.removeExistingDialog()
+                return
+            }
+            // present contextual onboarding dialog if needed
             self?.updateStateAndPresentContextualOnboarding()
+            self?.lastURL = self?.tabViewModel?.tab.url
         }.store(in: &tabViewModelCancellables)
     }
 

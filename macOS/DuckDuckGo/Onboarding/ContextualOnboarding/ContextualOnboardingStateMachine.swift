@@ -142,8 +142,6 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
     private var stateString: String {
         didSet {
             if stateString == ContextualOnboardingState.notStarted.rawValue {
-                // This makes the home page DuckDuckGo during the onboarding
-                startUpPreferences.launchToCustomHomePage = true
                 // This avoids the info sheet on the Fire button popover to be shown during the onboarding
                 fireButtonInfoStateProvider.infoPresentedOnce = true
                 resetData()
@@ -154,8 +152,6 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
                 if !fireButtonUsedOnce {
                     fireButtonInfoStateProvider.infoPresentedOnce = false
                 }
-                // This resets the home page to be the new tab page after the onboarding
-                startUpPreferences.launchToCustomHomePage = false
                 resetData()
             }
         }
@@ -184,24 +180,42 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
 
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo? = nil) -> ContextualDialogType? {
         let info = privacyInfo ?? tab.privacyInfo
-        guard case .url = tab.content else {
+        switch tab.content {
+        case .url, .newtab:
+            break
+        default:
             return nil
         }
-        guard let url = tab.url else { return nil }
 
-        // This is to avoid showing a dialog immediately when the user opens a new Window
-        if isANewWindow(tab: tab, url: url) {
-            lastVisitTab = tab
-            lastVisitSite = url
-            return nil
+        if case .newtab = tab.content {
+            return dialogPerNewTab()
         }
 
         lastVisitTab = tab
-        lastVisitSite = url
+        lastVisitSite = tab.url
+
+        if case .newtab = tab.content {
+            return dialogPerNewTab()
+        }
+
+        guard let url = tab.url else { return nil }
         if url.isDuckDuckGoSearch {
             return dialogPerSearch()
         } else {
             return dialogPerSiteVisit(privacyInfo: info)
+        }
+    }
+
+    private func dialogPerNewTab() -> ContextualDialogType? {
+        switch state {
+        case .notStarted, .showTryASearch:
+            return .tryASearch
+        case .showTryASite:
+            return .tryASite
+        case .showHighFive:
+            return .highFive
+        default:
+            return nil
         }
     }
 
@@ -263,26 +277,45 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
     }
 
     func updateStateFor(tab: Tab) {
-        guard case .url = tab.content else {
-            return
-        }
-        guard let url = tab.url else { return }
-
-        // This is to avoid updating the state immediately when the user opens a new Window (and DuckDuckGo site is loaded)
-        if isANewWindow(tab: tab, url: url) {
-            lastVisitTab = tab
-            lastVisitSite = url
+        switch tab.content {
+        case .url, .newtab:
+            break
+        default:
             return
         }
 
-        if tab != lastVisitTab || url != lastVisitSite {
+        if tab != lastVisitTab || tab.url != lastVisitSite {
             lastVisitTab = tab
-            lastVisitSite = url
+            lastVisitSite = tab.url
+            if case .newtab = tab.content {
+                newTabOpened()
+                return
+            }
+            guard let url = tab.url else { return }
             if url.isDuckDuckGoSearch {
                 searchPerformed()
             } else {
                 siteVisited(tab: tab)
             }
+        }
+    }
+
+    private func newTabOpened() {
+        switch state {
+        case .notStarted:
+            state = .showTryASearch
+        case .showTryASearch:
+            state = .showSearchDone
+        case .showSearchDone:
+            state = .showTryASite
+        case .showTryASite:
+            state = .tryASiteSeen
+        case .showFireButton:
+            state = .showHighFive
+        case .showHighFive:
+            state = .onboardingCompleted
+        default:
+            break
         }
     }
 

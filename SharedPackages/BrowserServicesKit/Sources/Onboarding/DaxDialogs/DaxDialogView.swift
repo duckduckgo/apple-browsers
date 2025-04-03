@@ -25,6 +25,7 @@ private enum DaxDialogMetrics {
     static let contentPadding: CGFloat = 24.0
     static let shadowRadius: CGFloat = 5.0
     static let stackSpacing: CGFloat = 8
+    static let dismissButtonPadding: CGFloat = 8
 
     enum DaxLogo {
         static let size: CGFloat = 54.0
@@ -92,8 +93,12 @@ public struct DaxDialogView<Content: View>: View {
             daxLogo
                 .padding(.leading, DaxDialogMetrics.DaxLogo.horizontalPadding)
 
-            wrappedContent
-                .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
+            if #available(macOS 12.0, *) {
+                wrappedContent
+                    .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
+            } else {
+                // Fallback on earlier versions
+            }
         }
     }
 
@@ -101,8 +106,12 @@ public struct DaxDialogView<Content: View>: View {
         HStack(alignment: .top, spacing: stackSpacing) {
             daxLogo
 
-            wrappedContent
-                .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
+            if #available(macOS 12.0, *) {
+                wrappedContent
+                    .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
+            } else {
+                // Fallback on earlier versions
+            }
         }
 
     }
@@ -128,11 +137,11 @@ public struct DaxDialogView<Content: View>: View {
     @ViewBuilder
     private var wrappedContent: some View {
         let backgroundColor = Color(designSystemColor: .surface)
-        let shadowColors: (Color, Color) = colorScheme == .light ?
-        (.black.opacity(0.08), .black.opacity(0.1)) :
-        (.black.opacity(0.20), .black.opacity(0.16))
+        let shadowColors: (Color, Color) = colorScheme == .light
+            ? (.black.opacity(0.08), .black.opacity(0.1))
+            : (.black.opacity(0.20), .black.opacity(0.16))
 
-        content
+        let styledContent = content
             .padding(.all, DaxDialogMetrics.contentPadding)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -143,27 +152,29 @@ public struct DaxDialogView<Content: View>: View {
                     .frame(width: arrowSize.width, height: arrowSize.height)
                     .foregroundColor(backgroundColor)
                     .rotationEffect(Angle(degrees: logoPosition == .top ? 0 : -90), anchor: .bottom)
-                    .offset(arrowOffset)
-                ,
+                    .offset(arrowOffset),
                 alignment: .topLeading
             )
+
+        if #available(macOS 12.0, iOS 15.0, *) {
+            styledContent
             .ifLet(onManualDismiss) { view, onDismiss in
                 view.overlay(alignment: .topTrailing) {
                     OnboardingDismissButton(action: onDismiss)
-                        .alignmentGuide(.top) { $0.height/2 - 8 }
-                        .alignmentGuide(.trailing) { $0.width/2 + 8 }
+                        .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
                 }
             }
-
-
-//        if let onDismiss {
-//            contentToReturn
-//                .overlay(alignment: .topTrailing) {
-//                    OnboardingDismissButton(action: onDismiss)
-//                        .alignmentGuide(.top) { $0.height/2 - 8 }
-//                        .alignmentGuide(.trailing) { $0.width/2 + 8 }
-//                }
-//        }
+        } else {
+            ZStack(alignment: .topTrailing) {
+                styledContent
+                if let onDismiss = onManualDismiss {
+                    OnboardingDismissButton(action: onDismiss)
+                        .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+                }
+            }
+        }
     }
 
     private var arrowOffset: CGSize {
@@ -220,22 +231,25 @@ struct OnboardingDismissButton: View {
     var body: some View {
         Button(action: action) {
             Image(.close16)
-                .padding(8)
-                .background(.white.opacity(0.72))
+                .padding(DaxDialogMetrics.dismissButtonPadding)
+                .background(backgroundColor)
                 .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
+        .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
+        .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
+        .frame(width: 44, height: 44)
+    }
+
+    private var backgroundColor: Color {
+        if #available(macOS 12.0, iOS 15.0, *) {
+            return Color.white.opacity(0.72)
+        } else {
+            return Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 0.72)
         }
     }
 }
-
-//private extension View {
-//    func dismissButton() -> some View {
-//        overlay(alignment: .topTrailing) {
-//            OnboardingDismissButton()
-//                .alignmentGuide(.top) { $0.height/2 - 8 }
-//                .alignmentGuide(.trailing) { $0.width/2 + 8 }
-//        }
-//    }
-//}
 
 extension View {
 

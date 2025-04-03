@@ -307,7 +307,7 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
         expectation.fulfill()
-        return AnyView(OnboardingFinalDialog(highFiveAction: {}))
+        return AnyView(OnboardingFinalDialog(highFiveAction: {}, onManualDismiss: {}))
     }
 
     func performOnGotItPressed() {

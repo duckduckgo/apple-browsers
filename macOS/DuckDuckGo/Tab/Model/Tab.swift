@@ -844,7 +844,8 @@ protocol NewWindowPolicyDecisionMaker {
             Application.appDelegate.onboardingStateMachine.state = .notStarted
             setContent(.onboarding)
         } else {
-            setContent(.onboardingDeprecated)
+            Application.appDelegate.onboardingStateMachine.state = .notStarted
+            setContent(.onboarding)
         }
     }
 

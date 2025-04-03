@@ -51,12 +51,12 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .onboardingCompleted)
     }
 
-    func testWhenOnboardingCompletedThenLaunchToCustomHomePageIsFalse() {
-        preferences.launchToCustomHomePage = true
-        stateMachine.state = .onboardingCompleted
-
-        XCTAssertFalse(preferences.launchToCustomHomePage)
-    }
+//    func testWhenOnboardingCompletedThenLaunchToCustomHomePageIsFalse() {
+//        preferences.launchToCustomHomePage = true
+//        stateMachine.state = .onboardingCompleted
+//
+//        XCTAssertFalse(preferences.launchToCustomHomePage)
+//    }
 
     func testWhenOnboardingIsAboutToStartThenFireButtonInfoStateIsTrue() {
         fireButtonInfoStateProvider.infoPresentedOnce = false
@@ -80,12 +80,12 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertFalse(fireButtonInfoStateProvider.infoPresentedOnce)
     }
 
-    func testWhenOnboardingIsAboutToStartLaunchToCustomHomePageIsTrue() {
-        preferences.launchToCustomHomePage = false
-        stateMachine.state = .notStarted
-
-        XCTAssertTrue(preferences.launchToCustomHomePage)
-    }
+//    func testWhenOnboardingIsAboutToStartLaunchToCustomHomePageIsTrue() {
+//        preferences.launchToCustomHomePage = false
+//        stateMachine.state = .notStarted
+//
+//        XCTAssertTrue(preferences.launchToCustomHomePage)
+//    }
 
     func test_OnSearch_WhenStateIsShowSearchDoneOrFireUsedShowSearchDone_returnsSearchDoneShouldFollowUp() {
         let states: [ContextualOnboardingState] = [.showSearchDone, .fireUsedShowSearchDone]

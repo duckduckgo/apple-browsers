@@ -466,7 +466,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Verify state was reset
         XCTAssertFalse(sut.state.hasBeenShown, "State should indicate DuckPlayer has not been shown")
         XCTAssertNil(sut.state.videoID, "Video ID should be cleared")
-        XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")       
+        XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")
     }
 
     @MainActor

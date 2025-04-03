@@ -567,6 +567,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     private func noTrackersMessage() -> DaxDialogs.BrowsingSpec? {
+        setTryVisitSiteMessageSeen()
         if !settings.browsingWithoutTrackersShown && !settings.browsingMajorTrackingSiteShown && !settings.browsingWithTrackersShown {
             settings.browsingWithoutTrackersShown = true
             return BrowsingSpec.withoutTrackers
@@ -585,8 +586,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
                                                            entityName,
                                                            entityPrevalence)
     }
-    
+
     private func majorTrackerMessage(_ host: String, isReloadingDialog: Bool) -> DaxDialogs.BrowsingSpec? {
+        setTryVisitSiteMessageSeen()
         if !isReloadingDialog && settings.browsingMajorTrackingSiteShown { return nil }
 
         guard let entityName = entityProviding.entity(forHost: host)?.displayName else { return nil }
@@ -629,6 +631,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
  
     private func blockedEntityNames(_ trackerInfo: TrackerInfo) -> [String]? {
+        setTryVisitSiteMessageSeen()
         guard !trackerInfo.trackersBlocked.isEmpty else { return nil }
         
         return trackerInfo.trackersBlocked.removingDuplicates { $0.entityName }
@@ -643,6 +646,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
     
     private func isOwnedByFacebookOrGoogle(_ host: String) -> Entity? {
+        setTryVisitSiteMessageSeen()
         guard let entity = entityProviding.entity(forHost: host) else { return nil }
         return entity.domains?.contains(where: { MajorTrackers.domains.contains($0) }) ?? false ? entity : nil
     }

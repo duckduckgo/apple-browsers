@@ -309,7 +309,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                    featureFlagger: featureFlagger,
                                                                    userDefaults: subscriptionUserDefaults,
                                                                    canPerformAuthMigration: true,
-                                                                   canHandlePixels: true)
+                                                                   pixelHandlingSource: .mainApp)
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {

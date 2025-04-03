@@ -49,7 +49,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         subscriptionManager.tokenRecoveryHandler = {
@@ -138,7 +138,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         let helpURL = subscriptionManager.url(for: .purchase)
@@ -196,7 +196,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         // When
@@ -215,7 +215,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         // When

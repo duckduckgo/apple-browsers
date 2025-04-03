@@ -472,11 +472,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
-                                                             subscriptionEndpointService: subscriptionEndpointServiceV2,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             tokenRecoveryHandler: nil,
-                                                             initForPurchase: false)
+                                                               subscriptionEndpointService: subscriptionEndpointServiceV2,
+                                                               subscriptionEnvironment: subscriptionEnvironment,
+                                                               pixelHandler: pixelHandler,
+                                                               tokenRecoveryHandler: nil,
+                                                               initForPurchase: false)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")

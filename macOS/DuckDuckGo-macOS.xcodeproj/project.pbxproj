@@ -3416,12 +3416,12 @@
 		F1D447232D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D447242D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D447252D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
-		F1D447262D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D447272D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D447282D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D447292D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D4472A2D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1D4472B2D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
+		F1D4472F2D9ECEE90085809A /* AuthV2PixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1D447222D9EAA950085809A /* AuthV2PixelHandler.swift */; };
 		F1DA51862BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
 		F1DA51872BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
 		F1DA51882BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1DA51842BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift */; };
@@ -13423,6 +13423,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				02FDA6642C765D0F0024CD8B /* VPNAgentConfigurationURLProvider.swift in Sources */,
+				F1D4472F2D9ECEE90085809A /* AuthV2PixelHandler.swift in Sources */,
 				7B2DDCFB2A93B25F0039D884 /* KeychainType+ClientDefault.swift in Sources */,
 				B6F92BA32A691583002ABA6B /* UserDefaultsWrapper.swift in Sources */,
 				4BA7C4DB2B3F63AE00AFE511 /* NetworkExtensionController.swift in Sources */,
@@ -13578,7 +13579,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B97CD5C2B7E0BBB004FEF43 /* UserDefaultsWrapper.swift in Sources */,
-				F1D447262D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */,
 				7BDA36F52B7E055800AD5388 /* MacTransparentProxyProvider.swift in Sources */,
 				7B97CD5D2B7E0BCE004FEF43 /* BundleExtension.swift in Sources */,
 			);

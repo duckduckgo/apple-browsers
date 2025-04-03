@@ -189,6 +189,7 @@ final class NavigationBarViewController: NSViewController {
 
         setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()
+        setupNavigationButtonIcons()
         addContextMenu()
 
         optionsButton.sendAction(on: .leftMouseDown)
@@ -676,6 +677,18 @@ final class NavigationBarViewController: NSViewController {
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip
         refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+    }
+
+    private func setupNavigationButtonIcons() {
+        goBackButton.image = visualStyleManager.style.backButtonImage
+        goForwardButton.image = visualStyleManager.style.forwardButtonImage
+        refreshOrStopButton.image = visualStyleManager.style.reloadButtonImage
+        homeButton.image = visualStyleManager.style.homeButtonImage
+
+        downloadsButton.image = visualStyleManager.style.downloadsButtonImage
+        passwordManagementButton.image = visualStyleManager.style.passwordManagerButtonImage
+        bookmarkListButton.image = visualStyleManager.style.bookmarksButtonImage
+        optionsButton.image = visualStyleManager.style.moreOptionsbuttonImage
     }
 
     private func setupNavigationButtonsCornerRadius() {

@@ -121,7 +121,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Determines if the priming modal should be shown
     private var shouldShowPrimingModal: Bool {
         let now = Int(Date().timeIntervalSince1970)
-        let timeSinceLastShown = now - appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented
+        let timeSinceLastShown = now - appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime
 
         return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount < Constants.primingModalEventCountThreshold
             && timeSinceLastShown > Constants.primingModalTimeSinceLastPresentedThreshold && appSettings.duckPlayerNativeYoutubeMode == .ask
@@ -154,6 +154,15 @@ final class DuckPlayerNativeUIPresenter {
             name: DefaultOmniBarView.didLayoutNotification,
             object: nil
         )
+
+            // Add observers for app settings changes
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(handleAppSettingsChange),
+            name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+            object: nil
+        )
+
     }
 
     /// Updates the UI based on Ombibar Notification
@@ -162,6 +171,13 @@ final class DuckPlayerNativeUIPresenter {
         omniBarHeight = omniBar.frame.height
         guard let bottomConstraint = bottomConstraint else { return }
         bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -omniBarHeight : 0
+    }
+
+        /// Updates the UI based on Ombibar Notification
+    @objc func handleAppSettingsChange(_ notification: Notification) {
+        appSettings = AppDependencyProvider.shared.appSettings
+        print("appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount: \(appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount)")
+        print("appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime: \(appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime)")
     }
 
     /// Creates a container with the appropriate pill view based on the pill type
@@ -402,7 +418,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         if shouldShowPrimingModal {
             appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1
-            appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = Int(Date().timeIntervalSince1970)
+            appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = Int(Date().timeIntervalSince1970)
             presentPrimingModal(for: videoID, in: hostViewController, timestamp: timestamp)
         }
 
@@ -515,10 +531,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         if reset {
             self.state = DuckPlayerState()
-            // Reset app settings values
-            appSettings.duckPlayerPillDismissCount = 0
-            appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-            appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
         }
     }
 

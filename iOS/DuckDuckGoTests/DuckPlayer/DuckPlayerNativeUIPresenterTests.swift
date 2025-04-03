@@ -276,7 +276,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = nil
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -293,7 +293,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = 0.0
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -325,7 +325,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = nil
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -358,7 +358,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let timestamp: TimeInterval? = nil
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
         // Set time since last presented to exceed threshold (24 hours = 86400 seconds)
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = Int(Date().timeIntervalSince1970) - 86401
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = Int(Date().timeIntervalSince1970) - 86401
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -375,7 +375,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = nil
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 3 // Set to threshold
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -392,7 +392,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = nil
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 0
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
         mockAppSettings.duckPlayerNativeYoutubeMode = .never
 
         // When
@@ -402,6 +402,23 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertFalse(mockHostViewController.presentCalled, "Modal should not be presented when YouTube mode is never")
         XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 0, "Presentation event count should not be incremented")
     }
+    
+    @MainActor
+   func testPrimingModal_WhenTimeThreshholdNotMet_DoesNotShowModal() {
+       // Given
+       let videoID = "test123"
+       let timestamp: TimeInterval? = nil
+       mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 1
+       mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = Int(Date().timeIntervalSince1970) - 6500// Less than 24h ago
+       mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+
+       // When
+       sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+
+       // Then
+       XCTAssertFalse(mockHostViewController.presentCalled)
+       XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 1)
+   }
 
     // MARK: - dismissPill Tests
 
@@ -439,7 +456,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
         mockAppSettings.duckPlayerPillDismissCount = 2
         mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 1
-        mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = 1000
+        mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 1000
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
 
         // When
@@ -452,7 +469,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")
         XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 0, "Dismiss count should be reset")
         XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 0, "Presentation event count should be reset")
-        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented, 0, "Time since last presented should be reset")
+        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime, 0, "Time since last presented should be reset")
 
         // Verify we can present again as a first-time presentation
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)

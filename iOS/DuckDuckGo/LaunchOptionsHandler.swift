@@ -20,7 +20,10 @@
 import Foundation
 
 public final class LaunchOptionsHandler {
-    private static let isOnboardingCompleted = "isOnboardingCompleted"
+
+    // Used by debug controller
+    public static let isOnboardingCompleted = "isOnboardingCompleted"
+
     private static let appVariantName = "currentAppVariant"
     private static let automationPort = "automationPort"
 

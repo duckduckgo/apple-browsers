@@ -355,11 +355,21 @@ final class TabTests: XCTestCase {
 
     @MainActor
     func testIfTabIsBurner_ThenFaviconManagerIsInMemory() throws {
-        let tab = Tab(content: .newtab)
-        XCTAssertTrue(tab.faviconManagement === FaviconManager.shared)
+        let builder = TestTabExtensionsBuilder.shared
+        builder.shouldCaptureBuildCalls = true
+        defer {
+            builder.shouldCaptureBuildCalls = false
+            builder.buildCalls = []
+        }
+        builder.buildCalls = []
 
-        let burnerTab = Tab(content: .newtab, burnerMode: BurnerMode(isBurner: true))
-        XCTAssertTrue(burnerTab.faviconManagement !== FaviconManager.shared)
+        _ = Tab(content: .newtab)
+        let faviconManagement = try XCTUnwrap(builder.buildCalls[safe: 0]?.1.faviconManagement)
+        XCTAssertTrue(faviconManagement === NSApp.delegateTyped.faviconManager)
+
+        _ = Tab(content: .newtab, burnerMode: BurnerMode(isBurner: true))
+        let burnerFaviconManagement = try XCTUnwrap(builder.buildCalls[safe: 1]?.1.faviconManagement)
+        XCTAssertTrue(burnerFaviconManagement !== NSApp.delegateTyped.faviconManager)
     }
 
     // MARK: - Control Center Media Session enabled

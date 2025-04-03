@@ -56,10 +56,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
+               BlueprintIdentifier = "UDSHelperTests"
+               BuildableName = "UDSHelperTests"
+               BlueprintName = "UDSHelperTests"
+               ReferencedContainer = "container:LocalPackages/UDSHelper">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -70,10 +70,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "UDSHelperTests"
-               BuildableName = "UDSHelperTests"
-               BlueprintName = "UDSHelperTests"
-               ReferencedContainer = "container:LocalPackages/UDSHelper">
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -193,6 +193,60 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedThenDDGLoaded_tabIsNotMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedThenNotDetected_tabIsNotMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedViaHTTPRedirectChain_tabIsMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedViaJSRedirectChain_tabIsMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetected_tabIsMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetectedNotDetected_tabIsNotMarkedScam()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetectedThenDDGLoaded_tabIsNotMarkedScam()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetected_tabIsMarkedScam()">
+               </Test>
+               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test
@@ -241,16 +295,6 @@
                BuildableName = "NetworkProtectionUITests"
                BlueprintName = "NetworkProtectionUITests"
                ReferencedContainer = "container:LocalPackages/NetworkProtectionMac">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -311,6 +355,16 @@
                BuildableName = "SyncUITests"
                BlueprintName = "SyncUITests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

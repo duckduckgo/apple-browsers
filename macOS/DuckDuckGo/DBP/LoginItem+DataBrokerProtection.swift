@@ -18,7 +18,7 @@
 
 import Foundation
 import LoginItems
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import os.log
 
 extension LoginItem {

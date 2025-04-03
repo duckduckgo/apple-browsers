@@ -68,7 +68,7 @@ final class StatisticsLoader {
                 PixelExperiment.fireSerpPixel()
                 PixelExperiment.fireOnboardingSearchPerformed5to7Pixel()
                 self.fireSearchExperimentPixels()
-                if NSApp.runType == .normal {
+                if AppVersion.runType == .normal {
                     self.fireDailyOsVersionCounterPixel()
                 }
                 self.fireDockPixel()

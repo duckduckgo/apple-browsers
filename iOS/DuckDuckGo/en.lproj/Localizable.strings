@@ -235,6 +235,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Unable to remove this device from Sync & Backup.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Sorry, this code is invalid. Please make sure the correct code was entered or scanned.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Unable to connect to the server.";
 
@@ -359,7 +362,7 @@
 "autofill.keep-enabled.alert.disable" = "Disable";
 
 /* A link that takes the user to the DuckDuckGo help pages explaining password managers */
-"autofill.learn.more.link.title" = "Learn More";
+"autofill.learn.more.link.title" = "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
 
 /* Button displayed after saving/updating an autofill login that takes the user to the saved login */
 "autofill.login-save-action-button.toast" = "View";
@@ -503,10 +506,7 @@
 "autofill.logins.list.search-placeholder" = "Search passwords";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.footer.fallback" = "Passwords are encrypted. Nobody but you can see them, not even us.";
-
-/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. Has a URL link by clicking Learn More. */
-"autofill.logins.list.settings.footer.markdown" = "Passwords are encrypted. Nobody but you can see them, not even us. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+"autofill.logins.list.settings.footer" = "Passwords are encrypted. Nobody but you can see them, not even us.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Suggested";
@@ -641,6 +641,15 @@
 /* Confirm CTA displayed on modal asking for the user to save the password */
 "autofill.save-password.save.CTA" = "Save Password";
 
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "Ask to save and autofill";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "Import Passwords";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.options.section-header" = "Options";
+
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Report a problem with autofill";
 
@@ -661,6 +670,9 @@
 
 /* Title for the row to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.title" = "Autofill not working?";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "View";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Show Password";
@@ -1169,8 +1181,14 @@
 /* Text for the toggle to autoplay videos */
 "duck-player.native-autoplay-videos" = "Autoplay Videos";
 
+/* Text for the description about autoplay videos */
+"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
+
 /* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
+"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
+
+/* Text for the button to resume watching a video on DuckPlayer */
+"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
 
 /* Text for the button to watch a video on YouTube */
 "duck-player.native-watch-on-youtube" = "Watch in Youtube";
@@ -1191,6 +1209,9 @@
 /* Toggle text to enable/disable AI Chat in the browsing menu */
 "duckai.settings.enable.browsing-menu-toggle" = "Show Duck.ai in Browser Menu";
 
+/* Toggle text to enable/disable Duck.ai in tab manager */
+"duckai.settings.enable.tab-switcher-toggle" = "Show Duck.ai on the Tabs Screen";
+
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Show Duck.ai in Voice Search";
 
@@ -1206,8 +1227,14 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Never";
 
+/* Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
+
+/* Button on Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message.button" = "Open Settings";
+
 /* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player lets you watch YouTube without targeted ads in DuckDuckGo and what you watch won’t influence your recommendations.";
@@ -1245,17 +1272,29 @@
 /* Text displayed when DuckPlayer is automatically enabled for Youtube */
 "duckPlayerNative.auto.label" = "Automatically";
 
+/* Label for the automatic youtube video opening */
+"duckPlayerNative.auto.open.label" = "Auto-open Duck Player on Youtube";
+
+/* CTA for DuckPlayer priming modal */
+"duckPlayerNative.modal.cta" = "Watch Now Privately";
+
+/* Description for DuckPlayer priming modal */
+"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
+
+/* Title for DuckPlayer priming modal */
+"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
+
 /* Text displayed when DuckPlayer is in off for youtube. */
 "duckPlayerNative.never.label" = "Don't Show";
 
 /* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "YouTube videos on DuckDuckGo search results will open in Duck Player.";
+"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
 
 /* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "Use on Search Results";
+"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
 
 /* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Makes Duck Player available on Youtube video pages.";
+"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
 
 /* Label for the use DuckPlayer on Youtube toggle */
 "duckPlayerNative.use.on.youtube.label" = "Use on Youtube.com";
@@ -1781,6 +1820,9 @@ https://duckduckgo.com/mac";
 
 /* Title for the Mac Waitlist feature */
 "mac-waitlist.title" = "DuckDuckGo App for Mac";
+
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "Warn me on sites flagged for scams, phishing, or malware";
 
 /* Button that redirect the user to a web page explaining what Malicious Site Protection is */
 "malicious-site-protection.settings.footer.button.learn-more" = "Learn More";
@@ -2498,7 +2540,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.let.duckduckgo.manage.cookie.consent.popups" = "Let DuckDuckGo manage cookie consent pop-ups";
 
 /* Settings screen cell text for passwords */
-"settings.logins" = "Passwords";
+"settings.logins" = "Passwords & Autofill";
 
 /* The name of the settings section containing main settings */
 "settings.main.settings" = "Main Settings";
@@ -3074,8 +3116,8 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the VPN widget onboarding screen */
 "vpn.addWidget.settings.title" = "Find and select **DuckDuckGo**, then swipe to **VPN** and select **Add Widget**";
 
-/* Message for success when running the intent to enable the DuckDuckGo VPN */
-"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN is connected";
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPN is disconnected";
 
 /* No comment provided by engineer. */
 "vpn.control-widget.education.screen.description" = "Siri Shortcuts let you connect to your VPN with a quick voice command, like “Siri, turn on DuckDuckGo VPN”. It’s a fast, hands-free way to use your VPN.";

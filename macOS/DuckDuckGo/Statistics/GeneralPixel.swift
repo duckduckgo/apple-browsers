@@ -255,12 +255,12 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
-    case autocompleteClickPhrase(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickWebsite(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickBookmark(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickFavorite(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickHistory(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickOpenTab(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
+    case autocompleteClickPhrase
+    case autocompleteClickWebsite
+    case autocompleteClickBookmark
+    case autocompleteClickFavorite
+    case autocompleteClickHistory
+    case autocompleteClickOpenTab
     case autocompleteToggledOff
     case autocompleteToggledOn
 
@@ -1195,6 +1195,7 @@ enum GeneralPixel: PixelKitEventV2 {
 
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
+
         }
     }
 
@@ -1392,23 +1393,6 @@ enum GeneralPixel: PixelKitEventV2 {
                 .bookmarksSearchResultClicked(let origin):
             return ["origin": origin]
 
-        case .autocompleteClickPhrase(let from, let cohort, let onboardingCohort),
-                .autocompleteClickWebsite(let from, let cohort, let onboardingCohort),
-                .autocompleteClickBookmark(let from, let cohort, let onboardingCohort),
-                .autocompleteClickFavorite(let from, let cohort, let onboardingCohort),
-                .autocompleteClickHistory(let from, let cohort, let onboardingCohort),
-                .autocompleteClickOpenTab(let from, let cohort, let onboardingCohort):
-            var parameters: [String: String] = [:]
-            if let from {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.from] = from.rawValue
-            }
-            if let cohort {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.cohort] = cohort.rawValue
-            }
-            if let onboardingCohort {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.onboardingCohort] = onboardingCohort.rawValue
-            }
-            return parameters
         case .fileDownloadCreatePresentersFailed(let osVersion):
             return ["osVersion": osVersion]
         default: return nil

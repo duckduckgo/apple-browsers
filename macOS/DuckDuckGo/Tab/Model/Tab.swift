@@ -56,6 +56,7 @@ protocol NewWindowPolicyDecisionMaker {
         var certificateTrustEvaluator: CertificateTrustEvaluating
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
+        var faviconManagement: FaviconManagement?
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -70,7 +71,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     private let featureFlagger: FeatureFlagger
-    let pinnedTabsManager: PinnedTabsManager
+    let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
     private let webViewConfiguration: WKWebViewConfiguration
 
@@ -96,7 +97,7 @@ protocol NewWindowPolicyDecisionMaker {
                      webCacheManager: WebCacheManager = WebCacheManager.shared,
                      webViewConfiguration: WKWebViewConfiguration? = nil,
                      historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
-                     pinnedTabsManager: PinnedTabsManager? = nil,
+                     pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
                      duckPlayer: DuckPlayer? = nil,
@@ -127,9 +128,9 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
 
         let duckPlayer = duckPlayer
-            ?? (NSApp.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
+            ?? (AppVersion.runType.requiresEnvironment ? DuckPlayer.shared : DuckPlayer.mock(withMode: .enabled))
         let statisticsLoader = statisticsLoader
-            ?? (NSApp.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
+            ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? PrivacyFeatures
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         var faviconManager = faviconManagement
@@ -139,11 +140,11 @@ protocol NewWindowPolicyDecisionMaker {
 
         self.init(id: id,
                   content: content,
-                  faviconManagement: faviconManager ?? FaviconManager.shared,
+                  faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
                   historyCoordinating: historyCoordinating,
-                  pinnedTabsManager: pinnedTabsManager ?? WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider,
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
                   duckPlayer: duckPlayer,
@@ -181,7 +182,7 @@ protocol NewWindowPolicyDecisionMaker {
          webCacheManager: WebCacheManager,
          webViewConfiguration: WKWebViewConfiguration?,
          historyCoordinating: HistoryCoordinating,
-         pinnedTabsManager: PinnedTabsManager,
+         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          workspace: Workspace,
          privacyFeatures: AnyPrivacyFeatures,
          duckPlayer: DuckPlayer,
@@ -213,14 +214,14 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
         self._id = id
         self.content = content
-        self.faviconManagement = faviconManagement
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
+        self.parentTabID = parentTab?.id
         self.securityOrigin = securityOrigin ?? .empty
         self.burnerMode = burnerMode
         self._canBeClosedWithBack = canBeClosedWithBack
@@ -261,7 +262,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tabGetter: () -> Tab? = { nil }
         self.extensions = extensionsBuilder
             .build(with: (tabIdentifier: instrumentation.currentTabIdentifier,
-                          isTabPinned: { tabGetter().map { tab in pinnedTabsManager.isTabPinned(tab) } ?? false },
+                          isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
                           contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                           setContent: { tabGetter()?.setContent($0) },
@@ -284,7 +285,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        downloadManager: downloadManager,
                                                        certificateTrustEvaluator: certificateTrustEvaluator,
                                                        tunnelController: tunnelController,
-                                                       maliciousSiteDetector: maliciousSiteDetector))
+                                                       maliciousSiteDetector: maliciousSiteDetector,
+                                                       faviconManagement: faviconManagement))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -295,8 +297,9 @@ protocol NewWindowPolicyDecisionMaker {
         setupWebView(shouldLoadInBackground: shouldLoadInBackground)
         webViewPromise.fulfill(webView)
 
+        faviconCancellable = extensions.favicons?.faviconPublisher.assign(to: \.favicon, onWeaklyHeld: self)
         if favicon == nil {
-            handleFavicon()
+            extensions.favicons?.handleFavicon(oldValue: nil, error: error)
         }
 
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
@@ -374,7 +377,7 @@ protocol NewWindowPolicyDecisionMaker {
 
             userContentController?.cleanUpBeforeClosing()
 #if DEBUG
-            if case .normal = NSApp.runType {
+            if case .normal = AppVersion.runType {
                 webView.assertObjectDeallocated(after: 4.0)
             }
 #endif
@@ -458,12 +461,14 @@ protocol NewWindowPolicyDecisionMaker {
             if !content.displaysContentInWebView && oldValue.displaysContentInWebView {
                 webView.stopAllMedia(shouldStopLoading: false)
             }
-            handleFavicon(oldValue: oldValue)
+            Task { @MainActor in
+                extensions.favicons?.handleFavicon(oldValue: oldValue, error: error)
+            }
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
             }
 #endif
@@ -539,8 +544,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
             }
 #endif
@@ -574,8 +579,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
             }
 #endif
@@ -597,6 +602,7 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     weak private(set) var parentTab: Tab?
+    private(set) var parentTabID: String?
     private var _canBeClosedWithBack: Bool
     var canBeClosedWithBack: Bool {
         // Reset canBeClosedWithBack on any WebView navigation
@@ -627,6 +633,12 @@ protocol NewWindowPolicyDecisionMaker {
     }
 
     func getActualInteractionStateData() -> Data? {
+        if let pinnedTabsManager = pinnedTabsManagerProvider.pinnedTabsManager(for: self),
+           pinnedTabsManager.isTabPinned(self) {
+            // To optimize the performance, don't save interaction state data for pinned tabs
+            return nil
+        }
+
         if let interactionStateData = interactionState.data {
             return interactionStateData
         }
@@ -823,7 +835,7 @@ protocol NewWindowPolicyDecisionMaker {
         userInteractionDialog = nil
 
 #if DEBUG || REVIEW
-        if Application.runType == .uiTestsOnboarding {
+        if AppVersion.runType == .uiTestsOnboarding {
             setContent(.onboarding)
             return
         }
@@ -874,8 +886,8 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
         }
 #endif
@@ -1016,6 +1028,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     private var webViewCancellables = Set<AnyCancellable>()
     private var emailDidSignOutCancellable: AnyCancellable?
+    private var faviconCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1089,32 +1102,6 @@ protocol NewWindowPolicyDecisionMaker {
     // MARK: - Favicon
 
     @Published var favicon: NSImage?
-    let faviconManagement: FaviconManagement
-
-    @MainActor(unsafe)
-    private func handleFavicon(oldValue: TabContent? = nil) {
-        guard content.isUrl, let url = content.urlForWebView, error == nil else {
-            favicon = nil
-            return
-        }
-
-        if url.isDuckPlayer {
-            favicon = .duckPlayer
-            return
-        }
-
-        guard faviconManagement.areFaviconsLoaded else { return }
-
-        if let cachedFavicon = faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image {
-            if cachedFavicon != favicon {
-                favicon = cachedFavicon
-            }
-        } else if oldValue?.urlForWebView?.host != url.host {
-            // If the domain matches the previous value, just keep the same favicon
-            favicon = nil
-        }
-    }
-
 }
 
 extension Tab: UserContentControllerDelegate {
@@ -1125,7 +1112,6 @@ extension Tab: UserContentControllerDelegate {
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
         userScripts.debugScript.instrumentation = instrumentation
-        userScripts.faviconScript.delegate = self
         userScripts.pageObserverScript.delegate = self
         userScripts.printingUserScript.delegate = self
         specialPagesUserScript = nil
@@ -1137,23 +1123,6 @@ extension Tab: PageObserverUserScriptDelegate {
 
     func pageDOMLoaded() {
         self.delegate?.tabPageDOMLoaded(self)
-    }
-
-}
-
-extension Tab: FaviconUserScriptDelegate {
-
-    @MainActor(unsafe)
-    func faviconUserScript(_ faviconUserScript: FaviconUserScript,
-                           didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
-                           for documentUrl: URL) {
-        guard documentUrl != .error else { return }
-        faviconManagement.handleFaviconLinks(faviconLinks, documentUrl: documentUrl) { favicon in
-            guard documentUrl == self.content.urlForWebView, let favicon = favicon else {
-                return
-            }
-            self.favicon = favicon.image
-        }
     }
 
 }
@@ -1300,8 +1269,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
               !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder */ else { return }
 
         // don‘t show an error page if the error was already handled
-        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`
-        guard self.content.urlForWebView == url
+        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`.
+        // When comparing URL, also try removing text fragment, because WebKit may drop it from the URL on failed loads.
+        guard self.content.urlForWebView == url || self.content.urlForWebView?.removingTextFragment() == url
                 || self.content == .none /* when navigation fails instantly we may have no content set yet */
                 // navigation failure with MaliciousSiteError is achieved by redirecting to a special token-protected
                 // duck://error?.. URL performed in SpecialErrorPageTabExtension.swift

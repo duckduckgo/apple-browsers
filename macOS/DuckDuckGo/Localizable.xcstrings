@@ -107,6 +107,7 @@
     },
     "**%lld** tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -323,6 +324,7 @@
     },
     "%lld tracking attempts blocked" : {
       "comment" : "The number of tracking attempts blocked in the last 7 days, shown on a new tab, translate as: Tracking attempts blocked: %@",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -998,7 +1000,7 @@
     },
     "add.favorite" : {
       "comment" : "Button for adding a favorite bookmark",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9799,7 +9801,7 @@
     },
     "bookmarks.bar.context-menu.copy" : {
       "comment" : "Copy menu item for the bookmarks bar context menu",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -16058,6 +16060,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Копировать адрес изображения"
+          }
+        }
+      }
+    },
+    "copy.link" : {
+      "comment" : "Copy Link button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Copy Link"
           }
         }
       }
@@ -29567,7 +29581,7 @@
     },
     "home.page.settings.background" : {
       "comment" : "Section title in Home Page Settings to customization Home Page background",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -29627,7 +29641,7 @@
     },
     "home.page.settings.browser.theme" : {
       "comment" : "Section title in Home Page Settings to adjust browser theme",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -30227,7 +30241,7 @@
     },
     "home.page.settings.sections" : {
       "comment" : "Section title in Home Page Settings to adjust Home Page sections visibility",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -40815,7 +40829,7 @@
     },
     "newTab.search.bar.section.title" : {
       "comment" : "Setting to show or hide the search box (search field) in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -41895,7 +41909,7 @@
     },
     "newTab.setup.section.title" : {
       "comment" : "Title of the setup section in the home page",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -48758,6 +48772,66 @@
         }
       }
     },
+    "phishing-detection.deprecated.enabled.checkbox" : {
+      "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warne mich vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn me on sites flagged for phishing or malware."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisarme sobre sitios marcados como estafas, phishing o malware"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mettez-moi en garde contre les sites signalés pour escroqueries, pour hameçonnage ou comme étant des logiciels malveillants"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisami sui siti contrassegnati per truffe, phishing o malware"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuw me op websites die zijn aangeduid als oplichting, phishing of malware"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj mnie przed witrynami oznaczonymi jako oszustwa, wyłudzanie informacji lub złośliwe oprogramowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar-me sobre sites sinalizados como fraudes, phishing ou malware"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о мошеннических, фишинговых и вредоносных сайтах"
+          }
+        }
+      }
+    },
     "phishing-detection.enabled.checkbox" : {
       "comment" : "Checkbox that enables or disables the phishing and malware detection feature in the browser",
       "extractionState" : "extracted_with_value",
@@ -48771,7 +48845,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn me on sites flagged for phishing or malware."
+            "value" : "Warn me on sites flagged for scams, phishing, or malware."
           }
         },
         "es" : {
@@ -48994,6 +49068,150 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрепить вкладку"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.message" : {
+      "comment" : "Info message to users about option to adjust behavior of pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can now choose to have shared or separate pinned tabs across multiple browser windows."
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.message.2" : {
+      "comment" : "Info message to users about option to adjust behavior of pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can change this anytime in Settings."
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.separate" : {
+      "comment" : "Button opening Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use Separate Pinned Tabs"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.shared" : {
+      "comment" : "Button to close the popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keep Shared Pinned Tabs"
+          }
+        }
+      }
+    },
+    "pinned-tabs.discovery.popover.title" : {
+      "comment" : "Title for pinned tabs discovery dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New Pinned Tab Settings"
+          }
+        }
+      }
+    },
+    "pinned.tabs.mode.separate" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are different in each window",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Separate in each window"
+          }
+        }
+      }
+    },
+    "pinned.tabs.mode.shared" : {
+      "comment" : "Preferences > Tabs > Pinned tabs are shared across all windows",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shared across all windows"
+          }
+        }
+      }
+    },
+    "pinning.hide-aichat-shortcut" : {
+      "comment" : "Menu item for hiding the AI Chat shortcut",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-Chat-Verknüpfung ausblenden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI Chat Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar acceso directo a AI Chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le raccourci de chat IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi scorciatoia AI Chat"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor AI-chat verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj skrót do AI Chat"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar atalho do AI Chat"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть ярлык AI Chat"
           }
         }
       }
@@ -56970,6 +57188,30 @@
         }
       }
     },
+    "preferences-pinned-tabs-warning" : {
+      "comment" : "Content of warning before switching from per window pinned tabs to shared pinned tabs\nTitle of warning before switching from per window pinned tabs to shared pinned tabs",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Are you sure you want to share pinned tabs across all windows?"
+          }
+        }
+      }
+    },
+    "preferences-pinned-tabs.title" : {
+      "comment" : "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pinned tabs are"
+          }
+        }
+      }
+    },
     "preferences-tabs.new.tab.position.title" : {
       "comment" : "Title for new tab positioning",
       "extractionState" : "extracted_with_value",
@@ -61564,59 +61806,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remove from browsing history"
-          }
-        }
-      }
-    },
-    "Reopen All Windows From Last Session" : {
-      "comment" : "Main Menu History item",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Fenster der letzten Sitzung wieder öffnen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volver a abrir todas las ventanas de la última sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rouvrir toutes les fenêtres de la dernière session"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riapri tutte le finestre dell'ultima sessione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle vensters van de laatste sessie opnieuw openen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz ponownie wszystkie okna z ostatniej sesji"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reabrir todas as janelas da última sessão"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Заново открыть все окна из последнего сеанса"
           }
         }
       }

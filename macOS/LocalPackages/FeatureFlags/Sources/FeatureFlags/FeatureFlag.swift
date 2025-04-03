@@ -42,11 +42,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/0/1209150117333883/f
     case networkProtectionAppExclusions
 
+    /// https://app.asana.com/0/0/1209402073283584
+    case networkProtectionAppStoreSysex
+
+    /// https://app.asana.com/0/1203108348835387/1209710972679271/f
+    case networkProtectionAppStoreSysexMessage
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
-
-    /// https://app.asana.com/0/72649045549333/1208241266421040/f
-    case htmlNewTabPage
 
     /// https://app.asana.com/0/1201048563534612/1208850443048685/f
     case historyView
@@ -59,6 +62,15 @@ public enum FeatureFlag: String, CaseIterable {
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
     case popoverVsBannerExperiment
+
+    /// https://app.asana.com/0/72649045549333/1207991044706236/f
+    case privacyProAuthV2
+
+    /// https://app.asana.com/0/72649045549333/1209633877674689/f
+    case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/0/72649045549333/1209793701087222/f
+    case visualRefresh
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -79,16 +91,30 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .htmlNewTabPage, .autofillPartialFormSaves, .autcompleteTabs, .networkProtectionAppExclusions, .networkProtectionRiskyDomainsProtection, .syncSeamlessAccountSwitching, .historyView, .webExtensions, .autoUpdateInDEBUG, .popoverVsBannerExperiment, .scamSiteProtection:
+        case .autofillPartialFormSaves,
+                .autcompleteTabs,
+                .networkProtectionAppExclusions,
+                .networkProtectionAppStoreSysex,
+                .networkProtectionAppStoreSysexMessage,
+                .networkProtectionRiskyDomainsProtection,
+                .syncSeamlessAccountSwitching,
+                .historyView,
+                .webExtensions,
+                .autoUpdateInDEBUG,
+                .popoverVsBannerExperiment,
+                .privacyProAuthV2,
+                .scamSiteProtection,
+                .exchangeKeysToSyncWithAnotherDevice,
+                .visualRefresh:
             return true
         case .debugMenu,
-             .sslCertificatesBypass,
-             .appendAtbToSerpQueries,
-             .freemiumDBP,
-             .contextualOnboarding,
-             .unknownUsernameCategorization,
-             .credentialsImportPromotionForExistingUsers,
-             .maliciousSiteProtection:
+                .sslCertificatesBypass,
+                .appendAtbToSerpQueries,
+                .freemiumDBP,
+                .contextualOnboarding,
+                .unknownUsernameCategorization,
+                .credentialsImportPromotionForExistingUsers,
+                .maliciousSiteProtection:
             return false
         }
     }
@@ -113,8 +139,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
         case .networkProtectionAppExclusions:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
-        case .htmlNewTabPage:
-            return .remoteReleasable(.subfeature(HTMLNewTabPageSubfeature.isLaunched))
+        case .networkProtectionAppStoreSysex:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
+        case .networkProtectionAppStoreSysexMessage:
+            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtensionMessage))
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
@@ -133,6 +161,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .popoverVsBannerExperiment:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
+        case .privacyProAuthV2:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .visualRefresh:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
         }
     }
 }

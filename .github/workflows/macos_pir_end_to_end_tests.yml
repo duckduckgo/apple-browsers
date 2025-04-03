@@ -11,12 +11,12 @@ on:
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'macOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'macOS/**'
 
 jobs:
@@ -35,7 +35,7 @@ jobs:
       group: ${{ github.workflow }}-${{ github.ref }}-${{ matrix.runner }}
       cancel-in-progress: true
 
-    timeout-minutes: 40
+    timeout-minutes: 32
     steps:
     - name: Register SSH keys for certificates repository and PIR fake broker repository access
       uses: webfactory/ssh-agent@v0.9.0
@@ -56,6 +56,9 @@ jobs:
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_PIR_FAKE_BROKER }}
         ref: main
         path: macOS/pir-fake-broker
+
+    - name: Update Homebrew
+      run: brew update
 
     - name: Start PIR Fake Broker
       run: |
@@ -100,10 +103,9 @@ jobs:
           ${{ runner.os }}-macos-
 
     - name: Select Xcode
-      run: |
-        # Override .xcode_version because 15.4 is not available on macos 13
-        echo "${{ matrix.xcode-version }}" > .xcode-version
-        sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Run PIR e2e Tests
       run: |
@@ -116,6 +118,7 @@ jobs:
           ENABLE_TESTABILITY=true \
           "-only-testing:DBPE2ETests" \
           -retry-tests-on-failure \
+          -test-iterations 2 \
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:

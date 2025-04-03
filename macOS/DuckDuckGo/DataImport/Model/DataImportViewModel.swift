@@ -424,7 +424,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared),
-                            faviconManager: FaviconManager.shared)
+                            faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
@@ -736,7 +736,7 @@ extension DataImportViewModel {
 
         Logger.dataImportExport.debug("dismiss")
         dismiss()
-        if case .xcPreviews = NSApp.runType {
+        if case .xcPreviews = AppVersion.runType {
             self.update(with: importSource) // reset
         }
     }

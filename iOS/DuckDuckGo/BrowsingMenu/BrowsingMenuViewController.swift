@@ -60,6 +60,8 @@ final class BrowsingMenuViewController: UIViewController {
     private let menuEntries: [BrowsingMenuEntry]
     private let appSettings: AppSettings
 
+    var onDismiss: (() -> Void)?
+
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
             BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, appSettings: appSettings, coder: coder)
@@ -84,6 +86,13 @@ final class BrowsingMenuViewController: UIViewController {
         configureHeader()
 
         decorate()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if isBeingDismissed {
+            onDismiss?()
+        }
     }
 
     private func configureHeader() {

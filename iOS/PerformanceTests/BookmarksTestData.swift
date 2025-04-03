@@ -143,7 +143,7 @@ class BookmarksTestData {
         var bookmarksDataReference = 0
         var foldersDataReference = 0
         var foldersToPopulate = [ BookmarkUtils.fetchRootFolder(context)! ]
-        let favoritesRoot = BookmarkUtils.fetchFavoritesFolder(context)!
+        let favoritesRoot = BookmarkUtils.fetchFavoritesFolder(withUUID: FavoritesFolderID.mobile.rawValue, in: context)!
         while let folder = foldersToPopulate.first {
             foldersToPopulate.removeFirst()
             

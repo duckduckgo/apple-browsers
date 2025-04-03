@@ -19,13 +19,13 @@
 import Foundation
 import LoginItems
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import os.log
 
 struct DataBrokerProtectionAppEvents {
 
     private let featureGatekeeper: DataBrokerProtectionFeatureGatekeeper
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let loginItemsManager: LoginItemsManaging
     private let loginItemInterface: DataBrokerProtectionLoginItemInterface
 
@@ -35,7 +35,7 @@ struct DataBrokerProtectionAppEvents {
     }
 
     init(featureGatekeeper: DataBrokerProtectionFeatureGatekeeper,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
          loginItemInterface: DataBrokerProtectionLoginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface) {
         self.featureGatekeeper = featureGatekeeper

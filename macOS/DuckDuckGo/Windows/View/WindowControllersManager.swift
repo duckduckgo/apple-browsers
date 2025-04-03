@@ -30,7 +30,7 @@ protocol WindowControllersManagerProtocol {
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
     var lastKeyMainWindowController: MainWindowController? { get }
-    var pinnedTabsManager: PinnedTabsManager { get }
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
     var didUnregisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
@@ -73,7 +73,7 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static let shared = WindowControllersManager(pinnedTabsManager: Application.appDelegate.pinnedTabsManager,
+    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                                                  subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
     )
 
@@ -81,9 +81,9 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         lastKeyMainWindowController?.mainViewController
     }
 
-    init(pinnedTabsManager: PinnedTabsManager,
+    init(pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability) {
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
     }
 
@@ -92,7 +92,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
-    private(set) var pinnedTabsManager: PinnedTabsManager
+    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
 
     weak var lastKeyMainWindowController: MainWindowController? {
@@ -118,6 +118,8 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     func unregister(_ windowController: MainWindowController) {
+        pinnedTabsManagerProvider.cacheClosedWindowPinnedTabsIfNeeded(pinnedTabsManager: windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager)
+
         guard let idx = mainWindowControllers.firstIndex(of: windowController) else {
             Logger.general.error("WindowControllersManager: Window Controller not registered")
             return
@@ -134,7 +136,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
                 mainWindowControllers.count == 1 &&
                 mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.count == 1 &&
                 mainWindowControllers.first?.mainViewController.tabCollectionViewModel.tabs.first?.content == .newtab &&
-                pinnedTabsManager.tabCollection.tabs.isEmpty
+                pinnedTabsManagerProvider.arePinnedTabsEmpty
             )
         }
     }
@@ -363,7 +365,11 @@ extension WindowControllersManager {
 
 extension Tab {
     var isPinned: Bool {
-        return self.pinnedTabsManager.isTabPinned(self)
+        guard let pinnedTabsManager = self.pinnedTabsManagerProvider.pinnedTabsManager(for: self) else {
+            return false
+        }
+
+        return pinnedTabsManager.isTabPinned(self)
     }
 }
 
@@ -395,7 +401,6 @@ extension WindowControllersManagerProtocol {
     }
 
     func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
-        let pinnedTabs = includingPinnedTabs ? (0..<pinnedTabsManager.tabViewModels.count).compactMap(pinnedTabsManager.tabViewModel(at:)) : []
         let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
@@ -403,7 +408,10 @@ extension WindowControllersManagerProtocol {
         let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
             (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
         }
-        let result = pinnedTabs + tabViewModelsWithOriginalOrder
+        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
+            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        }) : []
+        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
 
         return result
     }

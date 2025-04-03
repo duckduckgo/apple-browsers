@@ -119,7 +119,9 @@ final class SyncBookmarksAdapter {
                             deleted: faviconsFetcherInput.deletedBookmarksUUIDs
                         )
                     }
-                    faviconsFetcher.startFetching()
+                    Task {
+                        await faviconsFetcher.startFetching()
+                    }
                 }
             }
         )
@@ -149,7 +151,7 @@ final class SyncBookmarksAdapter {
             database: database,
             stateStore: stateStore,
             fetcher: FaviconFetcher(),
-            faviconStore: FaviconManager.shared,
+            faviconStore: { NSApp.delegateTyped.faviconManager },
             errorEvents: BookmarksFaviconsFetcherErrorHandler()
         )
     }

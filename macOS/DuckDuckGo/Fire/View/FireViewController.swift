@@ -19,6 +19,7 @@
 import Cocoa
 import Lottie
 import Combine
+import Common
 
 @MainActor
 final class FireViewController: NSViewController {
@@ -69,7 +70,7 @@ final class FireViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         deletingDataLabel.stringValue = UserText.fireDialogDelitingData
-        if case .normal = NSApp.runType {
+        if case .normal = AppVersion.runType {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
                 await self.setupFireAnimationView()
             }
@@ -152,7 +153,10 @@ final class FireViewController: NSViewController {
     private let fireAnimationBeginning = 0.1
     private let fireAnimationEnd = 0.63
 
+    @MainActor
     func animateFireWhenClosing() async {
+        closeAllChildWindows()
+
         await waitForFireAnimationViewIfNeeded()
         await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
             progressIndicatorWrapper.isHidden = true
@@ -186,6 +190,8 @@ final class FireViewController: NSViewController {
         }
 
         if playFireAnimation {
+            closeAllChildWindows()
+
             await waitForFireAnimationViewIfNeeded()
 
             progressIndicatorWrapper.isHidden = true
@@ -216,6 +222,11 @@ final class FireViewController: NSViewController {
         if fireAnimationView == nil {
             await fireAnimationViewLoadingTask?.value
         }
+    }
+
+    @MainActor
+    private func closeAllChildWindows() {
+        view.window?.childWindows?.forEach { $0.close() }
     }
 }
 

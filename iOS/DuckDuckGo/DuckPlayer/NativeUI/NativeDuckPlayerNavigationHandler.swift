@@ -57,6 +57,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Cancellable for observing DuckPlayer dismissal
     @MainActor private var duckPlayerDismissalCancellable: AnyCancellable?
 
+    /// isLinkPreview is true when the DuckPlayer is opened from a link preview
+    var isLinkPreview = false
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -248,6 +251,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
 
+        // If we are in link preview mode, we don't need to show the DuckPlayer Pill
+        if isLinkPreview {
+            return .notHandled(.isLinkPreview)
+        }
+
         // Check if DuckPlayer feature is enabled
         guard featureFlagger.isFeatureOn(.duckPlayer) else {
             return .notHandled(.featureOff)
@@ -258,13 +266,13 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill(reset: true, animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             return .notHandled(.invalidURL)
         }
 
         // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill(reset: true, animated: true)
+            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -275,7 +283,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
-            duckPlayer.dismissPill(reset: true, animated: false)
+            duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
             return .notHandled(.duckPlayerDisabled)
         }
 
@@ -428,6 +436,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
+        isLinkPreview = hostViewController.isLinkPreview
         duckPlayer.setHostViewController(hostViewController)
     }
 
@@ -437,7 +446,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func updateDuckPlayerForWebViewAppearance(_ hostViewController: TabViewController) {
         setHostViewController(hostViewController)
         if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
-            if !disableDuckPlayerForNextVideo {
+            if !disableDuckPlayerForNextVideo && !isLinkPreview {
                 self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
             }
         }
@@ -445,7 +454,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles DuckPlayer Updates when WebView dissapears
     func updateDuckPlayerForWebViewDisappearance(_ hostViewController: TabViewController) {
-        duckPlayer.dismissPill(reset: false, animated: false)
+        duckPlayer.dismissPill(reset: false, animated: false, programatic: true)
     }
 
 }

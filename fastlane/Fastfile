@@ -1,2 +1,24 @@
 import("../iOS/fastlane/Fastfile")
 import("../macOS/fastlane/Fastfile")
+
+lane :update_dependencies do
+  Dir.chdir("../SharedPackages/BrowserServicesKit") do
+    sh('swift package update')
+  end
+
+  Dir.chdir("../SharedPackages/DataBrokerProtectionCore") do
+    sh('swift package update')
+  end
+
+  Dir.chdir("../iOS") do
+    sh('xcodebuild -resolvePackageDependencies')
+  end
+
+  Dir.chdir("../macOS") do
+    sh('xcodebuild -resolvePackageDependencies')
+  end
+
+  Dir.chdir("..") do
+    sh('xcodebuild -resolvePackageDependencies')
+  end
+end

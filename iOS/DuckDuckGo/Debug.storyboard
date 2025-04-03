@@ -4,7 +4,6 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -1069,34 +1068,34 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <prototypes>
                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="ConfigurationURLTableViewCell" id="i6Y-Di-PX3" customClass="ConfigurationURLTableViewCell" customModule="DuckDuckGo" customModuleProvider="target">
-                                <rect key="frame" x="20" y="55.5" width="374" height="102.5"/>
+                                <rect key="frame" x="20" y="55.5" width="374" height="103.5"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="i6Y-Di-PX3" id="qn4-gq-5fa">
-                                    <rect key="frame" x="0.0" y="0.0" width="374" height="102.5"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="374" height="103.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <stackView opaque="NO" contentMode="scaleToFill" distribution="equalSpacing" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="pKD-Xm-Eu1">
-                                            <rect key="frame" x="20" y="11" width="334" height="80.5"/>
+                                            <rect key="frame" x="20" y="11" width="334" height="81.5"/>
                                             <subviews>
                                                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="fillEqually" translatesAutoresizingMaskIntoConstraints="NO" id="j3A-OZ-DWy">
-                                                    <rect key="frame" x="0.0" y="0.0" width="44" height="80.5"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="44" height="81.5"/>
                                                     <subviews>
                                                         <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="gKw-J7-XIW">
-                                                            <rect key="frame" x="0.0" y="0.0" width="44" height="26.5"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="44" height="27"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                         <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" insetsLayoutMarginsFromSafeArea="NO" text="Subtitle" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="UrI-B0-rWf">
-                                                            <rect key="frame" x="0.0" y="26.5" width="44" height="27"/>
+                                                            <rect key="frame" x="0.0" y="27" width="44" height="27"/>
                                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="12"/>
-                                                            <color key="textColor" name="accent"/>
+                                                            <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="6RK-ug-mZa">
-                                                            <rect key="frame" x="0.0" y="54" width="44" height="26.5"/>
+                                                            <rect key="frame" x="0.0" y="54.5" width="44" height="27"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="12"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
@@ -1104,7 +1103,7 @@
                                                     </subviews>
                                                 </stackView>
                                                 <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="right" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Nkj-yK-cgm">
-                                                    <rect key="frame" x="310" y="0.0" width="24" height="80.5"/>
+                                                    <rect key="frame" x="310" y="0.0" width="24" height="81.5"/>
                                                     <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
                                                     <state key="normal" image="Reload-24"/>
                                                 </button>
@@ -1157,9 +1156,6 @@
     <resources>
         <image name="Logo" width="128" height="128"/>
         <image name="Reload-24" width="24" height="24"/>
-        <namedColor name="accent">
-            <color red="0.22352941176470589" green="0.41176470588235292" blue="0.93725490196078431" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <systemColor name="labelColor">
             <color white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

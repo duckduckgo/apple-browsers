@@ -37,7 +37,7 @@ final class FireproofDomainsViewController: NSViewController {
     @IBOutlet var doneButton: NSButton!
     @IBOutlet var fireproofSitesLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = FaviconManager.shared
+    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var allFireproofDomains = [String]()
     private var filteredFireproofDomains: [String]?
@@ -111,7 +111,6 @@ extension FireproofDomainsViewController: NSTableViewDataSource, NSTableViewDele
             let domain = fireproofDomains[row]
             cell.textField?.stringValue = domain
             cell.imageView?.image = faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
-            cell.imageView?.applyFaviconStyle()
 
             return cell
         }

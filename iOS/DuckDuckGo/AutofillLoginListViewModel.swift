@@ -27,11 +27,6 @@ import DDGSync
 import PrivacyDashboard
 import os.log
 
-internal enum EnableAutofillRows: Int, CaseIterable {
-    case toggleAutofill
-    case resetNeverPromptWebsites
-}
-
 final class AutofillLoginListViewModel: ObservableObject {
     
     enum ViewState {
@@ -67,7 +62,6 @@ final class AutofillLoginListViewModel: ObservableObject {
     private var currentTabUrl: URL?
     private var currentTabUid: String?
     private let secureVault: (any AutofillSecureVault)?
-    private let autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private let privacyConfig: PrivacyConfiguration
     private let keyValueStore: KeyValueStoringDictionaryRepresentable
     private var cachedDeletedCredentials: SecureVaultModels.WebsiteCredentials?
@@ -124,22 +118,12 @@ final class AutofillLoginListViewModel: ObservableObject {
             .map { $0.count }
             .eraseToAnyPublisher()
     }
-    
-    var isAutofillEnabledInSettings: Bool {
-        get { appSettings.autofillCredentialsEnabled }
-        set {
-            appSettings.autofillCredentialsEnabled = newValue
-            keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillFirstTimeUser.rawValue)
-            NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
-        }
-    }
 
     init(appSettings: AppSettings,
          tld: TLD,
          secureVault: (any AutofillSecureVault)?,
          currentTabUrl: URL? = nil,
          currentTabUid: String? = nil,
-         autofillNeverPromptWebsitesManager: AutofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager,
          privacyConfig: PrivacyConfiguration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig,
          keyValueStore: KeyValueStoringDictionaryRepresentable = UserDefaults.standard,
          syncService: DDGSyncing,
@@ -149,7 +133,6 @@ final class AutofillLoginListViewModel: ObservableObject {
         self.secureVault = secureVault
         self.currentTabUrl = currentTabUrl
         self.currentTabUid = currentTabUid
-        self.autofillNeverPromptWebsitesManager = autofillNeverPromptWebsitesManager
         self.privacyConfig = privacyConfig
         self.keyValueStore = keyValueStore
         self.syncService = syncService
@@ -176,10 +159,7 @@ final class AutofillLoginListViewModel: ObservableObject {
             let success = delete(item.account)
             updateData()
             return success
-        default:
-            break
         }
-        return false
     }
     
     func deleteAllCredentials() -> Bool {
@@ -240,8 +220,6 @@ final class AutofillLoginListViewModel: ObservableObject {
 
     func rowsInSection(_ section: Int) -> Int {
         switch self.sections[section] {
-        case .enableAutofill:
-            return autofillNeverPromptWebsitesManager.neverPromptWebsites.isEmpty ? 1 : 2
         case .suggestions(_, let items):
             if isEditing || !showBreakageReporter {
                 return items.count
@@ -277,7 +255,7 @@ final class AutofillLoginListViewModel: ObservableObject {
     }
 
     func resetNeverPromptWebsites() {
-        _ = autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
+        _ = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager.deleteAllNeverPromptWebsites()
     }
 
     func createBreakageReporterAlert() -> UIAlertController? {
@@ -362,7 +340,8 @@ final class AutofillLoginListViewModel: ObservableObject {
                                       vpnOn: false,
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
-                                      variant: "")
+                                      variant: "",
+                                      cookieConsentInfo: nil)
 
         try? breakageReporter.report(report, reportMode: .regular, daysToExpiry: breakageReportIntervalDays)
     }
@@ -421,10 +400,6 @@ final class AutofillLoginListViewModel: ObservableObject {
         var newSections = [AutofillLoginListSectionType]()
 
         if !isSearching {
-            if !isEditing {
-                newSections.append(.enableAutofill)
-            }
-
             if !accountsToSuggest.isEmpty {
                 let accountItems = accountsToSuggest.map { AutofillLoginItem(account: $0,
                                                                              tld: tld,
@@ -468,10 +443,8 @@ final class AutofillLoginListViewModel: ObservableObject {
             } else {
                 newViewState = .searching
             }
-        } else if isEditing {
-            newViewState = sections.count >= 1 ? .showItems : .empty
         } else {
-            newViewState = sections.count > 1 ? .showItems : .empty
+            newViewState = sections.count > 0 ? .showItems : .empty
         }
         
         // Avoid unnecessary updates
@@ -488,14 +461,12 @@ final class AutofillLoginListViewModel: ObservableObject {
             switch section {
             case .credentials(_, let items), .suggestions(_, let items):
                 if let itemIndex = items.firstIndex(where: { $0.account.id == accountId }) {
-                        if items.count == 1 {
-                            sectionsToDelete.append(index)
-                        } else {
-                            rowsToDelete.append(IndexPath(row: itemIndex, section: index))
-                        }
+                    if items.count == 1 {
+                        sectionsToDelete.append(index)
+                    } else {
+                        rowsToDelete.append(IndexPath(row: itemIndex, section: index))
                     }
-            default:
-                break
+                }
             }
         }
 

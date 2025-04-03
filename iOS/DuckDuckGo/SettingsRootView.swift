@@ -47,11 +47,17 @@ struct SettingsRootView: View {
 
         List {
             SettingsPrivacyProtectionsView()
+                .listRowBackground(Color(designSystemColor: .surface))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)
+                .listRowBackground(Color(designSystemColor: .surface))
             SettingsMainSettingsView()
+                .listRowBackground(Color(designSystemColor: .surface))
             SettingsNextStepsView()
+                .listRowBackground(Color(designSystemColor: .surface))
             SettingsOthersView()
+                .listRowBackground(Color(designSystemColor: .surface))
             SettingsDebugView()
+                .listRowBackground(Color(designSystemColor: .surface))
         }
         .navigationBarTitle(UserText.settingsTitle, displayMode: .inline)
         .navigationBarItems(trailing: Button(UserText.navigationTitleDone) {
@@ -108,7 +114,7 @@ struct SettingsRootView: View {
     /// Navigation Views for DeepLink and programmatic navigation
     @ViewBuilder func navigationDestinationView(for target: SettingsViewModel.SettingsDeepLinkSection) -> some View {
 
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !viewModel.isAuthV2Enabled {
             switch target {
             case .dbp:
                 SubscriptionPIRView()

@@ -32,3 +32,9 @@ struct CustomRoundedCorners: Shape {
         return Path(path.cgPath)
     }
 }
+
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(CustomRoundedCorners(radius: radius, corners: corners))
+    }
+}

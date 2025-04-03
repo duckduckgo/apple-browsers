@@ -30,7 +30,7 @@ final class NewTabPageCoordinator {
 
     init(
         appearancePreferences: AppearancePreferences,
-        settingsModel: HomePage.Models.SettingsModel,
+        customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
@@ -42,7 +42,7 @@ final class NewTabPageCoordinator {
     ) {
         actionsManager = NewTabPageActionsManager(
             appearancePreferences: appearancePreferences,
-            settingsModel: settingsModel,
+            customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
@@ -54,20 +54,20 @@ final class NewTabPageCoordinator {
 
         notificationCenter.publisher(for: .newTabPageWebViewDidAppear)
             .prefix(1)
-            .sink { [weak self, weak settingsModel, weak appearancePreferences] _ in
-                guard let self, let settingsModel, let appearancePreferences else {
+            .sink { [weak self, weak customizationModel, weak appearancePreferences] _ in
+                guard let self, let customizationModel, let appearancePreferences else {
                     return
                 }
-                fireNewTabPageShownPixel(appearancePreferences: appearancePreferences, settingsModel: settingsModel)
+                fireNewTabPageShownPixel(appearancePreferences: appearancePreferences, customizationModel: customizationModel)
             }
             .store(in: &cancellables)
     }
 
-    private func fireNewTabPageShownPixel(appearancePreferences: AppearancePreferences, settingsModel: HomePage.Models.SettingsModel) {
+    private func fireNewTabPageShownPixel(appearancePreferences: AppearancePreferences, customizationModel: NewTabPageCustomizationModel) {
         let mode = NewTabPageModeDecider(keyValueStore: keyValueStore).effectiveMode
         let recentActivity = mode == .recentActivity ? appearancePreferences.isRecentActivityVisible : nil
         let privacyStats = mode == .privacyStats ? appearancePreferences.isPrivacyStatsVisible : nil
-        let customBackground = settingsModel.customBackground != nil
+        let customBackground = customizationModel.customBackground != nil
 
         fireDailyPixel(
             NewTabPagePixel.newTabPageShown(

@@ -115,7 +115,7 @@ final class SuggestionContainerTests: XCTestCase {
 
     @MainActor
     func testSuggestionsJsonScenarios() async throws {
-        let onlyRun = "" // "bookmarks-history-open-tabs-basic.json"
+        let onlyRun = "" // "bookmarks-history-open-tabs-basic"
         guard let directoryURL = Bundle(for: SuggestionContainerTests.self).url(forResource: "privacy-reference-tests/suggestions", withExtension: nil) else {
             return XCTFail("Failed to locate the suggestions directory in the bundle")
         }
@@ -128,7 +128,8 @@ final class SuggestionContainerTests: XCTestCase {
             && !$0.deletingPathExtension().lastPathComponent.hasSuffix("schema")
         }
 
-        for fileURL in jsonFiles where onlyRun.isEmpty || onlyRun == fileURL.lastPathComponent {
+        for fileURL in jsonFiles
+        where onlyRun.isEmpty || onlyRun.dropping(suffix: ".json") + ".json" == fileURL.lastPathComponent {
             // Load and decode each JSON file
             let data = try Data(contentsOf: fileURL)
             let testScenario: TestScenario
@@ -183,7 +184,11 @@ final class SuggestionContainerTests: XCTestCase {
         }
 
         // Initialize a mock WindowControllersManager with pinned tabs, tab view models, and the selected window index for testing.
-        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManager: pinnedTabsManager(tabs: input.pinnedTabs.map(OpenTab.init)),
+        let provider = PinnedTabsManagerProvidingMock()
+        let manager = pinnedTabsManager(tabs: input.pinnedTabs.map(OpenTab.init))
+        provider.currentPinnedTabManagers = [manager]
+
+        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManagerProvider: provider,
                                                                         tabCollectionViewModels: tabCollectionViewModels,
                                                                         selectedWindow: selectedWindow)
 
@@ -361,7 +366,7 @@ extension SuggestionContainerTests {
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
 
-        var pinnedTabsManager: DuckDuckGo_Privacy_Browser.PinnedTabsManager
+        var pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding
 
         var didRegisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
 
@@ -392,8 +397,8 @@ extension SuggestionContainerTests {
             nil
         }
 
-        init(pinnedTabsManager: PinnedTabsManager, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
-            self.pinnedTabsManager = pinnedTabsManager
+        init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
+            self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
             self.allTabCollectionViewModels = tabCollectionViewModels
             self.selectedWindowIndex = selectedWindow
         }
@@ -546,7 +551,7 @@ private extension Suggestion {
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)
 
         case .website(url: let url):
-            return .init(type: .website, title: url.absoluteString, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: 0)
+            return .init(type: .website, title: url.absoluteString.dropping(prefix: url.navigationalScheme?.separated() ?? ""), subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: 0)
 
         case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, score: let score):
             return .init(type: isFavorite ? .favorite : .bookmark, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)

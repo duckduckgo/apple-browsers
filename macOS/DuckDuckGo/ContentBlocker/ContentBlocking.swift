@@ -104,14 +104,14 @@ final class AppContentBlocking {
     }
 
     private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
 
         let domainEvent: GeneralPixel
         var finalParameters = parameters ?? [:]
         switch event {
         case .trackerDataParseFailed:
             domainEvent = .trackerDataParseFailed
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
                 finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
             }
@@ -166,7 +166,7 @@ final class AppContentBlocking {
             let timeBucket = GeneralPixel.CompileTimeBucketAggregation(number: timeBucketAggregation)
             domainEvent = .contentBlockingCompilationTaskPerformance(iterationCount: iterationCount,
                                                                      timeBucketAggregation: timeBucket)
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[Constants.ParameterName.experimentName] = experimentName
                 finalParameters[Constants.ParameterName.etag] = ContentBlocking.shared.trackerDataManager.fetchedData?.etag ?? ""
             }

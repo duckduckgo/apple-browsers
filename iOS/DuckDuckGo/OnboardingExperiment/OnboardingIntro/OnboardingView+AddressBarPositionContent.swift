@@ -27,30 +27,28 @@ private enum Metrics {
 
 extension OnboardingView {
 
-    struct AddressBarPositionContentState {
-        var animateTitle = true
-        var showContent = false
-    }
-
     struct AddressBarPositionContent: View {
 
         private var animateTitle: Binding<Bool>
         private var showContent: Binding<Bool>
+        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
         init(
             animateTitle: Binding<Bool> = .constant(true),
             showContent: Binding<Bool> = .constant(true),
+            isSkipped: Binding<Bool>,
             action: @escaping () -> Void
         ) {
             self.animateTitle = animateTitle
             self.showContent = showContent
+            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.AddressBarPosition.title, startAnimating: animateTitle) {
+                AnimatableTypingText(UserText.Onboarding.AddressBarPosition.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
                     showContent.wrappedValue = true
                 }
                 .foregroundColor(.primary)
@@ -74,5 +72,5 @@ extension OnboardingView {
 // MARK: - Preview
 
 #Preview {
-    OnboardingView.AddressBarPositionContent(action: {})
+    OnboardingView.AddressBarPositionContent(isSkipped: .constant(false), action: {})
 }

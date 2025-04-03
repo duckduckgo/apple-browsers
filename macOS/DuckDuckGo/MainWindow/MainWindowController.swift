@@ -63,8 +63,8 @@ final class MainWindowController: NSWindowController {
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
 #endif
@@ -82,11 +82,11 @@ final class MainWindowController: NSWindowController {
 #if DEBUG
         return false
 #elseif REVIEW
-        if Application.runType == .uiTests {
+        if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             return false
         } else {
-            if Application.runType == .uiTestsOnboarding {
+            if AppVersion.runType == .uiTestsOnboarding {
                 Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             }
             let onboardingIsComplete = OnboardingViewModel.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
@@ -243,8 +243,8 @@ extension MainWindowController: NSWindowDelegate {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
 #endif
@@ -355,8 +355,8 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         WindowControllersManager.shared.unregister(self)
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }
 #endif

@@ -21,11 +21,13 @@ import WebKit
 
 protocol AIChatWebViewControllerDelegate: AnyObject {
     @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL)
+    @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestOpenDownloadWithFileName fileName: String)
 }
 
 final class AIChatWebViewController: UIViewController {
     weak var delegate: AIChatWebViewControllerDelegate?
     private let chatModel: AIChatViewModeling
+    private var downloadHandler: DownloadHandling
 
     private lazy var webView: WKWebView = {
         let webView = WKWebView(frame: .zero, configuration: chatModel.webViewConfiguration)
@@ -44,8 +46,9 @@ final class AIChatWebViewController: UIViewController {
         return activityIndicator
     }()
 
-    init(chatModel: AIChatViewModeling) {
+    init(chatModel: AIChatViewModeling, downloadHandler: DownloadHandling) {
         self.chatModel = chatModel
+        self.downloadHandler = downloadHandler
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -57,14 +60,31 @@ final class AIChatWebViewController: UIViewController {
         super.viewDidLoad()
 
         view.backgroundColor = .black
-
         setupWebView()
         setupLoadingView()
         loadWebsite()
+        setupDownloadHandler()
+    }
+
+    private func setupDownloadHandler() {
+        downloadHandler.onDownloadComplete = { [weak self] result in
+            guard let self = self else { return }
+
+            switch result {
+            case .success(let filename):
+                self.view.showDownloadCompletionToast(for: filename) {
+                    self.delegate?.aiChatWebViewController(self, didRequestOpenDownloadWithFileName: filename)
+                }
+
+            case .failure:
+                self.view.showDownloadFailedToast()
+            }
+        }
     }
 
     private func setupWebView() {
         view.addSubview(webView)
+        webView.customUserAgent = chatModel.userAgent
 
         if #available(iOS 16.4, *) {
             webView.isInspectable = chatModel.inspectableWebView
@@ -127,7 +147,7 @@ extension AIChatWebViewController: WKNavigationDelegate {
             return .allow
         }
 
-        if chatModel.shouldAllowRequestWithNavigationAction(navigationAction) {
+        if shouldAllowNavigation(for: url, with: navigationAction) {
             return .allow
         } else {
             delegate?.aiChatWebViewController(self, didRequestToLoad: url)
@@ -135,19 +155,46 @@ extension AIChatWebViewController: WKNavigationDelegate {
         }
     }
 
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        guard let url = navigationResponse.response.url else {
+            return .allow
+        }
+        return url.scheme == SchemeType.blob ? .download : .allow
+    }
+
+    func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        download.delegate = downloadHandler
+    }
+
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
-        loadingView.startAnimating()
+        updateLoadingState(isLoading: true)
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        loadingView.stopAnimating()
+        updateLoadingState(isLoading: false)
     }
+
+    private func shouldAllowNavigation(for url: URL, with navigationAction: WKNavigationAction) -> Bool {
+        return url.scheme == SchemeType.blob || chatModel.shouldAllowRequestWithNavigationAction(navigationAction)
+    }
+    
+    private func updateLoadingState(isLoading: Bool) {
+        if isLoading {
+            loadingView.startAnimating()
+        } else {
+            loadingView.stopAnimating()
+        }
+    }
+}
+
+enum SchemeType {
+    static let blob = "blob"
 }

@@ -66,7 +66,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         database: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        pinnedTabsManager: PinnedTabsManager,
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
@@ -76,7 +76,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
-            pinnedTabsManager: pinnedTabsManager,
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             internalUserDecider: internalUserDecider,
             subscriptionManager: subscriptionManager
         )
@@ -164,7 +164,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
 
     /// It's public in order to allow refreshing on demand via Debug menu. Otherwise it shouldn't be called from outside.
     func refreshRemoteMessages() {
-        guard NSApp.runType.requiresEnvironment else {
+        guard AppVersion.runType.requiresEnvironment else {
             return
         }
         Task {
@@ -196,7 +196,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             return
         }
 
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             database.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {

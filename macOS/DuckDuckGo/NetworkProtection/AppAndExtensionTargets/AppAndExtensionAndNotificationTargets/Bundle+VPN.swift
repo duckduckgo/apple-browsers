@@ -23,16 +23,26 @@ import Common
 extension Bundle {
 
     private enum VPNInfoKey: String {
-        case tunnelExtensionBundleID = "TUNNEL_EXTENSION_BUNDLE_ID"
-        case proxyExtensionBundleID = "PROXY_EXTENSION_BUNDLE_ID"
+        case tunnelAppexBundleID = "TUNNEL_APPEX_BUNDLE_ID"
+        case tunnelSysexBundleID = "TUNNEL_SYSEX_BUNDLE_ID"
+        case proxyAppexBundleID = "PROXY_APPEX_BUNDLE_ID"
+        case proxySysexBundleID = "PROXY_SYSEX_BUNDLE_ID"
     }
 
-    static var tunnelExtensionBundleID: String {
-        string(for: .tunnelExtensionBundleID)
+    static var tunnelAppexBundleID: String {
+        string(for: .tunnelAppexBundleID)
     }
 
-    static var proxyExtensionBundleID: String {
-        string(for: .proxyExtensionBundleID)
+    static var tunnelSysexBundleID: String {
+        string(for: .tunnelSysexBundleID)
+    }
+
+    static var proxyAppexBundleID: String {
+        string(for: .proxyAppexBundleID)
+    }
+
+    static var proxySysexBundleID: String {
+        string(for: .proxySysexBundleID)
     }
 
     private static func string(for key: VPNInfoKey) -> String {

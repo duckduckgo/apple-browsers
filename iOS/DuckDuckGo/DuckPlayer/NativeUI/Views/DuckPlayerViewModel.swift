@@ -49,6 +49,11 @@ final class DuckPlayerViewModel: ObservableObject {
         static let disabled = "0"
         // Used to set the start time of the video
         static let startParameter = "start"
+        
+        // Used to force the player to use a stable version of the player
+        // https://app.asana.com/0/1204099484721401/1209718564423105/f
+        static let colorSchemeParameter = "color"
+        static let colorSchemeValue = "white"
     }
 
     /// A publisher to notify when Youtube navigation is required.
@@ -67,7 +72,8 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled
+        Constants.playsInlineParameter: Constants.enabled,
+        Constants.colorSchemeParameter: Constants.colorSchemeValue
     ]
 
     /// The referrer for the DuckPlayer
@@ -82,6 +88,12 @@ final class DuckPlayerViewModel: ObservableObject {
         !isLandscape && source == .serp
     }
 
+    /// Whether the auto-open on YouTube toggle should be visible
+    /// This is hidden in landscape mode or when explicitly set to hidden
+    var shouldShowAutoOpenToggle: Bool {
+        !isLandscape && showAutoOpenOnYoutubeToggle
+    }
+
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -90,6 +102,14 @@ final class DuckPlayerViewModel: ObservableObject {
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
     @Published private(set) var timestamp: TimeInterval = 0
+
+    // Automatic open on Youtube toggle
+    @Published var showAutoOpenOnYoutubeToggle: Bool = true
+    @Published var autoOpenOnYoutube: Bool = false {
+        didSet {
+            appSettings.duckPlayerNativeYoutubeMode = autoOpenOnYoutube ? .auto : .ask
+        }
+    }
 
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
@@ -110,6 +130,7 @@ final class DuckPlayerViewModel: ObservableObject {
         self.appSettings = appSettings
         self.timestamp = timestamp ?? 0
         self.source = source
+        self.autoOpenOnYoutube = appSettings.duckPlayerNativeYoutubeMode == .auto
         self.url = getVideoURL()
     }
 
@@ -166,7 +187,18 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Updates the current interface orientation state
     func updateOrientation() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            isLandscape = windowScene.interfaceOrientation.isLandscape
+            let newIsLandscape = windowScene.interfaceOrientation.isLandscape
+            isLandscape = newIsLandscape
+
+            // Update toggle visibility based on orientation
+            if newIsLandscape {
+                // Hide toggle in landscape mode
+                showAutoOpenOnYoutubeToggle = false
+            } else if !showAutoOpenOnYoutubeToggle && !autoOpenOnYoutube {
+                // Restore toggle visibility in portrait mode if it wasn't explicitly hidden
+                // and auto-open is not enabled
+                showAutoOpenOnYoutubeToggle = true
+            }
         }
     }
 
@@ -200,6 +232,13 @@ final class DuckPlayerViewModel: ObservableObject {
         timestampUpdateTimer = nil
         webView = nil
         coordinator = nil
+    }
+
+    // MARK: - Public Methods
+
+    /// Hides the auto-open toggle UI element
+    func hideAutoOpenToggle() {
+        showAutoOpenOnYoutubeToggle = false
     }
 
     // MARK: - Private Methods

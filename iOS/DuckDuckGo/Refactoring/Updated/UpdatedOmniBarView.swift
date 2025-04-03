@@ -202,8 +202,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = UpdatedOmniBarSearchView()
-    private let searchAreaContainerView = UIView()
-    private let searchAreaSubshadowView = UIView()
+    private let searchAreaContainerView = CompositeShadowView()
     private let activeOutlineView = UIView()
 
     private let stackView = UIStackView()
@@ -239,8 +238,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         stackView.addArrangedSubview(searchAreaContainerView)
         stackView.addArrangedSubview(trailingButtonsContainer)
 
-        stackView.insertSubview(searchAreaSubshadowView, belowSubview: searchAreaContainerView)
-
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
 
@@ -248,9 +245,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
-
-//        searchAreaView.leftIconContainer.addArrangedSubview(UIImageView(image: UIImage(resource: .shield)))
-//        searchAreaView.leadingItemsContainer.addArrangedSubview(privacyInfoContainer)
         addSubview(activeOutlineView)
     }
 
@@ -267,7 +261,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaBottomPaddingConstraint = searchAreaBottomPadding
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
 
-        searchAreaSubshadowView.translatesAutoresizingMaskIntoConstraints = false
         omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaView.translatesAutoresizingMaskIntoConstraints = false
@@ -295,12 +288,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
             omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
-
-            searchAreaSubshadowView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
-            searchAreaSubshadowView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
-            searchAreaSubshadowView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            searchAreaSubshadowView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
+            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
@@ -324,18 +312,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
-        searchAreaContainerView.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
-        searchAreaContainerView.layer.shadowOpacity = 1
-        searchAreaContainerView.layer.shadowRadius = 12
-        searchAreaContainerView.layer.shadowOffset = CGSize(width: 0, height: 2)
-
-        searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
-        searchAreaSubshadowView.layer.cornerRadius = Metrics.cornerRadius
-        searchAreaSubshadowView.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
-        searchAreaSubshadowView.layer.shadowOpacity = 1
-        searchAreaSubshadowView.layer.shadowRadius = 48
-        searchAreaSubshadowView.layer.shadowOffset = CGSize(width: 0, height: 16)
-        searchAreaSubshadowView.isHidden = true
 
         searchAreaView.layer.cornerRadius = Metrics.cornerRadius
 
@@ -372,6 +348,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         settingsButtonView.setImage(UIImage(resource: .settings24E), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
+
+        updateShadows()
     }
 
     private func setUpCallbacks() {
@@ -394,6 +372,24 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         privacyInfoContainer.privacyIcon.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
     }
 
+    private func updateShadows() {
+        let color = UIColor(designSystemColor: .shadowPrimary)
+
+        let shadow1 = CompositeShadowView.Shadow(id: "shadow1", color: color, opacity: 1, radius: 6.0, offset: CGSize(width: 0, height: 2))
+        // These two have the same name so we can update the existing shadow
+        let shadow2Inactive = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 0, radius: 24.0, offset: CGSize(width: 0, height: 16))
+        let shadow2Active = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 1, radius: 24.0, offset: CGSize(width: 0, height: 16))
+
+        let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
+
+        if searchAreaContainerView.shadows.isEmpty {
+            let shadows = [shadow1, secondaryShadow].compactMap { $0 }
+            searchAreaContainerView.shadows = shadows
+        } else {
+            searchAreaContainerView.updateShadow(secondaryShadow)
+        }
+    }
+
     private func setUpAccessibility() {
         
     }
@@ -408,18 +404,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         omniBarProgressView.layer.cornerRadius = cornerRadius
         searchAreaContainerView.layer.cornerRadius = cornerRadius
         activeOutlineView.layer.cornerRadius = cornerRadius
-        searchAreaSubshadowView.layer.cornerRadius = cornerRadius
 
         activeOutlineView.alpha = isActiveState ? 1 : 0
+
+        updateShadows()
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            searchAreaContainerView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
-            searchAreaContainerView.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
-            searchAreaSubshadowView.layer.shadowColor = UIColor(designSystemColor: .shadowPrimary).cgColor
+            searchAreaContainerView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).resolvedColor(with: traitCollection).cgColor
+
+            updateShadows()
         }
     }
 

@@ -115,7 +115,7 @@ final class SuggestionContainerTests: XCTestCase {
 
     @MainActor
     func testSuggestionsJsonScenarios() async throws {
-        let onlyRun = "" // "bookmarks-history-open-tabs-basic.json"
+        let onlyRun = "" // "bookmarks-history-open-tabs-basic"
         guard let directoryURL = Bundle(for: SuggestionContainerTests.self).url(forResource: "privacy-reference-tests/suggestions", withExtension: nil) else {
             return XCTFail("Failed to locate the suggestions directory in the bundle")
         }
@@ -128,7 +128,8 @@ final class SuggestionContainerTests: XCTestCase {
             && !$0.deletingPathExtension().lastPathComponent.hasSuffix("schema")
         }
 
-        for fileURL in jsonFiles where onlyRun.isEmpty || onlyRun == fileURL.lastPathComponent {
+        for fileURL in jsonFiles
+        where onlyRun.isEmpty || onlyRun.dropping(suffix: ".json") + ".json" == fileURL.lastPathComponent {
             // Load and decode each JSON file
             let data = try Data(contentsOf: fileURL)
             let testScenario: TestScenario
@@ -546,7 +547,7 @@ private extension Suggestion {
             return .init(type: .phrase, title: phrase, subtitle: viewModel.suffix ?? "", uri: URL.makeSearchUrl(from: phrase)?.absoluteString, tabId: nil, score: 0)
 
         case .website(url: let url):
-            return .init(type: .website, title: url.absoluteString, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: 0)
+            return .init(type: .website, title: url.absoluteString.dropping(prefix: url.navigationalScheme?.separated() ?? ""), subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: 0)
 
         case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, score: let score):
             return .init(type: isFavorite ? .favorite : .bookmark, title: title, subtitle: viewModel.suffix ?? "", uri: url.absoluteString, tabId: nil, score: score)

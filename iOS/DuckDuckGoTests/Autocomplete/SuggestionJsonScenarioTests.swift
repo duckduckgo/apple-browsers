@@ -43,7 +43,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
 
     @MainActor
     func testSuggestionsJsonScenarios() async throws {
-        let onlyRun = "" // "bookmarks-history-open-tabs-basic.json"
+        let onlyRun = "" // "bookmarks-history-open-tabs-basic"
         guard let directoryURL = Bundle(for: SuggestionJsonScenarioTests.self).url(forResource: "privacy-reference-tests/suggestions", withExtension: nil) else {
             return XCTFail("Failed to locate the suggestions directory in the bundle")
         }
@@ -56,7 +56,8 @@ final class SuggestionJsonScenarioTests: XCTestCase {
             && !$0.deletingPathExtension().lastPathComponent.hasSuffix("schema")
         }
 
-        for fileURL in jsonFiles where onlyRun.isEmpty || onlyRun == fileURL.lastPathComponent {
+        for fileURL in jsonFiles
+        where onlyRun.isEmpty || onlyRun.dropping(suffix: ".json") + ".json" == fileURL.lastPathComponent {
             // Load and decode each JSON file
             let data = try Data(contentsOf: fileURL)
             let testScenario: TestScenario
@@ -159,10 +160,18 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         }
 
         // Convert the results to test expectations format
+        var expectations = testScenario.expectations
         let testResults = TestExpectations(from: actualResults, query: input.query)
+        // append "&t=ddg_ios" to duckduckgo queries for iOS
+        for idx in expectations.searchSuggestions.indices {
+            let searchSuggestion = expectations.searchSuggestions[idx]
+            if case .phrase = searchSuggestion.type {
+                expectations.searchSuggestions[idx].uri = (searchSuggestion.uri ?? "") + "&t=ddg_ios"
+            }
+        }
 
         // Assert the results match expectations
-        assertInlineSnapshot(of: testResults?.encoded(), as: .lines, message: name, matches: testScenario.expectations.encoded)
+        assertInlineSnapshot(of: testResults?.encoded(), as: .lines, message: name, matches: expectations.encoded)
     }
 
 }
@@ -180,7 +189,7 @@ extension SuggestionJsonScenarioTests {
         let platform: Platform
         let description: String
         let input: TestInput
-        let expectations: TestExpectations
+        var expectations: TestExpectations
     }
     
     struct TestInput: Decodable {
@@ -472,7 +481,7 @@ extension SuggestionJsonScenarioTests {
             let type: SuggestionType
             let title: String
             let subtitle: String
-            let uri: String?
+            var uri: String?
             let tabId: UUID?
             let score: Int
             
@@ -512,7 +521,7 @@ extension SuggestionJsonScenarioTests {
         }
         
         let topHits: [ExpectedSuggestion]
-        let searchSuggestions: [ExpectedSuggestion]
+        var searchSuggestions: [ExpectedSuggestion]
         let localSuggestions: [ExpectedSuggestion]
         
         init?(from result: SuggestionResult?, query: String) {
@@ -551,7 +560,7 @@ private extension Suggestion {
             return .init(type: .phrase, title: phrase, subtitle: subtitle, uri: URL.makeSearchURL(query: phrase, forceSearchQuery: true)?.absoluteString, tabId: nil, score: 0)
 
         case .website(url: let url):
-            return .init(type: .website, title: url.absoluteString, subtitle: subtitle, uri: url.absoluteString, tabId: nil, score: 0)
+            return .init(type: .website, title: url.absoluteString.dropping(prefix: (url.scheme ?? "") + "://"), subtitle: subtitle, uri: url.absoluteString, tabId: nil, score: 0)
 
         case .bookmark(title: let title, url: let url, isFavorite: let isFavorite, score: let score):
             return .init(type: isFavorite ? .favorite : .bookmark, title: title, subtitle: "", uri: url.absoluteString, tabId: nil, score: score)

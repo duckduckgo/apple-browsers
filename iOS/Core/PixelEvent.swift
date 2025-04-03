@@ -244,6 +244,17 @@ extension Pixel {
         case daxDialogsEndOfJourneyNewTabUnique
         case daxDialogsEndOfJourneyDismissed
 
+        case onboardingTrySearchDialogNewTabDismissButtonTapped
+        case onboardingTrySearchDialogDismissButtonTapped
+        case onboardingSearchResultDialogDismissButtonTapped
+        case onboardingTryVisitSiteDialogNewTabDismissButtonTapped
+        case onboardingTryVisitSiteDialogDismissButtonTapped
+        case onboardingTrackersDialogDismissButtonTapped
+        case onboardingFireDialogDismissButtonTapped
+        case onboardingEndOfJourneyDialogNewTabDismissButtonTapped
+        case onboardingEndOfJourneyDialogDismissButtonTapped
+        case onboardingPrivacyPromoDialogDismissButtonTapped
+
         // MARK: - Onboarding Add To Dock
 
         case onboardingAddToDockPromoImpressionsUnique
@@ -1318,6 +1329,17 @@ extension Pixel.Event {
         case .daxDialogsEndOfJourneyTabUnique: return "m_dx_end_tab_unique"
         case .daxDialogsEndOfJourneyNewTabUnique: return "m_dx_end_new_tab_unique"
         case .daxDialogsEndOfJourneyDismissed: return "m_dx_end_dialog_dismissed"
+
+        case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab-dismiss-button-tapped"
+        case .onboardingTrySearchDialogDismissButtonTapped: return "m_onboarding_try-search-dialog_dismiss-button-tapped"
+        case .onboardingSearchResultDialogDismissButtonTapped: return "m_onboarding_search-result-dialog_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogNewTabDismissButtonTapped: return "m_onboarding_try-visit-site-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogDismissButtonTapped: return "m_onboarding_try-visit-site-dialog_dismiss-button-tapped"
+        case .onboardingTrackersDialogDismissButtonTapped: return "m_onboarding_trackers-dialog_dismiss-button-tapped"
+        case .onboardingFireDialogDismissButtonTapped: return "m_onboarding_fire-dialog_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogNewTabDismissButtonTapped: return "m_onboarding_end-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogDismissButtonTapped: return "m_onboarding_end-dialog_dismiss-button-tapped"
+        case .onboardingPrivacyPromoDialogDismissButtonTapped: return "m_onboarding_privacy-promo-dialog_dismiss-button-tapped"
 
         case .onboardingAddToDockPromoImpressionsUnique: return "m_onboarding_add_to_dock_promo_impressions_unique"
         case .onboardingAddToDockPromoShowTutorialCTATapped: return "m_onboarding_add_to_dock_promo_show_tutorial_button_tapped"

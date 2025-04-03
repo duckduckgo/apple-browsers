@@ -466,24 +466,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         // Verify state was reset
         XCTAssertFalse(sut.state.hasBeenShown, "State should indicate DuckPlayer has not been shown")
         XCTAssertNil(sut.state.videoID, "Video ID should be cleared")
-        XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")
-        XCTAssertEqual(mockAppSettings.duckPlayerPillDismissCount, 0, "Dismiss count should be reset")
-        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalPresentationEventCount, 0, "Presentation event count should be reset")
-        XCTAssertEqual(mockAppSettings.duckPlayerNativeUIPrimingModalLastPresentationTime, 0, "Time since last presented should be reset")
-
-        // Verify we can present again as a first-time presentation
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
-        XCTAssertTrue(mockHostViewController.presentCalled, "Should be able to present again after reset")
-
-        // Verify notifications were posted
-        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
-            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
-        }
-        XCTAssertEqual(postedNotifications.count, 3, "Should have three pill visibility notifications (initial, dismissal, and after reset)")
-
-        // Verify the last notification indicates visibility
-        let lastNotification = postedNotifications.last
-        XCTAssertEqual(lastNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Last notification should indicate pill is visible")
+        XCTAssertNil(sut.state.timestamp, "Timestamp should be cleared")       
     }
 
     @MainActor

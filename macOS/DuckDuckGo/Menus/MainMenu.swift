@@ -477,7 +477,7 @@ final class MainMenu: NSMenu {
 
     private func updateAppAboutDDGMenuItem() {
         if internalUserDecider.isInternalUser {
-            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) v\(appVersion.versionAndBuildNumber)"
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
         } else {
             appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
         }

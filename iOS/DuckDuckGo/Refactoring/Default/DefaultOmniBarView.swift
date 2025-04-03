@@ -797,7 +797,11 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
 
-        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+        let deferred = UIDeferredMenuElement.uncached { [weak self] completion in
+            if self?.omniDelegate?.isSERP == true {
+                completion([])
+                return
+            }
 
             let children = OmniBarAccessoryType.allCases.map { accessoryType in
                 let image = switch accessoryType {
@@ -806,12 +810,15 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
                 case .share: UIImage(resource: .share24)
                 }
 
-                return UIAction(title: accessoryType.description, image: image) { _ in
-                    self.state.dependencies.customisation.updateOmnibarAccessoryType(accessoryType)
+                return UIAction(title: accessoryType.description, image: image, state: self?.state.dependencies.customisation.omnibarAccessoryType == accessoryType ? .on : .off) { _ in
+                    self?.state.dependencies.customisation.updateOmnibarAccessoryType(accessoryType)
                 }
             }
+            completion(children)
+        }
 
-            return UIMenu(title: "Choose your Website Action Button", children: children)
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            return UIMenu(title: "Choose your Website Action Button", children: [deferred])
         }
     }
 

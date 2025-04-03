@@ -76,6 +76,8 @@ protocol OmniBarDelegate: AnyObject {
 
     func onDidEndEditing()
 
+    var isSERP: Bool { get }
+
 }
 
 extension OmniBarDelegate {

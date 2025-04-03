@@ -2020,6 +2020,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 extension MainViewController: OmniBarDelegate {
 
+    var isSERP: Bool {
+        currentTab?.url?.isDuckDuckGoSearch == true
+    }
+
     func selectedSuggestion() -> Suggestion? {
         return suggestionTrayController?.selectedSuggestion
     }

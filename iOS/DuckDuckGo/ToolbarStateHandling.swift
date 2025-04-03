@@ -51,13 +51,13 @@ final class ToolbarHandler: ToolbarStateHandling {
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
     }()
 
-    let fireButton: UIButton = {
+    private(set) lazy var fireButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(named: "Fire-New-24"), for: .normal)
         button.tintColor = .label
 
         button.frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-        button.backgroundColor = UIColor(Color.shade(0.09))
+        button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         button.layer.cornerRadius = 14
 
         button.imageView?.contentMode = .scaleAspectFit

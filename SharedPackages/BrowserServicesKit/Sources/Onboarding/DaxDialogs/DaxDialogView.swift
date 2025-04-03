@@ -222,8 +222,8 @@ struct OnboardingDismissButton: View {
     }
 }
 
-// TODO: Onboarding - Move to BSK
-extension View {
+// Move this extension to `SwiftUIExtensions` package when creating it.
+private extension View {
 
     @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
         if let value = value {

@@ -1272,8 +1272,8 @@ class MainViewController: UIViewController {
     }
 
     func dismissOmniBar() {
-        viewCoordinator.omniBar.endEditing()
         hideSuggestionTray()
+        viewCoordinator.omniBar.endEditing()
         refreshOmniBar()
     }
 

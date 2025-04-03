@@ -242,7 +242,6 @@ struct PrivacyProPromotionView: View {
     let proceedText: String
     let dismissText: String
     let proceedAction: () -> Void
-    let dismissAction: () -> Void
     let onManualDismiss: () -> Void
 
     var body: some View {
@@ -271,13 +270,6 @@ struct PrivacyProPromotionView: View {
                 buttonStyle: .primary(),
                 action: {
                     proceedAction()
-                }
-            )
-            OnboardingCTAButton(
-                title: dismissText,
-                buttonStyle: .ghost,
-                action: {
-                    dismissAction()
                 }
             )
         }

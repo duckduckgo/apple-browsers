@@ -414,7 +414,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            searchAreaContainerView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).resolvedColor(with: traitCollection).cgColor
+            activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
 
             updateShadows()
         }

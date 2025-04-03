@@ -133,19 +133,25 @@ enum PrivacyProPixel: PixelKitEventV2 {
         return nil
     }
 
+    private struct PrivacyProPixelsDefaults {
+        static let errorKey = "error"
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+    }
+
     var parameters: [String: String]? {
         switch self {
         case .privacyProInvalidRefreshTokenDetected(let source),
                 .privacyProAuthV2MigrationStarted(let source),
                 .privacyProAuthV2MigrationSucceeded(let source):
-            return ["source": source.description]
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2GetTokensError(let policy, let source, let error):
-            return ["error": error.localizedDescription,
-                    "policycache": policy.description,
-                    "source": source.description]
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.policyCacheKey: policy.description,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2MigrationFailed(let source, let error):
-            return ["error": error.localizedDescription,
-                    "source": source.description]
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
         default:
             return nil
         }

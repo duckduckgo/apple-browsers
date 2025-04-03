@@ -39,8 +39,14 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
 
     let source: Source
 
+    struct Defaults {
+        static let errorKey = "error"
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+    }
+
     public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        let sourceParam = ["source": source.description]
+        let sourceParam = [Defaults.sourceKey: source.description]
         switch pixelType {
         case .invalidRefreshToken:
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
@@ -49,12 +55,12 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
         case .migrationStarted:
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationStarted, withAdditionalParameters: sourceParam)
         case .migrationFailed(let error):
-            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription].merging(sourceParam) { $1 })
+            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
         case .migrationSucceeded:
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationSucceeded, withAdditionalParameters: sourceParam)
         case .getTokensError(let policy, let error):
-            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: ["error": error.localizedDescription,
-                                                                                                            "policycache": policy.description].merging(sourceParam) { $1 })
+            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription,
+                                                                                                            Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
         }
     }
 

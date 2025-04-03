@@ -17,12 +17,13 @@
 //
 
 import Subscription
+import os.log
 
 public struct MockPixelHandler: SubscriptionPixelHandler {
 
     public init() {}
 
     public func handle(pixelType: Subscription.SubscriptionPixelType) {
-        print("Pixel fired: \(pixelType)")
+        Logger.subscription.debug("Pixel fired: \(String(describing: pixelType))")
     }
 }

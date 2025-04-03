@@ -966,6 +966,7 @@ class TabViewController: UIViewController {
             webView.stopLoading()
             if webView.canGoBack {
                 duckPlayerNavigationHandler.handleGoBack(webView: webView)
+                webView.goBack()
                 chromeDelegate?.omniBar.endEditing()
                 return
             }
@@ -982,9 +983,10 @@ class TabViewController: UIViewController {
             onWebpageDidFinishLoading()
             return
         }
-
+        
         if webView.canGoBack {
             webView.goBack()
+            duckPlayerNavigationHandler.handleGoBack(webView: webView)
             chromeDelegate?.omniBar.endEditing()
             return
         }
@@ -999,6 +1001,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
 
         if webView.goForward() != nil {
+            duckPlayerNavigationHandler.handleGoForward(webView: webView)
             chromeDelegate?.omniBar.endEditing()
         }
     }

@@ -571,4 +571,5 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertEqual(receivedRequest?.videoID, videoID)
         XCTAssertEqual(receivedRequest?.timestamp, timestamp)
     }
+
 }

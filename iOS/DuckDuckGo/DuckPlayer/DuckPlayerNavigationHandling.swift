@@ -93,6 +93,11 @@ protocol DuckPlayerNavigationHandling: AnyObject {
     /// - Parameter webView: The web view to navigate back in.
     func handleGoBack(webView: WKWebView)
 
+    /// Handles the forward navigation action in the web view.
+    ///
+    /// - Parameter webView: The web view to navigate back in.
+    func handleGoForward(webView: WKWebView)
+
     /// Handles the reload action in the web view.
     ///
     /// - Parameter webView: The web view to reload.

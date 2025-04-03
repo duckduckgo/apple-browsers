@@ -155,7 +155,7 @@ final class DuckPlayerNativeUIPresenter {
             object: nil
         )
 
-            // Add observers for app settings changes
+         // Add observers for app settings changes
         notificationCenter.addObserver(
             self,
             selector: #selector(handleAppSettingsChange),
@@ -176,8 +176,6 @@ final class DuckPlayerNativeUIPresenter {
         /// Updates the UI based on Ombibar Notification
     @objc func handleAppSettingsChange(_ notification: Notification) {
         appSettings = AppDependencyProvider.shared.appSettings
-        print("appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount: \(appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount)")
-        print("appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime: \(appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime)")
     }
 
     /// Creates a container with the appropriate pill view based on the pill type

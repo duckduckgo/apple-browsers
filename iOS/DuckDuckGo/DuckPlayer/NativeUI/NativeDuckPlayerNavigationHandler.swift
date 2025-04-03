@@ -142,6 +142,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         duckPlayerDismissalCancellable?.cancel()
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
+        NotificationCenter.default.removeObserver(self)
     }
 
     /// Sets the referrer based on the current web view 
@@ -240,7 +241,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
             }
         }
     }
-
 }
 
 extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
@@ -346,7 +346,15 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` to navigate back in.
     @MainActor
     func handleGoBack(webView: WKWebView) {
-        webView.goBack()
+        lastHandledVideoID = nil
+    }
+
+    /// Custom forward navigation logic to handle Duck Player in the web view's history stack.
+    ///
+    /// - Parameter webView: The `WKWebView` to navigate back in.
+    @MainActor
+    func handleGoForward(webView: WKWebView) {
+        lastHandledVideoID = nil
     }
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
@@ -436,6 +444,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func handleDelegateNavigation(navigationAction: WKNavigationAction, webView: WKWebView) -> Bool {
 
         setReferrer(webView: webView)
+
+        // Reset lastHandledVideoID
+        lastHandledVideoID = nil
 
         guard let url = navigationAction.request.url else {
             return false

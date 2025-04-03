@@ -429,21 +429,6 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
     }
 
-    // MARK: - handleGoBack Tests
-    func testHandleGoBack_CallsWebViewGoBack() {
-        // Given
-        let firstURL = URL(string: "https://www.example.com/first")!
-        let secondURL = URL(string: "https://www.example.com/second")!
-        mockWebView.navigate(to: firstURL)
-        mockWebView.navigate(to: secondURL)
-
-        // When
-        sut.handleGoBack(webView: mockWebView)
-
-        // Then
-        XCTAssertEqual(mockWebView.url, firstURL, "handleGoBack should navigate to the previous URL in history")
-    }
-
     // MARK: - handleReload Tests
     func testHandleReload_WithValidYouTubeURL_HandlesCorrectly() {
         // Given
@@ -611,7 +596,8 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Given
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
         mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)  // Set SERP Referrer
-
+        sut.handleDidStartLoading(webView: mockWebView)
+        
         let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
         let mockFrameInfo = MockFrameInfo(isMainFrame: true)
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
@@ -623,4 +609,34 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Then
         XCTAssertFalse(result)
     }
+
+    
+    func testHandleGoBack_ResetsLastHandledVideoID() {
+        // GIven
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let urlAsk = URL(string: "https://www.youtube.com/watch?v=djd83w3s")!
+        let urlAskAuto = URL(string: "https://www.youtube.com/watch?v=8232q")!
+        
+        // When
+        playerSettings.nativeUIYoutubeMode = .ask
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        sut.handleGoBack(webView: mockWebView)
+                        
+        XCTAssertNil(sut.lastHandledVideoID)
+    }
+    
+    func testHandleGoForward_ResetsLastHandledVideoID() {
+        // GIven
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let urlAsk = URL(string: "https://www.youtube.com/watch?v=djd83w3s")!
+        let urlAskAuto = URL(string: "https://www.youtube.com/watch?v=8232q")!
+        
+        // When
+        playerSettings.nativeUIYoutubeMode = .ask
+        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: urlAsk)
+        sut.handleGoForward(webView: mockWebView)
+                        
+        XCTAssertNil(sut.lastHandledVideoID)
+    }
+    
 }

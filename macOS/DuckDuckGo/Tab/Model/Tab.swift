@@ -315,7 +315,7 @@ protocol NewWindowPolicyDecisionMaker {
     func addDeallocationChecks(for webView: WKWebView) {
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
-        let timeout: TimeInterval = AppVersion.runType == .integrationTests ? 3.0 : 1.0
+        let timeout: TimeInterval = AppVersion.runType == .integrationTests ? 1.0 : 1.0
 
         webView.onDeinit { [weak self] in
             // Tab should deallocate with the WebView

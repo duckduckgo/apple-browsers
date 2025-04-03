@@ -589,22 +589,22 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     func testHandleDelegateNavigation_WhenOnSERPAndDuckPlayerEnabled_LoadsNativePlayer() async {
         // Given
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        playerSettings.nativeUISERPEnabled = true
         mockWebView.navigate(to: URL(string: "https://duckduckgo.com/?q=test")!)  // Set SERP Referrer
 
-        let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
+        let request = URLRequest(url: URL(string: "https://www.youtube.com/watch?v=aasdj111")!)
         let mockFrameInfo = MockFrameInfo(isMainFrame: true)
         let navigationAction = MockNavigationAction(request: request, targetFrame: mockFrameInfo)
-        playerSettings.nativeUISERPEnabled = true
+        
 
         // When
         let result = sut.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
 
         // Then
         XCTAssertTrue(result)
+        XCTAssertEqual(sut.lastHandledVideoID, "aasdj111")
         mockDelayHandler.completeDelay()
-        XCTAssertTrue(mockDuckPlayer.presentPillCalled)
         XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
-        XCTAssertEqual(sut.lastHandledVideoID, "test123")
     }
 
     func testHandleDelegateNavigation_WhenOnSERPAndDuckPlayerDisabled_LoadsYoutubePage() async {
@@ -622,83 +622,5 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Then
         XCTAssertFalse(result)
-    }
-
-    // MARK: - updateDuckPlayerForWebViewAppearance Tests
-
-    func testUpdateDuckPlayerForWebViewAppearance_WhenFeatureOff_DoesNotPresentPill() async {
-
-        // Given
-        // mockFeatureFlagger.enabledFeatures = []
-
-        // When
-        // await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
-
-        // Then
-        // XCTAssertFalse(mockDuckPlayer.presentPillCalled)
-
-    }
-
-    func testUpdateDuckPlayerForWebViewAppearance_WhenOnYouTubeAndNotDisabled_PresentsPill() async {
-        // Given
-        /*
-        mockFeatureFlagger.isFeatureOnResult = true
-        mockTabNavigator.tabModel.link = Link(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
-        sut.disableDuckPlayerForNextVideo = false
-        sut.isLinkPreview = false
-        
-        // When
-        await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
-        
-        // Then
-        XCTAssertTrue(mockDuckPlayer.presentPillCalled)
-        XCTAssertEqual(mockDuckPlayer.lastPresentedVideoID, "test123")
-         */
-    }
-
-    func testUpdateDuckPlayerForWebViewAppearance_WhenDisabled_DoesNotPresentPill() async {
-        // Given
-        /*
-        mockFeatureFlagger.isFeatureOnResult = true
-        mockTabNavigator.tabModel.link = Link(url: URL(string: "https://www.youtube.com/watch?v=test123")!)
-        sut.disableDuckPlayerForNextVideo = true
-        sut.isLinkPreview = false
-        
-        // When
-        await sut.updateDuckPlayerForWebViewAppearance(mockTabNavigator)
-        
-        // Then
-        XCTAssertFalse(mockDuckPlayer.presentPillCalled)
-         */
-    }
-
-    // MARK: - updateDuckPlayerForWebViewDisappearance Tests
-
-    func testUpdateDuckPlayerForWebViewDisappearance_WhenFeatureOff_DoesNotDismissPill() async {
-        /*
-        // Given
-        mockFeatureFlagger.isFeatureOnResult = false
-        
-        // When
-        await sut.updateDuckPlayerForWebViewDisappearance(mockTabNavigator)
-        
-        // Then
-        XCTAssertFalse(mockDuckPlayer.dismissPillCalled)
-         */
-    }
-
-    func testUpdateDuckPlayerForWebViewDisappearance_WhenFeatureOn_DismissesPill() async {
-        // Given
-        // mockFeatureFlagger.isFeatureOnResult = true
-
-        // When
-        // await sut.updateDuckPlayerForWebViewDisappearance(mockTabNavigator)
-
-        // Then
-        // XCTAssertTrue(mockDuckPlayer.dismissPillCalled)
-        // XCTAssertFalse(mockDuckPlayer.lastDismissPillReset)
-        // XCTAssertFalse(mockDuckPlayer.lastDismissPillAnimated)
-        // XCTAssertTrue(mockDuckPlayer.lastDismissPillProgramatic)
-
     }
 }

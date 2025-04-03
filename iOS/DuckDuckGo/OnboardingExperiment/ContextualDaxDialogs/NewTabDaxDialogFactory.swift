@@ -156,11 +156,9 @@ private extension NewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
-                dismissAction: { [weak self] in
+                onManualDismiss: { [weak self] in
                     self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
                     onDismiss(true)
-                }, onManualDismiss: {
-                    onManualDismiss()
                 }
             )
         }

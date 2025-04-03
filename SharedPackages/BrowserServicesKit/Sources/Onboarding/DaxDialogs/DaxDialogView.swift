@@ -26,6 +26,7 @@ private enum DaxDialogMetrics {
     static let shadowRadius: CGFloat = 5.0
     static let stackSpacing: CGFloat = 8
     static let dismissButtonPadding: CGFloat = 8
+    static let dismissButtonSize: CGFloat = 44
 
     enum DaxLogo {
         static let size: CGFloat = 54.0
@@ -206,19 +207,33 @@ public struct DaxDialogView<Content: View>: View {
 }
 
 struct OnboardingDismissButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(.close16)
+                .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
-                .background(.white.opacity(0.72))
+                .background(backgroundColor)
                 .clipShape(Circle())
         }
         .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
         .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
         .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
-        .frame(width: 44, height: 44)
+        .frame(width: DaxDialogMetrics.dismissButtonSize, height: DaxDialogMetrics.dismissButtonSize)
+    }
+
+    private var backgroundColor: Color {
+        switch colorScheme {
+        case .light:
+            Color.white.opacity(0.72)
+        case .dark:
+            Color(red: 0.27, green: 0.27, blue: 0.27).opacity(0.72)
+        @unknown default:
+            Color.white.opacity(0.72)
+        }
     }
 }
 

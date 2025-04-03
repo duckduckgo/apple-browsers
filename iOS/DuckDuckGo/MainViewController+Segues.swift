@@ -174,7 +174,8 @@ extension MainViewController {
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
                                       featureFlagger: self.featureFlagger,
-                                      tabManager: self.tabManager)
+                                      tabManager: self.tabManager,
+                                      aiChatSettings: self.aiChatSettings)
         }) else {
             assertionFailure()
             return
@@ -234,11 +235,19 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount) {
+    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account)
+            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
+        }
+    }
+
+    func segueToSettingsAIChat() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .aiChat)
         }
     }
 
@@ -268,6 +277,7 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
+                                                  isAuthV2Enabled: isAuthV2Enabled,
                                                   subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
                                                   subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
                                                   subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,

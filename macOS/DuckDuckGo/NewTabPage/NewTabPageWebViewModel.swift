@@ -72,6 +72,13 @@ final class NewTabPageWebViewModel: NSObject {
             }
             .store(in: &cancellables)
     }
+
+    func removeUserScripts() {
+        if let controller = webView.configuration.userContentController as? NewTabPageUserContentController {
+            controller.removeUserScripts()
+        }
+    }
+
 }
 
 extension NewTabPageWebViewModel: WKNavigationDelegate {

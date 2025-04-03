@@ -23,11 +23,11 @@ import BrowserServicesKit
 struct LargeOmniBarState {
 
     struct HomeEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -35,10 +35,10 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        var showMenu: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
-        var showSettings: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showMenu = true
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -65,11 +65,11 @@ struct LargeOmniBarState {
     }
 
     struct HomeTextEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -77,10 +77,10 @@ struct LargeOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        var showMenu: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
-        var showSettings: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showMenu = true
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -99,11 +99,11 @@ struct LargeOmniBarState {
     }
 
     struct HomeNonEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showSearchLoupe = true
@@ -112,10 +112,10 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        var showMenu: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
-        var showSettings: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showMenu = true
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -133,11 +133,11 @@ struct LargeOmniBarState {
     }
 
     struct BrowsingEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        let showAccessoryButton: Bool = true
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        let showAccessoryButton = true
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -147,8 +147,8 @@ struct LargeOmniBarState {
         let showRefresh = false
         let showMenu = true
         let showSettings = false
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showCancel = false
+        let showDismiss = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -167,11 +167,11 @@ struct LargeOmniBarState {
     }
 
     struct BrowsingTextEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        let showAccessoryButton: Bool = true
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        let showAccessoryButton = true
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -181,8 +181,8 @@ struct LargeOmniBarState {
         let showRefresh = false
         let showMenu = true
         let showSettings = false
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showCancel = false
+        let showDismiss = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -201,11 +201,11 @@ struct LargeOmniBarState {
     }
 
     struct BrowsingNonEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = true
-        let showBackButton: Bool = true
-        let showForwardButton: Bool = true
-        let showBookmarksButton: Bool = true
-        let showAccessoryButton: Bool = true
+        let hasLargeWidth = true
+        let showBackButton = true
+        let showForwardButton = true
+        let showBookmarksButton = true
+        let showAccessoryButton = true
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false
@@ -216,8 +216,8 @@ struct LargeOmniBarState {
         var showRefresh: Bool { !isLoading }
         let showMenu = true
         let showSettings = false
-        let showCancel: Bool = false
-        let showDismiss: Bool = false
+        let showCancel = false
+        let showDismiss = false
         let showVoiceSearch = false
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return self }

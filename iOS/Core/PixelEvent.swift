@@ -31,6 +31,14 @@ extension Pixel {
 
         case appInstall
         case appLaunch
+        /// Fires when the app launches as a result of tapping an http/https link outside the DDG browser.
+        ///
+        /// For more info check the [Asana Task](https://app.asana.com/0/72649045549333/1209593812414962/f)
+        case appLaunchFromExternalLink
+        /// Fires when the app launches as a result of an external app sharing a link with the DDG browser.
+        ///
+        /// For more info check the [Asana Task](https://app.asana.com/0/72649045549333/1209593812414962/f)
+        case appLaunchFromShareExtension
         case refreshPressed
         case pullToRefresh
 
@@ -62,6 +70,20 @@ extension Pixel {
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
+
+        // MARK: KeyValueFiles Store validation
+        case keyValueFileStoreSupportDirAccessError
+        case keyValueFileStoreInitError
+        case keyValueFileStoreFirstAccess(success: Bool)
+        case keyValueFileStoreSecondAccess(firstAccessStatus: Bool, secondAccessStatus: Bool)
+
+        case keyValueFileStoreAsyncDirAccessError
+        case keyValueFileStoreAsyncInitError
+        case keyValueFileStoreAsyncFirstAccess(success: Bool)
+
+        case keyValueFileStoreRetryDirAccessError
+        case keyValueFileStoreRetryInitError
+        case keyValueFileStoreRetryAccess(success: Bool, delay: Int)
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -353,6 +375,10 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        
+        case autofillDeviceCapabilityDeviceAuthDisabled
+        
+        case autofillSettingsOpened
 
         case autofillManagementOpened
         case autofillManagementCopyUsername
@@ -818,6 +844,22 @@ extension Pixel {
         case siteNotWorkingShown
         case siteNotWorkingWebsiteIsBroken
 
+        // Set As Default Browser Debug Pixels
+        // Privacy Triage: https://app.asana.com/0/1206329551987282/1209505775591500
+
+        /// Fired when a successful result (either true or false) is returned from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserSuccessfulResult
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure
+
+        /// Fired when an error with domain `UIApplicationCategoryDefaultErrorDomain` and code `rateLimited` is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method
+        /// and we don’t have a persisted version of the previous result.
+        case debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure
+
+        /// Fired when a generic error is thrown from [isDefault(.webBrowser)](https://developer.apple.com/documentation/UIKit/UIApplication/isDefault(_:)) method.
+        case debugSetAsDefaultBrowserUnknownFailure
+
         // MARK: History
         case historyStoreLoadFailed
         case historyRemoveFailed
@@ -867,9 +909,14 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
-        case privacyProDeadTokenDetected
-        case authV1MigrationFailed
-        case authV1MigrationSucceeded
+        // AUth V2
+        case privacyProInvalidRefreshTokenDetected
+        case privacyProInvalidRefreshTokenSignedOut
+        case privacyProInvalidRefreshTokenRecovered
+        case privacyProAuthV2MigrationStarted
+        case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationSucceeded
+        case privacyProAuthV2GetTokensError
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1038,6 +1085,17 @@ extension Pixel {
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
         case openAIChatFromIconShortcut
+        case openAIChatFromTabManager
+
+        case aiChatSettingsVoiceTurnedOff
+        case aiChatSettingsVoiceTurnedOn
+        case aiChatSettingsAddressBarTurnedOff
+        case aiChatSettingsAddressBarTurnedOn
+        case aiChatSettingsBrowserMenuTurnedOff
+        case aiChatSettingsBrowserMenuTurnedOn
+        case aiChatSettingsTabManagerTurnedOff
+        case aiChatSettingsTabManagerTurnedOn
+        case aiChatSettingsDisplayed
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1063,6 +1121,8 @@ extension Pixel.Event {
         switch self {
         case .appInstall: return "m_install"
         case .appLaunch: return "ml"
+        case .appLaunchFromExternalLink: return "m_app-launch_tapped-external-link"
+        case .appLaunchFromShareExtension: return "m_app-launch_shared-link"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
 
@@ -1084,7 +1144,20 @@ extension Pixel.Event {
         case .dashboardProtectionAllowlistRemove: return "mp_wlr"
             
         case .privacyDashboardReportBrokenSite: return "mp_rb"
-            
+
+        case .keyValueFileStoreSupportDirAccessError: return "m_test_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreInitError: return "m_test_key_value_file_store_init_error"
+        case .keyValueFileStoreFirstAccess(let success): return "m_test_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
+        case .keyValueFileStoreSecondAccess(let firstAccessStatus, let secondAccessStatus): return "m_test_key_value_file_store_first_acccess_\(firstAccessStatus ? "success" : "failed")_second_acccess_\(secondAccessStatus ? "success" : "failed")"
+
+        case .keyValueFileStoreAsyncDirAccessError: return "m_test_async_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreAsyncInitError: return "m_test_async_key_value_file_store_init_error"
+        case .keyValueFileStoreAsyncFirstAccess(let success): return "m_test_async_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
+
+        case .keyValueFileStoreRetryDirAccessError: return "m_test_retry_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreRetryInitError: return "m_test_retry_key_value_file_store_init_error"
+        case .keyValueFileStoreRetryAccess(let success, let delay): return "m_test_retry_key_value_file_store_acccess_\(delay)_\(success ? "success" : "failed")"
+
         case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -1371,7 +1444,11 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+            
+        case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
+        case .autofillSettingsOpened: return "autofill_settings_opened"
+            
         case .autofillManagementOpened:
             return "m_autofill_management_opened"
         case .autofillManagementCopyUsername:
@@ -1681,6 +1758,11 @@ extension Pixel.Event {
         case .tabInteractionStateRestorationTime(let aggregation):
             return "m_d_tab-interaction-state_restoration-time-\(aggregation)"
 
+        case .debugSetAsDefaultBrowserSuccessfulResult: return "m_debug_set-default-browser_successful-result"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached"
+        case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
+        case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
+
             // MARK: Ad Attribution
 
         case .adAttributionGlobalAttributedRulesDoNotExist: return "m_attribution_global_attributed_rules_do_not_exist"
@@ -1865,9 +1947,14 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
+        // AUth V2
+        case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
+        case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -2059,7 +2146,16 @@ extension Pixel.Event {
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
-
+        case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
+        case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
+        case .aiChatSettingsVoiceTurnedOn: return "m_aichat_settings_voice_turned_on"
+        case .aiChatSettingsAddressBarTurnedOff: return "m_aichat_settings_address_bar_turned_off"
+        case .aiChatSettingsAddressBarTurnedOn: return "m_aichat_settings_address_bar_turned_on"
+        case .aiChatSettingsBrowserMenuTurnedOff: return "m_aichat_settings_browser_menu_turned_off"
+        case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
+        case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
+        case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
+        case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

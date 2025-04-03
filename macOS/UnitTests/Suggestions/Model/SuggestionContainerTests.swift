@@ -184,7 +184,11 @@ final class SuggestionContainerTests: XCTestCase {
         }
 
         // Initialize a mock WindowControllersManager with pinned tabs, tab view models, and the selected window index for testing.
-        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManager: pinnedTabsManager(tabs: input.pinnedTabs.map(OpenTab.init)),
+        let provider = PinnedTabsManagerProvidingMock()
+        let manager = pinnedTabsManager(tabs: input.pinnedTabs.map(OpenTab.init))
+        provider.currentPinnedTabManagers = [manager]
+
+        let windowControllersManagerMock = WindowControllersManagerMock(pinnedTabsManagerProvider: provider,
                                                                         tabCollectionViewModels: tabCollectionViewModels,
                                                                         selectedWindow: selectedWindow)
 
@@ -362,7 +366,7 @@ extension SuggestionContainerTests {
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?
 
-        var pinnedTabsManager: DuckDuckGo_Privacy_Browser.PinnedTabsManager
+        var pinnedTabsManagerProvider: any DuckDuckGo_Privacy_Browser.PinnedTabsManagerProviding
 
         var didRegisterWindowController = PassthroughSubject<(DuckDuckGo_Privacy_Browser.MainWindowController), Never>()
 
@@ -393,8 +397,8 @@ extension SuggestionContainerTests {
             nil
         }
 
-        init(pinnedTabsManager: PinnedTabsManager, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
-            self.pinnedTabsManager = pinnedTabsManager
+        init(pinnedTabsManagerProvider: PinnedTabsManagerProviding, tabCollectionViewModels: [TabCollectionViewModel] = [], selectedWindow: Int = 0) {
+            self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
             self.allTabCollectionViewModels = tabCollectionViewModels
             self.selectedWindowIndex = selectedWindow
         }

@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Foundation
 import AppKit
 import Common
 import LoginItems
 import NetworkProtectionProxy
 import os.log
+import PixelKit
 
 final class DataBrokerProtectionDebugMenu: NSMenu {
 
@@ -48,7 +50,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
-    private let settings = DataBrokerProtectionSettings()
+    private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
     init() {
         super.init(title: "Personal Information Removal")
@@ -272,20 +274,30 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func forceBrokerJSONFilesUpdate() {
-        if let updater = DefaultDataBrokerProtectionBrokerUpdater.provideForDebug() {
-            updater.updateBrokers()
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+
+        guard let pixelKit = PixelKit.shared else {
+            fatalError("PixelKit not set up")
         }
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
+            fatalError("Failed to make secure storage vault")
+        }
+
+        let updater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
+        updater.updateBrokers()
     }
 
     @objc private func toggleVPNBypass() {
         Task {
-            DataBrokerProtectionSettings().vpnBypass.toggle()
-            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting()
+            await DataBrokerProtectionManager.shared.dataBrokerProtectionDataManagerWillApplyVPNBypassSetting(!VPNBypassService().isEnabled)
         }
     }
 
     @objc private func resetVPNBypassOnboarding() {
-        DataBrokerProtectionSettings().vpnBypassOnboardingShown = false
+        DataBrokerProtectionSettings(defaults: .dbp).vpnBypassOnboardingShown = false
     }
 
     @objc private func toggleShowStatusMenuItem() {

@@ -91,7 +91,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
-    var pinnedTabsManager = PinnedTabsManager(tabCollection: .init())
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding = PinnedTabsManagerProvidingMock()
 
     var didRegisterWindowController = PassthroughSubject<(MainWindowController), Never>()
     var didUnregisterWindowController = PassthroughSubject<(MainWindowController), Never>()

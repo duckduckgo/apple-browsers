@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Subscription
 import os.log
 import Freemium
@@ -32,7 +32,7 @@ protocol DataBrokerProtectionFeatureGatekeeper {
 struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeatureGatekeeper {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let featureDisabler: DataBrokerProtectionFeatureDisabling
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private let subscriptionAvailability: SubscriptionFeatureAvailability
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
@@ -40,7 +40,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
-         pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,

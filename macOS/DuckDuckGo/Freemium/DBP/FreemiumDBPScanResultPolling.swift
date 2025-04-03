@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Freemium
 import OSLog
 

@@ -31,6 +31,7 @@ import Subscription
 import SwiftUI
 import UserScript
 import WebKit
+import DataBrokerProtection_macOS
 
 protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
@@ -51,6 +52,9 @@ final class BrowserTabViewController: NSViewController {
         actionsManager: newTabPageActionsManager,
         activeRemoteMessageModel: activeRemoteMessageModel
     )
+
+    private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+
     private(set) weak var webView: WebView?
     private weak var webViewContainer: NSView?
     private weak var webViewSnapshot: NSView?
@@ -150,7 +154,6 @@ final class BrowserTabViewController: NSViewController {
         hoverLabelContainer.alphaValue = 0
         subscribeToTabs()
         subscribeToSelectedTabViewModel()
-        subscribeToHTMLNewTabPageFeatureFlagChanges()
 
         if let webViewContainer {
             removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
@@ -189,6 +192,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func windowWillClose(_ notification: NSNotification) {
         self.removeWebViewFromHierarchy()
+        self.newTabPageWebViewModel.removeUserScripts()
     }
 
     @objc
@@ -290,25 +294,6 @@ final class BrowserTabViewController: NSViewController {
         Task { @MainActor in
             tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
         }
-    }
-
-    private func subscribeToHTMLNewTabPageFeatureFlagChanges() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .htmlNewTabPage }
-            .asVoid()
-            .sink { [weak self] in
-                guard let self, let tabViewModel else {
-                    return
-                }
-                if tabViewModel.tab.content == .newtab {
-                    showTabContent(of: tabViewModel)
-                }
-            }
-            .store(in: &cancellables)
     }
 
     private func subscribeToSelectedTabViewModel() {
@@ -652,7 +637,7 @@ final class BrowserTabViewController: NSViewController {
             self?.scheduleHoverLabelUpdatesForUrl($0)
         }.store(in: &tabViewModelCancellables)
 #if DEBUG
-        if case .xcPreviews = NSApp.runType {
+        if case .xcPreviews = AppVersion.runType {
             self.scheduleHoverLabelUpdatesForUrl(.duckDuckGo)
         }
 #endif
@@ -779,7 +764,7 @@ final class BrowserTabViewController: NSViewController {
         transientTabContentViewController?.removeCompletely()
         preferencesViewController?.removeCompletely()
         bookmarksViewController?.removeCompletely()
-        homePageViewController?.removeCompletely()
+        burnerHomePageViewController?.removeCompletely()
         webExtensionWebView?.superview?.removeFromSuperview()
         webExtensionWebView = nil
         dataBrokerProtectionHomeViewController?.removeCompletely()
@@ -832,11 +817,11 @@ final class BrowserTabViewController: NSViewController {
 
         case .newtab:
             // We only use HTML New Tab Page in regular windows for now
-            if featureFlagger.isFeatureOn(.htmlNewTabPage) && !tabCollectionViewModel.isBurner {
-                updateTabIfNeeded(tabViewModel: tabViewModel)
-            } else {
+            if tabCollectionViewModel.isBurner {
                 removeAllTabContent()
-                addAndLayoutChild(homePageViewControllerCreatingIfNeeded())
+                addAndLayoutChild(burnerHomePageViewControllerCreatingIfNeeded())
+            } else {
+                updateTabIfNeeded(tabViewModel: tabViewModel)
             }
 
         case .history:
@@ -854,8 +839,8 @@ final class BrowserTabViewController: NSViewController {
 
         case .webExtensionUrl:
             removeAllTabContent()
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 if let tab = tabViewModel?.tab,
                    let url = tab.url,
                    let webExtensionWebView = WebExtensionManager.shared.internalSiteHandler.webViewForExtensionUrl(url) {
@@ -916,7 +901,7 @@ final class BrowserTabViewController: NSViewController {
         case .onboarding:
             return
         case .newtab:
-            guard !featureFlagger.isFeatureOn(.htmlNewTabPage) else {
+            guard tabCollectionViewModel.isBurner else {
                 return
             }
             containsHostingView = false
@@ -938,14 +923,12 @@ final class BrowserTabViewController: NSViewController {
 
     // MARK: - New Tab page
 
-    var homePageViewController: HomePageViewController?
-    private func homePageViewControllerCreatingIfNeeded() -> HomePageViewController {
-        return homePageViewController ?? {
-            let freemiumDBPPromotionViewCoordinator = Application.appDelegate.freemiumDBPPromotionViewCoordinator
-            let homePageViewController = HomePageViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager,
-                                                                freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator)
-            self.homePageViewController = homePageViewController
-            return homePageViewController
+    var burnerHomePageViewController: BurnerHomePageViewController?
+    private func burnerHomePageViewControllerCreatingIfNeeded() -> BurnerHomePageViewController {
+        return burnerHomePageViewController ?? {
+            let burnerHomePageViewController = BurnerHomePageViewController()
+            self.burnerHomePageViewController = burnerHomePageViewController
+            return burnerHomePageViewController
         }()
     }
 
@@ -955,7 +938,11 @@ final class BrowserTabViewController: NSViewController {
     private func dataBrokerProtectionHomeViewControllerCreatingIfNeeded() -> DBPHomeViewController {
         return dataBrokerProtectionHomeViewController ?? {
             let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
-            let dataBrokerProtectionHomeViewController = DBPHomeViewController(dataBrokerProtectionManager: DataBrokerProtectionManager.shared, freemiumDBPFeature: freemiumDBPFeature)
+            let dataBrokerProtectionHomeViewController = DBPHomeViewController(
+                dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
+                vpnBypassService: VPNBypassService(),
+                freemiumDBPFeature: freemiumDBPFeature
+            )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController
             return dataBrokerProtectionHomeViewController
         }()
@@ -1465,7 +1452,7 @@ extension BrowserTabViewController {
     }
 
     private func handleTabSelectedInKeyWindow(_ tabIndex: TabIndex) {
-        if tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
+        if pinnedTabsManagerProvider.pinnedTabsMode == .shared, tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
             makeWebViewSnapshot()
         } else {
             hideWebViewSnapshotIfNeeded()

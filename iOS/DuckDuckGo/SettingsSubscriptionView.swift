@@ -66,7 +66,7 @@ struct SettingsSubscriptionView: View {
     }
 
     var currentStorefrontRegion: SubscriptionRegion {
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !settingsViewModel.isAuthV2Enabled {
             return AppDependencyProvider.shared.subscriptionManager!.storePurchaseManager().currentStorefrontRegion
         } else {
             return AppDependencyProvider.shared.subscriptionManagerV2!.storePurchaseManager().currentStorefrontRegion
@@ -101,7 +101,7 @@ struct SettingsSubscriptionView: View {
             }, isButton: true)
 
             // Restore subscription
-            if !AppDependencyProvider.shared.isAuthV2Enabled {
+            if !settingsViewModel.isAuthV2Enabled {
                 let restoreView = subscriptionRestoreView
                     .navigationViewStyle(.stack)
                     .onFirstAppear {
@@ -161,7 +161,7 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
 
         // Renew Subscription (Expired)
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !settingsViewModel.isAuthV2Enabled {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
                                                         settingsViewModel: settingsViewModel,
                                                         viewPlans: {
@@ -199,7 +199,7 @@ struct SettingsSubscriptionView: View {
         disabledFeaturesView
 
         // Renew Subscription (Expired)
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !settingsViewModel.isAuthV2Enabled {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.activating,
                                                         settingsViewModel: settingsViewModel,
                                                         viewPlans: {
@@ -281,7 +281,7 @@ struct SettingsSubscriptionView: View {
         let isActiveTrialOffer = settingsViewModel.state.subscription.isActiveTrialOffer
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
 
-        if !AppDependencyProvider.shared.isAuthV2Enabled {
+        if !settingsViewModel.isAuthV2Enabled {
             NavigationLink(destination: LazyView(SubscriptionSettingsView(configuration: configuration, settingsViewModel: settingsViewModel))
                 .environmentObject(subscriptionNavigationCoordinator)
             ) {

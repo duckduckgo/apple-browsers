@@ -21,7 +21,7 @@ import Foundation
 #if DEBUG
 public var customAssertionFailure: ((@autoclosure () -> String, StaticString, UInt) -> Void)?
 public func assertionFailure(_ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) {
-    customAssertionFailure?(message(), file, line) ?? Swift.assertionFailure(message(), file: file, line: line)
+//    customAssertionFailure?(message(), file, line) ?? Swift.assertionFailure(message(), file: file, line: line)
 }
 
 public var customAssert: ((@autoclosure () -> Bool, @autoclosure () -> String, StaticString, UInt) -> Void)?

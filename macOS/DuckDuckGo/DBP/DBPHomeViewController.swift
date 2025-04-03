@@ -17,7 +17,8 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import AppKit
 import Common
 import SwiftUI
@@ -31,7 +32,8 @@ public extension Notification.Name {
 final class DBPHomeViewController: NSViewController {
     private var presentedWindowController: NSWindowController?
     private let dataBrokerProtectionManager: DataBrokerProtectionManager
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler()
+    private let vpnBypassService: VPNBypassFeatureProvider
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler()
     private var currentChildViewController: NSViewController?
     private var observer: NSObjectProtocol?
     private var freemiumDBPFeature: FreemiumDBPFeature
@@ -65,6 +67,7 @@ final class DBPHomeViewController: NSViewController {
 
         return DataBrokerProtectionViewController(
             agentInterface: dataBrokerProtectionManager.loginItemInterface,
+            vpnBypassService: vpnBypassService,
             dataManager: dataBrokerProtectionManager.dataManager,
             privacyConfig: privacyConfigurationManager,
             prefs: prefs,
@@ -75,9 +78,11 @@ final class DBPHomeViewController: NSViewController {
     }()
 
     init(dataBrokerProtectionManager: DataBrokerProtectionManager,
+         vpnBypassService: VPNBypassFeatureProvider,
          prerequisiteVerifier: DataBrokerPrerequisitesStatusVerifier = DefaultDataBrokerPrerequisitesStatusVerifier(),
          freemiumDBPFeature: FreemiumDBPFeature) {
         self.dataBrokerProtectionManager = dataBrokerProtectionManager
+        self.vpnBypassService = vpnBypassService
         self.prerequisiteVerifier = prerequisiteVerifier
         self.freemiumDBPFeature = freemiumDBPFeature
         super.init(nibName: nil, bundle: nil)

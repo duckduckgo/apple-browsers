@@ -45,7 +45,7 @@ final class ExcludedDomainsViewController: NSViewController {
     @IBOutlet var doneButton: NSButton!
     @IBOutlet var excludedDomainsLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = FaviconManager.shared
+    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var allDomains = [String]()
     private var filteredDomains: [String]?
@@ -155,7 +155,6 @@ extension ExcludedDomainsViewController: NSTableViewDataSource, NSTableViewDeleg
 
         cell.textField?.stringValue = domain
         cell.imageView?.image = faviconManagement.getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: .small)?.image
-        cell.imageView?.applyFaviconStyle()
 
         return cell
     }

@@ -160,12 +160,12 @@ final class ConfigurationStore: ConfigurationStoring {
             do {
                 data = try Data(contentsOf: fileUrl)
             } catch {
-                guard NSApp.runType.requiresEnvironment else { return }
+                guard AppVersion.runType.requiresEnvironment else { return }
 
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    if config == .trackerDataSet, let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+                    if config == .trackerDataSet, let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                         let parameters = [
                             "experimentName": experimentName,
                             "etag": loadEtag(for: .trackerDataSet) ?? ""

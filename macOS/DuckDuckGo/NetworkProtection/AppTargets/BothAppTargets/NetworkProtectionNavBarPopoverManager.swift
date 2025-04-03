@@ -18,8 +18,10 @@
 
 import AppLauncher
 import AppKit
+import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import LoginItems
 import NetworkProtection
@@ -29,9 +31,8 @@ import NetworkProtectionUI
 import os.log
 import Subscription
 import SwiftUI
+import VPNAppState
 import VPNAppLauncher
-import BrowserServicesKit
-import FeatureFlags
 
 protocol NetworkProtectionIPCClient {
     var ipcStatusObserver: ConnectionStatusObserver { get }
@@ -106,6 +107,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
         let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
+        let vpnAppState = VPNAppState(defaults: .netP)
 
         var menuItems = [StatusBarMenu.MenuItem]()
 
@@ -116,22 +118,27 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 }))
         }
 
+        if vpnAppState.isUsingSystemExtension {
+            menuItems.append(contentsOf: [
+                .textWithDetail(
+                    icon: Image(.window16),
+                    title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
+                    detail: "(\(proxySettings.excludedAppsMinusDBPAgent.count))",
+                    action: { [weak self] in
+                        self?.manageExcludedApps()
+                    }),
+                .textWithDetail(
+                    icon: Image(.globe16),
+                    title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
+                    detail: "(\(proxySettings.excludedDomains.count))",
+                    action: { [weak self] in
+                        self?.manageExcludedSites()
+                    }),
+                .divider()
+            ])
+        }
+
         menuItems.append(contentsOf: [
-            .textWithDetail(
-                icon: Image(.window16),
-                title: UserText.vpnStatusViewExcludedAppsMenuItemTitle,
-                detail: "(\(proxySettings.excludedAppsMinusDBPAgent.count))",
-                action: { [weak self] in
-                    self?.manageExcludedApps()
-            }),
-            .textWithDetail(
-                icon: Image(.globe16),
-                title: UserText.vpnStatusViewExcludedDomainsMenuItemTitle,
-                detail: "(\(proxySettings.excludedDomains.count))",
-                action: { [weak self] in
-                    self?.manageExcludedSites()
-            }),
-            .divider(),
             .text(icon: Image(.help16), title: UserText.vpnStatusViewFAQMenuItemTitle, action: {
                 try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
             }),
@@ -178,6 +185,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         activeSitePublisher.refreshActiveSiteInfo()
 
         let popover: NSPopover = {
+            let vpnAppState = VPNAppState(defaults: .netP)
             let vpnSettings = VPNSettings(defaults: .netP)
             let controller = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
 
@@ -208,12 +216,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 activeSitePublisher: activeSitePublisher,
                 uiActionHandler: uiActionHandler)
 
-            let statusViewModel = NetworkProtectionStatusView.Model(controller: controller,
-                                              onboardingStatusPublisher: onboardingStatusPublisher,
-                                              statusReporter: statusReporter,
-                                              uiActionHandler: uiActionHandler,
-                                              menuItems: { [weak self] in
-
+            let menuItems = { [weak self] () -> [NetworkProtectionStatusView.Model.MenuItem] in
                 guard let self else { return [] }
 
                 guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
@@ -221,18 +224,48 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
                 }
 
                 return statusViewSubmenu()
-            },
-                                              agentLoginItem: LoginItem.vpnMenu,
-                                              isMenuBarStatusView: false,
-                                              userDefaults: .netP,
-                                              locationFormatter: DefaultVPNLocationFormatter(),
-                                              uninstallHandler: { [weak self] in
-                _ = try? await self?.vpnUninstaller.uninstall(removeSystemExtension: true)
-            })
+            }
+
+#if APPSTORE
+            let isExtensionUpdateOfferedPublisher: CurrentValuePublisher<Bool, Never> = {
+                let initialValue = featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage)
+                    && !vpnAppState.isUsingSystemExtension
+
+                let publisher = vpnAppState.isUsingSystemExtensionPublisher
+                    .map { [featureFlagger] value in
+                        featureFlagger.isFeatureOn(.networkProtectionAppStoreSysexMessage) && !value
+                    }.eraseToAnyPublisher()
+
+                return CurrentValuePublisher(initialValue: initialValue, publisher: publisher)
+            }()
+#else
+            let isExtensionUpdateOfferedPublisher = CurrentValuePublisher(initialValue: false, publisher: Just(false).eraseToAnyPublisher())
+#endif
+
+            let statusViewModel = NetworkProtectionStatusView.Model(
+                controller: controller,
+                onboardingStatusPublisher: onboardingStatusPublisher,
+                statusReporter: statusReporter,
+                uiActionHandler: uiActionHandler,
+                menuItems: menuItems,
+                agentLoginItem: LoginItem.vpnMenu,
+                isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
+                isMenuBarStatusView: false,
+                userDefaults: .netP,
+                locationFormatter: DefaultVPNLocationFormatter(),
+                uninstallHandler: { [weak self] reason in
+
+                    let showNotification = reason == .expiration
+
+                    try? await self?.vpnUninstaller.uninstall(
+                        removeSystemExtension: true,
+                        showNotification: showNotification)
+                })
 
             let tipsModel = VPNTipsModel(statusObserver: statusReporter.statusObserver,
                                          activeSitePublisher: activeSitePublisher,
                                          forMenuApp: false,
+                                         vpnAppState: vpnAppState,
                                          vpnSettings: vpnSettings,
                                          proxySettings: proxySettings,
                                          logger: Logger(subsystem: "DuckDuckGo", category: "TipKit"))

@@ -27,6 +27,7 @@ import Persistence
 import os.log
 import SwiftUI
 import BrowserServicesKit
+import AIChat
 
 class TabSwitcherViewController: UIViewController {
 
@@ -75,6 +76,13 @@ class TabSwitcherViewController: UIViewController {
         case list = "tabsToggleList"
         case grid = "tabsToggleGrid"
 
+        var accessibilityLabel: String {
+            switch self {
+            case .list: "Switch to grid view"
+            case .grid: "Switch to list view"
+            }
+        }
+
     }
 
     @IBOutlet weak var topBarView: UINavigationBar!
@@ -103,9 +111,11 @@ class TabSwitcherViewController: UIViewController {
 
     var tabsStyle: TabsStyle = .list
     var interfaceMode: InterfaceMode = .singleSelectNormal
+    var canShowSelectionMenu = false
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
+    let aiChatSettings: AIChatSettingsProvider
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -117,12 +127,14 @@ class TabSwitcherViewController: UIViewController {
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
                    favicons: Favicons = Favicons.shared,
-                   tabManager: TabManager) {
+                   tabManager: TabManager,
+                   aiChatSettings: AIChatSettingsProvider) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
         self.tabManager = tabManager
+        self.aiChatSettings = aiChatSettings
         super.init(coder: coder)
     }
 

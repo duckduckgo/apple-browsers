@@ -36,10 +36,10 @@ FEATURE_FLAGS[config=Debug][arch=*][sdk=*] = NETWORK_EXTENSION
 FEATURE_FLAGS[config=Review][arch=*][sdk=*] = NETWORK_EXTENSION
 
 PRODUCT_BUNDLE_IDENTIFIER[sdk=*] =
-PRODUCT_BUNDLE_IDENTIFIER[config=CI][sdk=*] = $(PROXY_EXTENSION_BUNDLE_ID)
-PRODUCT_BUNDLE_IDENTIFIER[config=Debug][sdk=*] = $(PROXY_EXTENSION_BUNDLE_ID)
-PRODUCT_BUNDLE_IDENTIFIER[config=Release][sdk=*] = $(PROXY_EXTENSION_BUNDLE_ID)
-PRODUCT_BUNDLE_IDENTIFIER[config=Review][sdk=*] = $(PROXY_EXTENSION_BUNDLE_ID)
+PRODUCT_BUNDLE_IDENTIFIER[config=CI][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
+PRODUCT_BUNDLE_IDENTIFIER[config=Debug][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
+PRODUCT_BUNDLE_IDENTIFIER[config=Release][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
+PRODUCT_BUNDLE_IDENTIFIER[config=Review][sdk=*] = $(PROXY_APPEX_BUNDLE_ID)
 
 PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct com.duckduckgo.mobile.ios.vpn.agent.debug.proxy macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match AppStore $(AGENT_BUNDLE_ID).proxy macos

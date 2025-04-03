@@ -19,11 +19,10 @@
 
 import UIKit
 import DesignResourcesKit
-import DuckUI
 
 // Once all colours are from the design system we can consider removing having multiple themes.
 extension Theme {
-
+    
     var omniBarBackgroundColor: UIColor { UIColor(designSystemColor: .panel) }
     var backgroundColor: UIColor { UIColor(designSystemColor: .background) }
     var mainViewBackgroundColor: UIColor { UIColor(designSystemColor: .background) }
@@ -33,68 +32,72 @@ extension Theme {
     var tableCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var tabSwitcherCellBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var searchBarTextPlaceholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
-
+    
     // New:
     var autocompleteCellAccessoryColor: UIColor { UIColor(designSystemColor: .icons) }
-    var autocompleteCellPlusButtonColor: UIColor { UIColor(lightColor: .shade(0.6), darkColor: .tint(0.6)) }
-
+    var autocompleteCellPlusButtonColor: UIColor { UIColor(designSystemColor: .iconsSecondary) }
+    
     var autofillDefaultTitleTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var autofillDefaultSubtitleTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var autofillEmptySearchViewTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var autofillLockedViewTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-
+    
     var ddgTextTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-
-    var privacyDashboardWebviewBackgroundColor: UIColor { UIColor(designSystemColor: .background) }
-
+    
     var iconCellBorderColor: UIColor { UIColor(designSystemColor: .icons) }
-
+    
     var browsingMenuTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var browsingMenuIconsColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var browsingMenuSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
-
+    
     var feedbackSentimentButtonBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-
+    
     var aboutScreenButtonColor: UIColor { UIColor(designSystemColor: .accent) }
 
-    var tabSwitcherCellBorderColor: UIColor { UIColor(designSystemColor: .surface) }
     var tabSwitcherCellTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-    var tabSwitcherCellSecondaryTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
-
+    
     var textFieldFontColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var textFieldBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-
+    
     var buttonTintColor: UIColor { UIColor(designSystemColor: .accent) }
-
+    
     var feedbackPrimaryTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var feedbackSecondaryTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
-
+    
     var progressBarGradientDarkColor: UIColor { UIColor(designSystemColor: .accent) }
     var progressBarGradientLightColor: UIColor { UIColor(designSystemColor: .accent) }
-
+    
     var daxDialogBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var daxDialogTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-
+    
     var placeholderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var searchBarTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-
+    
     var navigationBarTitleColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var tableHeaderTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
-
+    
     var faviconBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
-
+    
     var favoriteTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var aboutScreenTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var autocompleteSuggestionTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
-
+    
     var tableCellTextColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var tableCellSecondaryTextColor: UIColor { UIColor(designSystemColor: .textSecondary) }
     var tableCellSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
-
+    
     // No design system colour yet, so fall back to SDK colours
     var tableCellAccessoryTextColor: UIColor { .secondaryLabel }
-
+    
     var onboardingBackgroundColor: UIColor { UIColor(designSystemColor: .surface) }
     var onboardingHeaderColor: UIColor { UIColor(designSystemColor: .textPrimary) }
     var onboardingSubheaderColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    
+    var browsingMenuHighlightColor: UIColor { UIColor(designSystemColor: .urlBar) }
+    var searchBarBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
+    var tabsBarBackgroundColor: UIColor { UIColor(designSystemColor: .variousIPadTabs) }
+    var tabsBarSeparatorColor: UIColor { UIColor(designSystemColor: .lines) }
+    var navigationBarTintColor: UIColor { UIColor(designSystemColor: .textPrimary) }
+    var searchBarTextDeemphasisColor: UIColor { UIColor(designSystemColor: .textSecondary) }
+    var tableCellHighlightedBackgroundColor: UIColor { UIColor(designSystemColor: .urlBar) }
 }

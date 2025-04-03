@@ -1,6 +1,9 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
+- scrollUntilVisible:
+      element: Passwords & Autofill
+- tapOn: Passwords & Autofill
 - tapOn: Passwords
 - tapOn: Passcode field
 - inputText: "0000"
@@ -37,4 +40,5 @@ appId: com.duckduckgo.mobile.ios
 - assertVisible: mypersonalwebsite.com
 
 - tapOn: Passwords
+- tapOn: Passwords & Autofill
 - tapOn: Settings

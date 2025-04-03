@@ -62,6 +62,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
 
     private var signInObserver: Any?
     private var signOutObserver: Any?
+    private var entitlementsObserver: Any?
     private var subscriptionChangeObserver: Any?
 
     public enum UserEvent {
@@ -136,8 +137,21 @@ public final class PreferencesSubscriptionModel: ObservableObject {
         }
 
         subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { _ in
-            Task { [weak self] in
+            Logger.general.debug("SubscriptionDidChange notification received")
+            guard self.fetchSubscriptionDetailsTask == nil else { return }
+            self.fetchSubscriptionDetailsTask = Task { [weak self] in
+                defer {
+                    self?.fetchSubscriptionDetailsTask = nil
+                }
+
+                await self?.fetchEmailAndRemoteEntitlements()
                 await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
+            }
+        }
+
+        entitlementsObserver = NotificationCenter.default.addObserver(forName: .entitlementsDidChange, object: nil, queue: .main) { [weak self] _ in
+            Logger.general.debug("EntitlementsDidChange notification received")
+            Task { [weak self] in
                 await self?.updateAvailableSubscriptionFeatures()
             }
         }
@@ -154,6 +168,10 @@ public final class PreferencesSubscriptionModel: ObservableObject {
 
         if let subscriptionChangeObserver {
             NotificationCenter.default.removeObserver(subscriptionChangeObserver)
+        }
+
+        if let entitlementsObserver {
+            NotificationCenter.default.removeObserver(entitlementsObserver)
         }
     }
 
@@ -543,12 +561,20 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
 
         return Publishers.CombineLatest3($isUserAuthenticated, isSubscriptionActivePublisher, hasAnyEntitlementPublisher)
             .map { isUserAuthenticated, isSubscriptionActive, hasAnyEntitlement in
+                Logger.subscription.debug("""
+Update subscription state:
+isUserAuthenticated: \(isUserAuthenticated)
+isSubscriptionActive: \(isSubscriptionActive)
+hasAnyEntitlement: \(hasAnyEntitlement)
+""")
                 switch (isUserAuthenticated, isSubscriptionActive, hasAnyEntitlement) {
                 case (false, _, _): return PreferencesSubscriptionState.noSubscription
                 case (true, false, _):
                     switch self.subscriptionStatus {
                     case .expired, .inactive:
                         return PreferencesSubscriptionState.subscriptionExpired
+                    case .unknown:
+                        return PreferencesSubscriptionState.noSubscription
                     default:
                         return PreferencesSubscriptionState.subscriptionPendingActivation
                     }
@@ -869,6 +895,7 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
                     subscriptionStatus = subscription.status
                 }
             } catch {
+                Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
                 Task { @MainActor in
                     subscriptionPlatform = .unknown
                     subscriptionStatus = .unknown

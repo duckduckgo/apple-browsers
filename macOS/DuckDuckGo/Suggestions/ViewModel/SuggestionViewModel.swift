@@ -190,6 +190,9 @@ struct SuggestionViewModel: Equatable {
         case .internalPage(title: _, url: let url, _) where url.isSettingsURL,
              .openTab(title: _, url: let url, _, _) where url.isSettingsURL:
             return .settingsMulticolor16
+        case .internalPage(title: _, url: let url, _) where url.isHistory,
+             .openTab(title: _, url: let url, _, _) where url.isHistory:
+            return .historyFavicon
         case .internalPage(title: _, url: let url, _):
             guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }
             return .home16

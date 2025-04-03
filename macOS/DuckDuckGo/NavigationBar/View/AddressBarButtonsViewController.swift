@@ -205,6 +205,17 @@ final class AddressBarButtonsViewController: NSViewController {
         setupButtons()
     }
 
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+
+        // The permission popover leaks when its parent window is closed while it's still visible, so this workaround
+        // forces it to deallocate when the window is closing. This workaround can be removed if the true source of
+        // the leak is found.
+        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+            permissionAuthorizationPopover.close()
+        }
+    }
+
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
         if !isAnyShieldAnimationPlaying {
             buttonsBadgeAnimator.showNotification(withType: type,
@@ -558,7 +569,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         privacyEntryPointButton.sendAction(on: .leftMouseUp)
 
-        imageButton.applyFaviconStyle()
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
 
         cameraButton.sendAction(on: .leftMouseDown)
@@ -604,7 +614,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             let newAnimationView: LottieAnimationView
             // For unknown reason, this caused infinite execution of various unit tests.
-            if NSApp.runType.requiresEnvironment {
+            if AppVersion.runType.requiresEnvironment {
                 newAnimationView = getAnimationView(for: animationName) ?? LottieAnimationView()
             } else {
                 newAnimationView = LottieAnimationView()
@@ -822,7 +832,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePrivacyEntryPointIcon() {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         privacyEntryPointButton.image = nil
 
         guard let tabViewModel else { return }
@@ -833,12 +843,12 @@ final class AddressBarButtonsViewController: NSViewController {
             guard let host = url.host else { break }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
-            let isCertificateValid = tabViewModel.tab.isCertificateValid ?? true
+            let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
             let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
-            let isShieldDotVisible = isNotSecure || isUnprotected || !isCertificateValid
+            let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid
 
             if isFlaggedAsMalicious {
                 privacyEntryPointButton.isAnimationEnabled = false

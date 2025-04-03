@@ -63,23 +63,16 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let addressBarModel = HomePage.Models.AddressBarModel(
-            tabCollectionViewModel: tabCollectionViewModel,
-            privacyConfigurationManager: privacyConfigurationManager
-        )
-
         if !Application.appDelegate.isAuthV2Enabled {
             let prefRootView = Preferences.RootView(model: model,
-                                                    addressBarModel: addressBarModel,
                                                     subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
                                                     subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         } else {
             let prefRootView = Preferences.RootViewV2(model: model,
-                                                    addressBarModel: addressBarModel,
-                                                    subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
-                                                    subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
+                                                      subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
+                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

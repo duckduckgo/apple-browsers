@@ -16,14 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
+import NetworkExtension
 import NetworkProtection
 import NetworkProtectionUI
-
-#if NETP_SYSTEM_EXTENSION
 import SystemExtensionManager
 import SystemExtensions
-#endif
 
 /// The VPN's network extension session object.
 ///
@@ -31,35 +30,30 @@ import SystemExtensions
 ///
 final class NetworkExtensionController {
 
-#if NETP_SYSTEM_EXTENSION
+    private let featureFlagger: FeatureFlagger
     private let systemExtensionManager: SystemExtensionManager
     private let defaults: UserDefaults
-#endif
 
-    init(extensionBundleID: String, defaults: UserDefaults = .netP) {
-#if NETP_SYSTEM_EXTENSION
-        systemExtensionManager = SystemExtensionManager(extensionBundleID: extensionBundleID)
+    init(sysexBundleID: String, featureFlagger: FeatureFlagger, defaults: UserDefaults = .netP) {
+
         self.defaults = defaults
-#endif
+        self.featureFlagger = featureFlagger
+        systemExtensionManager = SystemExtensionManager(extensionBundleID: sysexBundleID)
     }
-
 }
 
 extension NetworkExtensionController {
 
     func activateSystemExtension(waitingForUserApproval: @escaping () -> Void) async throws {
-#if NETP_SYSTEM_EXTENSION
         if let extensionVersion = try await systemExtensionManager.activate(waitingForUserApproval: waitingForUserApproval) {
 
             NetworkProtectionLastVersionRunStore(userDefaults: defaults).lastExtensionVersionRun = extensionVersion
         }
 
         try await Task.sleep(nanoseconds: 300 * NSEC_PER_MSEC)
-#endif
     }
 
     func deactivateSystemExtension() async throws {
-#if NETP_SYSTEM_EXTENSION
         do {
             try await systemExtensionManager.deactivate()
         } catch OSSystemExtensionError.extensionNotFound {
@@ -68,7 +62,6 @@ extension NetworkExtensionController {
         } catch {
             throw error
         }
-#endif
     }
 
 }

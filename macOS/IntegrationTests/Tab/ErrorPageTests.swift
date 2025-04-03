@@ -852,10 +852,13 @@ class ErrorPageTests: XCTestCase {
 
         let tab = Tab(content: .url(.alternative, source: .ui), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
         let eNavigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
+        let provider = PinnedTabsManagerProvidingMock()
         let manager = PinnedTabsManager()
+        provider.pinnedTabsManager = manager
+        provider.newPinnedTabsManager = manager
         manager.pin(tab)
 
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: []), pinnedTabsManager: manager)
+        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: []), pinnedTabsManagerProvider: provider)
         window = WindowsManager.openNewWindow(with: viewModel)!
         viewModel.select(at: .pinned(0))
         let webViewShownPromise = tab.webView.publisher(for: \.superview).compactMap { $0 }.timeout(5).first().promise()

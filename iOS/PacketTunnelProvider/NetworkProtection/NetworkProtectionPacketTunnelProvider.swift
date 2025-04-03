@@ -31,7 +31,6 @@ import WidgetKit
 import WireGuard
 import BrowserServicesKit
 
-// Initial implementation for initial Network Protection tests. Will be fleshed out with https://app.asana.com/0/1203137811378537/1204630829332227/f
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private static var vpnLogger = VPNLogger()
@@ -435,13 +434,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // MARK: - Configure Subscription
+        // Configure Subscription
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
-
+        Self.isAuthV2Enabled = settings.isAuthV2Enabled
         if !Self.isAuthV2Enabled {
             // MARK: Subscription V1
+            Logger.networkProtection.log("Configure Subscription V1")
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                      settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
@@ -466,63 +466,28 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             entitlementsCheck = { return await Self.entitlementCheck(accountManager: accountManager) }
             self.subscriptionManager = nil
         } else {
-            
             // MARK: Subscription V2
-            
-            let configuration = URLSessionConfiguration.default
-            configuration.httpCookieStorage = nil
-            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-            let urlSession = URLSession(configuration: configuration,
-                                        delegate: SessionDelegate(),
-                                        delegateQueue: nil)
-            let apiService = DefaultAPIService(urlSession: urlSession)
+            Logger.networkProtection.log("Configure Subscription V2")
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
-            
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
                 Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
             }
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
-            
-            apiService.authorizationRefresherCallback = { _ in
-                guard let tokenContainer = tokenStorage.tokenContainer else {
-                    throw OAuthClientError.internalError("Missing refresh token")
-                }
-                
-                if tokenContainer.decodedAccessToken.isExpired() {
-                    Logger.OAuth.debug("Refreshing tokens")
-                    let tokens = try await authClient.getTokens(policy: .localForceRefresh)
-                    return tokens.accessToken
-                } else {
-                    Logger.general.debug("Trying to refresh valid token, using the old one")
-                    return tokenContainer.accessToken
-                }
-            }
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .deadToken:
-                    // handled by the main app: Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                    break
-                case .subscriptionIsActive, .v1MigrationFailed, .v1MigrationSuccessful: // handled by the main app only
-                    break
-                }
-            }
+
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
-                                                                   pixelHandler: pixelHandler,
                                                                    tokenRecoveryHandler: {
                 Logger.networkProtection.error("Expired refresh token detected")
             },
@@ -561,7 +526,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    snoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults),
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
-                   tokenHandler: tokenHandler,
+                   tokenHandlerProvider: { tokenHandler },
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
                    providerEvents: Self.packetTunnelProviderEvents,
                    settings: settings,

@@ -21,72 +21,82 @@ import UIKit
 import Core
 import Kingfisher
 import Common
+import DesignResourcesKit
 
 struct FaviconsHelper {
-    
+
+    private enum FaviconError: Error {
+        case missingFile
+        case corruptedData
+    }
+
+    private struct Constants {
+        static let duckPlayerDomain = "player"
+        static let duckDuckGoDomain = "duckduckgo.com"
+        static let duckPlayerImageName = "DuckPlayerURLIcon"
+        static let duckDuckGoImageName = "Logo"
+    }
+
     private static let tld: TLD = AppDependencyProvider.shared.storageCache.tld
-    
+
     static func loadFaviconSync(forDomain domain: String?,
                                 usingCache cacheType: FaviconsCacheType,
                                 useFakeFavicon: Bool,
                                 preferredFakeFaviconLetters: String? = nil) -> (image: UIImage?, isFake: Bool) {
 
-        func complete(_ image: UIImage?) -> (UIImage?, Bool) {
-            var fake = false
-            var resultImage: UIImage?
-            
-            if image != nil {
-                resultImage = image
-            } else if useFakeFavicon, let domain = domain {
-                fake = true
-                resultImage = Self.createFakeFavicon(forDomain: domain,
-                                                     backgroundColor: UIColor.forDomain(domain),
-                                                     preferredFakeFaviconLetters: preferredFakeFaviconLetters)
-            }
-            return (resultImage, fake)
+        // Handle special cases first
+        if let customImage = customImage(for: domain) {
+            return (customImage, false)
         }
-        
-        if domain == "player" {
-            return complete(UIImage(named: "DuckPlayer"))
+
+        // Check cache and resource availability
+        guard let cache = Favicons.Constants.caches[cacheType],
+              let resource = Favicons.shared.defaultResource(forDomain: domain) else {
+            return createFallbackResult(domain: domain,
+                                      useFakeFavicon: useFakeFavicon,
+                                      preferredLetters: preferredFakeFaviconLetters)
         }
-        
-        if URL.isDuckDuckGo(domain: domain) {
-            return complete(UIImage(named: "Logo"))
+
+        // Try memory cache first
+        if let cachedImage = cache.retrieveImageInMemoryCache(forKey: resource.cacheKey) {
+            return (cachedImage, false)
         }
-        
-        guard let cache = Favicons.Constants.caches[cacheType] else {
-            return complete(nil)
-        }
-        
-        guard let resource = Favicons.shared.defaultResource(forDomain: domain) else {
-            return complete(nil)
-        }
-        
-        if let image = cache.retrieveImageInMemoryCache(forKey: resource.cacheKey) {
-            return complete(image)
-        } else {
-                        
-            // Load manually otherwise Kingfisher won't load it if the file's modification date > current date
+
+        // Try loading from disk with proper error handling
+        do {
             let url = cache.diskStorage.cacheFileURL(forKey: resource.cacheKey)
-            guard let data = (try? Data(contentsOf: url)), let image = UIImage(data: data) else {
-                return complete(nil)
-            }
-
-            // Cache in memory with the original expiry date so that the image will be refreshed on user interaction.
             
-            if let attributes = (try? FileManager.default.attributesOfItem(atPath: url.path)),
-                let fileModificationDate = attributes[.modificationDate] as? Date {
-                
-                cache.store(image, forKey: resource.cacheKey, options: KingfisherParsedOptionsInfo([
-                    .cacheMemoryOnly,
-                    .diskCacheAccessExtendingExpiration(.none),
-                    .memoryCacheExpiration(.date(fileModificationDate))
-                ]), toDisk: false)
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                throw FaviconError.missingFile
             }
 
-            return complete(image)
-        }
+            let data = try Data(contentsOf: url, options: [.uncached])
+            guard let image = UIImage(data: data) else {
+                throw FaviconError.corruptedData
+            }
 
+            // Store in memory cache with original expiry date
+            if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let fileModificationDate = attributes[.modificationDate] as? Date {
+
+                cache.store(image,
+                           forKey: resource.cacheKey,
+                           options: KingfisherParsedOptionsInfo([
+                            .cacheMemoryOnly,
+                            .diskCacheAccessExtendingExpiration(.none),
+                            .memoryCacheExpiration(.date(fileModificationDate))
+                           ]),
+                           toDisk: false)
+            }
+
+            return (image, false)
+
+        } catch {
+            Logger.general.error("Failed to load favicon from disk for domain: \(domain ?? "unknown"), error: \(error)")
+            return createFallbackResult(domain: domain,
+                                      useFakeFavicon: useFakeFavicon,
+                                      preferredLetters: preferredFakeFaviconLetters)
+        }
     }
 
     static func loadFaviconSync(forDomain domain: String?,
@@ -101,7 +111,7 @@ struct FaviconsHelper {
 
     static func createFakeFavicon(forDomain domain: String,
                                   size: CGFloat = 192,
-                                  backgroundColor: UIColor = UIColor.greyishBrown2,
+                                  backgroundColor: UIColor = UIColor(baseColor: .gray70),
                                   bold: Bool = true,
                                   preferredFakeFaviconLetters: String? = nil,
                                   letterCount: Int = 2) -> UIImage? {
@@ -114,11 +124,11 @@ struct FaviconsHelper {
         let renderer = UIGraphicsImageRenderer(size: imageRect.size)
         let icon = renderer.image { imageContext in
             let context = imageContext.cgContext
-                            
+
             context.setFillColor(backgroundColor.cgColor)
             context.addPath(CGPath(roundedRect: imageRect, cornerWidth: cornerRadius, cornerHeight: cornerRadius, transform: nil))
             context.fillPath()
-           
+
             let label = UILabel(frame: labelFrame)
             label.numberOfLines = 1
             label.adjustsFontSizeToFitWidth = true
@@ -133,7 +143,7 @@ struct FaviconsHelper {
             } else {
                 label.text = String(tld.eTLDplus1(domain)?.prefix(letterCount) ?? "#").capitalized
             }
-           
+
             context.translateBy(x: padding, y: padding)
 
             label.layer.draw(in: context)
@@ -150,6 +160,33 @@ struct FaviconsHelper {
 
         let key = FaviconHasher.createHash(ofDomain: domain)
         return KF.ImageResource(downloadURL: source, cacheKey: key)
+    }
+
+    private static func createFallbackResult(domain: String?,
+                                             useFakeFavicon: Bool,
+                                             preferredLetters: String?) -> (UIImage?, Bool) {
+        guard useFakeFavicon,
+              let domain = domain else {
+            return (nil, false)
+        }
+
+        let fakeFavicon = createFakeFavicon(forDomain: domain,
+                                           backgroundColor: UIColor.forDomain(domain),
+                                           preferredFakeFaviconLetters: preferredLetters)
+        return (fakeFavicon, true)
+    }
+
+    private static func customImage(for domain: String?) -> UIImage? {
+        let customFavicons: [String: String] = [
+            Constants.duckPlayerDomain: Constants.duckPlayerImageName,
+            Constants.duckDuckGoDomain: Constants.duckDuckGoImageName
+        ]
+
+        guard let domain = domain, let imageName = customFavicons[domain] else { return nil }
+        
+        let image = UIImage(named: imageName)
+        image?.accessibilityIdentifier = imageName
+        return image
     }
 
 }

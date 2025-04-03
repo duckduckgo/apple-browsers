@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1741616410887,
+    "version": 1743428841598,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -193,9 +193,6 @@
             "exceptions": [
                 {
                     "domain": "allocine.fr"
-                },
-                {
-                    "domain": "barmer.de"
                 },
                 {
                     "domain": "bild.de"
@@ -444,13 +441,7 @@
                     "domain": "serif.com"
                 },
                 {
-                    "domain": "wetransfer.com"
-                },
-                {
                     "domain": "collectcheckout.com"
-                },
-                {
-                    "domain": "sbid.org"
                 },
                 {
                     "domain": "wunderground.com"
@@ -544,6 +535,24 @@
                 },
                 {
                     "domain": "carry.pl"
+                },
+                {
+                    "domain": "pap.pl"
+                },
+                {
+                    "domain": "hobbies.co.uk"
+                },
+                {
+                    "domain": "fairlawns.co.uk"
+                },
+                {
+                    "domain": "stamma.org"
+                },
+                {
+                    "domain": "nature.scot"
+                },
+                {
+                    "domain": "royalmail.com"
                 },
                 {
                     "domain": "marvel.com"
@@ -698,6 +707,7 @@
                     "vital-parts.co.uk",
                     "lta.org.uk",
                     "hobbyhall.fi",
+                    "wetransfer.com",
                     "wienmobil.at",
                     "memsoft.fr",
                     "bafin.de",
@@ -726,7 +736,7 @@
                     }
                 }
             },
-            "hash": "58e82a7d6ce716c077dd76851684e3dc"
+            "hash": "9584c66b688ad66b18f768c4f592a8f8"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -884,6 +894,14 @@
             "exceptions": [],
             "state": "enabled",
             "hash": "52857469413a66e8b0c7b00de5589162"
+        },
+        "brokerProtection": {
+            "state": "disabled",
+            "exceptions": [],
+            "settings": {
+                "useEnhancedCaptchaSystem": "disabled"
+            },
+            "hash": "59920c378133168ad93882dd115fa3a3"
         },
         "burn": {
             "state": "enabled",
@@ -1650,9 +1668,6 @@
                     "domain": "soranews24.com"
                 },
                 {
-                    "domain": "wunderground.com"
-                },
-                {
                     "domain": "marvel.com"
                 },
                 {
@@ -1713,9 +1728,57 @@
                             "weight": 0
                         }
                     ]
+                },
+                "tdsNextExperimentMar25": {
+                    "state": "disabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 25
+                            }
+                        ]
+                    },
+                    "settings": {
+                        "controlUrl": "v5/temp/tdsnextexperimentmar25-tds-control.json",
+                        "treatmentUrl": "v5/temp/tdsnextexperimentmar25-tds-treatment.json"
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 0
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 0
+                        }
+                    ]
+                },
+                "tdsNextExperimentApr25": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 100
+                            }
+                        ]
+                    },
+                    "settings": {
+                        "controlUrl": "v5/temp/tdsnextexperimentapr25-tds-control.json",
+                        "treatmentUrl": "v5/temp/tdsnextexperimentapr25-tds-treatment.json"
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ]
                 }
             },
-            "hash": "13631723e1576ed7d60b6915ac2c4724"
+            "hash": "4cc87c4d7263b72543876711ca5be967"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1933,7 +1996,8 @@
                                 "#video-title-link",
                                 "#video-title",
                                 "video.video-stream.html5-main-video"
-                            ]
+                            ],
+                            "drawerContainer": "body"
                         },
                         "thumbnailOverlays": {
                             "state": "enabled"
@@ -1942,6 +2006,9 @@
                             "state": "enabled"
                         },
                         "videoOverlays": {
+                            "state": "enabled"
+                        },
+                        "videoDrawer": {
                             "state": "enabled"
                         }
                     },
@@ -1983,7 +2050,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "51ef6e4978292d995e2ab92a21b001b6"
+            "hash": "231c343e47f7a482a22bacfb809954dd"
         },
         "elementHiding": {
             "exceptions": [
@@ -2099,7 +2166,7 @@
                         "type": "hide-empty"
                     },
                     {
-                        "selector": "[class*='ad-content']",
+                        "selector": "[class^='ad-content']",
                         "type": "hide-empty"
                     },
                     {
@@ -2477,6 +2544,10 @@
                     {
                         "selector": ".clsy-c-advsection",
                         "type": "hide-empty"
+                    },
+                    {
+                        "selector": "[class^='DisplayAdvert']",
+                        "type": "closest-empty"
                     }
                 ],
                 "styleTagExceptions": [
@@ -3021,6 +3092,28 @@
                             {
                                 "selector": ".TopBanner-container",
                                 "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "cnn.com",
+                        "rules": [
+                            {
+                                "selector": ".ad-slot-wrapper",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "coindesk.com",
+                        "rules": [
+                            {
+                                "selector": ".animate-shimmer",
+                                "type": "hide"
+                            },
+                            {
+                                "selector": "[data-freestar-ad='true']",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -3934,20 +4027,6 @@
                             {
                                 "selector": ".video-container",
                                 "type": "hide"
-                            },
-                            {
-                                "selector": ".top-ad-recirc",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "height",
-                                        "value": "auto"
-                                    },
-                                    {
-                                        "property": "min-height",
-                                        "value": "auto"
-                                    }
-                                ]
                             }
                         ]
                     },
@@ -4076,6 +4155,15 @@
                         ]
                     },
                     {
+                        "domain": "kabutan.jp",
+                        "rules": [
+                            {
+                                "selector": "[id^=div-gpt-ad-]",
+                                "type": "closest-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "kbb.com",
                         "rules": [
                             {
@@ -4117,10 +4205,6 @@
                         "domain": "kutv.com",
                         "rules": [
                             {
-                                "selector": "[class*='DisplayAdvert']",
-                                "type": "hide-empty"
-                            },
-                            {
                                 "selector": "[class*='adBeforeContent']",
                                 "type": "hide-empty"
                             }
@@ -4135,6 +4219,15 @@
                             },
                             {
                                 "selector": "[class*='styles__ad']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "lemonde.fr",
+                        "rules": [
+                            {
+                                "selector": ".dfp__container",
                                 "type": "hide-empty"
                             }
                         ]
@@ -4265,6 +4358,15 @@
                         ]
                     },
                     {
+                        "domain": "messenger.com",
+                        "rules": [
+                            {
+                                "selector": ".xw7yly9.xktsk01:has(div > a[href='https://www.facebook.com/help/messenger-app/597429858389632/'])",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "metro.co.uk",
                         "rules": [
                             {
@@ -4273,6 +4375,19 @@
                             {
                                 "selector": ".ad-slot-container",
                                 "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "minkabu.jp",
+                        "rules": [
+                            {
+                                "selector": ".ad",
+                                "type": "closest-empty"
+                            },
+                            {
+                                "selector": "div#side_navi > div:has(> div > div.ad)",
+                                "type": "hide"
                             }
                         ]
                     },
@@ -4397,6 +4512,19 @@
                             },
                             {
                                 "selector": "[id*='native_index_desktop_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "news.de",
+                        "rules": [
+                            {
+                                "selector": "[class*='-ad']",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": "div[id^='news_content_']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -4963,6 +5091,9 @@
                     {
                         "domain": "slate.com",
                         "rules": [
+                            {
+                                "type": "disable-default"
+                            },
                             {
                                 "selector": ".slate-ad",
                                 "type": "hide-empty"
@@ -5598,6 +5729,15 @@
                         ]
                     },
                     {
+                        "domain": "youtube.com",
+                        "rules": [
+                            {
+                                "selector": "ytm-promoted-sparkles-web-renderer",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "first-party.site",
                         "rules": [
                             {
@@ -5665,11 +5805,64 @@
                                 "type": "hide-empty"
                             }
                         ]
+                    },
+                    {
+                        "domain": "aucfree.com",
+                        "rules": [
+                            {
+                                "selector": "#pcarticle_bb",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "seriouseats.com",
+                        "rules": [
+                            {
+                                "selector": "[class*='mm-ads-leaderboard']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "inside-games.jp",
+                        "rules": [
+                            {
+                                "selector": ".header-ad",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "tradera.com",
+                        "rules": [
+                            {
+                                "selector": ".ad-slot-container",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "techxplore.com",
+                        "rules": [
+                            {
+                                "selector": ".ads-placeholder-250",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".article-banner",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": ".article-sidebar-banner",
+                                "type": "hide-empty"
+                            }
+                        ]
                     }
                 ]
             },
             "state": "enabled",
-            "hash": "bc1c1e80d069ec21895ab5b24a506ca2"
+            "hash": "e345ef96e7f68daa6575641eb0180ee5"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -5691,8 +5884,24 @@
         },
         "extendedOnboarding": {
             "exceptions": [],
-            "state": "disabled",
-            "hash": "728493ef7a1488e4781656d3f9db84aa"
+            "state": "enabled",
+            "features": {
+                "setAsDefaultBrowserExperiment": {
+                    "state": "enabled",
+                    "minSupportedVersion": "7.162.0",
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ]
+                }
+            },
+            "hash": "042cc21dcd61460ea41c394d02c9b2b6"
         },
         "fingerprintingAudio": {
             "state": "disabled",
@@ -6330,13 +6539,29 @@
                             }
                         ]
                     }
+                },
+                "scamProtection": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 10
+                            },
+                            {
+                                "percent": 25
+                            },
+                            {
+                                "percent": 50
+                            }
+                        ]
+                    }
                 }
             },
             "settings": {
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "8bc16b38993d73f0c98c72e6603764ab"
+            "hash": "eb15e20058390f13e79300b54cd26549"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -6407,10 +6632,13 @@
                 },
                 "enforceRoutes": {
                     "state": "enabled"
+                },
+                "riskyDomainsProtection": {
+                    "state": "enabled"
                 }
             },
             "exceptions": [],
-            "hash": "137177ca43449da8ce870fc838b35845"
+            "hash": "98e8267946cca646974c14248f31a0f1"
         },
         "newTabContinueSetUp": {
             "exceptions": [],
@@ -6574,6 +6802,25 @@
                     "minSupportedVersion": "7.148.0"
                 },
                 "privacyProFreeTrialJan25": {
+                    "state": "disabled",
+                    "targets": [
+                        {
+                            "localeCountry": "US"
+                        }
+                    ],
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 0
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 0
+                        }
+                    ],
+                    "minSupportedVersion": "7.157.0"
+                },
+                "privacyProOnboardingCTAMarch25": {
                     "state": "enabled",
                     "targets": [
                         {
@@ -6590,23 +6837,10 @@
                             "weight": 1
                         }
                     ],
-                    "minSupportedVersion": "7.157.0"
-                },
-                "privacyProOnboardingCTAMarch25": {
-                    "state": "internal",
-                    "cohorts": [
-                        {
-                            "name": "control",
-                            "weight": 1
-                        },
-                        {
-                            "name": "treatment",
-                            "weight": 1
-                        }
-                    ]
+                    "minSupportedVersion": "7.163.0"
                 }
             },
-            "hash": "7e419cdef83dd38cb9641c47a8fc4da2"
+            "hash": "335b250465ba839de95695d5ccb1e9f1"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",
@@ -6718,6 +6952,16 @@
             "state": "disabled",
             "hash": "78dac7be701d735e14b6976594608de1"
         },
+        "setAsDefaultAndAddToDock": {
+            "state": "disabled",
+            "exceptions": [],
+            "features": {
+                "popoverVsBannerExperiment": {
+                    "state": "disabled"
+                }
+            },
+            "hash": "e651cdd0b6f12e813acf09d9aa448b48"
+        },
         "settingsPage": {
             "exceptions": [],
             "state": "disabled",
@@ -6807,14 +7051,14 @@
         },
         "tabManager": {
             "exceptions": [],
-            "state": "internal",
+            "state": "enabled",
             "features": {
                 "multiSelection": {
                     "state": "enabled",
                     "minSupportedVersion": "7.161.0"
                 }
             },
-            "hash": "52a89a642a248f812f53003954e9e799"
+            "hash": "a9e5c481705a511ae24d80feb38019f2"
         },
         "textZoom": {
             "exceptions": [],
@@ -7035,6 +7279,16 @@
                                     "adamtheautomator.com",
                                     "gardeningknowhow.com",
                                     "packhacker.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "adtng.com": {
+                        "rules": [
+                            {
+                                "rule": "adtng.com",
+                                "domains": [
+                                    "hanime.tv"
                                 ]
                             }
                         ]
@@ -7707,28 +7961,171 @@
                                     "ah.nl",
                                     "applesfera.com",
                                     "rocketnews24.com",
-                                    "servustv.com"
+                                    "servustv.com",
+                                    "wunderground.com"
                                 ]
                             },
                             {
                                 "rule": "securepubads.g.doubleclick.net/tag/js/gpt.js",
                                 "domains": [
+                                    "13wham.com",
+                                    "22thepoint.com",
+                                    "abc3340.com",
+                                    "abc45.com",
+                                    "abc6onyourside.com",
+                                    "abc7amarillo.com",
+                                    "abcnews4.com",
+                                    "abcstlouis.com",
                                     "ah.nl",
                                     "applesfera.com",
                                     "asuracomic.net",
+                                    "azteca48.com",
+                                    "bakersfieldnow.com",
+                                    "cbs12.com",
+                                    "cbs2iowa.com",
+                                    "cbs4local.com",
+                                    "cbs6albany.com",
+                                    "cbsaustin.com",
+                                    "chattanoogacw.com",
+                                    "cnycentral.com",
+                                    "cw14online.com",
+                                    "cw18milwaukee.com",
+                                    "cw23tv.com",
+                                    "cw34.com",
+                                    "cw35.com",
+                                    "cw7michigan.com",
+                                    "cwalbany.com",
+                                    "cwbaltimore.com",
+                                    "cwcentralpa.com",
+                                    "cwcincinnati.com",
+                                    "cwcolumbus.com",
+                                    "cwlasvegas.com",
+                                    "cwnashville.tv",
+                                    "cwokc.com",
+                                    "cwomaha.tv",
+                                    "cwrochester.com",
+                                    "cwtreasurevalley.com",
+                                    "dayton247now.com",
                                     "fincopilot.net",
+                                    "fox11online.com",
+                                    "fox17.com",
+                                    "fox23maine.com",
+                                    "fox28savannah.com",
+                                    "fox38corpuschristi.com",
+                                    "fox42kptm.com",
+                                    "fox47.com",
+                                    "fox49.tv",
+                                    "fox4beaumont.com",
+                                    "fox56.com",
+                                    "foxbaltimore.com",
+                                    "foxchattanooga.com",
+                                    "foxillinois.com",
+                                    "foxkansas.com",
+                                    "foxnebraska.com",
+                                    "foxreno.com",
+                                    "foxrichmond.com",
+                                    "foxrochester.com",
+                                    "foxsanantonio.com",
                                     "goplay.be",
+                                    "idahonews.com",
                                     "itsthevibe.com",
+                                    "katu.com",
+                                    "katv.com",
+                                    "kcby.com",
+                                    "kdsm17.com",
+                                    "keprtv.com",
+                                    "kfdm.com",
+                                    "kfoxtv.com",
+                                    "khqa.com",
+                                    "kimatv.com",
+                                    "kjzz.com",
+                                    "klewtv.com",
+                                    "kmph.com",
+                                    "kmyu.tv",
+                                    "komonews.com",
+                                    "kpic.com",
+                                    "krcgtv.com",
+                                    "ktul.com",
+                                    "ktvl.com",
+                                    "ktvo.com",
+                                    "ktxs.com",
+                                    "kunptv.com",
+                                    "kunwtv.com",
                                     "kutv.com",
+                                    "kval.com",
+                                    "local12.com",
+                                    "local21news.com",
                                     "lowes.com",
+                                    "midmichigannow.com",
+                                    "my15wtcn.com",
+                                    "my24milwaukee.com",
+                                    "my48.tv",
+                                    "mycbs4.com",
+                                    "myfox28columbus.com",
+                                    "mylvtv.com",
+                                    "mynbc15.com",
+                                    "mynews4.com",
+                                    "myrdctv.com",
+                                    "mytv30web.com",
+                                    "mytvbaltimore.com",
+                                    "mytvbuffalo.com",
+                                    "mytvcharleston.com",
+                                    "mytvrichmond.com",
+                                    "mytvwichita.com",
+                                    "mytvz.com",
+                                    "nbc16.com",
+                                    "nbc24.com",
+                                    "nbcmontana.com",
+                                    "nebraska.tv",
+                                    "nevadasportsnet.com",
+                                    "news3lv.com",
+                                    "news4sanantonio.com",
+                                    "newschannel20.com",
+                                    "newschannel9.com",
                                     "nytimes.com",
+                                    "okcfox.com",
+                                    "raleighcw.com",
                                     "realmadrid.com",
                                     "repretel.com",
                                     "rocketnews24.com",
+                                    "siouxlandnews.com",
                                     "solitaired.com",
+                                    "southernoregoncw.com",
+                                    "star64.tv",
                                     "stuff.co.nz",
+                                    "thecw38.com",
+                                    "thecw46.com",
+                                    "thecwtc.com",
+                                    "thenationaldesk.com",
+                                    "turnto10.com",
+                                    "univisionseattle.com",
+                                    "upnorthlive.com",
+                                    "utv44.com",
                                     "uwbadgers.com",
+                                    "wabm68.com",
+                                    "wach.com",
+                                    "wchstv.com",
+                                    "wcti12.com",
+                                    "wcyb.com",
+                                    "weartv.com",
+                                    "wfgxtv.com",
+                                    "wfxl.com",
+                                    "wgme.com",
+                                    "wgxa.tv",
+                                    "wjactv.com",
+                                    "wjla.com",
+                                    "wlos.com",
+                                    "wpde.com",
+                                    "wpgh53.com",
+                                    "wsbt.com",
+                                    "wset.com",
+                                    "wtov9.com",
+                                    "wtto21.com",
+                                    "wtwc40.com",
                                     "wunderground.com",
+                                    "wutv29.com",
+                                    "wvah.com",
+                                    "wwmt.com",
                                     "youmath.it"
                                 ]
                             },
@@ -7754,7 +8151,8 @@
                                     "itsthevibe.com",
                                     "kutv.com",
                                     "lowes.com",
-                                    "triblive.com"
+                                    "triblive.com",
+                                    "wunderground.com"
                                 ]
                             },
                             {
@@ -9107,7 +9505,8 @@
                                 "rule": "npttech.com/advertising.js",
                                 "domains": [
                                     "blick.ch",
-                                    "independent.co.uk"
+                                    "independent.co.uk",
+                                    "slate.com"
                                 ]
                             }
                         ]
@@ -9490,6 +9889,7 @@
                                     "signupgenius.com",
                                     "smithsonianmag.com",
                                     "stockcharts.com",
+                                    "thenation.com",
                                     "titantv.com"
                                 ]
                             },
@@ -10372,7 +10772,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "b9f9ef3334342326472080aa74f9863d"
+            "hash": "00adbe5aa42330d5badd7d9b810e8087"
         },
         "trackingCookies1p": {
             "settings": {

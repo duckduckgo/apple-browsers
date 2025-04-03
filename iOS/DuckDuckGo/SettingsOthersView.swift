@@ -30,7 +30,8 @@ struct SettingsOthersView: View {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image("LogoIcon"))
+                                 image: Image("LogoIcon"),
+                                 accessory: .rightDetail("v\(viewModel.state.version)"))
             }
 
             // Share Feedback

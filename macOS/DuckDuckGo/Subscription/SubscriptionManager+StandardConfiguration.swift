@@ -116,14 +116,7 @@ extension DefaultSubscriptionManagerV2 {
                             canPerformAuthMigration: Bool,
                             canHandlePixels: Bool) {
 
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let urlSession = URLSession(configuration: configuration,
-                                    delegate: SessionDelegate(),
-                                    delegateQueue: nil)
-        let apiService = DefaultAPIService(urlSession: urlSession)
-        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: apiService)
+        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { keychainType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: keychainType, accessError: error),
                           frequency: .legacyDailyAndCount)
@@ -132,12 +125,10 @@ extension DefaultSubscriptionManagerV2 {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService)
-        apiService.authorizationRefresherCallback = { request in
-
-            guard request.url?.absoluteString.contains("api/auth/v2") == false else {
-                Logger.networkProtection.debug("Skipping refresh token for Auth V2 API calls")
-                throw OAuthClientError.internalError("Skipping refresh token for Auth V2 API calls")
-            }
+        var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription()
+        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+                                                                               baseURL: environment.serviceEnvironment.url)
+        apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = tokenStorage.tokenContainer else {
                 throw OAuthClientError.internalError("Missing refresh token")
@@ -152,9 +143,6 @@ extension DefaultSubscriptionManagerV2 {
                 return tokenContainer.accessToken
             }
         }
-
-        let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                                               baseURL: environment.serviceEnvironment.url)
         let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
             guard let featureFlagger else {
                 // With no featureFlagger provided there is no gating of features
@@ -178,14 +166,18 @@ extension DefaultSubscriptionManagerV2 {
         if canHandlePixels {
             pixelHandler = { type in
                 switch type {
-                case .deadToken:
-                    PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
+                case .invalidRefreshToken:
+                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected, frequency: .dailyAndCount)
                 case .subscriptionIsActive:
                     PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
-                case .v1MigrationFailed:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-                case .v1MigrationSuccessful:
-                    PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
+                case .migrationStarted:
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationStarted, frequency: .dailyAndCount)
+                case .migrationFailed(let error):
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(error), frequency: .dailyAndCount)
+                case .migrationSucceeded:
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded, frequency: .dailyAndCount)
+                case .getTokensError(let policy, let error):
+                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2GetTokensError(policy, error), frequency: .dailyAndCount)
                 }
             }
         } else {

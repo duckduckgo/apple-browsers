@@ -370,6 +370,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         settingsButtonView.setImage(UIImage(resource: .settingsNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
 
+        progressView?.hide()
+
         updateShadows()
     }
 
@@ -533,6 +535,7 @@ extension UpdatedOmniBarView {
         button.tintColor = UIColor(designSystemColor: .icons)
         button.adjustsImageWhenDisabled = true
         button.adjustsImageWhenHighlighted = true
+        button.isHidden = true
     }
 }
 

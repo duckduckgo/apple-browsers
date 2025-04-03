@@ -75,7 +75,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
         omniBarView.isUsingCompactLayout = !state.hasLargeWidth
 
-        let isShowingSeparator = state.showClear || state.showAbort || state.showRefresh || state.showVoiceSearch
+        let isShowingSeparator = state.showAccessoryButton
         omniBarView.isShowingSeparator = isShowingSeparator
     }
 

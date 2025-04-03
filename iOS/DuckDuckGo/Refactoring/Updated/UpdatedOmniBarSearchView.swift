@@ -139,30 +139,30 @@ final class UpdatedOmniBarSearchView: UIView {
         textField.spellCheckingType = .no
         textField.keyboardType = .webSearch
 
-        accessoryButton.setImage(UIImage(resource: .aiChat24E), for: .normal)
+        accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
 
-        reloadButton.setImage(UIImage(resource: .reload24E), for: .normal)
+        reloadButton.setImage(UIImage(resource: .reloadNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
 
-        clearButton.setImage(UIImage(resource: .closeCircleSmall24E), for: .normal)
+        clearButton.setImage(UIImage(resource: .closeCircleSmallNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
         clearButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
 
-        shareButton.setImage(UIImage(resource: .shareApple24E), for: .normal)
+        shareButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
 
-        cancelButton.setImage(UIImage(resource: .close24E), for: .normal)
+        cancelButton.setImage(UIImage(resource: .closeNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
         cancelButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
 
-        voiceSearchButton.setImage(UIImage(resource: .microphone24E), for: .normal)
+        voiceSearchButton.setImage(UIImage(resource: .microphoneNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: voiceSearchButton)
 
-        dismissButtonView.setImage(UIImage(resource: .arrowLeft24E), for: .normal)
+        dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
-        loupeIconView.image = UIImage(resource: .findSearch24E)
+        loupeIconView.image = UIImage(resource: .findSearchNew24)
         loupeIconView.tintColor = tintColor
         loupeIconView.contentMode = .center
 

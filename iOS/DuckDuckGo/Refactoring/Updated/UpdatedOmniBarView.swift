@@ -47,9 +47,9 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             switch accessoryType {
             case .chat:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChat24E), for: .normal)
+                searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
             case .share:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareApple24E), for: .normal)
+                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
             }
         }
     }
@@ -334,19 +334,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         leadingButtonsContainer.directionalLayoutMargins = Metrics.expandedSizeMargins
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(UIImage(resource: .arrowLeft24E), for: .normal)
+        backButtonView.setImage(UIImage(resource: .arrowLeftNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
-        forwardButtonView.setImage(UIImage(resource: .arrowRight24E), for: .normal)
+        forwardButtonView.setImage(UIImage(resource: .arrowRightNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
-        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24E), for: .normal)
+        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
-        menuButtonView.setImage(UIImage(resource: .menuHamburger24E), for: .normal)
+        menuButtonView.setImage(UIImage(resource: .menuHamburgerNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
 
-        settingsButtonView.setImage(UIImage(resource: .settings24E), for: .normal)
+        settingsButtonView.setImage(UIImage(resource: .settingsNew24), for: .normal)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
 
         updateShadows()

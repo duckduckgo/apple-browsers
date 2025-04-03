@@ -30,12 +30,12 @@ struct OnboardingGradientView: View {
         case .light:
             // iOS 15 doesn't render properly the light EllipticalGradient while the Dark gradient is rendered correctly
             // https://app.asana.com/0/1206329551987282/1208839072951158/f
-//            if #available(iOS 16, *) {
-//                OnboardingGradient()
-//            } else {
+            if #available(iOS 16, *) {
+                OnboardingGradient()
+            } else {
                 Image(.onboardingGradientLight)
                     .resizable()
-//            }
+            }
         @unknown default:
             OnboardingGradient()
         }

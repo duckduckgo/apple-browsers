@@ -24,14 +24,14 @@ public struct OnboardingGradient: View {
     public init() {}
 
     public var body: some View {
-        if #available(iOS 15, macOS 12, *) {
+        if #available(iOS 15, macOS 13, *) {
             gradient
         } else {
             gradientImage
         }
     }
 
-    @available(iOS 15, macOS 12, *)
+    @available(iOS 15, macOS 13, *)
     @ViewBuilder
     private var gradient: some View {
         switch colorScheme {
@@ -49,7 +49,7 @@ public struct OnboardingGradient: View {
     }
 }
 
-@available(iOS 15, macOS 12, *)
+@available(iOS 15, macOS 13, *)
 extension OnboardingGradient {
 
     struct LightGradient: View {

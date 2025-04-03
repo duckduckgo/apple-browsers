@@ -61,7 +61,11 @@ class MainViewCoordinator {
     }
     
     func showToolbarSeparator() {
-        toolbar.setShadowImage(nil, forToolbarPosition: .any)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            hideToolbarSeparator()
+        } else {
+            toolbar.setShadowImage(nil, forToolbarPosition: .any)
+        }
     }
 
     func hideToolbarSeparator() {

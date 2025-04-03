@@ -481,6 +481,8 @@
 		6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */; };
 		6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */; };
 		6FE3AF432D9EBEF5001AE6B8 /* CompositeShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */; };
+		6FE3AF462D9ECF6B001AE6B8 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */; };
+		6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */; };
 		6FEC0B852C999352006B4F6E /* FavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B842C999352006B4F6E /* FavoriteItem.swift */; };
 		6FEC0B882C999961006B4F6E /* FavoritesListInteractingAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */; };
 		6FF915822B88E07A0042AC87 /* AdAttributionFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */; };
@@ -2031,6 +2033,8 @@
 		6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2-new.json"; sourceTree = "<group>"; };
 		6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3-new.json"; sourceTree = "<group>"; };
 		6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeShadowView.swift; sourceTree = "<group>"; };
+		6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
+		6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
 		6FEC0B842C999352006B4F6E /* FavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItem.swift; sourceTree = "<group>"; };
 		6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesListInteractingAdapter.swift; sourceTree = "<group>"; };
 		6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionFetcherTests.swift; sourceTree = "<group>"; };
@@ -4799,6 +4803,8 @@
 		6FE3AEF22D9D8901001AE6B8 /* New */ = {
 			isa = PBXGroup;
 			children = (
+				6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */,
+				6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */,
 				6FE3AEF32D9D8933001AE6B8 /* dark-shield-new.json */,
 				6FE3AEF42D9D8933001AE6B8 /* dark-trackers-1-new.json */,
 				6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */,
@@ -8376,6 +8382,8 @@
 				98DA6B3322243CC3006EA9EB /* Feedback.xcassets in Resources */,
 				1EE411F728587AC50003FE64 /* PrivacyIcon.xcassets in Resources */,
 				6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */,
+				6FE3AF462D9ECF6B001AE6B8 /* shield-dot-new.json in Resources */,
+				6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */,
 				8548D96825262C33005AAE49 /* view_highlight.json in Resources */,
 				85F0E97329952D7A003D5181 /* DuckDuckGo Recovery Document.pdf in Resources */,
 				9880723725FA4E450039EF4B /* menu_dark.json in Resources */,

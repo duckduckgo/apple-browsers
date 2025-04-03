@@ -387,14 +387,15 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         // Test with .ask mode
         playerSettings.nativeUIYoutubeMode = .ask
         sut.handleDuckNavigation(navigationAction, webView: mockWebView)
-        XCTAssertNil(sut.lastHandledVideoID)
         XCTAssertEqual(mockWebView.lastLoadedRequest?.url?.absoluteString, "https://m.youtube.com/watch?v=\(videoID)")
+        XCTAssertTrue(mockDuckPlayer.presentPillCalled)
 
         // Test with .auto mode
         playerSettings.nativeUIYoutubeMode = .auto
         sut.handleDuckNavigation(navigationAction, webView: mockWebView)
-        XCTAssertNil(sut.lastHandledVideoID)
         XCTAssertEqual(mockWebView.lastLoadedRequest?.url?.absoluteString, "https://m.youtube.com/watch?v=\(videoID)")
+        mockDelayHandler.completeDelay()
+        XCTAssertTrue(mockDuckPlayer.loadNativeDuckPlayerVideoCalled)
     }
 
     func testDuckURLNavigation_WithMalformedURL_HandlesGracefully() {

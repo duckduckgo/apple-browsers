@@ -68,8 +68,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
-            createFinalDialog(onDismiss: onCompletion)
+            createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .privacyProPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
             createPrivacyProPromoDialog(onDismiss: onCompletion)
@@ -138,7 +137,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
     }
 
-    private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
             OnboardingFinalDialog(
                 logoPosition: .top,
@@ -146,11 +145,11 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
                 dismissAction: { [weak self] in
                     self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-                    onDismiss(true)
+                    onCompletion(true)
                 },
                 onManualDismiss: { [weak self] in
                     self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
-                    onDismiss(true)
+                    onManualDismiss()
                 }
             )
         }

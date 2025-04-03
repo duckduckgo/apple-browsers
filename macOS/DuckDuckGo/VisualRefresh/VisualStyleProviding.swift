@@ -24,6 +24,8 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+
+    var toolbarButtonsCornerRadius: CGFloat { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -61,6 +63,8 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
 
+    let toolbarButtonsCornerRadius: CGFloat
+
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default: return addressBarHeightForDefault
@@ -94,7 +98,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarTopPaddingForPopUpWindow: 0,
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
-                           addressBarBottomPaddingForPopUpWindow: 0)
+                           addressBarBottomPaddingForPopUpWindow: 0,
+                           toolbarButtonsCornerRadius: 4)
     }
 
     static var current: VisualStyleProviding {
@@ -106,7 +111,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarTopPaddingForPopUpWindow: 6,
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
-                           addressBarBottomPaddingForPopUpWindow: 6)
+                           addressBarBottomPaddingForPopUpWindow: 6,
+                           toolbarButtonsCornerRadius: 9)
     }
 }
 

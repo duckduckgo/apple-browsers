@@ -53,6 +53,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var addressBarContainer: NSView!
     @IBOutlet weak var daxLogo: NSImageView!
     @IBOutlet weak var addressBarStack: NSStackView!
+
     @IBOutlet weak var menuButtons: NSStackView!
 
     @IBOutlet weak var aiChatButton: MouseOverButton!
@@ -192,6 +193,7 @@ final class NavigationBarViewController: NSViewController {
         addressBarContainer.wantsLayer = true
         addressBarContainer.layer?.masksToBounds = false
 
+        setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()
         addContextMenu()
 
@@ -686,6 +688,20 @@ final class NavigationBarViewController: NSViewController {
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip
         refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+    }
+
+    private func setupNavigationButtonsCornerRadius() {
+        goBackButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        goForwardButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        refreshOrStopButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        homeButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+
+        aiChatButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        downloadsButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        passwordManagementButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        bookmarkListButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        networkProtectionButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        optionsButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
     }
 
     private func subscribeToSelectedTabViewModel() {

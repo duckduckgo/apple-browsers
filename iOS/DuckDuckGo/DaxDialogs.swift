@@ -377,32 +377,6 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         settings.lastShownContextualOnboardingDialogType = nil
     }
 
-    private func lastShownDaxDialog(privacyInfo: PrivacyInfo) -> BrowsingSpec? {
-        guard let dialogType = lastShownDaxDialogType else { return  nil }
-        switch dialogType {
-        case BrowsingSpec.SpecType.afterSearch.rawValue:
-            return BrowsingSpec.afterSearch
-        case BrowsingSpec.SpecType.visitWebsite.rawValue:
-            return nil
-        case BrowsingSpec.SpecType.withoutTrackers.rawValue:
-            return BrowsingSpec.withoutTrackers
-        case BrowsingSpec.SpecType.siteIsMajorTracker.rawValue:
-            guard let host = privacyInfo.domain else { return nil }
-            return majorTrackerMessage(host, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.siteOwnedByMajorTracker.rawValue:
-            guard let host = privacyInfo.domain, let owner = isOwnedByFacebookOrGoogle(host) else { return nil }
-            return majorTrackerOwnerMessage(host, owner, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.withOneTracker.rawValue, BrowsingSpec.SpecType.withMultipleTrackers.rawValue:
-            guard let entityNames = blockedEntityNames(privacyInfo.trackerInfo) else { return nil }
-            return trackersBlockedMessage(entityNames, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.fire.rawValue:
-            return .fire
-        case BrowsingSpec.SpecType.final.rawValue:
-            return nil
-        default: return nil
-        }
-    }
-
     func fireButtonPulseStarted() {
         ViewHighlighter.dismissPrivacyIconPulseAnimation()
         if settings.fireButtonPulseDateShown == nil {
@@ -482,7 +456,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         if let lastVisitedOnboardingWebsiteURLPath,
             compareUrls(url1: URL(string: lastVisitedOnboardingWebsiteURLPath), url2: privacyInfo.url) {
-            return lastShownDaxDialog(privacyInfo: privacyInfo)
+            return nil
         }
 
         guard let host = privacyInfo.domain else { return nil }

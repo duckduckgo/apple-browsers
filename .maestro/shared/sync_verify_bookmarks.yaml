@@ -9,6 +9,7 @@ appId: com.duckduckgo.mobile.ios
         text: Download Missing Icons?
     commands:
       - tapOn: Not Now
+- tapOn: Bookmarks
 
 - assertVisible: Spread Privacy
 - assertVisible: Stack Overflow - Where Developers Learn, Share, & Build Careers

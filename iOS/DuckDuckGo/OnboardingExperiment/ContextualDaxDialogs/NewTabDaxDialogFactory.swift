@@ -133,6 +133,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                 }
                 .padding()
             }
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
     }
@@ -152,6 +153,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                     onManualDismiss()
                 }
             )
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
@@ -186,6 +188,7 @@ private extension NewTabDaxDialogFactory {
                     onDismiss(true)
                 }
             )
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in

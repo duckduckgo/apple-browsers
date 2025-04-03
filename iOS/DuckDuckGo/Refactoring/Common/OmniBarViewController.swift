@@ -48,7 +48,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     // MARK: - Animation
 
-    private var dismissButtonAnimator: UIViewPropertyAnimator?
+    var dismissButtonAnimator: UIViewPropertyAnimator?
     private var privacyIconAndTrackersAnimator = PrivacyIconAndTrackersAnimator()
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
@@ -475,9 +475,9 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func updateLeftIconContainerState(oldState: any OmniBarState, newState: any OmniBarState) {
         if oldState.showSearchLoupe && newState.showDismiss {
-            animateTransition(from: barView.searchLoupe, to: barView.dismissButton)
+            animateDismissButtonTransition(from: barView.searchLoupe, to: barView.dismissButton)
         } else if oldState.showDismiss && newState.showSearchLoupe {
-            animateTransition(from: barView.dismissButton, to: barView.searchLoupe)
+            animateDismissButtonTransition(from: barView.dismissButton, to: barView.searchLoupe)
         } else if dismissButtonAnimator == nil || dismissButtonAnimator?.isRunning == false {
             updateLeftContainerVisibility(state: newState)
         }
@@ -489,7 +489,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
-    private func animateTransition(from oldView: UIView, to newView: UIView) {
+    func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
         dismissButtonAnimator?.stopAnimation(true)
         let animationOffset: CGFloat = 20
         let animationDuration: CGFloat = 0.7

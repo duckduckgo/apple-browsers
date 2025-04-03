@@ -30,9 +30,28 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
     // MARK: - Initialization
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
+        dismissButtonAnimator?.stopAnimation(true)
+        let animationDuration: CGFloat = 0.25
 
+        newView.alpha = 0
+        newView.isHidden = false
+        oldView.isHidden = false
+
+        dismissButtonAnimator = UIViewPropertyAnimator(duration: animationDuration, curve: .easeInOut) {
+            oldView.alpha = 0
+            newView.alpha = 1.0
+        }
+
+        dismissButtonAnimator?.isInterruptible = true
+
+        dismissButtonAnimator?.addCompletion { position in
+            if position == .end {
+                oldView.isHidden = true
+            }
+        }
+
+        dismissButtonAnimator?.startAnimation()
     }
 
     override func showCustomIcon(icon: OmniBarIcon) {

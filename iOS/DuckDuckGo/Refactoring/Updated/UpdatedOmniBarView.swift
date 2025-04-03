@@ -57,6 +57,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private var searchAreaTopPaddingConstraint: NSLayoutConstraint?
     private var searchAreaBottomPaddingConstraint: NSLayoutConstraint?
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
+    private var largeSizeSpacingConstraint: NSLayoutConstraint?
 
     // iPad elements
 
@@ -133,8 +134,13 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             leadingButtonsContainer.isHidden = isUsingCompactLayout
             trailingButtonsContainer.isHidden = isUsingCompactLayout
+            leadingSpacer.isHidden = isUsingCompactLayout
+            trailingSpacer.isHidden = isUsingCompactLayout
 
             readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
+            largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
+
+            stackView.spacing = isUsingCompactLayout ? 0 : Metrics.expandedSizeSpacing
         }
     }
 
@@ -205,6 +211,9 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let searchAreaContainerView = CompositeShadowView()
     private let activeOutlineView = UIView()
 
+    private let leadingSpacer = UIView()
+    private let trailingSpacer = UIView()
+
     private let stackView = UIStackView()
 
     static func create() -> Self {
@@ -235,13 +244,15 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaContainerView.addSubview(omniBarProgressView)
 
         stackView.addArrangedSubview(leadingButtonsContainer)
+        stackView.addArrangedSubview(leadingSpacer)
         stackView.addArrangedSubview(searchAreaContainerView)
+        stackView.addArrangedSubview(trailingSpacer)
         stackView.addArrangedSubview(trailingButtonsContainer)
 
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
+        leadingButtonsContainer.addArrangedSubview(bookmarksButtonView)
 
-        trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
@@ -250,16 +261,23 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private func setUpConstraints() {
 
-        let readableSearchAreaWidth = searchAreaView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
+        let readableSearchAreaWidth = searchAreaContainerView.widthAnchor.constraint(equalTo: readableContentGuide.widthAnchor)
         readableSearchAreaWidth.priority = .defaultHigh
         readableSearchAreaWidth.isActive = false
+
+        let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
+        searchAreaCenterXConstraint.priority = .defaultHigh
 
         let searchAreaTopPadding = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaTopPadding)
         let searchAreaBottomPadding = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaBottomPadding)
 
+        let largeSizeSpacing = leadingSpacer.widthAnchor.constraint(equalTo: trailingSpacer.widthAnchor)
+        largeSizeSpacing.isActive = false
+
         searchAreaTopPaddingConstraint = searchAreaTopPadding
         searchAreaBottomPaddingConstraint = searchAreaBottomPadding
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
+        largeSizeSpacingConstraint = largeSizeSpacing
 
         omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
@@ -278,6 +296,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
+            searchAreaCenterXConstraint,
             readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -325,13 +344,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         stackView.alignment = .fill
         stackView.distribution = .fill
 
-        trailingButtonsContainer.isLayoutMarginsRelativeArrangement = true
-        trailingButtonsContainer.directionalLayoutMargins = Metrics.expandedSizeMargins
-        trailingButtonsContainer.spacing = Metrics.expandedSizeSpacing
         trailingButtonsContainer.isHidden = true
 
-        leadingButtonsContainer.isLayoutMarginsRelativeArrangement = true
-        leadingButtonsContainer.directionalLayoutMargins = Metrics.expandedSizeMargins
         leadingButtonsContainer.isHidden = true
 
         backButtonView.setImage(UIImage(resource: .arrowLeftNew24), for: .normal)

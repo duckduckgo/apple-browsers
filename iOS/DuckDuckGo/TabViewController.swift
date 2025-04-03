@@ -215,7 +215,7 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
-    private var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
+    var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     public var url: URL? {
         willSet {
@@ -497,7 +497,6 @@ class TabViewController: UIViewController {
 
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-
     }
 
     private func registerForAddressBarLocationNotifications() {

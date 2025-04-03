@@ -189,6 +189,9 @@ class MainViewController: UIViewController {
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private lazy var themeColorManager: SiteThemeColorManager = {
+        SiteThemeColorManager(viewCoordinator: viewCoordinator, currentTabViewController: { [weak self] in self?.currentTab }())
+    }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
         let manager = AIChatViewControllerManager()
@@ -652,6 +655,7 @@ class MainViewController: UIViewController {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     @objc private func onShowFullURLAddressChanged() {
@@ -1176,6 +1180,7 @@ class MainViewController: UIViewController {
             attachTab(tab: tab)
             refreshControls()
         }
+        themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         if DaxDialogs.shared.shouldShowFireButtonPulse {
@@ -1589,6 +1594,7 @@ class MainViewController: UIViewController {
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
+        themeColorManager.updateThemeColor()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
@@ -2186,6 +2192,7 @@ extension MainViewController: OmniBarDelegate {
         dismissOmniBar()
         omniBar.cancel()
         hideSuggestionTray()
+        themeColorManager.updateThemeColor()
         self.showMenuHighlighterIfNeeded()
     }
 
@@ -2231,6 +2238,7 @@ extension MainViewController: OmniBarDelegate {
         } else {
             tryToShowSuggestionTray(.favorites)
         }
+        themeColorManager.updateThemeColor()
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -2510,6 +2518,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
+        themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
         let newTab = tabManager.addURLRequest(nil,
@@ -2539,6 +2548,7 @@ extension MainViewController: TabDelegate {
         }
         tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.model)
+        themeColorManager.updateThemeColor()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }
@@ -2758,6 +2768,7 @@ extension MainViewController: TabSwitcherDelegate {
         if newTabPageViewController != nil {
             animateLogoAppearance()
         }
+        themeColorManager.updateThemeColor()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
@@ -2765,6 +2776,7 @@ extension MainViewController: TabSwitcherDelegate {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+        themeColorManager.updateThemeColor()
     }
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
@@ -2801,6 +2813,7 @@ extension MainViewController: TabSwitcherDelegate {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
+        themeColorManager.updateThemeColor()
 
         if shouldOpen {
             let newTab = Tab()
@@ -3074,6 +3087,7 @@ extension MainViewController {
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     private func updateStatusBarBackgroundColor() {

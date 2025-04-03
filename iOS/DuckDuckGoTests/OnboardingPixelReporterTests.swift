@@ -342,23 +342,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    func testWhenMeasureTrySearchDialogDismissButtonTappedThenPixelIsFired() {
-        // GIVEN
-        let expectedPixel = Pixel.Event.onboardingTrySearchDialogDismissButtonTapped
-        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
-        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
-
-        // WHEN
-        sut.measureTrySearchDialogDismissButtonTapped()
-
-        // THEN
-        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
-        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
-        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
-    }
-
     func testWhenMeasureTryVisitSiteDialogNewTabDismissButtonTappedThenPixelIsFired() {
         // GIVEN
         let expectedPixel = Pixel.Event.onboardingTryVisitSiteDialogNewTabDismissButtonTapped

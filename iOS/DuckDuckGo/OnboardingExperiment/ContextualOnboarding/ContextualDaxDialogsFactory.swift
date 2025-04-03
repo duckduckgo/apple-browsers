@@ -147,7 +147,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             }
         }
 
-        let onManualDismiss: () -> Void = { [weak delegate] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureSearchResultDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
@@ -171,7 +172,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             pixelReporter: contextualOnboardingPixelReporter
         )
 
-        let onManualDismiss: () -> Void = { [weak delegate] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
@@ -194,9 +196,10 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     ) -> some View {
         let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
 
-        let onManualDismiss: () -> Void = { [weak delegate] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
             // Stop the privacy icon shield when dismissing the fire dialog
             ViewHighlighter.hideAll()
+            self?.contextualOnboardingPixelReporter.measureTrackersDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
@@ -227,7 +230,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         delegate: ContextualOnboardingDelegate,
         pixelName: Pixel.Event
     ) -> some View {
-        let onManualDismiss: () -> Void = { [weak delegate] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
@@ -246,7 +250,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
         }
 
-        let onManualDismiss: () -> Void = { [weak delegate] in
+        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
+            self?.contextualOnboardingPixelReporter.measureEndOfJourneyDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }
 

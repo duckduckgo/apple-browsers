@@ -35,16 +35,7 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
         }
 
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-
-        if target == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if target == .newTab || NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: true)
-        } else if NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: false)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
-        }
+        NewTabPageLinkOpener.open(url, target: target, using: tabCollectionViewModel)
     }
 
     func copyLink(_ favorite: Bookmark) {

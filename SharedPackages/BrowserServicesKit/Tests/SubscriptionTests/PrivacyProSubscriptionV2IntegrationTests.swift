@@ -54,16 +54,13 @@ final class PrivacyProSubscriptionV2IntegrationTests: XCTestCase {
         storePurchaseManager = StorePurchaseManagerMockV2()
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-            print("Pixel fired: \(type)")
-        }
         subscriptionFeatureFlagger = FeatureFlaggerMapping<SubscriptionFeatureFlags>(mapping: { $0.defaultState })
 
         subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                            oAuthClient: authClient,
                                                            subscriptionEndpointService: subscriptionEndpointService,
                                                            subscriptionEnvironment: subscriptionEnvironment,
-                                                           pixelHandler: pixelHandler)
+                                                           pixelHandler: MockPixelHandler())
 
         appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                            storePurchaseManager: storePurchaseManager)

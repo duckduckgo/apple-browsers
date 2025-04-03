@@ -195,23 +195,7 @@ final class AppDependencyProvider: DependencyProvider {
                 }
             }
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .invalidRefreshToken:
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected)
-                case .subscriptionIsActive:
-                    DailyPixel.fire(pixel: .privacyProSubscriptionActive)
-                case .migrationStarted:
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationStarted)
-                case .migrationFailed(let error):
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: ["error": error.localizedDescription])
-                case .migrationSucceeded:
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationSucceeded)
-                case .getTokensError(let policy, let error):
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2GetTokensError, withAdditionalParameters: ["error": error.localizedDescription,
-                                                                                                                    "policycache": policy.description])
-                }
-            }
+            let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
                                                                    subscriptionEndpointService: subscriptionEndpointService,

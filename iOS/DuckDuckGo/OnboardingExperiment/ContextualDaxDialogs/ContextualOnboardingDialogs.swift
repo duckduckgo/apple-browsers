@@ -216,8 +216,8 @@ struct OnboardingFinalDialog: View {
                     customActionView: AnyView(customActionView)
                 )
             }
+            .padding()
         }
-        .padding()
     }
 
     @ViewBuilder

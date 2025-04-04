@@ -124,11 +124,13 @@ struct OnboardingFirstSearchDoneDialog: View {
     let shouldFollowUp: Bool
     let viewModel: OnboardingSiteSuggestionsViewModel
     let gotItAction: () -> Void
-    let onManualDismiss: () -> Void
+    let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: {
+                onManualDismiss(showNextScreen)
+            }) {
                 VStack {
                     if showNextScreen {
                         OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
@@ -165,11 +167,13 @@ struct OnboardingTrackersDoneDialog: View {
     let shouldFollowUp: Bool
     let message: NSAttributedString
     let blockedTrackersCTAAction: () -> Void
-    let onManualDismiss: () -> Void
+    let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: {
+                onManualDismiss(showNextScreen)
+            }) {
                 VStack {
                     if showNextScreen {
                         OnboardingFireButtonDialogContent()
@@ -387,7 +391,7 @@ struct OnboardingAddToDockTutorialContent: View {
             pixelReporter: OnboardingPixelReporter()
         ),
         gotItAction: {},
-        onManualDismiss: {}
+        onManualDismiss: { _ in }
     )
     .padding()
 }
@@ -413,7 +417,7 @@ struct OnboardingAddToDockTutorialContent: View {
             """
         ),
         blockedTrackersCTAAction: { },
-        onManualDismiss: {}
+        onManualDismiss: { _ in }
     )
     .padding()
 }

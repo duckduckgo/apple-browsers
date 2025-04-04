@@ -147,8 +147,12 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             }
         }
 
-        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
-            self?.contextualOnboardingPixelReporter.measureSearchResultDialogDismissButtonTapped()
+        let onManualDismiss: (_ isShowingTryVisitSiteDialog: Bool) -> Void = { [weak delegate, weak self] isShowingTryVisitSiteDialog in
+            if isShowingTryVisitSiteDialog {
+                self?.contextualOnboardingPixelReporter.measureTryVisitSiteDialogDismissButtonTapped()
+            } else {
+                self?.contextualOnboardingPixelReporter.measureSearchResultDialogDismissButtonTapped()
+            }
             delegate?.didTapDismissContextualOnboardingAction()
         }
 
@@ -196,12 +200,17 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
     ) -> some View {
         let attributedMessage = spec.message.attributedStringFromMarkdown(color: ThemeManager.shared.currentTheme.daxDialogTextColor)
 
-        let onManualDismiss: () -> Void = { [weak delegate, weak self] in
-            // Stop the privacy icon shield when dismissing the fire dialog
+        let onManualDismiss: (_ isShowingFireDialog: Bool) -> Void = { [weak delegate, weak self] isShowingFireDialog in
+            // Hide Pulsing animation for Privacy Shield or Fire Dialog
             ViewHighlighter.hideAll()
-            // Set Fire dialog seen. In this way when we open a new tab we show the final dialog.
-            self?.contextualOnboardingLogic.setFireEducationMessageSeen()
-            self?.contextualOnboardingPixelReporter.measureTrackersDialogDismissButtonTapped()
+
+            if isShowingFireDialog {
+                self?.contextualOnboardingPixelReporter.measureFireDialogDismissButtonTapped()
+            } else {
+                // Set Fire dialog seen. In this way when we open a new tab we show the final dialog.
+                self?.contextualOnboardingLogic.setFireEducationMessageSeen()
+                self?.contextualOnboardingPixelReporter.measureTrackersDialogDismissButtonTapped()
+            }
             delegate?.didTapDismissContextualOnboardingAction()
         }
 

@@ -1329,7 +1329,7 @@ extension Pixel.Event {
         case .daxDialogsEndOfJourneyNewTabUnique: return "m_dx_end_new_tab_unique"
         case .daxDialogsEndOfJourneyDismissed: return "m_dx_end_dialog_dismissed"
 
-        case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab-dismiss-button-tapped"
+        case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab_dismiss-button-tapped"
         case .onboardingSearchResultDialogDismissButtonTapped: return "m_onboarding_search-result-dialog_dismiss-button-tapped"
         case .onboardingTryVisitSiteDialogNewTabDismissButtonTapped: return "m_onboarding_try-visit-site-dialog-new-tab_dismiss-button-tapped"
         case .onboardingTryVisitSiteDialogDismissButtonTapped: return "m_onboarding_try-visit-site-dialog_dismiss-button-tapped"

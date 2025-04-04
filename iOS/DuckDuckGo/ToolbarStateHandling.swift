@@ -44,7 +44,9 @@ protocol ToolbarStateHandling {
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
     private let featureFlagger: FeatureFlagger
-    let isExperimentalThemingEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
+    lazy var isExperimentalThemingEnabled = {
+        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
+    }()
 
     lazy var backButton = {
         let imageName = isExperimentalThemingEnabled ? "Arrow-Left-New-24" : "BrowsePrevious"

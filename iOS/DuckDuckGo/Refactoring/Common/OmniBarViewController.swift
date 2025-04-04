@@ -429,7 +429,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     }
 
-    private func onQuerySubmitted() {
+    func onQuerySubmitted() {
         if let suggestion = omniDelegate?.selectedSuggestion() {
             omniDelegate?.onOmniSuggestionSelected(suggestion)
         } else {

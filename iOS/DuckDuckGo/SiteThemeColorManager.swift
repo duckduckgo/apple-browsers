@@ -68,7 +68,7 @@ final class SiteThemeColorManager {
     // MARK: - Private Methods
 
     private func startObservingThemeColor() {
-        themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.new]) { [weak self] webView, change in
+        themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
             guard let self,
                   let newColor = change.newValue as? UIColor,
                   let host = webView.url?.host else {
@@ -110,6 +110,7 @@ final class SiteThemeColorManager {
         }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = color
         tabViewController?.webView?.underPageBackgroundColor = color
+        tabViewController?.webView?.scrollView.backgroundColor = color
     }
 
 }

@@ -246,10 +246,10 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
         measureLastDialogShownCalled = true
     }
 
-    func measureSearchSuggetionOptionTapped() {
+    func measureSearchSuggestionOptionTapped() {
     }
 
-    func measureSiteSuggetionOptionTapped() {
+    func measureSiteSuggestionOptionTapped() {
     }
 
     func measureFireButtonTryIt() {

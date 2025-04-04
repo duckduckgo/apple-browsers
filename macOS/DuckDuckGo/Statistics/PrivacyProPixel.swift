@@ -70,13 +70,13 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAddEmailSuccess
     case privacyProWelcomeFAQClick
     // Auth v2
-    case privacyProInvalidRefreshTokenDetected
+    case privacyProInvalidRefreshTokenDetected(AuthV2PixelHandler.Source)
     case privacyProInvalidRefreshTokenSignedOut
     case privacyProInvalidRefreshTokenRecovered
-    case privacyProAuthV2MigrationStarted
-    case privacyProAuthV2MigrationFailed(Error)
-    case privacyProAuthV2MigrationSucceeded
-    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, Error)
+    case privacyProAuthV2MigrationStarted(AuthV2PixelHandler.Source)
+    case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
+    case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
+    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
 
     var name: String {
         switch self {
@@ -133,13 +133,25 @@ enum PrivacyProPixel: PixelKitEventV2 {
         return nil
     }
 
+    private struct PrivacyProPixelsDefaults {
+        static let errorKey = "error"
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+    }
+
     var parameters: [String: String]? {
         switch self {
-        case .privacyProAuthV2GetTokensError(let policy, let error):
-            return ["error": error.localizedDescription,
-                    "policycache": policy.description]
-        case .privacyProAuthV2MigrationFailed(let error):
-            return ["error": error.localizedDescription]
+        case .privacyProInvalidRefreshTokenDetected(let source),
+                .privacyProAuthV2MigrationStarted(let source),
+                .privacyProAuthV2MigrationSucceeded(let source):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2GetTokensError(let policy, let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.policyCacheKey: policy.description,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2MigrationFailed(let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
         default:
             return nil
         }

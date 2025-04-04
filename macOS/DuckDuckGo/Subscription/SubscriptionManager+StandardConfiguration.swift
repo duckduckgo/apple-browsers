@@ -114,7 +114,7 @@ extension DefaultSubscriptionManagerV2 {
                             featureFlagger: FeatureFlagger? = nil,
                             userDefaults: UserDefaults,
                             canPerformAuthMigration: Bool,
-                            canHandlePixels: Bool) {
+                            pixelHandlingSource: AuthV2PixelHandler.Source) {
 
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { keychainType, error in
@@ -162,27 +162,7 @@ extension DefaultSubscriptionManagerV2 {
         }
 
         // Pixel handler configuration
-        let pixelHandler: SubscriptionManagerV2.PixelHandler
-        if canHandlePixels {
-            pixelHandler = { type in
-                switch type {
-                case .invalidRefreshToken:
-                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenDetected, frequency: .dailyAndCount)
-                case .subscriptionIsActive:
-                    PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
-                case .migrationStarted:
-                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationStarted, frequency: .dailyAndCount)
-                case .migrationFailed(let error):
-                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationFailed(error), frequency: .dailyAndCount)
-                case .migrationSucceeded:
-                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2MigrationSucceeded, frequency: .dailyAndCount)
-                case .getTokensError(let policy, let error):
-                    PixelKit.fire(PrivacyProPixel.privacyProAuthV2GetTokensError(policy, error), frequency: .dailyAndCount)
-                }
-            }
-        } else {
-            pixelHandler = { _ in }
-        }
+        var pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: pixelHandlingSource)
 
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         let legacyAccountStorage = AccountKeychainStorage()

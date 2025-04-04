@@ -47,6 +47,7 @@ public final class PrivacyInfo {
     @Published public var malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind?
     @Published public var isSpecialErrorPageVisible: Bool = false
     @Published public var shouldCheckServerTrust: Bool
+    public private(set) var debugFlags: String = ""
 
     public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false) {
         self.url = url
@@ -68,5 +69,13 @@ public final class PrivacyInfo {
 
     public func isFor(_ url: URL?) -> Bool {
         return self.url.host == url?.host
+    }
+
+    public func addDebugFlag(_ flag: String) {
+        if debugFlags.isEmpty {
+            debugFlags = flag
+        } else if !debugFlags.contains(flag) {
+            debugFlags.append(",\(flag)")
+        }
     }
 }

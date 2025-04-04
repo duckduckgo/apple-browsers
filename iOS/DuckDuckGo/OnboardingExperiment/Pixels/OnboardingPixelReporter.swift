@@ -48,6 +48,9 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
+    func measureSkipOnboardingCTAAction()
+    func measureConfirmSkipOnboardingCTAAction()
+    func measureResumeOnboardingCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
     func measureChooseAppIconImpression()
@@ -156,6 +159,18 @@ extension OnboardingPixelReporter {
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
+    func measureSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureConfirmSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroConfirmSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureResumeOnboardingCTAAction() {
+        fire(event: .onboardingIntroResumeOnboardingCTAPressed, unique: false)
+    }
+
     func measureOnboardingIntroImpression() {
         fire(event: .onboardingIntroShownUnique, unique: true)
     }
@@ -190,7 +205,7 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
     
-    func measureSearchSuggetionOptionTapped() {
+    func measureSearchSuggestionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
@@ -198,7 +213,7 @@ extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
 
 extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
     
-    func measureSiteSuggetionOptionTapped() {
+    func measureSiteSuggestionOptionTapped() {
         // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 

@@ -22,19 +22,19 @@ public enum Suggestion: Equatable {
 
     case phrase(phrase: String)
     case website(url: URL)
-    case bookmark(title: String, url: URL, isFavorite: Bool, allowedInTopHits: Bool)
-    case historyEntry(title: String?, url: URL, allowedInTopHits: Bool)
-    case internalPage(title: String, url: URL)
-    case openTab(title: String, url: URL, tabId: String?)
+    case bookmark(title: String, url: URL, isFavorite: Bool, score: Int)
+    case historyEntry(title: String?, url: URL, score: Int)
+    case internalPage(title: String, url: URL, score: Int)
+    case openTab(title: String, url: URL, tabId: String?, score: Int)
     case unknown(value: String)
 
     public var url: URL? {
         switch self {
         case .website(url: let url),
-             .historyEntry(title: _, url: let url, allowedInTopHits: _),
-             .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-             .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url, _):
+             .historyEntry(title: _, url: let url, _),
+             .bookmark(title: _, url: let url, isFavorite: _, _),
+             .internalPage(title: _, url: let url, _),
+             .openTab(title: _, url: let url, _, _):
             return url
         case .phrase, .unknown:
             return nil
@@ -43,42 +43,15 @@ public enum Suggestion: Equatable {
 
     var title: String? {
         switch self {
-        case .historyEntry(title: let title, url: _, allowedInTopHits: _):
+        case .historyEntry(title: let title, url: _, _):
             return title
-        case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
-             .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _, _):
+        case .bookmark(title: let title, url: _, isFavorite: _, _),
+             .internalPage(title: let title, url: _, _),
+             .openTab(title: let title, url: _, _, _):
             return title
         case .phrase, .website, .unknown:
             return nil
         }
-    }
-
-    public var allowedInTopHits: Bool {
-        switch self {
-        case .website, .openTab:
-            return true
-        case .historyEntry(title: _, url: _, allowedInTopHits: let allowedInTopHits):
-            return allowedInTopHits
-        case .bookmark(title: _, url: _, isFavorite: _, allowedInTopHits: let allowedInTopHits):
-            return allowedInTopHits
-        case .internalPage, .phrase, .unknown:
-            return false
-        }
-    }
-
-    public var isOpenTab: Bool {
-        if case .openTab = self {
-            return true
-        }
-        return false
-    }
-
-    public var isBookmark: Bool {
-        if case .bookmark = self {
-            return true
-        }
-        return false
     }
 
     public var isHistoryEntry: Bool {
@@ -87,53 +60,4 @@ public enum Suggestion: Equatable {
         }
         return false
     }
-}
-
-extension Suggestion {
-
-    init?(bookmark: Bookmark, allowedInTopHits: Bool) {
-        guard let urlObject = URL(string: bookmark.url) else { return nil }
-        self = .bookmark(title: bookmark.title,
-                         url: urlObject,
-                         isFavorite: bookmark.isFavorite,
-                         allowedInTopHits: allowedInTopHits)
-    }
-
-    init?(bookmark: Bookmark) {
-        guard let urlObject = URL(string: bookmark.url) else { return nil }
-        self = .bookmark(title: bookmark.title,
-                         url: urlObject,
-                         isFavorite: bookmark.isFavorite,
-                         allowedInTopHits: bookmark.isFavorite)
-    }
-
-    init(historyEntry: HistorySuggestion) {
-        let areVisitsLow = historyEntry.numberOfVisits < 4
-        let allowedInTopHits = !(historyEntry.failedToLoad ||
-                                 (areVisitsLow && !historyEntry.url.isRoot))
-        self = .historyEntry(title: historyEntry.title,
-                             url: historyEntry.url,
-                             allowedInTopHits: allowedInTopHits)
-    }
-
-    init(internalPage: InternalPage) {
-        self = .internalPage(title: internalPage.title, url: internalPage.url)
-    }
-
-    init(tab: BrowserTab) {
-        self = .openTab(title: tab.title, url: tab.url, tabId: tab.tabId)
-    }
-
-    init(url: URL) {
-        self = .website(url: url)
-    }
-
-    init(phrase: String, isNav: Bool) {
-        if isNav, let url = URL(string: "http://\(phrase)") {
-            self = .website(url: url)
-        } else {
-            self = .phrase(phrase: phrase)
-        }
-    }
-
 }

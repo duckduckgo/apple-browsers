@@ -1,7 +1,7 @@
 //
-//  DataExtension.swift
+//  MockPixelHandler.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
-import Foundation
+import Subscription
+import os.log
 
-extension Data {
+public struct MockPixelHandler: SubscriptionPixelHandler {
 
-    func utf8String() -> String? {
-        return String(data: self, encoding: .utf8)
+    public init() {}
+
+    public func handle(pixelType: Subscription.SubscriptionPixelType) {
+        Logger.subscription.debug("Pixel fired: \(String(describing: pixelType))")
     }
-
 }

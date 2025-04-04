@@ -48,6 +48,7 @@ final class SiteThemeColorManager {
 
     func attach(to tabViewController: TabViewController) {
         self.tabViewController = tabViewController
+        themeColorObservation?.invalidate()
         startObservingThemeColor()
     }
 

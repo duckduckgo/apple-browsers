@@ -1,51 +1,62 @@
 //
 //  CreditCardValidationTests.swift
-//  BrowserServicesKit
 //
-//  Created by Anya Mallon on 03/04/2025.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import XCTest
 @testable import BrowserServicesKit
 
 final class CreditCardValidationTests: XCTestCase {
-    
+
     // MARK: - Card Type Detection Tests
-    
+
     func testCardTypeDetection() {
         // Test Visa detection
         XCTAssertEqual(CreditCardValidation.type(for: "4111111111111111"), .visa)
         XCTAssertEqual(CreditCardValidation.type(for: "4012888888881881"), .visa)
         XCTAssertEqual(CreditCardValidation.type(for: "4222222222222"), .visa)
-        
+
         // Test Mastercard detection
         XCTAssertEqual(CreditCardValidation.type(for: "5555555555554444"), .mastercard)
         XCTAssertEqual(CreditCardValidation.type(for: "5105105105105100"), .mastercard)
         XCTAssertEqual(CreditCardValidation.type(for: "2221000000000000"), .mastercard) // New BIN range
         XCTAssertEqual(CreditCardValidation.type(for: "2720990000000000"), .mastercard) // New BIN range
-        
+
         // Test American Express detection
         XCTAssertEqual(CreditCardValidation.type(for: "378282246310005"), .amex)
         XCTAssertEqual(CreditCardValidation.type(for: "371449635398431"), .amex)
         XCTAssertEqual(CreditCardValidation.type(for: "340000000000000"), .amex)
-        
+
         // Test Discover detection
         XCTAssertEqual(CreditCardValidation.type(for: "6011111111111117"), .discover)
         XCTAssertEqual(CreditCardValidation.type(for: "6011000990139424"), .discover)
         XCTAssertEqual(CreditCardValidation.type(for: "6511000000000000"), .discover)
-        
+
         // Test Diners Club detection
         XCTAssertEqual(CreditCardValidation.type(for: "30569309025904"), .dinersClub)
         XCTAssertEqual(CreditCardValidation.type(for: "38520000023237"), .dinersClub)
-        
+
         // Test JCB detection
         XCTAssertEqual(CreditCardValidation.type(for: "3530111333300000"), .jcb)
         XCTAssertEqual(CreditCardValidation.type(for: "3566002020360505"), .jcb)
-        
+
         // Test Union Pay detection
         XCTAssertEqual(CreditCardValidation.type(for: "6212345678901232"), .unionPay)
         XCTAssertEqual(CreditCardValidation.type(for: "6250941006528599"), .unionPay)
-        
+
         // Test unknown card type
         XCTAssertEqual(CreditCardValidation.type(for: "9999999999999999"), .unknown)
         XCTAssertEqual(CreditCardValidation.type(for: "1234567890123456"), .unknown)

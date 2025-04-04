@@ -61,7 +61,7 @@ struct AutofillEditableMaskedCell: View {
                 }
             }
         }
-        .frame(minHeight:60)
+        .frame(minHeight: 60)
         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
         .focused($isFieldFocused)
         .onChange(of: isFieldFocused) { focused in

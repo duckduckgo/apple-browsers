@@ -227,7 +227,7 @@ struct OnboardingDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(.close16)
+            Image("Close-16", bundle: bundle)
                 .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(backgroundColor)

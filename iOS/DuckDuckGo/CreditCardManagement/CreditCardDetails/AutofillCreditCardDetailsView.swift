@@ -458,7 +458,8 @@ private struct MonthYearPickerView: View {
         self._isPresented = isPresented
         self.formatExpiration = formatExpiration
         
-        var initialDate: Date
+        let oneYearFromNow = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
+        var initialDate: Date = oneYearFromNow
         
         // Initialize selectedDate based on the current expirationMonth and expirationYear (if set)
         if expirationMonth.wrappedValue != nil && expirationYear.wrappedValue != nil {
@@ -466,10 +467,9 @@ private struct MonthYearPickerView: View {
             dateComponents.day = 1
             dateComponents.month = expirationMonth.wrappedValue
             dateComponents.year = expirationYear.wrappedValue
-            initialDate = Calendar.current.date(from: dateComponents) ?? Date()
-        } else {
-            // Fallback to current date
-            initialDate = Date()
+            if let specificDate = Calendar.current.date(from: dateComponents) {
+                initialDate = specificDate
+            }
         }
         
         self._selectedDate = State(initialValue: initialDate)

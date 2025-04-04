@@ -106,7 +106,7 @@ final class AutocompleteSuggestionsDataSourceTests: XCTestCase {
     private func makeFeatureFlagger(tabsEnabled: Bool = true) -> FeatureFlagger {
         let mock = MockFeatureFlagger()
         if tabsEnabled {
-            mock.enabledFeatureFlags.append(.autcompleteTabs)
+            mock.enabledFeatureFlags.append(.autocompleteTabs)
         }
         return mock
     }

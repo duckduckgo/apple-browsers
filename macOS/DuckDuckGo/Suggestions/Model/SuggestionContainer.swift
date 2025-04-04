@@ -204,7 +204,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
     }
 
     @MainActor func openTabs(for suggestionLoading: any Suggestions.SuggestionLoading) -> [any Suggestions.BrowserTab] {
-        guard featureFlagger.isFeatureOn(.autcompleteTabs) else { return [] }
+        guard featureFlagger.isFeatureOn(.autocompleteTabs) else { return [] }
         return openTabsProvider()
     }
 

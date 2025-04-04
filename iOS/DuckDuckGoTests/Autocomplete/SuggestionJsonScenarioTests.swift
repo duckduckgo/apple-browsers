@@ -110,7 +110,7 @@ final class SuggestionJsonScenarioTests: XCTestCase {
         
         // Set up feature flagger
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.autcompleteTabs)
+        featureFlagger.enabledFeatureFlags.append(.autocompleteTabs)
         
         // Create the real data source with test dependencies
         let dataSource = AutocompleteSuggestionsDataSource(

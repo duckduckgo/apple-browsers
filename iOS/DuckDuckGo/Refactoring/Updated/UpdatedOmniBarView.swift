@@ -51,6 +51,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             case .share:
                 searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
             }
+            updateAccessoryAccessibility()
         }
     }
 
@@ -414,7 +415,69 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func setUpAccessibility() {
+
+        backButtonView.accessibilityLabel = "Browse back"
+        backButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowseBack"
+        backButtonView.accessibilityTraits = .button
         
+        forwardButtonView.accessibilityLabel = "Browse forward"
+        forwardButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowseForward"
+        forwardButtonView.accessibilityTraits = .button
+
+        bookmarksButtonView.accessibilityLabel = "Bookmarks"
+        bookmarksButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Bookmarks"
+        bookmarksButtonView.accessibilityTraits = .button
+
+        menuButtonView.accessibilityLabel = "Browsing Menu"
+        menuButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.BrowsingMenu"
+        menuButtonView.accessibilityTraits = .button
+
+        settingsButtonView.accessibilityLabel = "Settings"
+        settingsButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Settings"
+        settingsButtonView.accessibilityTraits = .button
+
+        accessoryButton.accessibilityLabel = "AI Chat"
+        accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AI Chat"
+        accessoryButton.accessibilityTraits = .button
+
+        // This is for compatibility purposes with old OmniBar
+        searchAreaView.accessibilityIdentifier = "searchEntry"
+        searchAreaView.accessibilityTraits = .searchField
+
+        privacyIconView?.accessibilityIdentifier = "PrivacyIcon"
+        privacyIconView?.accessibilityTraits = .button
+
+        searchAreaView.voiceSearchButton.accessibilityLabel = "Voice Search"
+        searchAreaView.voiceSearchButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.VoiceSearch"
+        searchAreaView.voiceSearchButton.accessibilityTraits = .button
+
+        searchAreaView.reloadButton.accessibilityLabel = "Refresh page"
+        searchAreaView.reloadButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Refresh"
+        searchAreaView.reloadButton.accessibilityTraits = .button
+
+        searchAreaView.clearButton.accessibilityLabel = "Clear text"
+        searchAreaView.clearButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.ClearText"
+        searchAreaView.clearButton.accessibilityTraits = .button
+
+        searchAreaView.cancelButton.accessibilityLabel = "Stop Loading"
+        searchAreaView.cancelButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.StopLoading"
+        searchAreaView.cancelButton.accessibilityTraits = .button
+
+        searchAreaView.dismissButtonView.accessibilityLabel = "Cancel"
+        searchAreaView.dismissButtonView.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Dismiss"
+        searchAreaView.dismissButtonView.accessibilityTraits = .button
+    }
+
+    private func updateAccessoryAccessibility() {
+        switch accessoryType {
+        case .chat:
+            accessoryButton.accessibilityLabel = "AI Chat"
+            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
+        case .share:
+            accessoryButton.accessibilityLabel = "Share"
+            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Share"
+        }
+        accessoryButton.accessibilityTraits = .button
     }
 
     private func updateActiveState() {
@@ -522,6 +585,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             bottom: 0,
             trailing: expandedSizeSpacing
         )
+    }
+
+    private struct Constant {
+        static let accessibilityPrefix = "Browser.OmniBar"
     }
 }
 

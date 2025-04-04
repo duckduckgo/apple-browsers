@@ -276,7 +276,6 @@ struct OnboardingDismissButton: View {
     }
 }
 
-
 // Move this extension to `SwiftUIExtensions` package when creating it.
 private extension View {
 

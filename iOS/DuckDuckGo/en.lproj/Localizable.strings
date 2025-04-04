@@ -364,26 +364,26 @@
 /* Placeholder for card nickname field on autofill credit card details */
 "autofill.creditcard.edit.card-nickname-placeholder" = "(e.g. Work)";
 
-/* Subtitle for view displayed when no autofill passwords have been saved */
-"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Payment methods are stored securely on your device.";
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Credit cards are stored securely on your device.";
 
-/* Title for view displayed when autofill has no payment methods saved */
-"autofill.creditcard.empty-view.title" = "No payment methods saved yet";
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "No credit cards saved yet";
 
 /* Reason for auth when opening credit card list */
-"autofill.creditcard.list.auth.reason" = "Unlock device to access payment methods";
+"autofill.creditcard.list.auth.reason" = "Unlock device to access credit cards";
 
 /* Credit card row label for credit card expiry date */
 "autofill.creditcard.list.item.expiry" = "Expiry:";
 
 /* Title for screen listing autofill credit cards */
-"autofill.creditcard.list.title" = "Payment Methods";
+"autofill.creditcard.list.title" = "Credit Cards";
 
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
-"autofill.creditcard.no-auth.subtitle" = "A passcode is required to protect your payment methods.";
+"autofill.creditcard.no-auth.subtitle" = "A passcode is required to protect your credit cards.";
 
 /* Title for view displayed when autofill is locked on devices where a passcode has not been set */
-"autofill.creditcard.no-auth.title" = "Secure your device to save payment methods";
+"autofill.creditcard.no-auth.title" = "Secure your device to save credit cards";
 
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
@@ -599,7 +599,7 @@
 "autofill.logins.list.settings.footer" = "Passwords are encrypted. Nobody but you can see them, not even us.";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.passwords.cards.footer" = "Passwords and payment methods are encrypted. Nobody but you can see them, not even us.";
+"autofill.logins.list.settings.passwords.cards.footer" = "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Suggested";

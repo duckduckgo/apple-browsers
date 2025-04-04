@@ -30,8 +30,8 @@ final class SiteThemeColorManager {
     private var themeColorObservation: NSKeyValueObservation?
 
     init(viewCoordinator: MainViewCoordinator,
-        currentTabViewController: @autoclosure @escaping () -> TabViewController?,
-        themeManager: ThemeManager = ThemeManager.shared) {
+         currentTabViewController: @autoclosure @escaping () -> TabViewController?,
+         themeManager: ThemeManager = ThemeManager.shared) {
         self.viewCoordinator = viewCoordinator
         self.themeManager = themeManager
         self.currentTabViewController = currentTabViewController

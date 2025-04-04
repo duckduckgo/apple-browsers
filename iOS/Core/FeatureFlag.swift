@@ -45,7 +45,7 @@ public enum FeatureFlag: String {
     case onboardingHighlights
     case onboardingAddToDock
     case autofillSurveys
-    case autcompleteTabs
+    case autocompleteTabs
     case textZoom
     case adAttributionReporting
     case tabManagerMultiSelection
@@ -177,7 +177,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))

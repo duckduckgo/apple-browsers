@@ -228,7 +228,7 @@ final class TabViewControllerDaxDialogTests: XCTestCase {
 
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating, ContextualDaxDialogDisabling {
     var expectation: XCTestExpectation?
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
     private(set) var didCallSetTryVisitSiteMessageSeen = false
@@ -238,6 +238,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     private(set) var didCallEnableAddFavoriteFlow = false
     private(set) var didCallSetDaxDialogDismiss = false
     private(set) var didCallClearedBrowserData = false
+    private(set) var didCallDisableDaxDialogs = false
 
     var canStartFavoriteFlow = false
 
@@ -285,6 +286,10 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     }
 
     var privacyProPromotionDialogSeen: Bool = false
+
+    func disableContextualDaxDialogs() {
+        didCallDisableDaxDialogs = true
+    }
 }
 
 extension WKNavigation {

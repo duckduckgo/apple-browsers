@@ -18,7 +18,7 @@
 
 import Foundation
 
-extension Data {
+public extension Data {
 
     func utf8String() -> String? {
         return String(data: self, encoding: .utf8)

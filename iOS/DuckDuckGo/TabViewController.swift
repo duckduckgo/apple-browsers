@@ -215,7 +215,7 @@ class TabViewController: UIViewController {
     let syncService: DDGSyncing
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
-    private var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
+    var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
 
     public var url: URL? {
         willSet {
@@ -497,7 +497,6 @@ class TabViewController: UIViewController {
 
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -2627,6 +2626,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.printingUserScript.delegate = self
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
+        userScripts.contentScopeUserScript.delegate = self
 
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
@@ -2725,6 +2725,13 @@ extension TabViewController: PrintingUserScriptDelegate {
         controller.present(animated: true, completionHandler: nil)
     }
 
+}
+
+// MARK: - ContentScopeUserScriptDelegate
+extension TabViewController: ContentScopeUserScriptDelegate {
+    func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
+        privacyInfo?.addDebugFlag(debugFlag)
+    }
 }
 
 // MARK: - AutoconsentUserScriptDelegate

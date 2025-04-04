@@ -77,7 +77,9 @@ class WebsiteBreakageReportTests: XCTestCase {
             vpnOn: false,
             jsPerformance: nil,
             userRefreshCount: 0,
-            cookieConsentInfo: nil
+            cookieConsentInfo: nil,
+            debugFlags: "",
+            privacyExperiments: [:]
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)
@@ -126,7 +128,9 @@ class WebsiteBreakageReportTests: XCTestCase {
             vpnOn: false,
             jsPerformance: nil,
             userRefreshCount: 0,
-            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true)
+            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
+            debugFlags: "",
+            privacyExperiments: [:]
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)

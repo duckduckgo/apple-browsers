@@ -16,10 +16,30 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
+import Foundation
 
-struct ScoringService  {
+struct ScoredSuggestion {
+    enum Kind: Hashable {
+        case phrase
+        case website
+        case bookmark
+        case favorite
+        case historyEntry
+        case internalPage
+        case browserTab
+    }
+
+    var kind: Kind
+    var url: URL
+    var title: String
+    var visitCount: Int = 0
+    var failedToLoad: Bool = false
+    var score: Int = 0
+    var tabId: String?
+}
+
+struct ScoringService {
 
     /// Scores a suggestion based on the query and the suggestion's title and URL.
     ///
@@ -51,69 +71,80 @@ struct ScoringService  {
             if url.isRoot { score += 2000 }
         } else if lowercasedTitle.leadingBoundaryStartsWith(lowerQuery) {
             score += 200
+            // Prioritize root URLs most
             if url.isRoot { score += 2000 }
         } else if queryCount > 2 && domain.contains(lowerQuery) {
             score += 150
-        } else if queryCount > 2 && lowercasedTitle.contains(" \(lowerQuery)") { // Exact match from the begining of the word within string.
+        } else if queryCount > 2 && lowercasedTitle.contains(" \(lowerQuery)") {
+            // Exact match from the beginning of the word within string.
             score += 100
-        } else {
+        } else if queryTokens.count > 1 {
             // Tokenized matches
-            if queryTokens.count > 1 {
-                var matchesAllTokens = true
-                for token in queryTokens {
-                    // Match only from the begining of the word to avoid unintuitive matches.
-                    if !lowercasedTitle.leadingBoundaryStartsWith(token) && !lowercasedTitle.contains(" \(token)") && !nakedUrl.starts(with: token) {
-                        matchesAllTokens = false
-                        break
-                    }
+            var matchesAllTokens = true
+            for token in queryTokens {
+                // Match only from the beginning of the word to avoid unintuitive matches.
+                guard lowercasedTitle.leadingBoundaryStartsWith(token) || lowercasedTitle.contains(" \(token)") || nakedUrl.starts(with: token) else {
+                    matchesAllTokens = false
+                    break
                 }
+            }
 
-                if matchesAllTokens {
-                    // Score tokenized matches
-                    score += 10
+            if matchesAllTokens {
+                // Score tokenized matches
+                score += 10
 
-                    // Boost score if first token matches:
-                    if let firstToken = queryTokens.first { // nakedUrlString - high score boost
-                        if nakedUrl.starts(with: firstToken) {
-                            score += 70
-                        } else if lowercasedTitle.leadingBoundaryStartsWith(firstToken) { // begining of the title - moderate score boost
-                            score += 50
-                        }
-                    }
+                // Boost score if first token matches:
+                if nakedUrl.starts(with: queryTokens[0]) { // beginning of the domain - high score boost
+                    score += 70
+                } else if lowercasedTitle.leadingBoundaryStartsWith(queryTokens[0]) { // beginning of the title - moderate score boost
+                    score += 50
                 }
             }
         }
 
         if score > 0 {
-            // Second sort based on visitCount
-            score *= 1000
+            // If there are matches, add visitCount to prioritize more visited
+            score <<= 10 // Small optimization equivalent to '*= 1024'
             score += visitCount
         }
 
         return score
     }
 
-    static func score(bookmark: Bookmark, lowercasedQuery: String, queryTokens: [String]? = nil) -> Int {
-        guard let urlObject = URL(string: bookmark.url) else {
-            return 0
+    static func scored(lowercasedQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (Bookmark) -> ScoredSuggestion? {
+        { bookmark in
+            guard let url = URL(string: bookmark.url), !isUrlIgnored(url) else { return nil }
+            let score = score(title: bookmark.title, url: url, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+            guard score > 0 else { return nil }
+            return ScoredSuggestion(kind: bookmark.isFavorite ? .favorite : .bookmark, url: url, title: bookmark.title, score: score)
         }
-        return score(title: bookmark.title, url: urlObject, visitCount: 0, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
     }
 
-    static func score(historyEntry: HistorySuggestion, lowercasedQuery: String, queryTokens: [String]? = nil) -> Int {
-        return score(title: historyEntry.title ?? "",
-                     url: historyEntry.url,
-                     visitCount: historyEntry.numberOfVisits,
-                     lowercasedQuery: lowercasedQuery,
-                     queryTokens: queryTokens)
+    static func scored(lowercasedQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (HistorySuggestion) -> ScoredSuggestion? {
+        { historyEntry in
+            guard !isUrlIgnored(historyEntry.url) else { return nil }
+            let score = score(title: historyEntry.title ?? "", url: historyEntry.url, visitCount: historyEntry.numberOfVisits, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+            guard score > 0 else { return nil }
+            return ScoredSuggestion(kind: .historyEntry, url: historyEntry.url, title: historyEntry.title ?? "", visitCount: historyEntry.numberOfVisits, failedToLoad: historyEntry.failedToLoad, score: score)
+        }
     }
 
-    static func score(internalPage: InternalPage, lowercasedQuery: String, queryTokens: [String]? = nil) -> Int {
-        return score(title: internalPage.title, url: internalPage.url, visitCount: 0, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+    static func scored(lowercasedQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (InternalPage) -> ScoredSuggestion? {
+        { internalPage in
+            guard !isUrlIgnored(internalPage.url) else { return nil }
+            let score = score(title: internalPage.title, url: internalPage.url, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+            guard score > 0 else { return nil }
+            return ScoredSuggestion(kind: .internalPage, url: internalPage.url, title: internalPage.title, score: score)
+        }
     }
 
-    static func score(browserTab: BrowserTab, lowercasedQuery: String, queryTokens: [String]? = nil) -> Int {
-        return score(title: browserTab.title, url: browserTab.url, visitCount: 0, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+    static func scored(lowercasedQuery: String, queryTokens: [String]?, isUrlIgnored: @escaping (URL) -> Bool) -> (BrowserTab) -> ScoredSuggestion? {
+        { browserTab in
+            guard !isUrlIgnored(browserTab.url) else { return nil }
+            let score = score(title: browserTab.title, url: browserTab.url, lowercasedQuery: lowercasedQuery, queryTokens: queryTokens)
+            guard score > 0 else { return nil }
+            return ScoredSuggestion(kind: .browserTab, url: browserTab.url, title: browserTab.title, score: score, tabId: browserTab.tabId)
+        }
     }
 
 }

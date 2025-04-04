@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1743414937397,
+    "version": 1743758114945,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -175,9 +175,10 @@
             "hash": "527fd2e156c7669f001516ee2d3d7c0e"
         },
         "autocompleteTabs": {
-            "state": "disabled",
+            "state": "enabled",
             "exceptions": [],
-            "hash": "c292bb627849854515cebbded288ef5a"
+            "minSupportedVersion": "1.134.0",
+            "hash": "86c203133cbe1785c0cf1391e9c54af2"
         },
         "autoconsent": {
             "exceptions": [
@@ -6477,6 +6478,9 @@
                             },
                             {
                                 "percent": 50
+                            },
+                            {
+                                "percent": 100
                             }
                         ]
                     }
@@ -6486,7 +6490,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "5a3558c8b86793eee7e208ccf7025496"
+            "hash": "ae1614cbefacbd1adb82fd488c92347b"
         },
         "marketplaceAdPostback": {
             "state": "disabled",
@@ -11041,6 +11045,11 @@
             "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "windowsWaitlist": {
+            "exceptions": [],
+            "state": "disabled",
+            "hash": "728493ef7a1488e4781656d3f9db84aa"
+        },
+        "windowsWebViewPermissionsSavesInProfile": {
             "exceptions": [],
             "state": "disabled",
             "hash": "728493ef7a1488e4781656d3f9db84aa"

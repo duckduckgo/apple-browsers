@@ -3,11 +3,10 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Settings
 - tapOn: Done
-- waitFor:
+- extendedWaitUntil:
     visible:
       text: Download Missing Icons?
     timeout: 5000
-    optional: true
 - when: 
     visible:
         text: Download Missing Icons?

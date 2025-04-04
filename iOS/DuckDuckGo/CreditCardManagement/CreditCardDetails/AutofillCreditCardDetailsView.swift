@@ -139,6 +139,7 @@ struct AutofillCreditCardDetailsView: View {
                                          secure: true,
                                          keyboardType: .numberPad,
                                          inEditMode: viewModel.viewMode == .edit,
+                                         characterLimit: 4,
                                          selectedCell: $viewModel.selectedCell)
                     .accessibilityIdentifier("Field_SecurityCode")
                 } else {
@@ -148,6 +149,7 @@ struct AutofillCreditCardDetailsView: View {
                                                maskedString: .constant(viewModel.userVisibleCardSecurityCode),
                                                isMasked: $viewModel.isSecurityCodeHidden,
                                                keyboardType: .numberPad,
+                                               characterLimit: 4,
                                                selectedCell: $viewModel.selectedCell)
                     .accessibilityIdentifier("Field_SecurityCode")
                 }

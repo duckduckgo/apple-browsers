@@ -30,6 +30,7 @@ struct AutofillEditableMaskedCell: View {
     var autoCapitalizationType: UITextAutocapitalizationType = .none
     var disableAutoCorrection: Bool = true
     var keyboardType: UIKeyboardType = .default
+    var characterLimit: Int? = nil
     @Binding var selectedCell: UUID?
     
     @FocusState private var isFieldFocused: Bool
@@ -44,6 +45,11 @@ struct AutofillEditableMaskedCell: View {
             
             HStack {
                 TextField(placeholderText, text: isMasked ? $maskedString : $unmaskedString)
+                    .onChange(of: unmaskedString) { _ in
+                        if let limit = characterLimit, unmaskedString.count > limit {
+                            unmaskedString = String(unmaskedString.prefix(limit))
+                        }
+                    }
                     .autocapitalization(autoCapitalizationType)
                     .disableAutocorrection(disableAutoCorrection)
                     .keyboardType(keyboardType)

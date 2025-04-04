@@ -30,6 +30,7 @@ struct AutofillEditableCell: View {
     var keyboardType: UIKeyboardType = .default
     var id: UUID = UUID()
     let inEditMode: Bool
+    var characterLimit: Int? = nil
     @Binding var selectedCell: UUID?
     
     @FocusState private var isFieldFocused: Bool
@@ -43,6 +44,11 @@ struct AutofillEditableCell: View {
             HStack {
                 if secure && inEditMode {
                     SecureField(placeholderText, text: $text)
+                        .onChange(of: text) { _ in
+                            if let limit = characterLimit, text.count > limit {
+                                text = String(text.prefix(limit))
+                            }
+                        }
                         .font(.system(.footnote, design: .monospaced))
                         .foregroundStyle(Color(designSystemColor: .textPrimary))
                 } else {
@@ -51,7 +57,8 @@ struct AutofillEditableCell: View {
                                    autoCapitalizationType: autoCapitalizationType,
                                    disableAutoCorrection: disableAutoCorrection,
                                    keyboardType: keyboardType,
-                                   secure: secure)
+                                   secure: secure,
+                                   characterLimit: characterLimit)
                 }
             }
         }
@@ -63,6 +70,6 @@ struct AutofillEditableCell: View {
                 selectedCell = id
             }
         }
-
+        
     }
 }

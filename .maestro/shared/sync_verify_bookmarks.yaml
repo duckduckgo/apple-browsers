@@ -3,10 +3,11 @@ appId: com.duckduckgo.mobile.ios
 
 - tapOn: Settings
 - tapOn: Done
-- while:
+- repeat:
+  while:
     visible:
       text: Download Missing Icons?
-    timeout: 5000
+  timeout: 5000
   commands:
     - tapOn: Not Now
 - tapOn: Bookmarks

@@ -1201,6 +1201,7 @@ class MainViewController: UIViewController {
         
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
+        themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
     }
 
@@ -1594,7 +1595,6 @@ class MainViewController: UIViewController {
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
         currentTab?.dismiss()
-        themeColorManager.updateThemeColor()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.selectTab(existing)
@@ -1605,6 +1605,7 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.model)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
+        themeColorManager.updateThemeColor()
     }
     
     func updateFindInPage() {
@@ -2548,7 +2549,6 @@ extension MainViewController: TabDelegate {
         }
         tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.model)
-        themeColorManager.updateThemeColor()
         // note: model in swipeTabsCoordinator doesn't need to be updated here
         // https://app.asana.com/0/414235014887631/1206847376910045/f
     }

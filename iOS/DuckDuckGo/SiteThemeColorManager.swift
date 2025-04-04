@@ -25,51 +25,86 @@ final class SiteThemeColorManager {
     private let themeManager: ThemeManager
     private let currentTabViewController: () -> TabViewController?
 
-    private let defaultColor: UIColor = UIColor(designSystemColor: .background)
-    private var currentSiteThemeColor: UIColor?
+    private weak var tabViewController: TabViewController?
+    private var colorCache: [String: UIColor] = [:]
+    private var themeColorObservation: NSKeyValueObservation?
 
-    init(viewCoordinator: MainViewCoordinator,
-         currentTabViewController: @autoclosure @escaping () -> TabViewController?,
-         themeManager: ThemeManager = ThemeManager.shared) {
+
+    init(
+        viewCoordinator: MainViewCoordinator,
+        currentTabViewController: @autoclosure @escaping () -> TabViewController?,
+        themeManager: ThemeManager = ThemeManager.shared
+    ) {
         self.viewCoordinator = viewCoordinator
         self.themeManager = themeManager
         self.currentTabViewController = currentTabViewController
     }
 
+    deinit {
+        themeColorObservation?.invalidate()
+    }
+
+    // MARK: - Public Methods
+
+    func attach(to tabViewController: TabViewController) {
+        self.tabViewController = tabViewController
+        startObservingThemeColor()
+    }
+
     func updateThemeColor() {
-        guard ExperimentalThemingManager().isExperimentalThemingEnabled else { return }
-        guard viewCoordinator.suggestionTrayContainer.isHidden else {
+        guard let host = currentTabViewController()?.url?.host,
+              let cachedColor = colorCache[host] else {
+            resetThemeColor()
+            return
+        }
+        updateThemeColor(cachedColor)
+    }
+
+    func resetThemeColor() {
+        applyThemeColor(UIColor(designSystemColor: .background))
+    }
+
+    // MARK: - Private Methods
+
+    private func startObservingThemeColor() {
+        themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.new]) { [weak self] webView, change in
+            guard let self = self,
+                  self.isCurrentTab(),
+                  let newColor = change.newValue as? UIColor,
+                  let host = webView.url?.host else {
+                self?.resetThemeColor()
+                return
+            }
+
+            self.colorCache[host] = newColor
+            self.updateThemeColor(newColor)
+        }
+    }
+
+    private func isCurrentTab() -> Bool {
+        return tabViewController?.tabModel == currentTabViewController()?.tabModel
+    }
+
+    private func updateThemeColor(_ color: UIColor) {
+        guard ExperimentalThemingManager().isExperimentalThemingEnabled,
+              viewCoordinator.suggestionTrayContainer.isHidden else {
             resetThemeColor()
             return
         }
 
-        guard let siteThemeColor = currentTabViewController()?.webView?.themeColor else {
-            resetThemeColor()
-            return
-        }
-
-        guard currentSiteThemeColor != siteThemeColor else { return }
-        currentSiteThemeColor = siteThemeColor
-
-        let adjustedColor = adjustColor(siteThemeColor)
-        applyThemeColor(adjustedColor)
+        applyThemeColor(adjustColor(color))
     }
 
     private func adjustColor(_ color: UIColor) -> UIColor {
-        if themeManager.currentInterfaceStyle == .light {
-            return color.adjustBrightness(by: 0.04)
-        }
-        return color.adjustBrightness(by: -0.04)
+        let brightnessAdjustment = themeManager.currentInterfaceStyle == .light ? 0.04 : -0.04
+        return color.adjustBrightness(by: brightnessAdjustment)
     }
 
     private func applyThemeColor(_ color: UIColor) {
         viewCoordinator.statusBackground.backgroundColor = color
-        currentTabViewController()?.pullToRefreshViewAdapter?.backgroundColor = color
-        currentTabViewController()?.webView?.underPageBackgroundColor = color
-    }
-
-    private func resetThemeColor() {
-        applyThemeColor(defaultColor)
+        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = color
+        tabViewController?.webView?.underPageBackgroundColor = color
     }
 
 }
+

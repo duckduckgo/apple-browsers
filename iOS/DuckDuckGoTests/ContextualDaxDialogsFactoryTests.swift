@@ -29,6 +29,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var settingsMock: ContextualOnboardingSettingsMock!
     private var pixelReporterMock: OnboardingPixelReporterMock!
     private var onboardingManagerMock: OnboardingManagerMock!
+    private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
     private var window: UIWindow!
 
     override func setUpWithError() throws {
@@ -38,8 +39,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         settingsMock = ContextualOnboardingSettingsMock()
         pixelReporterMock = OnboardingPixelReporterMock()
         onboardingManagerMock = OnboardingManagerMock()
+        contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
         sut = ExperimentContextualDaxDialogsFactory(
-            contextualOnboardingLogic: ContextualOnboardingLogicMock(),
+            contextualOnboardingLogic: contextualOnboardingLogicMock,
             contextualOnboardingSettings: settingsMock,
             contextualOnboardingPixelReporter: pixelReporterMock,
             onboardingManager: onboardingManagerMock
@@ -55,6 +57,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         settingsMock = nil
         pixelReporterMock = nil
         onboardingManagerMock = nil
+        contextualOnboardingLogicMock = nil
         sut = nil
         try super.tearDownWithError()
     }
@@ -402,6 +405,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: result))
             XCTAssertFalse(pixelReporterMock.didCallMeasureTrackersDialogDismissButtonTapped)
             XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
+            XCTAssertFalse(contextualOnboardingLogicMock.didCallSetFireEducationMessageSeen)
 
             // WHEN
             view.onManualDismiss()
@@ -409,6 +413,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             // THEN
             XCTAssertTrue(pixelReporterMock.didCallMeasureTrackersDialogDismissButtonTapped)
             XCTAssertTrue(delegate.didCallDidTapDismissContextualOnboardingAction)
+            XCTAssertTrue(contextualOnboardingLogicMock.didCallSetFireEducationMessageSeen)
         }
     }
 

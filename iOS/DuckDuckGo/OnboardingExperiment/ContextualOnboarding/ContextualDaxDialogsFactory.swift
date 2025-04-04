@@ -199,6 +199,8 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let onManualDismiss: () -> Void = { [weak delegate, weak self] in
             // Stop the privacy icon shield when dismissing the fire dialog
             ViewHighlighter.hideAll()
+            // Set Fire dialog seen. In this way when we open a new tab we show the final dialog.
+            self?.contextualOnboardingLogic.setFireEducationMessageSeen()
             self?.contextualOnboardingPixelReporter.measureTrackersDialogDismissButtonTapped()
             delegate?.didTapDismissContextualOnboardingAction()
         }

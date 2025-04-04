@@ -149,22 +149,30 @@ extension YoutubeOverlayUserScript {
         switch pixelName {
         case "play.use":
             Pixel.fire(pixel: Pixel.Event.duckPlayerViewFromYoutubeViaMainOverlay, debounce: 2)
-            UniquePixel.fire(pixel: Pixel.Event.duckPlayerViewFromYoutubeViaMainOverlayUnique)
+            if (!duckPlayerStorage.userInteractedWithDuckPlayer) {
+                UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeChoiceUnique, withAdditionalParameters: ["choice": "use"])
+            }
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
         case "play.do_not_use":
             Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeWatchHere, debounce: 2)
-            UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeWatchHereUnique)
+            if (!duckPlayerStorage.userInteractedWithDuckPlayer) {
+                UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeChoiceUnique, withAdditionalParameters: ["choice": "do_not_use"])
+            }
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
-        case "play.do_not_use.thumbnail":
-            Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeThumbnailPlay, debounce: 2)
-            UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeThumbnailPlayUnique)
+        case "play.do_not_use.dismiss":
+            Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeDismissPlay, debounce: 2)
+            if (!duckPlayerStorage.userInteractedWithDuckPlayer) {
+                UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeChoiceUnique, withAdditionalParameters: ["choice": "dismiss"])
+            }
             duckPlayerStorage.userInteractedWithDuckPlayer = true
 
         case "overlay":
             Pixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeImpressions, debounce: 2)
-            UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeImpressionsUnique)
+            if (!duckPlayerStorage.userInteractedWithDuckPlayer) {
+                UniquePixel.fire(pixel: Pixel.Event.duckPlayerOverlayYoutubeImpressionsUnique)
+            }
 
         default:
             break

@@ -137,12 +137,20 @@ public final class PreferencesSubscriptionModel: ObservableObject {
         }
 
         subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { _ in
-            Task { [weak self] in
+            Logger.general.debug("SubscriptionDidChange notification received")
+            guard self.fetchSubscriptionDetailsTask == nil else { return }
+            self.fetchSubscriptionDetailsTask = Task { [weak self] in
+                defer {
+                    self?.fetchSubscriptionDetailsTask = nil
+                }
+
+                await self?.fetchEmailAndRemoteEntitlements()
                 await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
             }
         }
 
         entitlementsObserver = NotificationCenter.default.addObserver(forName: .entitlementsDidChange, object: nil, queue: .main) { [weak self] _ in
+            Logger.general.debug("EntitlementsDidChange notification received")
             Task { [weak self] in
                 await self?.updateAvailableSubscriptionFeatures()
             }

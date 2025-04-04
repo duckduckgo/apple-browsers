@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1742842782684,
+    "version": 1743414937397,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -533,7 +533,16 @@
                     "domain": "hobbies.co.uk"
                 },
                 {
+                    "domain": "fairlawns.co.uk"
+                },
+                {
                     "domain": "stamma.org"
+                },
+                {
+                    "domain": "nature.scot"
+                },
+                {
+                    "domain": "royalmail.com"
                 },
                 {
                     "domain": "marvel.com"
@@ -703,7 +712,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "4ef31d671526474e4ba8a912b9d71806"
+            "hash": "98515c03002cb086a119d6f09fabe627"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1613,7 +1622,7 @@
             ],
             "features": {
                 "tdsNextExperimentBaseline": {
-                    "state": "enabled",
+                    "state": "disabled",
                     "rollout": {
                         "steps": [
                             {
@@ -1637,7 +1646,7 @@
                     ]
                 }
             },
-            "hash": "e9af0e2625611aea5e869fc4faae65de"
+            "hash": "5fc4eb8ffcdc72d26ec601f7354ebcf6"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1922,7 +1931,8 @@
                                 "#video-title-link",
                                 "#video-title",
                                 "video.video-stream.html5-main-video"
-                            ]
+                            ],
+                            "drawerContainer": "body"
                         },
                         "thumbnailOverlays": {
                             "state": "enabled"
@@ -1932,6 +1942,9 @@
                         },
                         "videoOverlays": {
                             "state": "enabled"
+                        },
+                        "videoDrawer": {
+                            "state": "disabled"
                         }
                     },
                     "serpProxy": {
@@ -1972,7 +1985,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "53f280df4390ebae40388bc234648cde"
+            "hash": "1ee8bbdade4dae5c325ea489c35fe047"
         },
         "elementHiding": {
             "exceptions": [
@@ -2469,6 +2482,10 @@
                     {
                         "selector": ".clsy-c-advsection",
                         "type": "hide-empty"
+                    },
+                    {
+                        "selector": "[class^='DisplayAdvert']",
+                        "type": "closest-empty"
                     }
                 ],
                 "styleTagExceptions": [
@@ -3948,20 +3965,6 @@
                             {
                                 "selector": ".video-container",
                                 "type": "hide"
-                            },
-                            {
-                                "selector": ".top-ad-recirc",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "height",
-                                        "value": "auto"
-                                    },
-                                    {
-                                        "property": "min-height",
-                                        "value": "auto"
-                                    }
-                                ]
                             }
                         ]
                     },
@@ -4090,6 +4093,15 @@
                         ]
                     },
                     {
+                        "domain": "kabutan.jp",
+                        "rules": [
+                            {
+                                "selector": "[id^=div-gpt-ad-]",
+                                "type": "closest-empty"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "kbb.com",
                         "rules": [
                             {
@@ -4131,10 +4143,6 @@
                         "domain": "kutv.com",
                         "rules": [
                             {
-                                "selector": "[class*='DisplayAdvert']",
-                                "type": "hide-empty"
-                            },
-                            {
                                 "selector": "[class*='adBeforeContent']",
                                 "type": "hide-empty"
                             }
@@ -4149,6 +4157,15 @@
                             },
                             {
                                 "selector": "[class*='styles__ad']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "lemonde.fr",
+                        "rules": [
+                            {
+                                "selector": ".dfp__container",
                                 "type": "hide-empty"
                             }
                         ]
@@ -4300,6 +4317,19 @@
                         ]
                     },
                     {
+                        "domain": "minkabu.jp",
+                        "rules": [
+                            {
+                                "selector": ".ad",
+                                "type": "closest-empty"
+                            },
+                            {
+                                "selector": "div#side_navi > div:has(> div > div.ad)",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "mirror.co.uk",
                         "rules": [
                             {
@@ -4420,6 +4450,19 @@
                             },
                             {
                                 "selector": "[id*='native_index_desktop_']",
+                                "type": "hide-empty"
+                            }
+                        ]
+                    },
+                    {
+                        "domain": "news.de",
+                        "rules": [
+                            {
+                                "selector": "[class*='-ad']",
+                                "type": "hide-empty"
+                            },
+                            {
+                                "selector": "div[id^='news_content_']",
                                 "type": "hide-empty"
                             }
                         ]
@@ -5757,7 +5800,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "732968a0480b0c373a6ba4dfe564eede"
+            "hash": "2cc1eddf45931a5de97d551d859c3d39"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6428,6 +6471,12 @@
                         "steps": [
                             {
                                 "percent": 10
+                            },
+                            {
+                                "percent": 25
+                            },
+                            {
+                                "percent": 50
                             }
                         ]
                     }
@@ -6437,7 +6486,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "aa323fc9ac4bdee298d8f467782219f0"
+            "hash": "5a3558c8b86793eee7e208ccf7025496"
         },
         "marketplaceAdPostback": {
             "state": "disabled",
@@ -6453,10 +6502,21 @@
             "exceptions": [],
             "settings": {
                 "aiChat": "disabled",
-                "domains": []
+                "domains": [
+                    {
+                        "domain": "duckduckgo.com",
+                        "patchSettings": [
+                            {
+                                "op": "replace",
+                                "path": "/aiChat",
+                                "value": "enabled"
+                            }
+                        ]
+                    }
+                ]
             },
-            "state": "disabled",
-            "hash": "cec85d8cf7db4b2abcbc450c66dd63fc"
+            "state": "enabled",
+            "hash": "410b8ca0b32e1ca5801cae5f085cbfd4"
         },
         "navigatorInterface": {
             "exceptions": [

@@ -136,7 +136,7 @@ jobs:
         fi
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Archive and notarize the app
       id: archive

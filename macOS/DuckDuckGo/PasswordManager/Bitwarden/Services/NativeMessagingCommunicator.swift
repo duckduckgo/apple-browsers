@@ -80,7 +80,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
         process.terminationHandler = processDidTerminate(_:)
 
         try process.run()
-        Logger.webExtensions.log("NativeMessagingCommunicator: Proxy process running")
+        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process running")
 
         self.process = ProcessWrapper(process: process, readingHandle: outHandle, writingHandle: inputHandle)
     }
@@ -91,7 +91,7 @@ final class NativeMessagingCommunicator: NSObject, NativeMessagingCommunication 
     }
 
     private func processDidTerminate(_ process: Process) {
-        Logger.webExtensions.log("NativeMessagingCommunicator: Proxy process terminated")
+        Logger.bitWarden.log("NativeMessagingCommunicator: Proxy process terminated")
 
         if let runningProcess = self.process?.process {
             if process != runningProcess {

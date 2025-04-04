@@ -71,6 +71,20 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
+        // MARK: KeyValueFiles Store validation
+        case keyValueFileStoreSupportDirAccessError
+        case keyValueFileStoreInitError
+        case keyValueFileStoreFirstAccess(success: Bool)
+        case keyValueFileStoreSecondAccess(firstAccessStatus: Bool, secondAccessStatus: Bool)
+
+        case keyValueFileStoreAsyncDirAccessError
+        case keyValueFileStoreAsyncInitError
+        case keyValueFileStoreAsyncFirstAccess(success: Bool)
+
+        case keyValueFileStoreRetryDirAccessError
+        case keyValueFileStoreRetryInitError
+        case keyValueFileStoreRetryAccess(success: Bool, delay: Int)
+
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
         case tabSwitcherEditMenuSelectTabs
@@ -895,9 +909,14 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
-        case privacyProDeadTokenDetected
-        case authV1MigrationFailed
-        case authV1MigrationSucceeded
+        // AUth V2
+        case privacyProInvalidRefreshTokenDetected
+        case privacyProInvalidRefreshTokenSignedOut
+        case privacyProInvalidRefreshTokenRecovered
+        case privacyProAuthV2MigrationStarted
+        case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationSucceeded
+        case privacyProAuthV2GetTokensError
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1125,7 +1144,20 @@ extension Pixel.Event {
         case .dashboardProtectionAllowlistRemove: return "mp_wlr"
             
         case .privacyDashboardReportBrokenSite: return "mp_rb"
-            
+
+        case .keyValueFileStoreSupportDirAccessError: return "m_test_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreInitError: return "m_test_key_value_file_store_init_error"
+        case .keyValueFileStoreFirstAccess(let success): return "m_test_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
+        case .keyValueFileStoreSecondAccess(let firstAccessStatus, let secondAccessStatus): return "m_test_key_value_file_store_first_acccess_\(firstAccessStatus ? "success" : "failed")_second_acccess_\(secondAccessStatus ? "success" : "failed")"
+
+        case .keyValueFileStoreAsyncDirAccessError: return "m_test_async_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreAsyncInitError: return "m_test_async_key_value_file_store_init_error"
+        case .keyValueFileStoreAsyncFirstAccess(let success): return "m_test_async_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
+
+        case .keyValueFileStoreRetryDirAccessError: return "m_test_retry_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreRetryInitError: return "m_test_retry_key_value_file_store_init_error"
+        case .keyValueFileStoreRetryAccess(let success, let delay): return "m_test_retry_key_value_file_store_acccess_\(delay)_\(success ? "success" : "failed")"
+
         case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -1915,9 +1947,14 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
+        // AUth V2
+        case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
+        case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 

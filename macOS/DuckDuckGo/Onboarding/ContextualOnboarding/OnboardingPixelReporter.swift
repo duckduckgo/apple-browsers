@@ -36,6 +36,12 @@ protocol OnboardingDialogsReporting: AnyObject {
     func measureFireButtonSkipped()
     func measureLastDialogShown()
     func measureFireButtonTryIt()
+    func measureTrySearchDismissed()
+    func measureSearchResultDismissed()
+    func measureTryVisitSiteDismissed()
+    func measureTrackersBlockedDismissed()
+    func measureTryFireButtonDismissed()
+    func measureFinalDismissed()
 }
 
 protocol OnboardingFireReporting: AnyObject {
@@ -101,6 +107,30 @@ extension OnboardingPixelReporter: OnboardingFireReporting {
 }
 
 extension OnboardingPixelReporter: OnboardingDialogsReporting {
+    func measureTrySearchDismissed() {
+        fire(ContextualOnboardingPixel.trySearchDismissed, .uniqueByName)
+    }
+    
+    func measureSearchResultDismissed() {
+        fire(ContextualOnboardingPixel.searchResultDismissed, .uniqueByName)
+    }
+    
+    func measureTryVisitSiteDismissed() {
+        fire(ContextualOnboardingPixel.tryVisitSiteDismissed, .uniqueByName)
+    }
+    
+    func measureTrackersBlockedDismissed() {
+        fire(ContextualOnboardingPixel.trackersBlockedDismissed, .uniqueByName)
+    }
+    
+    func measureTryFireButtonDismissed() {
+        fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
+    }
+    
+    func measureFinalDismissed() {
+        fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
+    }
+    
     func measureLastDialogShown() {
         fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
     }

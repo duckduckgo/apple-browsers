@@ -187,6 +187,8 @@ struct AutofillCreditCardDetailsView: View {
 }
 
 private struct EditableCreditCardNumberCell: View {
+    @Environment(\.sizeCategory) private var sizeCategory
+    
     @State private var id = UUID()
     let title: String
     let placeholderText: String
@@ -212,7 +214,7 @@ private struct EditableCreditCardNumberCell: View {
                     isCardValid: $isCardValid,
                     isEditing: $closeButtonVisible,
                     selectedCell: $selectedCell)
-                .frame(height: 20)
+                .frame(height:  heightForSizeCategory(sizeCategory))
                 
                 Spacer()
                 
@@ -234,6 +236,18 @@ private struct EditableCreditCardNumberCell: View {
         .listRowInsets(Constants.insets)
     }
     
+    private func heightForSizeCategory(_ category: ContentSizeCategory) -> CGFloat {
+        print(category)
+        switch category {
+        case .accessibilityMedium, .extraExtraLarge, .extraExtraExtraLarge:
+            return 24
+        case .accessibilityLarge, .accessibilityExtraLarge, .accessibilityExtraExtraLarge, .accessibilityExtraExtraExtraLarge:
+            return 40
+        default:
+            return 20
+        }
+    }
+    
     private struct CreditCardNumberField: UIViewRepresentable {
         var id: UUID
         var placeholder: String?
@@ -244,7 +258,8 @@ private struct EditableCreditCardNumberCell: View {
         @Binding var selectedCell: UUID?
         
         func makeUIView(context: Context) -> UITextField {
-            let textField = UITextField()
+            let textField = UITextField(frame: .zero)
+            textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             textField.keyboardType = .numberPad
             textField.placeholder = placeholder
             textField.delegate = context.coordinator

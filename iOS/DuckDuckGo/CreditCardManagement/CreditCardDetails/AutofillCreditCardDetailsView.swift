@@ -29,6 +29,8 @@ struct AutofillCreditCardDetailsView: View {
     var body: some View {
         if viewModel.authenticationRequired {
             LockScreenView()
+                .frame(maxHeight: .infinity)
+                .ignoresSafeArea()
         } else {
             list
         }
@@ -237,7 +239,6 @@ private struct EditableCreditCardNumberCell: View {
     }
     
     private func heightForSizeCategory(_ category: ContentSizeCategory) -> CGFloat {
-        print(category)
         switch category {
         case .accessibilityMedium, .extraExtraLarge, .extraExtraExtraLarge:
             return 24
@@ -263,6 +264,7 @@ private struct EditableCreditCardNumberCell: View {
             textField.keyboardType = .numberPad
             textField.placeholder = placeholder
             textField.delegate = context.coordinator
+            textField.pasteDelegate = context.coordinator
             textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldDidChange), for: .editingChanged)
             textField.textColor = UIColor(designSystemColor: .textPrimary)
             textField.font = .daxBodyRegular()

@@ -29,12 +29,9 @@ final class SiteThemeColorManager {
     private var colorCache: [String: UIColor] = [:]
     private var themeColorObservation: NSKeyValueObservation?
 
-
-    init(
-        viewCoordinator: MainViewCoordinator,
+    init(viewCoordinator: MainViewCoordinator,
         currentTabViewController: @autoclosure @escaping () -> TabViewController?,
-        themeManager: ThemeManager = ThemeManager.shared
-    ) {
+        themeManager: ThemeManager = ThemeManager.shared) {
         self.viewCoordinator = viewCoordinator
         self.themeManager = themeManager
         self.currentTabViewController = currentTabViewController
@@ -68,30 +65,29 @@ final class SiteThemeColorManager {
 
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.new]) { [weak self] webView, change in
-            guard let self = self,
-                  self.isCurrentTab(),
+            guard let self,
                   let newColor = change.newValue as? UIColor,
                   let host = webView.url?.host else {
                 self?.resetThemeColor()
                 return
             }
 
-            self.colorCache[host] = newColor
-            self.updateThemeColor(newColor)
+            colorCache[host] = newColor
+            if isCurrentTab {
+                updateThemeColor(newColor)
+            }
         }
     }
 
-    private func isCurrentTab() -> Bool {
-        return tabViewController?.tabModel == currentTabViewController()?.tabModel
+    private var isCurrentTab: Bool {
+        tabViewController?.tabModel == currentTabViewController()?.tabModel
     }
 
     private func updateThemeColor(_ color: UIColor) {
-        guard ExperimentalThemingManager().isExperimentalThemingEnabled,
-              viewCoordinator.suggestionTrayContainer.isHidden else {
+        guard viewCoordinator.suggestionTrayContainer.isHidden else {
             resetThemeColor()
             return
         }
-
         applyThemeColor(adjustColor(color))
     }
 
@@ -101,10 +97,10 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor) {
+        guard ExperimentalThemingManager().isExperimentalThemingEnabled else { return }
         viewCoordinator.statusBackground.backgroundColor = color
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = color
         tabViewController?.webView?.underPageBackgroundColor = color
     }
 
 }
-

@@ -34,9 +34,10 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
+            assertionFailure("PixelKit not set up")
+            return nil
         }
         let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
@@ -76,8 +77,14 @@ public class DataBrokerProtectionAgentManagerProvider {
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
 
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
-            fatalError("Failed to make secure storage vault")
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch let error {
+            assertionFailure("Failed to make secure storage vault")
+            pixelHandler.fire(.backgroundAgentSetUpFailedSecureVaultInitFailed(error: error))
+            return nil
         }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)

@@ -31,17 +31,17 @@ protocol DataBrokerProtectionFeatureDisabling {
 
 struct DataBrokerProtectionFeatureDisabler: DataBrokerProtectionFeatureDisabling {
     private let loginItemInterface: DataBrokerProtectionLoginItemInterface
-    private let dataManager: InMemoryDataCacheDelegate
+    private let dataManager: InMemoryDataCacheDelegate?
 
     init(loginItemInterface: DataBrokerProtectionLoginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface,
-         dataManager: InMemoryDataCacheDelegate = DataBrokerProtectionManager.shared.dataManager) {
+         dataManager: InMemoryDataCacheDelegate? = DataBrokerProtectionManager.shared.dataManager) {
         self.dataManager = dataManager
         self.loginItemInterface = loginItemInterface
     }
 
     func disableAndDelete() {
         do {
-            try dataManager.removeAllData()
+            try dataManager?.removeAllData()
             // the dataManagers delegate handles login item disabling
         } catch {
             Logger.dataBrokerProtection.error("DataBrokerProtectionFeatureDisabler error: disableAndDelete, error: \(error.localizedDescription, privacy: .public)")

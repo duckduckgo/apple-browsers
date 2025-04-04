@@ -83,7 +83,7 @@ final class PullToRefreshViewAdapter: NSObject {
     var backgroundColor: UIColor? {
         didSet {
             fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
-            refreshControl.tintColor = .red
+            refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
         }
     }
 

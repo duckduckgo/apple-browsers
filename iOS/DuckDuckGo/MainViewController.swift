@@ -190,7 +190,9 @@ class MainViewController: UIViewController {
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     private lazy var themeColorManager: SiteThemeColorManager = {
-        SiteThemeColorManager(viewCoordinator: viewCoordinator, currentTabViewController: { [weak self] in self?.currentTab }())
+        SiteThemeColorManager(viewCoordinator: viewCoordinator,
+                              currentTabViewController: { [weak self] in self?.currentTab }(),
+                              appSettings: appSettings)
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {

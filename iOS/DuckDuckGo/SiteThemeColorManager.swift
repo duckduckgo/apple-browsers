@@ -23,6 +23,7 @@ final class SiteThemeColorManager {
 
     private let viewCoordinator: MainViewCoordinator
     private let themeManager: ThemeManager
+    private let appSettings: AppSettings
     private let currentTabViewController: () -> TabViewController?
 
     private weak var tabViewController: TabViewController?
@@ -31,8 +32,10 @@ final class SiteThemeColorManager {
 
     init(viewCoordinator: MainViewCoordinator,
          currentTabViewController: @autoclosure @escaping () -> TabViewController?,
+         appSettings: AppSettings,
          themeManager: ThemeManager = ThemeManager.shared) {
         self.viewCoordinator = viewCoordinator
+        self.appSettings = appSettings
         self.themeManager = themeManager
         self.currentTabViewController = currentTabViewController
     }
@@ -98,7 +101,12 @@ final class SiteThemeColorManager {
 
     private func applyThemeColor(_ color: UIColor) {
         guard ExperimentalThemingManager().isExperimentalThemingEnabled else { return }
-        viewCoordinator.statusBackground.backgroundColor = color
+        // We do not support top address bar position in this 1st iteration
+        if appSettings.currentAddressBarPosition == .bottom {
+            viewCoordinator.statusBackground.backgroundColor = color
+        } else {
+            viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .background)
+        }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = color
         tabViewController?.webView?.underPageBackgroundColor = color
     }

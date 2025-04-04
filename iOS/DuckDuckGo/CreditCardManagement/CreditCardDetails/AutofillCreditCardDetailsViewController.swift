@@ -20,6 +20,7 @@
 import UIKit
 import BrowserServicesKit
 import Combine
+import Core
 import SwiftUI
 
 protocol AutofillCreditCardDetailsViewControllerDelegate: AnyObject {
@@ -28,12 +29,12 @@ protocol AutofillCreditCardDetailsViewControllerDelegate: AnyObject {
 }
 
 final class AutofillCreditCardDetailsViewController: UIViewController {
-
+    
     weak var delegate: AutofillCreditCardDetailsViewControllerDelegate?
-
+    
     private let viewModel: AutofillCreditCardDetailsViewModel
     private var cancellables: Set<AnyCancellable> = []
-
+    
     private lazy var saveBarButtonItem: UIBarButtonItem = {
         let barButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(save))
         let attributes = [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .headline)]
@@ -41,7 +42,7 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
         barButtonItem.setTitleTextAttributes(attributes, for: [.disabled])
         return barButtonItem
     }()
-
+    
     private lazy var editBarButtonItem: UIBarButtonItem = {
         let barButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(toggleEditMode))
         let attributes = [NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .headline)]
@@ -49,8 +50,8 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
         return barButtonItem
     }()
     
-    init(secureVault: (any AutofillSecureVault)? = nil, card: SecureVaultModels.CreditCard? = nil) {
-        self.viewModel = AutofillCreditCardDetailsViewModel(secureVault: secureVault, creditCard: card)
+    init(authenticator: AutofillLoginListAuthenticator, secureVault: (any AutofillSecureVault)? = nil, card: SecureVaultModels.CreditCard? = nil) {
+        self.viewModel = AutofillCreditCardDetailsViewModel(authenticator: authenticator, secureVault: secureVault, creditCard: card)
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -61,15 +62,29 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupView()
+        setupObservers()
         setupCancellables()
         setupNavigationBar()
     }
     
+    private func setupObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActiveCallback), name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActiveCallback), name: UIApplication.willResignActiveNotification, object: nil)
+    }
+    
+    @objc private func appDidBecomeActiveCallback() {
+        authenticate()
+    }
+    
+    @objc private func appWillResignActiveCallback() {
+        viewModel.lockUI()
+    }
+    
     private func setupView() {
         viewModel.delegate = self
-
+        
         let controller = UIHostingController(rootView: AutofillCreditCardDetailsView(viewModel: viewModel))
         controller.view.backgroundColor = .clear
         installChildViewController(controller)
@@ -77,15 +92,21 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
     
     private func setupNavigationBar() {
         title = viewModel.navigationTitle
-        switch viewModel.viewMode {
-        case .edit, .new:
-            saveBarButtonItem.isEnabled = viewModel.canSave
-            navigationItem.rightBarButtonItem = saveBarButtonItem
-            navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
-
-        case .view:
-            navigationItem.rightBarButtonItem = editBarButtonItem
+        
+        if viewModel.authenticationRequired {
+            navigationItem.rightBarButtonItem = nil
             navigationItem.leftBarButtonItem = nil
+        } else {
+            switch viewModel.viewMode {
+            case .edit, .new:
+                saveBarButtonItem.isEnabled = viewModel.canSave
+                navigationItem.rightBarButtonItem = saveBarButtonItem
+                navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
+                
+            case .view:
+                navigationItem.rightBarButtonItem = editBarButtonItem
+                navigationItem.leftBarButtonItem = nil
+            }
         }
     }
     
@@ -103,13 +124,20 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
             viewModel.$cardSecurityCode,
             viewModel.$cardholderName,
             viewModel.$cardTitle)
+        .receive(on: DispatchQueue.main)
+        .sink { [weak self] _ in
+            self?.setupNavigationBar()
+        }
+        .store(in: &cancellables)
+        
+        viewModel.$authenticationRequired
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.setupNavigationBar()
             }
             .store(in: &cancellables)
     }
-
+    
     @objc private func toggleEditMode() {
         viewModel.toggleEditMode()
     }
@@ -123,6 +151,16 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
             dismiss(animated: true)
         } else {
             toggleEditMode()
+        }
+    }
+    
+    private func authenticate() {
+        viewModel.authenticate {[weak self] error in
+            guard let self = self else { return }
+            
+            if error != nil {
+                dismiss(animated: true)
+            }
         }
     }
 }
@@ -143,7 +181,7 @@ extension AutofillCreditCardDetailsViewController: AutofillCreditCardDetailsView
     func autofillCreditCardDetailsViewModelDelete(card: SecureVaultModels.CreditCard) {
         delegate?.autofillCreditCardDetailsViewControllerDelete(card: card)
         navigationController?.popViewController(animated: true)
-
+        
     }
     
     func autofillCreditCardDetailsViewModelDismiss() {

@@ -370,11 +370,20 @@
 /* Title for view displayed when autofill has no payment methods saved */
 "autofill.creditcard.empty-view.title" = "No payment methods saved yet";
 
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Unlock device to access payment methods";
+
 /* Credit card row label for credit card expiry date */
 "autofill.creditcard.list.item.expiry" = "Expiry:";
 
 /* Title for screen listing autofill credit cards */
 "autofill.creditcard.list.title" = "Payment Methods";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "A passcode is required to protect your payment methods.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Secure your device to save payment methods";
 
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
@@ -590,7 +599,7 @@
 "autofill.logins.list.settings.footer" = "Passwords are encrypted. Nobody but you can see them, not even us.";
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
-"autofill.logins.list.settings.passwords.cards.footer" = "Passwords and Payment methods are encrypted. Nobody but you can see them, not even us.";
+"autofill.logins.list.settings.passwords.cards.footer" = "Passwords and payment methods are encrypted. Nobody but you can see them, not even us.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Suggested";

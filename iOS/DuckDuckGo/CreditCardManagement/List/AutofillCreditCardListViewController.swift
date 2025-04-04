@@ -42,7 +42,7 @@ final class AutofillCreditCardListViewController: UIViewController {
         super.init(nibName: nil, bundle: nil)
         
         setupCancellables()
-        setupObsservers()
+        setupObservers()
         authenticate()
     }
     
@@ -52,7 +52,7 @@ final class AutofillCreditCardListViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupView()
         
         title = UserText.autofillCreditCardListTitle
@@ -67,15 +67,21 @@ final class AutofillCreditCardListViewController: UIViewController {
             .store(in: &cancellables)
     }
     
-    private func setupObsservers() {
+    private func setupObservers() {
         NotificationCenter.default.addObserver(self, selector: #selector(appDidBecomeActiveCallback), name: UIApplication.didBecomeActiveNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appWillResignActiveCallback), name: UIApplication.willResignActiveNotification, object: nil)
     }
     
     @objc private func appDidBecomeActiveCallback() {
+        if navigationController?.topViewController is AutofillCreditCardDetailsViewController {
+            return
+        } else if let presentedViewController = navigationController?.presentedViewController as? UINavigationController, presentedViewController.topViewController is AutofillCreditCardDetailsViewController {
+            return
+        }
+        
         authenticate()
     }
-
+    
     @objc private func appWillResignActiveCallback() {
         viewModel.lockUI()
     }
@@ -98,14 +104,22 @@ final class AutofillCreditCardListViewController: UIViewController {
             navigationItem.rightBarButtonItems = [addBarButtonItem]
         }
     }
-
+    
     private func authenticate() {
         viewModel.authenticate {[weak self] error in
             guard let self = self else { return }
-
+            
             if error != nil {
-                if error != .noAuthAvailable {
-                    dismiss(animated: true)
+                if error == .noAuthAvailable {
+                    let alert = UIAlertController(title: UserText.autofillCreditCardsNoAuthViewTitle, message: UserText.autofillCreditCardsNoAuthViewSubtitle, preferredStyle: .alert)
+                    alert.addAction(title: UserText.actionOK) { [weak self] in
+                        self?.navigationController?.popViewController(animated: true)
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
+                        self?.present(alert, animated: true)
+                    }
+                } else {
+                    navigationController?.popViewController(animated: true)
                 }
             }
         }
@@ -113,7 +127,7 @@ final class AutofillCreditCardListViewController: UIViewController {
     
     @objc
     private func addButtonPressed() {
-        let viewController = AutofillCreditCardDetailsViewController(secureVault: secureVault)
+        let viewController = AutofillCreditCardDetailsViewController(authenticator: viewModel.authenticator, secureVault: secureVault)
         viewController.delegate = self
         let detailsNavigationController = UINavigationController(rootViewController: viewController)
         detailsNavigationController.navigationBar.tintColor = UIColor(Color(designSystemColor: .textPrimary))
@@ -121,14 +135,14 @@ final class AutofillCreditCardListViewController: UIViewController {
     }
     
     private func presentCardDetails(for card: SecureVaultModels.CreditCard) {
-        let viewController = AutofillCreditCardDetailsViewController(secureVault: secureVault, card: card)
+        let viewController = AutofillCreditCardDetailsViewController(authenticator: viewModel.authenticator, secureVault: secureVault, card: card)
         viewController.delegate = self
         navigationController?.pushViewController(viewController, animated: true)
     }
 }
 
 extension AutofillCreditCardListViewController: AutofillCreditCardListViewModelDelegate {
-
+    
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard) {
         presentCardDetails(for: card)
     }
@@ -136,13 +150,13 @@ extension AutofillCreditCardListViewController: AutofillCreditCardListViewModelD
 }
 
 extension AutofillCreditCardListViewController: AutofillCreditCardDetailsViewControllerDelegate {
-
+    
     func autofillCreditCardDetailsViewControllerDidSave(_ controller: AutofillCreditCardDetailsViewController, card: SecureVaultModels.CreditCard?) {
         viewModel.refreshData()
     }
-
+    
     func autofillCreditCardDetailsViewControllerDelete(card: SecureVaultModels.CreditCard) {
         viewModel.deleteCard(card)
     }
-
+    
 }

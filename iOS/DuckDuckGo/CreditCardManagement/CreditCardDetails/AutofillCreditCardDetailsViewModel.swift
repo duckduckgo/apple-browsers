@@ -60,6 +60,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
     @Published var cardholderName = ""
     @Published var cardTitle = ""
     @Published var selectedCell: UUID?
+    @Published var authenticationRequired: Bool = false
     @Published var viewMode: ViewMode = .view {
         didSet {
             selectedCell = nil
@@ -73,7 +74,7 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
     }
     
     var creditCard: SecureVaultModels.CreditCard?
-
+    
     var navigationTitle: String {
         switch viewMode {
         case .edit:
@@ -109,11 +110,14 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
         dateFormatter.dateFormat = "MM / yy"
         return dateFormatter
     }()
-
+    
+    private let authenticator: UserAuthenticator
     private var secureVault: (any AutofillSecureVault)?
     private var cancellables = Set<AnyCancellable>()
-
-    internal init(secureVault: (any AutofillSecureVault)? = nil, creditCard: SecureVaultModels.CreditCard? = nil) {
+    
+    internal init(authenticator: UserAuthenticator, secureVault: (any AutofillSecureVault)? = nil, creditCard: SecureVaultModels.CreditCard? = nil) {
+        self.authenticator = authenticator
+        self.secureVault = secureVault
         self.creditCard = creditCard
         if let creditCard = creditCard {
             self.updateData(with: creditCard)
@@ -133,6 +137,24 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
                 viewMode = .edit
             }
         }
+    }
+    
+    func lockUI() {
+        authenticationRequired = true
+        authenticator.logOut()
+    }
+    
+    func authenticate(completion: @escaping (AutofillLoginListAuthenticator.AuthError?) -> Void) {
+        if cancellables.isEmpty {
+            setupCancellables()
+        }
+        
+        if !authenticator.canAuthenticate() || !authenticationRequired {
+            completion(nil)
+            return
+        }
+        
+        authenticator.authenticate(completion: completion)
     }
     
     func copyToPasteboard(_ action: PasteboardCopyAction) {
@@ -238,7 +260,25 @@ final class AutofillCreditCardDetailsViewModel: ObservableObject {
     }
     
     // MARK: Private methods
-    
+
+    private func setupCancellables() {
+        authenticator.$state
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.updateAuthViews()
+                }
+                .store(in: &cancellables)
+    }
+
+    private func updateAuthViews() {
+        switch authenticator.state {
+        case .loggedOut, .notAvailable:
+            self.authenticationRequired = true
+        case .loggedIn:
+            self.authenticationRequired = false
+        }
+    }
+
     private func updateData(with creditCard: SecureVaultModels.CreditCard) {
         self.creditCard = creditCard
         cardNumber = creditCard.cardNumber

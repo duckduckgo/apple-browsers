@@ -27,7 +27,11 @@ struct AutofillCreditCardDetailsView: View {
     @ObservedObject var viewModel: AutofillCreditCardDetailsViewModel
     
     var body: some View {
-        list
+        if viewModel.authenticationRequired {
+            LockScreenView()
+        } else {
+            list
+        }
     }
     
     private var list: some View {
@@ -51,7 +55,7 @@ struct AutofillCreditCardDetailsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(
             viewModel.viewMode == .view ? false : true
-        )        
+        )
     }
     
     private var viewingContentView: some View {
@@ -583,5 +587,5 @@ private struct Constants {
 }
 
 #Preview {
-    AutofillCreditCardDetailsView(viewModel: AutofillCreditCardDetailsViewModel())
+    AutofillCreditCardDetailsView(viewModel: AutofillCreditCardDetailsViewModel(authenticator: AutofillLoginListAuthenticator(reason: UserText.autofillCreditCardAuthenticationReason, cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)))
 }

@@ -32,11 +32,12 @@ protocol NewTabDaxDialogProvider {
     ///
     /// - Parameters:
     ///   - homeDialog: The specific `DaxDialogs.HomeScreenSpec` configuration that determines the dialog's content.
-    ///   - onDismiss: A closure that is executed when the dialog is dismissed.
+    ///   - onCompletion: A closure that is executed when the dialog is dismissed when the onboarding is completed.
     ///     - `activateSearch`: A Boolean value indicating whether the search should be activated after dismissal (i.e if the omnibar should become the first responder)
+    ///   - onManualDismiss: A closure that is executed when the dialog is dismissed manually by the user.
     ///
     /// - Returns: A view conforming to `DaxDialog` that represents the Dax dialog.
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> DaxDialog
 }
 
 final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
@@ -58,7 +59,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     }
 
     @ViewBuilder
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         switch homeDialog {
         case .initial:
             createInitialDialog(onManualDismiss: onManualDismiss)
@@ -67,19 +68,30 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
-            createFinalDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss)
+            createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .privacyProPromotion:
-            createPrivacyProPromoDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss)
+            // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
+            createPrivacyProPromoDialog(onDismiss: onCompletion, onManualDismiss: onManualDismiss)
         default:
             EmptyView()
         }
     }
 
     private func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
-        let viewModel = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), delegate: delegate, pixelReporter: onboardingPixelReporter)
+        let viewModel = OnboardingSearchSuggestionsViewModel(
+            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
+            delegate: delegate,
+            pixelReporter: onboardingPixelReporter
+        )
         let message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
+
+        let manualDismissAction = { [weak self] in
+            self?.onboardingPixelReporter.measureTrySearchDialogNewTabDismissButtonTapped()
+            onManualDismiss()
+        }
+
         return FadeInView {
-            OnboardingTrySearchDialog(message: message, viewModel: viewModel, onManualDismiss: onManualDismiss)
+            OnboardingTrySearchDialog(message: message, viewModel: viewModel, onManualDismiss: manualDismissAction)
                 .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
@@ -90,9 +102,20 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     }
 
     private func createSubsequentDialog(onManualDismiss: @escaping () -> Void) -> some View {
-        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), delegate: delegate, pixelReporter: onboardingPixelReporter)
+        let viewModel = OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
+            delegate: delegate,
+            pixelReporter: onboardingPixelReporter
+        )
+
+        let manualDismissAction = { [weak self] in
+            self?.onboardingPixelReporter.measureTryVisitSiteDialogNewTabDismissButtonTapped()
+            onManualDismiss()
+        }
+
         return FadeInView {
-            OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: viewModel, onManualDismiss: onManualDismiss)
+            OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: viewModel, onManualDismiss: manualDismissAction)
                 .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
@@ -110,24 +133,27 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
                 }
                 .padding()
             }
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
     }
 
-    private func createFinalDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
-        let dismissAction = { [weak self] in
-            self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
-            onDismiss(true)
-        }
-
+    private func createFinalDialog(onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         return FadeInView {
             OnboardingFinalDialog(
                 logoPosition: .top,
                 message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
                 cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-                dismissAction: dismissAction,
-                onManualDismiss: onManualDismiss
+                dismissAction: { [weak self] in
+                    self?.onboardingPixelReporter.measureEndOfJourneyDialogCTAAction()
+                    onCompletion(true)
+                },
+                onManualDismiss: { [weak self] in
+                    self?.onboardingPixelReporter.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+                    onManualDismiss()
+                }
             )
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
@@ -156,13 +182,13 @@ private extension NewTabDaxDialogFactory {
                     )
                     onDismiss(false)
                 },
-                dismissAction: { [weak self] in
+                onManualDismiss: { [weak self] in
                     self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
+                    self?.onboardingPixelReporter.measurePrivacyPromoDialogNewTabDismissButtonTapped()
                     onDismiss(true)
-                }, onManualDismiss: {
-                    onManualDismiss()
                 }
             )
+            .onboardingDaxDialogStyle()
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in

@@ -228,11 +228,11 @@ struct OnboardingDismissButton: View {
     private var backgroundColor: Color {
         switch colorScheme {
         case .light:
-            Color.white.opacity(0.72)
+            Color(red: 0.98, green: 0.98, blue: 0.98)
         case .dark:
-            Color(red: 0.27, green: 0.27, blue: 0.27).opacity(0.72)
+            Color(red: 0.27, green: 0.27, blue: 0.27)
         @unknown default:
-            Color.white.opacity(0.72)
+            Color(red: 0.98, green: 0.98, blue: 0.98)
         }
     }
 }

@@ -86,6 +86,7 @@ final class BrowserTabViewController: NSViewController {
     private var hoverLabelWorkItem: DispatchWorkItem?
 
     private var lastURL: URL?
+    private var wasDialogDismissed = false
 
     private(set) var transientTabContentViewController: NSViewController?
     private lazy var duckPlayerOnboardingModalManager: DuckPlayerOnboardingModalManager = {
@@ -165,7 +166,9 @@ final class BrowserTabViewController: NSViewController {
     }
 
     @objc func windowDidBecomeActive(notification: Notification) {
-        presentContextualOnboarding()
+        if !wasDialogDismissed {
+            presentContextualOnboarding()
+        }
     }
 
     override func viewWillAppear() {
@@ -485,6 +488,7 @@ final class BrowserTabViewController: NSViewController {
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
+                wasDialogDismissed = true
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
             }
         }
@@ -621,6 +625,7 @@ final class BrowserTabViewController: NSViewController {
             // present contextual onboarding dialog if needed
             self?.updateStateAndPresentContextualOnboarding()
             self?.lastURL = self?.tabViewModel?.tab.url
+            self?.wasDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 

@@ -28,6 +28,7 @@ final class MainWindowController: NSWindowController {
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = .shared
+    let fullscreenController = FullscreenController()
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -218,6 +219,18 @@ final class MainWindowController: NSWindowController {
         register()
     }
 
+    override func cancelOperation(_ sender: Any?) {
+        guard let window, !fullscreenController.shouldPreventFullscreenExit else {
+            // Just consume the ESC key to prevent exiting from full screen
+            fullscreenController.resetFullscreenExitFlag()
+            return
+        }
+
+        if window.styleMask.contains(.fullScreen) {
+            fullscreenController.manuallyExitFullscreen(window: window)
+        }
+    }
+
     func orderWindowBack(_ sender: Any?) {
         if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window {
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
@@ -269,6 +282,8 @@ extension MainWindowController: NSWindowDelegate {
         if !appearancePreferences.showTabsAndBookmarksBarOnFullScreen {
             showTabBarAndBookmarksBar()
         }
+
+        fullscreenController.resetFullscreenExitFlag()
     }
 
     private func hideTabBarAndBookmarksBar() {

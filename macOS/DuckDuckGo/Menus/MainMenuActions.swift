@@ -221,6 +221,11 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
     #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {

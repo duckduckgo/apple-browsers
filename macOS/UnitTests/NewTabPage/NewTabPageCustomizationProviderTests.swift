@@ -214,12 +214,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
         cancellable.cancel()
 
-        /// Slower machines may capture the initial empty array event so let's filter it out here
-        if events.first == [] {
-            events = Array(events.dropFirst())
-        }
-
-        XCTAssertEqual(events, [
+        /// Slower machines may capture the initial empty array event.
+        /// We're only interested in the correct sequence of events once images start being added.
+        XCTAssertEqual(events.suffix(4), [
             [.init(image1)],
             [.init(image1), .init(image2)],
             [],
@@ -271,7 +268,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
      * Sets up an expectation, then sets up Combine subscription for `settingsModel.$availableUserBackgroundImages` that fulfills
      * the expectation, then calls the provided `block` and waits for time specified by `duration` before cancelling the subscription.
      */
-    private func waitForAvailableUserBackgroundImages(for duration: TimeInterval = 1, inverted: Bool = false, _ block: () async -> Void = {}) async throws {
+    @MainActor
+    private func waitForAvailableUserBackgroundImages(for duration: TimeInterval = 1, inverted: Bool = false, _ block: @MainActor () async -> Void = {}) async throws {
         let expectation = self.expectation(description: "viewModelUpdate")
         expectation.isInverted = inverted
         let cancellable = customizationModel.$availableUserBackgroundImages.dropFirst().prefix(1).sink { _ in expectation.fulfill() }

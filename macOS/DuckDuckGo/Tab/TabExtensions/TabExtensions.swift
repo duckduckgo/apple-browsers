@@ -137,6 +137,7 @@ extension TabExtensionsBuilder {
             PrivacyDashboardTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
                                          autoconsentUserScriptPublisher: userScripts.map(\.?.autoconsentUserScript),
+                                         contentScopeUserScriptPublisher: userScripts.map(\.?.contentScopeUserScript),
                                          didUpgradeToHttpsPublisher: httpsUpgrade.didUpgradeToHttpsPublisher,
                                          trackersPublisher: contentBlocking.trackersPublisher,
                                          webViewPublisher: args.webViewFuture,

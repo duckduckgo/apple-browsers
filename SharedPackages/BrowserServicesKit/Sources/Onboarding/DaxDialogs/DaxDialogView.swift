@@ -228,6 +228,8 @@ public struct DaxDialogView<Content: View>: View {
 
 struct OnboardingDismissButton: View {
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+    @State private var isPressed = false
 
     let action: () -> Void
 
@@ -237,9 +239,18 @@ struct OnboardingDismissButton: View {
                 .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(backgroundColor)
+                .background(opacityColor)
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .pressEvents {
+            isPressed = true
+        } onRelease: {
+            isPressed = false
+        }
         .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
         .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
         .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
@@ -256,6 +267,21 @@ struct OnboardingDismissButton: View {
             Color(red: 0.98, green: 0.98, blue: 0.98)
         }
     }
+
+    private var opacityColor: Color {
+        switch (colorScheme, isPressed, isHovering) {
+        case (.light, true, _): return Color.black.opacity(0.12)
+        case (.light, false, true): return Color.black.opacity(0.06)
+        case (.light, false, false): return Color.clear
+
+        case (.dark, true, _): return Color.white.opacity(0.10)
+        case (.dark, false, true): return Color.white.opacity(0.06)
+        case (.dark, false, false): return Color.clear
+
+        @unknown default:
+            return Color(red: 0.98, green: 0.98, blue: 0.98)
+        }
+    }
 }
 
 // Move this extension to `SwiftUIExtensions` package when creating it.
@@ -269,4 +295,14 @@ private extension View {
         }
     }
 
+}
+
+extension View {
+    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self
+            .simultaneousGesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+            )
+    }
 }

@@ -3057,7 +3057,7 @@ extension MainViewController: AutoClearWorker {
         if viewCoordinator.toolbar.isHidden {
             fireButtonView = tabsBarController?.fireButton
         } else {
-            fireButtonView = viewCoordinator.toolbarFireButton.value(forKey: "view") as? UIView
+            fireButtonView = viewCoordinator.toolbarFireBarButtonItem.value(forKey: "view") as? UIView
         }
         guard let view = fireButtonView else { return }
         

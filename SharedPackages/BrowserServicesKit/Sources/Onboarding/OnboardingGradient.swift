@@ -24,11 +24,11 @@ public struct OnboardingGradient: View {
     public init() {}
 
     public var body: some View {
-        if #available(iOS 15, macOS 13, *) {
-            gradient
-        } else {
+//        if #available(iOS 15, macOS 13, *) {
+//            gradient
+//        } else {
             gradientImage
-        }
+//        }
     }
 
     @available(iOS 15, macOS 13, *)
@@ -46,6 +46,7 @@ public struct OnboardingGradient: View {
 
     private var gradientImage: some View {
         Image("OnboardingGradient", bundle: bundle)
+            .resizable()
     }
 }
 

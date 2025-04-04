@@ -1027,6 +1027,92 @@ final class DaxDialog: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testWhenURLVisitedIsMajorTracker_ThenSetTryVisitSuggestionSeenTrue() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingMajorTrackingSiteShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.facebook)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .siteIsMajorTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedIsOwnedByMajorTracker_ThenSetTryVisitSuggestionSeenTrue() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingMajorTrackingSiteShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.ownedByFacebook)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .siteOwnedByMajorTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasMultipleTrackers_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.example)
+        [URLs.google, URLs.amazon].forEach { tracker in
+            let detectedTracker = detectedTrackerFrom(tracker, pageUrl: URLs.example.absoluteString)
+            privacyInfo.trackerInfo.addDetectedTracker(detectedTracker, onPageWithURL: URLs.example)
+        }
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .withMultipleTrackers)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasOneTracker_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.example)
+        let detectedTracker = detectedTrackerFrom(URLs.google, pageUrl: URLs.example.absoluteString)
+        privacyInfo.trackerInfo.addDetectedTracker(detectedTracker, onPageWithURL: URLs.example)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .withOneTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasOneNoTrackers_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithoutTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: URLs.example))
+
+        // THEN
+        XCTAssertEqual(result?.type, .withoutTrackers)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,

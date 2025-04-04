@@ -205,8 +205,13 @@ final class MockSecureVault<T: AutofillDatabaseProvider>: AutofillSecureVault {
     }
 
     func storeCreditCard(_ card: SecureVaultModels.CreditCard) throws -> Int64 {
-        storedCards.append(card)
-        return card.id!
+        if let cardId = card.id, let index = storedCards.firstIndex(where: { $0.id == cardId }) {
+            storedCards[index] = card
+            return cardId
+        } else {
+            storedCards.append(card)
+            return card.id ?? -1
+        }
     }
 
     func deleteCreditCardFor(cardId: Int64) throws {

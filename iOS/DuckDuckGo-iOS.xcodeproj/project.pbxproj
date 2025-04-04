@@ -1141,6 +1141,8 @@
 		C1D21E2F293A599C006E5A05 /* AutofillLoginSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */; };
 		C1D2C3632D6F319B00213E3B /* OnboardingPrivacyProPromoExperiment.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2C3622D6F318500213E3B /* OnboardingPrivacyProPromoExperiment.swift */; };
 		C1D7F3F42D5F6D7B0029B213 /* BookmarksEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */; };
+		C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E2C2242D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift */; };
+		C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E2C2262D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift */; };
 		C1E42C7B2C5CD8AE00509204 /* AutofillCredentialsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E42C7A2C5CD8AD00509204 /* AutofillCredentialsDebugViewController.swift */; };
 		C1E4E9A62D0861AD00AA39AF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A42D0861AD00AA39AF /* InfoPlist.strings */; };
 		C1E4E9A92D0861AD00AA39AF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C1E4E9A72D0861AD00AA39AF /* Localizable.strings */; };
@@ -3213,6 +3215,8 @@
 		C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyView.swift; sourceTree = "<group>"; };
 		C1DCF3502D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1DCF3512D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1E2C2242D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewModelTests.swift; sourceTree = "<group>"; };
+		C1E2C2262D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardDetailsViewModelTests.swift; sourceTree = "<group>"; };
 		C1E42C7A2C5CD8AD00509204 /* AutofillCredentialsDebugViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillCredentialsDebugViewController.swift; sourceTree = "<group>"; };
 		C1E490582D08646400F86C5A /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1E490592D08646400F86C5A /* sl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sl; path = sl.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6202,13 +6206,13 @@
 			name = Survey;
 			sourceTree = "<group>";
 		};
-		C1935A1D2C89CA4B001AD72D /* Management */ = {
+		C1935A1D2C89CA4B001AD72D /* PasswordManagement */ = {
 			isa = PBXGroup;
 			children = (
 				C1935A1E2C89CA53001AD72D /* List */,
 				F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */,
 			);
-			name = Management;
+			name = PasswordManagement;
 			sourceTree = "<group>";
 		};
 		C1935A1E2C89CA53001AD72D /* List */ = {
@@ -6451,6 +6455,15 @@
 				C1D2C3622D6F318500213E3B /* OnboardingPrivacyProPromoExperiment.swift */,
 			);
 			path = PrivacyProPromotionExperiment;
+			sourceTree = "<group>";
+		};
+		C1E2C2232D9ED1910011C66C /* CreditCardManagement */ = {
+			isa = PBXGroup;
+			children = (
+				C1E2C2242D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift */,
+				C1E2C2262D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift */,
+			);
+			path = CreditCardManagement;
 			sourceTree = "<group>";
 		};
 		C1EA865E2C74CB5500E8604D /* Promotion */ = {
@@ -7724,11 +7737,12 @@
 		F40F843228C92B1C0081AE75 /* Autofill */ = {
 			isa = PBXGroup;
 			children = (
+				C1E2C2232D9ED1910011C66C /* CreditCardManagement */,
 				C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */,
 				C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */,
 				C1BF0BA629B63E0400482B73 /* AutofillLoginUI */,
 				C185ED622BD4388F00BAE9DC /* Import */,
-				C1935A1D2C89CA4B001AD72D /* Management */,
+				C1935A1D2C89CA4B001AD72D /* PasswordManagement */,
 				C14073812D8373EB0087E836 /* Settings */,
 			);
 			name = Autofill;
@@ -9540,6 +9554,7 @@
 				9F254AD52CF5E5B10063B308 /* MockMaliciousSiteProtectionNavigationHandler.swift in Sources */,
 				F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */,
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,
+				C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
@@ -9660,6 +9675,7 @@
 				85C503FD2CF0E7B10075DF6F /* MockFireproofing.swift in Sources */,
 				31D4CD4E2D4D3BF300BC27C6 /* ToolbarHandlerTests.swift in Sources */,
 				6F3529FF2CDCEDFF00A59170 /* OmniBarLoadingStateBearerTests.swift in Sources */,
+				C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */,
 				564DE45E2C45218500D23241 /* OnboardingNavigationDelegateTests.swift in Sources */,
 				C14E2F7729DE14EA002AC515 /* AutofillInterfaceUsernameTruncatorTests.swift in Sources */,
 				9F5BEA7C2D4382430045E484 /* MaliciousSiteProtectionMocks.swift in Sources */,

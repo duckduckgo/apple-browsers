@@ -121,4 +121,10 @@ extension UIColor {
         return self
     }
 
+    var brightnessPercentage: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r * 299 + g * 587 + b * 114) / 1000 * 100
+    }
+
 }

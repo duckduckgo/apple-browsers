@@ -841,11 +841,12 @@ protocol NewWindowPolicyDecisionMaker {
         }
 #endif
         if PixelExperiment.cohort == .newOnboarding {
-            Application.appDelegate.onboardingStateMachine.state = .notStarted
+            if #available(macOS 12.0, *) {
+                Application.appDelegate.onboardingStateMachine.state = .notStarted
+            }
             setContent(.onboarding)
         } else {
-            Application.appDelegate.onboardingStateMachine.state = .notStarted
-            setContent(.onboarding)
+            setContent(.onboardingDeprecated)
         }
     }
 

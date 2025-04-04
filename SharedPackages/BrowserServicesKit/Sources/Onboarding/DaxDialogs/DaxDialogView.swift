@@ -130,11 +130,11 @@ public struct DaxDialogView<Content: View>: View {
     @ViewBuilder
     private var wrappedContent: some View {
         let backgroundColor = Color(designSystemColor: .surface)
-        let shadowColors: (Color, Color) = colorScheme == .light ?
-        (.black.opacity(0.08), .black.opacity(0.1)) :
-        (.black.opacity(0.20), .black.opacity(0.16))
+        let shadowColors: (Color, Color) = colorScheme == .light
+        ? (.black.opacity(0.08), .black.opacity(0.1))
+        : (.black.opacity(0.20), .black.opacity(0.16))
 
-        content
+        let styledContent = content
             .padding(.all, DaxDialogMetrics.contentPadding)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -145,17 +145,29 @@ public struct DaxDialogView<Content: View>: View {
                     .frame(width: arrowSize.width, height: arrowSize.height)
                     .foregroundColor(backgroundColor)
                     .rotationEffect(Angle(degrees: logoPosition == .top ? 0 : -90), anchor: .bottom)
-                    .offset(arrowOffset)
-                ,
+                    .offset(arrowOffset),
                 alignment: .topLeading
             )
-            .ifLet(onManualDismiss) { view, onDismiss in
-                view.overlay(alignment: .topTrailing) {
+
+        if #available(macOS 12.0, iOS 15.0, *) {
+            styledContent
+                .ifLet(onManualDismiss) { view, onDismiss in
+                    view.overlay(alignment: .topTrailing) {
+                        OnboardingDismissButton(action: onDismiss)
+                            .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                            .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+                    }
+                }
+        } else {
+            ZStack(alignment: .topTrailing) {
+                styledContent
+                if let onDismiss = onManualDismiss {
                     OnboardingDismissButton(action: onDismiss)
-                        .alignmentGuide(.top) { $0.height/2 - DaxDialogMetrics.dismissButtonPadding }
-                        .alignmentGuide(.trailing) { $0.width/2 + DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
                 }
             }
+        }
     }
 
     private var arrowOffset: CGSize {
@@ -208,6 +220,8 @@ public struct DaxDialogView<Content: View>: View {
 
 struct OnboardingDismissButton: View {
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+    @State private var isPressed = false
 
     let action: () -> Void
 
@@ -217,7 +231,17 @@ struct OnboardingDismissButton: View {
                 .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(backgroundColor)
+                .background(opacityColor)
                 .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .pressEvents {
+            isPressed = true
+        } onRelease: {
+            isPressed = false
         }
         .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
         .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
@@ -235,7 +259,23 @@ struct OnboardingDismissButton: View {
             Color(red: 0.98, green: 0.98, blue: 0.98)
         }
     }
+
+    private var opacityColor: Color {
+        switch (colorScheme, isPressed, isHovering) {
+        case (.light, true, _): return Color.black.opacity(0.12)
+        case (.light, false, true): return Color.black.opacity(0.06)
+        case (.light, false, false): return Color.clear
+
+        case (.dark, true, _): return Color.white.opacity(0.10)
+        case (.dark, false, true): return Color.white.opacity(0.06)
+        case (.dark, false, false): return Color.clear
+
+        @unknown default:
+            return Color(red: 0.98, green: 0.98, blue: 0.98)
+        }
+    }
 }
+
 
 // Move this extension to `SwiftUIExtensions` package when creating it.
 private extension View {
@@ -246,6 +286,14 @@ private extension View {
         } else {
             self
         }
+    }
+
+    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self
+            .simultaneousGesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+            )
     }
 
 }

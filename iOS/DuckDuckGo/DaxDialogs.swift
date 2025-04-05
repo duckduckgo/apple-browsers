@@ -35,6 +35,10 @@ protocol NewTabDialogSpecProvider {
     func dismiss()
 }
 
+protocol ContextualDaxDialogDisabling {
+    func disableContextualDaxDialogs()
+}
+
 protocol ContextualOnboardingLogic {
     var isShowingFireDialog: Bool { get }
     var shouldShowPrivacyButtonPulse: Bool { get }
@@ -674,6 +678,14 @@ extension DaxDialogs: PrivacyProPromotionCoordinating {
             settings.privacyProPromotionDialogShown = newValue
         }
     }
+}
+
+extension DaxDialogs: ContextualDaxDialogDisabling {
+
+    func disableContextualDaxDialogs() {
+        dismiss()
+    }
+
 }
 
 extension URL {

@@ -50,7 +50,7 @@ struct OnboardingView: View {
                         Button {
                             model.overrideOnboardingCompleted()
                         } label: {
-                            Text(UserText.Onboarding.Intro.skip)
+                            Text(UserText.Onboarding.Intro.Debug.skip)
                         }
                         .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
                     }
@@ -74,8 +74,8 @@ struct OnboardingView: View {
                     content: {
                         VStack {
                             switch state.type {
-                            case .startOnboardingDialog:
-                                introView
+                            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
+                                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
                             case .browsersComparisonDialog:
                                 browsersComparisonView
                             case .addToDockPromoDialog:
@@ -115,15 +115,35 @@ struct OnboardingView: View {
             }
     }
 
-    private var introView: some View {
-        IntroDialogContent(
+    private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
+        let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
+            AnyView(
+                SkipOnboardingContent(
+                    animateTitle: $model.skipOnboardingState.animateTitle,
+                    animateMessage: $model.skipOnboardingState.animateMessage,
+                    showCTA: $model.skipOnboardingState.showContent,
+                    isSkipped: $model.isSkipped,
+                    startBrowsingAction: model.confirmSkipOnboardingAction,
+                    resumeOnboardingAction: {
+                        animateBrowserComparisonViewState(isResumingOnboarding: true)
+                    }
+                )
+            )
+        } else {
+            nil
+        }
+
+        return IntroDialogContent(
             title: model.copy.introTitle,
+            skipOnboardingView: skipOnboardingView,
             animateText: $model.introState.animateIntroText,
             showCTA: $model.introState.showIntroButton,
-            isSkipped: $model.isSkipped
-        ) {
-            animateBrowserComparisonViewState()
-        }
+            isSkipped: $model.isSkipped,
+            continueAction: {
+                animateBrowserComparisonViewState(isResumingOnboarding: false)
+            },
+            skipAction: model.skipOnboardingAction
+        )
         .onboardingDaxDialogStyle()
         .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
     }
@@ -148,7 +168,7 @@ struct OnboardingView: View {
             isAnimating: $model.addToDockState.isAnimating,
             isSkipped: $model.isSkipped,
             showTutorialAction: {
-                model.addtoDockShowTutorialAction()
+                model.addToDockShowTutorialAction()
             },
             dismissAction: { fromAddToDockTutorial in
                 model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
@@ -177,7 +197,7 @@ struct OnboardingView: View {
         .onboardingDaxDialogStyle()
     }
 
-    private func animateBrowserComparisonViewState() {
+    private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
         model.introState.showIntroViewContent = false
 
@@ -189,13 +209,13 @@ struct OnboardingView: View {
 
         if #available(iOS 17, *) {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             } completion: {
                 model.browserComparisonState.animateComparisonText = true
             }
         } else {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
                 model.browserComparisonState.animateComparisonText = true
@@ -236,7 +256,7 @@ extension OnboardingView.ViewState {
 extension OnboardingView.ViewState.Intro {
 
     enum IntroType: Equatable {
-        case startOnboardingDialog
+        case startOnboardingDialog(canSkipTutorial: Bool)
         case browsersComparisonDialog
         case addToDockPromoDialog
         case chooseAppIconDialog

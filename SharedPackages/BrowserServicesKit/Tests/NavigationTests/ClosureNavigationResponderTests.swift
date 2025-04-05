@@ -418,7 +418,7 @@ class ClosureNavigationResponderTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.struct(responder))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

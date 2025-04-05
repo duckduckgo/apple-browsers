@@ -26,24 +26,42 @@ extension OnboardingView {
     struct IntroDialogContent: View {
 
         private let title: String
+        private let skipOnboardingView: AnyView?
         private var animateText: Binding<Bool>
         private var showCTA: Binding<Bool>
         private var isSkipped: Binding<Bool>
-        private let action: () -> Void
+        private let continueAction: () -> Void
+        private let skipAction: () -> Void
 
-        init(title: String,
-             animateText: Binding<Bool> = .constant(true),
-             showCTA: Binding<Bool> = .constant(false),
-             isSkipped: Binding<Bool>,
-             action: @escaping () -> Void) {
+        @State private var showSkipOnboarding = false
+
+        init(
+            title: String,
+            skipOnboardingView: AnyView?,
+            animateText: Binding<Bool> = .constant(true),
+            showCTA: Binding<Bool> = .constant(false),
+            isSkipped: Binding<Bool>,
+            continueAction: @escaping () -> Void,
+            skipAction: @escaping () -> Void
+        ) {
             self.title = title
+            self.skipOnboardingView = skipOnboardingView
             self.animateText = animateText
             self.showCTA = showCTA
             self.isSkipped = isSkipped
-            self.action = action
+            self.continueAction = continueAction
+            self.skipAction = skipAction
         }
 
         var body: some View {
+            if showSkipOnboarding {
+                skipOnboardingView
+            } else {
+                introContent
+            }
+        }
+
+        private var introContent: some View {
             VStack(spacing: 24.0) {
                 AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
                     withAnimation {
@@ -53,13 +71,25 @@ extension OnboardingView {
                 .foregroundColor(.primary)
                 .font(Font.system(size: 20, weight: .bold))
 
-                Button(action: action) {
-                    Text(UserText.Onboarding.Intro.cta)
+                VStack {
+                    Button(action: continueAction) {
+                        Text(UserText.Onboarding.Intro.continueCTA)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+
+                    if skipOnboardingView != nil {
+                        OnboardingBorderedButton(maxHeight: 50.0, content: {
+                            Text(UserText.Onboarding.Intro.skipCTA)
+                        }, action: {
+                            isSkipped.wrappedValue = false
+                            showSkipOnboarding = true
+                            skipAction()
+                        })
+                    }
                 }
-                .buttonStyle(PrimaryButtonStyle())
                 .visibility(showCTA.wrappedValue ? .visible : .invisible)
             }
         }
-    }
 
+    }
 }

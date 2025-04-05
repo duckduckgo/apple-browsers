@@ -26,10 +26,11 @@ public extension OnboardingStyles {
         @Environment(\.colorScheme) private var colorScheme
 
 #if os(macOS)
-        private let maxHeight = 32.0
+        public static let defaultMaxHeight = 32.0
 #else
-        private let maxHeight = 40.0
+        public static let defaultMaxHeight = 40.0
 #endif
+        private let maxHeight: CGFloat
         private var maxWidth: CGFloat? = .infinity
 
 #if os(macOS)
@@ -40,8 +41,9 @@ public extension OnboardingStyles {
 
         @State private var isHovered = false
 
-        public init(maxWidth: CGFloat? = .infinity) {
+        public init(maxWidth: CGFloat? = .infinity, maxHeight: CGFloat = Self.defaultMaxHeight) {
             self.maxWidth = maxWidth
+            self.maxHeight = maxHeight
         }
 
         public func makeBody(configuration: Configuration) -> some View {

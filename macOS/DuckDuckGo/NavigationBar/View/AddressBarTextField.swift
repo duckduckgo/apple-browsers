@@ -1157,7 +1157,7 @@ private extension NSMenuItem {
 
     static var toggleAIChatAddressMenuItem: NSMenuItem {
         let menuItem = NSMenuItem(
-            title: UserText.showAIChatInAddress.localizedCapitalized,
+            title: UserText.showAIChatInAddress,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
             keyEquivalent: ""
         )

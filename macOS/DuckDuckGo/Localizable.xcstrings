@@ -58304,6 +58304,18 @@
         }
       }
     },
+    "preferences.appearance.show-aichat" : {
+      "comment" : "Option to show AI Chat the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
     "preferences.appearance.show-autocomplete-suggestions" : {
       "comment" : "Option to show autocomplete suggestions in the address bar",
       "extractionState" : "extracted_with_value",

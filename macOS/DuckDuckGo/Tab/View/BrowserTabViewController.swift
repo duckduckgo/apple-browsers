@@ -489,6 +489,7 @@ final class BrowserTabViewController: NSViewController {
             onDismissAction = { [weak self] in
                 guard let self else { return }
                 wasDialogDismissed = true
+                delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
             }
         }

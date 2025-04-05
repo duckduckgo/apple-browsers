@@ -265,4 +265,21 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     func measureSiteVisited() {
         measureSiteVisitedCalled = true
     }
+    func measureTrySearchDismissed() {
+    }
+
+    func measureSearchResultDismissed() {
+    }
+
+    func measureTryVisitSiteDismissed() {
+    }
+
+    func measureTrackersBlockedDismissed() {
+    }
+
+    func measureTryFireButtonDismissed() {
+    }
+
+    func measureFinalDismissed() {
+    }
 }

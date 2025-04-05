@@ -79,6 +79,7 @@ enum ContextualOnboardingState: String, CaseIterable {
     // From this state, after a website visit, it will show a "Tracker" dialog.
     // From this state, after a search, it will show nothing.
     case showTryASite
+    case showTryASiteSearchNotDone
 
     // State applied after the first search and the "Try A Site" dialog has been seen.
     // From this state, after a website visit, it will show a "Tracker" dialog.
@@ -210,7 +211,7 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
         switch state {
         case .notStarted, .showTryASearch:
             return .tryASearch
-        case .showTryASite:
+        case .showTryASite, .showTryASiteSearchNotDone:
             return .tryASite
         case .showHighFive:
             return .highFive
@@ -223,7 +224,7 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
         switch state {
         case .showSearchDone, .fireUsedShowSearchDone:
             return .searchDone(shouldFollowUp: true)
-        case .showBlockedTrackers, .showMajorOrNoTracker, .searchDoneShowBlockedTrackers, .searchDoneShowMajorOrNoTracker:
+        case .showBlockedTrackers, .showMajorOrNoTracker, .searchDoneShowBlockedTrackers, .searchDoneShowMajorOrNoTracker, .showTryASiteSearchNotDone:
             return .searchDone(shouldFollowUp: false)
         case .showTryASite:
             return .tryASite
@@ -305,7 +306,7 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
         case .notStarted:
             state = .showTryASearch
         case .showTryASearch:
-            state = .showSearchDone
+            state = .showTryASiteSearchNotDone
         case .showSearchDone:
             state = .showTryASite
         case .showTryASite:
@@ -354,7 +355,7 @@ final class ContextualOnboardingStateMachine: ContextualOnboardingDialogTypeProv
         switch state {
         case .notStarted:
             state = .showTryASearch
-        case .showTryASearch, .fireUsedTryASearchShown:
+        case .showTryASearch, .fireUsedTryASearchShown, .showTryASiteSearchNotDone:
             if case .blockedTrackers = trackerType {
                 state = .showBlockedTrackers
             } else if trackerType != nil {

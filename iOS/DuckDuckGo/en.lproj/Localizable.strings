@@ -550,11 +550,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Passwords are encrypted, stored on device, and locked with %@.";
+
 /* Description of autofill onboarding prompt's secure storage feature */
 "autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
-/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description.biometric" = "Passwords are encrypted, stored on device, and locked with %@.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID or passcode";
@@ -2307,7 +2307,7 @@ https://duckduckgo.com/mac";
 "ppro.feedback-form.title" = "Send Feedback";
 
 /* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request-description" = "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.";
+"prefrences.sync.bad-request.description" = "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Manage Bookmarks";
@@ -2328,7 +2328,7 @@ https://duckduckgo.com/mac";
 "prefrences.sync.limit-exceeded-title" = "Sync Paused";
 
 /* Description of too many requests error when syncing. */
-"prefrences.sync.too-many-requests-description" = "Sync & Backup is temporarily unavailable.";
+"prefrences.sync.too-many-requests.description" = "Sync & Backup is temporarily unavailable.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.";
@@ -3228,13 +3228,13 @@ Take back control of your personal information with the browser designed for dat
 "vpn.settings.dns.server.apply.button.title" = "Apply";
 
 /* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
-"vpn.settings.dns.server.content.blocking.filtering.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+"vpn.settings.dns.server.content.blocking.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.filtering.header" = "Content Blocking and Filtering";
+"vpn.settings.dns.server.content.blocking.header" = "Content Blocking and Filtering";
 
 /* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.filtering.title" = "Block risky domains";
+"vpn.settings.dns.server.content.blocking.title" = "Block risky domains";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

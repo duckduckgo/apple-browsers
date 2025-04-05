@@ -195,8 +195,6 @@ struct OnboardingFinalDialog: View {
     let cta: String
     let dismissAction: () -> Void
 
-    @State private var showAddToDockTutorial = false
-
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             DaxDialogView(logoPosition: logoPosition) {
@@ -216,7 +214,7 @@ struct OnboardingFinalDialog: View {
     private var customActionView: some View {
         OnboardingCTAButton(
             title: cta,
-            buttonStyle: .primary,
+            buttonStyle: .primary(),
             action: {
                 dismissAction()
             }
@@ -258,7 +256,7 @@ struct PrivacyProPromotionView: View {
                 .padding([.top, .bottom], 16)
             OnboardingCTAButton(
                 title: proceedText,
-                buttonStyle: .primary,
+                buttonStyle: .primary(),
                 action: {
                     proceedAction()
                 }
@@ -276,12 +274,12 @@ struct PrivacyProPromotionView: View {
 
 struct OnboardingCTAButton: View {
     enum ButtonStyle {
-        case primary
+        case primary(compact: Bool = false)
         case ghost
     }
 
     let title: String
-    var buttonStyle: ButtonStyle = .primary
+    var buttonStyle: ButtonStyle = .primary(compact: true)
     let action: () -> Void
 
 
@@ -291,8 +289,8 @@ struct OnboardingCTAButton: View {
         }
 
         switch buttonStyle {
-        case .primary:
-            button.buttonStyle(PrimaryButtonStyle(compact: true))
+        case .primary(let isCompact):
+            button.buttonStyle(PrimaryButtonStyle(compact: isCompact))
         case .ghost:
             button.buttonStyle(GhostButtonStyle())
         }

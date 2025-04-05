@@ -34,7 +34,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      * It is triggered in  OnboardingSearchSuggestionsViewModel when one of the search suggestion button in the list is pressed (listItemPressed) in the contextual onboarding
      * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
      */
-    case siteSuggetionOptionTapped
+    case siteSuggestionOptionTapped
 
     /**
      * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
@@ -43,7 +43,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      * It is triggered in  OnboardingSiteSuggestionsViewModel when one of the site suggestion button in the list is pressed (listItemPressed) in the contextual onboarding
      * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
      */
-    case searchSuggetionOptionTapped
+    case searchSuggestionOptionTapped
 
     /**
      * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
@@ -98,7 +98,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * It is triggered on fireButtonAction on MainMenuActions
-     * the OnboardingPixelProvider sends it only if the state non e' onboardingComleted
+     * the OnboardingPixelProvider sends it only if the state is not onboardingCompleted
      * Check code in that area  to check it behaves as expected
      */
     case onboardingFireButtonPressed
@@ -108,7 +108,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * It is triggered on privacyEntryPointButtonAction on AddressBarButtonViewController
-     * the OnboardingPixelProvider sends it only if the state non e' onboardingComleted
+     * the OnboardingPixelProvider sends it only if the state is not onboardingCompleted
      * Check code in that area  to check it behaves as expected
      */
     case onboardingPrivacyDashboardOpened
@@ -137,9 +137,9 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
             return "m_mac_onboarding_privacy_dashboard_opened_u"
         case .secondSiteVisited:
             return "m_mac_second_site_visit_u"
-        case .searchSuggetionOptionTapped:
+        case .searchSuggestionOptionTapped:
             return "m_mac_onboarding_search_option_tapped_u"
-        case .siteSuggetionOptionTapped:
+        case .siteSuggestionOptionTapped:
             return "m_mac_onboarding_visit_site_option_tapped_u"
         case .onboardingFireButtonTryItPressed:
             return "m_mac_onboarding_fire_button_try_it_pressed_u"

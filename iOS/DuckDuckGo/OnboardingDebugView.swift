@@ -46,8 +46,24 @@ struct OnboardingDebugView: View {
             }
 
             Section {
+                Picker(
+                    selection: $viewModel.onboardingUserType,
+                    content: {
+                        ForEach(OnboardingUserType.allCases) { state in
+                            Text(verbatim: state.description).tag(state)
+                        }
+                    },
+                    label: {
+                        Text(verbatim: "Type:")
+                    }
+                )
+            } header: {
+                Text(verbatim: "Onboarding User Type")
+            }
+
+            Section {
                 Button(action: newOnboardingIntroStartAction, label: {
-                    Text(verbatim: "Preview Onboarding Intro")
+                    Text(verbatim: "Preview Onboarding Intro - \(viewModel.onboardingUserType.description)")
                 })
             }
         }
@@ -55,15 +71,23 @@ struct OnboardingDebugView: View {
 }
 
 final class OnboardingDebugViewModel: ObservableObject {
+
+    @Published var onboardingUserType: OnboardingUserType {
+        didSet {
+            manager.onboardingUserTypeDebugValue = onboardingUserType
+        }
+    }
+
+    private let manager: OnboardingNewUserProviderDebugging
     private var settings: DaxDialogsSettings
-    let isIphone: Bool
 
     init(
-        settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
-        isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
+        manager: OnboardingNewUserProviderDebugging = OnboardingManager(),
+        settings: DaxDialogsSettings = DefaultDaxDialogsSettings()
     ) {
+        self.manager = manager
         self.settings = settings
-        self.isIphone = isIphone
+        onboardingUserType = manager.onboardingUserTypeDebugValue
     }
 
     func resetDaxDialogs() {
@@ -91,8 +115,8 @@ final class OnboardingDebugViewModel: ObservableObject {
     OnboardingDebugView(onNewOnboardingIntroStartAction: {})
 }
 
-extension OnboardingAddToDockState: Identifiable {
-    var id: OnboardingAddToDockState {
+extension OnboardingUserType: Identifiable {
+    var id: OnboardingUserType {
         self
     }
 }

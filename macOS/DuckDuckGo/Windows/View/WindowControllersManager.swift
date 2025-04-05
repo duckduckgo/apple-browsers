@@ -155,13 +155,22 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
-    func openAIChat(_ url: AIChatURL, newTab: Bool = false) {
+    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    ///
+    /// - Parameters:
+    ///   - url: The AI chat URL to open.
+    ///   - newTab: If `true`, opens the URL in a new tab; otherwise, uses the current tab. Defaults to `false`.
+    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `newTab` is `true`.
+    ///                Defaults to `false`.
+    func openAIChat(_ url: AIChatURL, newTab: Bool = false, hasPrompt: Bool = false) {
         if newTab {
             mainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui),
                                                                                                  selected: NSApplication.shared.isShiftPressed)
         } else {
             if let currentURL = mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.url, currentURL.isAIChatURL {
-                mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.reload()
+                if hasPrompt {
+                    mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.reload()
+                }
             } else {
                 show(url: url.wrappedValue, source: .ui, newTab: newTab)
             }

@@ -134,7 +134,7 @@ protocol DuckPlayerControlling: AnyObject {
     var settings: DuckPlayerSettings { get }
 
     /// The host view controller, if any.
-    var hostView: TabViewController? { get }
+    var hostView: DuckPlayerHosting? { get }
 
     // Navigation Request Publisher to notify when DuckPlayer needs direct Youtube Nav
     var youtubeNavigationRequest: PassthroughSubject<URL, Never> { get }
@@ -225,7 +225,7 @@ protocol DuckPlayerControlling: AnyObject {
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    func setHostViewController(_ vc: TabViewController)
+    func setHostViewController(_ vc: DuckPlayerHosting)
 
     /// Loads a native DuckPlayerView
     ///
@@ -245,7 +245,8 @@ protocol DuckPlayerControlling: AnyObject {
     /// - Parameters:
     ///   - reset: Whether to reset the pill state
     ///   - animated: Whether to animate the dismissal
-    @MainActor func dismissPill(reset: Bool, animated: Bool)
+    ///   - programatic: Whether the dismissal was triggered programatically
+    @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
 
     /// Hides the bottom sheet when browser chrome is hidden
     @MainActor func hidePillForHiddenChrome()
@@ -278,7 +279,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     private(set) var settings: DuckPlayerSettings
-    private(set) weak var hostView: TabViewController?
+    private(set) weak var hostView: DuckPlayerHosting?
 
     private var featureFlagger: FeatureFlagger
     private var hideBrowserChromeTimer: Timer?
@@ -321,7 +322,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     var playerDismissedPublisher: PassthroughSubject<Void, Never>
 
     /// Native UI Presenter
-    private let nativeUIPresenter: DuckPlayerNativeUIPresenting
+    let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
@@ -378,7 +379,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// Sets the host view controller for presenting modals.
     ///
     /// - Parameter vc: The view controller to set as host.
-    public func setHostViewController(_ vc: TabViewController) {
+    public func setHostViewController(_ vc: DuckPlayerHosting) {
         hostView = vc
     }
 
@@ -408,7 +409,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         if let url = hostView?.url, url.isDuckPlayer {
             let orientation = UIDevice.current.orientation
             if orientation.isLandscape {
-                hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                hostView?.showChrome()
                 Task { await showPillForVisibleChrome() }
             }
         }
@@ -423,7 +424,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             DispatchQueue.main.async {
                 let orientation = UIDevice.current.orientation
                 if orientation.isLandscape {
-                    weakHostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+                    weakHostView?.hideChrome()
                 }
             }
         }
@@ -494,10 +495,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         let orientation = UIDevice.current.orientation
 
         // Only proceed with orientation change if DuckPlayer is visible
-        guard let hostView = hostView,
-              let hostViewDelegate = hostView.delegate,
-              hostViewDelegate.tabCheckIfItsBeingCurrentlyPresented(hostView),
-              let url = hostView.url,
+        guard hostView?.isTabCurrentlyPresented() ?? false,
+              let url = hostView?.url,
               url.isDuckPlayer else {
             return
         }
@@ -526,8 +525,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Portrait rotation
     private func handlePortraitOrientation() {
-        hostView?.chromeDelegate?.omniBar.endEditing()
-        hostView?.chromeDelegate?.setBarsHidden(false, animated: true, customAnimationDuration: nil)
+        hostView?.showChrome()
         hideBrowserChromeTimer?.invalidate()
         hideBrowserChromeTimer = nil
         hostView?.setupWebViewForPortraitVideo()
@@ -535,9 +533,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Handle Landscape rotation
     private func handleLandscapeOrientation() {
-        hostView?.chromeDelegate?.omniBar.endEditing()
         hostView?.setupWebViewForLandscapeVideo()
-        hostView?.chromeDelegate?.setBarsHidden(true, animated: true, customAnimationDuration: Constants.chromeShowHideAnimationDuration)
+        hostView?.hideChrome()
     }
 
     /// Default rotation should be portrait mode
@@ -657,8 +654,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameter context: The presentation context for the modal.
     @MainActor
     public func presentDuckPlayerInfo(context: DuckPlayerModalPresenter.PresentationContext) {
-        guard let hostView else { return }
-        DuckPlayerModalPresenter(context: context).presentDuckPlayerFeatureModal(on: hostView)
+
+        // Need to cast to TabVC for now - Will be remove once DuckPlayer NativeUI is released
+        guard let view = hostView as? TabViewController else { return }
+        DuckPlayerModalPresenter(context: context).presentDuckPlayerFeatureModal(on: view)
     }
 
     /// Encodes user values for sending to the web content.
@@ -785,9 +784,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Parameters:
     ///   - reset: Whether to reset the pill state
     ///   - animated: Whether to animate the dismissal
+    ///   - programatic: Whether the dismissal was triggered programatically
     @MainActor
-    func dismissPill(reset: Bool, animated: Bool) {
-        nativeUIPresenter.dismissPill(reset: reset, animated: animated)
+    func dismissPill(reset: Bool, animated: Bool, programatic: Bool) {
+        nativeUIPresenter.dismissPill(reset: reset, animated: animated, programatic: programatic)
     }
 
     @objc private func handleChromeVisibilityChange(_ notification: Notification) {

@@ -26,20 +26,26 @@ extension OnboardingView {
 
         @State private var showAddToDockTutorial = false
 
+        private let isAnimating: Binding<Bool>
+        private let isSkipped: Binding<Bool>
         private let showTutorialAction: () -> Void
         private let dismissAction: (_ fromAddToDock: Bool) -> Void
 
         init(
+            isAnimating: Binding<Bool> = .constant(true),
+            isSkipped: Binding<Bool>,
             showTutorialAction: @escaping () -> Void,
             dismissAction: @escaping (_ fromAddToDock: Bool) -> Void
         ) {
+            self.isAnimating = isAnimating
+            self.isSkipped = isSkipped
             self.showTutorialAction = showTutorialAction
             self.dismissAction = dismissAction
         }
 
         var body: some View {
             if showAddToDockTutorial {
-                OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt) {
+                OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.gotIt, isSkipped: isSkipped) {
                     dismissAction(true)
                 }
             } else {
@@ -49,7 +55,8 @@ extension OnboardingView {
                     message: NSAttributedString(string: UserText.AddToDockOnboarding.Promo.introMessage),
                     messageFont: Font.system(size: 16),
                     customView: AnyView(addToDockPromoView),
-                    customActionView: AnyView(customActionView)
+                    customActionView: AnyView(customActionView),
+                    skipAnimations: isSkipped
                 )
             }
         }
@@ -64,8 +71,10 @@ extension OnboardingView {
             VStack {
                 OnboardingCTAButton(
                     title: UserText.AddToDockOnboarding.Buttons.tutorial,
+                    buttonStyle: .primary(compact: false),
                     action: {
                         showTutorialAction()
+                        isSkipped.wrappedValue = false
                         showAddToDockTutorial = true
                     }
                 )

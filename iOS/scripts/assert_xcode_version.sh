@@ -4,7 +4,7 @@
 script_dir=$(dirname "$(readlink -f "$0")")
 base_dir="${script_dir}/.."
 
-required_xcode_version=$(<"${base_dir}"/.xcode-version)
+required_xcode_version=$(<"${base_dir}"/../.xcode-version)
 current_xcode_version=$(xcodebuild -version | grep 'Xcode' | cut -d\  -f2)
 
 verlte() { 

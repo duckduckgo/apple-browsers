@@ -39,11 +39,11 @@ struct DuckPlayerEntryPillView: View {
         static let hStackSpacing: CGFloat = 10
         static let fontSize: CGFloat = 16
         static let playButtonFont: CGFloat = 16
-        static let cornerRadius: CGFloat = 12
-        static let shadowOpacity: CGFloat = 0.2
-        static let shadowRadius: CGFloat = 8
+        static let cornerRadius: CGFloat = 16
+        static let shadowOpacity: CGFloat = 0.1
+        static let shadowRadius: CGFloat = 3
         static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
-        static let regularPadding: CGFloat = 16
+        static let regularPadding: CGFloat = 12
     }
 
     private var playButton: some View {
@@ -73,6 +73,7 @@ struct DuckPlayerEntryPillView: View {
                                 .multilineTextAlignment(.leading)
                                 .lineLimit(2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .layoutPriority(1)
 
                             Text(UserText.duckPlayerTapToWatchWithoutAds)
                                 .daxFootnoteRegular()

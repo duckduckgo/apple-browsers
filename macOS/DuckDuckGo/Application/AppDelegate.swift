@@ -118,6 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -180,6 +181,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    // swiftlint:disable cyclomatic_complexity
     @MainActor
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
@@ -275,6 +277,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
+        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+
         onboardingStateMachine = ContextualOnboardingStateMachine()
 
         // MARK: - Subscription configuration
@@ -305,17 +309,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                    featureFlagger: featureFlagger,
                                                                    userDefaults: subscriptionUserDefaults,
                                                                    canPerformAuthMigration: true,
-                                                                   canHandlePixels: true)
+                                                                   pixelHandlingSource: .mainApp)
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {
                 let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
                 subscriptionManager.tokenRecoveryHandler = {
-                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                    do {
+                        try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+                    } catch {
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+                    }
                 }
             } else {
                 subscriptionManager.tokenRecoveryHandler = {
                     try await DeadTokenRecoverer.reportDeadRefreshToken()
+                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
                 }
             }
 
@@ -396,7 +406,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         faviconManager = FaviconManager(cacheType: .standard)
 #endif
+
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
+            Task { @MainActor in
+                await WebExtensionManager.shared.loadWebExtensions()
+            }
+        }
+#endif
     }
+    // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
@@ -609,15 +628,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
 
-        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { [weak self] isSubscriptionActive in
+        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
                 PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
-
-                // Temporary experiment pixel - https://app.asana.com/0/1206488453854252/1209643339074944
-                guard let self else { return }
-                let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: self.subscriptionAuthV1toV2Bridge)
-                experimentManager.sendOneTimeCohortSubscriptionStatusPixel()
-                // ----
             }
         }
 

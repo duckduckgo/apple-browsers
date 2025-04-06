@@ -347,6 +347,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     // MARK: - Manual Dismiss Dialog
 
     func testWhenSearchResultDialogDismissCTAIsTappedThenExpectedPixelFiresAndDelegateDidTapDismissIsCalled() throws {
+        // GIVEN
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let isShowingTryVisitSiteDialog = false
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
@@ -364,6 +365,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     func testWhenTryVisitSiteFromSearchResultDialogDismissCTAIsTappedThenExpectedPixelFiresAndDelegateDidTapDismissIsCalled() throws {
+        // GIVEN
         let spec = DaxDialogs.BrowsingSpec.afterSearch
         let isShowingTryVisitSiteDialog = true
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
@@ -381,6 +383,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     func testWhenTryVisitSiteDialogDismissCTAIsTappedThenExpectedPixelFiresAndDelegateDidTapDismissIsCalled() throws {
+        // GIVEN
         let spec = DaxDialogs.BrowsingSpec.visitWebsite
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingTryVisitingSiteDialog.self, in: result))
@@ -396,6 +399,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     func testWhenFireDialogDismissCTAIsTappedThenExpectedPixelFiresAndDelegateDidTapDismissIsCalled() throws {
+        // GIVEN
         let spec = DaxDialogs.BrowsingSpec.fire
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
@@ -467,6 +471,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     func testWhenEndOfJourneyDismissCTAIsTappedThenExpectedPixelFiresAndDelegateDidTapDismissIsCalled() throws {
+        // GIVEN
         let spec = DaxDialogs.BrowsingSpec.final
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingFinalDialog.self, in: result))

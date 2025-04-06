@@ -244,14 +244,44 @@ extension Pixel {
         case daxDialogsEndOfJourneyNewTabUnique
         case daxDialogsEndOfJourneyDismissed
 
+        // MARK: - Dismiss Dax Dialog
+        // [Pixel Triage](https://app.asana.com/0/69071770703008/1209886067589853)
+        // [Pixels description](https://app.asana.com/0/1206329551987282/1209878560708456/f)
+
+        /// Event Trigger: Triggered when the users dismiss the “Try Search” dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingTrySearchDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Search Result" dialog upon performing an anonymous search.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingSearchResultDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingTryVisitSiteDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingTryVisitSiteDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Blocked Trackers dialog".
+        /// Anomaly Investigation: Check that
         case onboardingTrackersDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Fire Button" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingFireDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingEndOfJourneyDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingEndOfJourneyDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Privacy Pro" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
         case onboardingPrivacyPromoDialogDismissButtonTapped
 
         // MARK: - Onboarding Add To Dock

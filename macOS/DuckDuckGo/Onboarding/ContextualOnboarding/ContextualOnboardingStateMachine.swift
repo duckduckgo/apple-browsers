@@ -79,6 +79,10 @@ enum ContextualOnboardingState: String, CaseIterable {
     // From this state, after a website visit, it will show a "Tracker" dialog.
     // From this state, after a search, it will show nothing.
     case showTryASite
+
+    // State applied when the new tab is open after try a search has been shown.
+    // From this state, after a website visit, it will show a "Tracker" dialog.
+    // From this state, after a search, it will show search done.
     case showTryASiteSearchNotDone
 
     // State applied after the first search and the "Try A Site" dialog has been seen.

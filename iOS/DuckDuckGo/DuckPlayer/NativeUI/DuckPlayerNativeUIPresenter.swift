@@ -253,23 +253,7 @@ final class DuckPlayerNativeUIPresenter {
     private func updateWebViewConstraintForPillHeight() {
         constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
-
-    /// Updates the content of an existing hosting controller with the appropriate pill view
-    @MainActor
-    private func updatePillContent(
-        for pillType: PillType,
-        videoID: String,
-        timestamp: TimeInterval?,
-        in hostingController: UIHostingController<DuckPlayerContainer.Container<AnyView>>
-    ) {
-        guard let containerViewModel = self.containerViewModel else { return }
-
-        // Create a new container with the updated content
-        let updatedContainer = createContainerWithPill(for: pillType, videoID: videoID, timestamp: timestamp, containerViewModel: containerViewModel)
-
-        // Update the hosting controller's root view
-        hostingController.rootView = updatedContainer
-    }
+    
 
     /// Resets the webView constraint to its default value
     @MainActor
@@ -426,12 +410,10 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0
 
-        // If we already have a container view model, just update the content and show it again
+        // If for any reasong we already have a container view model, make sure to dismiss it
         if let existingViewModel = containerViewModel, let hostingController = containerViewController {
-            updatePillContent(for: pillType, videoID: videoID, timestamp: timestamp, in: hostingController)
-            pillHeight = Constants.webViewRequiredBottomConstraint
-            existingViewModel.show()
-            postPillVisibilityNotification(isVisible: true)
+            dismissPill(reset: true, animated: false, programatic: true)
+            presentPill(for: videoID, in: hostViewController, timestamp: timestamp)
             return
         }
 
@@ -535,7 +517,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     func presentDuckPlayer(
         videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
-    ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
+    ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {        
 
         // Increase the presentation event count
         appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1
@@ -543,6 +525,12 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Reset the dismiss count if toast not already presented
         if appSettings.duckPlayerPillDismissCount < 3 {
             appSettings.duckPlayerPillDismissCount = 0
+        }
+
+        // Store the videoID & Update State
+        if state.videoID != videoID {
+            state.videoID = videoID
+            state.hasBeenShown = true  // State is always true for auto mode
         }
 
         let navigationRequest = PassthroughSubject<URL, Never>()
@@ -557,6 +545,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let hostingController = UIHostingController(rootView: duckPlayerView)
         hostingController.modalPresentationStyle = .overFullScreen
         hostingController.isModalInPresentation = false
+
+        // Update Host View
+        self.hostView = hostViewController
 
         // Update State
         self.state.hasBeenShown = true

@@ -25,6 +25,7 @@ public enum DuckPlayerContainer {
         static let easeInOutDuration: Double = 0.3
         static let shortDuration: Double = 0.2
         static let springDuration: Double = 0.5
+        static let dismissSpringDuration: Double = 1.0
         static let springBounce: Double = 0.2
         static let initialOffsetValue: Double = 500.0
         static let dragThreshold: CGFloat = 50
@@ -181,10 +182,11 @@ private struct SheetView<Content: View>: View {
     // Animate the sheet offset with a spring animation
     private func animateOffset(to visible: Bool) {
         let offset = calculateSheetOffset(for: visible, containerHeight: containerHeight)
+        let duration = visible ? DuckPlayerContainer.Constants.springDuration : DuckPlayerContainer.Constants.dismissSpringDuration
         if #available(iOS 17.0, *) {
             withAnimation(
                 .spring(
-                    duration: DuckPlayerContainer.Constants.springDuration, bounce: DuckPlayerContainer.Constants.springBounce)
+                    duration: duration, bounce: DuckPlayerContainer.Constants.springBounce)
             ) {
                 sheetOffset = offset
             } completion: {
@@ -193,7 +195,7 @@ private struct SheetView<Content: View>: View {
         } else {
             withAnimation(
                 .spring(
-                    duration: DuckPlayerContainer.Constants.springDuration, bounce: DuckPlayerContainer.Constants.springBounce)
+                    duration: duration, bounce: DuckPlayerContainer.Constants.springBounce)
             ) {
                 sheetOffset = offset
             }

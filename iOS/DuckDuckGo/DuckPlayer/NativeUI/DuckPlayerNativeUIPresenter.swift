@@ -410,8 +410,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0
 
-        // If for any reasong we already have a container view model, make sure to dismiss it
-        if let existingViewModel = containerViewModel, let hostingController = containerViewController {
+        // If for any reason we already have a container view model, make sure to dismiss it
+        if containerViewModel != nil, containerViewController != nil {
             dismissPill(reset: true, animated: false, programatic: true)
             presentPill(for: videoID, in: hostViewController, timestamp: timestamp)
             return

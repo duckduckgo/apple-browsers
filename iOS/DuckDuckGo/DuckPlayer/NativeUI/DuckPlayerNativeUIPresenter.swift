@@ -517,7 +517,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     @MainActor
     func presentDuckPlayer(
         videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
-    ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {        
+    ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
 
         // Increase the presentation event count
         appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1

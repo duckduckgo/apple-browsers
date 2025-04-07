@@ -43,7 +43,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -207,7 +207,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             XCTAssertEqual(request.path, "/")
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -300,7 +300,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             XCTAssertEqual(request.path, "/")
-            return .ok(.html(data.sameDocumentTestData.string()!))
+            return .ok(.html(data.sameDocumentTestData.utf8String()!))
         }]
         try server.start(8084)
 
@@ -378,7 +378,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })), .weak(customCallbacksHandler))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.sameDocumentClientRedirectData.string()!))
+            return .ok(.html(data.sameDocumentClientRedirectData.utf8String()!))
         }]
         try server.start(8084)
 
@@ -420,7 +420,7 @@ class SameDocumentNavigationTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })), .weak(customCallbacksHandler))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.sessionStatePushClientRedirectData.string()!))
+            return .ok(.html(data.sessionStatePushClientRedirectData.utf8String()!))
         }]
         try server.start(8084)
 

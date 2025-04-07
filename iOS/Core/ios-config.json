@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1743428841598,
+    "version": 1743758114945,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -1754,7 +1754,7 @@
                     ]
                 },
                 "tdsNextExperimentApr25": {
-                    "state": "enabled",
+                    "state": "disabled",
                     "rollout": {
                         "steps": [
                             {
@@ -1769,16 +1769,16 @@
                     "cohorts": [
                         {
                             "name": "control",
-                            "weight": 1
+                            "weight": 0
                         },
                         {
                             "name": "treatment",
-                            "weight": 1
+                            "weight": 0
                         }
                     ]
                 }
             },
-            "hash": "4cc87c4d7263b72543876711ca5be967"
+            "hash": "c2785a96684f75f86fa0a37a1d430d63"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -6552,6 +6552,9 @@
                             },
                             {
                                 "percent": 50
+                            },
+                            {
+                                "percent": 100
                             }
                         ]
                     }
@@ -6561,7 +6564,7 @@
                 "hashPrefixUpdateFrequency": 20,
                 "filterSetUpdateFrequency": 720
             },
-            "hash": "eb15e20058390f13e79300b54cd26549"
+            "hash": "2efe62f4dca258c98fa27b45c893b9af"
         },
         "marketplaceAdPostback": {
             "state": "enabled",
@@ -11038,6 +11041,11 @@
             "exceptions": [],
             "state": "enabled",
             "hash": "52857469413a66e8b0c7b00de5589162"
+        },
+        "windowsWebViewPermissionsSavesInProfile": {
+            "exceptions": [],
+            "state": "disabled",
+            "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "windowsWebviewFailures": {
             "exceptions": [],

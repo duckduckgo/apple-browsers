@@ -71,7 +71,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
         case .privacyProPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
-            createPrivacyProPromoDialog(onDismiss: onCompletion, onManualDismiss: onManualDismiss)
+            createPrivacyProPromoDialog(onDismiss: onCompletion)
         default:
             EmptyView()
         }
@@ -164,7 +164,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
+    private func createPrivacyProPromoDialog(onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
 
         return FadeInView {
             PrivacyProPromotionView(

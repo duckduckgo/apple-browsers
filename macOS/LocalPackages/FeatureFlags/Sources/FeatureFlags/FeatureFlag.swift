@@ -57,7 +57,7 @@ public enum FeatureFlag: String, CaseIterable {
     case autoUpdateInDEBUG
 
     case autofillPartialFormSaves
-    case autcompleteTabs
+    case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
@@ -92,7 +92,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autcompleteTabs,
+                .autocompleteTabs,
                 .networkProtectionAppExclusions,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
@@ -149,7 +149,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()

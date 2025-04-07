@@ -379,11 +379,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case let .duplicate(index):
             duplicateTab(at: .pinned(index))
         case let .bookmark(tab):
-            guard let url = tab.url, let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
-                Logger.general.debug("TabBarViewController: Failed to get url from tab")
+            guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
+                Logger.general.debug("TabBarViewController: Failed to get tabViewModel for pinned tab")
                 return
             }
-            bookmarkTab(with: url, title: tabViewModel.title)
+            addBookmark(for: tabViewModel)
         case let .removeBookmark(tab):
             guard let url = tab.url else {
                 Logger.general.debug("TabBarViewController: Failed to get url from tab")
@@ -880,10 +880,12 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         tabCollectionViewModel.duplicateTab(at: tabIndex)
     }
 
-    private func bookmarkTab(with url: URL, title: String) {
-        if !bookmarkManager.isUrlBookmarked(url: url) {
-            bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
-        }
+    private func addBookmark(for tabViewModel: any TabBarViewModel) {
+        // open Add Bookmark modal dialog
+        guard let url = tabViewModel.tabContent.userEditableUrl else { return }
+
+        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: WebsiteInfo(url: url, title: tabViewModel.title))
+        dialog.show(in: view.window)
     }
 
     private func deleteBookmark(with url: URL) {
@@ -912,20 +914,6 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         FireproofDomains.shared.remove(domain: host)
     }
 
-    // MARK: - TabViewItem
-
-    func urlAndTitle(for tabBarViewItem: TabBarViewItem) -> (url: URL, title: String)? {
-        guard
-            let indexPath = collectionView.indexPath(for: tabBarViewItem),
-            let tabViewModel = tabCollectionViewModel.tabViewModel(at: indexPath.item),
-            let url = tabViewModel.tab.content.userEditableUrl
-        else {
-            Logger.general.error("TabBarViewController: Failed to get index path of tab bar view item")
-            return nil
-        }
-
-        return (url, tabViewModel.title)
-    }
 }
 
 // MARK: - NSCollectionViewDelegateFlowLayout
@@ -1212,19 +1200,20 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        guard let url = urlAndTitle(for: tabBarViewItem)?.url else { return false }
+        guard let tabViewModel = tabBarViewItem.tabViewModel,
+              let url = tabViewModel.tabContent.userEditableUrl else { return false }
 
         return bookmarkManager.isUrlBookmarked(url: url)
     }
 
     func tabBarViewItemBookmarkThisPageAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let (url, title) = urlAndTitle(for: tabBarViewItem) else { return }
-
-        bookmarkTab(with: url, title: title)
+        guard let tabViewModel = tabBarViewItem.tabViewModel else { return }
+        addBookmark(for: tabViewModel)
     }
 
     func tabBarViewItemRemoveBookmarkAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let url = urlAndTitle(for: tabBarViewItem)?.url else { return }
+        guard let tabViewModel = tabBarViewItem.tabViewModel,
+              let url = tabViewModel.tabContent.userEditableUrl else { return }
 
         deleteBookmark(with: url)
     }
@@ -1236,6 +1225,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
         BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+    }
+
+    func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {
+        hideTabPreview()
     }
 
     func tabBarViewItemCloseAction(_ tabBarViewItem: TabBarViewItem) {

@@ -2156,7 +2156,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Dzēst pārlūkošanas datus ar vienu pogu";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloķē trešo pušu izsekotājus";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2170,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Es jau esmu bijis/-usi šeit agrāk";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Uzzināt vairāk";
@@ -2188,6 +2191,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Sākt pārlūkošanu";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Parādīt pamācību";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Atceries: tu vari dzēst visas savas cilnes, vēsturi un pārlūkošanas datus ar diviem pieskārieniem, izmantojot pogu Fire Button 🔥";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Sapratu! Es izlaidīšu pārējos padomus.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Pievienot logrīku";

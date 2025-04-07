@@ -139,8 +139,8 @@ public struct DaxDialogView<Content: View>: View {
     private var wrappedContent: some View {
         let backgroundColor = Color(designSystemColor: .surface)
         let shadowColors: (Color, Color) = colorScheme == .light
-            ? (.black.opacity(0.08), .black.opacity(0.1))
-            : (.black.opacity(0.20), .black.opacity(0.16))
+        ? (.black.opacity(0.08), .black.opacity(0.1))
+        : (.black.opacity(0.20), .black.opacity(0.16))
 
         let styledContent = content
             .padding(.all, DaxDialogMetrics.contentPadding)
@@ -162,8 +162,8 @@ public struct DaxDialogView<Content: View>: View {
                 .ifLet(onManualDismiss) { view, onDismiss in
                     view.overlay(alignment: .topTrailing) {
                         OnboardingDismissButton(action: onDismiss)
-                            .alignmentGuide(.top) { $0.height/2 - DaxDialogMetrics.dismissButtonPadding }
-                            .alignmentGuide(.trailing) { $0.width/2 + DaxDialogMetrics.dismissButtonPadding }
+                            .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                            .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
                     }
                 }
         } else {
@@ -235,7 +235,7 @@ struct OnboardingDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(.close16)
+            Image("Close-16", bundle: bundle)
                 .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(backgroundColor)
@@ -286,7 +286,7 @@ struct OnboardingDismissButton: View {
 
 // Move this extension to `SwiftUIExtensions` package when creating it.
 private extension View {
-
+    
     @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
         if let value = value {
             transform(self, value)
@@ -294,10 +294,10 @@ private extension View {
             self
         }
     }
-
 }
 
-extension View {
+
+private extension View {
     func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
         self
             .simultaneousGesture(DragGesture(minimumDistance: 0)

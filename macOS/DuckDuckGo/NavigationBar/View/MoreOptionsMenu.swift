@@ -155,7 +155,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    tabCollectionViewModel: tabCollectionViewModel,
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                   authenticationStateProvider: subscriptionManager)
+                                                   authenticationStateProvider: subscriptionManager,
+                                                   internalUserDecider: internalUserDecider)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -670,13 +671,16 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 final class FeedbackSubMenu: NSMenu {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
+    private let internalUserDecider: InternalUserDecider
 
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         authenticationStateProvider: any SubscriptionAuthenticationStateProvider) {
+         authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
+         internalUserDecider: InternalUserDecider) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
+        self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
         updateMenuItems(with: tabCollectionViewModel, targetting: target)
     }
@@ -708,6 +712,11 @@ final class FeedbackSubMenu: NSMenu {
                                                   keyEquivalent: "")
                 .withImage(.pProFeedback)
             addItem(sendPProFeedbackItem)
+        }
+
+        if internalUserDecider.isInternalUser {
+            addItem(.separator())
+            addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
     }
 }

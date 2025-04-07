@@ -184,7 +184,7 @@ fileprivate extension Data {
 fileprivate extension SuggestionLoader {
 
     convenience init() {
-        self.init(urlFactory: {_ in return nil})
+        self.init(urlFactory: { _ in return nil }, isUrlIgnored: { _ in false })
     }
 
 }

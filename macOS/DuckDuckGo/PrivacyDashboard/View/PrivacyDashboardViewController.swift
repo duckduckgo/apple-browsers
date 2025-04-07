@@ -71,6 +71,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
+    let featureFlagger: FeatureFlagger
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -88,10 +89,12 @@ final class PrivacyDashboardViewController: NSViewController {
 
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
+        self.featureFlagger = featureFlagger
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
@@ -344,6 +347,15 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
+        var privacyExperimentCohorts: [String: String] {
+            var experiments: [String: String] = [:]
+            for feature in ContentScopeExperimentsFeatureFlag.allCases {
+                let cohort = featureFlagger.resolveCohort(for: feature)
+                experiments[feature.rawValue] = cohort?.rawValue
+            }
+            return experiments
+        }
+
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
                                                description: description,
@@ -365,7 +377,9 @@ extension PrivacyDashboardViewController {
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
                                                jsPerformance: webVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
-                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged)
+                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
+                                               debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
+                                               privacyExperiments: privacyExperimentCohorts)
         return websiteBreakage
     }
 }

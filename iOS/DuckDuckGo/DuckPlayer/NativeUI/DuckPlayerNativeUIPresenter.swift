@@ -21,15 +21,22 @@ import Combine
 import Foundation
 import SwiftUI
 import UIKit
+import WebKit
+
+/// Represents different types of constraint updates for DuckPlayer UI
+public enum DuckPlayerConstraintUpdate {
+    case showPill(height: CGFloat)
+    case reset
+}
 
 protocol DuckPlayerNativeUIPresenting {
 
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never> { get }
 
-    @MainActor func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?)
+    @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?)
     @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
     @MainActor func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>)
     @MainActor func showBottomSheetForVisibleChrome()
     @MainActor func hideBottomSheetForHiddenChrome()
@@ -74,21 +81,21 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     /// The container view model for the entry pill
-    private var containerViewModel: DuckPlayerContainer.ViewModel?
+    private(set) var containerViewModel: DuckPlayerContainer.ViewModel?
 
     /// The hosting controller for the container
-    private var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
+    private(set) var containerViewController: UIHostingController<DuckPlayerContainer.Container<AnyView>>?
 
     /// References to the host view and source
-    private weak var hostView: TabViewController?
-    private var source: DuckPlayer.VideoNavigationSource?
-    private var state: DuckPlayerState
+    private(set) weak var hostView: DuckPlayerHosting?
+    private(set) var source: DuckPlayer.VideoNavigationSource?
+    private(set) var state: DuckPlayerState
 
     /// The DuckPlayer instance
     private weak var duckPlayer: DuckPlayerControlling?
 
     /// The view model for the player
-    private var playerViewModel: DuckPlayerViewModel?
+    private(set) var playerViewModel: DuckPlayerViewModel?
 
     /// A publisher to notify when a video playback request is needed
     let videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
@@ -103,45 +110,72 @@ final class DuckPlayerNativeUIPresenter {
     private var omniBarHeight: CGFloat = 0
 
     /// Bottom constraint for the container view
-    private var bottomConstraint: NSLayoutConstraint?
+    private(set) var bottomConstraint: NSLayoutConstraint?
 
     /// Height of the current pill view
-    private var pillHeight: CGFloat = 0
+    private(set) var pillHeight: CGFloat = 0
+
+    /// Notification center for posting notifications
+    private let notificationCenter: NotificationCenter
 
     /// Determines if the priming modal should be shown
     private var shouldShowPrimingModal: Bool {
         let now = Int(Date().timeIntervalSince1970)
-        let timeSinceLastShown = now - appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented
+        let timeSinceLastShown = now - appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime
 
         return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount < Constants.primingModalEventCountThreshold
             && timeSinceLastShown > Constants.primingModalTimeSinceLastPresentedThreshold && appSettings.duckPlayerNativeYoutubeMode == .ask
     }
 
+    /// Publisher for constraint updates
+    private let constraintUpdatePublisher = PassthroughSubject<DuckPlayerConstraintUpdate, Never>()
+
+    /// Public access to the constraint update publisher
+    var constraintUpdates: AnyPublisher<DuckPlayerConstraintUpdate, Never> {
+        constraintUpdatePublisher.eraseToAnyPublisher()
+    }
+
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings, state: DuckPlayerState = DuckPlayerState()) {
+    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         state: DuckPlayerState = DuckPlayerState(),
+         notificationCenter: NotificationCenter = .default) {
         self.appSettings = appSettings
         self.state = state
-        setupNotificationObservers()
+        self.notificationCenter = notificationCenter
+        setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
-    private func setupNotificationObservers() {
-        NotificationCenter.default.addObserver(
+    private func setupNotificationObservers(notificationCenter: NotificationCenter) {
+        notificationCenter.addObserver(
             self,
             selector: #selector(handleOmnibarDidLayout),
             name: DefaultOmniBarView.didLayoutNotification,
             object: nil
         )
 
+         // Add observers for app settings changes
+        notificationCenter.addObserver(
+            self,
+            selector: #selector(handleAppSettingsChange),
+            name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+            object: nil
+        )
+
     }
 
     /// Updates the UI based on Ombibar Notification
-    @objc private func handleOmnibarDidLayout(_ notification: Notification) {
+    @objc func handleOmnibarDidLayout(_ notification: Notification) {
         guard let omniBar = notification.object as? DefaultOmniBarView else { return }
         omniBarHeight = omniBar.frame.height
         guard let bottomConstraint = bottomConstraint else { return }
         bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -omniBarHeight : 0
+    }
+
+        /// Updates the UI based on Ombibar Notification
+    @objc func handleAppSettingsChange(_ notification: Notification) {
+        appSettings = AppDependencyProvider.shared.appSettings
     }
 
     /// Creates a container with the appropriate pill view based on the pill type
@@ -159,7 +193,7 @@ final class DuckPlayerNativeUIPresenter {
         if pillType == .entry {
             // Create the pill view model for entry type
             let pillViewModel = DuckPlayerEntryPillViewModel { [weak self] in
-                self?.videoPlaybackRequest.send((videoID, nil))
+                self?.videoPlaybackRequest.send((videoID, timestamp))
             }
 
             // Create the container view with the pill view
@@ -217,15 +251,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Updates the webView constraint based on the current pill height
     @MainActor
     private func updateWebViewConstraintForPillHeight() {
-        if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
-            if self.appSettings.currentAddressBarPosition == .bottom {
-                let targetHeight = hostView.chromeDelegate?.barsMaxHeight ?? 0.0
-                webViewBottomConstraint.constant = -targetHeight - self.pillHeight
-            } else {
-                webViewBottomConstraint.constant = -self.pillHeight
-            }
-            hostView.view.layoutIfNeeded()
-        }
+        constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
 
     /// Updates the content of an existing hosting controller with the appropriate pill view
@@ -248,12 +274,7 @@ final class DuckPlayerNativeUIPresenter {
     /// Resets the webView constraint to its default value
     @MainActor
     private func resetWebViewConstraint() {
-        if let hostView = self.hostView, let webViewBottomConstraint = hostView.webViewBottomAnchorConstraint {
-            // Reset to the default value based on address bar position
-            let targetHeight = hostView.chromeDelegate?.barsMaxHeight ?? 0.0
-            webViewBottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
-            hostView.view.layoutIfNeeded()
-        }
+        constraintUpdatePublisher.send(.reset)
     }
 
     /// Removes the pill controller
@@ -280,7 +301,7 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private func presentPrimingModal(
         for videoID: String,
-        in hostViewController: TabViewController,
+        in hostViewController: DuckPlayerHosting,
         timestamp: TimeInterval?
     ) {
         let viewModel = DuckPlayerPrimingModalViewModel()
@@ -302,7 +323,7 @@ final class DuckPlayerNativeUIPresenter {
             sheet.selectedDetentIdentifier = .medium
         }
 
-        hostViewController.present(hostingController, animated: true)
+        hostViewController.present(hostingController, animated: true, completion: nil)
 
         // Handle "Try DuckPlayer" action
         viewModel.tryDuckPlayerRequest
@@ -351,11 +372,8 @@ final class DuckPlayerNativeUIPresenter {
 
     @MainActor
     private func presentDismissCountToast() {
-        // Reset the dismiss count
-        appSettings.duckPlayerPillDismissCount = 0
-
         var message = AttributedString(UserText.duckPlayerNativePillDismissCountToastMessage)
-        message.foregroundColor = Color(designSystemColor: .buttonsWhite)
+        message.foregroundColor = .white
         displayToast(
             with: message,
             buttonTitle: UserText.duckPlayerNativePillDismissCountToastMessageButton
@@ -370,7 +388,7 @@ final class DuckPlayerNativeUIPresenter {
 
     /// Posts a notification about the pill's visibility state
     private func postPillVisibilityNotification(isVisible: Bool) {
-        NotificationCenter.default.post(
+        notificationCenter.post(
             name: Notifications.duckPlayerPillUpdated,
             object: nil,
             userInfo: [
@@ -389,7 +407,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video
     @MainActor
-    func presentPill(for videoID: String, in hostViewController: TabViewController, timestamp: TimeInterval?) {
+    func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -398,7 +416,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         if shouldShowPrimingModal {
             appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1
-            appSettings.duckPlayerNativeUIPrimingModalTimeSinceLastPresented = Int(Date().timeIntervalSince1970)
+            appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = Int(Date().timeIntervalSince1970)
             presentPrimingModal(for: videoID, in: hostViewController, timestamp: timestamp)
         }
 
@@ -484,14 +502,14 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func dismissPill(reset: Bool = false, animated: Bool = true, programatic: Bool = true) {
         // First reset constraints immediately
         resetWebViewConstraint()
-        
+
         postPillVisibilityNotification(isVisible: false)
 
         // If was dismissed by the user, increment the dismiss count
         if !programatic {
             appSettings.duckPlayerPillDismissCount += 1
 
-            if appSettings.duckPlayerPillDismissCount >= 3 {
+            if appSettings.duckPlayerPillDismissCount == 3 {
                 // Present toast reminding the user that they can disable DuckPlayer in settings
                 presentDismissCountToast()
             }
@@ -516,14 +534,16 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
     @MainActor
     func presentDuckPlayer(
-        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: TabViewController, title: String?, timestamp: TimeInterval?
+        videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
 
         // Increase the presentation event count
         appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount += 1
 
-        // Reset the dismiss count
-        appSettings.duckPlayerPillDismissCount = 0
+        // Reset the dismiss count if toast not already presented
+        if appSettings.duckPlayerPillDismissCount < 3 {
+            appSettings.duckPlayerPillDismissCount = 0
+        }
 
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()
@@ -568,7 +588,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             }
             .store(in: &playerCancellables)
 
-        hostViewController.present(hostingController, animated: true)
+        hostViewController.present(hostingController, animated: true, completion: nil)
 
         // Dismiss the Pill
         dismissPill()

@@ -127,7 +127,7 @@ struct DuckPlayerMiniPillView: View {
                                 .daxFootnoteRegular()
                                 .foregroundColor(Color(designSystemColor: .textSecondary))
                                 .multilineTextAlignment(.leading)
-                                .lineLimit(2)
+                                .lineLimit(1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .layoutPriority(1)

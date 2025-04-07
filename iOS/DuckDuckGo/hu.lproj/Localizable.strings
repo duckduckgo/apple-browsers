@@ -2156,7 +2156,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Harmadik féltől származó nyomkövetők blokkolása";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2170,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Rajta, csináljuk!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Már jártam itt korábban";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "További részletek";
@@ -2188,6 +2191,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Böngészés indítása";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Útmutató megjelenítése";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Ne feledd: a Fire Button 🔥 segítségével két érintéssel törölheted az összes lapodat, előzményedet és böngészési adatodat.";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Értem! Kihagyom a többi tippet.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Minialkalmazás hozzáadása";

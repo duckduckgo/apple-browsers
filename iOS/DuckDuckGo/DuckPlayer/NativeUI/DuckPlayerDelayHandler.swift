@@ -1,7 +1,8 @@
 //
-//  DataExtension.swift
+//  DuckPlayerDelayHandler.swift
+//  DuckDuckGo
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,11 +18,17 @@
 //
 
 import Foundation
+import Combine
 
-extension Data {
+// A generic protocol to
+protocol DuckPlayerDelayHandling {
+    func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never>
+}
 
-    func utf8String() -> String? {
-        return String(data: self, encoding: .utf8)
+class DuckPlayerDelayHandler: DuckPlayerDelayHandling {
+    func delay(seconds: TimeInterval) -> AnyPublisher<Void, Never> {
+        Just(())
+            .delay(for: .seconds(seconds), scheduler: DispatchQueue.main)
+            .eraseToAnyPublisher()
     }
-
 }

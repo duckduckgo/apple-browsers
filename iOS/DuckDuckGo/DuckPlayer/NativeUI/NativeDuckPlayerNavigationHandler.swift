@@ -60,6 +60,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// isLinkPreview is true when the DuckPlayer is opened from a link preview
     var isLinkPreview = false
 
+    /// Native UserScript
+    var nativeUserScript: DuckPlayerNativeUserScript = DuckPlayerNativeUserScript()
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -173,9 +176,10 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///  - mute: Whether to mute the audio.
     @MainActor
     private func toggleAudioForTab(_ webView: WKWebView, mute: Bool) {
-        if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
-            webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
-        }
+        nativeUserScript.muteAudio(mute: mute)
+        //if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
+        //    webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
+        //}
     }
 
     /// Register a DuckPlayer Youtube Navigation Request observer

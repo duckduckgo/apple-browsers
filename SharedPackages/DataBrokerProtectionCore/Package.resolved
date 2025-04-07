@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "f0104543e4c16874588fca1bf089cf048ba40053",
-        "version" : "8.9.0"
+        "branch" : "mgurgel/duckplayer-native",
+        "revision" : "e445a5fb4bc953671adfffba38e7734b236fd20b"
       }
     },
     {

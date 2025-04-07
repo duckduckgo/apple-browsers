@@ -38,6 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -74,7 +75,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,6 +89,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -332,6 +335,16 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
+        var privacyExperimentCohorts: [String: String] {
+            var experiments: [String: String] = [:]
+            for feature in ContentScopeExperimentsFeatureFlag.allCases {
+                let cohort = featureFlagger.resolveCohort(for: feature)
+                experiments[feature.rawValue] = cohort?.rawValue
+            }
+            return experiments
+        }
+
+
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
@@ -357,7 +370,9 @@ extension PrivacyDashboardViewController {
                                 jsPerformance: webVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged)
+                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                debugFlags: privacyInfo.debugFlags,
+                                privacyExperiments: privacyExperimentCohorts)
     }
 
 }

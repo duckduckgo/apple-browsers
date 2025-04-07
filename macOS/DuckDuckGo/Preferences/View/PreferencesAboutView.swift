@@ -162,7 +162,7 @@ extension Preferences {
                 Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText .versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
 #if SPARKLE

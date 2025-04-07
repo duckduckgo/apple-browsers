@@ -212,6 +212,9 @@ extension Pixel {
         // MARK: - Onboarding
 
         case onboardingIntroShownUnique
+        case onboardingIntroSkipOnboardingCTAPressed
+        case onboardingIntroConfirmSkipOnboardingCTAPressed
+        case onboardingIntroResumeOnboardingCTAPressed
         case onboardingIntroComparisonChartShownUnique
         case onboardingIntroChooseBrowserCTAPressed
         case onboardingIntroChooseAppIconImpressionUnique
@@ -240,6 +243,46 @@ extension Pixel {
         case daxDialogsEndOfJourneyTabUnique
         case daxDialogsEndOfJourneyNewTabUnique
         case daxDialogsEndOfJourneyDismissed
+
+        // MARK: - Dismiss Dax Dialog
+        // [Pixel Triage](https://app.asana.com/0/69071770703008/1209886067589853)
+        // [Pixels description](https://app.asana.com/0/1206329551987282/1209878560708456/f)
+
+        /// Event Trigger: Triggered when the users dismiss the “Try Search” dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTrySearchDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Search Result" dialog upon performing an anonymous search.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingSearchResultDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTryVisitSiteDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTryVisitSiteDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Blocked Trackers dialog".
+        /// Anomaly Investigation: Check that
+        case onboardingTrackersDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Fire Button" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingFireDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingEndOfJourneyDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingEndOfJourneyDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Privacy Pro" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingPrivacyPromoDialogDismissButtonTapped
 
         // MARK: - Onboarding Add To Dock
 
@@ -909,9 +952,14 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
-        case privacyProDeadTokenDetected
-        case authV1MigrationFailed
-        case authV1MigrationSucceeded
+        // AUth V2
+        case privacyProInvalidRefreshTokenDetected
+        case privacyProInvalidRefreshTokenSignedOut
+        case privacyProInvalidRefreshTokenRecovered
+        case privacyProAuthV2MigrationStarted
+        case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationSucceeded
+        case privacyProAuthV2GetTokensError
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -1279,6 +1327,9 @@ extension Pixel.Event {
         case .brokenSiteReport: return "epbf"
             
         case .onboardingIntroShownUnique: return "m_preonboarding_intro_shown_unique"
+        case .onboardingIntroSkipOnboardingCTAPressed: return "m_preonboarding_skip-onboarding-pressed"
+        case .onboardingIntroConfirmSkipOnboardingCTAPressed: return "m_preonboarding_confirm-skip-onboarding-pressed"
+        case .onboardingIntroResumeOnboardingCTAPressed: return "m_preonboarding_resume-onboarding-pressed"
         case .onboardingIntroComparisonChartShownUnique: return "m_preonboarding_comparison_chart_shown_unique"
         case .onboardingIntroChooseBrowserCTAPressed: return "m_preonboarding_choose_browser_pressed"
         case .onboardingIntroChooseAppIconImpressionUnique: return "m_preonboarding_choose_icon_impressions_unique"
@@ -1307,6 +1358,16 @@ extension Pixel.Event {
         case .daxDialogsEndOfJourneyTabUnique: return "m_dx_end_tab_unique"
         case .daxDialogsEndOfJourneyNewTabUnique: return "m_dx_end_new_tab_unique"
         case .daxDialogsEndOfJourneyDismissed: return "m_dx_end_dialog_dismissed"
+
+        case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingSearchResultDialogDismissButtonTapped: return "m_onboarding_search-result-dialog_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogNewTabDismissButtonTapped: return "m_onboarding_try-visit-site-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogDismissButtonTapped: return "m_onboarding_try-visit-site-dialog_dismiss-button-tapped"
+        case .onboardingTrackersDialogDismissButtonTapped: return "m_onboarding_trackers-dialog_dismiss-button-tapped"
+        case .onboardingFireDialogDismissButtonTapped: return "m_onboarding_fire-dialog_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogNewTabDismissButtonTapped: return "m_onboarding_end-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogDismissButtonTapped: return "m_onboarding_end-dialog_dismiss-button-tapped"
+        case .onboardingPrivacyPromoDialogDismissButtonTapped: return "m_onboarding_privacy-promo-dialog_dismiss-button-tapped"
 
         case .onboardingAddToDockPromoImpressionsUnique: return "m_onboarding_add_to_dock_promo_impressions_unique"
         case .onboardingAddToDockPromoShowTutorialCTATapped: return "m_onboarding_add_to_dock_promo_show_tutorial_button_tapped"
@@ -1942,9 +2003,14 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
+        // AUth V2
+        case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
+        case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 

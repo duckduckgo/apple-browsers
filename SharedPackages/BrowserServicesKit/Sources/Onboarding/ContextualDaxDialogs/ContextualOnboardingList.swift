@@ -84,22 +84,19 @@ private let strokeColor = Color.blue
     public var body: some View {
         VStack {
             ForEach(list.indices, id: \.self) { index in
-                Button(action: {
-                    action(list[index])
-                }, label: {
-                    HStack {
-                        Image(list[index].imageName, bundle: bundle)
-                            .frame(width: iconSize, height: iconSize)
-                        Text(list[index].visibleTitle)
-                            .frame(alignment: .leading)
-                        Spacer(minLength: 0)
+                OnboardingBorderedButton(
+                    content: {
+                        HStack {
+                            Image(list[index].imageName, bundle: bundle)
+                                .frame(width: iconSize, height: iconSize)
+                            Text(list[index].visibleTitle)
+                                .frame(alignment: .leading)
+                            Spacer(minLength: 0)
+                        }
+                    },
+                    action: {
+                        action(list[index])
                     }
-                })
-                .buttonStyle(OnboardingStyles.ListButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .inset(by: 0.5)
-                        .stroke(strokeColor, lineWidth: 1)
                 )
             }
         }

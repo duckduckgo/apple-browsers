@@ -42,7 +42,7 @@ enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
     }
 }
 
-protocol AppSettings: AnyObject {
+protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
     var currentThemeStyle: ThemeStyle { get set }
@@ -92,6 +92,12 @@ protocol AppSettings: AnyObject {
     var duckPlayerNativeUISERPEnabled: Bool { get set }
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get set }
+    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int { get set }
     var duckPlayerPillDismissCount: Int { get set }
+}
+
+// MARK: - AppSettings + OnboardingDebugSettings
+
+protocol OnboardingDebugAppSettings {
+    var onboardingUserType: OnboardingUserType { get set }
 }

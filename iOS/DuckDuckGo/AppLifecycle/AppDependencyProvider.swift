@@ -169,25 +169,18 @@ final class AppDependencyProvider: DependencyProvider {
             Logger.subscription.debug("Configuring Subscription V2")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
-            let configuration = URLSessionConfiguration.default
-            configuration.httpCookieStorage = nil
-            configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-            let urlSession = URLSession(configuration: configuration,
-                                        delegate: SessionDelegate(),
-                                        delegateQueue: nil)
-            let apiService = DefaultAPIService(urlSession: urlSession)
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: apiService)
-
-            // keychain storage
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
 
-            apiService.authorizationRefresherCallback = { _ in
+            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription()
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            apiServiceForSubscription.authorizationRefresherCallback = { _ in
+
                 guard let tokenContainer = tokenStorageV2.tokenContainer else {
                     throw OAuthClientError.internalError("Missing refresh token")
                 }
@@ -201,21 +194,8 @@ final class AppDependencyProvider: DependencyProvider {
                     return tokenContainer.accessToken
                 }
             }
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
-            let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-                switch type {
-                case .deadToken:
-                    Pixel.fire(pixel: .privacyProDeadTokenDetected)
-                case .subscriptionIsActive:
-                    DailyPixel.fire(pixel: .privacyProSubscriptionActive)
-                case .v1MigrationFailed:
-                    Pixel.fire(pixel: .authV1MigrationFailed)
-                case .v1MigrationSuccessful:
-                    Pixel.fire(pixel: .authV1MigrationSucceeded)
-                }
-            }
+            let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
@@ -228,7 +208,14 @@ final class AppDependencyProvider: DependencyProvider {
 
             let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: storePurchaseManager)
             subscriptionManager.tokenRecoveryHandler = {
-                try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                do {
+                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                    DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenRecovered)
+                    Pixel.fire(pixel: .privacyProInvalidRefreshTokenRecovered)
+                } catch {
+                    DailyPixel.fire(pixel: .privacyProInvalidRefreshTokenSignedOut)
+                    Pixel.fire(pixel: .privacyProInvalidRefreshTokenSignedOut)
+                }
             }
 
             self.subscriptionManagerV2 = subscriptionManager

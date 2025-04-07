@@ -37,15 +37,23 @@ public enum FeatureFlag: String {
     case autoconsentOnByDefault
     case history
     case newTabPageSections
+        
+    // Duckplayer 'Web based' UI
     case duckPlayer
+    // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
+    
+    // Duckplayer 'Native' UI
+    // https://app.asana.com/0/1204099484721401/1209255140870410/f
+    case duckPlayerNativeUI
+
     case sslCertificatesBypass
     case syncPromotionBookmarks
     case syncPromotionPasswords
     case onboardingHighlights
     case onboardingAddToDock
     case autofillSurveys
-    case autcompleteTabs
+    case autocompleteTabs
     case textZoom
     case adAttributionReporting
     case tabManagerMultiSelection
@@ -165,6 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
         case .duckPlayerOpenInNewTab:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.openInNewTab))
+        case .duckPlayerNativeUI:
+            return .remoteReleasable(.subfeature(DuckPlayerSubfeature.nativeUI))
         case .sslCertificatesBypass:
             return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .syncPromotionBookmarks:
@@ -177,7 +187,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))
@@ -205,7 +215,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
 
         case .privacyProAuthV2:
-            return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
 
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))

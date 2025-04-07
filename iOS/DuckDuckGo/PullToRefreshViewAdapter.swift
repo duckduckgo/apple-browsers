@@ -80,6 +80,23 @@ final class PullToRefreshViewAdapter: NSObject {
     private weak var pullableView: UIView?
     private let onRefresh: () -> Void
 
+    var backgroundColor: UIColor? {
+        didSet {
+            fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
+            // Set refresh control tint color based on background brightness
+            refreshControl.tintColor = determineRefreshControlTintColor(for: backgroundColor)
+        }
+    }
+
+    private func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
+        guard let backgroundColor = backgroundColor else {
+            return UIColor(designSystemColor: .iconsSecondary)
+        }
+
+        let userInterfaceStyle: UIUserInterfaceStyle = backgroundColor.brightnessPercentage < 50 ? .dark : .light
+        return UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: .init(userInterfaceStyle: userInterfaceStyle))
+    }
+
     /**
      * Initializes the pull-to-refresh logic with the necessary components.
      *
@@ -104,7 +121,7 @@ final class PullToRefreshViewAdapter: NSObject {
         setupBackgroundScrollView(basedOn: pullableView)
         fakeScrollView.refreshControl = refreshControl
         setupPanGestureRecognizer()
-        refreshControl.tintColor = .label
+        refreshControl.tintColor = UIColor(designSystemColor: .iconsSecondary)
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {
@@ -184,7 +201,19 @@ final class PullToRefreshViewAdapter: NSObject {
 
     private func calculatePullDistance(translationY: CGFloat) -> CGFloat {
         let adjustedTranslation = max(0, translationY - initialTranslationY)
-        return min(adjustedTranslation, pullLimit)
+        // Allow full movement up to the refresh trigger threshold
+        if adjustedTranslation <= refreshTriggerThreshold {
+            return adjustedTranslation
+        } else {
+            // Apply gradually increasing resistance beyond the refresh trigger threshold
+            let extraPull = adjustedTranslation - refreshTriggerThreshold
+
+            // Quadratic resistance curve - starts gentle but increases rapidly
+            let resistanceFactor = 0.4 / (1 + 0.3 * pow(extraPull / refreshTriggerThreshold, 2))
+            let resistedExtraPull = extraPull * resistanceFactor
+
+            return refreshTriggerThreshold + resistedExtraPull
+        }
     }
 
     private func handlePullEffect(pullDistance: CGFloat) {

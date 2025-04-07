@@ -56,12 +56,12 @@ final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, 
         self.userDefaults = userDefaults
     }
 
-    func measureSiteSuggetionOptionTapped() {
-        fire(ContextualOnboardingPixel.siteSuggetionOptionTapped, .uniqueByName)
+    func measureSiteSuggestionOptionTapped() {
+        fire(ContextualOnboardingPixel.siteSuggestionOptionTapped, .uniqueByName)
     }
 
-    func measureSearchSuggetionOptionTapped() {
-        fire(ContextualOnboardingPixel.searchSuggetionOptionTapped, .uniqueByName)
+    func measureSearchSuggestionOptionTapped() {
+        fire(ContextualOnboardingPixel.searchSuggestionOptionTapped, .uniqueByName)
     }
 }
 

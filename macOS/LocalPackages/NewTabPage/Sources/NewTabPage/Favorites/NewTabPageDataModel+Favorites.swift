@@ -24,11 +24,6 @@ extension NewTabPageDataModel {
         let id: String
     }
 
-    struct FavoritesOpenAction: Codable {
-        let id: String
-        let url: String
-    }
-
     struct FavoritesMoveAction: Codable {
         let id: String
         let fromIndex: Int

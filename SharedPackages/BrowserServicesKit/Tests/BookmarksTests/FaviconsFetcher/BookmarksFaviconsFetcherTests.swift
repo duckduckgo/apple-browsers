@@ -70,7 +70,7 @@ final class BookmarksFaviconsFetcherTests: XCTestCase {
             database: bookmarksDatabase,
             stateStore: stateStore,
             fetcher: fetcher,
-            faviconStore: faviconStore,
+            faviconStore: { self.faviconStore },
             errorEvents: eventMapper
         )
     }
@@ -188,7 +188,7 @@ final class BookmarksFaviconsFetcherTests: XCTestCase {
         var results: [Result<Void, Error>] = []
         let cancellable = bookmarksFaviconsFetcher.fetchingDidFinishPublisher.sink { results.append($0) }
 
-        bookmarksFaviconsFetcher.startFetching()
+        await bookmarksFaviconsFetcher.startFetching()
 
         await runAfterOperationsFinished {
             XCTAssertEqual(results.count, 1)
@@ -213,7 +213,7 @@ final class BookmarksFaviconsFetcherTests: XCTestCase {
         var results: [Result<Void, Error>] = []
         let cancellable = bookmarksFaviconsFetcher.fetchingDidFinishPublisher.sink { results.append($0) }
 
-        bookmarksFaviconsFetcher.startFetching()
+        await bookmarksFaviconsFetcher.startFetching()
         try await Task.sleep(nanoseconds: 10_000_000)
         bookmarksFaviconsFetcher.cancelOngoingFetchingIfNeeded()
 
@@ -246,11 +246,11 @@ final class BookmarksFaviconsFetcherTests: XCTestCase {
 
         await withTaskGroup(of: Void.self) { group in
             group.addTask {
-                self.bookmarksFaviconsFetcher.startFetching()
+                await self.bookmarksFaviconsFetcher.startFetching()
             }
             try? await Task.sleep(nanoseconds: 10_000_000)
             group.addTask {
-                self.bookmarksFaviconsFetcher.startFetching()
+                await self.bookmarksFaviconsFetcher.startFetching()
             }
         }
 

@@ -221,7 +221,12 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
-#endif
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
+    #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem else {

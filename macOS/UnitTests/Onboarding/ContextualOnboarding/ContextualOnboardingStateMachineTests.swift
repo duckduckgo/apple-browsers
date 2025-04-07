@@ -51,13 +51,6 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .onboardingCompleted)
     }
 
-//    func testWhenOnboardingCompletedThenLaunchToCustomHomePageIsFalse() {
-//        preferences.launchToCustomHomePage = true
-//        stateMachine.state = .onboardingCompleted
-//
-//        XCTAssertFalse(preferences.launchToCustomHomePage)
-//    }
-
     func testWhenOnboardingIsAboutToStartThenFireButtonInfoStateIsTrue() {
         fireButtonInfoStateProvider.infoPresentedOnce = false
         stateMachine.state = .notStarted
@@ -80,12 +73,61 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertFalse(fireButtonInfoStateProvider.infoPresentedOnce)
     }
 
-//    func testWhenOnboardingIsAboutToStartLaunchToCustomHomePageIsTrue() {
-//        preferences.launchToCustomHomePage = false
-//        stateMachine.state = .notStarted
-//
-//        XCTAssertTrue(preferences.launchToCustomHomePage)
-//    }
+    func test_OnNewTab_WhenStateIsNotStartedOrShowTryASearch_returnsTryASearch() {
+        let states: [ContextualOnboardingState] = [.notStarted, .showTryASearch]
+        tab.setContent(.newtab)
+
+        for state in states {
+            stateMachine.state = state
+            let dialogType = stateMachine.dialogTypeForTab(tab)
+            XCTAssertEqual(dialogType, .tryASearch)
+        }
+    }
+
+    func test_OnNewTab_WhenStateIsShowTryASiteOrShowTryASiteSearchNotDone_returnsTryASite() {
+        let states: [ContextualOnboardingState] = [.showTryASite, .showTryASiteSearchNotDone]
+        tab.setContent(.newtab)
+
+        for state in states {
+            stateMachine.state = state
+            let dialogType = stateMachine.dialogTypeForTab(tab)
+            XCTAssertEqual(dialogType, .tryASite)
+        }
+    }
+
+    func test_OnNewTab_WhenStateIsShowHighFive_returnsHighFive() {
+        let states: [ContextualOnboardingState] = [.showHighFive]
+        tab.setContent(.newtab)
+
+        for state in states {
+            stateMachine.state = state
+            let dialogType = stateMachine.dialogTypeForTab(tab)
+            XCTAssertEqual(dialogType, .highFive)
+        }
+    }
+
+    func test_OnNewTab_WhenOtherStates_returnsNil() {
+        let states: [ContextualOnboardingState] = [
+            .showSearchDone,
+                .showBlockedTrackers,
+                .showMajorOrNoTracker,
+                .tryASiteSeen,
+                .searchDoneShowBlockedTrackers,
+                .searchDoneShowMajorOrNoTracker,
+                .searchDoneSeenShowBlockedTrackers,
+                .searchDoneSeenShowMajorOrNoTracker,
+                .fireUsedTryASearchShown,
+                .fireUsedShowSearchDone,
+                .showFireButton,
+                .onboardingCompleted]
+        tab.setContent(.newtab)
+
+        for state in states {
+            stateMachine.state = state
+            let dialogType = stateMachine.dialogTypeForTab(tab)
+            XCTAssertEqual(dialogType, nil)
+        }
+    }
 
     func test_OnSearch_WhenStateIsShowSearchDoneOrFireUsedShowSearchDone_returnsSearchDoneShouldFollowUp() {
         let states: [ContextualOnboardingState] = [.showSearchDone, .fireUsedShowSearchDone]
@@ -121,6 +163,17 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
     }
 
     func test_OnSearch_WhenStateIsSearchDoneShowBlockedTrackersOrSearchSoneShowMajorOrNoTracker_returnSearchDoneShouldFollowUpFalse() {
+        let states: [ContextualOnboardingState] = [.searchDoneShowBlockedTrackers, .searchDoneShowMajorOrNoTracker]
+        tab.url = URL.makeSearchUrl(from: "query something")
+
+        for state in states {
+            stateMachine.state = state
+            let dialogType = stateMachine.dialogTypeForTab(tab)
+            XCTAssertEqual(dialogType, .searchDone(shouldFollowUp: false))
+        }
+    }
+
+    func test_OnSearch_WhenStateIsShowTryASiteSearchNotDone_returnSearchDoneShouldFollowUpFalse() {
         let states: [ContextualOnboardingState] = [.searchDoneShowBlockedTrackers, .searchDoneShowMajorOrNoTracker]
         tab.url = URL.makeSearchUrl(from: "query something")
 
@@ -229,6 +282,7 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         let states: [ContextualOnboardingState] = [
             .notStarted,
             .showTryASite,
+            .showTryASiteSearchNotDone,
             .fireUsedTryASearchShown,
             .onboardingCompleted]
         tab.url = URL.duckDuckGo
@@ -529,6 +583,32 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .showBlockedTrackers)
     }
 
+    func test_OnUpdateStateFor_VisitsSite_WhenInFireUsedTryASearchShown_AndTrackersBlocked_ThenStateIsShowsBlockedTrackers() {
+        // Given
+        stateMachine.state = .fireUsedTryASearchShown
+        tab.url = URL(string: "https://example.com")
+        mockTrackerMessageProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .showBlockedTrackers)
+    }
+
+    func test_OnUpdateStateFor_VisitsSite_WhenInShowTryASiteSearchNotDone_AndTrackersBlocked_ThenStateIsShowsBlockedTrackers() {
+        // Given
+        stateMachine.state = .showTryASiteSearchNotDone
+        tab.url = URL(string: "https://example.com")
+        mockTrackerMessageProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .showBlockedTrackers)
+    }
+
     func test_OnUpdateStateFor_VisitsSite_WhenOnsearchDoneSeenShowBlockedTrackers_AndTrackersBlocked_ThenStateIsShowFireButton() {
         // Given
         stateMachine.state = .searchDoneSeenShowBlockedTrackers
@@ -646,6 +726,34 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .showMajorOrNoTracker)
     }
 
+    func test_OnUpdateStateFor_VisitsSite_WhenOnFireUsedTryASearchShownh_AndNoTrackers_ThenStateIsShowMajorOrNoTracker() {
+        // Given
+        stateMachine.state = .fireUsedTryASearchShown
+        tab.url = URL(string: "https://example.com")
+        mockTrackerMessageProvider.trackerType = .majorTracker
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertNil(stateMachine.dialogTypeForTab(tab))
+        XCTAssertEqual(stateMachine.state, .showMajorOrNoTracker)
+    }
+
+    func test_OnUpdateStateFor_VisitsSite_WhenOnShowTryASiteSearchNotDone_AndNoTrackers_ThenStateIsShowMajorOrNoTracker() {
+        // Given
+        stateMachine.state = .showTryASiteSearchNotDone
+        tab.url = URL(string: "https://example.com")
+        mockTrackerMessageProvider.trackerType = .majorTracker
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertNil(stateMachine.dialogTypeForTab(tab))
+        XCTAssertEqual(stateMachine.state, .showMajorOrNoTracker)
+    }
+
     func test_OnUpdateStateFor_VisitsSite_WhenOnShowTryASearchAndTrackersBlocked_AfterTrackersNotBlocked_ThenDoesNotUpdateState() {
         // Given
         stateMachine.state = .showTryASearch
@@ -672,6 +780,66 @@ class ContextualOnboardingStateMachineTests: XCTestCase {
 
         // Then
         XCTAssertEqual(stateMachine.state, .showBlockedTrackers)
+    }
+
+    func test_OnUpdateStateFor_NewTab_WhenOnShowTryASearch_ThenStateIsShowTryASiteSearchNotDone() {
+        // Given
+        stateMachine.state = .showTryASearch
+        tab.setContent(.newtab)
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .showTryASiteSearchNotDone)
+    }
+
+    func test_OnUpdateStateFor_NewTab_WhenOnShowSearchDone_ThenStateIsShowTryASite() {
+        // Given
+        stateMachine.state = .showSearchDone
+        tab.setContent(.newtab)
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .showTryASite)
+    }
+
+    func test_OnUpdateStateFor_NewTab_WhenOnShowTryASite_ThenStateIsTryASiteSeen() {
+        // Given
+        stateMachine.state = .showTryASite
+        tab.setContent(.newtab)
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .tryASiteSeen)
+    }
+
+    func test_OnUpdateStateFor_NewTab_WhenOnShowFireButton_ThenStateIsShowHighFive() {
+        // Given
+        stateMachine.state = .showFireButton
+        tab.setContent(.newtab)
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .showHighFive)
+    }
+
+    func test_OnUpdateStateFor_NewTab_WhenOnShowHighFive_ThenStateIsOnboardingCompleted() {
+        // Given
+        stateMachine.state = .showHighFive
+        tab.setContent(.newtab)
+
+        // When
+        stateMachine.updateStateFor(tab: tab)
+
+        // Then
+        XCTAssertEqual(stateMachine.state, .onboardingCompleted)
     }
 
     func test_OnTurnOffFeature_StateBecomesOnboardingCompleted() {

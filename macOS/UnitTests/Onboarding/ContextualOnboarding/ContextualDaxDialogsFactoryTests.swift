@@ -42,9 +42,11 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN
         let dialogType = ContextualDialogType.tryASearch
+        var onDismissRun = false
+        let onDismiss = { onDismissRun = true }
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
+        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         let view = try XCTUnwrap(find(OnboardingTrySearchDialog.self, in: result))
@@ -53,10 +55,13 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         let query = "some search"
         view.viewModel.listItemPressed(ContextualOnboardingListItem.search(title: query))
+        view.onManualDismiss()
 
         // THEN
         XCTAssertTrue(delegate.didCallSearchFor)
         XCTAssertEqual(delegate.capturedQuery, query)
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureTrySearchDismissedCalled)
     }
 
     func testWhenMakeViewForSearchDoneWithShouldFollowUpThenOnboardingsearchDoneViewCreatedAndOnActionNothingOccurs() throws {
@@ -81,6 +86,14 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // THEN
         XCTAssertFalse(onDismissRun)
         XCTAssertTrue(onGotItPressedRun)
+
+        // WHEN
+        onDismissRun = false
+        view.onManualDismiss()
+
+        // THEN
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureSearchResultDismissedCalled)
     }
 
     func testWhenMakeViewForSearchDoneWithoutShouldFollowUpThenOnboardingsearchDoneViewCreatedAndOnActionOccurs() throws {
@@ -110,9 +123,11 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     func testWhenMakeViewForTryASiteThenOnboardingTrySiteDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN
         let dialogType = ContextualDialogType.tryASite
+        var onDismissRun = false
+        let onDismiss = { onDismissRun = true }
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
+        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         let view = try XCTUnwrap(find(OnboardingTryVisitingASiteDialog.self, in: result))
@@ -121,13 +136,16 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         let urlString = "some.site"
         view.viewModel.listItemPressed(ContextualOnboardingListItem.site(title: urlString))
+        view.onManualDismiss()
 
         // THEN
         XCTAssertTrue(delegate.didNavigateToCalled)
         XCTAssertEqual(delegate.capturedUrlString, urlString)
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureTryVisitSiteDismissedCalled)
     }
 
-    func testWhenMakeViewForTryASiteWithShouldFollowUpThenTrySiteDialogViewCreatedAndOnActionNothingOccurs() throws {
+    func testWhenMakeViewForTrackerBlockerWithShouldFollowUpThenTTrackerBlockerViewCreatedAndOnActionNothingOccurs() throws {
         // GIVEN
         var onDismissRun = false
         var onGotItPressedRun = false
@@ -150,9 +168,17 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // THEN
         XCTAssertFalse(onDismissRun)
         XCTAssertTrue(onGotItPressedRun)
+
+        // WHEN
+        onDismissRun = false
+        view.onManualDismiss()
+
+        // THEN
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureTrackersBlockedDismissedCalled)
     }
 
-    func testWhenMakeViewForTryASiteWithoutShouldFollowUpThenTryASiteDialogViewCreatedAndOnActionOccurs() throws {
+    func testWhenMakeViewForTrackerBlockerWithoutShouldFollowUpThenTrackerBlockerViewCreatedAndOnActionOccurs() throws {
         // GIVEN
         var onDismissRun = false
         var onGotItPressedRun = false
@@ -177,7 +203,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(onGotItPressedRun)
     }
 
-    func testWhenMakeViewForHighFivThenFilalDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
+    func testWhenMakeViewForHighFivThenFinalDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN
         var onDismissRun = false
         var onGotItPressedRun = false
@@ -197,17 +223,27 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // THEN
         XCTAssertTrue(onDismissRun)
         XCTAssertTrue(onGotItPressedRun)
+
+        // WHEN
+        onDismissRun = false
+        view.onManualDismiss()
+
+        // THEN
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureFinalDismissedCalled)
     }
 
     @MainActor
     func testWhenMakeViewForTryFireButtonAndFireButtonIsPressedThenOnFireButtonPressedActionIsCalled() throws {
         // GIVEN
         var onFireButtonRun = false
+        var onDismissRun = false
         let dialogType = ContextualDialogType.tryFireButton
         let onFireButtonPressed = { onFireButtonRun = true }
+        let onDismiss = { onDismissRun = true }
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)
+        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)
 
         // THEN
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
@@ -217,6 +253,14 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(onFireButtonRun)
+
+        // WHEN
+        onDismissRun = false
+        view.onManualDismiss()
+
+        // THEN
+        XCTAssertTrue(onDismissRun)
+        XCTAssertTrue(reporter.measureTryFireButtonDismissedCalled)
     }
 
     func testWhenMakeViewForTryFireButtonAndSkipButtonIsPressedThenmeasureFireButtonSkippedCalled() throws {
@@ -224,7 +268,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let dialogType = ContextualDialogType.highFive
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
+        _ = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         XCTAssertTrue(reporter.measureLastDialogShownCalled)
@@ -237,6 +281,12 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false
     var measureSiteVisitedCalled = false
+    var measureTrySearchDismissedCalled = false
+    var measureSearchResultDismissedCalled = false
+    var measureTryVisitSiteDismissedCalled = false
+    var measureTrackersBlockedDismissedCalled = false
+    var measureTryFireButtonDismissedCalled = false
+    var measureFinalDismissedCalled = false
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -266,20 +316,26 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
         measureSiteVisitedCalled = true
     }
     func measureTrySearchDismissed() {
+        measureTrySearchDismissedCalled = true
     }
 
     func measureSearchResultDismissed() {
+        measureSearchResultDismissedCalled = true
     }
 
     func measureTryVisitSiteDismissed() {
+        measureTryVisitSiteDismissedCalled = true
     }
 
     func measureTrackersBlockedDismissed() {
+        measureTrackersBlockedDismissedCalled = true
     }
 
     func measureTryFireButtonDismissed() {
+        measureTryFireButtonDismissedCalled = true
     }
 
     func measureFinalDismissed() {
+        measureFinalDismissedCalled = true
     }
 }

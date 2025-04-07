@@ -135,6 +135,42 @@ final class OnboardingPixelReporterTests: XCTestCase {
         frequency = nil
     }
 
+    func test_WhenMeasureTrySearchDismissed_ThenTrySearchDismissedEventSent() throws {
+        reporter.measureTrySearchDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.trySearchDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
+    func test_WhenMeasureSearchResultDismissed_ThenSearchResultDismissedEventSent() throws {
+        reporter.measureSearchResultDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.searchResultDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
+    func test_WhenMeasureTryVisitSiteDismissed_ThenTryVisitSiteDismissedEventSent() throws {
+        reporter.measureTryVisitSiteDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.tryVisitSiteDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
+    func test_WhenMeasureTrackersBlockedDismissed_ThenTrackersBlockedDismissedEventSent() throws {
+        reporter.measureTrackersBlockedDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.trackersBlockedDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
+    func test_WhenMeasureTryFireButtonDismissed_ThenTryFireButtonDismissedEventSent() throws {
+        reporter.measureTryFireButtonDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.tryFireButtonDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
+    func test_WhenMeasureFinalDismissed_ThenFinalDialogDismissedEventSent() throws {
+        reporter.measureFinalDismissed()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.finalDialogDismissed.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+    }
+
     // Tab Onboarding Pixel test
     @MainActor
     func test_WhenNavigationDidFinish_ThenReporterMeasureSiteVisitedCalled() {

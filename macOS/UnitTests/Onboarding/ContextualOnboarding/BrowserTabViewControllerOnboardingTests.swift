@@ -141,6 +141,56 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
     }
 
+    func testWhenNavigationCompletedAndIsAReloadThenNoDialogCapturedInFactory() throws {
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertEqual(factory.capturedType, .tryFireButton)
+        XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
+
+        factory.capturedType = nil
+        let expectation2 = XCTestExpectation()
+        factory.expectation = expectation2
+        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+
+        tab.webViewDidFinishNavigationPublisher
+            .sink {
+                expectation2.fulfill()
+            }
+            .store(in: &cancellables)
+        XCTAssertNil(factory.capturedType)
+    }
+
+    func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertEqual(factory.capturedType, .tryFireButton)
+        XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
+
+        factory.capturedType = nil
+        viewController.windowDidBecomeActive(notification: .init(name: .windowDidBecomeKey))
+
+        XCTAssertEqual(factory.capturedType, .tryFireButton)
+    }
+
+    func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
+        dialogProvider.dialog = .tryFireButton
+        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        let delegate = BrowserTabViewControllerDelegateSpy()
+        viewController.delegate = delegate
+
+        wait(for: [expectation], timeout: 3.0)
+        XCTAssertEqual(factory.capturedType, .tryFireButton)
+        XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
+
+        factory.performOnManualDismiss()
+
+        XCTAssertTrue(delegate.didCallDismissViewHighlight)
+    }
+
     func testWhenNavigationCompletedAndDialogTypeNilThenAskDelegateToRemoveViewHighlights() throws {
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
@@ -290,12 +340,13 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
 }
 
 class CapturingDialogFactory: ContextualDaxDialogsFactory {
-    let expectation: XCTestExpectation
+    public var expectation: XCTestExpectation
     var capturedType: ContextualDialogType?
     var capturedDelegate: OnboardingNavigationDelegate?
 
     private var onGotItPressed: (() -> Void)?
     private var onFireButtonPressed: (() -> Void)?
+    private var onManualDismissPressed: (() -> Void)?
 
     init(expectation: XCTestExpectation) {
         self.expectation = expectation
@@ -306,6 +357,7 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
         capturedDelegate = delegate
         self.onGotItPressed = onGotItPressed
         self.onFireButtonPressed = onFireButtonPressed
+        self.onManualDismissPressed = onDismiss
         expectation.fulfill()
         return AnyView(OnboardingFinalDialog(highFiveAction: {}, onManualDismiss: {}))
     }
@@ -316,6 +368,10 @@ class CapturingDialogFactory: ContextualDaxDialogsFactory {
 
     func performOnFireButtonPressed() {
         onFireButtonPressed?()
+    }
+
+    func performOnManualDismiss() {
+        onManualDismissPressed?()
     }
 
 }

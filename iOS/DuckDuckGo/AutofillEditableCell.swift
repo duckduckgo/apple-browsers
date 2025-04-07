@@ -30,7 +30,7 @@ struct AutofillEditableCell: View {
     var keyboardType: UIKeyboardType = .default
     var id: UUID = UUID()
     let inEditMode: Bool
-    var characterLimit: Int? = nil
+    var characterLimit: Int?
     @Binding var selectedCell: UUID?
     
     @FocusState private var isFieldFocused: Bool

@@ -26,7 +26,7 @@ struct ClearTextField: View {
     var disableAutoCorrection = true
     var keyboardType: UIKeyboardType = .default
     var secure = false
-    var characterLimit: Int? = nil
+    var characterLimit: Int?
     
     @State private var closeButtonVisible = false
     @FocusState private var isFieldFocused: Bool

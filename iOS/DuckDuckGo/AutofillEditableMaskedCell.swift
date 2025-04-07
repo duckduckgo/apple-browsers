@@ -30,7 +30,7 @@ struct AutofillEditableMaskedCell: View {
     var autoCapitalizationType: UITextAutocapitalizationType = .none
     var disableAutoCorrection: Bool = true
     var keyboardType: UIKeyboardType = .default
-    var characterLimit: Int? = nil
+    var characterLimit: Int?
     @Binding var selectedCell: UUID?
     
     @FocusState private var isFieldFocused: Bool

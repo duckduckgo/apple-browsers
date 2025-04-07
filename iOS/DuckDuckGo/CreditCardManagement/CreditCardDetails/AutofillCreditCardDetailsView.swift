@@ -218,7 +218,7 @@ private struct EditableCreditCardNumberCell: View {
                     isCardValid: $isCardValid,
                     isEditing: $closeButtonVisible,
                     selectedCell: $selectedCell)
-                .frame(height:  heightForSizeCategory(sizeCategory))
+                .frame(height: heightForSizeCategory(sizeCategory))
                 
                 Spacer()
                 
@@ -279,7 +279,6 @@ private struct EditableCreditCardNumberCell: View {
             if uiView.text != formattedCardNumber {
                 // Store current cursor position
                 let currentPosition = uiView.selectedTextRange
-                
                 uiView.text = formattedCardNumber
                 
                 // Restore cursor position if possible

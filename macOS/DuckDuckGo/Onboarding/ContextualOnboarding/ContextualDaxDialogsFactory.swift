@@ -62,7 +62,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
         return AnyView(viewWithBackground)
     }
 
-    private func tryASearchDialog(delegate: OnboardingNavigationDelegate, onDismiss:  @escaping () -> Void) -> some View {
+    private func tryASearchDialog(delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void) -> some View {
         let suggestedSearchedProvider = OnboardingSuggestedSearchesProvider()
         let viewModel = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: suggestedSearchedProvider, delegate: delegate, pixelReporter: onboardingPixelReporter)
         let onManualDismiss: () -> Void = {
@@ -83,7 +83,7 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
         return OnboardingFirstSearchDoneDialog(shouldFollowUp: shouldFollowUp, viewModel: viewModel, gotItAction: gotIt, onManualDismiss: onManualDismiss)
     }
 
-    private func tryASiteDialog(delegate: OnboardingNavigationDelegate, onDismiss:  @escaping () -> Void) -> some View {
+    private func tryASiteDialog(delegate: OnboardingNavigationDelegate, onDismiss: @escaping () -> Void) -> some View {
         let suggestedSitesProvider = OnboardingSuggestedSitesProvider(surpriseItemTitle: OnboardingSuggestedSitesProvider.surpriseItemTitle)
         let viewModel = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestedSitesProvider, delegate: delegate, pixelReporter: onboardingPixelReporter)
         let onManualDismiss: () -> Void = {

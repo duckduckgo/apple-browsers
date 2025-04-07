@@ -110,27 +110,27 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
     func measureTrySearchDismissed() {
         fire(ContextualOnboardingPixel.trySearchDismissed, .uniqueByName)
     }
-    
+
     func measureSearchResultDismissed() {
         fire(ContextualOnboardingPixel.searchResultDismissed, .uniqueByName)
     }
-    
+
     func measureTryVisitSiteDismissed() {
         fire(ContextualOnboardingPixel.tryVisitSiteDismissed, .uniqueByName)
     }
-    
+
     func measureTrackersBlockedDismissed() {
         fire(ContextualOnboardingPixel.trackersBlockedDismissed, .uniqueByName)
     }
-    
+
     func measureTryFireButtonDismissed() {
         fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)
     }
-    
+
     func measureFinalDismissed() {
         fire(ContextualOnboardingPixel.finalDialogDismissed, .uniqueByName)
     }
-    
+
     func measureLastDialogShown() {
         fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
     }

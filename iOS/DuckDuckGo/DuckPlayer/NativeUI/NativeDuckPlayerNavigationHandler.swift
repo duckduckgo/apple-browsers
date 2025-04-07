@@ -241,6 +241,12 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
             }
         }
     }
+
+    private func resetLastHandledVideoID(force: Bool = false) {
+        if duckPlayer.settings.nativeUIYoutubeMode == .ask || force {
+            lastHandledVideoID = nil
+        }
+    }
 }
 
 extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
@@ -252,7 +258,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///   - webView: The `WKWebView` where navigation is occurring.
     @MainActor
     func handleDuckNavigation(_ navigationAction: WKNavigationAction, webView: WKWebView) {
-        lastHandledVideoID = nil
+        resetLastHandledVideoID()
         let (videoID, _) = navigationAction.request.url?.youtubeVideoParams ?? ("", nil)
         let youtubeURL = URL.youtube(videoID)
         webView.load(URLRequest(url: youtubeURL))
@@ -288,14 +294,14 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
             duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
-            lastHandledVideoID = nil
+            resetLastHandledVideoID()
             return .notHandled(.invalidURL)
         }
 
         // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
             duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
-            lastHandledVideoID = nil
+            resetLastHandledVideoID()
             return .notHandled(.isNotYoutubeWatch)
         }
 
@@ -312,7 +318,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
             duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
-            lastHandledVideoID = nil
+            resetLastHandledVideoID()
             return .notHandled(.duckPlayerDisabled)
         }
 
@@ -347,7 +353,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` to navigate back in.
     @MainActor
     func handleGoBack(webView: WKWebView) {
-        lastHandledVideoID = nil
+        resetLastHandledVideoID()
     }
 
     /// Custom forward navigation logic to handle Duck Player in the web view's history stack.
@@ -355,7 +361,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` to navigate back in.
     @MainActor
     func handleGoForward(webView: WKWebView) {
-        lastHandledVideoID = nil
+        resetLastHandledVideoID()
     }
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
@@ -367,7 +373,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
-        lastHandledVideoID = nil
+        resetLastHandledVideoID(force: true)
         duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
         _ = handleURLChange(webView: webView, previousURL: nil, newURL: webView.url)
 
@@ -447,7 +453,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         setReferrer(webView: webView)
 
         // Reset lastHandledVideoID
-        lastHandledVideoID = nil
+        resetLastHandledVideoID()
 
         guard let url = navigationAction.request.url else {
             return false

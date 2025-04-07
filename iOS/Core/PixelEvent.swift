@@ -26,7 +26,7 @@ import MaliciousSiteProtection
 import PixelKit
 
 extension Pixel {
-
+    
     public enum Event {
 
         case appInstall
@@ -52,15 +52,15 @@ extension Pixel {
         case forgetAllPressedTabSwitching
         case forgetAllExecuted
         case forgetAllDataCleared
-
+        
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
 
         case dashboardProtectionAllowlistAdd
         case dashboardProtectionAllowlistRemove
-
+        
         case privacyDashboardReportBrokenSite
-
+        
         case tabSwitcherNewLayoutSeen
         case tabSwitcherListEnabled
         case tabSwitcherGridEnabled
@@ -123,11 +123,11 @@ extension Pixel {
         case settingsDoNotSellShown
         case settingsDoNotSellOn
         case settingsDoNotSellOff
-
+        
         case settingsAutoconsentShown
         case settingsAutoconsentOn
         case settingsAutoconsentOff
-
+        
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuNewTab
@@ -173,13 +173,13 @@ extension Pixel {
         case shareSheetActivityPrint
         case shareSheetActivityAddToReadingList
         case shareSheetActivityOther
-
+        
         case tabBarBackPressed
         case tabBarForwardPressed
         case bookmarksButtonPressed
         case tabBarBookmarksLongPressed
         case tabBarTabSwitcherOpened
-
+        
         case homeScreenShown
         case homeScreenEditFavorite
         case homeScreenDeleteFavorite
@@ -206,9 +206,9 @@ extension Pixel {
 
         case feedbackPositive
         case feedbackNegativePrefix(category: String)
-
+        
         case brokenSiteReport
-
+        
         // MARK: - Onboarding
 
         case onboardingIntroShownUnique
@@ -296,14 +296,14 @@ extension Pixel {
         case widgetsOnboardingCTAPressed
         case widgetsOnboardingDeclineOptionPressed
         case widgetsOnboardingMovedToBackground
-
+        
         case emailEnabled
         case emailDisabled
         case emailUserPressedUseAddress
         case emailUserPressedUseAlias
         case emailUserCreatedAlias
         case emailTooltipDismissed
-
+        
         case voiceSearchSERPDone
         case voiceSearchAIChatDone
         case openVoiceSearch
@@ -334,17 +334,17 @@ extension Pixel {
         case downloadStartedDueToUnhandledMIMEType
         case downloadTriedToPresentPreviewWithoutTab
         case downloadsListOpened
-
+        
         case downloadsListOngoingDownloadCancelled
         case downloadsListCompleteDownloadDeleted
         case downloadsListAllCompleteDownloadsDeleted
         case downloadsListDeleteUndo
         case downloadsListSharePressed
-
+        
         case downloadsSharingPredownloadedLocalFile
-
+        
         case jsAlertShown
-
+        
         case featureFlaggingInternalUserAuthenticated
 
         // MARK: Autofill pixels
@@ -362,29 +362,29 @@ extension Pixel {
         case autofillLoginsSavePasswordModalDisplayed
         case autofillLoginsSavePasswordModalConfirmed
         case autofillLoginsSavePasswordModalDismissed
-
+        
         case autofillLoginsUpdatePasswordModalDisplayed
         case autofillLoginsUpdatePasswordModalConfirmed
         case autofillLoginsUpdatePasswordModalDismissed
-
+        
         case autofillLoginsUpdateUsernameModalDisplayed
         case autofillLoginsUpdateUsernameModalConfirmed
         case autofillLoginsUpdateUsernameModalDismissed
-
+        
         case autofillLoginsFillLoginInlineManualDisplayed
         case autofillLoginsFillLoginInlineManualConfirmed
         case autofillLoginsFillLoginInlineManualDismissed
-
+        
         case autofillLoginsFillLoginInlineAutopromptDisplayed
         case autofillLoginsFillLoginInlineAutopromptConfirmed
-
+        
         case autofillLoginsFillLoginInlineAuthenticationDeviceDisplayed
         case autofillLoginsFillLoginInlineAuthenticationDeviceAuthAuthenticated
         case autofillLoginsFillLoginInlineAuthenticationDeviceAuthFailed
         case autofillLoginsFillLoginInlineAuthenticationDeviceAuthUnavailable
         case autofillLoginsFillLoginInlineAuthenticationDeviceAuthCancelled
         case autofillLoginsAutopromptDismissed
-
+        
         case autofillLoginsFillLoginInlineDisableSnackbarShown
         case autofillLoginsFillLoginInlineDisableSnackbarOpenSettings
 
@@ -393,7 +393,7 @@ extension Pixel {
         case autofillLoginsSettingsResetExcludedDisplayed
         case autofillLoginsSettingsResetExcludedConfirmed
         case autofillLoginsSettingsResetExcludedDismissed
-
+        
         case autofillLoginsPasswordGenerationPromptDisplayed
         case autofillLoginsPasswordGenerationPromptConfirmed
         case autofillLoginsPasswordGenerationPromptDismissed
@@ -418,9 +418,9 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
-
+        
         case autofillDeviceCapabilityDeviceAuthDisabled
-
+        
         case autofillSettingsOpened
 
         case autofillManagementOpened
@@ -454,12 +454,12 @@ extension Pixel {
         case autofillExtensionPasswordsSearch
 
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
-
+        
         case secureVaultError
-
+        
         case secureVaultInitFailedError
         case secureVaultFailedToOpenDatabaseError
-
+        
         // Replacing secureVaultIsEnabledCheckedWhenEnabledAndBackgrounded with data protection check
         case secureVaultIsEnabledCheckedWhenEnabledAndDataProtected
 
@@ -494,18 +494,18 @@ extension Pixel {
         case importResultUnzipping
 
         // MARK: Ad Click Attribution pixels
-
+        
         case adClickAttributionDetected
         case adClickAttributionActive
         case adClickAttributionPageLoads
-
+        
         // MARK: SERP pixels
-
+        
         case serpRequerySame
         case serpRequeryNew
-
+        
         // MARK: Network Protection
-
+        
         case networkProtectionActiveUser
         case networkProtectionNewUser
 
@@ -546,19 +546,19 @@ extension Pixel {
 
         case networkProtectionLatency(quality: String)
         case networkProtectionLatencyError
-
+        
         case networkProtectionEnabledOnSearch
 
         case networkProtectionRekeyAttempt
         case networkProtectionRekeyFailure
         case networkProtectionRekeyCompleted
-
+        
         case networkProtectionTunnelConfigurationNoServerRegistrationInfo
         case networkProtectionTunnelConfigurationCouldNotSelectClosestServer
         case networkProtectionTunnelConfigurationCouldNotGetPeerPublicKey
         case networkProtectionTunnelConfigurationCouldNotGetPeerHostName
         case networkProtectionTunnelConfigurationCouldNotGetInterfaceAddressRange
-
+        
         case networkProtectionClientFailedToFetchServerList
         case networkProtectionClientFailedToParseServerListResponse
         case networkProtectionClientFailedToFetchServerStatus
@@ -569,13 +569,13 @@ extension Pixel {
         case networkProtectionClientFailedToFetchLocations
         case networkProtectionClientFailedToParseLocationsResponse
         case networkProtectionClientInvalidAuthToken
-
+        
         case networkProtectionKeychainErrorFailedToCastKeychainValueToData
         case networkProtectionKeychainReadError
         case networkProtectionKeychainWriteError
         case networkProtectionKeychainUpdateError
         case networkProtectionKeychainDeleteError
-
+        
         case networkProtectionWireguardErrorCannotLocateTunnelFileDescriptor
         case networkProtectionWireguardErrorInvalidState
         case networkProtectionWireguardErrorFailedDNSResolution
@@ -586,16 +586,16 @@ extension Pixel {
         case networkProtectionFailedToLoadFromPreferences
         case networkProtectionFailedToSaveToPreferences
         case networkProtectionActivationRequestFailed
-
+        
         case networkProtectionDisconnected
-
+        
         case networkProtectionNoAccessTokenFoundError
-
+        
         case networkProtectionMemoryWarning
         case networkProtectionMemoryCritical
-
+        
         case networkProtectionUnhandledError
-
+        
         case networkProtectionGeoswitchingOpened
         case networkProtectionGeoswitchingSetNearest
         case networkProtectionGeoswitchingSetCustom
@@ -665,7 +665,7 @@ extension Pixel {
         case networkProtectionWidgetTipIgnored
 
         // MARK: remote messaging pixels
-
+        
         case remoteMessageShown
         case remoteMessageShownUnique
         case remoteMessageDismissed
@@ -673,7 +673,7 @@ extension Pixel {
         case remoteMessagePrimaryActionClicked
         case remoteMessageSecondaryActionClicked
         case remoteMessageSheet
-
+        
         // MARK: debug pixels
         case dbCrashDetected
         case dbCrashDetectedDaily
@@ -690,9 +690,9 @@ extension Pixel {
         case dbRemoteMessagingUpdateMessageShownError
         case dbRemoteMessagingUpdateMessageStatusError
         case dbLocalAuthenticationError
-
+        
         case configurationFetchInfo
-
+        
         case trackerDataParseFailed
         case trackerDataReloadFailed
         case trackerDataCouldNotBeLoaded
@@ -701,18 +701,18 @@ extension Pixel {
         case privacyConfigurationReloadFailed
         case privacyConfigurationParseFailed
         case privacyConfigurationCouldNotBeLoaded
-
+        
         case contentBlockingCompilationFailed(listType: CompileRulesListType,
                                               component: ContentBlockerDebugEvents.Component)
-
+        
         case contentBlockingLookupRulesSucceeded
         case contentBlockingFetchLRCSucceeded
         case contentBlockingNoMatchInLRC
         case contentBlockingLRCMissing
-
+        
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-
+        
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
         case webKitDidTerminateDuringWarmup
@@ -721,9 +721,9 @@ extension Pixel {
         case webKitWarmupUnexpectedDidTerminate
 
         case backgroundTaskSubmissionFailed
-
+        
         case blankOverlayNotDismissed
-
+        
         case cookieDeletionTime(_ time: BucketAggregation)
         case cookieDeletionLeftovers
         case clearDataInDefaultPersistence(_ time: BucketAggregation)
@@ -733,16 +733,16 @@ extension Pixel {
 
         case cachedTabPreviewsExceedsTabCount
         case cachedTabPreviewRemovalError
-
+        
         case missingDownloadedFile
-
+        
         case compilationResult(result: CompileRulesResult, waitTime: BucketAggregation, appState: AppState)
-
+        
         case emailAutofillKeychainError
-
+        
         case adAttributionGlobalAttributedRulesDoNotExist
         case adAttributionCompilationFailedForAttributedRulesList
-
+        
         case adAttributionLogicUnexpectedStateOnInheritedAttribution
         case adAttributionLogicUnexpectedStateOnRulesCompiled
         case adAttributionLogicUnexpectedStateOnRulesCompilationFailed
@@ -773,7 +773,7 @@ extension Pixel {
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
-
+        
         // Errors from Bookmarks Module
         case bookmarkFolderExpected
         case bookmarksListIndexNotMatchingBookmark
@@ -784,7 +784,7 @@ extension Pixel {
         case indexOutOfRange(BookmarksModelError.ModelType)
         case saveFailed(BookmarksModelError.ModelType)
         case missingParent(BookmarksModelError.ObjectType)
-
+        
         case bookmarksCouldNotLoadDatabase
         case bookmarksCouldNotPrepareDatabase
         case bookmarksMigrationAlreadyPerformed
@@ -860,12 +860,12 @@ extension Pixel {
         case favoritesCleanupFailed
         case bookmarksFaviconsFetcherStateStoreInitializationFailed
         case bookmarksFaviconsFetcherFailed
-
+        
         case credentialsDatabaseCleanupFailed
         case credentialsCleanupAttemptedWhileSyncWasEnabled
-
+        
         case invalidPayload(Configuration)
-
+        
         case emailIncontextPromptDisplayed
         case emailIncontextPromptConfirmed
         case emailIncontextPromptDismissed
@@ -874,7 +874,7 @@ extension Pixel {
         case emailIncontextModalDismissed
         case emailIncontextModalExitEarly
         case emailIncontextModalExitEarlyContinue
-
+        
         case compilationFailed
 
         case protectionToggledOffBreakageReport
@@ -1056,7 +1056,7 @@ extension Pixel {
         case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
         case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
-        // MARK: DuckPlayer
+        // MARK: DuckPlayer        
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
         case duckPlayerViewFromYoutubeViaHoverButton
@@ -1159,7 +1159,7 @@ extension Pixel {
 extension Pixel.Event: Equatable {}
 
 extension Pixel.Event {
-
+    
     public var name: String {
         switch self {
         case .appInstall: return "m_install"
@@ -1179,13 +1179,13 @@ extension Pixel.Event {
         case .forgetAllPressedTabSwitching: return "mf_tp"
         case .forgetAllExecuted: return "mf"
         case .forgetAllDataCleared: return "mf_dc"
-
+            
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
 
         case .dashboardProtectionAllowlistAdd: return "mp_wla"
         case .dashboardProtectionAllowlistRemove: return "mp_wlr"
-
+            
         case .privacyDashboardReportBrokenSite: return "mp_rb"
 
         case .keyValueFileStoreSupportDirAccessError: return "m_test_key_value_file_store_support_dir_access_error"
@@ -1214,7 +1214,7 @@ extension Pixel.Event {
         case .settingsDoNotSellShown: return "ms_dns"
         case .settingsDoNotSellOn: return "ms_dns_on"
         case .settingsDoNotSellOff: return "ms_dns_off"
-
+            
         case .settingsAutoconsentShown: return "m_settings_autoconsent_shown"
         case .settingsAutoconsentOn: return "m_settings_autoconsent_on"
         case .settingsAutoconsentOff: return "m_settings_autoconsent_off"
@@ -1258,7 +1258,7 @@ extension Pixel.Event {
         case .browsingMenuReportBrokenSite: return "mb_rb"
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
-
+            
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
         case .addressBarShare: return "m_addressbar_share"
@@ -1283,7 +1283,7 @@ extension Pixel.Event {
         case .shareSheetActivityPrint: return "m_sharesheet_activity_print"
         case .shareSheetActivityAddToReadingList: return "m_sharesheet_activity_addtoreadinglist"
         case .shareSheetActivityOther: return "m_sharesheet_activity_other"
-
+            
         case .tabBarBackPressed: return "mt_bk"
         case .tabBarForwardPressed: return "mt_fw"
         case .bookmarksButtonPressed: return "mt_bm"
@@ -1323,9 +1323,9 @@ extension Pixel.Event {
 
         case .feedbackPositive: return "mfbs_positive_submit"
         case .feedbackNegativePrefix(category: let category): return "mfbs_negative_\(category)"
-
+            
         case .brokenSiteReport: return "epbf"
-
+            
         case .onboardingIntroShownUnique: return "m_preonboarding_intro_shown_unique"
         case .onboardingIntroSkipOnboardingCTAPressed: return "m_preonboarding_skip-onboarding-pressed"
         case .onboardingIntroConfirmSkipOnboardingCTAPressed: return "m_preonboarding_confirm-skip-onboarding-pressed"
@@ -1344,7 +1344,7 @@ extension Pixel.Event {
         case .onboardingContextualSiteCustomUnique: return "m_onboarding_visit_site_custom_unique"
         case .onboardingContextualTrySearchUnique: return "m_dx_try_a_search_unique"
         case .onboardingContextualTryVisitSiteUnique: return "m_dx_try_visit_site_unique"
-
+        
         case .daxDialogsSerpUnique: return "m_dx_s_unique"
         case .daxDialogsWithoutTrackersUnique: return "m_dx_wo_unique"
         case .daxDialogsWithoutTrackersFollowUp: return "m_dx_wof"
@@ -1377,19 +1377,19 @@ extension Pixel.Event {
         case .widgetsOnboardingCTAPressed: return "m_o_w_a"
         case .widgetsOnboardingDeclineOptionPressed: return "m_o_w_d"
         case .widgetsOnboardingMovedToBackground: return "m_o_w_b"
-
+            
         case .emailEnabled: return "email_enabled"
         case .emailDisabled: return "email_disabled"
         case .emailUserPressedUseAddress: return "email_filled_main"
         case .emailUserPressedUseAlias: return "email_filled_random"
         case .emailUserCreatedAlias: return "email_generated_button"
         case .emailTooltipDismissed: return "email_tooltip_dismissed"
-
+            
         case .voiceSearchSERPDone: return "m_voice_search_serp_done"
         case .voiceSearchAIChatDone: return "m_voice_search_aichat_done"
         case .openVoiceSearch: return "m_open_voice_search"
         case .voiceSearchCancelled: return "m_voice_search_cancelled"
-
+            
         case .bookmarkImportSuccess: return "m_bi_s"
         case .bookmarkImportFailure: return "m_bi_e"
         case .bookmarkImportFailureParsingDL: return "m_bi_e_parsing_dl"
@@ -1409,17 +1409,17 @@ extension Pixel.Event {
         case .downloadStartedDueToUnhandledMIMEType: return "m_download_started_due_to_unhandled_mime_type"
         case .downloadTriedToPresentPreviewWithoutTab: return "m_download_tried_to_present_preview_without_tab"
         case .downloadsListOpened: return "m_downloads_list_opened"
-
+            
         case .downloadsListOngoingDownloadCancelled: return "m_downloads_list_ongoing_download_cancelled"
         case .downloadsListCompleteDownloadDeleted: return "m_downloads_list_complete_download_deleted"
         case .downloadsListAllCompleteDownloadsDeleted: return "m_downloads_list_all_complete_downloads_deleted"
         case .downloadsListDeleteUndo: return "m_downloads_list_delete_undo"
         case .downloadsListSharePressed: return "m_downloads_list_share_pressed"
-
+            
         case .downloadsSharingPredownloadedLocalFile: return "m_downloads_sharing_predownloaded_local_file"
-
+            
         case .jsAlertShown: return "m_js_alert_shown"
-
+            
         case .featureFlaggingInternalUserAuthenticated: return "m_internal-user_authenticated"
 
             // MARK: Autofill pixels
@@ -1437,22 +1437,22 @@ extension Pixel.Event {
         case .autofillLoginsSavePasswordModalDisplayed: return "m_autofill_logins_save_password_inline_displayed"
         case .autofillLoginsSavePasswordModalConfirmed: return "m_autofill_logins_save_password_inline_confirmed"
         case .autofillLoginsSavePasswordModalDismissed: return "m_autofill_logins_save_password_inline_dismissed"
-
+            
         case .autofillLoginsUpdatePasswordModalDisplayed: return "m_autofill_logins_update_password_inline_displayed"
         case .autofillLoginsUpdatePasswordModalConfirmed: return "m_autofill_logins_update_password_inline_confirmed"
         case .autofillLoginsUpdatePasswordModalDismissed: return "m_autofill_logins_update_password_inline_dismissed"
-
+            
         case .autofillLoginsUpdateUsernameModalDisplayed: return "m_autofill_logins_update_username_inline_displayed"
         case .autofillLoginsUpdateUsernameModalConfirmed: return "m_autofill_logins_update_username_inline_confirmed"
         case .autofillLoginsUpdateUsernameModalDismissed: return "m_autofill_logins_update_username_inline_dismissed"
-
+            
         case .autofillLoginsFillLoginInlineManualDisplayed: return "m_autofill_logins_fill_login_inline_manual_displayed"
         case .autofillLoginsFillLoginInlineManualConfirmed: return "m_autofill_logins_fill_login_inline_manual_confirmed"
         case .autofillLoginsFillLoginInlineManualDismissed: return "m_autofill_logins_fill_login_inline_manual_dismissed"
-
+            
         case .autofillLoginsFillLoginInlineAutopromptDisplayed: return "m_autofill_logins_fill_login_inline_autoprompt_displayed"
         case .autofillLoginsFillLoginInlineAutopromptConfirmed: return "m_autofill_logins_fill_login_inline_autoprompt_confirmed"
-
+            
         case .autofillLoginsFillLoginInlineAuthenticationDeviceDisplayed:
             return "m_autofill_logins_fill_login_inline_authentication_device-displayed"
         case .autofillLoginsFillLoginInlineAuthenticationDeviceAuthAuthenticated:
@@ -1465,16 +1465,16 @@ extension Pixel.Event {
             return "m_autofill_logins_fill_login_inline_authentication_device-auth_cancelled"
         case .autofillLoginsAutopromptDismissed:
             return "m_autofill_logins_autoprompt_dismissed"
-
+            
         case .autofillLoginsFillLoginInlineDisableSnackbarShown: return "autofill_logins_save_disable_snackbar_shown"
         case .autofillLoginsFillLoginInlineDisableSnackbarOpenSettings: return "autofill_logins_save_disable_snackbar_open_settings"
-
+            
         case .autofillLoginsSettingsEnabled: return "m_autofill_logins_settings_enabled"
         case .autofillLoginsSettingsDisabled: return "m_autofill_logins_settings_disabled"
         case .autofillLoginsSettingsResetExcludedDisplayed: return "m_autofill_settings_reset_excluded_displayed"
         case .autofillLoginsSettingsResetExcludedConfirmed: return "m_autofill_settings_reset_excluded_confirmed"
         case .autofillLoginsSettingsResetExcludedDismissed: return "m_autofill_settings_reset_excluded_dismissed"
-
+            
         case .autofillLoginsPasswordGenerationPromptDisplayed: return "m_autofill_logins_password_generation_prompt_displayed"
         case .autofillLoginsPasswordGenerationPromptConfirmed: return "m_autofill_logins_password_generation_prompt_confirmed"
         case .autofillLoginsPasswordGenerationPromptDismissed: return "m_autofill_logins_password_generation_prompt_dismissed"
@@ -1500,11 +1500,11 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
-
+            
         case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
         case .autofillSettingsOpened: return "autofill_settings_opened"
-
+            
         case .autofillManagementOpened:
             return "m_autofill_management_opened"
         case .autofillManagementCopyUsername:
@@ -1545,12 +1545,12 @@ extension Pixel.Event {
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
-
+            
         case .secureVaultError: return "m_secure_vault_error"
-
+            
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
-
+            
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
@@ -1584,18 +1584,18 @@ extension Pixel.Event {
         case .importResultUnzipping: return "import_result_unzipping"
 
             // MARK: Ad Click Attribution pixels
-
+            
         case .adClickAttributionDetected: return "m_ad_click_detected"
         case .adClickAttributionActive: return "m_ad_click_active"
         case .adClickAttributionPageLoads: return "m_pageloads_with_ad_attribution"
-
+            
             // MARK: SERP pixels
-
+            
         case .serpRequerySame: return "rq_0"
         case .serpRequeryNew: return "rq_1"
-
+            
             // MARK: Network Protection pixels
-
+            
         case .networkProtectionActiveUser: return "m_netp_daily_active_d"
         case .networkProtectionNewUser: return "m_netp_daily_active_u"
         case .networkProtectionControllerStartAttempt: return "m_netp_controller_start_attempt"
@@ -1662,7 +1662,7 @@ extension Pixel.Event {
         case .networkProtectionMemoryWarning: return "m_netp_vpn_memory_warning"
         case .networkProtectionMemoryCritical: return "m_netp_vpn_memory_critical"
         case .networkProtectionUnhandledError: return "m_netp_unhandled_error"
-
+            
         case .networkProtectionGeoswitchingOpened: return "m_netp_imp_geoswitching"
         case .networkProtectionGeoswitchingSetNearest: return "m_netp_ev_geoswitching_set_nearest"
         case .networkProtectionGeoswitchingSetCustom: return "m_netp_ev_geoswitching_set_custom"
@@ -1705,7 +1705,7 @@ extension Pixel.Event {
         case .networkProtectionWidgetTipIgnored: return "m_vpn_tip_widget_ignored"
 
             // MARK: remote messaging pixels
-
+            
         case .remoteMessageShown: return "m_remote_message_shown"
         case .remoteMessageShownUnique: return "m_remote_message_shown_unique"
         case .remoteMessageDismissed: return "m_remote_message_dismissed"
@@ -1729,11 +1729,11 @@ extension Pixel.Event {
         case .dbRemoteMessagingUpdateMessageShownError: return "m_d_db_rm_update_message_shown"
         case .dbRemoteMessagingUpdateMessageStatusError: return "m_d_db_rm_update_message_status"
         case .dbLocalAuthenticationError: return "m_d_local_auth_error"
-
+            
         case .debugBookmarksMigratedMoreThanOnce: return "m_debug_bookmarks_migrated-more-than-once"
-
+            
         case .configurationFetchInfo: return "m_d_cfgfetch"
-
+            
         case .trackerDataParseFailed: return "m_d_tracker_data_parse_failed"
         case .trackerDataReloadFailed: return "m_d_tds_r"
         case .trackerDataCouldNotBeLoaded: return "m_d_tracker_data_could_not_be_loaded"
@@ -1742,11 +1742,11 @@ extension Pixel.Event {
         case .privacyConfigurationReloadFailed: return "m_d_pc_r"
         case .privacyConfigurationParseFailed: return "m_d_pc_p"
         case .privacyConfigurationCouldNotBeLoaded: return "m_d_pc_l"
-
+            
         case .contentBlockingCompilationFailed(let listType, let component):
             return "m_d_content_blocking_\(listType)_\(component)_compilation_failed"
-
-
+            
+            
         case .contentBlockingLookupRulesSucceeded: return "m_content_blocking_lookup_rules_succeeded"
         case .contentBlockingFetchLRCSucceeded: return "m_content_blocking_fetch_lrc_succeeded"
         case .contentBlockingNoMatchInLRC: return "m_content_blocking_no_match_in_lrc"
@@ -1755,7 +1755,7 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-
+            
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
         case .webKitTerminationDidReloadCurrentTab: return "m_d_wktct"
@@ -1764,9 +1764,9 @@ extension Pixel.Event {
         case .webKitWarmupUnexpectedDidTerminate: return "m_d_webkit-warmup-unexpected-did-terminate"
 
         case .backgroundTaskSubmissionFailed: return "m_background-task_submission-failed"
-
+            
         case .blankOverlayNotDismissed: return "m_d_ovs"
-
+            
         case .cookieDeletionTime(let aggregation):
             return "m_debug_cookie-clearing-time-\(aggregation)"
         case .clearDataInDefaultPersistence(let aggregation):
@@ -1780,14 +1780,14 @@ extension Pixel.Event {
 
         case .cachedTabPreviewsExceedsTabCount: return "m_d_tpetc"
         case .cachedTabPreviewRemovalError: return "m_d_tpre"
-
+            
         case .missingDownloadedFile: return "m_d_missing_downloaded_file"
-
+            
         case .compilationResult(result: let result, waitTime: let waitTime, appState: let appState):
             return "m_compilation_result_\(result)_time_\(waitTime)_state_\(appState)"
-
+            
         case .emailAutofillKeychainError: return "m_email_autofill_keychain_error"
-
+        
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
         case .debugBookmarksStructureLost: return "m_d_bookmarks_structure_lost"
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
@@ -1823,7 +1823,7 @@ extension Pixel.Event {
 
         case .adAttributionGlobalAttributedRulesDoNotExist: return "m_attribution_global_attributed_rules_do_not_exist"
         case .adAttributionCompilationFailedForAttributedRulesList: return "m_attribution_compilation_failed_for_attributed_rules_list"
-
+            
         case .adAttributionLogicUnexpectedStateOnInheritedAttribution: return "m_attribution_unexpected_state_on_inherited_attribution_2"
         case .adAttributionLogicUnexpectedStateOnRulesCompiled: return "m_attribution_unexpected_state_on_rules_compiled"
         case .adAttributionLogicUnexpectedStateOnRulesCompilationFailed: return "m_attribution_unexpected_state_on_rules_compilation_failed"
@@ -1832,7 +1832,7 @@ extension Pixel.Event {
         case .adAttributionLogicRequestingAttributionTimedOut: return "m_attribution_logic_requesting_attribution_timed_out"
         case .adAttributionLogicWrongVendorOnSuccessfulCompilation: return "m_attribution_logic_wrong_vendor_on_successful_compilation"
         case .adAttributionLogicWrongVendorOnFailedCompilation: return "m_attribution_logic_wrong_vendor_on_failed_compilation"
-
+            
         case .bookmarkFolderExpected: return "m_d_bookmark_folder_expected"
         case .bookmarksListIndexNotMatchingBookmark: return "m_d_bookmarks_list_index_not_matching_bookmark"
         case .bookmarksListMissingFolder: return "m_d_bookmarks_list_missing_folder"
@@ -1842,7 +1842,7 @@ extension Pixel.Event {
         case .indexOutOfRange(let modelType): return "m_d_bookmarks_index_out_of_range_\(modelType.rawValue)"
         case .saveFailed(let modelType): return "m_d_bookmarks_view_model_save_failed_\(modelType.rawValue)"
         case .missingParent(let objectType): return "m_d_bookmark_model_missing_parent_\(objectType.rawValue)"
-
+            
         case .bookmarksCouldNotLoadDatabase: return "m_d_bookmarks_could_not_load_database"
         case .bookmarksCouldNotPrepareDatabase: return "m_d_bookmarks_could_not_prepare_database"
         case .bookmarksMigrationAlreadyPerformed: return "m_d_bookmarks_migration_already_performed"
@@ -1918,12 +1918,12 @@ extension Pixel.Event {
         case .favoritesCleanupFailed: return "m_d_favorites_cleanup_failed"
         case .bookmarksFaviconsFetcherStateStoreInitializationFailed: return "m_d_bookmarks_favicons_fetcher_state_store_initialization_failed"
         case .bookmarksFaviconsFetcherFailed: return "m_d_bookmarks_favicons_fetcher_failed"
-
+            
         case .credentialsDatabaseCleanupFailed: return "m_d_credentials_database_cleanup_failed_2"
         case .credentialsCleanupAttemptedWhileSyncWasEnabled: return "m_d_credentials_cleanup_attempted_while_sync_was_enabled"
-
+            
         case .invalidPayload(let configuration): return "m_d_\(configuration.rawValue)_invalid_payload".lowercased()
-
+            
             // MARK: - InContext Email Protection
         case .emailIncontextPromptDisplayed: return "m_email_incontext_prompt_displayed"
         case .emailIncontextPromptConfirmed: return "m_email_incontext_prompt_confirmed"
@@ -1933,18 +1933,18 @@ extension Pixel.Event {
         case .emailIncontextModalDismissed: return "m_email_incontext_modal_dismissed"
         case .emailIncontextModalExitEarly: return "m_email_incontext_modal_exit_early"
         case .emailIncontextModalExitEarlyContinue: return "m_email_incontext_modal_exit_early_continue"
-
+            
         case .compilationFailed: return "m_d_compilation_failed"
             // MARK: - Return user measurement
         case .debugReturnUserAddATB: return "m_debug_return_user_add_atb"
         case .debugReturnUserUpdateATB: return "m_debug_return_user_update_atb"
-
+            
         // MARK: - Toggle reports
         case .protectionToggledOffBreakageReport: return "m_protection-toggled-off-breakage-report"
         case .toggleProtectionsDailyCount: return "m_toggle-protections-daily-count"
         case .toggleReportDoNotSend: return "m_toggle-report-do-not-send"
         case .toggleReportDismiss: return "m_toggle-report-dismiss"
-
+            
         // MARK: - Apple Ad Attribution
         case .appleAdAttribution: return "m_apple-ad-attribution"
 
@@ -2177,7 +2177,7 @@ extension Pixel.Event {
         case .pproFeedbackSubcategoryScreenShow: return "m_ppro_feedback_subcategory-screen_show"
         case .pproFeedbackSubmitScreenShow: return "m_ppro_feedback_submit-screen_show"
         case .pproFeedbackSubmitScreenFAQClick: return "m_ppro_feedback_submit-screen-faq_click"
-
+            
         // MARK: - WebView Error Page shown
         case .webViewErrorPageShown: return "m_errorpageshown"
 
@@ -2260,11 +2260,11 @@ extension Pixel.Event {
 }
 
 extension Pixel.Event {
-
+    
     public enum BucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }
-
+        
         case zero = "0"
         case lessThan01 = "0.1"
         case lessThan05 = "0.5"
@@ -2274,7 +2274,7 @@ extension Pixel.Event {
         case lessThan20 = "20"
         case lessThan40 = "40"
         case more
-
+        
         public init(number: Double) {
             switch number {
             case 0:
@@ -2297,33 +2297,33 @@ extension Pixel.Event {
                 self = .more
             }
         }
-
+        
     }
-
+    
     public enum CompileRulesResult: String, CustomStringConvertible {
-
+        
         public var description: String { rawValue }
-
+        
         case tabClosed = "tab_closed"
         case appQuit = "app_quit"
         case appBackgrounded = "app_backgrounded"
         case success
-
+        
     }
-
+    
     public enum AppState: String, CustomStringConvertible {
-
+        
         public var description: String { rawValue }
-
+        
         case onboarding
         case regular
-
+        
     }
-
+    
     public enum CompileRulesListType: String, CustomStringConvertible {
-
+        
         public var description: String { rawValue }
-
+        
         case tds
         case blockingAttribution
         case attributed
@@ -2334,7 +2334,7 @@ extension Pixel.Event {
     public enum CompileTimeBucketAggregation: String, CustomStringConvertible {
 
         public var description: String { rawValue }
-
+     
         case lessThan1 = "1"
         case lessThan2 = "2"
         case lessThan3 = "3"

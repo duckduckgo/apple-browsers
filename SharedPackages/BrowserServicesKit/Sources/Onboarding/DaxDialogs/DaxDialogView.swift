@@ -94,12 +94,8 @@ public struct DaxDialogView<Content: View>: View {
             daxLogo
                 .padding(.leading, DaxDialogMetrics.DaxLogo.horizontalPadding)
 
-            if #available(macOS 12.0, *) {
-                wrappedContent
-                    .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
-            } else {
-                // Fallback on earlier versions
-            }
+            wrappedContent
+                .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
         }
     }
 
@@ -107,12 +103,8 @@ public struct DaxDialogView<Content: View>: View {
         HStack(alignment: .top, spacing: stackSpacing) {
             daxLogo
 
-            if #available(macOS 12.0, *) {
-                wrappedContent
-                    .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
-            } else {
-                // Fallback on earlier versions
-            }
+            wrappedContent
+                .visibility(showDialogBox.wrappedValue ? .visible : .invisible)
         }
 
     }
@@ -294,10 +286,7 @@ private extension View {
             self
         }
     }
-}
 
-
-private extension View {
     func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
         self
             .simultaneousGesture(DragGesture(minimumDistance: 0)

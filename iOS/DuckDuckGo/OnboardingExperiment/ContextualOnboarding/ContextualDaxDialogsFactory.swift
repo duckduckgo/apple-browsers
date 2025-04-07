@@ -290,13 +290,13 @@ protocol ContextualOnboardingSettings {
 }
 
 extension DefaultDaxDialogsSettings: ContextualOnboardingSettings {
-
+    
     var userHasSeenTrackersDialog: Bool {
         browsingWithTrackersShown ||
         browsingWithoutTrackersShown ||
         browsingMajorTrackingSiteShown
     }
-
+    
     var userHasSeenFireDialog: Bool {
         fireMessageExperimentShown
     }

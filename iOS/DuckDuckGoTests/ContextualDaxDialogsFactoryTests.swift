@@ -537,11 +537,11 @@ final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
     func didShowContextualOnboardingTrackersDialog() {
         didCallDidShowContextualOnboardingTrackersDialog = true
     }
-
+    
     func didAcknowledgeContextualOnboardingTrackersDialog() {
         didCallDidAcknowledgeContextualOnboardingTrackersDialog = true
     }
-
+    
     func didTapDismissContextualOnboardingAction() {
         didCallDidTapDismissContextualOnboardingAction = true
     }
@@ -549,7 +549,7 @@ final class ContextualOnboardingDelegateMock: ContextualOnboardingDelegate {
     func searchFromOnboarding(for query: String) {
         didCallSearchForQuery = true
     }
-
+    
     func navigateFromOnboarding(to url: URL) {
         didCallNavigateToURL = true
         urlToNavigateTo = url

@@ -25,9 +25,9 @@ import Common
 import PrivacyDashboard
 
 protocol EntityProviding {
-
+    
     func entity(forHost host: String) -> Entity?
-
+    
 }
 
 protocol NewTabDialogSpecProvider {
@@ -60,30 +60,30 @@ protocol ContextualOnboardingLogic {
 protocol PrivacyProPromotionCoordinating {
     /// Indicates whether the Privacy Pro promotion dialog is currently being displayed
     var isShowingPrivacyProPromotion: Bool { get }
-
+    
     /// Indicates whether the user has seen the Privacy Pro promotion dialog
     var privacyProPromotionDialogSeen: Bool { get set }
 }
 
 extension ContentBlockerRulesManager: EntityProviding {
-
+    
     func entity(forHost host: String) -> Entity? {
         currentMainRules?.trackerData.findParentEntityOrFallback(forHost: host)
     }
-
+    
 }
 
 final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
-
+    
     struct MajorTrackers {
-
+        
         static let facebookDomain = "facebook.com"
         static let googleDomain = "google.com"
-
+        
         static let domains = [facebookDomain, googleDomain]
-
+        
     }
-
+    
     struct HomeScreenSpec: Equatable {
         static let initial = HomeScreenSpec(message: UserText.daxDialogHomeInitial, accessibilityLabel: nil)
         static let subsequent = HomeScreenSpec(message: "", accessibilityLabel: nil)
@@ -95,7 +95,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         let message: String
         let accessibilityLabel: String?
     }
-
+    
     func overrideShownFlagFor(_ spec: BrowsingSpec, flag: Bool) {
         switch spec.type {
         case .withMultipleTrackers, .withOneTracker:
@@ -115,7 +115,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             settings.browsingFinalDialogShown = flag
         }
     }
-
+    
     struct BrowsingSpec: Equatable {
         // swiftlint:disable nesting
 
@@ -176,7 +176,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         fileprivate(set) var highlightAddressBar: Bool
         let pixelName: Pixel.Event
         let type: SpecType
-
+        
         func format(args: CVarArg...) -> BrowsingSpec {
             format(message: message, args: args)
         }
@@ -195,7 +195,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             )
         }
     }
-
+    
     struct ActionSheetSpec: Equatable {
         static let fireButtonEducation = ActionSheetSpec(message: UserText.daxDialogFireButtonEducation,
                                                          confirmAction: UserText.daxDialogFireButtonEducationConfirmAction,
@@ -209,7 +209,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         let confirmAction: String
         let cancelAction: String
         let isConfirmActionDestructive: Bool
-
+        
         let displayedPixelName: Pixel.Event
         let confirmActionPixelName: Pixel.Event
         let cancelActionPixelName: Pixel.Event
@@ -227,7 +227,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private let launchOptionsHandler: LaunchOptionsHandler
 
     private var nextHomeScreenMessageOverride: HomeScreenSpec?
-
+    
     // So we can avoid showing two dialogs for the same page
     private var lastURLDaxDialogReturnedFor: URL?
 
@@ -306,7 +306,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     var isAddFavoriteFlow: Bool {
         return nextHomeScreenMessageOverride == .addFavorite
     }
-
+    
     var shouldShowFireButtonPulse: Bool {
         // Show fire the user hasn't seen the fire education dialog or the fire button has not animated before.
         nonDDGBrowsingMessageSeen && (!settings.fireMessageExperimentShown && settings.fireButtonPulseDateShown == nil) && isEnabled
@@ -328,7 +328,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         // Reset last shown dialog as we don't have to show it anymore.
         clearOnboardingBrowsingData()
     }
-
+    
     func primeForUse() {
         settings.isDismissed = false
     }
@@ -340,14 +340,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     func resumeRegularFlow() {
         nextHomeScreenMessageOverride = nil
     }
-
+    
     func clearHeldURLData() {
         lastURLDaxDialogReturnedFor = nil
     }
-
+    
     private var fireButtonPulseTimer: Timer?
     private static let timeToFireButtonExpire: TimeInterval = 1 * 60 * 60
-
+    
     private(set) var lastVisitedOnboardingWebsiteURL: URL?
     private(set) var lastShownDaxDialogType: BrowsingSpec.SpecType?
 
@@ -395,7 +395,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
             RunLoop.current.add(fireButtonPulseTimer!, forMode: RunLoop.Mode.common)
         }
     }
-
+    
     func fireButtonPulseCancelled() {
         fireButtonPulseTimer?.invalidate()
         settings.fireButtonEducationShownOrExpired = true
@@ -442,7 +442,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         if message != nil {
             lastURLDaxDialogReturnedFor = privacyInfo.url
         }
-
+        
         return message
     }
 
@@ -547,7 +547,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         if !settings.tryVisitASiteShown {
             return .subsequent
         }
-
+        
         return nil
     }
 
@@ -561,7 +561,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     func majorTrackerOwnerMessage(_ host: String, _ majorTrackerEntity: Entity, isReloadingDialog: Bool) -> DaxDialogs.BrowsingSpec? {
         if !isReloadingDialog && settings.browsingMajorTrackingSiteShown { return nil }
-
+        
         guard let entityName = majorTrackerEntity.displayName,
             let entityPrevalence = majorTrackerEntity.prevalence else { return nil }
         settings.browsingMajorTrackingSiteShown = true
@@ -578,7 +578,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         settings.browsingWithoutTrackersShown = true
         return BrowsingSpec.siteIsMajorTracker.format(args: entityName, host)
     }
-
+    
     private func searchMessage() -> BrowsingSpec? {
         guard !settings.browsingAfterSearchShown else { return nil }
         settings.browsingAfterSearchShown = true
@@ -611,22 +611,22 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         }
         return spec
     }
-
+ 
     private func blockedEntityNames(_ trackerInfo: TrackerInfo) -> [String]? {
         setTryVisitSiteMessageSeen()
         guard !trackerInfo.trackersBlocked.isEmpty else { return nil }
-
+        
         return trackerInfo.trackersBlocked.removingDuplicates { $0.entityName }
             .sorted(by: { $0.prevalence ?? 0.0 > $1.prevalence ?? 0.0 })
             .compactMap { $0.entityName }
     }
-
+    
     private func isFacebookOrGoogle(_ url: URL) -> Bool {
         return [ MajorTrackers.facebookDomain, MajorTrackers.googleDomain ].contains { domain in
             return url.isPart(ofDomain: domain)
         }
     }
-
+    
     private func isOwnedByFacebookOrGoogle(_ host: String) -> Entity? {
         guard let entity = entityProviding.entity(forHost: host) else { return nil }
         return entity.domains?.contains(where: { MajorTrackers.domains.contains($0) }) ?? false ? entity : nil
@@ -650,7 +650,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 }
 
 extension DaxDialogs: PrivacyProPromotionCoordinating {
-
+    
     var isShowingPrivacyProPromotion: Bool {
         currentHomeSpec == .privacyProPromotion
     }
@@ -690,7 +690,7 @@ extension URL {
         let normalizedQuery2 = queryValue2?
             .replacingOccurrences(of: "+", with: " ")
             .replacingOccurrences(of: "%20", with: " ")
-
+        
         return normalizedQuery1 == normalizedQuery2
     }
 }

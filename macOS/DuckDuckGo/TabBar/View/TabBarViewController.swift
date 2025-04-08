@@ -593,12 +593,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func observeToScrollNotifications() {
         scrollView.contentView.postsBoundsChangedNotifications = true
 
-        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentSizeDidChange(_:)), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.frameDidChangeNotification, object: collectionView)
         previousScrollViewWidth = scrollView.bounds.size.width
         NotificationCenter.default.addObserver(self, selector: #selector(scrollViewFrameDidChange(_:)), name: NSView.frameDidChangeNotification, object: scrollView)
     }
 
-    @objc private func scrollViewContentSizeDidChange(_ notification: Notification) {
+    @objc private func scrollViewContentRectDidChange(_ notification: Notification) {
         enableScrollButtons()
         hideTabPreview(allowQuickRedisplay: true)
     }

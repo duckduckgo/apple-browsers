@@ -37,15 +37,15 @@ struct AutofillCreditCardDetailsView: View {
     }
     
     private var list: some View {
-        List {
-            switch viewModel.viewMode {
-            case .edit:
-                editingContentView
-            case .view:
-                viewingContentView
-            case .new:
-                editingContentView
-            }
+            List {
+                switch viewModel.viewMode {
+                case .edit:
+                    editingContentView
+                case .view:
+                    viewingContentView
+                case .new:
+                    editingContentView
+                }
         }
         .simultaneousGesture(
             DragGesture().onChanged({_ in
@@ -200,7 +200,7 @@ private struct EditableCreditCardNumberCell: View {
     @Binding var formattedText: String
     @Binding var isCardValid: Bool
     @Binding var selectedCell: UUID?
-    @State private var closeButtonVisible = false
+    @State private var closeButtonVisible: Bool?
     
     var body: some View {
         
@@ -223,15 +223,16 @@ private struct EditableCreditCardNumberCell: View {
                 Spacer()
                 
                 if text.count > 0 {
-                    if closeButtonVisible {
-                        Image(.clear16)
-                            .onTapGesture {
-                                self.text = ""
-                                self.formattedText = ""
-                            }
-                    }
-                    if !isCardValid && !closeButtonVisible {
-                        Image(.exclamationColor16)
+                    if let closeButtonVisible = closeButtonVisible {
+                        if closeButtonVisible {
+                            Image(.clear16)
+                                .onTapGesture {
+                                    self.text = ""
+                                    self.formattedText = ""
+                                }
+                        } else if !isCardValid {
+                            Image(.exclamationColor16)
+                        }
                     }
                 }
             }
@@ -257,7 +258,7 @@ private struct EditableCreditCardNumberCell: View {
         @Binding var cardNumber: String
         @Binding var formattedCardNumber: String
         @Binding var isCardValid: Bool
-        @Binding var isEditing: Bool
+        @Binding var isEditing: Bool?
         @Binding var selectedCell: UUID?
         
         func makeUIView(context: Context) -> UITextField {
@@ -286,6 +287,12 @@ private struct EditableCreditCardNumberCell: View {
                     uiView.selectedTextRange = position
                 }
             }
+            
+            if selectedCell != id && uiView.isFirstResponder {
+                DispatchQueue.main.async {
+                    uiView.resignFirstResponder()
+                }
+           }
         }
         
         func makeCoordinator() -> Coordinator {
@@ -378,7 +385,7 @@ private struct EditableCreditCardNumberCell: View {
                 parent.selectedCell = nil
                 
                 if !parent.isCardValid && !parent.formattedCardNumber.isEmpty {
-                    textField.textColor = .red
+                    textField.textColor = .systemRed
                 } else {
                     textField.textColor = UIColor(designSystemColor: .textPrimary)
                 }
@@ -603,6 +610,8 @@ private struct Constants {
     static let minRowHeight: CGFloat = 60
     static let insets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 }
+
+
 
 #Preview {
     AutofillCreditCardDetailsView(viewModel: AutofillCreditCardDetailsViewModel(authenticator: AutofillLoginListAuthenticator(reason: UserText.autofillCreditCardAuthenticationReason, cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)))

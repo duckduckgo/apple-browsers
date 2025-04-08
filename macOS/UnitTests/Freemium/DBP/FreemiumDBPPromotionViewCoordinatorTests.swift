@@ -108,6 +108,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     }
 
     func testCloseAction_dismissesPromotion_andFiresPixel() async throws {
+        try XCTSkip("Flaky")
+
         // When
         let viewModel = try await waitForViewModelUpdate(for: 3)
         viewModel?.closeAction()

@@ -93,6 +93,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     public func serpNotification(enabled: Bool) {
+        print("DuckPlayerNativeUserScript serpNotification")
         let params = ["enabled": enabled]
         if let webView {
             broker?.push(method: "onSerpNotify", params: params, for: self, into: webView)
@@ -100,6 +101,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
    public func mediaControl(pause: Bool) {
+        print("DuckPlayerNativeUserScript mediaControl")
         let params = ["pause": pause]
         if let webView {
             broker?.push(method: "onMediaControl", params: params, for: self, into: webView)
@@ -115,7 +117,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DuckPlayerNativeUserScript onYoutubeError")
+        print("DuckPlayerNativeUserScript onCurrentTimeStamp")
         guard let dict = params as? [String: Any],
               let time = dict["timestamp"] as? String else {
             return nil

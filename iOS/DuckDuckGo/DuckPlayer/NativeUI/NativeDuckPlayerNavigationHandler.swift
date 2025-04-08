@@ -199,9 +199,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func toggleAudioForTab(_ webView: WKWebView, mute: Bool) {
         nativeUserScript.muteAudio(mute: mute)
-        //if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
+        // if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
         //    webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
-        //}
+        // }
     }
 
     /// Register a DuckPlayer Youtube Navigation Request observer
@@ -226,7 +226,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func toggleMediaPlayback(_ webView: WKWebView, pause: Bool) {
         if let url = webView.url, url.isYoutubeWatch {
-            webView.evaluateJavaScript("\(mediaControlScript); mediaControl(\(pause))")
+            nativeUserScript.mediaControl(pause: pause)
+            // webView.evaluateJavaScript("\(mediaControlScript); mediaControl(\(pause))")
         }
     }
 
@@ -436,7 +437,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // This disables SERP Overlays when DuckPlayer is enabled
         if webView.url?.isDuckDuckGoSearch ?? false {
             let isEnabled = duckPlayer.settings.nativeUISERPEnabled || duckPlayer.settings.nativeUIYoutubeMode != .never
-            webView.evaluateJavaScript(getSerpNotifyScript(enabled: isEnabled))
+            // webView.evaluateJavaScript(getSerpNotifyScript(enabled: isEnabled))
+            nativeUserScript.serpNotification(enabled: isEnabled)
         }
     }
 

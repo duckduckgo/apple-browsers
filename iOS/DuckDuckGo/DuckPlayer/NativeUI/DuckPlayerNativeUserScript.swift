@@ -115,8 +115,9 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-          guard let dict = params as? [String: Any],
-                let time = dict["timestamp"] as? String else {
+        print("DuckPlayerNativeUserScript onYoutubeError")
+        guard let dict = params as? [String: Any],
+              let time = dict["timestamp"] as? String else {
             return nil
         }
         currentTimeStamp = Int(time) ?? 0

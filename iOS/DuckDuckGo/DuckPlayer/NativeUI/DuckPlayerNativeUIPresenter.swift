@@ -138,9 +138,11 @@ final class DuckPlayerNativeUIPresenter {
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         state: DuckPlayerState = DuckPlayerState(),
-         notificationCenter: NotificationCenter = .default) {
+    init(
+        appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+        state: DuckPlayerState = DuckPlayerState(),
+        notificationCenter: NotificationCenter = .default
+    ) {
         self.appSettings = appSettings
         self.state = state
         self.notificationCenter = notificationCenter
@@ -155,7 +157,7 @@ final class DuckPlayerNativeUIPresenter {
             object: nil
         )
 
-         // Add observers for app settings changes
+        // Add observers for app settings changes
         notificationCenter.addObserver(
             self,
             selector: #selector(handleAppSettingsChange),
@@ -173,7 +175,7 @@ final class DuckPlayerNativeUIPresenter {
         bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -omniBarHeight : 0
     }
 
-        /// Updates the UI based on Ombibar Notification
+    /// Updates the UI based on Ombibar Notification
     @objc func handleAppSettingsChange(_ notification: Notification) {
         appSettings = AppDependencyProvider.shared.appSettings
     }
@@ -253,7 +255,6 @@ final class DuckPlayerNativeUIPresenter {
     private func updateWebViewConstraintForPillHeight() {
         constraintUpdatePublisher.send(.showPill(height: self.pillHeight))
     }
-    
 
     /// Resets the webView constraint to its default value
     @MainActor
@@ -392,7 +393,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - timestamp: The timestamp of the video
     @MainActor
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
-        
+
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -455,7 +456,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         NSLayoutConstraint.activate([
             hostingController.view.leadingAnchor.constraint(equalTo: hostView.view.leadingAnchor),
             hostingController.view.trailingAnchor.constraint(equalTo: hostView.view.trailingAnchor),
-            bottomConstraint!
+            bottomConstraint!,
         ])
 
         // Store reference to the hosting controller
@@ -464,7 +465,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Subscribe to the sheet animation completed event
         containerViewModel.$sheetAnimationCompleted.sink { [weak self] completed in
             if completed && containerViewModel.sheetVisible {
-                self?.updateWebViewConstraintForPillHeight()                
+                self?.updateWebViewConstraintForPillHeight()
             }
         }.store(in: &containerCancellables)
 
@@ -579,7 +580,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.state.timestamp = timestamp
-                
+
                 // Present pill only if the source is youtube
                 if source == .youtube {
                     self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
@@ -603,7 +604,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         containerViewModel?.dismiss()
         resetWebViewConstraint()
         containerViewController?.view.isUserInteractionEnabled = false
-         postPillVisibilityNotification(isVisible: false)
+        postPillVisibilityNotification(isVisible: false)
     }
 
     /// Shows the bottom sheet when browser chrome is visible

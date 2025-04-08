@@ -81,7 +81,6 @@ extension URL {
         guard let host else { return false }
         return host.contains("youtube.com") && path == "/watch"
     }
-    
 
     public var isYoutubeWatchWithFragment: Bool {
         return isYoutubeWatch && fragment != nil

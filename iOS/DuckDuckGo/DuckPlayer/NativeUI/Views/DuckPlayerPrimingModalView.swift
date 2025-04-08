@@ -47,7 +47,7 @@ struct DuckPlayerPrimingModalView: View {
             VStack(spacing: Constants.spacing) {
                 LottieView(
                     lottieFile: Constants.primingImageName,
-                    loopMode: .mode(.loop),
+                    loopMode: .mode(.playOnce),
                     isAnimating: $isAnimating
                 )
                 .frame(width: Constants.imageWidth, height: Constants.imageHeight)

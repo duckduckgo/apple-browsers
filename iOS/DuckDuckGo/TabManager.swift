@@ -63,8 +63,7 @@ class TabManager {
          interactionStateSource: TabInteractionStateSource?,
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
-         syncService: DDGSyncing,
-         duckPlayer: DuckPlayer = DuckPlayer(),
+         syncService: DDGSyncing,         
          privacyProDataReporter: PrivacyProDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -83,8 +82,7 @@ class TabManager {
         self.interactionStateSource = interactionStateSource
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
-        self.syncService = syncService
-        self.duckPlayer = duckPlayer
+        self.syncService = syncService        
         self.privacyProDataReporter = privacyProDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic

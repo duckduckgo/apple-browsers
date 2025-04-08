@@ -26,8 +26,9 @@ import BrowserServicesKit
 import DuckPlayer
 
 final class DuckPlayerNativeUserScript: NSObject, Subfeature {
-    
-    @Published var currentTimeStamp: Int = 0
+        
+    var duckPlayer: DuckPlayerControlling
+    private var cancellables = Set<AnyCancellable>()
 
     struct Constants {
         static let featureName = "duckPlayerNative"
@@ -41,7 +42,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
-    let duckPlayer: DuckPlayerControlling
+    
 
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.duckduckgo),
@@ -51,49 +52,43 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie)
     ])
     public var featureName: String = Constants.featureName
-
-    private var cancellables = Set<AnyCancellable>()
+    
 
     init(duckPlayer: DuckPlayerControlling) {
         self.duckPlayer = duckPlayer
         super.init()
+        // Ensure duckPlayer is treated as an object for ObjectIdentifier
+        if let object = duckPlayer as? AnyObject {
+             print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Initializing with DuckPlayer instance ID: \(ObjectIdentifier(object))")
+        } else {
+             print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Initializing with DuckPlayer, but it's not an AnyObject.")
+        }
         setupSubscriptions()
     }
 
     private func setupSubscriptions() {
+        print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Setting up subscriptions")
         
-        duckPlayer.mediaControlPublisher.sink { [weak self] pause in
-            print("DP: Received mediaControl update: \(pause)")
-            guard let self = self, let broker = self.broker, let webView = self.webView else {
-                print("DP: Error: Broker or webView not available for mediaControl update.")
-                return
+        duckPlayer.mediaControlPublisher
+            .sink { [weak self] pause in
+                print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Received mediaControlPublisher event: \(pause)")
+                self?.handleMediaControl(pause: pause)
             }
-            print("DP: Sending Broker message onMediaControl: \(pause)")
-            broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
-        }
-        .store(in: &cancellables)
+            .store(in: &cancellables)
 
-        duckPlayer.serpNotificationPublisher.sink { [weak self] enabled in
-            print("DP: Received serpNotification update: \(enabled)")
-            guard let self = self, let broker = self.broker, let webView = self.webView else {
-                print("DP: Error: Broker or webView not available for serpNotification update.")
-                return
+        duckPlayer.serpNotificationPublisher
+            .sink { [weak self] enabled in
+                 print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Received serpNotificationPublisher event: \(enabled)")
+                self?.handleSerpNotification(enabled: enabled)
             }
-            print("DP: Sending Broker message onSerpNotification: \(enabled)")
-            broker.push(method: "onSerpNotification", params: ["enabled": enabled], for: self, into: webView)
-        }
-        .store(in: &cancellables)
+            .store(in: &cancellables)
 
-        duckPlayer.muteAudioPublisher.sink { [weak self] mute in
-            print("DP: Received muteAudio update: \(mute)")
-            guard let self = self, let broker = self.broker, let webView = self.webView else {
-                print("DP: Error: Broker or webView not available for muteAudio update.")
-                return
+        duckPlayer.muteAudioPublisher
+            .sink { [weak self] mute in
+                 print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Received muteAudioPublisher event: \(mute)")
+                self?.handleMuteAudio(mute: mute)
             }
-            print("DP: Sending Broker message onMuteAudio: \(mute)")
-            broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
-        }
-        .store(in: &cancellables)
+            .store(in: &cancellables)
     }
 
 
@@ -117,7 +112,28 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return nil
         }
     }
+
+    deinit {
+        print("DP: DuckPlayerNativeUserScript deinit called")
+        cancellables.forEach { $0.cancel() }
+        cancellables.removeAll()
+    }
     
+
+    private func handleMediaControl(pause: Bool) {
+        print("DP: handleMediaControl called with pause: \(pause)")
+        //broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
+    }
+
+    private func handleSerpNotification(enabled: Bool) {
+        print("DP: handleSerpNotification called with enabled: \(enabled)")
+        //broker.push(method: "onSerpNotification", params: ["enabled": enabled], for: self, into: webView)
+    }
+
+    private func handleMuteAudio(mute: Bool) {
+        print("DP: handleMuteAudio called with mute: \(mute)")
+        //broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+    }
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
@@ -132,9 +148,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         guard let dict = params as? [String: Any],
               let time = dict["timestamp"] as? String else {
             return nil
-        }        
-        currentTimeStamp = Int(time) ?? 0
-        duckPlayer.currentTimeStampPublisher.send(TimeInterval(currentTimeStamp))
+        }
+        duckPlayer.currentTimeStampPublisher.send(TimeInterval(Int(time) ?? 0))
         let result: [String: String] = [:]
         return result
     }

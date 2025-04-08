@@ -75,6 +75,8 @@ final class AddressBarButtonsViewController: NSViewController {
     var shieldAnimationView: LottieAnimationView!
     var shieldDotAnimationView: LottieAnimationView!
 
+    @IBOutlet weak var aiChatDivider: NSImageView!
+
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
 
     @IBOutlet private weak var permissionButtons: NSView!
@@ -331,7 +333,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         bookmarkButton.isShown = shouldShowBookmarkButton
-
+        updateAIChatDividerVisibility()
     }
 
     private func updateZoomButtonVisibility(animation: Bool = false) {
@@ -362,6 +364,11 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateAIChatButtonVisibility() {
         aiChatButton.toolTip = UserText.aiChatAddressBarTooltip
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
+        updateAIChatDividerVisibility()
+    }
+
+    private func updateAIChatDividerVisibility() {
+        aiChatDivider.isShown = clearButton.isShown || bookmarkButton.isShown
     }
 
     private func updateButtonsPosition() {

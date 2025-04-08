@@ -440,6 +440,10 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Add to host view
         hostView.view.addSubview(hostingController.view)
 
+        // Refresh layout to ensure view is rendered in place befor animation starts
+        hostView.view.layoutIfNeeded()
+        hostingController.view.layoutIfNeeded()
+
         // Calculate bottom constraints based on URL Bar position
         // If at the bottom, the Container should be placed above it
         bottomConstraint =
@@ -459,7 +463,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Subscribe to the sheet animation completed event
         containerViewModel.$sheetAnimationCompleted.sink { [weak self] completed in
             if completed && containerViewModel.sheetVisible {
-                self?.updateWebViewConstraintForPillHeight()
+                // Update the webView constraint for the pill height
+                // after the pill animation is shown
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self?.updateWebViewConstraintForPillHeight()
+                }
             }
         }.store(in: &containerCancellables)
 

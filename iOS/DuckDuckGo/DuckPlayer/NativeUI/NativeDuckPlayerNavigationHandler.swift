@@ -17,15 +17,15 @@
 //  limitations under the License.
 //
 
-import Foundation
-import ContentScopeScripts
-import WebKit
-import Core
-import Common
 import BrowserServicesKit
-import DuckPlayer
-import os.log
 import Combine
+import Common
+import ContentScopeScripts
+import Core
+import DuckPlayer
+import Foundation
+import WebKit
+import os.log
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class NativeDuckPlayerNavigationHandler: NSObject {
@@ -80,7 +80,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// JavaScript for media playback control
     private let mediaControlScript: String = {
         guard let url = Bundle.main.url(forResource: "mediaControl", withExtension: "js"),
-              let script = try? String(contentsOf: url) else {
+            let script = try? String(contentsOf: url)
+        else {
             assertionFailure("Failed to load mute audio script")
             return ""
         }
@@ -90,7 +91,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Script to mute/unmute audio
     private let muteAudioScript: String = {
         guard let url = Bundle.main.url(forResource: "muteAudio", withExtension: "js"),
-              let script = try? String(contentsOf: url) else {
+            let script = try? String(contentsOf: url)
+        else {
             assertionFailure("Failed to load mute audio script")
             return ""
         }
@@ -100,7 +102,8 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Script to notify SERP about DuckPlayer State
     private let serpNotifyScript: String = {
         guard let url = Bundle.main.url(forResource: "serpNotify", withExtension: "js"),
-              let script = try? String(contentsOf: url) else {
+            let script = try? String(contentsOf: url)
+        else {
             assertionFailure("Failed to load mute audio script")
             return ""
         }
@@ -125,11 +128,13 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - pixelFiring: The pixel firing utility for analytics.
     ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
-    init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         appSettings: AppSettings,
-         tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
-         delayHandler: DuckPlayerDelayHandling = DuckPlayerDelayHandler()) {
+    init(
+        duckPlayer: DuckPlayerControlling = DuckPlayer(),
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        appSettings: AppSettings,
+        tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
+        delayHandler: DuckPlayerDelayHandling = DuckPlayerDelayHandler()
+    ) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
@@ -147,7 +152,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         NotificationCenter.default.removeObserver(self)
     }
 
-    /// Sets the referrer based on the current web view 
+    /// Sets the referrer based on the current web view
     ///
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
     private func setReferrer(webView: WKWebView) {
@@ -173,12 +178,13 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// - Parameter videoID: The ID of the video to load
     @MainActor
     private func loadNativeDuckPlayerVideo(videoID: String) {
-        let source: DuckPlayer.VideoNavigationSource = switch referrer {
-        case .youtube: .youtube
-        case .serp: .serp
-        case .other: .other
-        default: .other
-        }
+        let source: DuckPlayer.VideoNavigationSource =
+            switch referrer {
+            case .youtube: .youtube
+            case .serp: .serp
+            case .other: .other
+            default: .other
+            }
         duckPlayer.loadNativeDuckPlayerVideo(videoID: videoID, source: source, timestamp: nil)
     }
 
@@ -277,6 +283,20 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
 
+        let previousVideoID = previousURL?.youtubeVideoParams?.0
+        let newVideoID = newURL?.youtubeVideoParams?.0
+
+        // Never update the pill when navigating Youtube Internal Menu
+        // which is accessed via the same url and a fragment
+        // eg https://www.youtube.com/watch?v=dQw4w9WgXcQ#settings
+        // Or visiting the same video ID
+        if let url = newURL, url.isYoutubeWatchWithFragment && previousVideoID == newVideoID {
+            return .notHandled(.duplicateNavigation)
+        }
+
+        // Dismiss the pill on every URL change
+        duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
+
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
 
@@ -310,15 +330,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.disabledForVideo)
         }
 
-        // Get video ID from URL
-        guard videoID != lastHandledVideoID else {
-            return .notHandled(.disabledForVideo)
-        }
-
-        // Always dismiss the pill when a new URL is loaded
-        duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
-
-
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
             resetLastHandledVideoID()
@@ -341,7 +352,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
             lastHandledVideoID = videoID
             Task { await pauseVideoStart(webView: webView) }
-            
+
             delayHandler.delay(seconds: Constants.playerPresentationDelay)
                 .sink { [weak self] _ in
                     self?.loadNativeDuckPlayerVideo(videoID: videoID)
@@ -420,8 +431,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Notify SERP about Duckplayer State
         // This disables SERP Overlays when DuckPlayer is enabled
         if webView.url?.isDuckDuckGoSearch ?? false {
-            let isEnabled = duckPlayer.settings.nativeUISERPEnabled ||
-                            duckPlayer.settings.nativeUIYoutubeMode != .never
+            let isEnabled = duckPlayer.settings.nativeUISERPEnabled || duckPlayer.settings.nativeUIYoutubeMode != .never
             webView.evaluateJavaScript(getSerpNotifyScript(enabled: isEnabled))
         }
     }
@@ -440,8 +450,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Returns: A Duck Player `URL` if applicable.
     func getDuckURLFor(_ url: URL) -> URL {
         guard let (youtubeVideoID, timestamp) = url.youtubeVideoParams,
-                url.isDuckPlayer,
-                !url.isDuckURLScheme
+            url.isDuckPlayer,
+            !url.isDuckURLScheme
         else {
             return url
         }
@@ -475,13 +485,11 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return false }
 
         // Stop navigation if we are on SERP and DuckPlayer is enabled for it
-        if referrer == .serp &&
-            duckPlayer.settings.nativeUISERPEnabled &&
-            url.isYoutubeWatch {
-                let (videoID, _) = url.youtubeVideoParams ?? ("", nil)
-                lastHandledVideoID = videoID
-                loadNativeDuckPlayerVideo(videoID: videoID)
-                return true
+        if referrer == .serp && duckPlayer.settings.nativeUISERPEnabled && url.isYoutubeWatch {
+            let (videoID, _) = url.youtubeVideoParams ?? ("", nil)
+            lastHandledVideoID = videoID
+            loadNativeDuckPlayerVideo(videoID: videoID)
+            return true
         }
 
         // Allow everything else

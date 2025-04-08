@@ -292,8 +292,9 @@ private struct SheetView<Content: View>: View {
             sheetOffset = DuckPlayerContainer.Constants.initialOffsetValue
 
             // If the sheet should be visible, animate it into view after a tiny delay
+            // This is to ensure the view is rendered in place before the animation starts
             if viewModel.sheetVisible {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     animateOffset(to: true)
                 }
             }

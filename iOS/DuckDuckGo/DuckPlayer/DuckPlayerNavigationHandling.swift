@@ -50,6 +50,7 @@ enum DuckPlayerNavigationHandlerURLChangeResult: Equatable {
         case disabledForVideo
         case duplicateNavigation
         case isLinkPreview
+        case isYoutubeWatchWithFragment
     }
 
     /// Possible reasons for handling a URL change.

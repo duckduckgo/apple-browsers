@@ -45,6 +45,7 @@ final class UserScripts: UserScriptsProvider {
     }
     var youtubeOverlayScript: YoutubeOverlayUserScript?
     var youtubePlayerUserScript: YoutubePlayerUserScript?
+    var duckPlayerNativeUserScript: DuckPlayerNativeUserScript?
     var specialErrorPageUserScript: SpecialErrorPageUserScript?
 
     private(set) var faviconScript = FaviconUserScript()
@@ -109,12 +110,15 @@ final class UserScripts: UserScriptsProvider {
     private func initializeDuckPlayer() {
         if let duckPlayer {
             
-            // Initialize scripts if nativeUI is disabled
+            // Initialize Duckplayer UserScripts
             if !duckPlayer.settings.nativeUI {
                 youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
                 youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
                 youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
                 youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+            } else {
+                duckPlayerNativeUserScript = DuckPlayerNativeUserScript()
+                duckPlayerNativeUserScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
             }
         }
     }

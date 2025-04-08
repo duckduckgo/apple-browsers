@@ -35,7 +35,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     struct Handlers {
         static let initialSetup = "initialSetup"
-        static let onCurrentTimeStamp = "onGetCurrentTimestamp"
+        static let onCurrentTimeStamp = "onCurrentTimestamp"
         static let onYoutubeError = "onYoutubeError"
     }
 
@@ -46,7 +46,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.duckduckgo),
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtube),
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeMobile),
-        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeWWW)
+        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeWWW),
+        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie)
     ])
     public var featureName: String = Constants.featureName
 
@@ -108,25 +109,27 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
         print("DuckPlayerNativeUserScript initialSetup")
-        return nil
+        let result: [String: String] = [:]
+        return result
     }
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
           guard let dict = params as? [String: Any],
                 let time = dict["timestamp"] as? String else {
-            assertionFailure("Could not parse WKMessage to obtain video details")
             return nil
         }
         currentTimeStamp = Int(time) ?? 0
         print("DuckPlayerNativeUserScript onCurrentTimeStamp: \(currentTimeStamp)")
-        return nil
+        let result: [String: String] = [:]
+        return result
     }
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
         print("DuckPlayerNativeUserScript onYoutubeError")
-        return nil
+        let result: [String: String] = [:]
+        return result
     }
 
 }

@@ -231,6 +231,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         static let youtubeWWW = "www.youtube.com"
         static let youtube = "youtube.com"
         static let youtubeMobile = "m.youtube.com"
+        static let youtubeNoCookie = "youtube-nocookie.com"
     }
 
     /// The current mode of Duck Player.

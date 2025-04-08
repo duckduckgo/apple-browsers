@@ -719,7 +719,4 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertNil(sut.lastHandledVideoID)
     }
 
-    
-    
-    
 }

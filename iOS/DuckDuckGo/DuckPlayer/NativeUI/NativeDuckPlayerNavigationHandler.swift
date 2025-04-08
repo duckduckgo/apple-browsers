@@ -143,7 +143,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         self.appSettings = appSettings
         self.tabNavigationHandler = tabNavigationHandler
         self.delayHandler = delayHandler
-        super.init()        
+        super.init()
     }
 
     deinit {
@@ -158,10 +158,10 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     // CSS TESTS
     func testCSS() {
         nativeUserScript.serpNotification(enabled: true)
-        nativeUserScript.muteAudio(mute: mute)
-        nativeUserScript.mediaControl(pause: pause)
-        nativeUserScript.getCurrentTimeStamp(mute: mute)
-    }   
+        nativeUserScript.muteAudio(mute: true)
+        nativeUserScript.mediaControl(pause: true)
+        nativeUserScript.getCurrentTimeStamp()
+    }
 
     /// Sets the referrer based on the current web view
     ///

@@ -84,7 +84,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         }
     }
 
-    public func getCurrentTimeStamp(mute: Bool) {
+    public func getCurrentTimeStamp() {
         let params: [String: String] = [:]
         if let webView {
             broker?.push(method: "onGetCurrentTimestamp", params: params, for: self, into: webView)

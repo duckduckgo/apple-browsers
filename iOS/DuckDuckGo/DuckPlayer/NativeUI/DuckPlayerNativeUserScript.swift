@@ -85,21 +85,21 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     public func getCurrentTimeStamp(mute: Bool) {
-        let params = []
+        let params: [String: String] = [:]
         if let webView {
             broker?.push(method: "onGetCurrentTimestamp", params: params, for: self, into: webView)
         }
     }
 
-    public func serpNotification(mute: Bool) {
-        let params = []
+    public func serpNotification(enabled: Bool) {
+        let params = ["enabled": enabled]
         if let webView {
             broker?.push(method: "onSerpNotify", params: params, for: self, into: webView)
         }
     }
 
    public func mediaControl(pause: Bool) {
-        let params = ["mute": mute]
+        let params = ["pause": pause]
         if let webView {
             broker?.push(method: "onMediaControl", params: params, for: self, into: webView)
         }

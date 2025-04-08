@@ -143,7 +143,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         self.appSettings = appSettings
         self.tabNavigationHandler = tabNavigationHandler
         self.delayHandler = delayHandler
-        super.init()
+        super.init()        
     }
 
     deinit {
@@ -154,6 +154,14 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         cancellables.removeAll()
         NotificationCenter.default.removeObserver(self)
     }
+
+    // CSS TESTS
+    func testCSS() {
+        nativeUserScript.serpNotification(enabled: true)
+        nativeUserScript.muteAudio(mute: mute)
+        nativeUserScript.mediaControl(pause: pause)
+        nativeUserScript.getCurrentTimeStamp(mute: mute)
+    }   
 
     /// Sets the referrer based on the current web view
     ///
@@ -392,7 +400,12 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Parameter webView: The `WKWebView` to reload.
     @MainActor
     func handleReload(webView: WKWebView) {
+        
         webView.reload()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.testCSS()
+        }
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 

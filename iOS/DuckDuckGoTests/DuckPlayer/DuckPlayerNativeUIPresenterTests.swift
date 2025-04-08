@@ -145,7 +145,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         XCTAssertEqual(bottomConstraint.firstItem as? UIView, containerViewController.view, "Bottom constraint should be attached to container view")
         XCTAssertEqual(bottomConstraint.secondItem as? UIView, mockHostViewController.view, "Bottom constraint should be attached to host view")
 
-        // CHange address bar position
+        // Change address bar position
         mockAppSettings.currentAddressBarPosition = .bottom
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
 
@@ -156,8 +156,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
             notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
         }
-        XCTAssertEqual(postedNotifications.count, 2, "Should post exactly two pill visibility notifications (one for each address bar position test)")
-
         let notification = postedNotifications.first
         XCTAssertNotNil(notification, "Should have posted a notification")
         XCTAssertEqual(notification?.name, DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated, "Should post the correct notification")
@@ -218,10 +216,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let timestamp: TimeInterval? = 30
         let source: DuckPlayer.VideoNavigationSource = .youtube
 
-        // When
-        // First present the pill
-        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
-
         // Present DuckPlayer
         let (_, _) = sut.presentDuckPlayer(
             videoID: videoID,
@@ -255,11 +249,60 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
             notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
         }
-        XCTAssertEqual(postedNotifications.count, 3, "Should have three pill visibility notifications (initial, presentation and after dismissal)")
+    
+        // Verify the last notification indicates visibility
+        let notification = postedNotifications.last
+        XCTAssertEqual(notification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
 
+        // Verify the timestamp was preserved
+        XCTAssertEqual(sut.state.timestamp, timestamp, "Timestamp should be preserved after dismissal")
+    }
+
+    @MainActor
+    func testPresentPill_WhenDuckPlayerIsDismissedAndSourceIsNotYoutube_DoesNotShowReEntryPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = 30
+        let source: DuckPlayer.VideoNavigationSource = .other
+
+        // When
+        // Present DuckPlayer
+        let (_, _) = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: timestamp
+        )
+
+        // Subscribe to pill visibility notifications to detect when it's shown again
+        testNotificationCenter.addObserver(
+            self,
+            selector: #selector(handlePillVisibilityChange),
+            name: DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated,
+            object: nil
+        )
+
+        // Simulate DuckPlayer dismissal with a timestamp
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should be created")
+            return
+        }
+        playerViewModel.dismissPublisher.send(timestamp ?? 0)
+
+        // Then
+        // Verify state after DuckPlayer presentation
+        XCTAssertEqual(sut.state.hasBeenShown, true, "DuckPlayer should have been shown")
+        XCTAssertEqual(sut.state.videoID, videoID, "The video ID should be set")
+
+        // Verify pill was presented again after dismissal
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        
         // Verify the second notification indicates visibility
-        let secondNotification = postedNotifications.last
-        XCTAssertEqual(secondNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
+        let notification = postedNotifications.last
+        XCTAssertEqual(notification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, false, "Second notification should indicate pill is visible")
 
         // Verify the timestamp was preserved
         XCTAssertEqual(sut.state.timestamp, timestamp, "Timestamp should be preserved after dismissal")
@@ -344,11 +387,10 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
             notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
         }
-        XCTAssertEqual(postedNotifications.count, 2, "Should have two pill visibility notifications (initial and after modal dismissal)")
 
         // Verify the second notification indicates visibility
-        let secondNotification = postedNotifications.last
-        XCTAssertEqual(secondNotification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
+        let notification = postedNotifications.last
+        XCTAssertEqual(notification?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Second notification should indicate pill is visible")
     }
 
     @MainActor

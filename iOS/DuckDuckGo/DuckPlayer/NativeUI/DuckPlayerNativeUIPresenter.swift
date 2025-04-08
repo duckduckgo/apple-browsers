@@ -392,6 +392,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     ///   - timestamp: The timestamp of the video
     @MainActor
     func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?) {
+        
         // Store the videoID & Update State
         if state.videoID != videoID {
             state.hasBeenShown = false
@@ -582,7 +583,12 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.state.timestamp = timestamp
-                self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                
+                // Present pill only if the source is youtube
+                if source == .youtube {
+                    self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                }
+
                 self.containerViewModel?.show()
             }
             .store(in: &playerCancellables)

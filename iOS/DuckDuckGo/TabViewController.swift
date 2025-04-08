@@ -3385,19 +3385,23 @@ extension TabViewController {
                 
                 switch update {
                 case .showPill(let height):
-                    if self.appSettings.currentAddressBarPosition == .bottom {
-                        let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                        self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
-                    } else {
-                        self.webViewBottomAnchorConstraint?.constant = -height
+                    UIView.animate(withDuration: 0.5, delay: 1.0, options: .curveEaseInOut) {
+                        if self.appSettings.currentAddressBarPosition == .bottom {
+                            let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                            self.webViewBottomAnchorConstraint?.constant = -targetHeight - height
+                        } else {
+                            self.webViewBottomAnchorConstraint?.constant = -height
+                        }
+                        self.view.layoutIfNeeded()
                     }
                     
                 case .reset:
-                    let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
-                    self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                    UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut) {
+                        let targetHeight = self.chromeDelegate?.barsMaxHeight ?? 0
+                        self.webViewBottomAnchorConstraint?.constant = self.appSettings.currentAddressBarPosition == .bottom ? -targetHeight : 0
+                        self.view.layoutIfNeeded()
+                    }
                 }
-                
-                self.view.layoutIfNeeded()
             }
             .store(in: &cancellables)
     }

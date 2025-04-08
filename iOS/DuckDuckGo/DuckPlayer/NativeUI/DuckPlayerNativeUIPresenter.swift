@@ -464,11 +464,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Subscribe to the sheet animation completed event
         containerViewModel.$sheetAnimationCompleted.sink { [weak self] completed in
             if completed && containerViewModel.sheetVisible {
-                // Update the webView constraint for the pill height
-                // after the pill animation is shown
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    self?.updateWebViewConstraintForPillHeight()
-                }
+                self?.updateWebViewConstraintForPillHeight()                
             }
         }.store(in: &containerCancellables)
 

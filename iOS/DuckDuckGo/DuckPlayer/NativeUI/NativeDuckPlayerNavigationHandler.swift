@@ -69,9 +69,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Cancellables for delaying actions
     private var cancellables = Set<AnyCancellable>()
 
-    /// Native UserScript
-    var nativeUserScript: DuckPlayerNativeUserScript = DuckPlayerNativeUserScript()
-
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -79,48 +76,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         static let playerPresentationDelay = 1.0
         static let pillPresentationDelay = 1.2
     }
-
-    /// JavaScript for media playback control
-    private let mediaControlScript: String = {
-        guard let url = Bundle.main.url(forResource: "mediaControl", withExtension: "js"),
-            let script = try? String(contentsOf: url)
-        else {
-            assertionFailure("Failed to load mute audio script")
-            return ""
-        }
-        return script
-    }()
-
-    /// Script to mute/unmute audio
-    private let muteAudioScript: String = {
-        guard let url = Bundle.main.url(forResource: "muteAudio", withExtension: "js"),
-            let script = try? String(contentsOf: url)
-        else {
-            assertionFailure("Failed to load mute audio script")
-            return ""
-        }
-        return script
-    }()
-
-    /// Script to notify SERP about DuckPlayer State
-    private let serpNotifyScript: String = {
-        guard let url = Bundle.main.url(forResource: "serpNotify", withExtension: "js"),
-            let script = try? String(contentsOf: url)
-        else {
-            assertionFailure("Failed to load mute audio script")
-            return ""
-        }
-        return script
-    }()
-
-    /// Returns the SERP notification script with the provided mode string
-    /// - Parameter mode: The mode string to inject into the script
-    private func getSerpNotifyScript(enabled: Bool) -> String {
-        if !enabled {
-            return serpNotifyScript.replacingOccurrences(of: Constants.serpNotifyEnabled, with: Constants.serpNotifyDisabled)
-        }
-        return serpNotifyScript
-    }
+    
 
     /// Initializes a new instance of `DuckPlayerNavigationHandler` with the provided dependencies.
     ///
@@ -156,11 +112,12 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     }
 
     // CSS TESTS
+    @MainActor
     func testCSS() {
-        nativeUserScript.serpNotification(enabled: true)
-        nativeUserScript.muteAudio(mute: true)
-        nativeUserScript.mediaControl(pause: true)
-        nativeUserScript.getCurrentTimeStamp()
+        duckPlayer.serpNotificationPublisher.send(true)
+        duckPlayer.muteAudioPublisher.send(true)
+        duckPlayer.mediaControlPublisher.send(true)
+        duckPlayer.currentTimeStampPublisher.send(100)
     }
 
     /// Sets the referrer based on the current web view
@@ -206,10 +163,9 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///  - mute: Whether to mute the audio.
     @MainActor
     private func toggleAudioForTab(_ webView: WKWebView, mute: Bool) {
-        nativeUserScript.muteAudio(mute: mute)
-        // if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
-        //    webView.evaluateJavaScript("\(muteAudioScript)(\(mute))")
-        // }
+         if duckPlayer.settings.openInNewTab || duckPlayer.settings.nativeUI {
+            duckPlayer.muteAudioPublisher.send(mute)
+         }
     }
 
     /// Register a DuckPlayer Youtube Navigation Request observer
@@ -234,8 +190,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     @MainActor
     private func toggleMediaPlayback(_ webView: WKWebView, pause: Bool) {
         if let url = webView.url, url.isYoutubeWatch {
-            nativeUserScript.mediaControl(pause: pause)
-            // webView.evaluateJavaScript("\(mediaControlScript); mediaControl(\(pause))")
+            duckPlayer.mediaControlPublisher.send(pause)
         }
     }
 
@@ -450,8 +405,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // This disables SERP Overlays when DuckPlayer is enabled
         if webView.url?.isDuckDuckGoSearch ?? false {
             let isEnabled = duckPlayer.settings.nativeUISERPEnabled || duckPlayer.settings.nativeUIYoutubeMode != .never
-            // webView.evaluateJavaScript(getSerpNotifyScript(enabled: isEnabled))
-            nativeUserScript.serpNotification(enabled: isEnabled)
+            duckPlayer.serpNotificationPublisher.send(isEnabled)
         }
     }
 

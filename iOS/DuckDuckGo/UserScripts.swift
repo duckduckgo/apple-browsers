@@ -117,7 +117,7 @@ final class UserScripts: UserScriptsProvider {
                 youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
                 youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
             } else {
-                duckPlayerNativeUserScript = DuckPlayerNativeUserScript()
+                duckPlayerNativeUserScript = DuckPlayerNativeUserScript(duckPlayer: duckPlayer)
                 duckPlayerNativeUserScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
             }
         }

@@ -41,6 +41,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
+    let duckPlayer: DuckPlayerControlling
 
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.duckduckgo),
@@ -51,10 +52,50 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     ])
     public var featureName: String = Constants.featureName
 
-    override init() {
+    private var cancellables = Set<AnyCancellable>()
+
+    init(duckPlayer: DuckPlayerControlling) {
+        self.duckPlayer = duckPlayer
         super.init()
-        print("DuckPlayerNativeUserScript init")
+        setupSubscriptions()
     }
+
+    private func setupSubscriptions() {
+        
+        duckPlayer.mediaControlPublisher.sink { [weak self] pause in
+            print("DP: Received mediaControl update: \(pause)")
+            guard let self = self, let broker = self.broker, let webView = self.webView else {
+                print("DP: Error: Broker or webView not available for mediaControl update.")
+                return
+            }
+            print("DP: Sending Broker message onMediaControl: \(pause)")
+            broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
+        }
+        .store(in: &cancellables)
+
+        duckPlayer.serpNotificationPublisher.sink { [weak self] enabled in
+            print("DP: Received serpNotification update: \(enabled)")
+            guard let self = self, let broker = self.broker, let webView = self.webView else {
+                print("DP: Error: Broker or webView not available for serpNotification update.")
+                return
+            }
+            print("DP: Sending Broker message onSerpNotification: \(enabled)")
+            broker.push(method: "onSerpNotification", params: ["enabled": enabled], for: self, into: webView)
+        }
+        .store(in: &cancellables)
+
+        duckPlayer.muteAudioPublisher.sink { [weak self] mute in
+            print("DP: Received muteAudio update: \(mute)")
+            guard let self = self, let broker = self.broker, let webView = self.webView else {
+                print("DP: Error: Broker or webView not available for muteAudio update.")
+                return
+            }
+            print("DP: Sending Broker message onMuteAudio: \(mute)")
+            broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+        }
+        .store(in: &cancellables)
+    }
+
 
     // MARK: - Subfeature
 
@@ -73,64 +114,34 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         case Handlers.initialSetup:
             return initialSetup
         default:
-            assertionFailure("Failed to parse script message: \(methodName)")
             return nil
         }
     }
-
-    public func muteAudio(mute: Bool) {
-        let params = ["mute": mute]
-        if let webView {
-            broker?.push(method: "onMuteAudio", params: params, for: self, into: webView)
-        }
-    }
-
-    public func getCurrentTimeStamp() {
-        let params: [String: String] = [:]
-        if let webView {
-            broker?.push(method: "onGetCurrentTimestamp", params: params, for: self, into: webView)
-        }
-    }
-
-    public func serpNotification(enabled: Bool) {
-        print("DuckPlayerNativeUserScript serpNotification")
-        let params = ["enabled": enabled]
-        if let webView {
-            broker?.push(method: "onSerpNotify", params: params, for: self, into: webView)
-        }
-    }
-
-   public func mediaControl(pause: Bool) {
-        print("DuckPlayerNativeUserScript mediaControl")
-        let params = ["pause": pause]
-        if let webView {
-            broker?.push(method: "onMediaControl", params: params, for: self, into: webView)
-        }
-    }
+    
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DuckPlayerNativeUserScript initialSetup")
+        print("DP: DuckPlayerNativeUserScript initialSetup Called from UserScript")
         let result: [String: String] = [:]
         return result
     }
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DuckPlayerNativeUserScript onCurrentTimeStamp")
+        //print("DP: DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
         guard let dict = params as? [String: Any],
               let time = dict["timestamp"] as? String else {
             return nil
-        }
+        }        
         currentTimeStamp = Int(time) ?? 0
-        print("DuckPlayerNativeUserScript onCurrentTimeStamp: \(currentTimeStamp)")
+        duckPlayer.currentTimeStampPublisher.send(TimeInterval(currentTimeStamp))
         let result: [String: String] = [:]
         return result
     }
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DuckPlayerNativeUserScript onYoutubeError")
+        print("DP: DuckPlayerNativeUserScript onYoutubeError Called from UserScript")
         let result: [String: String] = [:]
         return result
     }

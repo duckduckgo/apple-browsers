@@ -253,6 +253,16 @@ protocol DuckPlayerControlling: AnyObject {
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor func showPillForVisibleChrome()
+
+    // Native UI - UserScript Methods    
+    // These are used to notify the UserScript to trigger the appropriate actions
+    // The UserScript will subscribe to these publishers and call the appropriate methods
+    // on the UserScript Broker    
+    var muteAudioPublisher: PassthroughSubject<Bool, Never> { get }
+    var mediaControlPublisher: PassthroughSubject<Bool, Never> { get }
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never> { get }
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never> { get }
+
 }
 
 extension DuckPlayerControlling {
@@ -325,12 +335,20 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
+    /// Publishers for the Native UI - UserScript Methods
+    // DuckPlayer acts as a two way bridge between the UserScripts and the Native UI
+    var muteAudioPublisher: PassthroughSubject<Bool, Never>
+    var mediaControlPublisher: PassthroughSubject<Bool, Never>
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never>
+
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
     /// - Parameters:
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
     ///   - nativeUIPresenter: The native UI presenter.
+    ///   - nativeUINavigationHandler: The native UI navigation handler.    
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          nativeUIPresenter: DuckPlayerNativeUIPresenting) {
@@ -339,6 +357,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
+        self.muteAudioPublisher = PassthroughSubject<Bool, Never>()
+        self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
+        self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
+        self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
         super.init()
         setupSubscriptions()
 
@@ -832,6 +854,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         }
         return (.duckPlayerYouTubeUnknownErrorImpression, .duckPlayerYouTubeUnknownErrorDaily)
     }
+
+
 }
 
 extension DuckPlayer: UIGestureRecognizerDelegate {

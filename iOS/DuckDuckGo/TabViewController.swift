@@ -378,6 +378,7 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let historyCapture: HistoryCapture
+    
     weak var duckPlayer: DuckPlayerControlling?
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
@@ -2646,11 +2647,19 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer Scripts if not using native UI
-        if (duckPlayer?.settings.nativeUI) != nil {
-            userScripts.duckPlayer = duckPlayerNavigationHandler.duckPlayer
-            userScripts.youtubeOverlayScript?.webView = webView
-            userScripts.youtubePlayerUserScript?.webView = webView
+        // Setup DuckPlayer Scripts
+        if let duckPlayer = duckPlayer {
+            userScripts.duckPlayer = duckPlayer
+
+            // Native UI
+            if duckPlayer.settings.nativeUI {
+                userScripts.duckPlayerNativeUserScript?.webView = webView
+            
+            // Classic UI
+            } else {
+                userScripts.youtubeOverlayScript?.webView = webView
+                userScripts.youtubePlayerUserScript?.webView = webView
+            }
         }
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)

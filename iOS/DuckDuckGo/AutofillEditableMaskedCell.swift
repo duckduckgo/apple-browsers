@@ -34,8 +34,35 @@ struct AutofillEditableMaskedCell: View {
     @Binding var selectedCell: UUID?
     
     @FocusState private var isFieldFocused: Bool
+    @State private var shouldBeMonospaced: Bool
     @State private var closeButtonVisible = false
     
+    init(title: String,
+        placeholderText: String,
+        unmaskedString: Binding<String>,
+        maskedString: Binding<String>,
+        isMasked: Binding<Bool>,
+        autoCapitalizationType: UITextAutocapitalizationType = .none,
+        disableAutoCorrection: Bool = true,
+        keyboardType: UIKeyboardType = .default,
+        characterLimit: Int? = nil,
+        selectedCell: Binding<UUID?>) {
+       
+       self.title = title
+       self.placeholderText = placeholderText
+       self._unmaskedString = unmaskedString
+       self._maskedString = maskedString
+       self._isMasked = isMasked
+       self.autoCapitalizationType = autoCapitalizationType
+       self.disableAutoCorrection = disableAutoCorrection
+       self.keyboardType = keyboardType
+       self.characterLimit = characterLimit
+       self._selectedCell = selectedCell
+       
+       // Initialize shouldBeMonospaced based on the initial unmaskedString value
+       self._shouldBeMonospaced = State(initialValue: unmaskedString.wrappedValue.count > 0)
+   }
+
     var body: some View {
         
         VStack(alignment: .leading, spacing: 4) {
@@ -45,15 +72,16 @@ struct AutofillEditableMaskedCell: View {
             
             HStack {
                 TextField(placeholderText, text: isMasked ? $maskedString : $unmaskedString)
+                    .autocapitalization(autoCapitalizationType)
+                    .disableAutocorrection(disableAutoCorrection)
+                    .keyboardType(keyboardType)
+                    .label4Style(design: shouldBeMonospaced ? .monospaced : .default)
                     .onChange(of: unmaskedString) { _ in
+                        shouldBeMonospaced = unmaskedString.count > 0
                         if let limit = characterLimit, unmaskedString.count > limit {
                             unmaskedString = String(unmaskedString.prefix(limit))
                         }
                     }
-                    .autocapitalization(autoCapitalizationType)
-                    .disableAutocorrection(disableAutoCorrection)
-                    .keyboardType(keyboardType)
-                    .label4Style(design: unmaskedString.count > 0 ? .monospaced : .default)
                 
                 Spacer()
                 
@@ -72,9 +100,12 @@ struct AutofillEditableMaskedCell: View {
         .focused($isFieldFocused)
         .onChange(of: isFieldFocused) { focused in
             closeButtonVisible = focused
+            shouldBeMonospaced = unmaskedString.count > 0
             if focused {
                 isMasked = false
                 selectedCell = id
+            } else {
+                isMasked = true
             }
         }
     }

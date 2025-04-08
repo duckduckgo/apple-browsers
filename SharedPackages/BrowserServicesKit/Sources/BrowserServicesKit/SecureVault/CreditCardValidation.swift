@@ -102,12 +102,18 @@ public struct CreditCardValidation {
         return formatted.replacingOccurrences(of: "[^0-9]", with: "", options: .regularExpression)
     }
 
+    public static func hasMinimumLength(_ cardNumber: String) -> Bool {
+        return cardNumber.count >= 8
+    }
+
+    public static func hasMaximumLength(_ cardNumber: String) -> Bool {
+        return cardNumber.count <= 19
+    }
+
     public static func isValidCardNumber(_ number: String) -> Bool {
-        // Minimum valid card length
-        guard number.count >= 8 && number.count <= 19 else {
+        guard hasMinimumLength(number), hasMaximumLength(number) else {
             return false
         }
-
         // Implement Luhn algorithm (mod 10)
         var sum = 0
         let reversedDigits = number.reversed().map { Int(String($0)) ?? 0 }

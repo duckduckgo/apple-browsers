@@ -27,27 +27,30 @@ struct ClearTextField: View {
     var keyboardType: UIKeyboardType = .default
     var secure = false
     var characterLimit: Int?
-    
-    @State private var closeButtonVisible = false
+
     @FocusState private var isFieldFocused: Bool
+    @State private var shouldBeMonospaced: Bool = false
+    @State private var closeButtonVisible = false
     
     var body: some View {
         HStack {
             TextField(placeholderText, text: $text)
+                .autocapitalization(autoCapitalizationType)
+                .disableAutocorrection(disableAutoCorrection)
+                .keyboardType(keyboardType)
+                .label4Style(design: shouldBeMonospaced ? .monospaced : .default)
+                .focused($isFieldFocused)
+                .onChange(of: isFieldFocused) { focused in
+                    shouldBeMonospaced = secure && text.count > 0
+                    closeButtonVisible = focused
+                }
                 .onChange(of: text) { _ in
+                    shouldBeMonospaced = secure && text.count > 0
                     if let limit = characterLimit, text.count > limit {
                         text = String(text.prefix(limit))
                     }
                 }
-                .autocapitalization(autoCapitalizationType)
-                .disableAutocorrection(disableAutoCorrection)
-                .keyboardType(keyboardType)
-                .label4Style(design: secure && text.count > 0 ? .monospaced : .default)
-                .focused($isFieldFocused)
-                .onChange(of: isFieldFocused) { focused in
-                    closeButtonVisible = focused
-                }
-            
+
             Spacer()
             Image("Clear-16")
                 .opacity(closeButtonOpacity)

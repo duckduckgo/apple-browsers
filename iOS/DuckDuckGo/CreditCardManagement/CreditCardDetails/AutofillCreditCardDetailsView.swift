@@ -384,10 +384,13 @@ private struct EditableCreditCardNumberCell: View {
                 parent.isEditing = false
                 parent.selectedCell = nil
                 
-                if !parent.isCardValid && !parent.formattedCardNumber.isEmpty {
-                    textField.textColor = .systemRed
-                } else {
-                    textField.textColor = UIColor(designSystemColor: .textPrimary)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self else { return }
+                    if !self.parent.isCardValid && !self.parent.formattedCardNumber.isEmpty {
+                        textField.textColor = .systemRed
+                    } else {
+                        textField.textColor = UIColor(designSystemColor: .textPrimary)
+                    }
                 }
             }
         }

@@ -66,6 +66,7 @@ struct AutofillCreditCardDetailsView: View {
                 AutofillCopyableRow(title: UserText.autofillCreditCardDetailsCardNumber,
                                     subtitle: viewModel.formattedCardNumber,
                                     selectedCell: $viewModel.selectedCell,
+                                    isMonospaced: true,
                                     actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardNumber),
                                     action: { viewModel.copyToPasteboard(.cardNumber) },
                                     buttonImageName: "Copy-24",
@@ -271,8 +272,8 @@ private struct EditableCreditCardNumberCell: View {
             textField.pasteDelegate = context.coordinator
             textField.addTarget(context.coordinator, action: #selector(Coordinator.textFieldDidChange), for: .editingChanged)
             textField.textColor = UIColor(designSystemColor: .textPrimary)
-            textField.font = .daxBodyRegular()
-            
+            textField.font = UIFont.monospacedSystemFont(ofSize: UIFont.daxBodyRegular().pointSize, weight: .regular)
+
             return textField
         }
         

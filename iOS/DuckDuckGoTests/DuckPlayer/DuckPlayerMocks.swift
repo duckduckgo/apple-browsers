@@ -247,6 +247,12 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
 }
 
 final class MockDuckPlayer: DuckPlayerControlling {
+    
+    var muteAudioPublisher: PassthroughSubject<Bool, Never>
+    var mediaControlPublisher: PassthroughSubject<Bool, Never>
+    var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
+    var serpNotificationPublisher: PassthroughSubject<Bool, Never>
+    
 
     // MARK: - Required Properties
     var settings: DuckPlayerSettings
@@ -265,7 +271,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
 
     // MARK: - Private Properties
     private var featureFlagger: FeatureFlagger
-    private var nativeUIPresenter: DuckPlayerNativeUIPresenting
+    var nativeUIPresenter: DuckPlayerNativeUIPresenting
 
     // MARK: - Initialization
     init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting()) {
@@ -274,6 +280,12 @@ final class MockDuckPlayer: DuckPlayerControlling {
         self.nativeUIPresenter = nativeUIPresenter
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
+        self.nativeUIPresenter = nativeUIPresenter
+        self.muteAudioPublisher = PassthroughSubject<Bool, Never>()
+        self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
+        self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
+        self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
+        
     }
 
     // MARK: - User Values Methods

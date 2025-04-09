@@ -59,33 +59,29 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         super.init()
         // Ensure duckPlayer is treated as an object for ObjectIdentifier
         if let object = duckPlayer as? AnyObject {
-             print("DP: 🔴 DUCKPLAYER_NATIVE_USERSCRIPT: Initializing with DuckPlayer instance ID: \(ObjectIdentifier(object))")
+             print("DP: 🟢 DuckPlayerUserScript: Initializing with DuckPlayer instance ID: \(ObjectIdentifier(object))")
         } else {
-             print("DP: 🔴 DUCKPLAYER_NATIVE_USERSCRIPT: Initializing with DuckPlayer, but it's not an AnyObject.")
+             print("DP: 🔴 DuckPlayerUserScript.swift: Initializing with DuckPlayer, but it's not an AnyObject.")
         }
         setupSubscriptions()
     }
 
     private func setupSubscriptions() {
-        print("🟢 DUCKPLAYER_NATIVE_USERSCRIPT: Setting up subscriptions")
         
         duckPlayer.mediaControlPublisher
             .sink { [weak self] pause in
-                print("🟢 DUCKPLAYER_NATIVE_USERSCRIPT: Received mediaControlPublisher event: \(pause)")
                 self?.handleMediaControl(pause: pause)
             }
             .store(in: &cancellables)
 
         duckPlayer.serpNotificationPublisher
             .sink { [weak self] enabled in
-                 print("🟢 DUCKPLAYER_NATIVE_USERSCRIPT: Received serpNotificationPublisher event: \(enabled)")
                 self?.handleSerpNotification(enabled: enabled)
             }
             .store(in: &cancellables)
 
         duckPlayer.muteAudioPublisher
             .sink { [weak self] mute in
-                 print("🟢 DUCKPLAYER_NATIVE_USERSCRIPT: Received muteAudioPublisher event: \(mute)")
                 self?.handleMuteAudio(mute: mute)
             }
             .store(in: &cancellables)
@@ -122,32 +118,32 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     private func handleMediaControl(pause: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        print("DP: 🟢 handleMediaControl called with pause: \(pause)")
+        print("DP: 🟣 Pushing onMediaControl event with pause: \(pause)")
         broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
     }
 
     private func handleSerpNotification(enabled: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        print("DP: 🟢 handleSerpNotification called with enabled: \(enabled)")
-        broker.push(method: "onSerpNotification", params: ["enabled": enabled], for: self, into: webView)
+        print("DP: 🟣 Pushing handleSerpNotification with enabled: \(enabled)")
+        broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
     }
 
     private func handleMuteAudio(mute: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        print("DP: 🟢 handleMuteAudio called with mute: \(mute)")
+        print("DP: 🟣 Pushing handleMuteAudio with mute: \(mute)")
         broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
     }
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟢 DuckPlayerNativeUserScript initialSetup Called from UserScript")
+        print("DP: 🟣 DuckPlayerNativeUserScript initialSetup Called from UserScript")
         let result: [String: String] = [:]
         return result
     }
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-        //print("DP: 🟢 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
+        //print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
         guard let dict = params as? [String: Any],
               let time = dict["timestamp"] as? String else {
             return nil
@@ -159,7 +155,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟢 DuckPlayerNativeUserScript onYoutubeError Called from UserScript")
+        print("DP: 🟣 DuckPlayerNativeUserScript onYoutubeError Called from UserScript")
         let result: [String: String] = [:]
         return result
     }

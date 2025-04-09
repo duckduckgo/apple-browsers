@@ -67,7 +67,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     private func setupSubscriptions() {
-        print("🪫 DUCKPLAYER_NATIVE_USERSCRIPT: Setting up subscriptions")
+        print("🟢 DUCKPLAYER_NATIVE_USERSCRIPT: Setting up subscriptions")
         
         duckPlayer.mediaControlPublisher
             .sink { [weak self] pause in
@@ -147,7 +147,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟢 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
+        //print("DP: 🟢 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
         guard let dict = params as? [String: Any],
               let time = dict["timestamp"] as? String else {
             return nil

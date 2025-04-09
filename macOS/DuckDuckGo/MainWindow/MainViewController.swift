@@ -642,14 +642,14 @@ extension MainViewController {
              kVK_ANSI_R where flags == .command:
             guard view.window?.firstResponder is WebView else { return false }
             NSApp.menu?.performKeyEquivalent(with: event)
-            return true
+            return false
 
         case kVK_ANSI_Y where flags == .command:
             if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
                 return false
             }
             (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
-            return true
+            return false
 
         default:
             return false

@@ -42,18 +42,25 @@ public final class DataBrokerProtectionManager {
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
-    lazy var dataManager: DataBrokerProtectionDataManager = {
+    lazy var dataManager: DataBrokerProtectionDataManager? = {
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
 
         guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
+            assertionFailure("PixelKit not set up")
+            return nil
         }
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
-            fatalError("Failed to make secure storage vault")
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch let error {
+            assertionFailure("Failed to make secure storage vault")
+            pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
+            return nil
         }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)

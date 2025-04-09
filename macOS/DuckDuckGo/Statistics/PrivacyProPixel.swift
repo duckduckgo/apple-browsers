@@ -19,6 +19,7 @@
 import Foundation
 import Subscription
 import PixelKit
+import Networking
 
 // swiftlint:disable private_over_fileprivate
 #if APPSTORE
@@ -69,10 +70,13 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProAddEmailSuccess
     case privacyProWelcomeFAQClick
     // Auth v2
-    case privacyProDeadTokenDetected
-    case authV1MigrationFailed
-    case authV1MigrationSucceeded
-    case setSubscriptionInvalidSubscriptionValues
+    case privacyProInvalidRefreshTokenDetected(AuthV2PixelHandler.Source)
+    case privacyProInvalidRefreshTokenSignedOut
+    case privacyProInvalidRefreshTokenRecovered
+    case privacyProAuthV2MigrationStarted(AuthV2PixelHandler.Source)
+    case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
+    case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
+    case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
 
     var name: String {
         switch self {
@@ -114,11 +118,14 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .privacyProAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .privacyProWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
-            // Auth v2 // todo align with android
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
-        case .setSubscriptionInvalidSubscriptionValues: return "m_privacy-pro_invalid_subscriptionvalues"
+            // Auth v2
+        case .privacyProInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationStarted: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_started"
+        case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
         }
     }
 
@@ -126,8 +133,28 @@ enum PrivacyProPixel: PixelKitEventV2 {
         return nil
     }
 
+    private struct PrivacyProPixelsDefaults {
+        static let errorKey = "error"
+        static let policyCacheKey = "policycache"
+        static let sourceKey = "source"
+    }
+
     var parameters: [String: String]? {
-        return nil
+        switch self {
+        case .privacyProInvalidRefreshTokenDetected(let source),
+                .privacyProAuthV2MigrationStarted(let source),
+                .privacyProAuthV2MigrationSucceeded(let source):
+            return [PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2GetTokensError(let policy, let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.policyCacheKey: policy.description,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
+        case .privacyProAuthV2MigrationFailed(let source, let error):
+            return [PrivacyProPixelsDefaults.errorKey: error.localizedDescription,
+                    PrivacyProPixelsDefaults.sourceKey: source.description]
+        default:
+            return nil
+        }
     }
 }
 

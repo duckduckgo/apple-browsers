@@ -189,6 +189,11 @@ class MainViewController: UIViewController {
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private lazy var themeColorManager: SiteThemeColorManager = {
+        SiteThemeColorManager(viewCoordinator: viewCoordinator,
+                              currentTabViewController: { [weak self] in self?.currentTab }(),
+                              appSettings: appSettings)
+    }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
         let manager = AIChatViewControllerManager()
@@ -326,9 +331,16 @@ class MainViewController: UIViewController {
 
         viewCoordinator.toolbarBackButton.action = #selector(onBackPressed)
         viewCoordinator.toolbarForwardButton.action = #selector(onForwardPressed)
-        viewCoordinator.toolbarFireButton.action = #selector(onFirePressed)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
+        } else {
+            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
+        }
         viewCoordinator.toolbarPasswordsButton.action = #selector(onPasswordsPressed)
         viewCoordinator.toolbarBookmarksButton.action = #selector(onToolbarBookmarksPressed)
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.menuToolbarButton.action = #selector(onMenuPressed)
+        }
 
         installSwipeTabs()
             
@@ -342,7 +354,9 @@ class MainViewController: UIViewController {
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
         initTabButton()
-        initMenuButton()
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            initMenuButton()
+        }
         initBookmarksButton()
         loadInitialView()
         previewsSource.prepare()
@@ -643,6 +657,7 @@ class MainViewController: UIViewController {
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
         refreshViewsBasedOnAddressBarPosition(appSettings.currentAddressBarPosition)
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     @objc private func onShowFullURLAddressChanged() {
@@ -758,9 +773,23 @@ class MainViewController: UIViewController {
     }
 
     private func initTabButton() {
-        tabSwitcherButton = TabSwitcherButton()
-        tabSwitcherButton.delegate = self
-        viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            let button = UIButton(type: .system)
+            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+            button.setImage(UIImage(named: "Tab-New-24"), for: .normal)
+            button.contentMode = .center
+            button.imageView?.contentMode = .scaleAspectFit
+            button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
+
+            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(launchNewTab))
+            button.addGestureRecognizer(longPressRecognizer)
+
+            viewCoordinator.toolbarTabSwitcherButton.customView = button
+        } else {
+            tabSwitcherButton = TabSwitcherButton()
+            tabSwitcherButton.delegate = self
+            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+        }
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
     }
@@ -1153,6 +1182,7 @@ class MainViewController: UIViewController {
             attachTab(tab: tab)
             refreshControls()
         }
+        themeColorManager.updateThemeColor()
         tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         if DaxDialogs.shared.shouldShowFireButtonPulse {
@@ -1173,6 +1203,7 @@ class MainViewController: UIViewController {
         
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
+        themeColorManager.attach(to: tab)
         tab.chromeDelegate = self
     }
 
@@ -1207,9 +1238,11 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-        tabSwitcherButton.tabCount = tabManager.count
-        tabSwitcherButton.hasUnread = tabManager.hasUnread
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
+            tabSwitcherButton.tabCount = tabManager.count
+            tabSwitcherButton.hasUnread = tabManager.hasUnread
+        }
     }
 
     private func refreshOmniBar() {
@@ -1317,8 +1350,10 @@ class MainViewController: UIViewController {
             
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
-            
-            self.refreshMenuButtonState()
+
+            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+                self.refreshMenuButtonState()
+            }
         }
     }
 
@@ -1550,7 +1585,7 @@ class MainViewController: UIViewController {
 
     func animateBackgroundTab() {
         showBars()
-        tabSwitcherButton.incrementAnimated()
+        tabSwitcherButton?.incrementAnimated()
         tabsBarController?.backgroundTabAdded()
     }
 
@@ -1572,6 +1607,7 @@ class MainViewController: UIViewController {
         tabsBarController?.refresh(tabsModel: tabManager.model)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
+        themeColorManager.updateThemeColor()
     }
     
     func updateFindInPage() {
@@ -2038,7 +2074,8 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.showPrivacyDashboard()
     }
 
-    func onMenuPressed() {
+    @objc func onMenuPressed() {
+        viewCoordinator.menuToolbarButton.isEnabled = false
         omniBar.cancel()
 
         // Dismiss privacy icon animation when showing menu
@@ -2051,13 +2088,10 @@ extension MainViewController: OmniBarDelegate {
         }
         performCancel()
         ActionMessageView.dismissAllMessages()
-        Task {
-            await launchBrowsingMenu()
-        }
+        launchBrowsingMenu()
     }
 
-    @MainActor
-    private func launchBrowsingMenu() async {
+    private func launchBrowsingMenu() {
         guard let tab = currentTab ?? tabManager.current(createIfNeeded: true) else {
             return
         }
@@ -2077,6 +2111,11 @@ extension MainViewController: OmniBarDelegate {
                                                                 menuEntries: menuEntries)
 
         controller.modalPresentationStyle = .custom
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            controller.onDismiss = {
+                self.viewCoordinator.menuToolbarButton.isEnabled = true
+            }
+        }
         self.present(controller, animated: true) {
             if self.canDisplayAddFavoriteVisualIndicator {
                 controller.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
@@ -2156,6 +2195,7 @@ extension MainViewController: OmniBarDelegate {
         dismissOmniBar()
         omniBar.cancel()
         hideSuggestionTray()
+        themeColorManager.updateThemeColor()
         self.showMenuHighlighterIfNeeded()
     }
 
@@ -2201,6 +2241,7 @@ extension MainViewController: OmniBarDelegate {
         } else {
             tryToShowSuggestionTray(.favorites)
         }
+        themeColorManager.updateThemeColor()
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -2347,13 +2388,13 @@ extension MainViewController: AutocompleteViewControllerDelegate {
         case .historyEntry(_, url: let url, _):
             loadUrl(url)
 
-        case .openTab(title: _, url: let url, tabId: let tabId):
+        case .openTab(title: _, url: let url, tabId: let tabId, _):
             if newTabPageViewController != nil, let tab = tabManager.model.currentTab {
                 self.closeTab(tab)
             }
             loadUrlInNewTab(url, reuseExisting: tabId.map(ExistingTabReusePolicy.tabWithId) ?? .any, inheritedAttribution: .noAttribution)
 
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
 
@@ -2375,7 +2416,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
         case .historyEntry(title: let title, _, _):
             viewCoordinator.omniBar.updateQuery(title)
         case .openTab: break // no-op
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
     }
@@ -2390,7 +2431,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
             }
         case .website(url: let url):
             viewCoordinator.omniBar.text = url.absoluteString
-        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _):
+        case .bookmark(title: let title, _, _, _), .openTab(title: let title, url: _, _, _):
             viewCoordinator.omniBar.text = title
             if title.hasPrefix(query) {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
@@ -2404,7 +2445,7 @@ extension MainViewController: AutocompleteViewControllerDelegate {
                 viewCoordinator.omniBar.selectTextToEnd(query.count)
             }
 
-        case .unknown(value: let value), .internalPage(title: let value, url: _):
+        case .unknown(value: let value), .internalPage(title: let value, url: _, _):
             assertionFailure("Unknown suggestion: \(value)")
         }
     }
@@ -2480,6 +2521,7 @@ extension MainViewController: TabDelegate {
         hideNotificationBarIfBrokenSitePromptShown()
         showBars()
         currentTab?.dismiss()
+        themeColorManager.updateThemeColor()
 
         // Don't use a request or else the page gets stuck on "about:blank"
         let newTab = tabManager.addURLRequest(nil,
@@ -2546,7 +2588,7 @@ extension MainViewController: TabDelegate {
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton.incrementAnimated()
+            tabSwitcherButton?.incrementAnimated()
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
             self.currentTab?.openingTab = tab
@@ -2728,6 +2770,7 @@ extension MainViewController: TabSwitcherDelegate {
         if newTabPageViewController != nil {
             animateLogoAppearance()
         }
+        themeColorManager.updateThemeColor()
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didSelectTab tab: Tab) {
@@ -2735,6 +2778,7 @@ extension MainViewController: TabSwitcherDelegate {
         if DaxDialogs.shared.shouldShowFireButtonPulse {
             showFireButtonPulse()
         }
+        themeColorManager.updateThemeColor()
     }
     
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, editBookmarkForUrl url: URL) {
@@ -2771,6 +2815,7 @@ extension MainViewController: TabSwitcherDelegate {
         guard let index = tabManager.model.indexOf(tab: tab) else { return }
         hideSuggestionTray()
         hideNotificationBarIfBrokenSitePromptShown()
+        themeColorManager.updateThemeColor()
 
         if shouldOpen {
             let newTab = Tab()
@@ -2820,7 +2865,10 @@ extension MainViewController: BookmarksDelegate {
 
 extension MainViewController: TabSwitcherButtonDelegate {
     
-    func launchNewTab(_ button: TabSwitcherButton) {
+    @objc func launchNewTab(_ button: TabSwitcherButton) {
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        }
         Pixel.fire(pixel: .tabSwitchLongPressNewTab)
         performCancel()
         newTab()
@@ -3009,7 +3057,7 @@ extension MainViewController: AutoClearWorker {
         if viewCoordinator.toolbar.isHidden {
             fireButtonView = tabsBarController?.fireButton
         } else {
-            fireButtonView = viewCoordinator.toolbarFireButton.value(forKey: "view") as? UIView
+            fireButtonView = viewCoordinator.toolbarFireBarButtonItem.value(forKey: "view") as? UIView
         }
         guard let view = fireButtonView else { return }
         
@@ -3041,6 +3089,7 @@ extension MainViewController {
         super.traitCollectionDidChange(previousTraitCollection)
 
         updateStatusBarBackgroundColor()
+        themeColorManager.updateThemeColor()
     }
 
     private func updateStatusBarBackgroundColor() {
@@ -3070,7 +3119,7 @@ extension MainViewController {
         viewCoordinator.navigationBarContainer.tintColor = theme.barTintColor
 
         viewCoordinator.toolbar.barTintColor = theme.barBackgroundColor
-        viewCoordinator.toolbar.tintColor = theme.barTintColor
+        viewCoordinator.toolbar.tintColor = UIColor(designSystemColor: .icons)
 
         viewCoordinator.toolbarTabSwitcherButton.tintColor = theme.barTintColor
         
@@ -3173,7 +3222,7 @@ extension MainViewController {
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
         viewCoordinator.omniBar.barView.backButtonMenu = backMenu
         viewCoordinator.toolbarBackButton.menu = backMenu
-        
+
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
         viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
         viewCoordinator.toolbarForwardButton.menu = forwardMenu

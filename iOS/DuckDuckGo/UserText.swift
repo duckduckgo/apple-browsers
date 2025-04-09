@@ -1602,8 +1602,19 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
 
         public enum Intro {
             public static let title = NSLocalizedString("onboarding.highlights.intro.title", value: "Hi there.\n\nReady for a faster browser that keeps you protected?", comment: "The title of the onboarding dialog popup")
-            public static let cta = NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
-            public static let skip = NotLocalizedString("onboarding.intro.skip", value: "Skip", comment: "Button to skip the onboarding process")
+            public static let continueCTA = NSLocalizedString("onboarding.intro.cta", value: "Let’s do it!", comment: "Button to continue the onboarding process")
+            public static let skipCTA = NSLocalizedString("onboarding.intro.cta.skip", value: "I’ve been here before", comment: "Button to skip the onboarding process")
+
+            enum Debug {
+                public static let skip = NotLocalizedString("onboarding.intro.debug.skip", value: "Skip", comment: "Button to skip the onboarding process")
+            }
+        }
+
+        public enum Skip {
+            public static let title = NSLocalizedString("onboarding.skip.title", value: "Got it! I’ll skip the other tips.", comment: "The title of the skip onboarding dialog popup")
+            public static let message = NSLocalizedString("onboarding.skip.message", value: "Remember: you can delete all your tabs, history, and browsing data in two taps with the Fire Button 🔥", comment: "The message of the skip onboarding dialog popup.")
+            public static let confirmSkipOnboardingCTA = NSLocalizedString("onboarding.skip.cta.confirmSkip", value: "Start Browsing", comment: "The title of the button to skip the onboarding and start browsing.")
+            public static let resumeOnboardingCTA = NSLocalizedString("onboarding.skip.cta.resumeOnboarding", value: "Show Tutorial", comment: "The title of the button to resume the onboarding.")
         }
 
         public enum BrowsersComparison {
@@ -1612,7 +1623,7 @@ Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-p
 
             public enum Features {
                 public static let privateSearch = NSLocalizedString("onboarding.browsers.features.privateSearch.title", value: "Search privately by default", comment: "Message to highlight browser capability of private searches")
-                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability ofblocking 3rd party trackers")
+                public static let trackerBlockers = NSLocalizedString("onboarding.highlights.browsers.features.trackerBlocker.title", value: "Block 3rd-party trackers", comment: "Message to highlight browser capability of blocking 3rd party trackers")
                 public static let cookiePopups = NSLocalizedString("onboarding.highlights.browsers.features.cookiePopups.title", value: "Block cookie pop-ups", comment: "Message to highlight how the browser allows you to block cookie pop-ups")
                 public static let creepyAds = NSLocalizedString("onboarding.highlights.browsers.features.creepyAds.title", value: "Block tracking ads", comment: "Message to highlight browser capability of blocking creepy ads")
                 public static let eraseBrowsingData = NSLocalizedString("onboarding.highlights.browsers.features.eraseBrowsingData.title", value: "Delete browsing data with one button", comment: "Message to highlight browser capability of swiftly erase browsing data")

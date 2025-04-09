@@ -2156,7 +2156,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Стирает данные браузера одним нажатием";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Блокировка сторонних трекеров";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2170,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Мы уже это проходили";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Узнать больше";
@@ -2188,6 +2191,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Начать просмотр";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Показать руководство";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Напоминаем: с помощью кнопки огня 🔥 можно за пару нажатий закрыть все вкладки, а также стереть историю и скопившиеся в браузере данные.";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Добавить виджет";

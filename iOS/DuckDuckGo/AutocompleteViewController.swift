@@ -188,7 +188,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             }
 
             return url
-        })
+        }, isUrlIgnored: { _ in false })
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }

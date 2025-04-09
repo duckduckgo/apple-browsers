@@ -102,9 +102,9 @@ extension AppDelegate {
     @objc func recentlyClosedAction(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem,
               let cacheItem = menuItem.representedObject as? RecentlyClosedCacheItem else {
-                  assertionFailure("Wrong represented object for recentlyClosedAction()")
-                  return
-              }
+            assertionFailure("Wrong represented object for recentlyClosedAction()")
+            return
+        }
         DispatchQueue.main.async {
             RecentlyClosedCoordinator.shared.reopenItem(cacheItem)
         }
@@ -182,7 +182,7 @@ extension AppDelegate {
         WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
     }
 
-    #if FEEDBACK
+#if FEEDBACK
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
@@ -221,6 +221,11 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
     #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
@@ -230,7 +235,7 @@ extension AppDelegate {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark,
-        let url = bookmark.urlObject else {
+              let url = bookmark.urlObject else {
             assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
             return
         }
@@ -363,6 +368,7 @@ extension AppDelegate {
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
         newTabPageCustomizationModel.resetAllCustomizations()
     }
+
 }
 
 extension MainViewController {

@@ -19,6 +19,22 @@
 import NewTabPage
 
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
+
+    @MainActor
+    static func open(_ url: URL, target: LinkOpenTarget, using tabCollectionViewModel: TabCollectionViewModel) {
+        /// FE sends `.newWindow` always when activating a link with Shift key pressed,
+        /// which is a Windows-specific behavior. We override it to `.newTab` and handle Shift key on the native side.
+        let correctedTarget: LinkOpenTarget = (target == .newWindow && NSApplication.shared.isShiftPressed) ? .newTab : target
+
+        if correctedTarget == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
+            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
+        } else if correctedTarget == .newTab || NSApplication.shared.isCommandPressed {
+            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: NSApplication.shared.isShiftPressed)
+        } else {
+            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
+        }
+    }
+
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async {
         switch target {
         case .settings:

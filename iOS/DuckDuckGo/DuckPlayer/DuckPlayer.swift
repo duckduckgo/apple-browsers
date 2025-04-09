@@ -253,6 +253,11 @@ protocol DuckPlayerControlling: AnyObject {
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor func showPillForVisibleChrome()
+    
+    /// Returns the native UI presenter
+    var nativeUIPresenter: DuckPlayerNativeUIPresenting { get }
+
+    
 
     // Native UI - UserScript Methods    
     // These are used to notify the UserScript to trigger the appropriate actions

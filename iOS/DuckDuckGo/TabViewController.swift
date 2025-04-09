@@ -333,8 +333,7 @@ class TabViewController: UIViewController {
                                    appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
-                                   syncService: DDGSyncing,
-                                   duckPlayer: DuckPlayerControlling?,
+                                   syncService: DDGSyncing,                                   
                                    privacyProDataReporter: PrivacyProDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -353,8 +352,7 @@ class TabViewController: UIViewController {
                               appSettings: appSettings,
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
-                              syncService: syncService,
-                              duckPlayer: duckPlayer,
+                              syncService: syncService,                              
                               privacyProDataReporter: privacyProDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -379,10 +377,12 @@ class TabViewController: UIViewController {
     let historyManager: HistoryManaging
     let historyCapture: HistoryCapture
     
-    weak var duckPlayer: DuckPlayerControlling?
+    // Initialize DuckPlayer with default settings
+    var duckPlayer: DuckPlayerControlling = DuckPlayer(settings: DuckPlayerSettingsDefault(),
+                                                       featureFlagger: AppDependencyProvider.shared.featureFlagger)
+    
+    // Initialize DuckPlayerNavigationHandler
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
-        let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
-                                   featureFlagger: AppDependencyProvider.shared.featureFlagger)
         
         if duckPlayer.settings.nativeUI {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
@@ -416,8 +416,7 @@ class TabViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
-                   certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
-                   duckPlayer: DuckPlayerControlling?,
+                   certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),                   
                    privacyProDataReporter: PrivacyProDataReporting,
                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                    contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -437,7 +436,6 @@ class TabViewController: UIViewController {
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
         self.certificateTrustEvaluator = certificateTrustEvaluator
-        self.duckPlayer = duckPlayer
         self.privacyProDataReporter = privacyProDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -2647,20 +2645,17 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer Scripts
-        if let duckPlayer = duckPlayer {
-            userScripts.duckPlayer = duckPlayer
-
-            // Native UI
-            if duckPlayer.settings.nativeUI {
-                userScripts.duckPlayerNativeUserScript?.webView = webView
-            
-            // Classic UI
-            } else {
-                userScripts.youtubeOverlayScript?.webView = webView
-                userScripts.youtubePlayerUserScript?.webView = webView
-            }
+        // Setup DuckPlayer Scripts        
+        userScripts.duckPlayer = duckPlayer
+        // Native UI
+        if duckPlayer.settings.nativeUI {
+            userScripts.duckPlayerNativeUserScript?.webView = webView
+        // Classic UI
+        } else {
+            userScripts.youtubeOverlayScript?.webView = webView
+            userScripts.youtubePlayerUserScript?.webView = webView
         }
+        
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)

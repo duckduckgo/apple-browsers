@@ -38,7 +38,6 @@ class TabManager {
     private let syncService: DDGSyncing
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
-    private var duckPlayer: DuckPlayerControlling
     private var privacyProDataReporter: PrivacyProDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -63,7 +62,7 @@ class TabManager {
          interactionStateSource: TabInteractionStateSource?,
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
-         syncService: DDGSyncing,         
+         syncService: DDGSyncing,
          privacyProDataReporter: PrivacyProDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -82,7 +81,7 @@ class TabManager {
         self.interactionStateSource = interactionStateSource
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
-        self.syncService = syncService        
+        self.syncService = syncService
         self.privacyProDataReporter = privacyProDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -120,8 +119,7 @@ class TabManager {
         let controller = TabViewController.loadFromStoryboard(model: tab,
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
-                                                              syncService: syncService,
-                                                              duckPlayer: duckPlayer,
+                                                              syncService: syncService,                                                              
                                                               privacyProDataReporter: privacyProDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -212,7 +210,6 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
-                                                              duckPlayer: duckPlayer,
                                                               privacyProDataReporter: privacyProDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,

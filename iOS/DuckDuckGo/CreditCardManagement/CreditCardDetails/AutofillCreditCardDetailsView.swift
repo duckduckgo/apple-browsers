@@ -616,8 +616,6 @@ private struct Constants {
     static let insets = EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
 }
 
-
-
 #Preview {
     AutofillCreditCardDetailsView(viewModel: AutofillCreditCardDetailsViewModel(authenticator: AutofillLoginListAuthenticator(reason: UserText.autofillCreditCardAuthenticationReason, cancelTitle: UserText.autofillLoginListAuthenticationCancelButton)))
 }

@@ -101,7 +101,7 @@ struct SettingsDuckPlayerView: View {
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                     }
 
-                    Section(footer: Text(verbatim:  "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player")) {
+                    Section(footer: Text(verbatim: "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player")) {
                         SettingsCellView(label: "Autoplay Videos",
                                         accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)

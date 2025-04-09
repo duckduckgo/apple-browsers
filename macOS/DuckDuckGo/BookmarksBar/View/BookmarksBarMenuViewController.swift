@@ -688,7 +688,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         switch node.representedObject {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark: bookmark)
+            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
             delegate?.closeBookmarksPopovers(self)
 
         case let menuItem as MenuItemNode:

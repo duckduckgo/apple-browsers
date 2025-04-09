@@ -709,7 +709,7 @@ final class BookmarkListViewController: NSViewController {
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
         }
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
         delegate?.closeBookmarksPopover(self)
     }
 

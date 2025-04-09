@@ -110,7 +110,7 @@ extension AppDelegate {
         }
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
               let url = visit.historyEntry?.url else {
             assertionFailure("Wrong represented object")
@@ -561,16 +561,16 @@ extension MainViewController {
         tab.openHomePage()
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
-              let url = visit.historyEntry?.url else {
+              let historyEntry = visit.historyEntry else {
             assertionFailure("Wrong represented object")
             return
         }
 
         makeKeyIfNeeded()
-        getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
+
+        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -691,7 +691,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {

@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import History
 import os.log
-import BrowserServicesKit
 
 @MainActor
 protocol WindowControllersManagerProtocol {
@@ -160,22 +161,61 @@ extension WindowControllersManager {
     }
 
     /// Opens a bookmark in a tab, respecting the current modifier keys when deciding where to open the bookmark's URL.
-    func open(bookmark: Bookmark) {
+    func open(_ bookmark: Bookmark, with event: NSEvent?) {
         guard let url = bookmark.urlObject else { return }
 
-        if NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: false)
-        } else if mainWindowController?.mainViewController.view.window?.isPopUpWindow ?? false {
-            show(url: url, source: .bookmark, newTab: true)
-        } else if NSApplication.shared.isCommandPressed && !NSApplication.shared.isOptionPressed {
-            mainWindowController?.mainViewController.tabCollectionViewModel.appendNewTab(with: .url(url, source: .bookmark), selected: false)
-        } else if selectedTab?.isPinned ?? false { // When selecting a bookmark with a pinned tab active, always open the URL in a new tab
-            show(url: url, source: .bookmark, newTab: true)
-        } else {
-            show(url: url, source: .bookmark)
+        // Call updated openBookmark
+        open(url, with: event, source: .bookmark)
+        // Keep the pixel firing
+        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+    }
+
+    /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
+    func open(_ historyEntry: HistoryEntry, with event: NSEvent?) {
+        open(historyEntry.url, with: event, source: .historyEntry)
+    }
+
+    /// Helper method for opening with an event
+    func open(_ url: URL, with event: NSEvent?, source: Tab.TabContent.URLSource) {
+        // get clicked window or last key window if menu item selected
+        let windowController = (event?.window?.windowController as? MainWindowController) ?? lastKeyMainWindowController
+        let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel
+
+        let isPinnedTab = tabCollectionViewModel?.selectedTab?.isPinned ?? false
+        let isPopUpWindow = windowController?.window?.isPopUpWindow ?? false
+
+        // For pinned tabs or popup windows, force new tab by disallowing current tab
+        let canOpenLinkInCurrentTab = !(isPinnedTab || isPopUpWindow)
+        let switchToNewTabWhenOpened = TabsPreferences.shared.switchToNewTabWhenOpened
+
+        let behavior = LinkOpenBehavior(
+            event: event,
+            switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: canOpenLinkInCurrentTab
+        )
+
+        open(url, with: behavior, source: source, target: windowController)
+    }
+
+    func open(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, source: Tab.TabContent.URLSource, target: MainWindowController?) {
+        let windowController = target ?? lastKeyMainWindowController
+        switch linkOpenBehavior {
+        case .currentTab:
+            if let windowController, windowController.window?.isPopUpWindow == false {
+                show(url: url, in: windowController, source: source, newTab: false)
+            } else {
+                show(url: url, source: source)
+            }
+        case .newTab(let selected):
+            guard windowController?.window?.isPopUpWindow == false,
+                  let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
+            tabCollectionViewModel.appendNewTab(with: .url(url, source: .bookmark), selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: windowController?.mainViewController.isBurner ?? false, showWindow: selected)
         }
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
+
 
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }

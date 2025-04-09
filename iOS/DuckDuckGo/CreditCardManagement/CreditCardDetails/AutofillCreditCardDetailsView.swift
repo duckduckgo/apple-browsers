@@ -37,15 +37,15 @@ struct AutofillCreditCardDetailsView: View {
     }
     
     private var list: some View {
-            List {
-                switch viewModel.viewMode {
-                case .edit:
-                    editingContentView
-                case .view:
-                    viewingContentView
-                case .new:
-                    editingContentView
-                }
+        List {
+            switch viewModel.viewMode {
+            case .edit:
+                editingContentView
+            case .view:
+                viewingContentView
+            case .new:
+                editingContentView
+            }
         }
         .simultaneousGesture(
             DragGesture().onChanged({_ in

@@ -1899,7 +1899,6 @@
 		650552962D673E440067D4F2 /* muteAudio.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = muteAudio.js; sourceTree = "<group>"; };
 		650552A12D67768E0067D4F2 /* DuckPlayerEntryPillViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerEntryPillViewModel.swift; sourceTree = "<group>"; };
 		651CDA492DA03305005EB1E4 /* DuckPlayerNativeUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerNativeUserScript.swift; sourceTree = "<group>"; };
-		651CDA4B2DA04EB3005EB1E4 /* content-scope-scripts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "content-scope-scripts"; path = "/Users/daniel/Developer/content-scope-scripts"; sourceTree = "<absolute>"; };
 		6526CA6A2D70CAAD0048819E /* DuckPlayerMiniPillViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckPlayerMiniPillViewModel.swift; sourceTree = "<group>"; };
 		6526CA6C2D70CABD0048819E /* DuckPlayerMiniPillView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckPlayerMiniPillView.swift; sourceTree = "<group>"; };
 		6526CA6E2D70CE260048819E /* DuckPlayerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerState.swift; sourceTree = "<group>"; };
@@ -1912,6 +1911,7 @@
 		65898D8B2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerDelayHandler.swift; sourceTree = "<group>"; };
 		659AD5B02D76160500420D1D /* YoutubeOembedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeOembedService.swift; sourceTree = "<group>"; };
 		65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerContainer.swift; sourceTree = "<group>"; };
+		65ABEECD2DA65B5000B487D7 /* content-scope-scripts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "content-scope-scripts"; path = "/Users/daniel/Developer/content-scope-scripts"; sourceTree = "<absolute>"; };
 		65B4D5C12D68EE4200FC677A /* DuckPlayerNativeUIPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerNativeUIPresenter.swift; sourceTree = "<group>"; };
 		65BA72D02D79F2E600E442E0 /* DuckPlayerEntryPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerEntryPillView.swift; sourceTree = "<group>"; };
 		65BD16332D8C206F000795DE /* DuckPlayerPrimingModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerPrimingModalView.swift; sourceTree = "<group>"; };
@@ -4318,7 +4318,7 @@
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
 				37FCAACB2993149A000E420A /* Waitlist */,
 				315C77802CFA414400699683 /* AIChat */,
-				651CDA4B2DA04EB3005EB1E4 /* content-scope-scripts */,
+				65ABEECD2DA65B5000B487D7 /* content-scope-scripts */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";

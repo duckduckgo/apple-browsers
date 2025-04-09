@@ -368,23 +368,23 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
         super.init()
         setupSubscriptions()
-        print("⚫️ DUCKPLAYER: Initialized instance: \(self)")
+        print("🔵 DUCKPLAYER: Initialized instance: \(self)")
 
         // Logging for UserScript Publishers
         muteAudioPublisher
-            .sink { muted in print("⚫️ DUCKPLAYER: Mute Audio: \\(muted)") }
+            .sink { muted in print("🔵 DUCKPLAYER: Mute Audio: \\(muted)") }
             .store(in: &nativePlayerCancellables)
 
         mediaControlPublisher
-            .sink { playing in print("⚫️ DUCKPLAYER: Media Control Play: \\(playing)") }
+            .sink { playing in print("🔵 DUCKPLAYER: Media Control Play: \\(playing)") }
             .store(in: &nativePlayerCancellables)
 
         currentTimeStampPublisher
-            .sink { timestamp in print("⚫️ DUCKPLAYER: Current Timestamp: \\(timestamp)") }
+            .sink { timestamp in print("🔵 DUCKPLAYER: Current Timestamp: \\(timestamp)") }
             .store(in: &nativePlayerCancellables)
 
         serpNotificationPublisher
-            .sink { isSERP in print("⚫️ DUCKPLAYER: SERP Notification: \\(isSERP)") }
+            .sink { isSERP in print("🔵 DUCKPLAYER: SERP Notification: \\(isSERP)") }
             .store(in: &nativePlayerCancellables)
 
         NotificationCenter.default.addObserver(self,

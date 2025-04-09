@@ -49,7 +49,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtube),
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeMobile),
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeWWW),
-        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie)
+        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie),
+        .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW)
     ])
     public var featureName: String = Constants.featureName
     

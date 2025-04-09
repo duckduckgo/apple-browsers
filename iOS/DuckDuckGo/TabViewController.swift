@@ -333,7 +333,7 @@ class TabViewController: UIViewController {
                                    appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
-                                   syncService: DDGSyncing,                                   
+                                   syncService: DDGSyncing,
                                    privacyProDataReporter: PrivacyProDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -352,7 +352,7 @@ class TabViewController: UIViewController {
                               appSettings: appSettings,
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
-                              syncService: syncService,                              
+                              syncService: syncService,
                               privacyProDataReporter: privacyProDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -416,7 +416,7 @@ class TabViewController: UIViewController {
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
-                   certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),                   
+                   certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                    privacyProDataReporter: PrivacyProDataReporting,
                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                    contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -1377,7 +1377,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
 
         if let url = webView.url {
-            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url) ?? url
+            let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             historyCapture.webViewDidCommit(url: finalURL)
             instrumentation.willLoad(url: url)
         }
@@ -1630,7 +1630,7 @@ extension TabViewController: WKNavigationDelegate {
         /// Never show onboarding Dax on Youtube or DuckPlayer, unless DuckPlayer is disabled
         guard let url = link?.url,
               !url.isDuckPlayer,
-              !(url.isYoutube && duckPlayer?.settings.mode != .disabled) else {
+              !(url.isYoutube && duckPlayer.settings.mode != .disabled) else {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }

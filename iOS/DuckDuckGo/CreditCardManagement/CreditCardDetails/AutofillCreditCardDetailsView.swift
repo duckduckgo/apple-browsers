@@ -229,6 +229,7 @@ private struct EditableCreditCardNumberCell: View {
                                 .onTapGesture {
                                     self.text = ""
                                     self.formattedText = ""
+                                    self.isCardValid = CreditCardValidation.isValidCardNumber(text)
                                 }
                         } else if !isCardValid {
                             Image(.exclamationColor16)

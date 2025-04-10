@@ -104,6 +104,19 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
     }
 
+    /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
+    func currentEventMainWindowController(for event: NSEvent?) -> MainWindowController? {
+        guard let eventWindow = event?.window else { return lastKeyMainWindowController }
+
+        // go up from the clicked window (popover or Bookmarks Bar Menu) to find the root target Main Window
+        for window in sequence(first: eventWindow, next: \.parent) {
+            if let windowController = window.windowController as? MainWindowController {
+                return windowController
+            }
+        }
+        return lastKeyMainWindowController
+    }
+
     let didChangeKeyWindowController = PassthroughSubject<MainWindowController?, Never>()
     let didRegisterWindowController = PassthroughSubject<(MainWindowController), Never>()
     let didUnregisterWindowController = PassthroughSubject<(MainWindowController), Never>()
@@ -178,7 +191,7 @@ extension WindowControllersManager {
     /// Helper method for opening with an event
     func open(_ url: URL, with event: NSEvent?, source: Tab.TabContent.URLSource) {
         // get clicked window or last key window if menu item selected
-        let windowController = (event?.window?.windowController as? MainWindowController) ?? lastKeyMainWindowController
+        let windowController = currentEventMainWindowController(for: event)
         let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel
 
         let isPinnedTab = tabCollectionViewModel?.selectedTab?.isPinned ?? false

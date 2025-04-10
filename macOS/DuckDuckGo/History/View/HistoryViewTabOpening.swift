@@ -39,12 +39,12 @@ protocol HistoryViewTabOpening: AnyObject {
  * This protocol is used by `DefaultHistoryViewTabOpener` to abstract
  * actual opening tabs and remove the dependency on `WindowControllersManager`.
  */
-@MainActor
 protocol URLOpening: AnyObject {
-    func open(_ url: URL)
-    func openInNewTab(_ urls: [URL])
-    func openInNewWindow(_ urls: [URL])
-    func openInNewFireWindow(_ urls: [URL])
+    @MainActor func open(_ url: URL, with event: NSEvent?, source: Tab.TabContent.URLSource)
+
+    @MainActor func openInNewTab(_ urls: [URL])
+    @MainActor func openInNewWindow(_ urls: [URL])
+    @MainActor func openInNewFireWindow(_ urls: [URL])
 }
 
 final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
@@ -54,35 +54,35 @@ final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
     }
 
     weak var dialogPresenter: HistoryViewDialogPresenting?
-    let urlOpener: () async -> URLOpening
+    let urlOpener: @MainActor () -> URLOpening
 
-    init(urlOpener: (() async -> URLOpening)? = nil) {
-        self.urlOpener = urlOpener ?? { await WindowControllersManager.shared }
+    init(urlOpener: (@MainActor () -> URLOpening)? = nil) {
+        self.urlOpener = urlOpener ?? { WindowControllersManager.shared }
     }
 
-    @MainActor func open(_ url: URL) async {
-        await urlOpener().open(url)
+    @MainActor func open(_ url: URL) {
+        urlOpener().open(url, with: NSApp.currentEvent, source: .historyEntry)
     }
 
     @MainActor func openInNewTab(_ urls: [URL]) async {
         guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
             return
         }
-        await urlOpener().openInNewTab(urls)
+        urlOpener().openInNewTab(urls)
     }
 
     @MainActor func openInNewWindow(_ urls: [URL]) async {
         guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
             return
         }
-        await urlOpener().openInNewWindow(urls)
+        urlOpener().openInNewWindow(urls)
     }
 
     @MainActor func openInNewFireWindow(_ urls: [URL]) async {
         guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
             return
         }
-        await urlOpener().openInNewFireWindow(urls)
+        urlOpener().openInNewFireWindow(urls)
     }
 
     // MARK: - Private

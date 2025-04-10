@@ -91,7 +91,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         self.firePixel = firePixel
     }
 
-    func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse {
+    func showDeleteDialog(for query: DataModel.HistoryQueryKind, in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
         guard let dataProvider, !query.shouldSkipDeleteDialog else {
             return .noAction
         }
@@ -111,7 +111,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
             }
         }()
 
-        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: adjustedQuery.deleteMode) {
+        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: adjustedQuery.deleteMode, in: window) {
         case .burn:
             await dataProvider.burnVisits(matching: adjustedQuery)
             firePixel(.delete, .daily)
@@ -127,8 +127,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         }
     }
 
-    func showDeleteDialog(for entries: [String]) async -> DataModel.DeleteDialogResponse {
-        await showDeleteDialog(for: entries.compactMap(VisitIdentifier.init))
+    func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
+        await showDeleteDialog(for: entries.compactMap(VisitIdentifier.init), in: window)
     }
 
     @MainActor
@@ -143,57 +143,56 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         }
 
         let urls = identifiers.map(\.url)
-        let menu = NSMenu()
-
-        menu.buildItems {
-            NSMenuItem(
-                title: urls.count == 1 ? UserText.openInNewTab : UserText.openAllInNewTabs,
-                action: #selector(openInNewTab(_:)),
-                target: self,
-                representedObject: urls
-            )
+        let menu = NSMenu {
+            NSMenuItem(title: urls.count == 1 ? UserText.openInNewTab : UserText.openAllInNewTabs) { [weak self] _ in
+                self?.openInNewTab(urls, window: presenter.window)
+            }
             .withAccessibilityIdentifier("HistoryView.openInNewTab")
 
-            NSMenuItem(
-                title: urls.count == 1 ? UserText.openInNewWindow : UserText.openAllTabsInNewWindow,
-                action: #selector(openInNewWindow(_:)),
-                target: self,
-                representedObject: urls
-            )
+            NSMenuItem(title: urls.count == 1 ? UserText.openInNewWindow : UserText.openAllTabsInNewWindow) { [weak self] _ in
+                self?.openInNewWindow(urls, window: presenter.window)
+            }
             .withAccessibilityIdentifier("HistoryView.openInNewWindow")
 
-            NSMenuItem(
-                title: urls.count == 1 ? UserText.openInNewFireWindow : UserText.openAllInNewFireWindow,
-                action: #selector(openInNewFireWindow(_:)),
-                target: self,
-                representedObject: urls
-            )
+            NSMenuItem(title: urls.count == 1 ? UserText.openInNewFireWindow : UserText.openAllInNewFireWindow) { [weak self] _ in
+                self?.openInNewFireWindow(urls, window: presenter.window)
+            }
             .withAccessibilityIdentifier("HistoryView.openInNewFireWindow")
 
             NSMenuItem.separator()
 
             if urls.count == 1, let url = urls.first {
-                NSMenuItem(title: UserText.showAllHistoryFromThisSite, action: #selector(showAllHistoryFromThisSite(_:)), target: self)
-                    .withAccessibilityIdentifier("HistoryView.showAllHistoryFromThisSite")
+                NSMenuItem(title: UserText.showAllHistoryFromThisSite) { [weak self] _ in
+                    self?.showAllHistoryFromThisSite()
+                }
+                .withAccessibilityIdentifier("HistoryView.showAllHistoryFromThisSite")
                 NSMenuItem.separator()
                 NSMenuItem(title: UserText.copyLink, action: #selector(copy(_:)), target: self, representedObject: url)
                     .withAccessibilityIdentifier("HistoryView.copyLink")
                 if !bookmarksHandler.isUrlBookmarked(url: url) {
-                    NSMenuItem(title: UserText.addToBookmarks, action: #selector(addBookmarks(_:)), target: self, representedObject: [url])
-                        .withAccessibilityIdentifier("HistoryView.addBookmark")
+                    NSMenuItem(title: UserText.addToBookmarks) { [weak self] _ in
+                        self?.addBookmarks(for: [url])
+                    }
+                    .withAccessibilityIdentifier("HistoryView.addBookmark")
                 }
                 if !bookmarksHandler.isUrlFavorited(url: url) {
-                    NSMenuItem(title: UserText.addToFavorites, action: #selector(addFavorite(_:)), target: self, representedObject: url)
-                        .withAccessibilityIdentifier("HistoryView.addFavorite")
+                    NSMenuItem(title: UserText.addToFavorites) { [weak self] _ in
+                        self?.addFavorite(for: url)
+                    }
+                    .withAccessibilityIdentifier("HistoryView.addFavorite")
                 }
             } else if urls.contains(where: { !bookmarksHandler.isUrlBookmarked(url: $0) }) {
-                NSMenuItem(title: UserText.addAllToBookmarks, action: #selector(addBookmarks(_:)), target: self, representedObject: urls)
-                    .withAccessibilityIdentifier("HistoryView.addBookmark")
+                NSMenuItem(title: UserText.addAllToBookmarks) { [weak self] _ in
+                    self?.addBookmarks(for: urls)
+                }
+                .withAccessibilityIdentifier("HistoryView.addBookmark")
             }
 
             NSMenuItem.separator()
-            NSMenuItem(title: UserText.delete, action: #selector(delete(_:)), target: self, representedObject: identifiers)
-                .withAccessibilityIdentifier("HistoryView.delete")
+            NSMenuItem(title: UserText.delete) { [weak self] _ in
+                self?.delete(identifiers, window: presenter.window)
+            }
+            .withAccessibilityIdentifier("HistoryView.delete")
         }
 
         presenter.showContextMenu(menu)
@@ -206,38 +205,29 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
         return contextMenuResponse
     }
 
-    func open(_ url: URL) async {
+    func open(_ url: URL, window: NSWindow?) async {
         firePixel(.itemOpened(.single), .dailyAndStandard)
-        await tabOpener.open(url)
+        await tabOpener.open(url, window: window)
     }
 
-    @objc private func openInNewTab(_ sender: NSMenuItem) {
-        guard let urls = sender.representedObject as? [URL] else {
-            return
-        }
+    private func openInNewTab(_ urls: [URL], window: NSWindow?) {
         Task {
             fireItemOpenedPixel(urls)
-            await tabOpener.openInNewTab(urls)
+            await tabOpener.openInNewTab(urls, sourceWindow: window)
         }
     }
 
-    @objc private func openInNewWindow(_ sender: NSMenuItem) {
-        guard let urls = sender.representedObject as? [URL] else {
-            return
-        }
+    private func openInNewWindow(_ urls: [URL], window: NSWindow?) {
         Task {
             fireItemOpenedPixel(urls)
-            await tabOpener.openInNewWindow(urls)
+            await tabOpener.openInNewWindow(urls, sourceWindow: window)
         }
     }
 
-    @objc private func openInNewFireWindow(_ sender: NSMenuItem) {
-        guard let urls = sender.representedObject as? [URL] else {
-            return
-        }
+    private func openInNewFireWindow(_ urls: [URL], window: NSWindow?) {
         Task {
             fireItemOpenedPixel(urls)
-            await tabOpener.openInNewFireWindow(urls)
+            await tabOpener.openInNewFireWindow(urls, sourceWindow: window)
         }
     }
 
@@ -257,10 +247,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     @MainActor
-    @objc private func addBookmarks(_ sender: NSMenuItem) {
-        guard let dataProvider, let urls = sender.representedObject as? [URL] else {
-            return
-        }
+    private func addBookmarks(for urls: [URL]) {
+        guard let dataProvider else { return }
 
         let titles = dataProvider.titles(for: urls)
         let websiteInfos = urls.map { WebsiteInfo(url: $0, title: titles[$0]) }
@@ -268,10 +256,8 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     @MainActor
-    @objc private func addFavorite(_ sender: NSMenuItem) {
-        guard let dataProvider, let url = sender.representedObject as? URL else {
-            return
-        }
+    private func addFavorite(for url: URL) {
+        guard let dataProvider else { return }
         let titles = dataProvider.titles(for: [url])
         if let bookmark = bookmarksHandler.getBookmark(for: url) {
             bookmarksHandler.markAsFavorite(bookmark)
@@ -281,23 +267,19 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
     }
 
     @MainActor
-    @objc private func showAllHistoryFromThisSite(_ sender: NSMenuItem) {
+    private func showAllHistoryFromThisSite() {
         contextMenuResponse = .domainSearch
     }
 
     @MainActor
-    @objc private func delete(_ sender: NSMenuItem) {
-        guard let identifiers = sender.representedObject as? [VisitIdentifier] else {
-            return
-        }
-
+    private func delete(_ identifiers: [VisitIdentifier], window: NSWindow?) {
         deleteDialogTask = Task { @MainActor in
-            await showDeleteDialog(for: identifiers)
+            await showDeleteDialog(for: identifiers, in: window)
         }
     }
 
     @MainActor
-    private func showDeleteDialog(for identifiers: [VisitIdentifier]) async -> DataModel.DeleteDialogResponse {
+    private func showDeleteDialog(for identifiers: [VisitIdentifier], in window: NSWindow?) async -> DataModel.DeleteDialogResponse {
         guard let dataProvider, identifiers.count > 0 else {
             return .noAction
         }
@@ -311,7 +293,7 @@ final class HistoryViewActionsHandler: HistoryView.ActionsHandling {
 
         let visitsCount = identifiers.count
 
-        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: .unspecified) {
+        switch await dialogPresenter.showDeleteDialog(for: visitsCount, deleteMode: .unspecified, in: window) {
         case .burn:
             await dataProvider.burnVisits(for: identifiers)
             firePixel(.delete, .daily)

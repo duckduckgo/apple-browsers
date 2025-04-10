@@ -105,16 +105,16 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
     }
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
-    func currentEventMainWindowController(for event: NSEvent?) -> MainWindowController? {
-        guard let eventWindow = event?.window else { return lastKeyMainWindowController }
+    func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
+        guard let sourceWindow else { return nil }
 
         // go up from the clicked window (popover or Bookmarks Bar Menu) to find the root target Main Window
-        for window in sequence(first: eventWindow, next: \.parent) {
+        for window in sequence(first: sourceWindow, next: \.parent) {
             if let windowController = window.windowController as? MainWindowController {
                 return windowController
             }
         }
-        return lastKeyMainWindowController
+        return nil
     }
 
     let didChangeKeyWindowController = PassthroughSubject<MainWindowController?, Never>()
@@ -178,20 +178,20 @@ extension WindowControllersManager {
         guard let url = bookmark.urlObject else { return }
 
         // Call updated openBookmark
-        open(url, with: event, source: .bookmark)
+        open(url, source: .bookmark, target: nil, event: event)
         // Keep the pixel firing
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
     func open(_ historyEntry: HistoryEntry, with event: NSEvent?) {
-        open(historyEntry.url, with: event, source: .historyEntry)
+        open(historyEntry.url, source: .historyEntry, target: nil, event: event)
     }
 
     /// Helper method for opening with an event
-    func open(_ url: URL, with event: NSEvent?, source: Tab.TabContent.URLSource) {
+    func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
         // get clicked window or last key window if menu item selected
-        let windowController = currentEventMainWindowController(for: event)
+        let windowController = mainWindowController(for: window ?? event?.window) ?? lastKeyMainWindowController
         let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel
 
         let isPinnedTab = tabCollectionViewModel?.selectedTab?.isPinned ?? false

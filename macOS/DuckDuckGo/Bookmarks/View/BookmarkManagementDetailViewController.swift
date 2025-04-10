@@ -640,7 +640,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
                 shouldLoadInBackground: true,
                 burnerMode: tabCollection.burnerMode)
         }
-        tabCollection.append(tabs: tabs)
+        tabCollection.append(tabs: tabs, andSelect: true)
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 }

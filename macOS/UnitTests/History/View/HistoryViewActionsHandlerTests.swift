@@ -602,3 +602,15 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls, [.init(2, .unspecified)])
     }
 }
+
+private extension HistoryViewActionsHandler {
+    @MainActor func open(_ url: URL) async {
+        await open(url, window: nil)
+    }
+    @MainActor func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse {
+        await showDeleteDialog(for: query, in: nil)
+    }
+    @MainActor func showDeleteDialog(for entries: [String]) async -> DataModel.DeleteDialogResponse {
+        await showDeleteDialog(for: entries, in: nil)
+    }
+}

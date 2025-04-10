@@ -21,15 +21,16 @@ import Foundation
 import NewTabPage
 
 final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling {
-    func open(_ url: URL, target: LinkOpenTarget) async {
+    
+    func openHistoryEntry(_ url: URL, in target: NewTabPage.LinkOpenTarget) {
         openCalls.append(.init(url: url, target: target))
     }
 
-    func addFavorite(_ url: URL) async {
+    func addFavorite(_ url: URL) {
         addFavoriteCalls.append(url)
     }
 
-    func removeFavorite(_ url: URL) async {
+    func removeFavorite(_ url: URL) {
         removeFavoriteCalls.append(url)
     }
 

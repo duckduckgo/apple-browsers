@@ -21,19 +21,19 @@
 final class CapturingHistoryViewTabOpener: HistoryViewTabOpening {
     var dialogPresenter: HistoryViewDialogPresenting?
 
-    func open(_ url: URL) async {
+    func open(_ url: URL, window: NSWindow?) async {
         openCalls.append(url)
     }
 
-    func openInNewTab(_ urls: [URL]) async {
+    func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) async {
         openInNewTabCalls.append(urls)
     }
 
-    func openInNewWindow(_ urls: [URL]) async {
+    func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) async {
         openInNewWindowCalls.append(urls)
     }
 
-    func openInNewFireWindow(_ urls: [URL]) async {
+    func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?) async {
         openInNewFireWindowCalls.append(urls)
     }
 

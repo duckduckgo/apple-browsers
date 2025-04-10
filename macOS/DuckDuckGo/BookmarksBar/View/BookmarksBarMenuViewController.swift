@@ -712,7 +712,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         delegate?.closeBookmarksPopovers(self)
 
         let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
-        tabCollection.append(tabs: tabs)
+        tabCollection.append(tabs: tabs, andSelect: true)
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 

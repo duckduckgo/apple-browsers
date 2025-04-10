@@ -16,13 +16,14 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 
 public protocol ActionsHandling {
-    @MainActor func open(_ url: URL) async
+    @MainActor func open(_ url: URL, window: NSWindow?) async
 
-    @MainActor func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse
-    @MainActor func showDeleteDialog(for entries: [String]) async -> DataModel.DeleteDialogResponse
+    @MainActor func showDeleteDialog(for query: DataModel.HistoryQueryKind, in window: NSWindow?) async -> DataModel.DeleteDialogResponse
+    @MainActor func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> DataModel.DeleteDialogResponse
 
     @MainActor func showContextMenu(for entries: [String], using presenter: ContextMenuPresenting) async -> DataModel.DeleteDialogResponse
 }

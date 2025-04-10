@@ -2156,7 +2156,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Slet browsingdata med én knap";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloker tredjeparts-trackere";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2170,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Lad os gøre det!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Jeg har været her før";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Mere info";
@@ -2188,6 +2191,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Start søgning";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Vis vejledning";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Husk: Du kan slette alle dine faner, historik og browserdata med to tryk på Fire Button 🔥";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Forstået! Jeg springer de andre tips over.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Tilføj widget";

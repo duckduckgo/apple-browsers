@@ -401,18 +401,18 @@ extension WindowControllersManagerProtocol {
     }
 
     func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
-        var result = allTabCollectionViewModels
+        let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
             }
-            .flatMap {
-                $0.tabViewModels.values
-            }
-        if includingPinnedTabs {
-            result += pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
-                $0.tabViewModels.values
-            })
+        let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
+            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
         }
+        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
+            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        }) : []
+        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
+
         return result
     }
 

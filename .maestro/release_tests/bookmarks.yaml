@@ -16,6 +16,8 @@ tags:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
+
+- assertVisible: ".*Privacy Test Pages.*"
  
 # Bookmark site
 - assertVisible: "Browsing menu"

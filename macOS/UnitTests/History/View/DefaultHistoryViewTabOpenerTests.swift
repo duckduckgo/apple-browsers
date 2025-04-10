@@ -184,4 +184,3 @@ private extension DefaultHistoryViewTabOpener {
         await openInNewFireWindow(urls, sourceWindow: nil)
     }
 }
-

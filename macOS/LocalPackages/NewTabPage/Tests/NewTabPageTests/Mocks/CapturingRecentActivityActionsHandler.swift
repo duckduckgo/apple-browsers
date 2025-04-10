@@ -21,8 +21,7 @@ import Foundation
 import NewTabPage
 
 final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling {
-    
-    func openHistoryEntry(_ url: URL, in target: NewTabPage.LinkOpenTarget) {
+    func open(_ url: URL, target: LinkOpenTarget) async {
         openCalls.append(.init(url: url, target: target))
     }
 

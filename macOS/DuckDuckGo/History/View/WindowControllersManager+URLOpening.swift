@@ -31,7 +31,7 @@ extension WindowControllersManager: URLOpening {
 
     func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) {
         guard !urls.isEmpty else { return }
-        
+
         let tabs = urls.map { Tab(content: .url($0, source: .historyEntry), shouldLoadInBackground: true) }
 
         let newTabCollection = TabCollection(tabs: tabs)

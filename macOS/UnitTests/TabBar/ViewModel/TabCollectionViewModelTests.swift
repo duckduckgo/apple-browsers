@@ -235,9 +235,21 @@ final class TabCollectionViewModelTests: XCTestCase {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
         let lastTab = Tab()
-        tabCollectionViewModel.append(tabs: [Tab(), lastTab])
+        tabCollectionViewModel.append(tabs: [Tab(), lastTab], andSelect: true)
 
         XCTAssert(tabCollectionViewModel.selectedTabViewModel?.tab === lastTab)
+    }
+
+    @MainActor
+    func testWhenMultipleTabsAreAppendedAndNoSelectThenTheLastOneIsNotSelected() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let firstTab = Tab()
+        tabCollectionViewModel.append(tab: firstTab, selected: true)
+
+        let lastTab = Tab()
+        tabCollectionViewModel.append(tabs: [Tab(), lastTab], andSelect: false)
+
+        XCTAssert(tabCollectionViewModel.selectedTabViewModel?.tab === firstTab)
     }
 
     // MARK: - Insert
@@ -628,7 +640,7 @@ final class TabCollectionViewModelTests: XCTestCase {
             .init(content: .bookmarks),
             .init(content: .anySettingsPane),
             .init(content: .url(.duckDuckGoEmail, credential: nil, source: .ui)),
-        ])
+        ], andSelect: true)
         sut.pinTab(at: 1)
         XCTAssertEqual(sut.pinnedTabs.count, 1)
         XCTAssertEqual(sut.tabViewModels.count, 6)

@@ -21,7 +21,7 @@ import AppKit
 public typealias ContextMenuPresenterProvider = (NSWindow?) -> ContextMenuPresenting
 
 @inlinable
-public func DefaultContextMenuPresenterProvider() -> ContextMenuPresenterProvider {
+public func DefaultContextMenuPresenterProvider() -> ContextMenuPresenterProvider { // swiftlint:disable:this identifier_name
     DefaultContextMenuPresenter.init
 }
 

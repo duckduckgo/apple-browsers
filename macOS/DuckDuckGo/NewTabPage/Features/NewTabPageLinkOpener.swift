@@ -21,17 +21,16 @@ import NewTabPage
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     @MainActor
-    static func open(_ url: URL, target: LinkOpenTarget, using tabCollectionViewModel: TabCollectionViewModel) {
-        /// FE sends `.newWindow` always when activating a link with Shift key pressed,
-        /// which is a Windows-specific behavior. We override it to `.newTab` and handle Shift key on the native side.
-        let correctedTarget: LinkOpenTarget = (target == .newWindow && NSApplication.shared.isShiftPressed) ? .newTab : target
-
-        if correctedTarget == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if correctedTarget == .newTab || NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: NSApplication.shared.isShiftPressed)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
+    static func open(_ url: URL, source: Tab.Content.URLSource, sender: LinkOpenSender, sourceWindow: NSWindow?) {
+        lazy var tabCollectionViewModel = WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
+        switch sender {
+        case .newTabContextMenuItem:
+            guard let tabCollectionViewModel else { fallthrough }
+            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: TabsPreferences.shared.switchToNewTabWhenOpened)
+        case .newWindowContextMenuItem:
+            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel?.isBurner ?? false)
+        case .script: // click/⌘-click/middle-click…
+            WindowControllersManager.shared.open(url, source: source, target: sourceWindow, event: NSApp.currentEvent)
         }
     }
 

@@ -78,7 +78,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
     }
 
     private func add(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        await favoritesModel.addNew()
+        await favoritesModel.addNewFavorite(in: original.webView?.window)
         return nil
     }
 
@@ -133,7 +133,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         guard let action: NewTabPageDataModel.ActivityOpenAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        favoritesModel.openFavorite(withURL: action.url, target: action.target)
+        favoritesModel.openFavorite(withURL: action.url, target: action.target, sourceWindow: original.webView?.window)
         return nil
     }
 
@@ -142,7 +142,7 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
         guard let contextMenuAction: NewTabPageDataModel.FavoritesContextMenuAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        favoritesModel.showContextMenu(for: contextMenuAction.id)
+        favoritesModel.showContextMenu(for: contextMenuAction.id, window: original.webView?.window)
         return nil
     }
 }

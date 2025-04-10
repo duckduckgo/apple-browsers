@@ -18,19 +18,6 @@
 
 import Foundation
 
-public enum LinkOpenTarget: Equatable {
-    case current, newTab, newWindow
-}
-
-extension LinkOpenTarget {
-    init(_ target: NewTabPageDataModel.ActivityOpenAction.OpenTarget) {
-        switch target {
-        case .sameTab:
-            self = .current
-        case .newTab:
-            self = .newTab
-        case .newWindow:
-            self = .newWindow
-        }
-    }
+public enum LinkOpenSender: Equatable {
+    case script, newTabContextMenuItem, newWindowContextMenuItem
 }

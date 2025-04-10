@@ -216,7 +216,6 @@ extension WindowControllersManager {
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
-
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
         if source == .bookmark {

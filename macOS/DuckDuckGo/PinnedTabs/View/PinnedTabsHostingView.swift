@@ -28,7 +28,7 @@ final class PinnedTabsHostingView: NSHostingView<PinnedTabsView> {
     }
 
     override func otherMouseDown(with event: NSEvent) {
-        guard event.buttonNumber == 2 else { return }
+        guard case .middle = event.button else { return }
 
         let locationInView = convert(event.locationInWindow, from: nil)
         middleClickSubject.send(locationInView)

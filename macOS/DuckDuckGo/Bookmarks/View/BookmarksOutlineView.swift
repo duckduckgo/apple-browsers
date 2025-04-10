@@ -171,7 +171,7 @@ final class BookmarksOutlineView: NSOutlineView {
         super.viewDidMoveToWindow()
         guard let scrollView = enclosingScrollView else { return }
 
-        let trackingArea = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeInKeyWindow, .inVisibleRect], owner: self, userInfo: nil)
+        let trackingArea = NSTrackingArea(rect: .zero, options: [.mouseMoved, .mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self, userInfo: nil)
 
         scrollView.addTrackingArea(trackingArea)
 

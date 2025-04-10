@@ -80,6 +80,23 @@ final class PullToRefreshViewAdapter: NSObject {
     private weak var pullableView: UIView?
     private let onRefresh: () -> Void
 
+    var backgroundColor: UIColor? {
+        didSet {
+            fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
+            // Set refresh control tint color based on background brightness
+            refreshControl.tintColor = determineRefreshControlTintColor(for: backgroundColor)
+        }
+    }
+
+    private func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
+        guard let backgroundColor = backgroundColor else {
+            return UIColor(designSystemColor: .iconsSecondary)
+        }
+
+        let userInterfaceStyle: UIUserInterfaceStyle = backgroundColor.brightnessPercentage < 50 ? .dark : .light
+        return UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: .init(userInterfaceStyle: userInterfaceStyle))
+    }
+
     /**
      * Initializes the pull-to-refresh logic with the necessary components.
      *

@@ -839,6 +839,14 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
     }
 
+    /// Custom back navigation logic to handle Duck Player in the web view's history stack.
+    ///
+    /// - Parameter webView: The `WKWebView` to navigate back in.
+    @MainActor
+    func handleGoForward(webView: WKWebView) {
+        webView.goForward()
+    }
+
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
     ///
     /// - Parameter webView: The `WKWebView` to reload.
@@ -1021,7 +1029,10 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
-        duckPlayer.setHostViewController(hostViewController)
+        guard let controller = hostViewController as? TabViewController else {
+            return
+        }
+        duckPlayer.setHostViewController(controller)
 
         // Ensure the tab is not muted
         if let webview = hostViewController.webView {

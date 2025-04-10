@@ -65,6 +65,8 @@ tags:
 - inputText: "https://example.com"
 - pressKey: Enter
 
+- assertVisible: ".*Example Domain.*"
+
 # Go home and hover there a bit
 - pressKey: Home
 

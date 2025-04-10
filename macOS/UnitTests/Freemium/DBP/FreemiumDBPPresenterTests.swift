@@ -62,7 +62,7 @@ private final class MockWindowControllerManager: WindowControllersManagerProtoco
         showTabContent = content
     }
 
-    func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool) {}
+    func show(url: URL?, tabId: String?, source: DuckDuckGo_Privacy_Browser.Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {}
 
     func showBookmarksTab() {}
 

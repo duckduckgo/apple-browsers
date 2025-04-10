@@ -24,16 +24,6 @@ import WebKitExtensions
 enum NavigationDecision {
     case allow(NewWindowPolicy)
     case cancel
-
-    /**
-     * Replaces `.tab` with `.window` when user prefers windows over tabs.
-     */
-    func preferringTabsToWindows(_ prefersTabsToWindows: Bool) -> NavigationDecision {
-        guard case .allow(let targetKind) = self, !prefersTabsToWindows else {
-            return self
-        }
-        return .allow(targetKind.preferringTabsToWindows(prefersTabsToWindows))
-    }
 }
 
 @MainActor

@@ -208,7 +208,6 @@ internal class MouseOverButton: NSButton, Hoverable {
         isMouseDown = false
     }
 
-
     override func otherMouseDown(with event: NSEvent) {
         if eventTypeMask.contains(.init(type: event.type)), let action {
             NSApp.sendAction(action, to: target, from: self)

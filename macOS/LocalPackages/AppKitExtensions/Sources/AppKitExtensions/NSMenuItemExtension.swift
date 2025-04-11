@@ -43,7 +43,7 @@ public extension NSMenuItem {
         }
     }
 
-    // Instantiates NSMenuItem with the closure called when the menu item is selected
+    /// Instantiates NSMenuItem with the closure called when the menu item is selected
     convenience init(title: String, keyEquivalent: NSEvent.KeyEquivalent = [], representedObject: Any? = nil, state: NSControl.StateValue = .off, action: @escaping (NSMenuItem) -> Void) {
         let target = NSMenuItemTarget(action: action)
         self.init(title: title, action: #selector(NSMenuItemTarget.menuItemSelected), target: target, keyEquivalent: keyEquivalent, representedObject: representedObject, state: state)

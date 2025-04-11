@@ -52,11 +52,6 @@ struct DebugScreensView: View {
 
                 DebugScreensListView(model: model, sectionTitle: "Screens", screens: model.unpinnedScreens)
                 DebugScreensListView(model: model, sectionTitle: "Actions", screens: model.actions)
-                Section {
-                    SettingsCellView(label: "Legacy Debug", action: {
-                        model.navigateToLegacyDebugController()
-                    }, disclosureIndicator: true, isButton: true)
-                }
             } else {
                 DebugScreensListView(model: model, sectionTitle: "Results", screens: model.filtered)
             }

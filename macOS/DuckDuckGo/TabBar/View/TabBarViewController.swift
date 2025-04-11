@@ -779,9 +779,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         tabPreviewWindowController.show(parentWindow: window, topLeftPointInWindow: pointInWindow, shouldDisplayPreviewAfterDelay: { [weak self] in
             self?.shouldDisplayTabPreviews ?? false
         })
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: "/Applications/Mattermost.app"), configuration: NSWorkspace.OpenConfiguration())
-        }
     }
 
     func hideTabPreview(withDelay: Bool = false, allowQuickRedisplay: Bool = false) {

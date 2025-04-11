@@ -68011,6 +68011,18 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "tooltip.aichat.address-bar-tooltip" : {
+      "comment" : "Tooltip With Shortcut for the AI Chat address bar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
             "value" : "Duck.ai ⇧↵"
           }
         }

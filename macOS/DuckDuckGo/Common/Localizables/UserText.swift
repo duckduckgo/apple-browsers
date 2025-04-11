@@ -444,7 +444,9 @@ struct UserText {
 
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New AI Chat", comment: "Menu item to launch AI Chat")
 
-    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai ⇧↵", comment: "Tooltip for the AI Chat address bar button")
+    static let aiChatAddressBarShortcutTooltip = NSLocalizedString("tooltip.aichat.address-bar-shortcut", value: "Duck.ai ⇧↵", comment: "Tooltip With Shortcut for the AI Chat address bar button")
+
+    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")

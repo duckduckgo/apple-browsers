@@ -28,7 +28,7 @@ import PrivacyDashboard
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-
+    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -365,10 +365,12 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.toolTip = UserText.aiChatAddressBarTooltip
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
         updateAIChatDividerVisibility()
+        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
     }
 
     private func updateAIChatDividerVisibility() {
-        aiChatDivider.isShown = clearButton.isShown || bookmarkButton.isShown
+        let shouldShowDivider = clearButton.isShown || bookmarkButton.isShown
+        aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
     }
 
     private func updateButtonsPosition() {

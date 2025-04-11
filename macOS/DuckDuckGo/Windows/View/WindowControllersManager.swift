@@ -159,20 +159,26 @@ extension WindowControllersManager {
     ///
     /// - Parameters:
     ///   - url: The AI chat URL to open.
-    ///   - newTab: If `true`, opens the URL in a new tab; otherwise, uses the current tab. Defaults to `false`.
-    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `newTab` is `true`.
-    ///                Defaults to `false`.
-    func openAIChat(_ url: AIChatURL, newTab: Bool = false, hasPrompt: Bool = false) {
-        if newTab {
-            mainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui),
-                                                                                                 selected: NSApplication.shared.isShiftPressed)
-        } else {
-            if let currentURL = mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.url, currentURL.isAIChatURL {
+    ///   - target: Specifies where to open the URL. Can be `.newTabSelected`, `.newTabUnselected`, or `.sameTab`.
+    ///             Defaults to `.sameTab`.
+    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
+    ///                or `.newTabUnselected`. Defaults to `false`.
+    func openAIChat(_ url: AIChatURL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+
+        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
+
+        switch target {
+        case .newTabSelected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: true)
+        case .newTabUnselected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: false)
+        case .sameTab:
+            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isAIChatURL {
                 if hasPrompt {
-                    mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab?.reload()
+                    tabCollectionViewModel?.selectedTab?.reload()
                 }
             } else {
-                show(url: url.wrappedValue, source: .ui, newTab: newTab)
+                show(url: url.wrappedValue, source: .ui, newTab: false)
             }
         }
     }

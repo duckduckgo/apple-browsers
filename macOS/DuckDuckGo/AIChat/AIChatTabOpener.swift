@@ -18,17 +18,23 @@
 
 protocol AIChatTabOpening {
     @MainActor
-    func openAIChatTab(_ query: String?, newTab: Bool)
+    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, newTab: Bool)
+    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
 }
 
 extension AIChatTabOpening {
     @MainActor
     func openAIChatTab() {
-        openAIChatTab(nil, newTab: false)
+        openAIChatTab(nil, target: .sameTab)
     }
+}
+
+enum AIChatTabOpenerTarget {
+    case newTabSelected
+    case newTabUnselected
+    case sameTab
 }
 
 struct AIChatTabOpener: AIChatTabOpening {
@@ -44,16 +50,16 @@ struct AIChatTabOpener: AIChatTabOpening {
     }
 
     @MainActor
-    func openAIChatTab(_ value: AddressBarTextField.Value, newTab: Bool) {
+    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget) {
         let query = addressBarQueryExtractor.queryForValue(value)
-        openAIChatTab(query, newTab: newTab)
+        openAIChatTab(query, target: target)
     }
 
     @MainActor
-    func openAIChatTab(_ query: String?, newTab: Bool) {
+    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
         if let query = query {
             promptHandler.setData(query)
         }
-        WindowControllersManager.shared.openAIChat(aiChatURL, newTab: newTab, hasPrompt: query != nil)
+        WindowControllersManager.shared.openAIChat(aiChatURL, target: target, hasPrompt: query != nil)
     }
 }

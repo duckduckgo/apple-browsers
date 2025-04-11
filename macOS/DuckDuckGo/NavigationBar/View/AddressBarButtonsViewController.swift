@@ -293,12 +293,20 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func aiChatButtonAction(_ sender: Any) {
-        let shouldOpenInNewTab = NSEvent.modifierFlags.contains(.command)
+        let isCommandPressed = NSEvent.modifierFlags.contains(.command)
+        let isShiftPressed = NSApplication.shared.isShiftPressed
+
+        let target: AIChatTabOpenerTarget
+        if isCommandPressed {
+            target = isShiftPressed ? .newTabSelected : .newTabUnselected
+        } else {
+            target = .sameTab
+        }
 
         if let value = textFieldValue {
-            aiChatTabOpener.openAIChatTab(value, newTab: shouldOpenInNewTab)
+            aiChatTabOpener.openAIChatTab(value, target: target)
         } else {
-            aiChatTabOpener.openAIChatTab(nil, newTab: shouldOpenInNewTab)
+            aiChatTabOpener.openAIChatTab(nil, target: target)
         }
     }
 

@@ -311,7 +311,7 @@
 "autofill.creditcard.details.card-number" = "Card number";
 
 /* Card number label for credit card details on autofill when editing */
-"autofill.creditcard.details.card-number.required" = "Card number (required)";
+"autofill.creditcard.details.card-number.required" = "Card number";
 
 /* Title for toast when copying the credit card name */
 "autofill.creditcard.details.copy-toast.card-name-copied" = "Name copied";

@@ -49,7 +49,7 @@ final class DuckPlayerViewModel: ObservableObject {
         static let disabled = "0"
         // Used to set the start time of the video
         static let startParameter = "start"
-        
+
         // Used to force the player to use a stable version of the player
         // https://app.asana.com/0/1204099484721401/1209718564423105/f
         static let colorSchemeParameter = "color"

@@ -241,6 +241,9 @@ extension WindowControllersManager {
     ///   - source: The origin of the URL being opened, which can indicate whether it is from a bookmark, history record, external link, etc.
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
     ///             The default is `false`.
+    ///   - selected: An optional Boolean value that determines whether the new tab should be selected (active) or opened in the background.
+    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.shared.switchToNewTabWhenOpened`).
+    ///               The default is `true`.
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false, selected: Bool? = true) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
         if source == .bookmark {

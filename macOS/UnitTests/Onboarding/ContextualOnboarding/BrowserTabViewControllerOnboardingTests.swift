@@ -28,6 +28,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     var viewController: BrowserTabViewController!
     var dialogProvider: MockDialogsProvider!
+    var pixelReporter: CapturingOnboardingPixelReporter!
     var factory: CapturingDialogFactory!
     var featureFlagger: MockFeatureFlagger!
     var tab: Tab!
@@ -39,13 +40,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         try super.setUpWithError()
         let tabCollectionViewModel = TabCollectionViewModel()
         featureFlagger = MockFeatureFlagger()
+        pixelReporter = CapturingOnboardingPixelReporter()
         dialogProvider = MockDialogsProvider()
         expectation = .init()
         factory = CapturingDialogFactory(expectation: expectation)
         tab = Tab()
         tab.setContent(.url(URL.duckDuckGo, credential: nil, source: .appOpenUrl))
         let tabViewModel = TabViewModel(tab: tab)
-        viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
+        viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
         viewController.tabViewModel = tabViewModel
         let window = NSWindow()
         window.contentViewController = viewController
@@ -189,6 +191,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         factory.performOnManualDismiss()
 
         XCTAssertTrue(delegate.didCallDismissViewHighlight)
+        XCTAssertEqual(pixelReporter.dismissedDialog, .tryFireButton)
+
     }
 
     func testWhenNavigationCompletedAndDialogTypeNilThenAskDelegateToRemoveViewHighlights() throws {
@@ -211,7 +215,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenNavigationCompletedAndStateIsShowFireButtonThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
         dialogProvider.dialog = .tryFireButton
-        dialogProvider.state = .showFireButton
         let url = try XCTUnwrap(URL(string: "some.url"))
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
@@ -228,7 +231,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenNavigationCompletedAndStateIsShowBlockedTrackersThenAskDelegateToHighlightPrivacyShield() throws {
         // GIVEN
         dialogProvider.dialog = .trackers(message: .init(string: ""), shouldFollowUp: true)
-        dialogProvider.state = .showBlockedTrackers
         let url = try XCTUnwrap(URL(string: "some.url"))
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
@@ -279,8 +281,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenGotItButtonPressedAndStateIsShowFireButtonThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
-        dialogProvider.dialog = .trackers(message: .init(string: ""), shouldFollowUp: true)
-        dialogProvider.state = .showFireButton
+        dialogProvider.dialog = .tryFireButton
         let url = try XCTUnwrap(URL(string: "some.url"))
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
@@ -315,6 +316,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 }
 
 class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+    var lastDialog: DuckDuckGo_Privacy_Browser.ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted
     var turnOffFeatureCalledExpectation: XCTestExpectation?
@@ -327,6 +329,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
 
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
         dialogTypeForTabExpectation?.fulfill()
+        lastDialog = dialog
         return dialog
     }
 

@@ -116,7 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel = NewTabPageCustomizationModel()
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
     let visualStyleManager: VisualStyleManagerProviding
 
@@ -279,7 +279,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
 
-        onboardingStateMachine = ContextualOnboardingStateMachine()
+        onboardingContextualDialogsManager = ContextualDialogsManager()
 
         // MARK: - Subscription configuration
 

@@ -36,7 +36,7 @@ final class HistoryViewOnboardingDecider: HistoryViewOnboardingDeciding {
     init(
         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
         settingsPersistor: HistoryViewOnboardingViewSettingsPersisting = UserDefaultsHistoryViewOnboardingViewSettingsPersistor(),
-        isContextualOnboardingCompleted: @escaping () -> Bool = { Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted },
+        isContextualOnboardingCompleted: @escaping () -> Bool = { Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted },
         isNewUser: @escaping () -> Bool = { AppDelegate.isNewUser }
     ) {
         self.featureFlagger = featureFlagger

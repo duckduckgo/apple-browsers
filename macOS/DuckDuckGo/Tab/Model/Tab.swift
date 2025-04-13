@@ -847,7 +847,7 @@ protocol NewWindowPolicyDecisionMaker {
 #endif
         if PixelExperiment.cohort == .newOnboarding {
             if #available(macOS 12.0, *) {
-                Application.appDelegate.onboardingStateMachine.state = .notStarted
+                Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
             }
             setContent(.onboarding)
         } else {

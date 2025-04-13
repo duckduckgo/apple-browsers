@@ -87,6 +87,7 @@ final class BrowserTabViewController: NSViewController {
 
     private var lastURL: URL?
     private var wasDialogDismissed = false
+    private let onboardingPixelReporter: OnboardingPixelReporting
 
     private(set) var transientTabContentViewController: NSViewController?
     private lazy var duckPlayerOnboardingModalManager: DuckPlayerOnboardingModalManager = {
@@ -100,7 +101,8 @@ final class BrowserTabViewController: NSViewController {
 
     init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingStateMachine,
+         onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+         onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
@@ -108,6 +110,7 @@ final class BrowserTabViewController: NSViewController {
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
@@ -167,7 +170,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc func windowDidBecomeActive(notification: Notification) {
         if !wasDialogDismissed {
-            presentContextualOnboarding()
+            presentContextualOnboarding(showLastDialog: true)
         }
     }
 
@@ -455,8 +458,6 @@ final class BrowserTabViewController: NSViewController {
             onboardingDialogTypeProvider.turnOffFeature()
             return
         }
-        guard let tab = tabViewModel?.tab else { return }
-        onboardingDialogTypeProvider.updateStateFor(tab: tab)
         presentContextualOnboarding()
     }
 
@@ -467,7 +468,7 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    private func presentContextualOnboarding() {
+    private func presentContextualOnboarding(showLastDialog: Bool = false) {
         // Before presenting a new dialog, remove any existing ones.
         removeExistingDialog()
         // Remove any existing higlights animation
@@ -479,7 +480,8 @@ final class BrowserTabViewController: NSViewController {
         }
 
         guard let tab = tabViewModel?.tab else { return }
-        guard let dialogType = onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
+
+        guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialog : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
             delegate?.dismissViewHighlight()
             return
         }
@@ -491,6 +493,9 @@ final class BrowserTabViewController: NSViewController {
                 wasDialogDismissed = true
                 delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
+                if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+                    self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+                }
             }
         }
 
@@ -499,13 +504,13 @@ final class BrowserTabViewController: NSViewController {
 
             onboardingDialogTypeProvider.gotItPressed()
 
-            let currentState = onboardingDialogTypeProvider.state
+            let currentState = onboardingDialogTypeProvider.lastDialog
 
             // Reset highlight animations
             delegate?.dismissViewHighlight()
 
             // Process state
-            if case .showFireButton = currentState {
+            if case .tryFireButton = currentState {
                 delegate?.highlightFireButton()
             }
         }

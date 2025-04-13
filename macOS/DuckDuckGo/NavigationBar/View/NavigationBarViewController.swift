@@ -635,7 +635,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private var isOnboardingFinished: Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingStateMachine.state == .onboardingCompleted
+        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 
     private func showBrokenSitePrompt() {

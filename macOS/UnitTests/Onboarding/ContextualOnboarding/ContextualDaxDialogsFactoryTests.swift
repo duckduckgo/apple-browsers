@@ -61,7 +61,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertTrue(delegate.didCallSearchFor)
         XCTAssertEqual(delegate.capturedQuery, query)
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureTrySearchDismissedCalled)
     }
 
     func testWhenMakeViewForSearchDoneWithShouldFollowUpThenOnboardingsearchDoneViewCreatedAndOnActionNothingOccurs() throws {
@@ -93,7 +92,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureSearchResultDismissedCalled)
     }
 
     func testWhenMakeViewForSearchDoneWithoutShouldFollowUpThenOnboardingsearchDoneViewCreatedAndOnActionOccurs() throws {
@@ -142,10 +140,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertTrue(delegate.didNavigateToCalled)
         XCTAssertEqual(delegate.capturedUrlString, urlString)
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureTryVisitSiteDismissedCalled)
     }
 
-    func testWhenMakeViewForTrackerBlockerWithShouldFollowUpThenTTrackerBlockerViewCreatedAndOnActionNothingOccurs() throws {
+    func testWhenMakeViewForTrackerBlockerWithShouldFollowUpThenTrackerBlockerViewCreatedAndOnActionNothingOccurs() throws {
         // GIVEN
         var onDismissRun = false
         var onGotItPressedRun = false
@@ -175,7 +172,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureTrackersBlockedDismissedCalled)
     }
 
     func testWhenMakeViewForTrackerBlockerWithoutShouldFollowUpThenTrackerBlockerViewCreatedAndOnActionOccurs() throws {
@@ -203,7 +199,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         XCTAssertFalse(onGotItPressedRun)
     }
 
-    func testWhenMakeViewForHighFivThenFinalDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
+    func testWhenMakeViewForHighFiveThenFinalDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN
         var onDismissRun = false
         var onGotItPressedRun = false
@@ -230,7 +226,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureFinalDismissedCalled)
     }
 
     @MainActor
@@ -260,7 +255,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(onDismissRun)
-        XCTAssertTrue(reporter.measureTryFireButtonDismissedCalled)
     }
 
     func testWhenMakeViewForTryFireButtonAndSkipButtonIsPressedThenmeasureFireButtonSkippedCalled() throws {
@@ -281,12 +275,7 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     var measureFireButtonTryItCalled = false
     var measureLastDialogShownCalled = false
     var measureSiteVisitedCalled = false
-    var measureTrySearchDismissedCalled = false
-    var measureSearchResultDismissedCalled = false
-    var measureTryVisitSiteDismissedCalled = false
-    var measureTrackersBlockedDismissedCalled = false
-    var measureTryFireButtonDismissedCalled = false
-    var measureFinalDismissedCalled = false
+    var dismissedDialog: ContextualDialogType?
 
     func measureFireButtonSkipped() {
         measureFireButtonSkippedCalled = true
@@ -315,27 +304,8 @@ class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
     func measureSiteVisited() {
         measureSiteVisitedCalled = true
     }
-    func measureTrySearchDismissed() {
-        measureTrySearchDismissedCalled = true
-    }
 
-    func measureSearchResultDismissed() {
-        measureSearchResultDismissedCalled = true
-    }
-
-    func measureTryVisitSiteDismissed() {
-        measureTryVisitSiteDismissedCalled = true
-    }
-
-    func measureTrackersBlockedDismissed() {
-        measureTrackersBlockedDismissedCalled = true
-    }
-
-    func measureTryFireButtonDismissed() {
-        measureTryFireButtonDismissedCalled = true
-    }
-
-    func measureFinalDismissed() {
-        measureFinalDismissedCalled = true
+    func measureDialogDismissed(dialogType: ContextualDialogType) {
+        dismissedDialog = dialogType
     }
 }

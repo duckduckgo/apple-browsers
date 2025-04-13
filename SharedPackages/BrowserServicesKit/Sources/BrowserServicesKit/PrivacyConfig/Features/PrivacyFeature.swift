@@ -223,6 +223,7 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case openInNewTab
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
+    case nativeUI // Use Duckplayer's native UI
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {

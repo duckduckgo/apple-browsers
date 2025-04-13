@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1743758114945,
+    "version": 1744016827714,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",

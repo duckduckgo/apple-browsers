@@ -78,6 +78,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var previousScrollViewWidth: CGFloat = .zero
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -128,8 +129,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
-
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -142,8 +141,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
-
         updateEmptyTabArea()
         tabCollectionViewModel.delegate = self
         reloadSelection()
@@ -154,24 +151,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabBarRemoteMessageListener()
     }
 
-    override func viewWillDisappear() {
-        super.viewWillDisappear()
+    override func viewDidAppear() {
+        enableScrollButtons()
+    }
 
+    override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
     }
 
     override func viewDidLayout() {
-        super.viewDidLayout()
-
         frozenLayout = view.isMouseLocationInsideBounds()
         updateTabMode()
         updateEmptyTabArea()
         collectionView.invalidateLayout()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     @objc func addButtonAction(_ sender: NSButton) {
@@ -379,11 +372,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case let .duplicate(index):
             duplicateTab(at: .pinned(index))
         case let .bookmark(tab):
-            guard let url = tab.url, let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
-                Logger.general.debug("TabBarViewController: Failed to get url from tab")
+            guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
+                Logger.general.debug("TabBarViewController: Failed to get tabViewModel for pinned tab")
                 return
             }
-            bookmarkTab(with: url, title: tabViewModel.title)
+            addBookmark(for: tabViewModel)
         case let .removeBookmark(tab):
             guard let url = tab.url else {
                 Logger.general.debug("TabBarViewController: Failed to get url from tab")
@@ -600,13 +593,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func observeToScrollNotifications() {
         scrollView.contentView.postsBoundsChangedNotifications = true
 
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(scrollViewBoundsDidChange(_:)),
-                                               name: NSView.boundsDidChangeNotification,
-                                               object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.frameDidChangeNotification, object: collectionView)
+        previousScrollViewWidth = scrollView.bounds.size.width
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewFrameDidChange(_:)), name: NSView.frameDidChangeNotification, object: scrollView)
     }
 
-    @objc private func scrollViewBoundsDidChange(_ sender: Any) {
+    @objc private func scrollViewContentRectDidChange(_ notification: Notification) {
+        enableScrollButtons()
+        hideTabPreview(allowQuickRedisplay: true)
+    }
+
+    @objc private func scrollViewFrameDidChange(_ notification: Notification) {
+        adjustScrollPositionOnResize()
         enableScrollButtons()
         hideTabPreview(allowQuickRedisplay: true)
     }
@@ -623,6 +622,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightShadowImageView.isHidden = scrollViewsAreHidden
         leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
+    }
+
+    /// Adjust the right edge scroll position to keep Selected Tab visible when resizing (or bring it into view expanding the right edge when it‘s behind the edge)
+    private func adjustScrollPositionOnResize() {
+        let newWidth = scrollView.bounds.size.width
+        let resizeAmount = newWidth - previousScrollViewWidth
+        previousScrollViewWidth = newWidth
+
+        guard resizeAmount != 0,
+              let selectedIndexPath = collectionView.selectionIndexPaths.first,
+              let layoutAttributes = collectionView.layoutAttributesForItem(at: selectedIndexPath) else { return }
+
+        let visibleRect = collectionView.visibleRect
+        let selectedItemFrame = layoutAttributes.frame
+
+        let isExpanding = resizeAmount > 0
+
+        let selectedItemLeft = selectedItemFrame.minX
+        let selectedItemRight = selectedItemFrame.maxX
+        let visibleLeft = visibleRect.minX
+        let visibleRight = visibleRect.maxX
+        let currentOriginX = scrollView.documentVisibleRect.origin.x
+
+        // CONTRACTING: if selected item is beyond the right edge, preserve right edge
+        if !isExpanding && selectedItemRight > visibleRight {
+            let newOriginX = currentOriginX + abs(resizeAmount)
+            collectionView.scroll(NSPoint(x: newOriginX, y: 0))
+
+        // EXPANDING: if selected item is beyond the left edge, preserve right edge
+        } else if isExpanding && selectedItemLeft < visibleLeft {
+            let newOriginX = max(0, currentOriginX - abs(resizeAmount))
+            collectionView.scroll(NSPoint(x: newOriginX, y: 0))
+        }
     }
 
     private func setupAddTabButton() {
@@ -880,10 +912,12 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         tabCollectionViewModel.duplicateTab(at: tabIndex)
     }
 
-    private func bookmarkTab(with url: URL, title: String) {
-        if !bookmarkManager.isUrlBookmarked(url: url) {
-            bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
-        }
+    private func addBookmark(for tabViewModel: any TabBarViewModel) {
+        // open Add Bookmark modal dialog
+        guard let url = tabViewModel.tabContent.userEditableUrl else { return }
+
+        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: WebsiteInfo(url: url, title: tabViewModel.title))
+        dialog.show(in: view.window)
     }
 
     private func deleteBookmark(with url: URL) {
@@ -912,20 +946,6 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         FireproofDomains.shared.remove(domain: host)
     }
 
-    // MARK: - TabViewItem
-
-    func urlAndTitle(for tabBarViewItem: TabBarViewItem) -> (url: URL, title: String)? {
-        guard
-            let indexPath = collectionView.indexPath(for: tabBarViewItem),
-            let tabViewModel = tabCollectionViewModel.tabViewModel(at: indexPath.item),
-            let url = tabViewModel.tab.content.userEditableUrl
-        else {
-            Logger.general.error("TabBarViewController: Failed to get index path of tab bar view item")
-            return nil
-        }
-
-        return (url, tabViewModel.title)
-    }
 }
 
 // MARK: - NSCollectionViewDelegateFlowLayout
@@ -1212,19 +1232,20 @@ extension TabBarViewController: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemIsAlreadyBookmarked(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        guard let url = urlAndTitle(for: tabBarViewItem)?.url else { return false }
+        guard let tabViewModel = tabBarViewItem.tabViewModel,
+              let url = tabViewModel.tabContent.userEditableUrl else { return false }
 
         return bookmarkManager.isUrlBookmarked(url: url)
     }
 
     func tabBarViewItemBookmarkThisPageAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let (url, title) = urlAndTitle(for: tabBarViewItem) else { return }
-
-        bookmarkTab(with: url, title: title)
+        guard let tabViewModel = tabBarViewItem.tabViewModel else { return }
+        addBookmark(for: tabViewModel)
     }
 
     func tabBarViewItemRemoveBookmarkAction(_ tabBarViewItem: TabBarViewItem) {
-        guard let url = urlAndTitle(for: tabBarViewItem)?.url else { return }
+        guard let tabViewModel = tabBarViewItem.tabViewModel,
+              let url = tabViewModel.tabContent.userEditableUrl else { return }
 
         deleteBookmark(with: url)
     }

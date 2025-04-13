@@ -25,6 +25,8 @@ private enum DaxDialogMetrics {
     static let contentPadding: CGFloat = 24.0
     static let shadowRadius: CGFloat = 5.0
     static let stackSpacing: CGFloat = 8
+    static let dismissButtonPadding: CGFloat = 8
+    static let dismissButtonSize: CGFloat = 44
 
     enum DaxLogo {
         static let size: CGFloat = 54.0
@@ -50,6 +52,7 @@ public struct DaxDialogView<Content: View>: View {
     private let cornerRadius: CGFloat
     private let arrowSize: CGSize
     private let onTapGesture: (() -> Void)?
+    private let onManualDismiss: (() -> Void)?
     private let content: Content
 
     public init(
@@ -59,6 +62,7 @@ public struct DaxDialogView<Content: View>: View {
         cornerRadius: CGFloat = 16.0,
         arrowSize: CGSize = .init(width: 16.0, height: 8.0),
         onTapGesture: (() -> Void)? = nil,
+        onManualDismiss: (() -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         _logoPosition = State(initialValue: logoPosition)
@@ -67,6 +71,7 @@ public struct DaxDialogView<Content: View>: View {
         self.cornerRadius = cornerRadius
         self.arrowSize = arrowSize
         self.onTapGesture = onTapGesture
+        self.onManualDismiss = onManualDismiss
         self.content = content()
     }
 
@@ -122,13 +127,14 @@ public struct DaxDialogView<Content: View>: View {
         }
     }
 
+    @ViewBuilder
     private var wrappedContent: some View {
         let backgroundColor = Color(designSystemColor: .surface)
-        let shadowColors: (Color, Color) = colorScheme == .light ?
-        (.black.opacity(0.08), .black.opacity(0.1)) :
-        (.black.opacity(0.20), .black.opacity(0.16))
+        let shadowColors: (Color, Color) = colorScheme == .light
+        ? (.black.opacity(0.08), .black.opacity(0.1))
+        : (.black.opacity(0.20), .black.opacity(0.16))
 
-        return content
+        let styledContent = content
             .padding(.all, DaxDialogMetrics.contentPadding)
             .background(backgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
@@ -139,10 +145,29 @@ public struct DaxDialogView<Content: View>: View {
                     .frame(width: arrowSize.width, height: arrowSize.height)
                     .foregroundColor(backgroundColor)
                     .rotationEffect(Angle(degrees: logoPosition == .top ? 0 : -90), anchor: .bottom)
-                    .offset(arrowOffset)
-                ,
+                    .offset(arrowOffset),
                 alignment: .topLeading
             )
+
+        if #available(macOS 12.0, iOS 15.0, *) {
+            styledContent
+                .ifLet(onManualDismiss) { view, onDismiss in
+                    view.overlay(alignment: .topTrailing) {
+                        OnboardingDismissButton(action: onDismiss)
+                            .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                            .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+                    }
+                }
+        } else {
+            ZStack(alignment: .topTrailing) {
+                styledContent
+                if let onDismiss = onManualDismiss {
+                    OnboardingDismissButton(action: onDismiss)
+                        .alignmentGuide(.top) { $0.height / 2 - DaxDialogMetrics.dismissButtonPadding }
+                        .alignmentGuide(.trailing) { $0.width / 2 + DaxDialogMetrics.dismissButtonPadding }
+                }
+            }
+        }
     }
 
     private var arrowOffset: CGSize {
@@ -191,4 +216,83 @@ public struct DaxDialogView<Content: View>: View {
         }
         .padding()
     }
+}
+
+struct OnboardingDismissButton: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var isHovering = false
+    @State private var isPressed = false
+
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image("Close-16", bundle: bundle)
+                .foregroundColor(.primary)
+                .padding(DaxDialogMetrics.dismissButtonPadding)
+                .background(backgroundColor)
+                .background(opacityColor)
+                .clipShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovering = hovering
+        }
+        .pressEvents {
+            isPressed = true
+        } onRelease: {
+            isPressed = false
+        }
+        .shadow(color: Color(red: 0.1, green: 0.17, blue: 0.3).opacity(0.05), radius: 12, x: 0, y: 8)
+        .shadow(color: Color(red: 0.17, green: 0.1, blue: 0.3).opacity(0.05), radius: 6, x: 0, y: 4)
+        .shadow(color: Color(red: 0.1, green: 0.16, blue: 0.3).opacity(0.08), radius: 1, x: 0, y: 1)
+        .frame(width: DaxDialogMetrics.dismissButtonSize, height: DaxDialogMetrics.dismissButtonSize)
+    }
+
+    private var backgroundColor: Color {
+        switch colorScheme {
+        case .light:
+            Color(red: 0.98, green: 0.98, blue: 0.98)
+        case .dark:
+            Color(red: 0.27, green: 0.27, blue: 0.27)
+        @unknown default:
+            Color(red: 0.98, green: 0.98, blue: 0.98)
+        }
+    }
+
+    private var opacityColor: Color {
+        switch (colorScheme, isPressed, isHovering) {
+        case (.light, true, _): return Color.black.opacity(0.12)
+        case (.light, false, true): return Color.black.opacity(0.06)
+        case (.light, false, false): return Color.clear
+
+        case (.dark, true, _): return Color.white.opacity(0.10)
+        case (.dark, false, true): return Color.white.opacity(0.06)
+        case (.dark, false, false): return Color.clear
+
+        @unknown default:
+            return Color(red: 0.98, green: 0.98, blue: 0.98)
+        }
+    }
+}
+
+// Move this extension to `SwiftUIExtensions` package when creating it.
+private extension View {
+
+    @ViewBuilder func `ifLet`<Content: View, Value>(_ value: Value?, transform: (Self, Value) -> Content) -> some View {
+        if let value = value {
+            transform(self, value)
+        } else {
+            self
+        }
+    }
+
+    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self
+            .simultaneousGesture(DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPress() }
+                .onEnded { _ in onRelease() }
+            )
+    }
+
 }

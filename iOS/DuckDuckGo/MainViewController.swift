@@ -1085,7 +1085,7 @@ class MainViewController: UIViewController {
             refreshOmniBar()
             refreshTabIcon()
             refreshControls()
-            tabsBarController?.refresh(tabsModel: tabManager.model)
+            tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         }
 
@@ -1604,7 +1604,7 @@ class MainViewController: UIViewController {
             tabManager.addHomeTab()
         }
         attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
+        tabsBarController?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()

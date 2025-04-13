@@ -134,7 +134,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("YouTube was not loaded")
         }
     }
-    
+
     @MainActor
     func testHandleNavigation_OpenInYouTubeURL_AlwaysRedirectsToYouTube() async {
         // Arrange
@@ -142,7 +142,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         let navigationAction = MockNavigationAction(request: URLRequest(url: openInYouTubeURL))
         playerSettings.mode = .enabled  // DuckPlayer mode is enabled
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]  // Feature is enabled
-        
+
         // Act
         handler.handleDuckNavigation(navigationAction, webView: mockWebView)
 
@@ -198,7 +198,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("DuckPlayer was not loaded")
         }
     }
-    
+
     @MainActor
     func testHandleNavigation_ToDirectDuckURLInNewTab_OpenInNewTabWithParameters() async {
         // Arrange
@@ -210,7 +210,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         handler.handleDuckNavigation(navigationAction, webView: mockWebView)
-        
+
         // Assert
         if let openedURL = tabNavigator.openedURL {
             XCTAssertEqual(openedURL.host, "player")
@@ -220,7 +220,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("No URL was opened in a new tab")
         }
     }
-    
+
     @MainActor
     func testHandleNavigation_ToYouTubeWatchInAskMode_RedirectsToDuckPlayerWithParameters() async {
         // Arrange
@@ -232,7 +232,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         handler.handleDuckNavigation(navigationAction, webView: mockWebView)
-        
+
         // Assert
         if let openedURL = tabNavigator.openedURL {
             XCTAssertEqual(openedURL.host, "player")
@@ -242,7 +242,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("No URL was opened in a new tab")
         }
     }
-    
+
     @MainActor
     func testHandleNavigation_WithReferrerInURL_UpdatesDuckPlayerReferrer() async {
         // Arrange
@@ -254,12 +254,12 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         handler.handleDuckNavigation(navigationAction, webView: mockWebView)
-        
+
         // Assert
         XCTAssertEqual(handler.referrer, .serp)
-        
+
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_DuckPlayerURL_CancelNavigationAndLoadsDuckPlayerWithParamsInTab() async {
         // Arrange
@@ -273,7 +273,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         handler.handleDuckNavigation(navigationAction, webView: mockWebView)
-        
+
         // Assert
         if let openedURL = tabNavigator.openedURL {
             XCTAssertEqual(openedURL.host, "player")
@@ -283,7 +283,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("No URL was opened in a new tab")
         }
     }
-    
+
     // MARK: - Tests for handleURLChange
 
     @MainActor
@@ -296,10 +296,10 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         let result1 = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
-        
+
         // Wait less than one second before calling again
         try? await Task.sleep(nanoseconds: 500_000_000)
-        
+
         let result2 = handler.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURL)
 
         // Assert
@@ -390,7 +390,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
             XCTFail("Expected .unhandled when feature flag is disabled")
         }
     }
-    
+
     @MainActor
     func testHandleURLChange_WithYoutubeEmbedURIParam_ReturnsHandled() async {
         // Arrange
@@ -401,7 +401,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Act
         let result = handler.handleURLChange(webView: mockWebView, previousURL: nil, newURL: youtubeURL)
-        
+
         // Assert
         if case .handled(.allowFirstVideo) = result {
             // Success
@@ -410,7 +410,6 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         }
     }
 
-    
     @MainActor
     func testHandleDelegateNavigation_NotToMainFrame_ReturnsFalse() async {
         // Arrange
@@ -426,7 +425,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT to be cancelled as it's not mainframe navigation")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_With_DuckPlayerFeatureDisabled_ReturnsFalse() async {
         // Arrange
@@ -442,8 +441,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT be cancelled as DuckPlayer Feature is Disabled")
     }
-    
-    
+
     @MainActor
     func testHandleDelegateNavigation_With_DuckPlayerDisabled_ReturnsFalse() async {
         // Arrange
@@ -459,7 +457,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT to be cancelled as DuckPlayer is Disabled")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_ToYouTubeWith_DuckPlayerAlwaysAsk_ReturnsTrue() async {
         // Arrange
@@ -476,7 +474,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertTrue(shouldCancel, "Expected navigation TO be cancelled as it should redirect to Youtube")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_WithBackForwardNavigation_ReturnsFalse() async {
         // Arrange
@@ -493,7 +491,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation to be cancelled as Nav is backForward")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_WithAllowFirstVideo_ReturnsFalse() async {
         // Arrange
@@ -511,7 +509,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation to be cancelled as it's first video")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_WithValidURL_ReturnsTrue() async {
         // Arrange
@@ -527,15 +525,14 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
 
         // Assert
         XCTAssertTrue(shouldCancel, "Expected navigation to be cancelled as it's first video")
-        
+
         if let url = mockWebView.lastLoadedRequest?.url {
             XCTAssertTrue(url.isDuckPlayer, "Expected final URL to be a Duck URL")
         } else {
             XCTFail("No URL was loaded. Expecting a Duck Player Video")
         }
-        
+
     }
-    
 
     @MainActor
     func testHandleDelegateNavigation_YouTubeURL_DuckPlayerDisabled_ReturnsFalse() async {
@@ -568,7 +565,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation not to be cancelled when feature flag is disabled")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_DuckPlayerURL_DoesNotOpenInNewTabIfFeatureDisabled() async {
         // Arrange
@@ -587,7 +584,6 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertFalse(shouldCancel, "Expected navigation not to be cancelled for DuckPlayer URL")
         XCTAssertNil(tabNavigator.openedURL, "No new tabs should open")
     }
-    
 
     // MARK: Reload Operations
     @MainActor
@@ -598,14 +594,14 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         playerSettings.openInNewTab = true
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
         mockWebView.setCurrentURL(duckPlayerURL)
-        
+
         // Act
         handler.handleReload(webView: mockWebView)
 
         // Assert
         XCTAssertNil(tabNavigator.openedURL, "No new tabs should open")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_YoutubeWatchURLWithAlwaysAsk_DoesNotOpenInANewTab() async {
         // Arrange
@@ -614,14 +610,14 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         playerSettings.openInNewTab = true
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
         mockWebView.setCurrentURL(duckPlayerURL)
-        
+
         // Act
         handler.handleReload(webView: mockWebView)
 
         // Assert
         XCTAssertNil(tabNavigator.openedURL, "No new tabs should open")
     }
-    
+
     @MainActor
     func testHandleDelegateNavigation_YoutubeInternalNavigation_ReturnsFalse() async {
         // Arrange
@@ -633,25 +629,25 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger.enabledFeatures = [.duckPlayer, .duckPlayerOpenInNewTab]
 
         mockWebView.setCurrentURL(youtubeURL)
-        
+
         // Act
         var shouldCancel = handler.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
 
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT to be cancelled as it's Youtube Internal navigation")
-        
+
         // Arrange
         playerSettings.mode = .disabled
-        
+
         // Act
         shouldCancel = handler.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
 
         // Assert
         XCTAssertFalse(shouldCancel, "Expected navigation NOT to be cancelled as it's Youtube Internal navigation")
-        
+
         // Arrange
         featureFlagger.enabledFeatures = [.duckPlayer]
-        
+
         // Act
         shouldCancel = handler.handleDelegateNavigation(navigationAction: navigationAction, webView: mockWebView)
 

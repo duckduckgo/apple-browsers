@@ -323,7 +323,162 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
     }
 
-    // Enqueuing / Dequeuing Pixels
+    // MARK: - Manual Dismiss
+
+    func testWhenMeasureTrySearchDialogNewTabDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingTrySearchDialogNewTabDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureTrySearchDialogNewTabDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureTryVisitSiteDialogNewTabDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingTryVisitSiteDialogNewTabDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureTryVisitSiteDialogNewTabDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureTryVisitSiteDialogDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingTryVisitSiteDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureTryVisitSiteDialogDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureSearchResultDialogDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingSearchResultDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureSearchResultDialogDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureTrackersDialogDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingTrackersDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureTrackersDialogDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureFireDialogDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingFireDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureFireDialogDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureEndOfJourneyDialogNewTabDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingEndOfJourneyDialogNewTabDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureEndOfJourneyDialogNewTabDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasureEndOfJourneyDialogDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingEndOfJourneyDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measureEndOfJourneyDialogDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    func testWhenMeasurePrivacyProPromoDialogNewTabDismissButtonTappedThenPixelIsFired() {
+        // GIVEN
+        let expectedPixel = Pixel.Event.onboardingPrivacyPromoDialogDismissButtonTapped
+        XCTAssertFalse(OnboardingPixelFireMock.didCallFire)
+        XCTAssertNil(OnboardingPixelFireMock.capturedPixelEvent)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [])
+
+        // WHEN
+        sut.measurePrivacyPromoDialogNewTabDismissButtonTapped()
+
+        // THEN
+        XCTAssertTrue(OnboardingPixelFireMock.didCallFire)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedPixelEvent, expectedPixel)
+        XCTAssertEqual(expectedPixel.name, expectedPixel.name)
+        XCTAssertEqual(OnboardingPixelFireMock.capturedIncludeParameters, [.appVersion])
+    }
+
+    // MARK: - Enqueuing / Dequeuing Pixels
 
     func testWhenPixelIsFiredAndAndATBIsNotAvailableAndPixelNeedsATBThenEnqueuePixel() throws {
         // GIVEN

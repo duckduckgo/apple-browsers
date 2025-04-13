@@ -159,7 +159,7 @@ class ContextualDialogsManagerTests: XCTestCase {
         let tab = Tab(content: .newtab)
         tab.url = URL.duckDuckGo
 
-        let keys = [2 ,4, 6, 8]
+        let keys = [2, 4, 6, 8]
         for key in keys {
             stateStorage.blockedTrackerSeen = false
             manager.state = .ongoing
@@ -392,7 +392,6 @@ class MockTrackerMessageProvider: TrackerMessageProviding {
     let expectation: XCTestExpectation
     var message: NSAttributedString
     var trackerType: OnboardingTrackersType?
-    
 
     init(expectation: XCTestExpectation, message: NSAttributedString = NSAttributedString(string: "Trackers Detected"), trackerType: OnboardingTrackersType? = .blockedTrackers(entityNames: ["entity1", "entity2"])) {
         self.expectation = expectation

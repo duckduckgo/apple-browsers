@@ -225,11 +225,11 @@ extension ContextualDialogType {
         switch self {
         case .tryASearch:
             return "tryASearch"
-        case .searchDone(_):
+        case .searchDone:
             return "searchDone"
         case .tryASite:
             return "tryASite"
-        case .trackers(_, _):
+        case .trackers:
             return "trackers"
         case .tryFireButton:
             return "tryFireButton"

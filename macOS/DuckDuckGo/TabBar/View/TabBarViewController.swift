@@ -78,6 +78,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
+    private var previousScrollViewWidth: CGFloat = .zero
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -128,8 +129,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
-
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -142,8 +141,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
-
         updateEmptyTabArea()
         tabCollectionViewModel.delegate = self
         reloadSelection()
@@ -154,24 +151,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         addTabBarRemoteMessageListener()
     }
 
-    override func viewWillDisappear() {
-        super.viewWillDisappear()
+    override func viewDidAppear() {
+        enableScrollButtons()
+    }
 
+    override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
     }
 
     override func viewDidLayout() {
-        super.viewDidLayout()
-
         frozenLayout = view.isMouseLocationInsideBounds()
         updateTabMode()
         updateEmptyTabArea()
         collectionView.invalidateLayout()
-    }
-
-    deinit {
-        NotificationCenter.default.removeObserver(self)
     }
 
     @objc func addButtonAction(_ sender: NSButton) {
@@ -600,13 +593,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func observeToScrollNotifications() {
         scrollView.contentView.postsBoundsChangedNotifications = true
 
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(scrollViewBoundsDidChange(_:)),
-                                               name: NSView.boundsDidChangeNotification,
-                                               object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.boundsDidChangeNotification, object: scrollView.contentView)
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewContentRectDidChange(_:)), name: NSView.frameDidChangeNotification, object: collectionView)
+        previousScrollViewWidth = scrollView.bounds.size.width
+        NotificationCenter.default.addObserver(self, selector: #selector(scrollViewFrameDidChange(_:)), name: NSView.frameDidChangeNotification, object: scrollView)
     }
 
-    @objc private func scrollViewBoundsDidChange(_ sender: Any) {
+    @objc private func scrollViewContentRectDidChange(_ notification: Notification) {
+        enableScrollButtons()
+        hideTabPreview(allowQuickRedisplay: true)
+    }
+
+    @objc private func scrollViewFrameDidChange(_ notification: Notification) {
+        adjustScrollPositionOnResize()
         enableScrollButtons()
         hideTabPreview(allowQuickRedisplay: true)
     }
@@ -623,6 +622,39 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightShadowImageView.isHidden = scrollViewsAreHidden
         leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
+    }
+
+    /// Adjust the right edge scroll position to keep Selected Tab visible when resizing (or bring it into view expanding the right edge when it‘s behind the edge)
+    private func adjustScrollPositionOnResize() {
+        let newWidth = scrollView.bounds.size.width
+        let resizeAmount = newWidth - previousScrollViewWidth
+        previousScrollViewWidth = newWidth
+
+        guard resizeAmount != 0,
+              let selectedIndexPath = collectionView.selectionIndexPaths.first,
+              let layoutAttributes = collectionView.layoutAttributesForItem(at: selectedIndexPath) else { return }
+
+        let visibleRect = collectionView.visibleRect
+        let selectedItemFrame = layoutAttributes.frame
+
+        let isExpanding = resizeAmount > 0
+
+        let selectedItemLeft = selectedItemFrame.minX
+        let selectedItemRight = selectedItemFrame.maxX
+        let visibleLeft = visibleRect.minX
+        let visibleRight = visibleRect.maxX
+        let currentOriginX = scrollView.documentVisibleRect.origin.x
+
+        // CONTRACTING: if selected item is beyond the right edge, preserve right edge
+        if !isExpanding && selectedItemRight > visibleRight {
+            let newOriginX = currentOriginX + abs(resizeAmount)
+            collectionView.scroll(NSPoint(x: newOriginX, y: 0))
+
+        // EXPANDING: if selected item is beyond the left edge, preserve right edge
+        } else if isExpanding && selectedItemLeft < visibleLeft {
+            let newOriginX = max(0, currentOriginX - abs(resizeAmount))
+            collectionView.scroll(NSPoint(x: newOriginX, y: 0))
+        }
     }
 
     private func setupAddTabButton() {

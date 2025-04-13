@@ -59,24 +59,26 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(frequency, .uniqueByName)
     }
 
-//    func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
-//        for state in ContextualOnboardingState.allCases {
-//            eventSent = nil
-//            frequency = nil
-//            onboardingState.state = state
-//            reporter.measureAddressBarTypedIn()
-//            if state == .showTryASearch {
-//                XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingSearchCustom.name)
-//                XCTAssertEqual(frequency, .uniqueByName)
-//            } else if state == .showTryASite {
-//                XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingVisitSiteCustom.name)
-//                XCTAssertEqual(frequency, .uniqueByName)
-//            } else {
-//                XCTAssertNil(eventSent)
-//                XCTAssertNil(frequency)
-//            }
-//        }
-//    }
+    func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
+        onboardingState.lastDialog = .tryASearch
+        reporter.measureAddressBarTypedIn()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingSearchCustom.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+
+        eventSent = nil
+        frequency = nil
+        onboardingState.lastDialog = .tryASite
+        reporter.measureAddressBarTypedIn()
+        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingVisitSiteCustom.name)
+        XCTAssertEqual(frequency, .uniqueByName)
+
+        eventSent = nil
+        frequency = nil
+        onboardingState.lastDialog = .highFive
+        reporter.measureAddressBarTypedIn()
+        XCTAssertNil(eventSent)
+        XCTAssertNil(frequency)
+    }
 
     func test_WhenMeasureFireButtonSkipped_ThenOnboardingFireButtonPromptSkipPressedSent() {
         reporter.measureFireButtonSkipped()
@@ -191,7 +193,6 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
     }
 
     var lastDialog: ContextualDialogType?
-
 
     var state: ContextualOnboardingState = .onboardingCompleted
 

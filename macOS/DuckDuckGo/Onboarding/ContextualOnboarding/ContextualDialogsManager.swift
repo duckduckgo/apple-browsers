@@ -69,10 +69,10 @@ public class ContextualOnboardingStateStorage: ContextualOnboardingStateStoring 
 
 public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
 
-    private var lastDialogDisplayed: ContextualDialogType? = nil
+    private var lastDialogDisplayed: ContextualDialogType?
     private let trackerMessageProvider: TrackerMessageProviding
     private var stateStorage: ContextualOnboardingStateStoring
-    var lastDialog: ContextualDialogType? = nil
+    var lastDialog: ContextualDialogType?
 
     var state: ContextualOnboardingState {
         get {
@@ -225,11 +225,11 @@ extension ContextualDialogType {
         switch self {
         case .tryASearch:
             return "tryASearch"
-        case .searchDone(shouldFollowUp: _):
+        case .searchDone(_):
             return "searchDone"
         case .tryASite:
             return "tryASite"
-        case .trackers(message: _, shouldFollowUp: _):
+        case .trackers(_, _):
             return "trackers"
         case .tryFireButton:
             return "tryFireButton"

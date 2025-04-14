@@ -383,7 +383,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
-        searchAreaView.dismissButtonView.addTarget(self, action: #selector(dismissButtonViewTap), for: .touchUpInside)
 
         forwardButtonView.addTarget(self, action: #selector(forwardButtonTap), for: .touchUpInside)
         backButtonView.addTarget(self, action: #selector(backButtonTap), for: .touchUpInside)
@@ -556,10 +555,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     @objc private func accessoryButtonTap() {
         onAccessoryPressed?()
-    }
-
-    @objc private func dismissButtonViewTap() {
-        onDismissPressed?()
     }
 
     private struct Metrics {

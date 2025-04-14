@@ -51,6 +51,9 @@ enum AIChatPixel: PixelKitEventV2 {
     /// Event Trigger: Duck.ai settings panel is displayed
     case aiChatSettingsDisplayed
 
+    /// Event Trigger: User clicks in the Omnibar duck.ai button
+    case aiChatAddressBarButtonClicked
+
     var name: String {
         switch self {
         case .aichatApplicationMenuAppClicked:
@@ -69,6 +72,8 @@ enum AIChatPixel: PixelKitEventV2 {
             return "m_mac_aichat_settings_application_menu_on"
         case .aiChatSettingsDisplayed:
             return "m_mac_aichat_settings_displayed"
+        case .aiChatAddressBarButtonClicked:
+            return "m_mac_aichat_addressbar_button_clicked"
         }
     }
 

@@ -24,6 +24,7 @@ import Common
 import Lottie
 import os.log
 import PrivacyDashboard
+import PixelKit
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
@@ -293,6 +294,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func aiChatButtonAction(_ sender: Any) {
+        PixelKit.fire(AIChatPixel.aiChatAddressBarButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
         let isCommandPressed = NSEvent.modifierFlags.contains(.command)
         let isShiftPressed = NSApplication.shared.isShiftPressed
 

@@ -92,7 +92,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     public let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    private let localBrokerProvider: LocalBrokerJSONServiceProvider?
+    private let localBrokerProvider: BrokerJSONFallbackProvider?
 
     private var uncompressedBrokerJSONDirectoryURL: URL?
 
@@ -100,12 +100,22 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
-                localBrokerProvider: LocalBrokerJSONServiceProvider?) {
+                localBrokerProvider: BrokerJSONFallbackProvider?) {
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
+    }
+
+    // MARK: - Local fallback
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        try localBrokerProvider?.bundledBrokers()
+    }
+
+    private func checkBundleForUpdates() async {
+        try? await localBrokerProvider?.checkForUpdates()
     }
 
     // MARK: - Main flow
@@ -130,7 +140,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             }
 
             /// 2. Use bundled JSONs to populate/update the database
-            try await checkForFallbackBrokerJSONs()
+            await checkBundleForUpdates()
 
             /// 3. Hit main_config.json endpoint for ETag and active broker changes
             guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
@@ -178,11 +188,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                                activeBrokers: mainConfig.activeDataBrokers,
                                testBrokers: mainConfig.testDataBrokers)
         try cleanUp()
-    }
-
-    private func checkForFallbackBrokerJSONs() async throws {
-        guard let localBrokerProvider, try await authenticationManager.hasValidEntitlement() else { return }
-        localBrokerProvider.checkForUpdates()
     }
 
     // MARK: - File handling

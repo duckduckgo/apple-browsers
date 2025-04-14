@@ -19,20 +19,17 @@
 import Foundation
 import os.log
 
-public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & BrokerJSONFallbackProvider & BrokerManaging
+public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & LocalBrokerJSONServiceProvider & BrokerManaging & AnyObject
+public typealias BrokerJSONFallbackProvider = LocalBrokerJSONServiceProvider & BrokerManaging
 
-public protocol RemoteBrokerJSONServiceProvider: AnyObject {
-    func checkForUpdates() async throws
+public protocol RemoteBrokerJSONServiceProvider {
     func checkForUpdates(skipsLimiter: Bool) async throws
-}
-
-public protocol BrokerJSONFallbackProvider {
-    func fallbackBrokers() throws -> [DataBroker]?
+    func checkForUpdates() async throws
 }
 
 public protocol LocalBrokerJSONServiceProvider {
     func bundledBrokers() throws -> [DataBroker]?
-    func checkForUpdates()
+    func checkForUpdates() async throws
 }
 
 public protocol BrokerManaging {

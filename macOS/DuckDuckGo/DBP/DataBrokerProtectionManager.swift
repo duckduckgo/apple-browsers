@@ -78,7 +78,7 @@ public final class DataBrokerProtectionManager {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
                                                     pixelHandler: sharedPixelsHandler,
                                                     vault: vault,
-                                                    brokerFallbackProvider: brokerUpdater)
+                                                    localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database,
                                                           profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
 

@@ -116,7 +116,7 @@ public final class AppVersionNumber: AppVersionNumberProvider {
     }
 }
 
-public struct LocalBrokerJSONService: LocalBrokerJSONServiceProvider, BrokerManaging {
+public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
 
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
@@ -161,7 +161,7 @@ public struct LocalBrokerJSONService: LocalBrokerJSONServiceProvider, BrokerMana
         try resources.fetchBrokerFromResourceFiles()
     }
 
-    public func checkForUpdates() {
+    public func checkForUpdates() async throws {
         if let lastCheckedVersion = repository.getLastCheckedVersion() {
             if shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
                 updateBrokersAndSaveLatestVersion()

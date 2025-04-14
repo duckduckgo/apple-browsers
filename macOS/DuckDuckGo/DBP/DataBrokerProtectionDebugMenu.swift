@@ -240,7 +240,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showDatabaseBrowser() {
-        let viewController = DataBrokerDatabaseBrowserViewController(brokerFallbackProvider: brokerUpdater)
+        let viewController = DataBrokerDatabaseBrowserViewController(localBrokerService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -259,7 +259,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showForceOptOutWindow() {
-        let viewController = DataBrokerForceOptOutViewController(brokerFallbackProvider: brokerUpdater)
+        let viewController = DataBrokerForceOptOutViewController(localBrokerService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,

@@ -21,10 +21,10 @@ import SwiftUI
 import DataBrokerProtectionCore
 
 public final class DataBrokerDatabaseBrowserViewController: NSViewController {
-    private let brokerFallbackProvider: BrokerJSONFallbackProvider
+    private let localBrokerService: LocalBrokerJSONServiceProvider
 
-    public init(brokerFallbackProvider: BrokerJSONFallbackProvider) {
-        self.brokerFallbackProvider = brokerFallbackProvider
+    public init(localBrokerService: LocalBrokerJSONServiceProvider) {
+        self.localBrokerService = localBrokerService
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -33,7 +33,7 @@ public final class DataBrokerDatabaseBrowserViewController: NSViewController {
     }
 
     public override func loadView() {
-        let viewModel = DataBrokerDatabaseBrowserViewModel(brokerFallbackProvider: brokerFallbackProvider)
+        let viewModel = DataBrokerDatabaseBrowserViewModel(localBrokerService: localBrokerService)
         let contentView = DataBrokerDatabaseBrowserView(viewModel: viewModel)
         let hostingController = NSHostingController(rootView: contentView)
         hostingController.view.autoresizingMask = [.width, .height]

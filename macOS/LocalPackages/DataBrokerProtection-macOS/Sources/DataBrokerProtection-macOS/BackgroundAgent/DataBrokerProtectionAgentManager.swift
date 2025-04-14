@@ -96,7 +96,7 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                     pixelHandler: sharedPixelsHandler,
                                                     localBrokerProvider: localBrokerService)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerFallbackProvider: brokerUpdater)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()

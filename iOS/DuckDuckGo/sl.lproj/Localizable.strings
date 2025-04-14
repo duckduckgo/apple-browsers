@@ -2159,7 +2159,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokirajte sledilnike tretjih oseb";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2173,6 +2173,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pa začnimo!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Tukaj sem že bil/-a";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Več";
@@ -2191,6 +2194,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Začni brskanje";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Prikaži vadnico";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Ne pozabite: Z gumbom Fire Button 🔥 lahko z dvema dotikoma izbrišete zavihke, zgodovino in podatke o brskanju.";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Razumem! Druge nasvete bom preskočil/-a.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Dodaj gradnik";

@@ -1,0 +1,20 @@
+name: 'Select Xcode Version'
+description: 'Selects the Xcode version based on input or .xcode-version file'
+
+inputs:
+  xcode-version:
+    description: 'Xcode version to use (e.g. 16.2). If not provided, reads from .xcode-version file.'
+    required: false
+
+outputs:
+  xcode-version:
+    description: 'The selected Xcode version'
+    value: ${{ steps.select-xcode.outputs.xcode-version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - id: select-xcode
+      shell: bash
+      run: |
+        ${{ github.action_path }}/select_xcode_version.sh "${{ inputs.xcode-version }}"

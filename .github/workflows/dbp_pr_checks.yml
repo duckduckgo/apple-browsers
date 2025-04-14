@@ -57,7 +57,7 @@ jobs:
             ${{ runner.os }}-dbp-spm-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
@@ -137,7 +137,7 @@ jobs:
             ${{ runner.os }}-dbp-spm-ios-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Resolve package dependencies
         run: |

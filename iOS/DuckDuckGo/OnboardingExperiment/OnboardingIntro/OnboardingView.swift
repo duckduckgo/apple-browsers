@@ -32,16 +32,6 @@ struct OnboardingView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var model: OnboardingIntroViewModel
 
-    @State private var showDaxDialogBox = false
-    @State private var showIntroViewContent = true
-    @State private var showIntroButton = false
-    @State private var animateIntroText = false
-    @State private var showComparisonButton = false
-    @State private var animateComparisonText = false
-
-    @State private var appIconPickerContentState = AppIconPickerContentState()
-    @State private var addressBarPositionContentState = AddressBarPositionContentState()
-
     init(model: OnboardingIntroViewModel) {
         self.model = model
     }
@@ -60,7 +50,7 @@ struct OnboardingView: View {
                         Button {
                             model.overrideOnboardingCompleted()
                         } label: {
-                            Text(UserText.Onboarding.Intro.skip)
+                            Text(UserText.Onboarding.Intro.Debug.skip)
                         }
                         .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: false))
                     }
@@ -75,29 +65,17 @@ struct OnboardingView: View {
                 DaxDialogView(
                     logoPosition: .top,
                     matchLogoAnimation: (Self.daxGeometryEffectID, animationNamespace),
-                    showDialogBox: $showDaxDialogBox,
+                    showDialogBox: $model.introState.showDaxDialogBox,
                     onTapGesture: {
                         withAnimation {
-                            switch model.state.intro?.type {
-                            case .startOnboardingDialog:
-                                showIntroButton = true
-                                animateIntroText = false
-                            case .browsersComparisonDialog:
-                                showComparisonButton = true
-                                animateComparisonText = false
-                            case .chooseAppIconDialog:
-                                appIconPickerContentState.animateTitle = false
-                                appIconPickerContentState.animateMessage = false
-                                appIconPickerContentState.showContent = true
-                            default: break
-                            }
+                            model.tapped()
                         }
                     },
                     content: {
                         VStack {
                             switch state.type {
-                            case .startOnboardingDialog:
-                                introView
+                            case .startOnboardingDialog(let shouldShowSkipOnboardingButton):
+                                introView(shouldShowSkipOnboardingButton: shouldShowSkipOnboardingButton)
                             case .browsersComparisonDialog:
                                 browsersComparisonView
                             case .addToDockPromoDialog:
@@ -116,8 +94,8 @@ struct OnboardingView: View {
             .offset(y: geometry.size.height * Metrics.dialogVerticalOffsetPercentage.build(v: verticalSizeClass, h: horizontalSizeClass))
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + Metrics.daxDialogVisibilityDelay) {
-                    showDaxDialogBox = true
-                    animateIntroText = true
+                    model.introState.showDaxDialogBox = true
+                    model.introState.animateIntroText = true
                 }
             }
         }
@@ -137,23 +115,45 @@ struct OnboardingView: View {
             }
     }
 
-    private var introView: some View {
-        IntroDialogContent(
-            title: model.copy.introTitle,
-            animateText: $animateIntroText,
-            showCTA: $showIntroButton
-        ) {
-            animateBrowserComparisonViewState()
+    private func introView(shouldShowSkipOnboardingButton: Bool) -> some View {
+        let skipOnboardingView: AnyView? = if shouldShowSkipOnboardingButton {
+            AnyView(
+                SkipOnboardingContent(
+                    animateTitle: $model.skipOnboardingState.animateTitle,
+                    animateMessage: $model.skipOnboardingState.animateMessage,
+                    showCTA: $model.skipOnboardingState.showContent,
+                    isSkipped: $model.isSkipped,
+                    startBrowsingAction: model.confirmSkipOnboardingAction,
+                    resumeOnboardingAction: {
+                        animateBrowserComparisonViewState(isResumingOnboarding: true)
+                    }
+                )
+            )
+        } else {
+            nil
         }
+
+        return IntroDialogContent(
+            title: model.copy.introTitle,
+            skipOnboardingView: skipOnboardingView,
+            animateText: $model.introState.animateIntroText,
+            showCTA: $model.introState.showIntroButton,
+            isSkipped: $model.isSkipped,
+            continueAction: {
+                animateBrowserComparisonViewState(isResumingOnboarding: false)
+            },
+            skipAction: model.skipOnboardingAction
+        )
         .onboardingDaxDialogStyle()
-        .visibility(showIntroViewContent ? .visible : .invisible)
+        .visibility(model.introState.showIntroViewContent ? .visible : .invisible)
     }
 
     private var browsersComparisonView: some View {
         BrowsersComparisonContent(
             title: model.copy.browserComparisonTitle,
-            animateText: $animateComparisonText,
-            showContent: $showComparisonButton,
+            animateText: $model.browserComparisonState.animateComparisonText,
+            showContent: $model.browserComparisonState.showComparisonButton,
+            isSkipped: $model.isSkipped,
             setAsDefaultBrowserAction: {
                 model.setDefaultBrowserAction()
             }, cancelAction: {
@@ -165,8 +165,10 @@ struct OnboardingView: View {
 
     private var addToDockPromoView: some View {
         AddToDockPromoContent(
+            isAnimating: $model.addToDockState.isAnimating,
+            isSkipped: $model.isSkipped,
             showTutorialAction: {
-                model.addtoDockShowTutorialAction()
+                model.addToDockShowTutorialAction()
             },
             dismissAction: { fromAddToDockTutorial in
                 model.addToDockContinueAction(isShowingAddToDockTutorial: fromAddToDockTutorial)
@@ -176,9 +178,10 @@ struct OnboardingView: View {
 
     private var appIconPickerView: some View {
         AppIconPickerContent(
-            animateTitle: $appIconPickerContentState.animateTitle,
-            animateMessage: $appIconPickerContentState.animateMessage,
-            showContent: $appIconPickerContentState.showContent,
+            animateTitle: $model.appIconPickerContentState.animateTitle,
+            animateMessage: $model.appIconPickerContentState.animateMessage,
+            showContent: $model.appIconPickerContentState.showContent,
+            isSkipped: $model.isSkipped,
             action: model.appIconPickerContinueAction
         )
         .onboardingDaxDialogStyle()
@@ -186,16 +189,17 @@ struct OnboardingView: View {
 
     private var addressBarPreferenceSelectionView: some View {
         AddressBarPositionContent(
-            animateTitle: $addressBarPositionContentState.animateTitle,
-            showContent: $addressBarPositionContentState.showContent,
+            animateTitle: $model.addressBarPositionContentState.animateTitle,
+            showContent: $model.addressBarPositionContentState.showContent,
+            isSkipped: $model.isSkipped,
             action: model.selectAddressBarPositionAction
         )
         .onboardingDaxDialogStyle()
     }
 
-    private func animateBrowserComparisonViewState() {
+    private func animateBrowserComparisonViewState(isResumingOnboarding: Bool) {
         // Hide content of Intro dialog before animating
-        showIntroViewContent = false
+        model.introState.showIntroViewContent = false
 
         // Animation with small delay for a better effect when intro content disappear
         let animationDuration = Metrics.comparisonChartAnimationDuration
@@ -205,16 +209,16 @@ struct OnboardingView: View {
 
         if #available(iOS 17, *) {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             } completion: {
-                animateComparisonText = true
+                model.browserComparisonState.animateComparisonText = true
             }
         } else {
             withAnimation(animation) {
-                model.startOnboardingAction()
+                model.startOnboardingAction(isResumingOnboarding: isResumingOnboarding)
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                animateComparisonText = true
+                model.browserComparisonState.animateComparisonText = true
             }
         }
     }
@@ -252,7 +256,7 @@ extension OnboardingView.ViewState {
 extension OnboardingView.ViewState.Intro {
 
     enum IntroType: Equatable {
-        case startOnboardingDialog
+        case startOnboardingDialog(canSkipTutorial: Bool)
         case browsersComparisonDialog
         case addToDockPromoDialog
         case chooseAppIconDialog

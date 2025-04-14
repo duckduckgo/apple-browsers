@@ -16,25 +16,9 @@
 //  limitations under the License.
 //
 
-/*
+#if WEB_EXTENSIONS_ENABLED
 
- - (void)didOpenWindow:(id <WKWebExtensionWindow>)newWindow NS_SWIFT_NAME(didOpenWindow(_:));
- - (void)didCloseWindow:(id <WKWebExtensionWindow>)closedWindow NS_SWIFT_NAME(didCloseWindow(_:));
- - (void)didFocusWindow:(nullable id <WKWebExtensionWindow>)focusedWindow NS_SWIFT_NAME(didFocusWindow(_:));
-
- - (void)didOpenTab:(id <WKWebExtensionTab>)newTab NS_SWIFT_NAME(didOpenTab(_:));
- - (void)didCloseTab:(id <WKWebExtensionTab>)closedTab windowIsClosing:(BOOL)windowIsClosing NS_SWIFT_NAME(didCloseTab(_:windowIsClosing:));
- - (void)didActivateTab:(id<WKWebExtensionTab>)activatedTab previousActiveTab:(nullable id<WKWebExtensionTab>)previousTab NS_SWIFT_NAME(didActivateTab(_:previousActiveTab:));
- - (void)didSelectTabs:(NSSet<id <WKWebExtensionTab>> *)selectedTabs NS_SWIFT_NAME(didSelectTabs(_:));
- - (void)didDeselectTabs:(NSSet<id <WKWebExtensionTab>> *)deselectedTabs NS_SWIFT_NAME(didDeselectTabs(_:));
- - (void)didMoveTab:(id <WKWebExtensionTab>)movedTab fromIndex:(NSUInteger)index inWindow:(nullable id <WKWebExtensionWindow>)oldWindow NS_SWIFT_NAME(didMoveTab(_:from:in:));
- - (void)didReplaceTab:(id <WKWebExtensionTab>)oldTab withTab:(id <WKWebExtensionTab>)newTab NS_SWIFT_NAME(didReplaceTab(_:with:));
- - (void)didChangeTabProperties:(WKWebExtensionTabChangedProperties)properties forTab:(id <WKWebExtensionTab>)changedTab NS_SWIFT_NAME(didChangeTabProperties(_:for:));
-
- @end
-
- */
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 protocol WebExtensionEventsListening {
 
     var controller: WKWebExtensionController? { get set }
@@ -52,7 +36,7 @@ protocol WebExtensionEventsListening {
     func didChangeTabProperties(_ properties: WKWebExtension.TabChangedProperties, for tab: WKWebExtensionTab)
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionEventsListener: WebExtensionEventsListening {
 
     weak var controller: WKWebExtensionController?
@@ -82,17 +66,15 @@ final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
     func didSelectTabs(_ tabs: [WKWebExtensionTab]) {
-        let set = NSSet(array: tabs) as Set
-        controller?.didSelectTabs(set)
+        controller?.didSelectTabs(tabs)
     }
 
     func didDeselectTabs(_ tabs: [WKWebExtensionTab]) {
-        let set = NSSet(array: tabs) as Set
-        controller?.didDeselectTabs(set)
+        controller?.didDeselectTabs(tabs)
     }
 
     func didMoveTab(_ tab: WKWebExtensionTab, from oldIndex: Int, in oldWindow: WKWebExtensionWindow) {
-        controller?.didMoveTab(tab, from: UInt(oldIndex), in: oldWindow)
+        controller?.didMoveTab(tab, from: oldIndex, in: oldWindow)
     }
 
     func didReplaceTab(_ oldTab: WKWebExtensionTab, with tab: WKWebExtensionTab) {
@@ -104,3 +86,5 @@ final class WebExtensionEventsListener: WebExtensionEventsListening {
     }
 
 }
+
+#endif

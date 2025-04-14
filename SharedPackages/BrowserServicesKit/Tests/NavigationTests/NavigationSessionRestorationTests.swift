@@ -74,7 +74,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -107,7 +107,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         responder(at: 0).onDidFinish = { _ in eDidFinish.fulfill() }
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -155,7 +155,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         waitForExpectations(timeout: 5)
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -210,7 +210,7 @@ class NavigationSessionRestorationTests: DistributedNavigationDelegateTestsBase 
         waitForExpectations(timeout: 5)
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

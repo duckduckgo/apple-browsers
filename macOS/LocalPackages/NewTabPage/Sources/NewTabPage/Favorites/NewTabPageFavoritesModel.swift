@@ -107,9 +107,9 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
     // MARK: - Actions
 
     @MainActor
-    func openFavorite(withURL url: String) {
+    func openFavorite(withURL url: String, target: NewTabPageDataModel.ActivityOpenAction.OpenTarget) {
         guard let url = URL(string: url), url.isValid else { return }
-        actionsHandler.open(url, target: .current)
+        actionsHandler.open(url, target: .init(target))
     }
 
     @MainActor

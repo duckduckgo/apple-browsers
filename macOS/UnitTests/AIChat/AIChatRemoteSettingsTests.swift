@@ -102,36 +102,6 @@ class AIChatRemoteSettingsTests: XCTestCase {
         aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
         XCTAssertFalse(aiChatRemoteSettings.isAIChatEnabled)
     }
-
-    func testIsToolbarShortcutEnabled_WhenShortcutIsEnabled_ThenReturnsTrue() {
-        var config = MockConfig()
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertTrue(aiChatRemoteSettings.isToolbarShortcutEnabled)
-    }
-
-    func testIsToolbarShortcutEnabled_WhenShortcutIsDisabled_ThenReturnsFalse() {
-        var config = MockConfig()
-        config.toolbarShortcutStatus = "disabled"
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertFalse(aiChatRemoteSettings.isToolbarShortcutEnabled)
-    }
-
-    func testIsApplicationMenuShortcutEnabled_WhenShortcutIsEnabled_ThenReturnsTrue() {
-        var config = MockConfig()
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertTrue(aiChatRemoteSettings.isApplicationMenuShortcutEnabled)
-    }
-
-    func testIsApplicationMenuShortcutEnabled_WhenShortcutIsDisabled_ThenReturnsFalse() {
-        var config = MockConfig()
-        config.applicationMenuShortcutStatus = "disabled"
-        config.embeddedData = config.configWithSettings
-        aiChatRemoteSettings = setupAIChatRemoteSettings(with: config)
-        XCTAssertFalse(aiChatRemoteSettings.isApplicationMenuShortcutEnabled)
-    }
 }
 
 private struct MockConfig {

@@ -22,6 +22,7 @@ import PixelKit
 /// This enum keeps pixels related to AI Chat (duck.ai)
 /// > Related links:
 /// [Original Pixel Triage](https://app.asana.com/0/69071770703008/1208619053222285/f)
+/// [Omnibar and Settings Pixel Triage](https://app.asana.com/0/1204167627774280/1209885580000745)
 
 enum AIChatPixel: PixelKitEventV2 {
 

@@ -33,12 +33,8 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
 
-    private enum Constants {
-        static let funnelAppSettingsOrigin = "funnel_appsettings_ios"
-    }
-
     private var settingPrivacyProRedirectURLComponents: URLComponents? {
-        SubscriptionURL.subscriptionURLComponentsWithOrigin(Constants.funnelAppSettingsOrigin)
+        SubscriptionURL.subscriptionURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
     var body: some View {

@@ -1,5 +1,6 @@
 //
 //  SubscriptionFunnelOrigin.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,14 +19,11 @@
 
 import Foundation
 
-/// Represents the origin point from which the user enters the subscription funnel in the macOS app.
+/// Represents the origin point from which the user enters the subscription funnel in the iOS app.
 enum SubscriptionFunnelOrigin: String {
+    /// User entered the funnel via the onboarding dialog screen.
+    case onboarding = "funnel_onboarding_ios"
+
     /// User entered the funnel via the App Settings screen.
-    case appSettings = "funnel_appsettings_macos"
-
-    /// User entered the funnel via the App More Menu.
-    case appMenu = "funnel_appmenu_macos"
-
-    /// User entered the funnel via the Free Scan feature.
-    case freeScan = "funnel_freescan_macos"
+    case appSettings = "funnel_appsettings_ios"
 }

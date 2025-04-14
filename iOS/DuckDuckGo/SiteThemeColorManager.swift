@@ -54,7 +54,8 @@ final class SiteThemeColorManager {
 
     func updateThemeColor() {
         guard let host = currentTabViewController()?.url?.host,
-              let cachedColor = colorCache[host] else {
+              let cachedColor = colorCache[host],
+              !isCurrentTabShowingError else {
             resetThemeColor()
             return
         }
@@ -77,7 +78,7 @@ final class SiteThemeColorManager {
             }
 
             colorCache[host] = newColor
-            if isCurrentTab {
+            if isCurrentTab, !isCurrentTabShowingError {
                 updateThemeColor(newColor)
             }
         }
@@ -85,6 +86,10 @@ final class SiteThemeColorManager {
 
     private var isCurrentTab: Bool {
         tabViewController?.tabModel == currentTabViewController()?.tabModel
+    }
+
+    private var isCurrentTabShowingError: Bool {
+        currentTabViewController()?.isError == true
     }
 
     private func updateThemeColor(_ color: UIColor) {

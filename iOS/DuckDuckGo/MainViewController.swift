@@ -2551,6 +2551,7 @@ extension MainViewController: TabDelegate {
     func tabLoadingStateDidChange(tab: TabViewController) {
         if currentTab == tab {
             refreshControls()
+            themeColorManager.updateThemeColor()
         }
         tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.model)

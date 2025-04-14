@@ -30,7 +30,7 @@ public protocol BrokerJSONFallbackProvider {
     func fallbackBrokers() throws -> [DataBroker]?
 }
 
-public protocol FallbackBrokerJSONServiceProvider {
+public protocol LocalBrokerJSONServiceProvider {
     func bundledBrokers() throws -> [DataBroker]?
     func checkForUpdates()
 }

@@ -1,5 +1,5 @@
 //
-//  FallbackBrokerJSONService.swift
+//  LocalBrokerJSONService.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -116,7 +116,7 @@ public final class AppVersionNumber: AppVersionNumberProvider {
     }
 }
 
-public struct FallbackBrokerJSONService: FallbackBrokerJSONServiceProvider, BrokerManaging {
+public struct LocalBrokerJSONService: LocalBrokerJSONServiceProvider, BrokerManaging {
 
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository

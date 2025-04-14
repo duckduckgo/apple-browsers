@@ -92,7 +92,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     public let vault: any DataBrokerProtectionSecureVault
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
-    private let fallbackService: FallbackBrokerJSONServiceProvider?
+    private let localBrokerProvider: LocalBrokerJSONServiceProvider?
 
     private var uncompressedBrokerJSONDirectoryURL: URL?
 
@@ -100,18 +100,18 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 vault: any DataBrokerProtectionSecureVault,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
-                fallbackService: FallbackBrokerJSONServiceProvider?) {
+                localBrokerProvider: LocalBrokerJSONServiceProvider?) {
         self.settings = settings
         self.vault = vault
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
-        self.fallbackService = fallbackService
+        self.localBrokerProvider = localBrokerProvider
     }
 
     // MARK: - Main flow
 
     public func fallbackBrokers() throws -> [DataBroker]? {
-        try fallbackService?.bundledBrokers()
+        try localBrokerProvider?.bundledBrokers()
     }
 
     public func checkForUpdates() async throws {
@@ -181,8 +181,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     private func checkForFallbackBrokerJSONs() async throws {
-        guard let fallbackService, try await authenticationManager.hasValidEntitlement() else { return }
-        fallbackService.checkForUpdates()
+        guard let localBrokerProvider, try await authenticationManager.hasValidEntitlement() else { return }
+        localBrokerProvider.checkForUpdates()
     }
 
     // MARK: - File handling

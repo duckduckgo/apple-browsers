@@ -89,14 +89,14 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
-        let fallbackService = FallbackBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    fallbackService: fallbackService)
+                                                    localBrokerProvider: localBrokerService)
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, fallbackService: brokerUpdater)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerFallbackProvider: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()

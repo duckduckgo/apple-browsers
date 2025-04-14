@@ -27,10 +27,10 @@ import PixelKit
 
 public final class DataBrokerForceOptOutViewController: NSViewController {
 
-    private let fallbackService: BrokerJSONFallbackProvider
+    private let brokerFallbackProvider: BrokerJSONFallbackProvider
 
-    public init(fallbackService: BrokerJSONFallbackProvider) {
-        self.fallbackService = fallbackService
+    public init(brokerFallbackProvider: BrokerJSONFallbackProvider) {
+        self.brokerFallbackProvider = brokerFallbackProvider
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -53,7 +53,7 @@ public final class DataBrokerForceOptOutViewController: NSViewController {
             fatalError("Failed to make secure storage vault")
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, fallbackService: fallbackService)
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerFallbackProvider: brokerFallbackProvider)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let viewModel = DataBrokerForceOptOutViewModel(dataManager: dataManager)

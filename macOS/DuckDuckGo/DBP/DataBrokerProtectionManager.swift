@@ -78,7 +78,7 @@ public final class DataBrokerProtectionManager {
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
                                                     pixelHandler: sharedPixelsHandler,
                                                     vault: vault,
-                                                    fallbackService: brokerUpdater)
+                                                    brokerFallbackProvider: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database,
                                                           profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
 
@@ -89,12 +89,12 @@ public final class DataBrokerProtectionManager {
     lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         guard let vault, let sharedPixelsHandler else { return nil }
 
-        let fallbackService = FallbackBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
-                                                    fallbackService: fallbackService)
+                                                    localBrokerProvider: localBrokerService)
         return brokerUpdater
     }()
 

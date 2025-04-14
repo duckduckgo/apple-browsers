@@ -26,7 +26,7 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
     private let dataManager: DataBrokerProtectionDataManager?
 
-    internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, fallbackService: BrokerJSONFallbackProvider) {
+    internal init(tables: [DataBrokerDatabaseBrowserData.Table]? = nil, brokerFallbackProvider: BrokerJSONFallbackProvider) {
 
         if let tables = tables {
             self.tables = tables
@@ -47,7 +47,7 @@ final class DataBrokerDatabaseBrowserViewModel: ObservableObject {
                 fatalError("Failed to make secure storage vault")
             }
 
-            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, fallbackService: fallbackService)
+            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, brokerFallbackProvider: brokerFallbackProvider)
 
             self.dataManager = DataBrokerProtectionDataManager(database: database)
             self.tables = [DataBrokerDatabaseBrowserData.Table]()

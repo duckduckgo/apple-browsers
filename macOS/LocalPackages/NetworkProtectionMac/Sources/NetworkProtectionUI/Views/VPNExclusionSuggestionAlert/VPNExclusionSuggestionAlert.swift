@@ -8,37 +8,23 @@
 import SwiftUI
 import SwiftUIExtensions
 
-/*
-@main
-struct VPNAlertApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
+public struct VPNExclusionSuggestionAlert: ModalView {
+
+    public enum Result: Sendable {
+        case stopVPN
+        case excludeApp
+        case excludeWebsite
     }
-}
 
-struct ContentView: View {
-    @State private var isShowingAlert = false
-
-    var body: some View {
-        VStack {
-            Button("Show Alert") {
-                isShowingAlert = true
-            }
-            .padding()
-        }
-        .sheet(isPresented: $isShowingAlert) {
-            VPNExclusionSuggestionAlert(isPresented: $isShowingAlert)
-        }
-    }
-}*/
-
-struct VPNExclusionSuggestionAlert: ModalView {
     @Environment(\.dismiss) private var dismiss
+    @Binding private var result: Result
     @State private var dontAskAgain = false
 
-    var body: some View {
+    public init(result: Binding<Result>) {
+        _result = result
+    }
+
+    public var body: some View {
         VStack(spacing: 20) {
             // Title
             Text("Is the VPN causing problems with a Website or App?")
@@ -64,8 +50,7 @@ struct VPNExclusionSuggestionAlert: ModalView {
             // Buttons
             HStack(spacing: 10) {
                 Button(action: {
-                    // Action for "Turn off VPN"
-                    print("Turn off VPN tapped")
+                    result = .stopVPN
                     dismiss()
                 }) {
                     Text("Turn off VPN")
@@ -77,8 +62,7 @@ struct VPNExclusionSuggestionAlert: ModalView {
                 }
 
                 Button(action: {
-                    // Action for "Exclude a Website"
-                    print("Exclude a Website tapped")
+                    result = .excludeWebsite
                     dismiss()
                 }) {
                     Text("Exclude a Website")
@@ -90,8 +74,7 @@ struct VPNExclusionSuggestionAlert: ModalView {
                 }
 
                 Button(action: {
-                    // Action for "Exclude an App"
-                    print("Exclude an App tapped")
+                    result = .excludeApp
                     dismiss()
                 }) {
                     Text("Exclude an App")
@@ -127,7 +110,8 @@ struct CheckboxToggleStyle: ToggleStyle {
 }
 
 struct VPNExclusionSuggestionAlert_Previews: PreviewProvider {
+
     static var previews: some View {
-        VPNExclusionSuggestionAlert()
+        VPNExclusionSuggestionAlert(result: .constant(.stopVPN))
     }
 }

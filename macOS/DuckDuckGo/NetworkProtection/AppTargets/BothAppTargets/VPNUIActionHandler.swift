@@ -18,9 +18,11 @@
 
 import AppLauncher
 import Foundation
+import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionProxy
 import NetworkProtectionUI
+import SwiftUI
 import VPNAppLauncher
 
 /// Main App's VPN UI action handler
@@ -29,14 +31,17 @@ final class VPNUIActionHandler {
 
     private let vpnIPCClient: VPNControllerXPCClient
     private let proxySettings: TransparentProxySettings
+    private let tunnelController: TunnelController
     private let vpnURLEventHandler: VPNURLEventHandler
 
     init(vpnIPCClient: VPNControllerXPCClient = .shared,
          vpnURLEventHandler: VPNURLEventHandler,
+         tunnelController: TunnelController,
          proxySettings: TransparentProxySettings) {
 
         self.vpnIPCClient = vpnIPCClient
         self.vpnURLEventHandler = vpnURLEventHandler
+        self.tunnelController = tunnelController
         self.proxySettings = proxySettings
     }
 
@@ -75,5 +80,33 @@ extension VPNUIActionHandler: VPNUIActionHandling {
 
     func showPrivacyPro() async {
         await vpnURLEventHandler.showPrivacyPro()
+    }
+
+    func willStopVPN() async -> Bool {
+        guard let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window else { // can show alert?
+            await tunnelController.stop()
+            return true
+        }
+
+        var result = VPNExclusionSuggestionAlert.Result.stopVPN
+        let binding = Binding<VPNExclusionSuggestionAlert.Result>.init {
+            result
+        } set: { newValue in
+            result = newValue
+        }
+
+        let modalAlert = await VPNExclusionSuggestionAlert(result: binding)
+        await modalAlert.show(in: parentWindow)
+
+        switch result {
+        case .stopVPN:
+            return true
+        case .excludeApp:
+            print("Exclude App!")
+            return false
+        case .excludeWebsite:
+            print("Exclude Website!")
+            return false
+        }
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import NetworkProtection
 
 public protocol VPNUIActionHandling {
     func moveAppToApplications() async
@@ -24,4 +25,10 @@ public protocol VPNUIActionHandling {
     func shareFeedback() async
     func showPrivacyPro() async
     func showVPNLocations() async
+
+    /// Called when the user clicks on the toggle to stop the VPN.
+    ///
+    /// This allows overriding VPN tunnel control.
+    ///
+    func willStopVPN() async -> Bool
 }

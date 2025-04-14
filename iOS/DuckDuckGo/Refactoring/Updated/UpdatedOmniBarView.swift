@@ -393,6 +393,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.textField.addTarget(self, action: #selector(textFieldTextEntered), for: .primaryActionTriggered)
 
         privacyInfoContainer.privacyIcon.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(privacyIconPressed)))
+        searchAreaView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(searchAreaPressed)))
     }
 
     private func updateShadows() {
@@ -555,6 +556,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     @objc private func accessoryButtonTap() {
         onAccessoryPressed?()
+    }
+
+    @objc private func searchAreaPressed() {
+        onTrackersViewPressed?()
     }
 
     private struct Metrics {

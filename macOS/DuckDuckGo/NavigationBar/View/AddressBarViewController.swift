@@ -375,7 +375,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
 
     private func updateSwitchToTabBoxAppearance() {
         guard case .editing(.openTabSuggestion) = mode,
-            addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+              addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
             switchToTabBox.isHidden = true
             switchToTabBox.alphaValue = 0
             return
@@ -467,7 +467,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         self.passiveTextFieldMinXConstraint.constant = minX
         // adjust min-x to passive text field when “Search or enter” placeholder is displayed (to prevent placeholder overlapping buttons)
         self.activeTextFieldMinXConstraint.constant = (!self.isFirstResponder || self.mode.isEditing)
-            ? minX : Self.defaultActiveTextFieldMinX
+        ? minX : Self.defaultActiveTextFieldMinX
     }
 
 }
@@ -604,7 +604,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
         addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
     }
-    
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()

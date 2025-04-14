@@ -107,11 +107,11 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
         switch dialogType {
         case .tryASearch:
             fire(ContextualOnboardingPixel.trySearchDismissed, .uniqueByName)
-        case .searchDone(shouldFollowUp: let shouldFollowUp):
+        case .searchDone:
             fire(ContextualOnboardingPixel.searchResultDismissed, .uniqueByName)
         case .tryASite:
             fire(ContextualOnboardingPixel.tryVisitSiteDismissed, .uniqueByName)
-        case .trackers(message: let message, shouldFollowUp: let shouldFollowUp):
+        case .trackers:
             fire(ContextualOnboardingPixel.trackersBlockedDismissed, .uniqueByName)
         case .tryFireButton:
             fire(ContextualOnboardingPixel.tryFireButtonDismissed, .uniqueByName)

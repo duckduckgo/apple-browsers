@@ -17,306 +17,223 @@
 //
 
 import XCTest
+import Testing
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
 
-class ContextualDialogsManagerTests: XCTestCase {
+class ContextualDialogsManagerTests {
     var manager: ContextualDialogsManager!
     var trackerProvider: MockTrackerMessageProvider!
     var stateStorage: MockContextualDialogStateStoring!
     let expectation = XCTestExpectation()
 
-    override func setUp() {
-        super.setUp()
+    init() {
         stateStorage = MockContextualDialogStateStoring()
         trackerProvider = MockTrackerMessageProvider(expectation: expectation)
         manager = ContextualDialogsManager(trackerMessageProvider: trackerProvider, stateStorage: stateStorage)
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
     }
 
-    override func tearDown() {
-        manager = nil
-        trackerProvider = nil
-        stateStorage = nil
-        super.tearDown()
-    }
-
+    @Test("Default state for contextual onboarding is completed")
     func testDefaultStateIsOnboardingCompleted() {
         XCTAssertEqual(manager.state, .onboardingCompleted)
     }
 
-    // MARK: - NewTab Combinations
+    // MARK: - NewTab
 
-    @MainActor
-    func testNewTabInitialShowsTryASearch() {
+    @Test("The first time New Tab is shown will show tryASearch dialog")
+    func testNewTabInitialShowsTryASearch() async {
         manager.state = .notStarted
-        let tab = Tab(content: .newtab)
+        let tab = await Tab(content: .newtab)
 
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
 
         XCTAssertEqual(dialog, .tryASearch)
     }
 
-    @MainActor
-    func testOnNewTabPageShowsTryASearch() {
+    @Test("New Tab Page show TryASearch dialog when expected", arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
+    func testOnNewTabPageShowsTryASearch2(contextualDialogsSeenKey: Int) async throws {
         manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        let keys = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .tryASearch)
-        }
+        let tab = await Tab(content: .newtab)
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .tryASearch)
     }
 
-    @MainActor
-    func testOnNewTabPageShowsTryASite() {
+    @Test("New Tab Page show TryASite dialog when expected", arguments: [2, 4, 18, 20])
+    func testOnNewTabPageShowsTryASite(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        let keys = [2, 4, 18, 20]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .tryASite)
-        }
+        let tab = await Tab(content: .newtab)
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .tryASite)
     }
 
-    @MainActor
-    func testOnNewTabPageShowsHighFive() {
+    @Test("New Tab Page show HighFive dialog when expected", arguments: [26, 28, 30, 32])
+    func testOnNewTabPageShowsHighFive(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        let keys = [26, 28, 30, 32]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .highFive)
-        }
+        let tab = await Tab(content: .newtab)
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .highFive)
     }
 
-    @MainActor
-    func testOnNewTabPageShowsNothing() {
-        let tab = Tab(content: .newtab)
-        let keys = [6, 8, 10, 12, 14, 16, 22, 24, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertNil(dialog, "\(key)")
-        }
+    @Test("New Tab Page show no dialog when expected", arguments: [6, 8, 10, 12, 14, 16, 22, 24, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64])
+    func testOnNewTabPageShowsNothing(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .newtab)
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == nil)
     }
 
-    // MARK: - On Site Visit Combinations
+    // MARK: - On Site Visit
 
-    @MainActor
-    func testOnSiteVisitShowsTryASearch() {
+    @Test("Site Visit shows tryASearch dialog when expected", arguments: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31])
+    func testOnSiteVisitShowsTryASearch(contextualDialogsSeenKey: Int) async {
         manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
-        let keys = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .tryASearch, "\(key)")
-        }
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .tryASearch)
     }
 
-    @MainActor
-    func testOnSiteVisitShowsHighFive() {
-        manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
+    @Test("Site Visit shows highFive dialog when expected", arguments: [26, 28, 30, 32])
+    func testOnSiteVisitShowsHighFive(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.blockedTrackerSeen = true
-
-        let keys = [26, 28, 30, 32]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .highFive, "\(key)")
-        }
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .highFive)
     }
 
-    @MainActor
-    func testOnSiteVisitShowsTryFireButton() {
+    @Test("Site Visit shows tryFireButton dialog when expected", arguments: [10, 12, 14, 16])
+    func testOnSiteVisitShowsTryFireButton(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.blockedTrackerSeen = true
-
-        let keys = [10, 12, 14, 16]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .tryFireButton, "\(key)")
-        }
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .tryFireButton)
     }
 
-    @MainActor
-    func testOnSiteVisitShowsTrackersFollowUp() {
+    @Test("Site Visit shows Trackers dialog (follow up on) when expected", arguments: [2, 4, 6, 8])
+    func testOnSiteVisitShowsTrackersFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
-
-        let keys = [2, 4, 6, 8]
-        for key in keys {
-            stateStorage.blockedTrackerSeen = false
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .trackers(message: trackerProvider.message, shouldFollowUp: true), "\(key)")
-        }
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
+        stateStorage.blockedTrackerSeen = false
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @MainActor
-    func testOnSiteVisitShowsTrackersNoFollowUp() {
+    @Test("Site Visit shows Trackers dialog (follow up off) when expected", arguments: [18, 20, 22, 24])
+    func testOnSiteVisitShowsTrackersNoFollowUp(contextualDialogsSeenKey: Int) async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
-
-        let keys = [18, 20, 22, 24]
-        for key in keys {
-            stateStorage.blockedTrackerSeen = false
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .trackers(message: trackerProvider.message, shouldFollowUp: false), "\(key)")
-        }
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
+        stateStorage.blockedTrackerSeen = false
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: false))
     }
 
-    @MainActor
-    func testOnSiteVisitIfItHasSeenTrackersBlockedItDoesNotShowItAgain() {
+    @Test("Site Visit does not show tracker dialog (with blocked trackers) twice")
+    func testOnSiteVisitIfItHasSeenTrackersBlockedItDoesNotShowItAgain() async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.blockedTrackerSeen = false
 
         // First Site Visit
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertEqual(dialog, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
         let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertNotEqual(dialog2, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @MainActor
-    func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsDoesNotShowOtherTrackerDialogWithNoTeckersBlocked() {
+    @Test("Site Visit does not show tracker dialog (with no blocked trackers) twice")
+    func testOnSiteVisitIfItHasNotSeenTrackersBlockedItDoesNotShowOtherTrackerDialogWithNoTeckersBlocked() async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertEqual(dialog, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
         let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertNotEqual(dialog2, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog2 != .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @MainActor
-    func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsTrackerDialogAgainIfTrackersBlocked() {
+    @Test("Site Visit shows tracker dialog (with blocked trackers) even if previously has shown a different tracker dialog")
+    func testOnSiteVisitIfItHasNotSeenTrackersBlockedItShowsTrackerDialogAgainIfTrackersBlocked() async {
         manager.state = .ongoing
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
         stateStorage.blockedTrackerSeen = false
 
         // First Site Visit
         trackerProvider.trackerType = .majorTracker
         stateStorage.contextualDialogsSeen = combinationDictionary[2]!
         let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertEqual(dialog, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog == .trackers(message: trackerProvider.message, shouldFollowUp: true))
 
         // Second Site Visit
         trackerProvider.trackerType = .blockedTrackers(entityNames: ["Tracker1"])
         let dialog2 = manager.dialogTypeForTab(tab, privacyInfo: nil)
-        XCTAssertEqual(dialog2, .trackers(message: trackerProvider.message, shouldFollowUp: true))
+        #expect(dialog2 == .trackers(message: trackerProvider.message, shouldFollowUp: true))
     }
 
-    @MainActor
-    func testOnSiteVisitShowsNothing() {
-        let tab = Tab(content: .newtab)
-        tab.url = URL.duckDuckGo
-        let keys = [33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertNil(dialog, "\(key)")
-        }
+    @Test("Site Visit shows no dialog when expected", arguments: [33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
+    func testOnSiteVisitShowsNothing(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.duckDuckGo, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == nil)
     }
 
     // MARK: - On Search Combinations
 
-    @MainActor
-    func testOnSearchShowsSearchDoneShouldFollowUp() {
-        manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        tab.url = URL.makeSearchUrl(from: "query something")
-        let keys = [2, 18]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .searchDone(shouldFollowUp: true))
-        }
+    @Test("Search shows searchDone dialog (follow up on) when expected", arguments: [2, 18])
+    func testOnSearchShowsSearchDoneShouldFollowUp(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .searchDone(shouldFollowUp: true))
     }
 
-    @MainActor
-    func testOnSearchShowsSearchDoneShouldNotFollowUp() {
-        manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        tab.url = URL.makeSearchUrl(from: "query something")
-        let keys = [6, 10, 14, 22, 26, 30]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .searchDone(shouldFollowUp: false), "\(key)")
-        }
+    @Test("Search shows searchDone dialog (follow up off) when expected", arguments: [6, 10, 14, 22, 26, 30])
+    func testOnSearchShowsSearchDoneShouldNotFollowUp(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .searchDone(shouldFollowUp: false))
     }
 
-    @MainActor
-    func testOnSearchShowsTryFireButton() {
-        manager.state = .notStarted
-        let tab = Tab(content: .newtab)
-        tab.url = URL.makeSearchUrl(from: "query something")
-        let keys = [12, 16]
-        for key in keys {
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .tryFireButton, "\(key)")
-        }
+    @Test("Search shows highFive dialog when expected", arguments: [28, 32])
+    func testOnSearchShowsHighFive(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == .highFive)
     }
 
-    @MainActor
-    func testOnSearchShowsHighFive() {
-        let tab = Tab(content: .newtab)
-        tab.url = URL.makeSearchUrl(from: "query something")
-        let keys = [28, 32]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertEqual(dialog, .highFive, "\(key)")
-        }
-    }
-
-    @MainActor
-    func testOnSearchWhenTryASearchNotSeenShowsNothing() {
-        let tab = Tab(content: .newtab)
-        tab.url = URL.makeSearchUrl(from: "query something")
-        let keys = [1, 3, 4, 5, 7, 8, 9, 11, 13, 15, 17, 19, 20, 21, 23, 24, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64]
-        for key in keys {
-            manager.state = .ongoing
-            stateStorage.contextualDialogsSeen = combinationDictionary[key]!
-            let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
-            XCTAssertNil(dialog, "\(key)")
-        }
+    @Test("Search shows no dialog when expected", arguments: [1, 3, 4, 5, 7, 8, 9, 11, 12, 13, 15, 16, 17, 19, 20, 21, 23, 24, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 64])
+    func testOnSearchWhenTryASearchNotSeenShowsNothing(contextualDialogsSeenKey: Int) async {
+        manager.state = .ongoing
+        let tab = await Tab(content: .url(URL.makeSearchUrl(from: "query something")!, credential: nil, source: .ui))
+        stateStorage.contextualDialogsSeen = combinationDictionary[contextualDialogsSeenKey]!
+        let dialog = manager.dialogTypeForTab(tab, privacyInfo: nil)
+        #expect(dialog == nil)
     }
 
     let combinationDictionary: [Int: [String]] = [

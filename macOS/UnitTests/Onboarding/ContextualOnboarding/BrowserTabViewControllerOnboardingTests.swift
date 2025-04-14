@@ -316,6 +316,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 }
 
 class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOnboardingStateUpdater {
+    func lastDialogForTab(_ tab: DuckDuckGo_Privacy_Browser.Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
+        return lastDialog
+    }
+    
     var lastDialog: DuckDuckGo_Privacy_Browser.ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted
@@ -343,7 +347,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
 }
 
 class CapturingDialogFactory: ContextualDaxDialogsFactory {
-    public var expectation: XCTestExpectation
+    var expectation: XCTestExpectation
     var capturedType: ContextualDialogType?
     var capturedDelegate: OnboardingNavigationDelegate?
 

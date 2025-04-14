@@ -86,7 +86,7 @@ final class BrowserTabViewController: NSViewController {
     private var hoverLabelWorkItem: DispatchWorkItem?
 
     private var lastURL: URL?
-    private var wasDialogDismissed = false
+    private var wasContextualOnboardingDialogDismissed = false
     private let onboardingPixelReporter: OnboardingPixelReporting
 
     private(set) var transientTabContentViewController: NSViewController?
@@ -169,7 +169,11 @@ final class BrowserTabViewController: NSViewController {
     }
 
     @objc func windowDidBecomeActive(notification: Notification) {
-        if !wasDialogDismissed {
+        // When a windows become key it will reload the last contextual onboarding dialog if needed
+        // This helps keep dialogs consistent when moving between Windows
+        //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
+        //  - It tells presentContextualOnboarding that should show the lastDialog if possible
+        if !wasContextualOnboardingDialogDismissed {
             presentContextualOnboarding(showLastDialog: true)
         }
     }
@@ -453,14 +457,6 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.addArrangedSubview(container)
     }
 
-    private func updateStateAndPresentContextualOnboarding() {
-        guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
-            onboardingDialogTypeProvider.turnOffFeature()
-            return
-        }
-        presentContextualOnboarding()
-    }
-
     private func removeExistingDialog() {
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
@@ -471,9 +467,10 @@ final class BrowserTabViewController: NSViewController {
     private func presentContextualOnboarding(showLastDialog: Bool = false) {
         // Before presenting a new dialog, remove any existing ones.
         removeExistingDialog()
-        // Remove any existing higlights animation
+        // Remove any existing highlights animation
         delegate?.dismissViewHighlight()
 
+        // Checks if the feature is on
         guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
             onboardingDialogTypeProvider.turnOffFeature()
             return
@@ -481,7 +478,10 @@ final class BrowserTabViewController: NSViewController {
 
         guard let tab = tabViewModel?.tab else { return }
 
-        guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialog : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
+        // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
+        // If there is it will show it
+        // This allow seeing the dialog when leaving and coming back to the Window but will avoid reloading the same when opening a new Window
+        guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialogForTab(tab) : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
             delegate?.dismissViewHighlight()
             return
         }
@@ -490,7 +490,7 @@ final class BrowserTabViewController: NSViewController {
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
-                wasDialogDismissed = true
+                wasContextualOnboardingDialogDismissed = true
                 delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
                 if let lastDialog = onboardingDialogTypeProvider.lastDialog {
@@ -623,15 +623,16 @@ final class BrowserTabViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
 
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
+            guard let self else { return }
             // remove dialog on reload
-            if self?.lastURL == tabViewModel?.tab.url && self?.lastURL != nil {
-                self?.removeExistingDialog()
+            if self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
+                self.removeExistingDialog()
                 return
             }
             // present contextual onboarding dialog if needed
-            self?.updateStateAndPresentContextualOnboarding()
-            self?.lastURL = self?.tabViewModel?.tab.url
-            self?.wasDialogDismissed = false
+            self.presentContextualOnboarding()
+            self.lastURL = self.tabViewModel?.tab.url
+            self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 

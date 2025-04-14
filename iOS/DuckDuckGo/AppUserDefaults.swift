@@ -86,7 +86,8 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
         static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
-        static let nativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
     }
 
     private struct DebugKeys {
@@ -492,14 +493,38 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
-    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalPresentationEventCount, defaultValue: 0)
-    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int
+    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int {
+        get {
+            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount) ?? 0
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
     
-    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalTimeSinceLastPresented, defaultValue: 0)
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int
+    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int {
+        get {
+            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented) ?? 0
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
 
-    @UserDefaultsWrapper(key: .duckPlayerPillDismissCount, defaultValue: 0)
-    var duckPlayerPillDismissCount: Int
+    var duckPlayerPillDismissCount: Int {
+        get {
+            return userDefaults?.integer(forKey: Keys.duckPlayerPillDismissCount) ?? 0
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerPillDismissCount)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
 
     var onboardingUserType: OnboardingUserType {
         get {

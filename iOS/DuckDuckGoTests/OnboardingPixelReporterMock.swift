@@ -56,6 +56,16 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
     private(set) var didCallMeasureDidSetDDGAsDefaultBrowser = false
     private(set) var didCallMeasureDidNotSetDDGAsDefaultBrowser = false
 
+    private(set) var didCallMeasureTrySearchDialogNewTabDismissButtonTapped = false
+    private(set) var didCallMeasureSearchResultDialogDismissButtonTapped = false
+    private(set) var didCallMeasureTryVisitSiteDialogNewTabDismissButtonTapped = false
+    private(set) var didCallMeasureTryVisitSiteDismissButtonTapped = false
+    private(set) var didCallMeasureTrackersDialogDismissButtonTapped = false
+    private(set) var didCallMeasureFireDialogDismissButtonTapped = false
+    private(set) var didCallMeasureEndOfJourneyDialogNewTabDismissButtonTapped = false
+    private(set) var didCallMeasureEndOfJourneyDialogDismissButtonTapped = false
+    private(set) var didCallMeasurePrivacyProPromoDialogNewTabDismissButtonTapped = false
+
     func measureOnboardingIntroImpression() {
         didCallMeasureOnboardingIntroImpression = true
     }
@@ -151,5 +161,41 @@ final class OnboardingPixelReporterMock: OnboardingIntroPixelReporting, Onboardi
 
     func measureDidNotSetDDGAsDefaultBrowser() {
         didCallMeasureDidNotSetDDGAsDefaultBrowser = true
+    }
+
+    func measureTrySearchDialogNewTabDismissButtonTapped() {
+        didCallMeasureTrySearchDialogNewTabDismissButtonTapped = true
+    }
+
+    func measureSearchResultDialogDismissButtonTapped() {
+        didCallMeasureSearchResultDialogDismissButtonTapped = true
+    }
+
+    func measureTryVisitSiteDialogNewTabDismissButtonTapped() {
+        didCallMeasureTryVisitSiteDialogNewTabDismissButtonTapped = true
+    }
+
+    func measureTryVisitSiteDialogDismissButtonTapped() {
+        didCallMeasureTryVisitSiteDismissButtonTapped = true
+    }
+
+    func measureTrackersDialogDismissButtonTapped() {
+        didCallMeasureTrackersDialogDismissButtonTapped = true
+    }
+
+    func measureFireDialogDismissButtonTapped() {
+        didCallMeasureFireDialogDismissButtonTapped = true
+    }
+
+    func measureEndOfJourneyDialogNewTabDismissButtonTapped() {
+        didCallMeasureEndOfJourneyDialogNewTabDismissButtonTapped = true
+    }
+
+    func measureEndOfJourneyDialogDismissButtonTapped() {
+        didCallMeasureEndOfJourneyDialogDismissButtonTapped = true
+    }
+
+    func measurePrivacyPromoDialogNewTabDismissButtonTapped() {
+        didCallMeasurePrivacyProPromoDialogNewTabDismissButtonTapped = true
     }
 }

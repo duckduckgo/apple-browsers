@@ -288,7 +288,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     var isShowingSitesSuggestions: Bool {
-        return lastShownDaxDialogType.flatMap(BrowsingSpec.SpecType.init(rawValue:)) == .visitWebsite || currentHomeSpec == .subsequent
+        return lastShownDaxDialogType == .visitWebsite || currentHomeSpec == .subsequent
     }
 
     var isEnabled: Bool {
@@ -300,7 +300,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     var isShowingFireDialog: Bool {
         guard let lastShownDaxDialogType else { return false }
-        return BrowsingSpec.SpecType(rawValue: lastShownDaxDialogType) == .fire
+        return lastShownDaxDialogType == .fire
     }
 
     var isAddFavoriteFlow: Bool {
@@ -348,58 +348,35 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private var fireButtonPulseTimer: Timer?
     private static let timeToFireButtonExpire: TimeInterval = 1 * 60 * 60
     
-    private var lastVisitedOnboardingWebsiteURLPath: String? {
-        return settings.lastVisitedOnboardingWebsiteURLPath
-    }
-
-    private func saveLastVisitedOnboardingWebsite(url: URL?) {
-        guard let url = url else { return }
-        settings.lastVisitedOnboardingWebsiteURLPath = url.absoluteString
-    }
-
-    private func removeLastVisitedOnboardingWebsite() {
-        settings.lastVisitedOnboardingWebsiteURLPath = nil
-    }
-
-    private var lastShownDaxDialogType: String? {
-        return settings.lastShownContextualOnboardingDialogType
-    }
+    private(set) var lastVisitedOnboardingWebsiteURL: URL?
+    private(set) var lastShownDaxDialogType: BrowsingSpec.SpecType?
 
     private var shouldShowNetworkTrackerDialog: Bool {
         !settings.browsingMajorTrackingSiteShown && !settings.browsingWithTrackersShown
     }
 
-    private func saveLastShownDaxDialog(specType: BrowsingSpec.SpecType) {
-        settings.lastShownContextualOnboardingDialogType = specType.rawValue
-    }
-
-    private func removeLastShownDaxDialog() {
-        settings.lastShownContextualOnboardingDialogType = nil
-    }
-
     private func lastShownDaxDialog(privacyInfo: PrivacyInfo) -> BrowsingSpec? {
         guard let dialogType = lastShownDaxDialogType else { return  nil }
         switch dialogType {
-        case BrowsingSpec.SpecType.afterSearch.rawValue:
+        case BrowsingSpec.SpecType.afterSearch:
             return BrowsingSpec.afterSearch
-        case BrowsingSpec.SpecType.visitWebsite.rawValue:
+        case BrowsingSpec.SpecType.visitWebsite:
             return nil
-        case BrowsingSpec.SpecType.withoutTrackers.rawValue:
+        case BrowsingSpec.SpecType.withoutTrackers:
             return BrowsingSpec.withoutTrackers
-        case BrowsingSpec.SpecType.siteIsMajorTracker.rawValue:
+        case BrowsingSpec.SpecType.siteIsMajorTracker:
             guard let host = privacyInfo.domain else { return nil }
             return majorTrackerMessage(host, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.siteOwnedByMajorTracker.rawValue:
+        case BrowsingSpec.SpecType.siteOwnedByMajorTracker:
             guard let host = privacyInfo.domain, let owner = isOwnedByFacebookOrGoogle(host) else { return nil }
             return majorTrackerOwnerMessage(host, owner, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.withOneTracker.rawValue, BrowsingSpec.SpecType.withMultipleTrackers.rawValue:
+        case BrowsingSpec.SpecType.withOneTracker, BrowsingSpec.SpecType.withMultipleTrackers:
             guard let entityNames = blockedEntityNames(privacyInfo.trackerInfo) else { return nil }
             return trackersBlockedMessage(entityNames, isReloadingDialog: true)
-        case BrowsingSpec.SpecType.fire.rawValue:
+        case BrowsingSpec.SpecType.fire:
             return .fire
-        case BrowsingSpec.SpecType.final.rawValue:
+        case BrowsingSpec.SpecType.final:
             return nil
-        default: return nil
         }
     }
 
@@ -433,14 +410,14 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     func setSearchMessageSeen() {
-        saveLastShownDaxDialog(specType: .visitWebsite)
+        lastShownDaxDialogType = BrowsingSpec.visitWebsite.type
     }
 
     func setFireEducationMessageSeen() {
         // Set also privacy button pulse seen as we don't have to show anymore if we saw the fire educational message.
         settings.privacyButtonPulseShown = true
         settings.fireMessageExperimentShown = true
-        saveLastShownDaxDialog(specType: .fire)
+        lastShownDaxDialogType = BrowsingSpec.fire.type
     }
 
     func clearedBrowserData() {
@@ -480,8 +457,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         guard isEnabled, nextHomeScreenMessageOverride == nil else { return nil }
 
-        if let lastVisitedOnboardingWebsiteURLPath,
-            compareUrls(url1: URL(string: lastVisitedOnboardingWebsiteURLPath), url2: privacyInfo.url) {
+        if let lastVisitedOnboardingWebsiteURL,
+            compareUrls(url1: lastVisitedOnboardingWebsiteURL, url2: privacyInfo.url) {
             return lastShownDaxDialog(privacyInfo: privacyInfo)
         }
 
@@ -492,14 +469,22 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         if privacyInfo.url.isDuckDuckGoSearch && !settings.browsingAfterSearchShown {
             spec = searchMessage()
         } else if isFacebookOrGoogle(privacyInfo.url) && shouldShowNetworkTrackerDialog {
+            // Set visit site suggestion site seen when navigating so we don't show the suggestion on new tab after visiting a site.
+            setTryVisitSiteMessageSeen()
             // won't be shown if owned by major tracker message has already been shown
             spec = majorTrackerMessage(host, isReloadingDialog: false)
         } else if let owner = isOwnedByFacebookOrGoogle(host), shouldShowNetworkTrackerDialog {
+            // Set visit site suggestion site seen when navigating so we don't show the suggestion on new tab after visiting a site.
+            setTryVisitSiteMessageSeen()
             // won't be shown if major tracker message has already been shown
             spec = majorTrackerOwnerMessage(host, owner, isReloadingDialog: false)
         } else if let entityNames = blockedEntityNames(privacyInfo.trackerInfo), !settings.browsingWithTrackersShown {
+            // Set visit site suggestion site seen when navigating so we don't show the suggestion on new tab after visiting a site.
+            setTryVisitSiteMessageSeen()
             spec = trackersBlockedMessage(entityNames, isReloadingDialog: false)
         } else if !settings.browsingWithoutTrackersShown && !privacyInfo.url.isDuckDuckGoSearch && !hasTrackers(host: host) {
+            // Set visit site suggestion site seen when navigating so we don't show the suggestion on new tab after visiting a site.
+            setTryVisitSiteMessageSeen()
             // if non duck duck go search and no trackers found and no tracker message already shown, show no trackers message
             spec = noTrackersMessage()
         } else if shouldDisplayFinalContextualBrowsingDialog {
@@ -508,8 +493,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         }
 
         if let spec {
-            saveLastShownDaxDialog(specType: spec.type)
-            saveLastVisitedOnboardingWebsite(url: privacyInfo.url)
+            lastShownDaxDialogType = spec.type
+            lastVisitedOnboardingWebsiteURL = privacyInfo.url
         } else {
             clearOnboardingBrowsingData()
         }
@@ -585,10 +570,9 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
                                                            entityName,
                                                            entityPrevalence)
     }
-    
+
     private func majorTrackerMessage(_ host: String, isReloadingDialog: Bool) -> DaxDialogs.BrowsingSpec? {
         if !isReloadingDialog && settings.browsingMajorTrackingSiteShown { return nil }
-
         guard let entityName = entityProviding.entity(forHost: host)?.displayName else { return nil }
         settings.browsingMajorTrackingSiteShown = true
         settings.browsingWithoutTrackersShown = true
@@ -629,6 +613,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
  
     private func blockedEntityNames(_ trackerInfo: TrackerInfo) -> [String]? {
+        setTryVisitSiteMessageSeen()
         guard !trackerInfo.trackersBlocked.isEmpty else { return nil }
         
         return trackerInfo.trackersBlocked.removingDuplicates { $0.entityName }
@@ -658,8 +643,8 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 
     private func clearOnboardingBrowsingData() {
-        removeLastShownDaxDialog()
-        removeLastVisitedOnboardingWebsite()
+        lastShownDaxDialogType = nil
+        lastVisitedOnboardingWebsiteURL = nil
         currentHomeSpec = nil
     }
 }
@@ -718,3 +703,17 @@ private extension ViewHighlighter {
     }
 
 }
+
+#if canImport(XCTest)
+extension DaxDialogs {
+
+    func setLastVisitedURL(_ url: URL?) {
+        lastVisitedOnboardingWebsiteURL = url
+    }
+
+    func setLastShownDialog(type: BrowsingSpec.SpecType) {
+        lastShownDaxDialogType = type
+    }
+
+}
+#endif

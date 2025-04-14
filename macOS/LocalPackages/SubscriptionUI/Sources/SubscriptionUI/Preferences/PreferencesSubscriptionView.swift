@@ -260,7 +260,7 @@ public struct PreferencesSubscriptionViewV1: View {
                 model.openLearnMore()
             }
             .padding(.top, -4)
-            
+
             if model.hasEmail {
                 emailView
                     .padding(.top, 2)

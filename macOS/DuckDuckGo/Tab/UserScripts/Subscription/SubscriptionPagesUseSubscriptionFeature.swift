@@ -579,7 +579,7 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
     ///   - `false` if a first scan has not been started and the origin is not set.
     func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
             subscriptionSuccessPixelHandler.origin = origin
             return true

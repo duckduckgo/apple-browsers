@@ -28,10 +28,6 @@ protocol SubscriptionAttributionPixelHandler: AnyObject {
 
 final class PrivacyProSubscriptionAttributionPixelHandler: SubscriptionAttributionPixelHandler {
 
-    enum Consts {
-        static let freemiumOrigin = "funnel_freescan_macos"
-    }
-
     var origin: String?
     private let decoratedAttributionPixelHandler: AttributionPixelHandler
 

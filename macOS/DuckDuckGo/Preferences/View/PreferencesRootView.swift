@@ -133,7 +133,7 @@ enum Preferences {
         private func makeSubscriptionViewModel() -> PreferencesSubscriptionModel {
             let openURL: (URL) -> Void = { url in
                 DispatchQueue.main.async {
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
+                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
                 }
             }
 

@@ -888,7 +888,14 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         if isUserAuthenticated {
             do {
-                let subscription = try await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
+                var subscription = try? await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
+                if subscription == nil {
+                    subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataDontLoad)
+                }
+                guard let subscription else {
+                    throw SubscriptionEndpointServiceError.noData
+                }
+
                 Task { @MainActor in
                     updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
                     subscriptionPlatform = subscription.platform

@@ -23,12 +23,15 @@ extension NetworkProtectionKeychainTokenStore: LegacyAuthTokenStoring {
 
     public var token: String? {
         get {
-            do {
-                return try fetchToken()
-            } catch {
-                assertionFailure("Failed to retrieve auth token: \(error)")
+            var token: String?
+            // extremely ugly hack, will be removed as soon auth v1 is removed
+            let semaphore = DispatchSemaphore(value: 0)
+            Task {
+                token = try await fetchToken() // Warning in macOS, will be removed alongside AuthV1
+                semaphore.signal()
             }
-            return nil
+            semaphore.wait()
+            return token
         }
         set(newValue) {
             do {

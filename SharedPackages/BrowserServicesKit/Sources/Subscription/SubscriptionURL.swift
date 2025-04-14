@@ -86,7 +86,7 @@ public enum SubscriptionURL {
 }
 
 extension SubscriptionURL {
-    
+
     /**
      * Creates URL components for a subscription URL with the specified origin parameter.
      *

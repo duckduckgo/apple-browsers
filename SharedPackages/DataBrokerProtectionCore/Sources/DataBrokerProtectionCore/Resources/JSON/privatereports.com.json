@@ -1,7 +1,7 @@
 {
   "name": "PrivateReports",
   "url": "privatereports.com",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "optOutUrl": "https://www.privatereports.com/optOut/name/landingPage",
   "steps": [
     {
@@ -169,7 +169,7 @@
         {
           "actionType": "extract",
           "selector": ".srp-table-item",
-          "noResultsSelector": "//div[contains(text(), 'unable to find')]|//h2[contains(text(), 'too many results')]",
+          "noResultsSelector": "//div[contains(text(), 'no results')]|//h2[contains(text(), 'too many results')]",
           "profile": {
             "name": {
               "selector": ".srp-name"

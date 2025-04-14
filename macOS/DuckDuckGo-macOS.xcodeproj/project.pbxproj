@@ -3102,6 +3102,10 @@
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
 		BBDAA91A2DAD4E7400555E1E /* NewVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* NewVPNNavigationBarIconProvider.swift */; };
 		BBDAA91B2DAD4E7400555E1E /* NewVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* NewVPNNavigationBarIconProvider.swift */; };
+		BBDAA91D2DAD6DAD00555E1E /* fire-icon.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */; };
+		BBDAA91E2DAD6DAD00555E1E /* fire-icon.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */; };
+		BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
+		BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */; };
 		BBDE001C2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
 		BBDE001D2D6DE6A800109F88 /* DefaultBrowserAndDockPromptPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */; };
 		BBDE001F2D6DE6F500109F88 /* DefaultBrowserAndDockPromptContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */; };
@@ -5169,6 +5173,8 @@
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* NewVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
+		BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-icon.json"; sourceTree = "<group>"; };
+		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
 		BBDE001B2D6DE6A000109F88 /* DefaultBrowserAndDockPromptPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPopover.swift; sourceTree = "<group>"; };
 		BBDE001E2D6DE6EE00109F88 /* DefaultBrowserAndDockPromptContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptContent.swift; sourceTree = "<group>"; };
 		BBDE00212D6DE73600109F88 /* DefaultBrowserAndDockPromptNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptNotifications.swift; sourceTree = "<group>"; };
@@ -6574,6 +6580,7 @@
 		37EE55C42D5F197300D53C7C /* Animations */ = {
 			isa = PBXGroup;
 			children = (
+				BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */,
 				37EE55B32D5F197300D53C7C /* BadgeAnimations */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
 				37EE55B52D5F197300D53C7C /* dark-shield.json */,
@@ -10035,6 +10042,7 @@
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
+				BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */,
 				BBDAA9192DAD4E5C00555E1E /* NewVPNNavigationBarIconProvider.swift */,
 				BB4EC6942D9B5C7800660600 /* VisualStyleProviding.swift */,
 			);
@@ -11274,6 +11282,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBDAA91E2DAD6DAD00555E1E /* fire-icon.json in Resources */,
 				561D66672B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */,
@@ -11487,6 +11496,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BBDAA91D2DAD6DAD00555E1E /* fire-icon.json in Resources */,
 				561D66662B95C45A008ACC5C /* Suggestion.storyboard in Resources */,
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */,
@@ -12135,6 +12145,7 @@
 				1D9297C02C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */,
 				3706FEC0293F6EFF00E42796 /* BWRequest.swift in Sources */,
 				3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */,
+				BBDAA9202DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */,
 				F18826852BBEE31700D9AC4F /* PixelKit+Assertion.swift in Sources */,
 				4BF0E5062AD2551A00FFEC9E /* NetworkProtectionPixelEvent.swift in Sources */,
 				C10529442C9CC18B0041E502 /* AutofillCredentialsDebugView.swift in Sources */,
@@ -14137,6 +14148,7 @@
 				B6106BA726A7BECC0013B453 /* PermissionAuthorizationQuery.swift in Sources */,
 				CD2AB5C32C8222F70019EB49 /* MaliciousSiteProtectionState.swift in Sources */,
 				1DB67F292B6FE4A6003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
+				BBDAA9212DAD6F5E00555E1E /* FireButtonIconStyleProviding.swift in Sources */,
 				4B9292CE2667123700AD2C21 /* BrowserTabSelectionDelegate.swift in Sources */,
 				9FEE986D2B85BA17002E44E8 /* AddEditBookmarkDialogCoordinatorViewModel.swift in Sources */,
 				B6BCC53B2AFD15DF002C5499 /* DataImportProfilePicker.swift in Sources */,

@@ -37,6 +37,7 @@ protocol VisualStyleProviding {
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
     var vpnNavigationIconsProvider: IconProvider { get }
+    var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -85,6 +86,7 @@ struct VisualStyle: VisualStyleProviding {
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
     let vpnNavigationIconsProvider: IconProvider
+    let fireButtonStyleProvider: FireButtonIconStyleProviding
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -129,7 +131,8 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagement,
                            bookmarksButtonImage: .bookmarks,
                            moreOptionsbuttonImage: .settings,
-                           vpnNavigationIconsProvider: NavigationBarIconProvider())
+                           vpnNavigationIconsProvider: NavigationBarIconProvider(),
+                           fireButtonStyleProvider: LegacyFireButtonIconStyleProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -151,7 +154,8 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagerNew,
                            bookmarksButtonImage: .bookmarksNew,
                            moreOptionsbuttonImage: .optionsNew,
-                           vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider())
+                           vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
+                           fireButtonStyleProvider: NewFireButtonIconStyleProvider())
     }
 }
 

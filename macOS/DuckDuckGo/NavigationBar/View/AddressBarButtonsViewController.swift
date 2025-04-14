@@ -28,7 +28,7 @@ import PrivacyDashboard
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-
+    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -66,6 +66,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
+    @IBOutlet weak var aiChatButton: AddressBarButton!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -73,6 +74,8 @@ final class AddressBarButtonsViewController: NSViewController {
     var trackerAnimationView3: LottieAnimationView!
     var shieldAnimationView: LottieAnimationView!
     var shieldDotAnimationView: LottieAnimationView!
+
+    @IBOutlet weak var aiChatDivider: NSImageView!
 
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
 
@@ -171,15 +174,22 @@ final class AddressBarButtonsViewController: NSViewController {
         fatalError("AddressBarButtonsViewController: Bad initializer")
     }
 
+    private let aiChatTabOpener: AIChatTabOpening
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
           popovers: NavigationBarPopovers?,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter()) {
+          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+          aiChatTabOpener: AIChatTabOpening,
+          aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.accessibilityPreferences = accessibilityPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.aiChatTabOpener = aiChatTabOpener
+        self.aiChatMenuConfig = aiChatMenuConfig
         super.init(coder: coder)
     }
 
@@ -195,6 +205,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateBookmarkButtonVisibility()
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
+        subscribeToAIChatPreferences()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
 
@@ -281,6 +292,24 @@ final class AddressBarButtonsViewController: NSViewController {
         openPrivacyDashboardPopover()
     }
 
+    @IBAction func aiChatButtonAction(_ sender: Any) {
+        let isCommandPressed = NSEvent.modifierFlags.contains(.command)
+        let isShiftPressed = NSApplication.shared.isShiftPressed
+
+        let target: AIChatTabOpenerTarget
+        if isCommandPressed {
+            target = isShiftPressed ? .newTabSelected : .newTabUnselected
+        } else {
+            target = .sameTab
+        }
+
+        if let value = textFieldValue {
+            aiChatTabOpener.openAIChatTab(value, target: target)
+        } else {
+            aiChatTabOpener.openAIChatTab(nil, target: target)
+        }
+    }
+
     func openPrivacyDashboardPopover(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
@@ -312,6 +341,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         bookmarkButton.isShown = shouldShowBookmarkButton
+        updateAIChatDividerVisibility()
     }
 
     private func updateZoomButtonVisibility(animation: Bool = false) {
@@ -337,6 +367,23 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButton.backgroundColor = isPopoverShown ? .buttonMouseDown : nil
         zoomButton.mouseOverColor = isPopoverShown ? nil : .buttonMouseOver
         zoomButton.isHidden = !shouldShowZoom
+    }
+
+    private func updateAIChatButtonVisibility() {
+        aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
+        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
+        updateAIChatDividerVisibility()
+        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
+    private func updateAIChatDividerVisibility() {
+        let shouldShowDivider = clearButton.isShown || bookmarkButton.isShown
+        aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
+    }
+
+    private func updateButtonsPosition() {
+        aiChatButton.position = .right
+        bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
     func openBookmarkPopover(setFavorite: Bool, accessPoint: GeneralPixel.AccessPoint) {
@@ -433,6 +480,8 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
+        updateAIChatButtonVisibility()
+        updateButtonsPosition()
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {
@@ -719,6 +768,14 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateSeparator()
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToAIChatPreferences() {
+        aiChatMenuConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] in
+                self?.updateAIChatButtonVisibility()
+            }).store(in: &cancellables)
     }
 
     private func updatePermissionButtons() {

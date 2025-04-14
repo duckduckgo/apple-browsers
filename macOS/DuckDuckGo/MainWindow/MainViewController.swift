@@ -129,7 +129,6 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         aiChatMenuConfig: aiChatMenuConfig,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter)
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
@@ -611,7 +610,11 @@ extension MainViewController {
         // Handle Enter
         if event.keyCode == kVK_Return,
            navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+            } else {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            }
             return true
         }
 

@@ -60,7 +60,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var savePaymentMethodPopover: SavePaymentMethodPopover?
     private(set) var autofillPopoverPresenter: AutofillPopoverPresenter
     private(set) var downloadsPopover: DownloadsPopover?
-    private(set) var aiChatOnboardingPopover: AIChatOnboardingPopover?
     private(set) var autofillOnboardingPopover: AutofillToolbarOnboardingPopover?
     private(set) var historyViewOnboardingPopover: HistoryViewOnboardingPopover?
 
@@ -229,28 +228,11 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
             privacyDashboardPopover?.close()
         }
 
-        if aiChatOnboardingPopover?.isShown ?? false {
-            aiChatOnboardingPopover?.close()
-        }
-
         if autofillOnboardingPopover?.isShown ?? false {
             autofillOnboardingPopover?.close()
         }
 
         return true
-    }
-
-    func showAIChatOnboardingPopover(from button: MouseOverButton,
-                                     withDelegate delegate: NSPopoverDelegate,
-                                     ctaCallback: @escaping (Bool) -> Void) {
-        guard closeTransientPopovers() else { return }
-        let popover = aiChatOnboardingPopover ?? AIChatOnboardingPopover(ctaCallback: ctaCallback)
-
-        PixelKit.fire(GeneralPixel.aichatToolbarOnboardingPopoverShown,
-                      includeAppVersionParameter: true)
-        popover.delegate = delegate
-        aiChatOnboardingPopover = popover
-        show(popover, positionedBelow: button)
     }
 
     func showHistoryViewOnboardingPopover(from button: MouseOverButton,
@@ -319,10 +301,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func closeZoomPopover() {
         zoomPopover?.close()
-    }
-
-    func closeAIChatOnboardingPopover() {
-        aiChatOnboardingPopover?.close()
     }
 
     func closeHistoryViewOnboardingViewPopover() {
@@ -436,10 +414,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     func bookmarkListPopoverClosed() {
         bookmarkListPopover = nil
-    }
-
-    func aiChatOnboardingPopoverClosed() {
-        aiChatOnboardingPopover = nil
     }
 
     func autofillOnboardingPopoverClosed() {

@@ -68,7 +68,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
             PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
         }
     }
@@ -532,10 +532,6 @@ extension MainViewController {
 
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
-    }
-
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
     }
 
     // MARK: - History

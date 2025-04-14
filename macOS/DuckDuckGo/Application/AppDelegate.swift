@@ -112,6 +112,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
     )
+
+    private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
+        promptHandler: AIChatPromptHandler.shared,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+    )
+
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel = NewTabPageCustomizationModel()

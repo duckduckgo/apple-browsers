@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import Subscription
 
 struct SettingsRootView: View {
 
@@ -32,6 +33,14 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
 
+    private enum Constants {
+        static let funnelAppSettingsOrigin = "funnel_appsettings_ios"
+    }
+
+    private var settingPrivacyProRedirectURLComponents: URLComponents? {
+        SubscriptionURL.subscriptionURLComponentsWithOrigin(Constants.funnelAppSettingsOrigin)
+    }
+
     var body: some View {
 
         // Hidden navigationLinks for programatic navigation
@@ -42,7 +51,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow()),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingPrivacyProRedirectURLComponents)),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {

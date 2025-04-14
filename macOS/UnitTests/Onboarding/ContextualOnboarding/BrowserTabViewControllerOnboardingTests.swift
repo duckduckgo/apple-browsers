@@ -161,6 +161,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                 expectation2.fulfill()
             }
             .store(in: &cancellables)
+        wait(for: [expectation2], timeout: 3.0)
         XCTAssertNil(factory.capturedType)
     }
 
@@ -319,7 +320,7 @@ class MockDialogsProvider: ContextualOnboardingDialogTypeProviding, ContextualOn
     func lastDialogForTab(_ tab: DuckDuckGo_Privacy_Browser.Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
         return lastDialog
     }
-    
+
     var lastDialog: DuckDuckGo_Privacy_Browser.ContextualDialogType?
 
     var state: ContextualOnboardingState = .onboardingCompleted

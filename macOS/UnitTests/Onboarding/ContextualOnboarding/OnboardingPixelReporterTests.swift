@@ -188,10 +188,10 @@ final class OnboardingPixelReporterTests: XCTestCase {
 }
 
 class MockContextualOnboardingState: ContextualOnboardingStateUpdater, ContextualOnboardingDialogTypeProviding {
-    func lastDialogForTab(_ tab: DuckDuckGo_Privacy_Browser.Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
+    func lastDialogForTab(_ tab: Tab) -> DuckDuckGo_Privacy_Browser.ContextualDialogType? {
         return lastDialog
     }
-    
+
     func dialogTypeForTab(_ tab: Tab, privacyInfo: PrivacyInfo?) -> ContextualDialogType? {
         return lastDialog
     }

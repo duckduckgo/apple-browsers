@@ -72,9 +72,9 @@ extension NetworkProtectionUI.OnboardingStatus {
         let vpnAppState = VPNAppState(defaults: .netP)
 
         if vpnAppState.isUsingSystemExtension {
-            .isOnboarding(step: .userNeedsToAllowExtension)
+            return .isOnboarding(step: .userNeedsToAllowExtension)
         } else {
-            .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+            return .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
         }
     }()
 }

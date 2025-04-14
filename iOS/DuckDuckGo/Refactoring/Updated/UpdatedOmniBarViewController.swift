@@ -75,7 +75,8 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
 
         omniBarView.isUsingCompactLayout = !state.hasLargeWidth
 
-        let isShowingSeparator = state.showAccessoryButton
+        // Should show separator only when there is another button next to accessory button
+        let isShowingSeparator = state.showAccessoryButton && (state.showClear || state.showVoiceSearch || state.showRefresh || state.showAbort)
         omniBarView.isShowingSeparator = isShowingSeparator
     }
 

@@ -427,7 +427,7 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
         // 2. We map the brokers to the UI model
             .flatMap { dataBroker -> [DBPUIDataBroker] in
                 var result: [DBPUIDataBroker] = []
-                result.append(DBPUIDataBroker(name: dataBroker.name, url: dataBroker.url, parentURL: dataBroker.parent, optOutUrl: dataBroker.optOutUrl))
+                result.append(DBPUIDataBroker(name: dataBroker.displayName, url: dataBroker.url, parentURL: dataBroker.parent, optOutUrl: dataBroker.optOutUrl))
 
                 for mirrorSite in dataBroker.mirrorSites {
                     result.append(DBPUIDataBroker(name: mirrorSite.name, url: mirrorSite.url, parentURL: dataBroker.parent, optOutUrl: dataBroker.optOutUrl))

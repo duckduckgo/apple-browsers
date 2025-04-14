@@ -103,6 +103,9 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
                 NSMenuItem(title: "Reset Site Issue Alert", action: #selector(NetworkProtectionDebugMenu.resetSiteIssuesAlert(_:)))
                     .targetting(self)
+
+                NSMenuItem(title: "Reset VPN Disable Exclusion Suggestions", action: #selector(NetworkProtectionDebugMenu.resetVPNDisableExclusionSuggesitons(_:)))
+                    .targetting(self)
             }
 
             NSMenuItem.separator()
@@ -208,6 +211,10 @@ final class NetworkProtectionDebugMenu: NSMenu {
 
     @objc func resetSiteIssuesAlert(_ sender: Any?) {
         debugUtilities.resetSiteIssuesAlert()
+    }
+
+    @objc func resetVPNDisableExclusionSuggesitons(_ sender: Any?) {
+        debugUtilities.resetVPNDisableExclusionSuggesitons()
     }
 
     /// Resets all state for NetworkProtection.

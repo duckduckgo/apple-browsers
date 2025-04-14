@@ -24,6 +24,7 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import SwiftUI
 import VPNAppLauncher
+import VPNAppState
 
 /// Main App's VPN UI action handler
 ///
@@ -32,17 +33,20 @@ final class VPNUIActionHandler {
     private let vpnIPCClient: VPNControllerXPCClient
     private let proxySettings: TransparentProxySettings
     private let tunnelController: TunnelController
+    private let vpnAppState: VPNAppState
     private let vpnURLEventHandler: VPNURLEventHandler
 
     init(vpnIPCClient: VPNControllerXPCClient = .shared,
          vpnURLEventHandler: VPNURLEventHandler,
          tunnelController: TunnelController,
-         proxySettings: TransparentProxySettings) {
+         proxySettings: TransparentProxySettings,
+         vpnAppState: VPNAppState) {
 
         self.vpnIPCClient = vpnIPCClient
         self.vpnURLEventHandler = vpnURLEventHandler
         self.tunnelController = tunnelController
         self.proxySettings = proxySettings
+        self.vpnAppState = vpnAppState
     }
 
     func askUserToReportIssues(withDomain domain: String) async {
@@ -82,29 +86,48 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showPrivacyPro()
     }
 
+    @MainActor
     func willStopVPN() async -> Bool {
-        guard let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window else {
+        guard !vpnAppState.dontAskAgainExclusionSuggestion,
+              let parentWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window else {
             return true
         }
 
-        var result = VPNExclusionSuggestionAlert.Result.stopVPN
-        let binding = Binding<VPNExclusionSuggestionAlert.Result>.init {
-            result
-        } set: { newValue in
-            result = newValue
+        @MainActor
+        final class VPNExclusionSuggestionAlertResults: ObservableObject {
+            @Published var userAction: VPNExclusionSuggestionAlert.UserAction = .stopVPN
+            @Published var dontAskAgain: Bool = false
         }
 
-        let modalAlert = await VPNExclusionSuggestionAlert(result: binding)
+        let alertResults = VPNExclusionSuggestionAlertResults()
+
+        let binding = Binding<VPNExclusionSuggestionAlert.UserAction>.init {
+            alertResults.userAction
+        } set: { newValue in
+            alertResults.userAction = newValue
+        }
+
+        let dontAskAgainBinding = Binding<Bool> {
+            alertResults.dontAskAgain
+        } set: { newValue in
+            alertResults.dontAskAgain = newValue
+        }
+
+        let modalAlert = VPNExclusionSuggestionAlert(userAction: binding, dontAskAgain: dontAskAgainBinding)
         await modalAlert.show(in: parentWindow)
 
-        switch result {
+        if alertResults.dontAskAgain {
+            vpnAppState.dontAskAgainExclusionSuggestion = true
+        }
+
+        switch alertResults.userAction {
         case .stopVPN:
             return true
         case .excludeApp:
-            await WindowControllersManager.shared.showVPNAppExclusions(addApp: true)
+            WindowControllersManager.shared.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
-            await WindowControllersManager.shared.showVPNDomainExclusions(addDomain: true)
+            WindowControllersManager.shared.showVPNDomainExclusions(addDomain: true)
             return false
         }
     }

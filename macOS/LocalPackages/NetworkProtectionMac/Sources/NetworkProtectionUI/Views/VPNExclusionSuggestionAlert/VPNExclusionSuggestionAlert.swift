@@ -21,7 +21,7 @@ import SwiftUIExtensions
 
 public struct VPNExclusionSuggestionAlert: ModalView {
 
-    public enum Result: Sendable {
+    public enum UserAction: Sendable {
         case stopVPN
         case excludeApp
         case excludeWebsite
@@ -37,11 +37,13 @@ public struct VPNExclusionSuggestionAlert: ModalView {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @Binding private var result: Result
-    @State private var dontAskAgain = false
+    @Binding private var userAction: UserAction
+    @Binding private var dontAskAgain: Bool
+    @State private var redraw: Bool = false
 
-    public init(result: Binding<Result>) {
-        _result = result
+    public init(userAction: Binding<UserAction>, dontAskAgain: Binding<Bool>) {
+        _userAction = userAction
+        _dontAskAgain = dontAskAgain
     }
 
     public var body: some View {
@@ -59,7 +61,12 @@ public struct VPNExclusionSuggestionAlert: ModalView {
                     .foregroundColor(.secondary)
                     .frame(alignment: .leading)
 
-                Toggle(isOn: $dontAskAgain) {
+                Toggle(isOn: .init(get: {
+                    dontAskAgain
+                }, set: { newValue in
+                    dontAskAgain = newValue
+                    redraw.toggle()
+                })) {
                     Text(UserText.vpnExclusionSuggestionAlertDontAskAgainTitle)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -70,13 +77,13 @@ public struct VPNExclusionSuggestionAlert: ModalView {
 
             HStack {
                 Button(UserText.vpnExclusiveSuggestionAlertActionExcludeAWebsite) {
-                    result = .excludeWebsite
+                    userAction = .excludeWebsite
                     dismiss()
                 }
                 .buttonStyle(DismissActionButtonStyle())
 
                 Button(UserText.vpnExclusiveSuggestionAlertActionExcludeAnApp) {
-                    result = .excludeApp
+                    userAction = .excludeApp
                     dismiss()
                 }
                 .buttonStyle(DismissActionButtonStyle())
@@ -84,7 +91,7 @@ public struct VPNExclusionSuggestionAlert: ModalView {
                 Spacer()
 
                 Button(UserText.vpnExclusiveSuggestionAlertActionTurnOffVPN) {
-                    result = .stopVPN
+                    userAction = .stopVPN
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -99,6 +106,6 @@ public struct VPNExclusionSuggestionAlert: ModalView {
 struct VPNExclusionSuggestionAlert_Previews: PreviewProvider {
 
     static var previews: some View {
-        VPNExclusionSuggestionAlert(result: .constant(.stopVPN))
+        VPNExclusionSuggestionAlert(userAction: .constant(.stopVPN), dontAskAgain: .constant(false))
     }
 }

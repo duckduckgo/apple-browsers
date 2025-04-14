@@ -52,7 +52,8 @@ public extension BrokerProfileQueryData {
                 schedulingConfig: DataBrokerScheduleConfig.mock,
                 parent: parentURL,
                 mirrorSites: mirrorSites,
-                optOutUrl: optOutUrl ?? ""
+                optOutUrl: optOutUrl ?? "",
+                eTag: ""
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
@@ -574,9 +575,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchBroker(with name: String) throws -> DataBroker? {
         if shouldReturnOldVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "")
+            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")
         } else if shouldReturnNewVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "")
+            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")
         }
 
         return nil
@@ -1233,7 +1234,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "", 
+            eTag: ""
         )
     }
 }
@@ -1806,7 +1808,8 @@ public extension BrokerDB {
             BrokerDB(id: nil, name: .random(length: 4),
                      json: try! JSONSerialization.data(withJSONObject: [:], options: []),
                      version: "\($0).\($0).\($0)",
-                     url: "www.testbroker.com")
+                     url: "www.testbroker.com",
+                     eTag: "")
         }
     }
 }
@@ -1865,6 +1868,7 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV3Migrations = false
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
+    public static var didCallV6Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -1883,6 +1887,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v5Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV5Migrations = true
+        return { _ in }
+    }
+
+    public static var v6Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV6Migrations = true
         return { _ in }
     }
 }
@@ -1948,7 +1957,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 
@@ -1969,7 +1979,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             parent: "some",
-            optOutUrl: ""
+            optOutUrl: "", 
+            eTag: ""
         )
     }
 
@@ -1985,7 +1996,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 
@@ -2000,7 +2012,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
               ),
-              optOutUrl: ""
+              optOutUrl: "",
+              eTag: ""
         )
     }
 
@@ -2021,7 +2034,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             mirrorSites: mirroSites,
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 }

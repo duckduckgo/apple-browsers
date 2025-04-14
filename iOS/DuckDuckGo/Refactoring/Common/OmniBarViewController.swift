@@ -28,12 +28,14 @@ class OmniBarViewController: UIViewController, OmniBar {
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
-    var isTextFieldEditing: Bool { false }
     var isBackButtonEnabled: Bool = false
     var isForwardButtonEnabled: Bool = false
     var text: String? {
         get { textField.text }
         set { textField.text = newValue }
+    }
+    var isTextFieldEditing: Bool {
+        textField.isEditing
     }
 
     // -

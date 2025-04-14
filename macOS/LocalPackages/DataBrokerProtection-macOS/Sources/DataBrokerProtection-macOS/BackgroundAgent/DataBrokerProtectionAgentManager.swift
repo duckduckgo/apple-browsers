@@ -89,7 +89,14 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let fallbackService = FallbackBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let brokerUpdater = RemoteBrokerJSONService(settings: dbpSettings,
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    fallbackService: fallbackService)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, fallbackService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
@@ -97,7 +104,6 @@ public class DataBrokerProtectionAgentManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
                                                                     operationsCreator: operationsBuilder,
                                                                     mismatchCalculator: mismatchCalculator,

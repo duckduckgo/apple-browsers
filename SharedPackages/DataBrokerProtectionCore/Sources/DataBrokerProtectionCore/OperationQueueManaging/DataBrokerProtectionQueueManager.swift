@@ -76,7 +76,7 @@ public protocol DataBrokerProtectionQueueManager {
     init(operationQueue: DataBrokerProtectionOperationQueue,
          operationsCreator: DataBrokerOperationsCreator,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+         brokerUpdater: BrokerJSONServiceProvider?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -101,7 +101,7 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     private var operationQueue: DataBrokerProtectionOperationQueue
     private let operationsCreator: DataBrokerOperationsCreator
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
+    private let brokerUpdater: BrokerJSONServiceProvider?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = DataBrokerProtectionQueueMode.idle
@@ -120,7 +120,7 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     public init(operationQueue: DataBrokerProtectionOperationQueue,
                 operationsCreator: DataBrokerOperationsCreator,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+                brokerUpdater: BrokerJSONServiceProvider?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.operationQueue = operationQueue
@@ -250,8 +250,9 @@ private extension DefaultDataBrokerProtectionQueueManager {
     }
 
     func updateBrokerData() {
-        // Update broker files if applicable
-        brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
+        Task {
+            try await brokerUpdater?.checkForUpdates()
+        }
     }
 
     func addOperations(withType type: OperationType,

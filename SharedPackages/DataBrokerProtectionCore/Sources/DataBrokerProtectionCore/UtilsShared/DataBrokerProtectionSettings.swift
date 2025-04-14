@@ -31,6 +31,9 @@ public final class DataBrokerProtectionSettings {
     public enum Keys {
         public static let runType = "dbp.environment.run-type"
         static let isAuthV2Enabled = "dbp.environment.isAuthV2Enabled"
+
+        static let mainConfigETagKey = "dbp.mainConfigETag"
+        static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
     }
 
     public enum SelectedEnvironment: String, Codable {
@@ -72,6 +75,30 @@ public final class DataBrokerProtectionSettings {
         set {
             defaults.setValue(newValue, forKey: Keys.isAuthV2Enabled)
         }
+    }
+
+    // MARK: - Broker JSONs
+
+    public var mainConfigETag: String? {
+        get {
+            defaults.string(forKey: Keys.mainConfigETagKey)
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.mainConfigETagKey)
+        }
+    }
+
+    private(set) var lastBrokerJSONUpdateCheckTimestamp: TimeInterval {
+        get {
+            defaults.double(forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
+        }
+        set {
+            defaults.set(Date().timeIntervalSince1970, forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
+        }
+    }
+
+    public func updateLastSuccessfulBrokerJSONUpdateCheckTimestamp() {
+        lastBrokerJSONUpdateCheckTimestamp = Date().timeIntervalSince1970
     }
 }
 

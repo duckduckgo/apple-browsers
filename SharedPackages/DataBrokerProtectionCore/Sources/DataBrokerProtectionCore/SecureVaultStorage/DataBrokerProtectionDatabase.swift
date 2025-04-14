@@ -78,13 +78,16 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let fakeBrokerFlag: DataBrokerDebugFlag
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let vault: (any DataBrokerProtectionSecureVault)
+    private let fallbackService: BrokerJSONFallbackProvider
 
     public init(fakeBrokerFlag: DataBrokerDebugFlag,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: (any DataBrokerProtectionSecureVault)) {
+                vault: (any DataBrokerProtectionSecureVault),
+                fallbackService: BrokerJSONFallbackProvider) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
+        self.fallbackService = fallbackService
     }
 
     public func save(_ profile: DataBrokerProtectionProfile) async throws {
@@ -505,13 +508,9 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
-        if let brokers = try FileResources().fetchBrokerFromResourceFiles() {
-            var brokerIDs = [Int64]()
-
-            for broker in brokers {
-                let brokerId = try vault.save(broker: broker)
-                brokerIDs.append(brokerId)
-            }
+        let storedBrokers = try vault.fetchAllBrokers()
+        if let brokers = storedBrokers.isEmpty ? try fallbackService.fallbackBrokers() : storedBrokers {
+            let brokerIDs = brokers.compactMap(\.id)
 
             try initializeDatabaseForProfile(
                 profileId: Self.profileId,

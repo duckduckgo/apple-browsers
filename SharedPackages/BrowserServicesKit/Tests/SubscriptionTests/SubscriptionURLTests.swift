@@ -174,39 +174,39 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(url, expectedURL)
     }
 
-    func testSubscriptionURLComponentsWithOriginForProduction() throws {
+    func testPurchaseURLComponentsWithOriginForProduction() throws {
         // Given
         let origin = "funnel_appsettings_ios"
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
 
         // When
-        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .production)
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)
         XCTAssertEqual(components?.url, expectedURL)
     }
 
-    func testSubscriptionURLComponentsWithOriginForStaging() throws {
+    func testPurchaseURLComponentsWithOriginForStaging() throws {
         // Given
         let origin = "funnel_appsettings_ios"
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging&origin=funnel_appsettings_ios")!
 
         // When
-        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .staging)
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .staging)
 
         // Then
         XCTAssertNotNil(components)
         XCTAssertEqual(components?.url, expectedURL)
     }
 
-    func testSubscriptionURLComponentsWithOriginWithEmptyOrigin() throws {
+    func testPurchaseURLComponentsWithOriginWithEmptyOrigin() throws {
         // Given
         let origin = ""
         let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=")!
 
         // When
-        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .production)
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)

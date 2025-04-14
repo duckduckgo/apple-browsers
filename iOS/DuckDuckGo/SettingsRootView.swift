@@ -34,7 +34,7 @@ struct SettingsRootView: View {
     @State var isShowingSubscribeFlow = false
 
     private var settingPrivacyProRedirectURLComponents: URLComponents? {
-        SubscriptionURL.subscriptionURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
+        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
     }
 
     var body: some View {

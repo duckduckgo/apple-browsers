@@ -21,6 +21,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import NetworkProtectionProxy
 import NetworkProtectionIPC
+import VPNAppState
 
 extension VPNBypassService {
     public convenience init() {
@@ -30,15 +31,7 @@ extension VPNBypassService {
     }
 
     public var isSupported: Bool {
-#if APPSTORE
-#if NETP_SYSTEM_EXTENSION
-        return true
-#else
-        return false
-#endif
-#else
-        return true
-#endif
+        VPNAppState(defaults: .netP).isUsingSystemExtension
     }
 }
 

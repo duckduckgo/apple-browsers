@@ -76,9 +76,9 @@ final class UpdatedOmniBarSearchView: UIView {
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
+        trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
         trailingItemsContainer.addArrangedSubview(reloadButton)
-        trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(accessoryButton)

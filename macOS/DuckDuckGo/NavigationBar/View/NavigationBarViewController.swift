@@ -164,7 +164,9 @@ final class NavigationBarViewController: NSViewController {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager, statusReporter: networkProtectionStatusReporter)
+        self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
+                                                                               statusReporter: networkProtectionStatusReporter,
+                                                                               iconProvider: visualStyleManager.style.vpnNavigationIconsProvider)
         self.downloadListCoordinator = downloadListCoordinator
         self.dragDropManager = dragDropManager
         self.brokenSitePromptLimiter = brokenSitePromptLimiter

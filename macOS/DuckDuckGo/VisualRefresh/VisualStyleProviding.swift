@@ -19,6 +19,7 @@
 import Combine
 import BrowserServicesKit
 import FeatureFlags
+import NetworkProtectionUI
 
 protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
@@ -35,6 +36,7 @@ protocol VisualStyleProviding {
     var passwordManagerButtonImage: NSImage { get }
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
+    var vpnNavigationIconsProvider: IconProvider { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -82,6 +84,7 @@ struct VisualStyle: VisualStyleProviding {
     let passwordManagerButtonImage: NSImage
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
+    let vpnNavigationIconsProvider: IconProvider
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -125,7 +128,8 @@ struct VisualStyle: VisualStyleProviding {
                            downloadsButtonImage: .downloads,
                            passwordManagerButtonImage: .passwordManagement,
                            bookmarksButtonImage: .bookmarks,
-                           moreOptionsbuttonImage: .settings)
+                           moreOptionsbuttonImage: .settings,
+                           vpnNavigationIconsProvider: NavigationBarIconProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -146,7 +150,8 @@ struct VisualStyle: VisualStyleProviding {
                            downloadsButtonImage: .downloadsNew,
                            passwordManagerButtonImage: .passwordManagerNew,
                            bookmarksButtonImage: .bookmarksNew,
-                           moreOptionsbuttonImage: .optionsNew)
+                           moreOptionsbuttonImage: .optionsNew,
+                           vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider())
     }
 }
 

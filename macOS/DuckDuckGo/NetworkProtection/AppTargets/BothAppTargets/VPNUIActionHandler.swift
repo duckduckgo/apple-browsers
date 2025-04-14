@@ -101,10 +101,10 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         case .stopVPN:
             return true
         case .excludeApp:
-            await WindowControllersManager.shared.showVPNAppExclusions()
+            await WindowControllersManager.shared.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
-            await WindowControllersManager.shared.showVPNDomainExclusions()
+            await WindowControllersManager.shared.showVPNDomainExclusions(addDomain: true)
             return false
         }
     }

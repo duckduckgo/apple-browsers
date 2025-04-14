@@ -20,19 +20,19 @@
 import BrowserServicesKit
 import Core
 
-enum OnboardingAddToDockState: String, Equatable, CaseIterable, CustomStringConvertible {
-    case disabled
-    case intro
-    case contextual
+enum OnboardingUserType: String, Equatable, CaseIterable, CustomStringConvertible {
+    case notSet
+    case newUser
+    case returningUser
 
     var description: String {
         switch self {
-        case .disabled:
-            "Disabled"
-        case .intro:
-            "Onboarding Intro"
-        case .contextual:
-            "Dax Dialogs"
+        case .notSet:
+            "Not Set - Using Real Value"
+        case .newUser:
+            "New User"
+        case .returningUser:
+            "Returning User"
         }
     }
 }
@@ -41,18 +41,22 @@ typealias OnboardingIntroExperimentManaging = OnboardingSetAsDefaultExperimentMa
 typealias OnboardingManaging = OnboardingSettingsURLProvider & OnboardingStepsProvider & OnboardingIntroExperimentManaging
 
 final class OnboardingManager {
+    private var appDefaults: OnboardingDebugAppSettings
     private let featureFlagger: FeatureFlagger
     private let variantManager: VariantManager
     private let isIphone: Bool
 
-    private var isNewUser: Bool {
+    var isNewUser: Bool {
 #if DEBUG || ALPHA
         // If debug or alpha build enable testing the experiment with cohort override.
         // If running unit tests do not override behaviour.
-        if ProcessInfo().arguments.contains("testing") {
+        switch appDefaults.onboardingUserType {
+        case .notSet:
             variantManager.currentVariant?.name != VariantIOS.returningUser.name
-        } else {
+        case .newUser:
             true
+        case .returningUser:
+            false
         }
 #else
         variantManager.currentVariant?.name != VariantIOS.returningUser.name
@@ -60,13 +64,33 @@ final class OnboardingManager {
     }
 
     init(
+        appDefaults: OnboardingDebugAppSettings = AppDependencyProvider.shared.appSettings,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         variantManager: VariantManager = DefaultVariantManager(),
         isIphone: Bool = UIDevice.current.userInterfaceIdiom == .phone
     ) {
+        self.appDefaults = appDefaults
         self.featureFlagger = featureFlagger
         self.variantManager = variantManager
         self.isIphone = isIphone
+    }
+}
+
+// MARK: - New User Debugging
+
+protocol OnboardingNewUserProviderDebugging: AnyObject {
+    var onboardingUserTypeDebugValue: OnboardingUserType { get set }
+}
+
+extension OnboardingManager: OnboardingNewUserProviderDebugging {
+
+    var onboardingUserTypeDebugValue: OnboardingUserType {
+        get {
+            appDefaults.onboardingUserType
+        }
+        set {
+            appDefaults.onboardingUserType = newValue
+        }
     }
 }
 
@@ -89,15 +113,29 @@ extension OnboardingManager: OnboardingSettingsURLProvider {}
 
 // MARK: - Onboarding Steps Provider
 
-enum OnboardingIntroStep {
-    case introDialog
+enum OnboardingIntroStep: Equatable {
+    case introDialog(isReturningUser: Bool)
     case browserComparison
     case appIconSelection
     case addressBarPositionSelection
     case addToDockPromo
 
-    static let defaultIPhoneFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
-    static let defaultIPadFlow: [OnboardingIntroStep] = [.introDialog, .browserComparison, .appIconSelection]
+    private static let iPhoneFlow: [OnboardingIntroStep] = [.browserComparison, .addToDockPromo, .appIconSelection, .addressBarPositionSelection]
+    private static let iPadFlow: [OnboardingIntroStep] = [.browserComparison, .appIconSelection]
+
+    static func newUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
+        let introStep = OnboardingIntroStep.introDialog(isReturningUser: false)
+        return [introStep] + steps(isIphone: isIphone)
+    }
+
+    static func returningUserSteps(isIphone: Bool) -> [OnboardingIntroStep] {
+        let introStep = OnboardingIntroStep.introDialog(isReturningUser: true)
+        return [introStep] + steps(isIphone: isIphone)
+    }
+
+    private static func steps(isIphone: Bool) -> [OnboardingIntroStep] {
+        isIphone ? iPhoneFlow : iPadFlow
+    }
 }
 
 protocol OnboardingStepsProvider: AnyObject {
@@ -107,7 +145,7 @@ protocol OnboardingStepsProvider: AnyObject {
 extension OnboardingManager: OnboardingStepsProvider {
 
     var onboardingSteps: [OnboardingIntroStep] {
-        isIphone ? OnboardingIntroStep.defaultIPhoneFlow : OnboardingIntroStep.defaultIPadFlow
+        isNewUser ? OnboardingIntroStep.newUserSteps(isIphone: isIphone) : OnboardingIntroStep.returningUserSteps(isIphone: isIphone)
     }
 
     var userHasSeenAddToDockPromoDuringOnboarding: Bool {

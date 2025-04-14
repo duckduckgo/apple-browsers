@@ -19,6 +19,8 @@ appId: com.duckduckgo.mobile.ios
 - inputText: "https://privacy-test-pages.site/"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 # Prepare to add widgets
 - pressKey: HOME
 

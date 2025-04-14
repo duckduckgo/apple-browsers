@@ -20,11 +20,10 @@ import Combine
 
 protocol AIChatPreferencesStorage {
     var showShortcutInApplicationMenu: Bool { get set }
-    var shouldDisplayToolbarShortcut: Bool { get set }
-    var didDisplayAIChatToolbarOnboarding: Bool { get set }
-
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> { get }
-    var shouldDisplayToolbarShortcutPublisher: AnyPublisher<Bool, Never> { get }
+
+    var showShortcutInAddressBar: Bool { get set }
+    var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> { get }
 
     func reset()
 }
@@ -38,20 +37,8 @@ struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         userDefaults.showAIChatShortcutInApplicationMenuPublisher
     }
 
-    var shouldDisplayToolbarShortcutPublisher: AnyPublisher<Bool, Never> {
-        notificationCenter.publisher(for: .PinnedViewsChanged)
-            .compactMap { notification -> PinnableView? in
-                guard let userInfo = notification.userInfo as? [String: Any],
-                      let viewType = userInfo[LocalPinningManager.pinnedViewChangedNotificationViewTypeKey] as? String,
-                      let view = PinnableView(rawValue: viewType) else {
-                    return nil
-                }
-                return view == .aiChat ? view : nil
-            }
-            .flatMap { view -> AnyPublisher<Bool, Never> in
-                return Just(self.pinningManager.isPinned(view)).eraseToAnyPublisher()
-            }
-            .eraseToAnyPublisher()
+    var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
+        userDefaults.showAIChatShortcutInAddressBarPublisher
     }
 
     init(userDefaults: UserDefaults = .standard,
@@ -62,42 +49,30 @@ struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
         self.notificationCenter = notificationCenter
     }
 
-    var shouldDisplayToolbarShortcut: Bool {
-        get { pinningManager.isPinned(.aiChat) }
-        set {
-            if newValue {
-                pinningManager.pin(.aiChat)
-            } else {
-                pinningManager.unpin(.aiChat)
-            }
-        }
-    }
-
     var showShortcutInApplicationMenu: Bool {
         get { userDefaults.showAIChatShortcutInApplicationMenu }
         set { userDefaults.showAIChatShortcutInApplicationMenu = newValue }
     }
 
-    var didDisplayAIChatToolbarOnboarding: Bool {
-        get { userDefaults.didDisplayAIChatToolbarOnboarding }
-        set { userDefaults.didDisplayAIChatToolbarOnboarding = newValue }
+    var showShortcutInAddressBar: Bool {
+        get { userDefaults.showAIChatShortcutInAddressBar }
+        set { userDefaults.showAIChatShortcutInAddressBar = newValue }
     }
 
     func reset() {
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
-        userDefaults.didDisplayAIChatToolbarOnboarding = UserDefaults.didDisplayAIChatToolbarOnboardingDefaultValue
-        pinningManager.unpin(.aiChat)
+        userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
     }
 }
 
 private extension UserDefaults {
     enum Keys {
         static let showAIChatShortcutInApplicationMenuKey = "aichat.showAIChatShortcutInApplicationMenu"
-        static let didDisplayAIChatToolbarOnboardingKey = "aichat.didDisplayAIChatToolbarOnboarding"
+        static let showAIChatShortcutInAddressBarKey = "aichat.showAIChatShortcutInAddressBar"
     }
 
     static let showAIChatShortcutInApplicationMenuDefaultValue = true
-    static let didDisplayAIChatToolbarOnboardingDefaultValue = false
+    static let showAIChatShortcutInAddressBarDefaultValue = true
 
     @objc dynamic var showAIChatShortcutInApplicationMenu: Bool {
         get {
@@ -110,14 +85,14 @@ private extension UserDefaults {
         }
     }
 
-    @objc dynamic var didDisplayAIChatToolbarOnboarding: Bool {
+    @objc dynamic var showAIChatShortcutInAddressBar: Bool {
         get {
-            value(forKey: Keys.didDisplayAIChatToolbarOnboardingKey) as? Bool ?? Self.didDisplayAIChatToolbarOnboardingDefaultValue
+            value(forKey: Keys.showAIChatShortcutInAddressBarKey) as? Bool ?? Self.showAIChatShortcutInAddressBarDefaultValue
         }
 
         set {
-            guard newValue != didDisplayAIChatToolbarOnboarding else { return }
-            set(newValue, forKey: Keys.didDisplayAIChatToolbarOnboardingKey)
+            guard newValue != showAIChatShortcutInAddressBar else { return }
+            set(newValue, forKey: Keys.showAIChatShortcutInAddressBarKey)
         }
     }
 
@@ -125,7 +100,7 @@ private extension UserDefaults {
         publisher(for: \.showAIChatShortcutInApplicationMenu).eraseToAnyPublisher()
     }
 
-    var didDisplayAIChatToolbarOnboardingPublisher: AnyPublisher<Bool, Never> {
-        publisher(for: \.didDisplayAIChatToolbarOnboarding).eraseToAnyPublisher()
+    var showAIChatShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
+        publisher(for: \.showAIChatShortcutInAddressBar).eraseToAnyPublisher()
     }
 }

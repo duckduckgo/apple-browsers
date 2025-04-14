@@ -1646,7 +1646,7 @@
     },
     "ai-chat.onboarding.popover.accept" : {
       "comment" : "AI Chat onboarding CTA for approval",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1706,7 +1706,7 @@
     },
     "ai-chat.onboarding.popover.message-fallback" : {
       "comment" : "AI Chat onboarding popover message continuation",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1766,7 +1766,7 @@
     },
     "ai-chat.onboarding.popover.reject" : {
       "comment" : "AI Chat onboarding CTA for rejection",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -21741,7 +21741,7 @@
     },
     "duck.ai.onboarding.popover.message-markdown" : {
       "comment" : "AI Chat onboarding popover message, make sure to keep Settings and AI Chat inside ** **",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -21861,7 +21861,7 @@
     },
     "duckai.onboarding.popover.confirmation" : {
       "comment" : "Confirmation for accepting the AI Chat onboarding popover",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -21921,7 +21921,7 @@
     },
     "duckai.onboarding.popover.title" : {
       "comment" : "AI Chat onboarding popover title",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -22039,6 +22039,18 @@
         }
       }
     },
+    "duckai.show-in-address-bar.toggle" : {
+      "comment" : "Show AI Chat in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Duck.ai shortcut in the address bar"
+          }
+        }
+      }
+    },
     "duckai.show-in-application-menu.toggle-setting" : {
       "comment" : "Show Duck.ai in application menus",
       "extractionState" : "extracted_with_value",
@@ -22101,7 +22113,7 @@
     },
     "duckai.show-in-toolbar.toggle" : {
       "comment" : "Show AI Chat in toolbar",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -49398,7 +49410,7 @@
     },
     "pinning.hide-duckai-shortcut" : {
       "comment" : "Menu item for hiding the AI Chat shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -49698,7 +49710,7 @@
     },
     "pinning.show-duckai-shortcut" : {
       "comment" : "Menu item for showing the AI Chat shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -58288,6 +58300,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настроить фон"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat" : {
+      "comment" : "Option to show AI Chat the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
           }
         }
       }
@@ -67976,6 +68000,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавить в избранное"
+          }
+        }
+      }
+    },
+    "tooltip.aichat.address-bar" : {
+      "comment" : "Tooltip for the AI Chat address bar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "tooltip.aichat.address-bar-shortcut" : {
+      "comment" : "Tooltip With Shortcut for the AI Chat address bar button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai ⇧↵"
           }
         }
       }

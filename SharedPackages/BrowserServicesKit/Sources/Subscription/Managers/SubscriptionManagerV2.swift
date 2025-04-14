@@ -64,6 +64,11 @@ public enum SubscriptionPixelType {
     case getTokensError(AuthTokensCachePolicy, Error)
 }
 
+/// Pixels handler
+public protocol SubscriptionPixelHandler {
+    func handle(pixelType: SubscriptionPixelType)
+}
+
 public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAuthenticationStateProvider, SubscriptionAuthV1toV2Bridge {
 
     // Environment
@@ -110,9 +115,6 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     /// Confirm a purchase with a platform signature
     func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription
 
-    /// Pixels handler
-    typealias PixelHandler = (SubscriptionPixelType) -> Void
-
     /// Closure called when an expired refresh token is detected and the Subscription login is invalid. An attempt to automatically recover it can be performed or the app can ask the user to do it manually
     typealias TokenRecoveryHandler = () async throws -> Void
 
@@ -157,7 +159,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     var oAuthClient: any OAuthClient
     private let _storePurchaseManager: StorePurchaseManagerV2?
     private let subscriptionEndpointService: SubscriptionEndpointServiceV2
-    private let pixelHandler: PixelHandler?
+    private let pixelHandler: SubscriptionPixelHandler
     public var tokenRecoveryHandler: TokenRecoveryHandler?
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
@@ -168,7 +170,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 oAuthClient: any OAuthClient,
                 subscriptionEndpointService: SubscriptionEndpointServiceV2,
                 subscriptionEnvironment: SubscriptionEnvironment,
-                pixelHandler: PixelHandler? = nil,
+                pixelHandler: SubscriptionPixelHandler,
                 tokenRecoveryHandler: TokenRecoveryHandler? = nil,
                 initForPurchase: Bool = true,
                 legacyAccountStorage: AccountKeychainStorage? = nil,
@@ -243,14 +245,14 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         // Attempting V1 token migration
         do {
-            pixelHandler?(.migrationStarted)
+            pixelHandler.handle(pixelType: .migrationStarted)
             if (try await oAuthClient.migrateV1Token()) != nil {
-                pixelHandler?(.migrationSucceeded)
+                pixelHandler.handle(pixelType: .migrationSucceeded)
             }
             v1MigrationNeeded = false
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
-            pixelHandler?(.migrationFailed(error))
+            pixelHandler.handle(pixelType: .migrationFailed(error))
             switch error {
             case OAuthServiceError.authAPIError(let code) where code ==  OAuthRequest.BodyErrorCode.invalidToken:
                 // Case where the token is not valid anymore, probably because the BE deleted the account: https://app.asana.com/0/1205842942115003/1209427500692943/f
@@ -269,9 +271,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             _ = try await currentSubscriptionFeatures(forceRefresh: true)
             let subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
-            if subscription.isActive {
-                pixelHandler?(.subscriptionIsActive)
-            }
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.log("No Subscription available")
             clearSubscriptionCache()
@@ -286,25 +285,29 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             throw SubscriptionEndpointServiceError.noData
         }
 
+        var subscription: PrivacyProSubscription
         // NOTE: This is ugly, the subscription cache will be moved from the endpoint service to here and handled properly https://app.asana.com/0/0/1209015691872191
         switch cachePolicy {
-
         case .reloadIgnoringLocalCacheData:
             let tokenContainer = try await getTokenContainer(policy: .localValid)
-            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                         cachePolicy: cachePolicy)
-
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
+                                                                                 cachePolicy: cachePolicy)
         case .returnCacheDataElseLoad:
-            guard let tokenContainer = try? await getTokenContainer(policy: .localValid) else {
-                return try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
+            if let tokenContainer = try? await getTokenContainer(policy: .localValid) {
+                subscription = try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
+                                                                                     cachePolicy: .returnCacheDataElseLoad)
+            } else {
+                subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
             }
-            return try await subscriptionEndpointService.getSubscription(accessToken: tokenContainer.accessToken,
-                                                                         cachePolicy: .returnCacheDataElseLoad)
-
         case .returnCacheDataDontLoad:
-            return try await subscriptionEndpointService.getSubscription(accessToken: "",
-                                                                         cachePolicy: .returnCacheDataDontLoad)
+            subscription = try await subscriptionEndpointService.getSubscription(accessToken: "",
+                                                                                 cachePolicy: .returnCacheDataDontLoad)
         }
+
+        if subscription.isActive {
+            pixelHandler.handle(pixelType: .subscriptionIsActive)
+        }
+        return subscription
     }
 
     public func isSubscriptionPresent() -> Bool {
@@ -428,14 +431,14 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.missingTokens: // Expected when no tokens are available
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
             case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
-                pixelHandler?(.getTokensError(policy, error))
+                pixelHandler.handle(pixelType: .getTokensError(policy, error))
                 do {
                     return try await attemptTokenRecovery()
                 } catch {
                     throw error
                 }
             default:
-                pixelHandler?(.getTokensError(policy, error))
+                pixelHandler.handle(pixelType: .getTokensError(policy, error))
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
             }
         }
@@ -448,7 +451,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         }
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
-        pixelHandler?(.invalidRefreshToken)
+        pixelHandler.handle(pixelType: .invalidRefreshToken)
         await signOut(notifyUI: false)
 
         try await tokenRecoveryHandler()

@@ -87,8 +87,6 @@ final class MainMenu: NSMenu {
     var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "N")
 
-    let toggleAIChatShortcutMenuItem = NSMenuItem(title: UserText.showAIChatShortcut, action: #selector(MainViewController.toggleAIChatShortcut), keyEquivalent: "L")
-
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
 
@@ -110,10 +108,13 @@ final class MainMenu: NSMenu {
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
+    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let internalUserDecider: InternalUserDecider
+    private let appVersion: AppVersion
 
     // MARK: - Initialization
 
@@ -123,8 +124,12 @@ final class MainMenu: NSMenu {
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
-         aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         internalUserDecider: InternalUserDecider,
+         appVersion: AppVersion = .shared) {
 
+        self.internalUserDecider = internalUserDecider
+        self.appVersion = appVersion
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -151,7 +156,8 @@ final class MainMenu: NSMenu {
 
     func buildDuckDuckGoMenu() -> NSMenuItem {
         NSMenuItem(title: UserText.duckDuckGo) {
-            NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+            appAboutDDGMenuItem
+
             NSMenuItem.separator()
 
             preferencesMenuItem
@@ -296,8 +302,6 @@ final class MainMenu: NSMenu {
             toggleDownloadsShortcutMenuItem
 
             toggleNetworkProtectionShortcutMenuItem
-
-            toggleAIChatShortcutMenuItem
 
             NSMenuItem.separator()
 
@@ -454,8 +458,8 @@ final class MainMenu: NSMenu {
 
         // To be safe, hide the NetP shortcut menu item by default.
         toggleNetworkProtectionShortcutMenuItem.isHidden = true
-        toggleAIChatShortcutMenuItem.isHidden = true
 
+        updateAppAboutDDGMenuItem()
         updateHomeButtonMenuItem()
         updateBookmarksBarMenuItem()
         updateShortcutMenuItems()
@@ -464,6 +468,14 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
+    }
+
+    private func updateAppAboutDDGMenuItem() {
+        if internalUserDecider.isInternalUser {
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
+        } else {
+            appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
+        }
     }
 
     // MARK: - Bookmarks
@@ -623,13 +635,6 @@ final class MainMenu: NSMenu {
             toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
             toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
             toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-
-            if AIChatRemoteSettings().isApplicationMenuShortcutEnabled {
-                toggleAIChatShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
-                toggleAIChatShortcutMenuItem.isHidden = false
-            } else {
-                toggleAIChatShortcutMenuItem.isHidden = true
-            }
 
             if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false

@@ -114,11 +114,11 @@ final class DefaultOmniBarViewController: UIViewController, OmniBar {
     }
 
     func beginEditing() {
-        omniBarView.textField.becomeFirstResponder()
+        omniBarView.becomeFirstResponder()
     }
 
     func endEditing() {
-        omniBarView.textField.resignFirstResponder()
+        omniBarView.resignFirstResponder()
     }
 
     func refreshText(forUrl url: URL?, forceFullURL: Bool) {

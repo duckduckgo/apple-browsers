@@ -313,6 +313,11 @@ protocol NewWindowPolicyDecisionMaker {
 
 #if DEBUG
     func addDeallocationChecks(for webView: WKWebView) {
+        /// Deallocation checks cause random crashes in CI for integration tests.
+        /// https://app.asana.com/0/1201037661562251/1209884224558923/f
+        guard AppVersion.runType != .integrationTests else {
+            return
+        }
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
 
@@ -841,7 +846,9 @@ protocol NewWindowPolicyDecisionMaker {
         }
 #endif
         if PixelExperiment.cohort == .newOnboarding {
-            Application.appDelegate.onboardingStateMachine.state = .notStarted
+            if #available(macOS 12.0, *) {
+                Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+            }
             setContent(.onboarding)
         } else {
             setContent(.onboardingDeprecated)

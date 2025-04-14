@@ -23,14 +23,13 @@ import XCTest
 import BrowserServicesKit
 import Combine
 
-
 class DuckPlayerSettingsTests: XCTestCase {
-    
+
     private var mockAppSettings: AppSettingsMock!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
     private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
     private var settings: DuckPlayerSettingsDefault!
-    
+
     override func setUp() {
         super.setUp()
         mockAppSettings = AppSettingsMock()
@@ -40,29 +39,29 @@ class DuckPlayerSettingsTests: XCTestCase {
                                            privacyConfigManager: mockPrivacyConfig,
                                            internalUserDecider: mockInternalUserDecider)
     }
-    
+
     override func tearDown() {
         mockAppSettings = nil
         mockInternalUserDecider = nil
         settings = nil
         super.tearDown()
     }
-    
+
     func testNativeUIAndAutoplayDisabledForNonInternalUsers() {
         mockInternalUserDecider.mockIsInternalUser = false
         mockAppSettings.duckPlayerNativeUI = true
         mockAppSettings.duckPlayerAutoplay = true
-        
+
         // Check nativeUI
         XCTAssertFalse(settings.nativeUI, "nativeUI should be false for non-internal users regardless of setting")
-        
+
         // Check autoplay
         XCTAssertFalse(settings.autoplay, "autoplay should be false for non-internal users regardless of setting")
-        
+
         // Verify settings stay false even after changes
         mockAppSettings.duckPlayerNativeUI = true
         mockAppSettings.duckPlayerAutoplay = true
-        
+
         XCTAssertFalse(settings.nativeUI, "nativeUI should remain false after settings change")
         XCTAssertFalse(settings.autoplay, "autoplay should remain false after settings change")
     }

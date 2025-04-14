@@ -53,21 +53,7 @@ final class ToolbarHandler: ToolbarStateHandling {
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
     }()
 
-    private(set) lazy var fireButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(named: "Fire-New-24"), for: .normal)
-        button.tintColor = .label
-
-        button.frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-        button.backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        button.layer.cornerRadius = 14
-
-        button.imageView?.contentMode = .scaleAspectFit
-        button.contentVerticalAlignment = .center
-        button.contentHorizontalAlignment = .center
-
-        return button
-    }()
+    private(set) lazy var fireButton = FireButton()
 
     lazy var fireBarButtonItem = {
         if isExperimentalThemingEnabled {

@@ -173,4 +173,43 @@ final class SubscriptionURLTests: XCTestCase {
         // Then
         XCTAssertEqual(url, expectedURL)
     }
+
+    func testSubscriptionURLComponentsWithOriginForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testSubscriptionURLComponentsWithOriginForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testSubscriptionURLComponentsWithOriginWithEmptyOrigin() throws {
+        // Given
+        let origin = ""
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=")!
+
+        // When
+        let components = SubscriptionURL.subscriptionURLComponentsWithOrigin(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
 }

@@ -693,10 +693,10 @@ class MainViewController: UIViewController {
 
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
-
     }
 
     private func updateChromeForDuckPlayer() {
+        themeColorManager.updateThemeColor()
         let position = appSettings.currentAddressBarPosition
         switch position {
         case .top:
@@ -2603,6 +2603,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
+            themeColorManager.updateThemeColor()
         }
     }
 

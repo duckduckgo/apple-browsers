@@ -53,12 +53,17 @@ final class SiteThemeColorManager {
     }
 
     func updateThemeColor() {
+        guard isCurrentTabShowingDaxPlayer == false else {
+            return
+        }
+
         guard let host = currentTabViewController()?.url?.host,
               let cachedColor = colorCache[host],
-              !isCurrentTabShowingError else {
+              shouldApplyColorToCurrentTab else {
             resetThemeColor()
             return
         }
+
         updateThemeColor(cachedColor)
     }
 
@@ -70,15 +75,21 @@ final class SiteThemeColorManager {
 
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
+
+            guard self?.isCurrentTabShowingDaxPlayer == false else {
+                return
+            }
+
             guard let self,
                   let newColor = change.newValue as? UIColor,
-                  let host = webView.url?.host else {
+                  let host = webView.url?.host,
+            self.shouldApplyColorToCurrentTab else {
                 self?.resetThemeColor()
                 return
             }
 
             colorCache[host] = newColor
-            if isCurrentTab, !isCurrentTabShowingError {
+            if isCurrentTab {
                 updateThemeColor(newColor)
             }
         }
@@ -88,8 +99,18 @@ final class SiteThemeColorManager {
         tabViewController?.tabModel == currentTabViewController()?.tabModel
     }
 
+    private var shouldApplyColorToCurrentTab: Bool {
+        // We do not support top address bar position in this 1st iteration
+        appSettings.currentAddressBarPosition == .bottom
+        && !(isCurrentTabShowingError || isCurrentTabShowingDaxPlayer)
+    }
+
     private var isCurrentTabShowingError: Bool {
         currentTabViewController()?.isError == true
+    }
+
+    private var isCurrentTabShowingDaxPlayer: Bool {
+        currentTabViewController()?.url?.isDuckPlayer == true
     }
 
     private func updateThemeColor(_ color: UIColor) {
@@ -97,6 +118,7 @@ final class SiteThemeColorManager {
             resetThemeColor()
             return
         }
+
         applyThemeColor(adjustColor(color))
     }
 
@@ -105,17 +127,19 @@ final class SiteThemeColorManager {
         return color.adjustBrightness(by: brightnessAdjustment)
     }
 
-    private func applyThemeColor(_ color: UIColor) {
+    private func applyThemeColor(_ color: UIColor?) {
         guard ExperimentalThemingManager().isExperimentalThemingEnabled else { return }
-        // We do not support top address bar position in this 1st iteration
-        if appSettings.currentAddressBarPosition == .bottom {
-            viewCoordinator.statusBackground.backgroundColor = color
-        } else {
-            viewCoordinator.statusBackground.backgroundColor = UIColor(designSystemColor: .background)
+
+        var newColor = UIColor(designSystemColor: .background)
+
+        if let color {
+            newColor = color
         }
-        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = color
-        tabViewController?.webView?.underPageBackgroundColor = color
-        tabViewController?.webView?.scrollView.backgroundColor = color
+
+        viewCoordinator.statusBackground.backgroundColor = newColor
+        tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
+        tabViewController?.webView?.underPageBackgroundColor = newColor
+        tabViewController?.webView?.scrollView.backgroundColor = newColor
     }
 
 }

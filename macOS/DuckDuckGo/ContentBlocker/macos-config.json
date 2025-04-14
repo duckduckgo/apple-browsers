@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1744016827714,
+    "version": 1744423374947,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -546,6 +546,15 @@
                     "domain": "royalmail.com"
                 },
                 {
+                    "domain": "schrodersgreencoat.com"
+                },
+                {
+                    "domain": "deinepflege.de"
+                },
+                {
+                    "domain": "ground.news"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -713,7 +722,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "98515c03002cb086a119d6f09fabe627"
+            "hash": "cbba75ec6e776459b66ac164807d00c6"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -722,6 +731,11 @@
             },
             "exceptions": [],
             "hash": "ebf35854bdf33091c165b35d418d5707"
+        },
+        "autofillService": {
+            "exceptions": [],
+            "state": "disabled",
+            "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "autofillSurveys": {
             "state": "enabled",
@@ -829,10 +843,7 @@
         "brokerProtection": {
             "state": "enabled",
             "exceptions": [],
-            "settings": {
-                "useEnhancedCaptchaSystem": "disabled"
-            },
-            "hash": "dab6dd0487212f8a3dbb6c251991cc30"
+            "hash": "697382e31649d84b01166f1dc6f790d6"
         },
         "burn": {
             "state": "enabled",
@@ -4413,6 +4424,15 @@
                         ]
                     },
                     {
+                        "domain": "ncaa.com",
+                        "rules": [
+                            {
+                                "selector": ".mobile-persistent-bottom",
+                                "type": "hide"
+                            }
+                        ]
+                    },
+                    {
                         "domain": "ndtvprofit.com",
                         "rules": [
                             {
@@ -5801,7 +5821,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "2cc1eddf45931a5de97d551d859c3d39"
+            "hash": "b774e7e3e873c9e2f8ff787bec0ea11d"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6951,22 +6971,9 @@
             "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "showOnAppLaunch": {
-            "exceptions": [
-                {
-                    "domain": "marvel.com"
-                },
-                {
-                    "domain": "sundancecatalog.com"
-                },
-                {
-                    "domain": "noaprints.com"
-                },
-                {
-                    "domain": "flexmls.com"
-                }
-            ],
+            "exceptions": [],
             "state": "disabled",
-            "hash": "78dac7be701d735e14b6976594608de1"
+            "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "sslCertificates": {
             "state": "enabled",
@@ -6979,22 +6986,9 @@
             "hash": "abe9584048f7f8157f71a14e7914cb1c"
         },
         "swipingTabs": {
-            "exceptions": [
-                {
-                    "domain": "marvel.com"
-                },
-                {
-                    "domain": "sundancecatalog.com"
-                },
-                {
-                    "domain": "noaprints.com"
-                },
-                {
-                    "domain": "flexmls.com"
-                }
-            ],
+            "exceptions": [],
             "state": "disabled",
-            "hash": "78dac7be701d735e14b6976594608de1"
+            "hash": "728493ef7a1488e4781656d3f9db84aa"
         },
         "syncPromotion": {
             "state": "enabled",
@@ -7108,6 +7102,16 @@
                             }
                         ]
                     },
+                    "acdn.no": {
+                        "rules": [
+                            {
+                                "rule": "acdn.no/pkg/@amedia/browserid/.*/index.js",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "acsbapp.com": {
                         "rules": [
                             {
@@ -7189,6 +7193,16 @@
                                 "rule": "publisher.adlightning.com/user-api/session/",
                                 "domains": [
                                     "boltive.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "adnami.io": {
+                        "rules": [
+                            {
+                                "rule": "macro.adnami.io/macro/gen/adsm.macro.rmb.js",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -7538,6 +7552,16 @@
                             }
                         ]
                     },
+                    "byspotify.com": {
+                        "rules": [
+                            {
+                                "rule": "byspotify.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "captcha-delivery.com": {
                         "rules": [
                             {
@@ -7752,6 +7776,16 @@
                             }
                         ]
                     },
+                    "convertexperiments.com": {
+                        "rules": [
+                            {
+                                "rule": "convertexperiments.com",
+                                "domains": [
+                                    "ground.news"
+                                ]
+                            }
+                        ]
+                    },
                     "cookielaw.org": {
                         "rules": [
                             {
@@ -7832,6 +7866,16 @@
                             }
                         ]
                     },
+                    "ctctcdn.com": {
+                        "rules": [
+                            {
+                                "rule": "ctctcdn.com",
+                                "domains": [
+                                    "constantcontactpages.com"
+                                ]
+                            }
+                        ]
+                    },
                     "cudasvc.com": {
                         "rules": [
                             {
@@ -7896,6 +7940,16 @@
                                 "rule": "datadome.co",
                                 "domains": [
                                     "thetrainline.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "datatables.net": {
+                        "rules": [
+                            {
+                                "rule": "datatables.net",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -8588,6 +8642,16 @@
                             }
                         ]
                     },
+                    "glia.com": {
+                        "rules": [
+                            {
+                                "rule": "glia.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "google-analytics.com": {
                         "rules": [
                             {
@@ -9209,6 +9273,16 @@
                             }
                         ]
                     },
+                    "kit.com": {
+                        "rules": [
+                            {
+                                "rule": "kit.com",
+                                "domains": [
+                                    "convertkit.com"
+                                ]
+                            }
+                        ]
+                    },
                     "klarnaservices.com": {
                         "rules": [
                             {
@@ -9328,6 +9402,16 @@
                                 "domains": [
                                     "shein.co.uk",
                                     "shein.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "magsrv.com": {
+                        "rules": [
+                            {
+                                "rule": "magsrv.com",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -9519,6 +9603,16 @@
                             }
                         ]
                     },
+                    "nofraud.com": {
+                        "rules": [
+                            {
+                                "rule": "nofraud.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "nosto.com": {
                         "rules": [
                             {
@@ -9601,6 +9695,16 @@
                                 "rule": "cdn.onesignal.com/sdks/OneSignalSDK.js",
                                 "domains": [
                                     "cosmicbook.news"
+                                ]
+                            }
+                        ]
+                    },
+                    "onlineaccess1.com": {
+                        "rules": [
+                            {
+                                "rule": "onlineaccess1.com",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -10254,6 +10358,16 @@
                             }
                         ]
                     },
+                    "stripe.network": {
+                        "rules": [
+                            {
+                                "rule": "stripe.network",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "strpst.com": {
                         "rules": [
                             {
@@ -10604,6 +10718,16 @@
                             }
                         ]
                     },
+                    "weglot.com": {
+                        "rules": [
+                            {
+                                "rule": "cdn.weglot.com/weglot.min.js",
+                                "domains": [
+                                    "cherrycreekschools.org"
+                                ]
+                            }
+                        ]
+                    },
                     "wovn.io": {
                         "rules": [
                             {
@@ -10802,7 +10926,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "1dbf505288b341a2d631d5d842127d84"
+            "hash": "46961586fad0c38ae323cafb3c53c28b"
         },
         "trackingCookies1p": {
             "settings": {

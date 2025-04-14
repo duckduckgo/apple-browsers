@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 
 public extension NSEvent {
 
@@ -96,8 +97,8 @@ public extension NSEvent {
 #if DEBUG
     var eventDescription: String {
         let eventString: String = String(describing: self)
-        let typePattern = try! NSRegularExpression(pattern: "type=(\\w+)")
-        let locPattern = try! NSRegularExpression(pattern: "loc=\\(([-\\d,.]+)\\)")
+        let typePattern = regex("type=(\\w+)")
+        let locPattern = regex("loc=\\(([-\\d,.]+)\\)")
 
         let typeRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)
         let locRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)

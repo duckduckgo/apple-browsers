@@ -86,6 +86,7 @@ final class BrowserTabViewController: NSViewController {
     private var hoverLabelWorkItem: DispatchWorkItem?
 
     private var lastURL: URL?
+    private var lastTab: Tab?
     private var wasContextualOnboardingDialogDismissed = false
     private let onboardingPixelReporter: OnboardingPixelReporting
 
@@ -625,13 +626,14 @@ final class BrowserTabViewController: NSViewController {
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
             guard let self else { return }
             // remove dialog on reload
-            if self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
+            if tabViewModel?.tab == lastTab && self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
                 self.removeExistingDialog()
                 return
             }
             // present contextual onboarding dialog if needed
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
+            self.lastTab = self.tabViewModel?.tab
             self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }

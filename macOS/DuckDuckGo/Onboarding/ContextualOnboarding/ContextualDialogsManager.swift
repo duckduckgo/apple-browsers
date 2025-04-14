@@ -145,6 +145,7 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         case .highFive?:
             // If highFive dialog, complete onboarding.
             state = .onboardingCompleted
+            lastDialog = nil
         default:
             break
         }

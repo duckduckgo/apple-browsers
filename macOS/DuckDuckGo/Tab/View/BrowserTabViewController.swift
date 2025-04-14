@@ -86,7 +86,7 @@ final class BrowserTabViewController: NSViewController {
     private var hoverLabelWorkItem: DispatchWorkItem?
 
     private var lastURL: URL?
-    private var lastTab: Tab?
+    private weak var lastTab: Tab?
     private var wasContextualOnboardingDialogDismissed = false
     private let onboardingPixelReporter: OnboardingPixelReporting
 

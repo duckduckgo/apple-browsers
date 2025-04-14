@@ -21,16 +21,28 @@ protocol VPNUIPresenting {
     func showVPNAppExclusions()
 
     @MainActor
+    func showVPNAppExclusions(addApp: Bool)
+
+    @MainActor
     func showVPNDomainExclusions()
+
+    @MainActor
+    func showVPNDomainExclusions(addDomain: Bool)
 }
 
 extension WindowControllersManager: VPNUIPresenting {
 
     @MainActor
     func showVPNAppExclusions() {
+        showVPNAppExclusions(addApp: false)
+    }
+
+    @MainActor
+    func showVPNAppExclusions(addApp: Bool) {
         showPreferencesTab(withSelectedPane: .vpn)
 
-        let windowController = ExcludedAppsViewController.create().wrappedInWindowController()
+        let viewController = ExcludedAppsViewController.create()
+        let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
               let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
@@ -40,13 +52,22 @@ extension WindowControllersManager: VPNUIPresenting {
         }
 
         parentWindowController.window?.beginSheet(window)
+        if addApp {
+            viewController.addApp()
+        }
     }
 
     @MainActor
     func showVPNDomainExclusions() {
+        showVPNDomainExclusions(addDomain: false)
+    }
+
+    @MainActor
+    func showVPNDomainExclusions(addDomain: Bool) {
         showPreferencesTab(withSelectedPane: .vpn)
 
-        let windowController = ExcludedDomainsViewController.create().wrappedInWindowController()
+        let viewController = ExcludedDomainsViewController.create()
+        let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
               let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
@@ -56,5 +77,9 @@ extension WindowControllersManager: VPNUIPresenting {
         }
 
         parentWindowController.window?.beginSheet(window)
+
+        if addDomain {
+            viewController.addDomain()
+        }
     }
 }

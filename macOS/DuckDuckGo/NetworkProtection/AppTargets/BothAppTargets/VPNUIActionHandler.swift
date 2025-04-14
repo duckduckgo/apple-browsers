@@ -83,8 +83,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
     }
 
     func willStopVPN() async -> Bool {
-        guard let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window else { // can show alert?
-            await tunnelController.stop()
+        guard let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window else {
             return true
         }
 
@@ -102,10 +101,10 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         case .stopVPN:
             return true
         case .excludeApp:
-            print("Exclude App!")
+            await WindowControllersManager.shared.showVPNAppExclusions()
             return false
         case .excludeWebsite:
-            print("Exclude Website!")
+            await WindowControllersManager.shared.showVPNDomainExclusions()
             return false
         }
     }

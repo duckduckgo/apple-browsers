@@ -53,18 +53,6 @@
         }
       }
     },
-    "Don't Ask Again" : {
-
-    },
-    "Exclude a Website" : {
-
-    },
-    "Exclude an App" : {
-
-    },
-    "Is the VPN causing problems with a Website or App?" : {
-
-    },
     "network.protection.autoconnect.tip.enable" : {
       "comment" : "Action to enable auto-connect",
       "extractionState" : "extracted_with_value",
@@ -3731,9 +3719,6 @@
         }
       }
     },
-    "Turn off VPN" : {
-
-    },
     "vpn.appstore.sysex.update.prompt.action.button.title" : {
       "comment" : "Action button title for the prompt that asks users to update the VPN to our System Extension.  Pressing this button reinstalls the VPN.",
       "extractionState" : "extracted_with_value",
@@ -3770,8 +3755,77 @@
         }
       }
     },
-    "You can exclude websites and apps from the VPN without turning it off." : {
-
+    "vpn.exclusion.suggestion.alert.action.exclude.a.website" : {
+      "comment" : "Action button title for an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exclude a Website"
+          }
+        }
+      }
+    },
+    "vpn.exclusion.suggestion.alert.action.exclude.an.app" : {
+      "comment" : "Action button title for an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Exclude an App"
+          }
+        }
+      }
+    },
+    "vpn.exclusion.suggestion.alert.action.turn.off.vpn" : {
+      "comment" : "Action button title for an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Turn off VPN"
+          }
+        }
+      }
+    },
+    "vpn.exclusion.suggestion.alert.description" : {
+      "comment" : "Description shown in an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You can exclude websites and apps from the VPN without turning it off."
+          }
+        }
+      }
+    },
+    "vpn.exclusion.suggestion.alert.dont.ask.again.title" : {
+      "comment" : "Title of the checkbox shown in an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Ask Again"
+          }
+        }
+      }
+    },
+    "vpn.exclusion.suggestion.alert.title" : {
+      "comment" : "Title shown in an alert to suggest using exclusions instead of disabling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Is the VPN causing problems with a Website or App?"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

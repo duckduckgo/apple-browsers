@@ -1,8 +1,19 @@
 //
 //  VPNExclusionSuggestionAlert.swift
-//  NetworkProtectionMac
 //
-//  Created by ddg on 3/24/25.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
 //
 
 import SwiftUI
@@ -16,6 +27,15 @@ public struct VPNExclusionSuggestionAlert: ModalView {
         case excludeWebsite
     }
 
+    struct Spacing {
+        static let viewEdgesToContent: CGFloat = 20
+        static let viewContentItemsToEachOther: CGFloat = 16
+    }
+
+    struct Sizing {
+        static let viewWidth: CGFloat = 500
+    }
+
     @Environment(\.dismiss) private var dismiss
     @Binding private var result: Result
     @State private var dontAskAgain = false
@@ -25,87 +45,54 @@ public struct VPNExclusionSuggestionAlert: ModalView {
     }
 
     public var body: some View {
-        VStack(spacing: 20) {
-            // Title
-            Text("Is the VPN causing problems with a Website or App?")
-                .font(.headline)
-                .multilineTextAlignment(.center)
-                .padding(.top, 20)
+        VStack(alignment: .leading, spacing: Spacing.viewContentItemsToEachOther) {
 
-            // Description
-            Text("You can exclude websites and apps from the VPN without turning it off.")
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+            VStack(alignment: .leading, spacing: Spacing.viewContentItemsToEachOther) {
+                Text(UserText.vpnExclusionSuggestionAlertTitle)
+                    .font(.system(size: 15))
+                    .fontWeight(.semibold)
 
-            // Checkbox
-            Toggle(isOn: $dontAskAgain) {
-                Text("Don't Ask Again")
-                    .font(.subheadline)
-            }
-            .toggleStyle(CheckboxToggleStyle())
-            .padding(.horizontal)
+                Text(UserText.vpnExclusionSuggestionAlertDescription)
+                    .multilineText()
+                    .multilineTextAlignment(.leading)
+                    .fixMultilineScrollableText()
+                    .foregroundColor(.secondary)
+                    .frame(alignment: .leading)
 
-            // Buttons
-            HStack(spacing: 10) {
-                Button(action: {
-                    result = .stopVPN
-                    dismiss()
-                }) {
-                    Text("Turn off VPN")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                Toggle(isOn: $dontAskAgain) {
+                    Text(UserText.vpnExclusionSuggestionAlertDontAskAgainTitle)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(EdgeInsets(top: Spacing.viewEdgesToContent, leading: Spacing.viewEdgesToContent, bottom: 0, trailing: Spacing.viewEdgesToContent))
 
-                Button(action: {
+            Divider()
+
+            HStack {
+                Button(UserText.vpnExclusiveSuggestionAlertActionExcludeAWebsite) {
                     result = .excludeWebsite
                     dismiss()
-                }) {
-                    Text("Exclude a Website")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundColor(.black)
-                        .cornerRadius(10)
                 }
+                .buttonStyle(DismissActionButtonStyle())
 
-                Button(action: {
+                Button(UserText.vpnExclusiveSuggestionAlertActionExcludeAnApp) {
                     result = .excludeApp
                     dismiss()
-                }) {
-                    Text("Exclude an App")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.gray.opacity(0.2))
-                        .foregroundColor(.black)
-                        .cornerRadius(10)
                 }
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 20)
-        }
-        .frame(width: 400)
-        .background(Color.white)
-        .cornerRadius(15)
-        .shadow(radius: 10)
-    }
-}
+                .buttonStyle(DismissActionButtonStyle())
 
-// Custom Checkbox Style for Toggle
-struct CheckboxToggleStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack {
-            Image(systemName: configuration.isOn ? "checkmark.square.fill" : "square")
-                .foregroundColor(configuration.isOn ? .blue : .gray)
-                .onTapGesture {
-                    configuration.isOn.toggle()
+                Spacer()
+
+                Button(UserText.vpnExclusiveSuggestionAlertActionTurnOffVPN) {
+                    result = .stopVPN
+                    dismiss()
                 }
-            configuration.label
+                .keyboardShortcut(.defaultAction)
+                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            }
+            .padding(EdgeInsets(top: 0, leading: Spacing.viewEdgesToContent, bottom: Spacing.viewEdgesToContent, trailing: Spacing.viewEdgesToContent))
         }
+        .frame(width: Sizing.viewWidth)
     }
 }
 

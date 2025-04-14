@@ -104,6 +104,10 @@ final class ExcludedAppsViewController: NSViewController {
     }
 
     @IBAction func addApp(_ sender: NSButton) {
+        addApp()
+    }
+
+    func addApp() {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.applicationBundle]
         panel.allowsMultipleSelection = false

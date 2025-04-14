@@ -19,7 +19,7 @@
 import Combine
 import Foundation
 import NetworkProtectionUI
-import VPNState
+import VPNAppState
 
 extension UserDefaults {
     // Convenience declaration

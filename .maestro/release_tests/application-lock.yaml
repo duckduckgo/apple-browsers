@@ -35,6 +35,8 @@ tags:
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 - tapOn: "Browsing Menu"
 - tapOn: "Settings"
 - scrollUntilVisible:

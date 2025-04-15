@@ -32,19 +32,10 @@ final class AIChatPreferences: ObservableObject {
         self.storage = storage
         self.configuration = configuration
 
-        showShortcutInToolbar = storage.shouldDisplayToolbarShortcut
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
+        showShortcutInAddressBar = storage.showShortcutInAddressBar
 
-        subscribeToShowInToolbarSettingsChanges()
         subscribeToShowInApplicationMenuSettingsChanges()
-    }
-
-    func subscribeToShowInToolbarSettingsChanges() {
-        storage.shouldDisplayToolbarShortcutPublisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.showShortcutInToolbar, onWeaklyHeld: self)
-            .store(in: &cancellables)
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
@@ -53,20 +44,12 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInApplicationMenu, onWeaklyHeld: self)
             .store(in: &cancellables)
-    }
 
-    var shouldShowToolBarShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForToolbarShortcut
-    }
-
-    var shouldShowApplicationMenuShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForApplicationMenuShortcut
-    }
-
-    @Published var showShortcutInToolbar: Bool {
-        didSet {
-            storage.shouldDisplayToolbarShortcut = showShortcutInToolbar
-        }
+        storage.showShortcutInAddressBarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
@@ -75,11 +58,17 @@ final class AIChatPreferences: ObservableObject {
         }
     }
 
+    @Published var showShortcutInAddressBar: Bool {
+        didSet {
+            storage.showShortcutInAddressBar = showShortcutInAddressBar
+        }
+    }
+
     @MainActor func openLearnMoreLink() {
         WindowControllersManager.shared.show(url: learnMoreURL, source: .ui, newTab: true)
     }
 
     @MainActor func openAIChatLink() {
-        AIChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
     }
 }

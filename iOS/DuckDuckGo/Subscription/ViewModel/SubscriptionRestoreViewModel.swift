@@ -43,7 +43,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
         var shouldShowPlans = false
         var shouldDismissView = false
         var isLoading = false
-        var viewTitle: String = ""
+        var viewTitle: String = UserText.subscriptionActivateViewTitle
     }
     
     // Publish the currently selected feature    

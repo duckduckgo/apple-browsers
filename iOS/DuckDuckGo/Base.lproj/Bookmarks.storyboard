@@ -146,12 +146,12 @@
                                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mUo-IX-WrZ">
                                                             <rect key="frame" x="287" y="0.0" width="24" height="24"/>
                                                             <subviews>
-                                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Favorite-Solid-16" translatesAutoresizingMaskIntoConstraints="NO" id="1fK-xP-Cxw">
-                                                                    <rect key="frame" x="4" y="4" width="16" height="16"/>
+                                                                <imageView userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Favorite-Solid-16" translatesAutoresizingMaskIntoConstraints="NO" id="1fK-xP-Cxw">
+                                                                    <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
                                                                     <color key="tintColor" systemColor="systemPurpleColor"/>
                                                                     <constraints>
-                                                                        <constraint firstAttribute="width" constant="16" id="Ryb-sj-pZe"/>
-                                                                        <constraint firstAttribute="height" constant="16" id="x53-Oq-oQ3"/>
+                                                                        <constraint firstAttribute="width" constant="24" id="Ryb-sj-pZe"/>
+                                                                        <constraint firstAttribute="height" constant="24" id="x53-Oq-oQ3"/>
                                                                     </constraints>
                                                                 </imageView>
                                                             </subviews>
@@ -229,6 +229,7 @@
                                                     <subviews>
                                                         <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="Folder-24" translatesAutoresizingMaskIntoConstraints="NO" id="Ggc-7C-ugZ">
                                                             <rect key="frame" x="0.0" y="0.0" width="24" height="24"/>
+                                                            <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="height" constant="24" id="5Gp-Uw-8sC"/>
                                                                 <constraint firstAttribute="width" constant="24" id="GaK-wT-bvt"/>
@@ -651,10 +652,10 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemPurpleColor">
-            <color red="0.68627450980392157" green="0.32156862745098042" blue="0.87058823529411766" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.68627450980000004" green="0.32156862749999998" blue="0.87058823529999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemRedColor">
-            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

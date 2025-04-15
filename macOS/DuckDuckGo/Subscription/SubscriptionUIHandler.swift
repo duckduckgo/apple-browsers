@@ -56,7 +56,7 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
 
     func presentSubscriptionAccessViewController(handler: any SubscriptionAccessActionHandling, message: WKScriptMessage) {
         let actionHandlers = SubscriptionAccessActionHandlers(openActivateViaEmailURL: {
-            let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activateViaEmail)
+            let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
             handler.subscriptionAccessActionOpenURLHandler(url: url)
         }, restorePurchases: {
             handler.subscriptionAccessActionRestorePurchases(message: message)

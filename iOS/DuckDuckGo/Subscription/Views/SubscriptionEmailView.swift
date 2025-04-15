@@ -34,7 +34,7 @@ struct SubscriptionEmailView: View {
     @State private var isShowingITR = false
     @State private var isShowingDBP = false
     @State private var isShowingNetP = false
-    
+
     enum Constants {
         static let navButtonPadding: CGFloat = 20.0
         static let backButtonImage = "chevron.left"
@@ -141,17 +141,37 @@ struct SubscriptionEmailView: View {
     }
     
     // MARK: -
-    
+
+    @ViewBuilder
     private var baseView: some View {
-        ZStack {
-            VStack {
-                AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
-                    .background()
+        if #available(iOS 16.0, *) {
+            // For activation/restore flow hide the toolbar background
+            ZStack {
+                VStack {
+                    AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
+                        .background()
+                }
+            }
+            .toolbarBackground(navigationBarVisibility, for: .navigationBar)
+        } else {
+            ZStack {
+                VStack {
+                    AsyncHeadlessWebView(viewModel: viewModel.webViewModel)
+                        .background()
+                }
             }
         }
     }
-    
-    @ViewBuilder
+
+    private var navigationBarVisibility: Visibility {
+        switch viewModel.state.currentFlow {
+        case .activationFlow, .restoreFlow:
+            return .hidden
+        case .manageEmailFlow:
+            return .visible
+        }
+    }
+
     private var browserBackButton: some View {
         Button(action: {
             Task { await viewModel.navigateBack() }

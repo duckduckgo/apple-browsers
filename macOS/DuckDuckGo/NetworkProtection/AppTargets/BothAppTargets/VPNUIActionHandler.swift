@@ -53,6 +53,11 @@ final class VPNUIActionHandler {
         let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window
         await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
     }
+
+    @MainActor
+    private var windowControllerManager: WindowControllersManager {
+        WindowControllersManager.shared
+    }
 }
 
 extension VPNUIActionHandler: VPNUIActionHandling {
@@ -127,7 +132,8 @@ extension VPNUIActionHandler: VPNUIActionHandling {
             WindowControllersManager.shared.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
-            WindowControllersManager.shared.showVPNDomainExclusions(addDomain: true)
+            let domain = windowControllerManager.activeDomain ?? ""
+            windowControllerManager.showVPNDomainExclusions(domain: domain)
             return false
         }
     }

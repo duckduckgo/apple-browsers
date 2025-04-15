@@ -141,6 +141,24 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
     }
 
+    // MARK: - Active Domain
+
+    var activeDomain: String? {
+        if let tabContent = lastKeyMainWindowController?.activeTab?.content {
+            return Self.domain(from: tabContent)
+        }
+
+        return nil
+    }
+
+    static func domain(from tabContent: Tab.TabContent) -> String? {
+        if case .url(let url, _, _) = tabContent {
+
+            return url.host
+        } else {
+            return nil
+        }
+    }
 }
 
 // MARK: - Opening a url from the external event

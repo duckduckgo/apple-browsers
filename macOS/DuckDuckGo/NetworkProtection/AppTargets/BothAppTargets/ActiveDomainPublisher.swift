@@ -46,10 +46,7 @@ final class ActiveDomainPublisher {
     @MainActor
     init(windowControllersManager: WindowControllersManager) {
 
-        if let tabContent = windowControllersManager.lastKeyMainWindowController?.activeTab?.content {
-            activeDomain = Self.domain(from: tabContent)
-        }
-
+        activeDomain = windowControllersManager.activeDomain
         self.windowControllersManager = windowControllersManager
 
         Task { @MainActor in
@@ -79,7 +76,7 @@ final class ActiveDomainPublisher {
     @MainActor
     private func subscribeToActiveTabContentChanges() {
         activeTabContentCancellable = activeTab?.$content
-            .map(Self.domain(from:))
+            .map(WindowControllersManager.domain(from:))
             .removeDuplicates()
             .assign(to: \.activeDomain, onWeaklyHeld: self)
     }
@@ -91,15 +88,6 @@ final class ActiveDomainPublisher {
             if self.activeWindowController == $0 {
                 self.activeWindowController = nil
             }
-        }
-    }
-
-    private static func domain(from tabContent: Tab.TabContent) -> String? {
-        if case .url(let url, _, _) = tabContent {
-
-            return url.host
-        } else {
-            return nil
         }
     }
 }

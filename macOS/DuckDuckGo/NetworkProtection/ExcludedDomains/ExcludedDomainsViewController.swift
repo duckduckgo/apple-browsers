@@ -102,8 +102,8 @@ final class ExcludedDomainsViewController: NSViewController {
         addDomain()
     }
 
-    func addDomain() {
-        AddExcludedDomainView(title: UserText.vpnAddExcludedDomainTitle, buttonsState: .compressed, cancelActionTitle: UserText.vpnAddExcludedDomainCancelButtonTitle, cancelAction: { dismiss in
+    func addDomain(domain: String = "") {
+        AddExcludedDomainView(title: UserText.vpnAddExcludedDomainTitle, domain: domain, buttonsState: .compressed, cancelActionTitle: UserText.vpnAddExcludedDomainCancelButtonTitle, cancelAction: { dismiss in
 
             dismiss()
         }, defaultActionTitle: UserText.vpnAddExcludedDomainActionButtonTitle) { [weak self] domain, dismiss in

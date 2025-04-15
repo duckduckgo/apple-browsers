@@ -21,24 +21,44 @@ import SwiftUI
 import SwiftUIExtensions
 
 struct AddExcludedDomainView: ModalView {
+
+    typealias DismissClosure = () -> Void
+
     enum ButtonsState {
         case compressed
         case expanded
     }
 
     let title: String
+    @State
+    var domain: String
     let buttonsState: ButtonsState
 
-    @State
-    private var domain = ""
-
     let cancelActionTitle: String
-    let cancelAction: @MainActor (_ dismiss: () -> Void) -> Void
+    let cancelAction: @MainActor (_ dismiss: DismissClosure) -> Void
 
-    let defaultActionTitle: String
     @State
     private var isDefaultActionDisabled = true
-    let defaultAction: @MainActor (_ domain: String, _ dismiss: () -> Void) -> Void
+    let defaultActionTitle: String
+    let defaultAction: @MainActor (_ domain: String, _ dismiss: DismissClosure) -> Void
+
+    init(title: String,
+         domain: String,
+         buttonsState: ButtonsState,
+         cancelActionTitle: String,
+         cancelAction: @escaping (DismissClosure) -> Void,
+         defaultActionTitle: String,
+         defaultAction: @escaping (String, DismissClosure) -> Void) {
+
+        self.title = title
+        self.domain = domain
+        self.buttonsState = buttonsState
+        self.cancelActionTitle = cancelActionTitle
+        self.cancelAction = cancelAction
+        self.isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
+        self.defaultActionTitle = defaultActionTitle
+        self.defaultAction = defaultAction
+    }
 
     var body: some View {
         TieredDialogView(
@@ -89,14 +109,21 @@ struct AddExcludedDomainView: ModalView {
                 TextField("", text: $domain)
                     .focusedOnAppear()
                     .onChange(of: domain) { domain in
-                        guard let url = URL(trimmedAddressBarString: domain) else { return }
-                        isDefaultActionDisabled = domain.trimmingWhitespace().isEmpty || !url.isValid
+                        isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
                     }
                     .accessibilityIdentifier("bookmark.add.name.textfield")
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .font(.system(size: 14))
             }
         )
+    }
+
+    static func isInvalidDomain(domain: String) -> Bool {
+        guard let url = URL(trimmedAddressBarString: domain) else {
+            return true
+        }
+
+        return domain.trimmingWhitespace().isEmpty || !url.isValid
     }
 }
 

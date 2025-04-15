@@ -27,7 +27,7 @@ protocol VPNUIPresenting {
     func showVPNDomainExclusions()
 
     @MainActor
-    func showVPNDomainExclusions(addDomain: Bool)
+    func showVPNDomainExclusions(domain: String?)
 }
 
 extension WindowControllersManager: VPNUIPresenting {
@@ -45,7 +45,7 @@ extension WindowControllersManager: VPNUIPresenting {
         let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Self.shared.lastKeyMainWindowController
         else {
             assertionFailure("Failed to present ExcludedAppsViewController")
             return
@@ -59,18 +59,18 @@ extension WindowControllersManager: VPNUIPresenting {
 
     @MainActor
     func showVPNDomainExclusions() {
-        showVPNDomainExclusions(addDomain: false)
+        showVPNDomainExclusions(domain: nil)
     }
 
     @MainActor
-    func showVPNDomainExclusions(addDomain: Bool) {
+    func showVPNDomainExclusions(domain: String?) {
         showPreferencesTab(withSelectedPane: .vpn)
 
         let viewController = ExcludedDomainsViewController.create()
         let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Self.shared.lastKeyMainWindowController
         else {
             assertionFailure("Failed to present ExcludedDomainsViewController")
             return
@@ -78,8 +78,8 @@ extension WindowControllersManager: VPNUIPresenting {
 
         parentWindowController.window?.beginSheet(window)
 
-        if addDomain {
-            viewController.addDomain()
+        if let domain {
+            viewController.addDomain(domain: domain)
         }
     }
 }

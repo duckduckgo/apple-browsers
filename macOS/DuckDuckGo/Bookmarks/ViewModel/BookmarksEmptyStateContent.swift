@@ -17,6 +17,7 @@
 //
 
 enum BookmarksEmptyStateContent {
+    case loading
     case noBookmarks
     case noSearchResults
 
@@ -34,29 +35,33 @@ enum BookmarksEmptyStateContent {
 
     var title: String {
         switch self {
-        case .noBookmarks: return UserText.bookmarksEmptyStateTitle
-        case .noSearchResults: return UserText.bookmarksEmptySearchResultStateTitle
+        case .noBookmarks: UserText.bookmarksEmptyStateTitle
+        case .noSearchResults: UserText.bookmarksEmptySearchResultStateTitle
+        case .loading: ""
         }
     }
 
     var description: String {
         switch self {
-        case .noBookmarks: return UserText.bookmarksEmptyStateMessage
-        case .noSearchResults: return UserText.bookmarksEmptySearchResultStateMessage
+        case .noBookmarks: UserText.bookmarksEmptyStateMessage
+        case .noSearchResults: UserText.bookmarksEmptySearchResultStateMessage
+        case .loading: ""
         }
     }
 
-    var image: NSImage {
+    var image: NSImage? {
         switch self {
-        case .noBookmarks: return .bookmarksEmpty
-        case .noSearchResults: return .bookmarkEmptySearch
+        case .noBookmarks: .bookmarksEmpty
+        case .noSearchResults: .bookmarkEmptySearch
+        case .loading: nil
         }
     }
 
     var shouldHideImportButton: Bool {
         switch self {
-        case .noBookmarks: return false
-        case .noSearchResults: return true
+        case .noBookmarks: false
+        case .noSearchResults: true
+        case .loading: true
         }
     }
 }

@@ -22,13 +22,29 @@ import PixelKit
 
 struct SyncPromoView: View {
 
+    static let autoLayoutWidthThreshold: CGFloat = 400
+
     enum Layout {
         case compact
         case horizontal
-        case vertical
+        case vertical(topPadding: CGFloat)
+        case auto(verticalLayoutTopPadding: CGFloat)
+
+        var isVertical: Bool {
+            switch self {
+            case .vertical, .auto:
+                return true
+            default:
+                return false
+            }
+        }
+
+        static let auto = Self.auto(verticalLayoutTopPadding: 70)
+        static let vertical = Self.vertical(topPadding: 70)
     }
 
     @State private var isHovering = false
+    @State private var width: CGFloat = 0
 
     let viewModel: SyncPromoViewModel
     var layout: Layout = .compact
@@ -38,15 +54,24 @@ struct SyncPromoView: View {
             switch layout {
             case .compact:
                 compactLayoutView
-            case .horizontal:
+            case .horizontal,
+                 .auto where width >= Self.autoLayoutWidthThreshold:
                 horizontalLayoutView
-            case .vertical:
-                verticalLayoutView
+            case .vertical(let topPadding), .auto(let topPadding):
+                verticalLayoutView(topPadding: topPadding)
             }
         }
-        .onAppear {
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
-        }
+        .background(
+            GeometryReader { geometry in
+                Color.clear.onAppear {
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+                    width = geometry.size.width
+                }
+                .onChange(of: geometry.size.width) { newWidth in
+                    width = newWidth
+                }
+            }
+        )
     }
 
     private var closeButton: some View {
@@ -76,14 +101,14 @@ struct SyncPromoView: View {
 
     private var title: some View {
         Text(viewModel.title)
-            .font(.system(size: layout == .vertical ? 15 : 13).bold())
-            .multilineTextAlignment(layout == .vertical ? .center : .leading)
+            .font(.system(size: layout.isVertical ? 15 : 13).bold())
+            .multilineTextAlignment(layout.isVertical ? .center : .leading)
             .multilineText()
     }
 
     private var subtitle: some View {
         Text(viewModel.subtitle)
-            .multilineTextAlignment(layout == .vertical ? .center : .leading)
+            .multilineTextAlignment(layout.isVertical ? .center : .leading)
             .multilineText()
     }
 
@@ -156,7 +181,7 @@ struct SyncPromoView: View {
         }
     }
 
-    private var verticalLayoutView: some View {
+    private func verticalLayoutView(topPadding: CGFloat) -> some View {
         VStack(alignment: .center, spacing: 16) {
 
             Image(.syncStart128)
@@ -207,7 +232,8 @@ struct SyncPromoView: View {
             Spacer()
         }
         .frame(width: 224)
-        .padding(.top, 70)
+        .padding(.top, topPadding)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func primaryAction() {
@@ -220,6 +246,8 @@ struct SyncPromoView: View {
         PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
     }
 }
+
+#if DEBUG
 
 #Preview("Compact") {
     SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
@@ -238,3 +266,14 @@ struct SyncPromoView: View {
                   layout: .vertical)
         .frame(height: 300)
 }
+
+@available(macOS 12.0, *)
+#Preview("Auto") {
+    ResizablePreviewView(maxSize: CGSize(width: 500, height: 500),
+                         minSize: CGSize(width: 224, height: 80)) {
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+                      layout: .auto)
+    }
+}
+
+#endif

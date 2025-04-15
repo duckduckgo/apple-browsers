@@ -64,6 +64,7 @@ protocol BookmarkManager: AnyObject {
     // Wrapper definition in a protocol is not supported yet
     var listPublisher: Published<BookmarkList?>.Publisher { get }
     var list: BookmarkList? { get }
+    var isLoading: Bool { get }
 
     var sortModePublisher: Published<BookmarksSortMode>.Publisher { get }
     var sortMode: BookmarksSortMode { get set }
@@ -110,6 +111,7 @@ final class LocalBookmarkManager: BookmarkManager {
 
     @Published private(set) var list: BookmarkList?
     var listPublisher: Published<BookmarkList?>.Publisher { $list }
+    var isLoading: Bool = true
 
     @Published var sortMode: BookmarksSortMode = .manual {
         didSet {
@@ -132,22 +134,26 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.loadAll(type: .topLevelEntities) { [weak self] (topLevelEntities, error) in
             guard error == nil, let topLevelEntities = topLevelEntities else {
                 Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch entities.")
+                self?.isLoading = false
                 return
             }
 
             self?.bookmarkStore.loadAll(type: .bookmarks) { [weak self] (bookmarks, error) in
                 guard error == nil, let bookmarks = bookmarks else {
                     Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch bookmarks.")
+                    self?.isLoading = false
                     return
                 }
 
                 self?.bookmarkStore.loadAll(type: .favorites) { [weak self] (favorites, error) in
-                    guard error == nil, let favorites = favorites else {
+                    guard let self, error == nil, let favorites = favorites else {
                         Logger.bookmarks.error("LocalBookmarkManager: Failed to fetch favorites.")
+                        self?.isLoading = false
                         return
                     }
 
-                    self?.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    self.isLoading = false
+                    self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
                 }
             }
         }

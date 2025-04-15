@@ -52,6 +52,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private lazy var scrollView = NSScrollView()
     private lazy var tableView = NSTableView()
 
+    private lazy var loadingProgressIndicator = NSProgressIndicator()
     private lazy var emptyState = NSView()
     private lazy var emptyStateImageView = NSImageView(image: .bookmarksEmpty)
         .withAccessibilityIdentifier(BookmarksEmptyStateContent.imageAccessibilityIdentifier)
@@ -76,25 +77,25 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private var documentView = FlippedView()
 
-    private var documentViewHeightConstraint: NSLayoutConstraint?
-    private var tableViewTopToPromoTopConstraint: NSLayoutConstraint?
-    private var tableViewTopToDocumentTopConstraint: NSLayoutConstraint?
-
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
 
-    private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
+    private lazy var syncPromoViewHostingView: NSView = {
         let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
             self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
-            self?.updateDocumentViewHeight()
         })
 
-        let headerView = SyncPromoView(viewModel: model,
-                                       layout: .horizontal)
+        let headerView = SyncPromoView(viewModel: model, layout: .auto(verticalLayoutTopPadding: 0))
 
-        let hostingController = NSHostingView(rootView: headerView)
-        return hostingController
+        let hostingView = NSHostingView(rootView: headerView)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+
+        hostingView.setContentHuggingPriority(.defaultLow, for: .vertical)
+        hostingView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+        hostingView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+
+        return hostingView
     }()
 
     func update(selectionState: BookmarkManagementSidebarViewController.SelectionState) {
@@ -135,20 +136,31 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
         view.addSubview(separator)
         view.addSubview(scrollView)
+        view.addSubview(loadingProgressIndicator)
         view.addSubview(emptyState)
         view.addSubview(toolbarButtonsStackView)
         view.addSubview(searchBar)
+
         toolbarButtonsStackView.addArrangedSubview(newBookmarkButton)
+        newBookmarkButton.setContentHuggingPriority(.init(100), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(newFolderButton)
+        newFolderButton.setContentHuggingPriority(.init(200), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(deleteItemsButton)
+        deleteItemsButton.setContentHuggingPriority(.init(300), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(sortItemsButton)
+        sortItemsButton.setContentHuggingPriority(.init(400), for: .horizontal)
         toolbarButtonsStackView.translatesAutoresizingMaskIntoConstraints = false
         toolbarButtonsStackView.distribution = .fill
+        toolbarButtonsStackView.setClippingResistancePriority(.defaultHigh, for: .horizontal)
 
         configureToolbarButton(newBookmarkButton, image: .addBookmark, isHidden: false)
         configureToolbarButton(newFolderButton, image: .addFolder, isHidden: false)
         configureToolbarButton(deleteItemsButton, image: .trash, isHidden: false)
         configureToolbarButton(sortItemsButton, image: .sortAscending, isHidden: false)
+
+        loadingProgressIndicator.translatesAutoresizingMaskIntoConstraints = false
+        loadingProgressIndicator.style = .spinning
+        loadingProgressIndicator.isHidden = true
 
         emptyState.addSubview(emptyStateImageView)
         emptyState.addSubview(emptyStateTitle)
@@ -210,6 +222,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.headerView = nil
         tableView.backgroundColor = .clear
         tableView.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        tableView.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         tableView.style = .plain
         tableView.selectionHighlightStyle = .none
         tableView.allowsMultipleSelection = true
@@ -239,36 +252,52 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     private func setupLayout() {
+        newBookmarkButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        newBookmarkButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        newFolderButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        newFolderButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        deleteItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        deleteItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        sortItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        sortItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         NSLayoutConstraint.activate([
             toolbarButtonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
             view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 58),
             separator.topAnchor.constraint(equalTo: toolbarButtonsStackView.bottomAnchor, constant: 24),
-            emptyState.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
             scrollView.topAnchor.constraint(equalTo: separator.bottomAnchor),
 
             searchBar.heightAnchor.constraint(equalToConstant: 28),
             searchBar.leadingAnchor.constraint(greaterThanOrEqualTo: toolbarButtonsStackView.trailingAnchor, constant: 8),
-            searchBar.widthAnchor.constraint(equalToConstant: 256),
+            searchBar.widthAnchor.constraint(equalToConstant: 256).priority(150),
+            searchBar.widthAnchor.constraint(greaterThanOrEqualToConstant: 125),
             searchBar.centerYAnchor.constraint(equalTo: toolbarButtonsStackView.centerYAnchor),
             view.trailingAnchor.constraint(equalTo: searchBar.trailingAnchor, constant: 58),
             view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
             view.trailingAnchor.constraint(greaterThanOrEqualTo: searchBar.trailingAnchor, constant: 20),
             view.trailingAnchor.constraint(equalTo: separator.trailingAnchor, constant: 58),
             emptyState.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyState.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
+            loadingProgressIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            loadingProgressIndicator.centerYAnchor.constraint(equalTo: emptyState.centerYAnchor),
             separator.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
             toolbarButtonsStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 32),
             emptyState.topAnchor.constraint(greaterThanOrEqualTo: separator.bottomAnchor, constant: 8),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 24),
+            newBookmarkButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             newFolderButton.heightAnchor.constraint(equalToConstant: 24),
+            newFolderButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             deleteItemsButton.heightAnchor.constraint(equalToConstant: 24),
+            deleteItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             sortItemsButton.heightAnchor.constraint(equalToConstant: 24),
+            sortItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
 
             emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
 
             importButton.topAnchor.constraint(equalTo: emptyStateMessage.bottomAnchor, constant: 8),
-            emptyState.heightAnchor.constraint(equalToConstant: 218),
+            emptyState.heightAnchor.constraint(equalToConstant: 218).priority(150),
             emptyStateMessage.topAnchor.constraint(equalTo: emptyStateTitle.bottomAnchor, constant: 8),
             importButton.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
             emptyStateImageView.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
@@ -319,6 +348,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         NotificationCenter.default.addObserver(self, selector: #selector(firstReponderDidChange), name: .firstResponder, object: nil)
 
         reloadData()
+        updatesyncPromoViewHostingVisibility()
     }
 
     override func viewDidDisappear() {
@@ -359,22 +389,30 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             showEmptyStateView(for: emptyState)
         case .nonEmpty:
             emptyState.isHidden = true
+            loadingProgressIndicator.stopAnimation(nil)
+            loadingProgressIndicator.isHidden = true
             tableView.isHidden = false
             searchBar.isEnabled = true
             sortItemsButton.isEnabled = true
         }
+        updatesyncPromoViewHostingVisibility()
     }
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
         tableView.isHidden = true
-        emptyState.isHidden = false
+        emptyState.isHidden = mode == .loading
+        loadingProgressIndicator.isHidden = mode != .loading
+        if mode == .loading {
+            loadingProgressIndicator.startAnimation(nil)
+        } else {
+            loadingProgressIndicator.stopAnimation(nil)
+        }
         emptyStateTitle.stringValue = mode.title
         emptyStateMessage.stringValue = mode.description
         emptyStateImageView.image = mode.image
         importButton.isHidden = mode.shouldHideImportButton
         searchBar.isEnabled = mode != .noBookmarks
         sortItemsButton.isEnabled = mode != .noBookmarks
-        updateDocumentViewHeight()
     }
 
     @objc func onImportClicked(_ sender: NSButton) {
@@ -624,8 +662,8 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
                 deleteItemsButton.animator().title = UserText.delete
                 deleteItemsButton.animator().isEnabled = false
             }
-            newBookmarkButton.animator().isHidden = selectedRowsCount > 1
-            newFolderButton.animator().isHidden = selectedRowsCount > 1
+            newBookmarkButton.animator().isEnabled = selectedRowsCount <= 1
+            newFolderButton.animator().isEnabled = selectedRowsCount <= 1
         }
     }
 
@@ -662,6 +700,8 @@ private extension BookmarkManagementDetailViewController {
         button.image = image
         button.imagePosition = .imageLeading
         button.isHidden = isHidden
+        button.lineBreakMode = .byTruncatingTail
+        button.cell?.wraps = false
     }
 
     func configureEmptyState(label: NSTextField, font: NSFont, attributedTitle: NSAttributedString) {
@@ -785,7 +825,6 @@ extension BookmarkManagementDetailViewController {
         scrollView.documentView = documentView
 
         documentView.translatesAutoresizingMaskIntoConstraints = false
-        syncPromoViewHostingView.translatesAutoresizingMaskIntoConstraints = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
 
         tableView.focusRingType = .none
@@ -794,13 +833,12 @@ extension BookmarkManagementDetailViewController {
     }
 
     private func setupSyncPromoLayout() {
-         NSLayoutConstraint.activate([
+        NSLayoutConstraint.activate([
             documentView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
             documentView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor),
             documentView.trailingAnchor.constraint(lessThanOrEqualTo: scrollView.contentView.trailingAnchor),
-            documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor, constant: 0),
-            scrollView.widthAnchor.constraint(greaterThanOrEqualToConstant: 400),
-            scrollView.heightAnchor.constraint(greaterThanOrEqualToConstant: 220)
+            documentView.widthAnchor.constraint(equalTo: scrollView.contentView.widthAnchor),
+            scrollView.widthAnchor.constraint(greaterThanOrEqualToConstant: 224),
         ])
 
         NSLayoutConstraint.activate([
@@ -808,84 +846,41 @@ extension BookmarkManagementDetailViewController {
             syncPromoViewHostingView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor, constant: 2),
             syncPromoViewHostingView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor, constant: -2),
 
+            tableView.topAnchor.constraint(equalTo: syncPromoViewHostingView.bottomAnchor, constant: 4)
+                .autoDeactivatedWhenViewIsHidden(syncPromoViewHostingView),
+
+            tableView.topAnchor.constraint(equalTo: documentView.topAnchor).priority(300),
             tableView.leadingAnchor.constraint(equalTo: documentView.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: documentView.trailingAnchor),
             tableView.bottomAnchor.constraint(greaterThanOrEqualTo: documentView.bottomAnchor),
         ])
 
-        tableViewTopToDocumentTopConstraint = tableView.topAnchor.constraint(equalTo: documentView.topAnchor)
-        tableViewTopToDocumentTopConstraint?.isActive = false
-        tableViewTopToPromoTopConstraint = tableView.topAnchor.constraint(equalTo: syncPromoViewHostingView.bottomAnchor, constant: 4)
-        tableViewTopToPromoTopConstraint?.isActive = true
-
-        let totalHeight = syncPromoViewHostingView.frame.height + tableView.frame.height
-        documentViewHeightConstraint = documentView.heightAnchor.constraint(equalToConstant: totalHeight)
-        documentViewHeightConstraint?.isActive = true
-
         NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(syncPromoDismissed),
-                name: SyncPromoManager.SyncPromoManagerNotifications.didDismissPromo,
-                object: nil)
-
-        NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(tableViewFrameDidChange),
-                name: NSView.frameDidChangeNotification,
-                object: tableView
-        )
-
-        tableView.postsFrameChangedNotifications = true
+            self,
+            selector: #selector(syncPromoDismissed),
+            name: SyncPromoManager.SyncPromoManagerNotifications.didDismissPromo,
+            object: nil)
     }
 
-    private func shouldShowSyncPromo() -> Bool {
+    private var shouldShowSyncPromo: Bool {
         return emptyState.isHidden
-               && !managementDetailViewModel.isSearching
-               && !tableView.isHidden
-               && parentFolder == nil
-               && (bookmarkManager.list?.totalBookmarks ?? 0) > 0
-               && totalRows() > 0
-               && syncPromoManager.shouldPresentPromoFor(.bookmarks)
+        && loadingProgressIndicator.isHidden
+        && !managementDetailViewModel.isSearching
+        && !tableView.isHidden
+        && parentFolder == nil
+        && (bookmarkManager.list?.totalBookmarks ?? 0) > 0
+        && totalRows() > 0
+        && syncPromoManager.shouldPresentPromoFor(.bookmarks)
     }
 
     @objc private func syncPromoDismissed(notification: Notification) {
-        updateDocumentViewHeight()
+        updatesyncPromoViewHostingVisibility()
     }
 
-    @objc private func tableViewFrameDidChange(notification: Notification) {
-        updateDocumentViewHeight()
+    private func updatesyncPromoViewHostingVisibility() {
+        syncPromoViewHostingView.isHidden = !shouldShowSyncPromo
     }
 
-    private func updateDocumentViewHeight() {
-        guard scrollView.documentView is FlippedView else { return }
-
-        let tableViewHeight = tableView.intrinsicContentSize.height
-
-        if shouldShowSyncPromo() {
-            if let tableViewTopToDocumentTopConstraint = tableViewTopToDocumentTopConstraint, tableViewTopToDocumentTopConstraint.isActive {
-                syncPromoViewHostingView.isHidden = false
-                tableViewTopToDocumentTopConstraint.isActive = false
-                tableViewTopToPromoTopConstraint?.isActive = true
-            }
-
-            let promoHeight = syncPromoViewHostingView.intrinsicContentSize.height == 0 ? 80 : syncPromoViewHostingView.intrinsicContentSize.height
-            let totalHeight = promoHeight + tableViewHeight
-            updateDocumentViewHeightIfNeeded(totalHeight)
-        } else {
-            if let tableViewTopToPromoTopConstraint = tableViewTopToPromoTopConstraint, tableViewTopToPromoTopConstraint.isActive {
-                syncPromoViewHostingView.isHidden = true
-                tableViewTopToPromoTopConstraint.isActive = false
-                tableViewTopToDocumentTopConstraint?.isActive = true
-            }
-
-            updateDocumentViewHeightIfNeeded(tableViewHeight)
-        }
-    }
-
-    private func updateDocumentViewHeightIfNeeded(_ newHeight: CGFloat) {
-        guard documentViewHeightConstraint?.constant != newHeight else { return }
-        documentViewHeightConstraint?.constant = newHeight
-    }
 }
 
 #if DEBUG

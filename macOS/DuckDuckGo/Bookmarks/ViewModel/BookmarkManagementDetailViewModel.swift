@@ -45,7 +45,7 @@ final class BookmarkManagementDetailViewModel {
 
     var contentState: BookmarksContentState {
         if bookmarkManager.list?.topLevelEntities.isEmpty ?? true {
-            return .empty(emptyState: .noBookmarks)
+            return .empty(emptyState: bookmarkManager.isLoading ? .loading : .noBookmarks)
         } else if !searchQuery.isEmpty && visibleBookmarks.isEmpty {
             return .empty(emptyState: .noSearchResults)
         }

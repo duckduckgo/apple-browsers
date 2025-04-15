@@ -931,6 +931,13 @@ public struct UserText {
     public static let autofillCreditCardCopyToastCopiedCVV = NSLocalizedString("autofill.creditcard.details.copy-toast.cvv-copied", value:"CVV copied", comment: "Title for toast when copying the credit card cvv (security code)")
     public static let autofillCreditCardCopyToastCopiedCardName = NSLocalizedString("autofill.creditcard.details.copy-toast.card-name-copied", value:"Name copied", comment: "Title for toast when copying the credit card name")
 
+    public static let autofillCreditCardSavePromptTitle = NSLocalizedString("autofill.creditcard.save-prompt.title", value: "Do you want DuckDuckGo to save your card info?", comment: "Title for prompt asking the user if they wish to save their credit card details")
+    public static let autofillCreditCardSavePromptSubtitle = NSLocalizedString("autofill.creditcard.save-prompt.subtitle", value: "Credit cards are stored securely on your device.", comment: "Subitle for prompt asking the user if they wish to save their credit card details")
+    public static let autofillCreditCardSavePromptSaveButton = NSLocalizedString("autofill.creditcard.save-prompt.save-button", value: "Save Card", comment: "Title for button to save credit card details")
+    public static let autofillCreditCardSavePromptDismissButton = NSLocalizedString("autofill.creditcard.save-prompt.dismiss-button", value: "Don't Save", comment: "Title for button to dismiss the save credit card details prompt")
+    public static let autofillCreditCardSavedToastMessage = NSLocalizedString("autofill.creditcard-saved.toast", value: "Card saved", comment: "Message displayed after saving an autofill credit card")
+    public static let autofillCreditCardFillPromptTitle = NSLocalizedString("autofill.creditcard.use-saved-prompt.title", value: "Use a saved card?", comment: "Title for prompt asking the user if they wish to autofill a saved credit card")
+
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
     public static let aboutText = NSLocalizedString("settings.about.text.new", value: """

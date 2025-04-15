@@ -48,7 +48,7 @@ struct SaveCreditCardView: View {
             VStack {
                 Spacer(minLength: Const.Size.topPadding)
                 
-                AutofillViews.AppIconHeader()
+                AutofillViews.AppIconHeader(size: Const.Size.iconSize)
                 
                 Spacer(minLength: Const.Size.contentSpacing)
                 
@@ -131,6 +131,7 @@ private enum Const {
         static let closeButtonOffsetPortrait: CGFloat = 44.0
         static let closeButtonOffsetPortraitSmallFrame: CGFloat = 16.0
         static let topPadding: CGFloat = 56.0
+        static let iconSize: CGFloat = 32.0
         static let contentSpacing: CGFloat = 24.0
         static let headlineToContentSpacing: CGFloat = 24.0
         static let ctaVerticalSpacing: CGFloat = 8.0

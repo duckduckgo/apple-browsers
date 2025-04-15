@@ -57,10 +57,12 @@ struct AutofillViews {
     }
 
     struct AppIconHeader: View {
+        var size: CGFloat = 48
+        
         var body: some View {
             Image(.appDuckDuckGo32)
                 .resizable()
-                .frame(width: 48, height: 48)
+                .frame(width: size, height: size)
         }
     }
 

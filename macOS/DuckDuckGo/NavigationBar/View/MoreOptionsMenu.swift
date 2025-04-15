@@ -76,6 +76,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let vpnFeatureGatekeeper: VPNFeatureGatekeeper
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
+    private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
 
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
@@ -103,7 +104,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          notificationCenter: NotificationCenter = .default,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
-         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration()) {
+         aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
@@ -123,6 +125,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
+        self.moreOptionsMenuIconsProvider = visualStyleManager.style.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 
@@ -150,13 +153,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return "\(UserText.sendFeedback) (version: \(AppVersion.shared.versionNumber).\(AppVersion.shared.buildNumber))"
         }()
         let feedbackMenuItem = NSMenuItem(title: feedbackString, action: nil, keyEquivalent: "")
-            .withImage(.sendFeedback)
+            .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
 
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    tabCollectionViewModel: tabCollectionViewModel,
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                    authenticationStateProvider: subscriptionManager,
-                                                   internalUserDecider: internalUserDecider)
+                                                   internalUserDecider: internalUserDecider,
+                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -169,7 +173,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                         .targetting(self)
                     addToDockMenuItem.view = createMenuItemWithFeatureIndicator(
                         title: UserText.addDuckDuckGoToDock,
-                        image: .addToDockMenuItem) {
+                        image: moreOptionsMenuIconsProvider.addToDockIcon) {
                             if let target = addToDockMenuItem.target {
                                 _ = target.perform(addToDockMenuItem.action, with: addToDockMenuItem)
                             }
@@ -179,7 +183,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 } else {
                     let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
                         .targetting(self)
-                        .withImage(.addToDockMenuItem)
+                        .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
                     addItem(addToDockMenuItem)
                 }
             }
@@ -188,7 +192,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)
-                .withImage(.defaultBrowserMenuItem)
+                .withImage(moreOptionsMenuIconsProvider.setAsDefaultBrowserIcon)
             addItem(setAsDefaultMenuItem)
         }
 
@@ -196,7 +200,9 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addWindowItems()
 
-        zoomMenuItem.submenu = ZoomSubMenu(targetting: self, tabCollectionViewModel: tabCollectionViewModel)
+        zoomMenuItem.submenu = ZoomSubMenu(targetting: self,
+                                           tabCollectionViewModel: tabCollectionViewModel,
+                                           moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
         addItem(zoomMenuItem)
 
         addItem(NSMenuItem.separator())
@@ -204,8 +210,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addUtilityItems()
 
         addItem(withTitle: UserText.emailOptionsMenuItem, action: nil, keyEquivalent: "")
-            .withImage(.optionsButtonMenuEmail)
-            .withSubmenu(EmailOptionsButtonSubMenu(tabCollectionViewModel: tabCollectionViewModel, emailManager: emailManager))
+            .withImage(moreOptionsMenuIconsProvider.emailProtectionIcon)
+            .withSubmenu(EmailOptionsButtonSubMenu(tabCollectionViewModel: tabCollectionViewModel,
+                                                   emailManager: emailManager,
+                                                   moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider))
 
         addItem(NSMenuItem.separator())
 
@@ -213,13 +221,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addPageItems()
 
-        let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "").withImage(.helpMenuItemIcon)
+        let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "")
+            .withImage(moreOptionsMenuIconsProvider.helpIcon)
         helpItem.submenu = HelpSubMenu(targetting: self)
         addItem(helpItem)
 
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(.preferences)
+            .withImage(moreOptionsMenuIconsProvider.settingsIcon)
         addItem(preferencesItem)
     }
 
@@ -405,12 +414,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         // New Tab
         addItem(withTitle: UserText.plusButtonNewTabMenuItem, action: #selector(newTab(_:)), keyEquivalent: "t")
             .targetting(self)
-            .withImage(.add)
+            .withImage(moreOptionsMenuIconsProvider.newTabIcon)
 
         // New Window
         addItem(withTitle: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "n")
             .targetting(self)
-            .withImage(.newWindow)
+            .withImage(moreOptionsMenuIconsProvider.newWindowIcon)
 
         // New Burner Window
         let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem,
@@ -418,7 +427,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                           target: self)
         burnerWindowItem.keyEquivalent = "n"
         burnerWindowItem.keyEquivalentModifierMask = [.command, .shift]
-        burnerWindowItem.image = .newBurnerWindow
+        burnerWindowItem.image = moreOptionsMenuIconsProvider.newFireWindowIcon
         addItem(burnerWindowItem)
 
         // New AI Chat
@@ -428,7 +437,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                         target: self)
             aiChatItem.keyEquivalent = "n"
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = .aiChat
+            aiChatItem.image = moreOptionsMenuIconsProvider.newAIChatIcon
             addItem(aiChatItem)
         }
 
@@ -437,29 +446,32 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     private func addUtilityItems() {
-        let bookmarksSubMenu = BookmarksSubMenu(targetting: self, tabCollectionViewModel: tabCollectionViewModel)
+        let bookmarksSubMenu = BookmarksSubMenu(targetting: self,
+                                                tabCollectionViewModel: tabCollectionViewModel,
+                                                moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         addItem(withTitle: UserText.bookmarks, action: #selector(openBookmarks), keyEquivalent: "")
             .targetting(self)
-            .withImage(.bookmarks)
+            .withImage(moreOptionsMenuIconsProvider.bookmarksIcon)
             .withSubmenu(bookmarksSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.openBookmarks")
         addItem(withTitle: UserText.downloads, action: #selector(openDownloads), keyEquivalent: "j")
             .targetting(self)
-            .withImage(.downloads)
+            .withImage(moreOptionsMenuIconsProvider.downloadsIcon)
 
         if featureFlagger.isFeatureOn(.historyView) {
             addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
-                .withImage(.history)
+                .withImage(moreOptionsMenuIconsProvider.historyIcon)
                 .withSubmenu(HistoryMenu(location: .moreOptionsMenu))
         }
 
         let loginsSubMenu = LoginsSubMenu(targetting: self,
-                                          passwordManagerCoordinator: passwordManagerCoordinator)
+                                          passwordManagerCoordinator: passwordManagerCoordinator,
+                                          moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         addItem(withTitle: UserText.passwordManagementTitle, action: #selector(openAutofillWithAllItems), keyEquivalent: "")
             .targetting(self)
-            .withImage(.passwordManagement)
+            .withImage(moreOptionsMenuIconsProvider.passwordsIcon)
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
 
@@ -481,7 +493,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return platform == .appStore && subscriptionManager.canPurchase == false
         }
 
-        let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem).withImage(.subscriptionIcon)
+        let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
+            .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
         if !subscriptionManager.isUserAuthenticated {
             privacyProItem.target = self
@@ -494,7 +507,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         } else {
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
-                                                         subscriptionManager: subscriptionManager)
+                                                         subscriptionManager: subscriptionManager,
+                                                         moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
             addItem(privacyProItem)
         }
     }
@@ -503,7 +517,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func addFreemiumDBPItem() {
         guard freemiumDBPFeature.isAvailable else { return }
 
-        let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem).withImage(.dbpIcon)
+        let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem)
+            .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
 
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
@@ -520,30 +535,30 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if url.canFireproof, let host = url.host {
             let isFireproof = fireproofDomains.isFireproof(fireproofDomain: host)
             let title = isFireproof ? UserText.removeFireproofing : UserText.fireproofSite
-            let image: NSImage = isFireproof ? .burn : .fireproof
+            let image: NSImage = isFireproof ? moreOptionsMenuIconsProvider.removeFireproofIcon : moreOptionsMenuIconsProvider.fireproofSiteIcon
 
             addItem(withTitle: title, action: #selector(toggleFireproofing(_:)), keyEquivalent: "")
                 .targetting(self)
                 .withImage(image)
         } else {
             addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
-                .withImage(.fireproof)
+                .withImage(moreOptionsMenuIconsProvider.fireproofSiteIcon)
         }
 
         addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
             .targetting(self)
-            .withImage(.findSearch)
+            .withImage(moreOptionsMenuIconsProvider.findInPageIcon)
             .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
         let shareItem = addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
             .targetting(self)
-            .withImage(.share)
+            .withImage(moreOptionsMenuIconsProvider.shareIcon)
             .withSubmenu(sharingMenu)
         shareItem.isEnabled = tabViewModel.canShare
 
         addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
             .targetting(self)
-            .withImage(.print)
+            .withImage(moreOptionsMenuIconsProvider.printIcon)
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())
@@ -580,12 +595,14 @@ final class EmailOptionsButtonSubMenu: NSMenu {
     private let emailManager: EmailManager
     private var emailProtectionDidChangeCancellable: AnyCancellable?
 
-    init(tabCollectionViewModel: TabCollectionViewModel, emailManager: EmailManager) {
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         emailManager: EmailManager,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
         super.init(title: UserText.emailOptionsMenuItem)
 
-        updateMenuItems()
+        updateMenuItems(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         emailProtectionDidChangeCancellable = Publishers
             .Merge(
@@ -594,7 +611,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             )
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.updateMenuItems()
+                self?.updateMenuItems(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
             }
     }
 
@@ -602,27 +619,27 @@ final class EmailOptionsButtonSubMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func updateMenuItems() {
+    private func updateMenuItems(moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
         if emailManager.isSignedIn {
             addItem(withTitle: UserText.emailOptionsMenuCreateAddressSubItem, action: #selector(createAddressAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(.optionsButtonMenuEmailGenerateAddress)
+                .withImage(moreOptionsMenuIconsProvider.emailGenerateAddressIcon)
 
             addItem(withTitle: UserText.emailOptionsMenuManageAccountSubItem, action: #selector(manageAccountAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(.identity16)
+                .withImage(moreOptionsMenuIconsProvider.emailManageAccount)
 
             addItem(.separator())
 
             addItem(withTitle: UserText.emailOptionsMenuTurnOffSubItem, action: #selector(turnOffEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(.emailDisabled16)
+                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOffIcon)
 
         } else {
             addItem(withTitle: UserText.emailOptionsMenuTurnOnSubItem, action: #selector(turnOnEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(.optionsButtonMenuEmail)
+                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOnIcon)
 
         }
     }
@@ -677,31 +694,34 @@ final class FeedbackSubMenu: NSMenu {
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
-         internalUserDecider: InternalUserDecider) {
+         internalUserDecider: InternalUserDecider,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
         self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
-        updateMenuItems(with: tabCollectionViewModel, targetting: target)
+        updateMenuItems(with: tabCollectionViewModel, targetting: target, moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel, targetting target: AnyObject) {
+    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel,
+                                 targetting target: AnyObject,
+                                 moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
         let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
                                              action: #selector(AppDelegate.openFeedback(_:)),
                                              keyEquivalent: "")
-            .withImage(.browserFeedback)
+            .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
         addItem(browserFeedbackItem)
 
         let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
                                               action: #selector(AppDelegate.openReportBrokenSite(_:)),
                                               keyEquivalent: "")
-            .withImage(.siteBreakage)
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
         addItem(reportBrokenSiteItem)
 
         if authenticationStateProvider.isUserAuthenticated {
@@ -710,7 +730,7 @@ final class FeedbackSubMenu: NSMenu {
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
                                                   action: #selector(AppDelegate.openPProFeedback(_:)),
                                                   keyEquivalent: "")
-                .withImage(.pProFeedback)
+                .withImage(moreOptionsMenuIconsProvider.sendPrivacyProFeedbackIcon)
             addItem(sendPProFeedbackItem)
         }
 
@@ -724,10 +744,14 @@ final class FeedbackSubMenu: NSMenu {
 final class ZoomSubMenu: NSMenu {
 
     @MainActor
-    init(targetting target: AnyObject, tabCollectionViewModel: TabCollectionViewModel) {
+    init(targetting target: AnyObject,
+         tabCollectionViewModel: TabCollectionViewModel,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         super.init(title: UserText.zoom)
 
-        updateMenuItems(with: tabCollectionViewModel, targetting: target)
+        updateMenuItems(with: tabCollectionViewModel,
+                        targetting: target,
+                        moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
@@ -735,21 +759,21 @@ final class ZoomSubMenu: NSMenu {
     }
 
     @MainActor
-    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel, targetting target: AnyObject) {
+    private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel, targetting target: AnyObject, moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
 
         let fullScreenItem = (NSApp.mainMenuTyped.toggleFullscreenMenuItem.copy() as? NSMenuItem)!
-            .withImage(.zoomFullScreen)
+            .withImage(moreOptionsMenuIconsProvider.enterFullscreenIcon)
         addItem(fullScreenItem)
 
         addItem(.separator())
 
         let zoomInItem = (NSApp.mainMenuTyped.zoomInMenuItem.copy() as? NSMenuItem)!
-            .withImage(.zoomIn)
+            .withImage(moreOptionsMenuIconsProvider.zoomInIcon)
         addItem(zoomInItem)
 
         let zoomOutItem = (NSApp.mainMenuTyped.zoomOutMenuItem.copy() as? NSMenuItem)!
-            .withImage(.zoomOut)
+            .withImage(moreOptionsMenuIconsProvider.zoomOutIcon)
         addItem(zoomOutItem)
 
         let actualSizeItem = (NSApp.mainMenuTyped.actualSizeMenuItem.copy() as? NSMenuItem)!
@@ -761,7 +785,7 @@ final class ZoomSubMenu: NSMenu {
         let globalZoomSettingItem = NSMenuItem(title: UserText.defaultZoomPageMoreOptionsItem,
                                                action: #selector(MoreOptionsMenu.openAccessibilityPreferences(_:)),
                                                target: target)
-            .withImage(.zoomChangeDefault)
+            .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon)
         addItem(globalZoomSettingItem)
     }
 }
@@ -769,10 +793,14 @@ final class ZoomSubMenu: NSMenu {
 final class BookmarksSubMenu: NSMenu {
 
     @MainActor
-    init(targetting target: AnyObject, tabCollectionViewModel: TabCollectionViewModel) {
+    init(targetting target: AnyObject,
+         tabCollectionViewModel: TabCollectionViewModel,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         super.init(title: UserText.passwordManagementTitle)
         self.autoenablesItems = false
-        addMenuItems(with: tabCollectionViewModel, target: target)
+        addMenuItems(with: tabCollectionViewModel,
+                     target: target,
+                     moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
@@ -780,7 +808,9 @@ final class BookmarksSubMenu: NSMenu {
     }
 
     @MainActor
-    private func addMenuItems(with tabCollectionViewModel: TabCollectionViewModel, target: AnyObject) {
+    private func addMenuItems(with tabCollectionViewModel: TabCollectionViewModel,
+                              target: AnyObject,
+                              moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         let bookmarkPageItem = addItem(withTitle: UserText.bookmarkThisPage, action: #selector(MoreOptionsMenu.bookmarkPage(_:)), keyEquivalent: "d")
             .withModifierMask([.command])
             .targetting(target)
@@ -814,11 +844,11 @@ final class BookmarksSubMenu: NSMenu {
             let favoritesItem = addItem(withTitle: UserText.favorites, action: nil, keyEquivalent: "")
             favoritesItem.submenu = NSMenu().buildItems {
                 NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage), keyEquivalent: "")
-                    .withImage(.favorite)
+                    .withImage(moreOptionsMenuIconsProvider.favoritesIcon)
                 NSMenuItem.separator()
                 potentialItems
             }
-            favoritesItem.image = .favorite
+            favoritesItem.image = moreOptionsMenuIconsProvider.favoritesIcon
 
             addItem(NSMenuItem.separator())
         }
@@ -881,17 +911,20 @@ final class BookmarksSubMenu: NSMenu {
 final class LoginsSubMenu: NSMenu {
     let passwordManagerCoordinator: PasswordManagerCoordinating
 
-    init(targetting target: AnyObject, passwordManagerCoordinator: PasswordManagerCoordinating) {
+    init(targetting target: AnyObject,
+         passwordManagerCoordinator: PasswordManagerCoordinating,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         self.passwordManagerCoordinator = passwordManagerCoordinator
         super.init(title: UserText.passwordManagementTitle)
-        updateMenuItems(with: target)
+        updateMenuItems(with: target, moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    private func updateMenuItems(with target: AnyObject) {
+    private func updateMenuItems(with target: AnyObject,
+                                 moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         addItem(withTitle: UserText.passwordManagementAllItems, action: #selector(MoreOptionsMenu.openAutofillWithAllItems), keyEquivalent: "")
             .targetting(target)
             .withAccessibilityIdentifier("LoginsSubMenu.allItems")
@@ -911,15 +944,15 @@ final class LoginsSubMenu: NSMenu {
 
         addItem(withTitle: autofillTitle, action: autofillSelector, keyEquivalent: "")
             .targetting(target)
-            .withImage(.loginGlyph)
+            .withImage(moreOptionsMenuIconsProvider.passwordsSubMenuIcon)
 
         addItem(withTitle: UserText.passwordManagementIdentities, action: #selector(MoreOptionsMenu.openAutofillWithIdentities), keyEquivalent: "")
             .targetting(target)
-            .withImage(.identityGlyph)
+            .withImage(moreOptionsMenuIconsProvider.identitiesIcon)
 
         addItem(withTitle: UserText.passwordManagementCreditCards, action: #selector(MoreOptionsMenu.openAutofillWithCreditCards), keyEquivalent: "")
             .targetting(target)
-            .withImage(.creditCardGlyph)
+            .withImage(moreOptionsMenuIconsProvider.creditCardsIcon)
     }
 
 }
@@ -968,12 +1001,16 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     var identityTheftRestorationItem: NSMenuItem!
     var subscriptionSettingsItem: NSMenuItem!
 
+    private let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
+        self.moreOptionsMenuIconsProvider = moreOptionsMenuIconsProvider
 
         super.init(title: "")
 
@@ -1014,7 +1051,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.showNetworkProtectionStatus(_:)),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(.image(for: .vpnIcon))
+        .withImage(moreOptionsMenuIconsProvider.vpnIcon)
     }
 
     private func makeDataBrokerProtectionItem(target: AnyObject) -> NSMenuItem {
@@ -1022,7 +1059,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.openDataBrokerProtection),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(.dbpIcon)
+        .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
     }
 
     private func makeIdentityTheftRestorationItem(target: AnyObject) -> NSMenuItem {
@@ -1030,7 +1067,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.openIdentityTheftRestoration),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(.itrIcon)
+        .withImage(moreOptionsMenuIconsProvider.identityTheftRestorationIcon)
     }
 
     private func makeSubscriptionSettingsItem(target: AnyObject) -> NSMenuItem {

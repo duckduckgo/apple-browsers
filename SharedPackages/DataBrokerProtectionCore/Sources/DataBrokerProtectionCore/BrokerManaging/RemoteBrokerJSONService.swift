@@ -281,10 +281,18 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             let fileName = fileURL.lastPathComponent
             guard changedBrokerFileNames.contains(fileName) else { continue }
 
-            var dataBroker = try DataBroker.initFromResource(fileURL)
-            dataBroker.setETag(eTagMapping[fileName] ?? "")
-            if activeBrokers.contains(fileName) {
-                try upsertBroker(dataBroker)
+            do {
+                var dataBroker = try DataBroker.initFromResource(fileURL)
+                dataBroker.setETag(eTagMapping[fileName] ?? "")
+                if activeBrokers.contains(fileName) {
+                    try upsertBroker(dataBroker)
+                }
+            } catch let error as DecodingError {
+                Logger.dataBrokerProtection.log("Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")
+            } catch let error as Step.DecodingError {
+                Logger.dataBrokerProtection.log("JSON file \(fileURL.lastPathComponent) contains unsupported data: \(error), skipping update")
+            } catch {
+                throw error
             }
         }
     }

@@ -18,6 +18,10 @@
 
 import Foundation
 
+public enum ScanType: String, Codable, Sendable {
+    case templatedUrl
+}
+
 public enum StepType: String, Codable, Sendable {
     case scan
     case optOut
@@ -30,22 +34,39 @@ public enum OptOutType: String, Codable, Sendable {
 
 public struct Step: Codable, Sendable {
     let type: StepType
+    let scanType: ScanType
     let optOutType: OptOutType?
     let actions: [Action]
 
     enum CodingKeys: String, CodingKey {
-        case actions, stepType, optOutType
+        case actions, stepType, scanType, optOutType
     }
 
-    init(type: StepType, actions: [Action], optOutType: OptOutType? = nil) {
+    enum DecodingError: Error {
+        case unsupportedScanType
+        case unsupportedStepType
+        case unsupportedActionType
+    }
+
+    init(type: StepType, scanType: ScanType = .templatedUrl, actions: [Action], optOutType: OptOutType? = nil) {
         self.type = type
+        self.scanType = scanType
         self.actions = actions
         self.optOutType = optOutType
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(StepType.self, forKey: .stepType)
+        do {
+            type = try container.decode(StepType.self, forKey: .stepType)
+        } catch {
+            throw DecodingError.unsupportedStepType
+        }
+        do {
+            scanType = try container.decode(ScanType.self, forKey: .scanType)
+        } catch {
+            throw DecodingError.unsupportedScanType
+        }
         optOutType = try? container.decode(OptOutType.self, forKey: .optOutType)
 
         let actionsList = try container.decode([[String: Any]].self, forKey: .actions)
@@ -55,6 +76,7 @@ public struct Step: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .stepType)
+        try container.encode(scanType, forKey: .scanType)
         try container.encode(optOutType, forKey: .optOutType)
 
         var actionsContainer = container.nestedUnkeyedContainer(forKey: .actions)
@@ -65,11 +87,13 @@ public struct Step: Codable, Sendable {
         var actionList = [Action]()
 
         for list in actions {
-            guard let typeValue = list["actionType"] as? String,
-                  let actionType = ActionType(rawValue: typeValue) else {
-                continue
+            guard let typeValue = list["actionType"] as? String else { continue }
+
+            guard let actionType = ActionType(rawValue: typeValue) else {
+                throw DecodingError.unsupportedActionType
             }
-             let jsonData = try JSONSerialization.data(withJSONObject: list, options: .prettyPrinted)
+
+            let jsonData = try JSONSerialization.data(withJSONObject: list, options: .prettyPrinted)
 
             switch actionType {
             case .click:

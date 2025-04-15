@@ -89,7 +89,7 @@ final class FirePopoverViewController: NSViewController {
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
                                                          tld: ContentBlocking.shared.tld,
-                                                         contextualOnboardingStateMachine: Application.appDelegate.onboardingStateMachine)
+                                                         onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)
     }

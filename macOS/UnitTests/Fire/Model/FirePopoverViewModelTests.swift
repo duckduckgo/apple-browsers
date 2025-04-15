@@ -22,7 +22,7 @@ import XCTest
 final class FirePopoverViewModelTests: XCTestCase {
 
     @MainActor
-    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel, contextualOnboardingStateMachine: ContextualOnboardingStateUpdater = ContextualOnboardingStateMachine()) -> FirePopoverViewModel {
+    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel, onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager()) -> FirePopoverViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -40,26 +40,26 @@ final class FirePopoverViewModelTests: XCTestCase {
             fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock()),
             faviconManagement: FaviconManagerMock(),
             tld: ContentBlocking.shared.tld,
-            contextualOnboardingStateMachine: contextualOnboardingStateMachine
+            onboardingContextualDialogsManager: onboardingContextualDialogsManager
         )
     }
 
-    @MainActor func testOnBurn_OnboardingStateMachineFireButtonUsedCalled() {
+    @MainActor func testOnBurn_OnboardingContextualDialogsManagerFireButtonUsedCalled() {
         // Given
         let tabCollectionVM = TabCollectionViewModel()
-        let stateMachine = CapturingContextualOnboardingStateUpdater()
-        let vm = makeViewModel(with: tabCollectionVM, contextualOnboardingStateMachine: stateMachine)
-        XCTAssertNil(stateMachine.updatedForTab)
-        XCTAssertFalse(stateMachine.gotItPressedCalled)
-        XCTAssertFalse(stateMachine.fireButtonUsedCalled)
+        let onboardingContextualDialogsManager = CapturingContextualOnboardingStateUpdater()
+        let vm = makeViewModel(with: tabCollectionVM, onboardingContextualDialogsManager: onboardingContextualDialogsManager)
+        XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
+        XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
+        XCTAssertFalse(onboardingContextualDialogsManager.fireButtonUsedCalled)
 
         // When
         vm.burn()
 
         // Then
-        XCTAssertNil(stateMachine.updatedForTab)
-        XCTAssertFalse(stateMachine.gotItPressedCalled)
-        XCTAssertTrue(stateMachine.fireButtonUsedCalled)
+        XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
+        XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
+        XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
     }
 }
 

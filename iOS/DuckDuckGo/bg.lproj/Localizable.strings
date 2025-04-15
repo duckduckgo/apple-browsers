@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Използвайте абонамента си за Privacy Pro на това устройство чрез Apple акаунт или имейл адрес.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Добавяне на имейл";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple акаунт";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Възстановяване на покупката";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Възстановете покупката си, за да активирате абонамента на това устройство.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Достъпът с абонамент става автоматично в DuckDuckGo на всяко устройство, което е вписано във Вашия Apple акаунт.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Добавяне към устройството";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Редактиране на имейл";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Редактиране на имейл";
 
-/* Email option for activation */
-"subscription.activate.email" = "Имейл";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Въведете имейл";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Използвайте имейла си, за да активирате абонамента на това устройство.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Активиране на абонамент";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Добавяне на абонамент за Privacy Pro към това устройство";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Отмени";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "ОК";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Възстановяване на покупката";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Възстановяване на покупката";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Активирайте абонамента си на това устройство";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Възстановете абонамента си за Apple устройства, като използвате своя Apple акаунт.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Добавяне чрез Apple акаунт";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Първи стъпки";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Използвайте имейл адрес, за да добавите Privacy Pro към това устройство.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Добавяне чрез имейл адрес";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Имам абонамент";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Повторно изпращане на инструкции";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Добавяне на имейл";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Добавяне на Privacy Pro към други устройства";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Добавете Privacy Pro към други устройства чрез Apple ID или чрез свързване с имейл адрес. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Използвайте този имейл, за да добавите абонамента си на други устройства в приложението DuckDuckGo. Отидете в Настройки > Privacy Pro > Имам абонамент. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Функцията Privacy Pro може да се използва на всяко устройство, което е вписано в същия Apple акаунт.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Сигурни ли сте?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Активиране на други устройства";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Добавете допълнителен имейл към абонамента, за да получите достъп до Privacy Pro на други устройства. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Използвайте този имейл, за да активирате абонамента от Настройки > Privacy Pro в приложението DuckDuckGo на други устройства. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Абонаментът, свързан с този имейл, вече не е активен.";

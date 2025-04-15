@@ -24,7 +24,13 @@ import Suggestions
 
 class QuerySubmittedTests: XCTestCase {
     let mock = MockOmniBarDelegate()
-    let sut = DefaultOmniBarView.loadFromXib(dependencies: MockOmnibarDependency(voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true)))
+    let sut = DefaultOmniBarViewController(
+        dependencies: MockOmnibarDependency(
+            voiceSearchHelper: MockVoiceSearchHelper(
+                isSpeechRecognizerAvailable: true,
+                voiceSearchEnabled: true)
+        )
+    )
 
     override func setUp() {
         super.setUp()
@@ -71,7 +77,7 @@ class QuerySubmittedTests: XCTestCase {
     }
 
     func testEmptyQueryDoesNotCallDelegate() {
-        sut.textField.text = ""
+        sut.barView.textField.text = ""
         sut.onQuerySubmitted()
 
         XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
@@ -79,7 +85,7 @@ class QuerySubmittedTests: XCTestCase {
     }
 
     func testBlankQueryDoesNotCallDelegate() {
-        sut.textField.text = "   "
+        sut.barView.textField.text = "   "
         sut.onQuerySubmitted()
 
         XCTAssertFalse(mock.wasOnOmniQuerySubmittedCalled)
@@ -89,7 +95,7 @@ class QuerySubmittedTests: XCTestCase {
     // MARK: - Helper Methods
 
     private func assertQuerySubmission(query: String, expected: String) {
-        sut.textField.text = query
+        sut.barView.textField.text = query
         sut.onQuerySubmitted()
 
         XCTAssertEqual(mock.query, expected)

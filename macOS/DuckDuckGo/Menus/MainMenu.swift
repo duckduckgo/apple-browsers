@@ -87,8 +87,6 @@ final class MainMenu: NSMenu {
     var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "N")
 
-    let toggleAIChatShortcutMenuItem = NSMenuItem(title: UserText.showAIChatShortcut, action: #selector(MainViewController.toggleAIChatShortcut), keyEquivalent: "L")
-
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
 
@@ -305,8 +303,6 @@ final class MainMenu: NSMenu {
 
             toggleNetworkProtectionShortcutMenuItem
 
-            toggleAIChatShortcutMenuItem
-
             NSMenuItem.separator()
 
             toggleFullscreenMenuItem
@@ -462,7 +458,6 @@ final class MainMenu: NSMenu {
 
         // To be safe, hide the NetP shortcut menu item by default.
         toggleNetworkProtectionShortcutMenuItem.isHidden = true
-        toggleAIChatShortcutMenuItem.isHidden = true
 
         updateAppAboutDDGMenuItem()
         updateHomeButtonMenuItem()
@@ -640,13 +635,6 @@ final class MainMenu: NSMenu {
             toggleAutofillShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .autofill)
             toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
             toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
-
-            if AIChatRemoteSettings().isApplicationMenuShortcutEnabled {
-                toggleAIChatShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
-                toggleAIChatShortcutMenuItem.isHidden = false
-            } else {
-                toggleAIChatShortcutMenuItem.isHidden = true
-            }
 
             if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false

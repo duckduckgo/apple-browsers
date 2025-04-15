@@ -27,9 +27,6 @@ final class AIChatDebugMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-            NSMenuItem(title: "Reset toolbar onboarding", action: #selector(resetToolbarOnboarding), target: self)
-            NSMenuItem(title: "Show toolbar onboarding", action: #selector(showToolbarOnboarding), target: self)
-
             NSMenuItem(title: "Web Communication") {
                 NSMenuItem(title: "Set Custom URL", action: #selector(setCustomURL))
                     .targetting(self)
@@ -48,15 +45,6 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
-    }
-
-    @objc func resetToolbarOnboarding() {
-        storage.reset()
-    }
-
-    @objc func showToolbarOnboarding() {
-        storage.didDisplayAIChatToolbarOnboarding = false
-        NotificationCenter.default.post(name: .AIChatOpenedForReturningUser, object: nil)
     }
 
     @objc func setCustomURL() {

@@ -43,7 +43,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         var isShowingLearnMoreView: Bool = false
         var subscriptionInfo: PrivacyProSubscription?
         var isLoadingSubscriptionInfo: Bool = false
-        var isLoadingEmailInfo: Bool = false
         
         // Used to display stripe WebUI
         var stripeViewModel: SubscriptionExternalLinkViewModel?
@@ -90,15 +89,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataDontLoad,
-                                                                                   loadingIndicator: false)
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .returnCacheDataDontLoad)
             async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .returnCacheDataDontLoad,
                                                                                                  loadingIndicator: false)
             let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
             
             // Reload remote subscription and email state
-            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData,
-                                                                            loadingIndicator: !hasLoadedEmailFromCache)
+            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .reloadIgnoringLocalCacheData)
             async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .reloadIgnoringLocalCacheData,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
             let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
@@ -132,7 +129,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         }
     }
     
-    func fetchAndUpdateAccountEmail(cachePolicy: APICachePolicy = .returnCacheDataElseLoad, loadingIndicator: Bool) async -> Bool {
+    func fetchAndUpdateAccountEmail(cachePolicy: APICachePolicy = .returnCacheDataElseLoad) async -> Bool {
         Logger.subscription.debug("\(#function)")
         guard let token = self.subscriptionManager.accountManager.accessToken else { return false }
         
@@ -145,14 +142,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         case .reloadIgnoringLocalCacheData:
             break
         }
-        
-        if loadingIndicator { displayEmailLoader(true) }
+
         switch await self.subscriptionManager.accountManager.fetchAccountDetails(with: token) {
         case .success(let details):
             Logger.subscription.debug("Account details fetched successfully")
             DispatchQueue.main.async {
                 self.state.subscriptionEmail = details.email
-                if loadingIndicator { self.displayEmailLoader(false) }
             }
             
             // If fetched email is different then update accountManager
@@ -163,9 +158,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             return true
         case .failure(let error):
             Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
-            DispatchQueue.main.async {
-                if loadingIndicator { self.displayEmailLoader(true) }
-            }
             return false
         }
     }
@@ -173,12 +165,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private func displaySubscriptionLoader(_ show: Bool) {
         DispatchQueue.main.async {
             self.state.isLoadingSubscriptionInfo = show
-        }
-    }
-    
-    private func displayEmailLoader(_ show: Bool) {
-        DispatchQueue.main.async {
-            self.state.isLoadingEmailInfo = show
         }
     }
     

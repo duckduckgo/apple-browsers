@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Piekļūsti savam Privacy Pro abonementam šajā ierīcē, izmantojot Apple kontu vai e-pasta adresi.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Pievienot e-pasta adresi";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple konts";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Atjaunot pirkumu";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Atjauno savu pirkumu, lai aktivizētu abonementu šajā ierīcē.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Tavs abonements ir automātiski pieejams DuckDuckGo jebkurā ierīcē, kurā esi pierakstījies savā Apple kontā.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Pievienot ierīcei";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Rediģēt e-pasta adresi";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediģēt e-pasta adresi";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-pasts";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Ievadi e-pasta adresi";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Izmanto savu e-pasta adresi, lai aktivizētu abonementu šajā ierīcē.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktivizēt abonementu";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Pievieno šai ierīcei savu Privacy Pro abonementu";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Atcelt";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "Labi";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Atjaunot pirkumu";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Atjaunot pirkumu";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivizē savu abonementu šajā ierīcē";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Atjauno abonementu Apple ierīcēs, izmantojot savu Apple kontu.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Pievienot, izmantojot Apple kontu";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Sākt darbu";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Izmanto e-pasta adresi, lai pievienotu Privacy Pro šai ierīcei.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Pievienot, izmantojot e-pasta adresi";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Man ir abonements";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Atkārtoti nosūtīt instrukcijas";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Pievienot e-pasta adresi";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Pievieno Privacy Pro citām ierīcēm";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Pievieno Privacy Pro citām ierīcēm ar Apple ID vai piesaistot e-pasta adresi. **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Izmanto šo e-pasta adresi, lai pievienotu abonementu citām ierīcēm DuckDuckGo lietotnē. Dodies uz sadaļu \"Iestatījumi\" > Privacy Pro > \"Man ir abonements\". **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro ir pieejams jebkurā ierīcē, kurā esi pierakstījies, izmantojot to pašu Apple kontu.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Vai esi pārliecināts?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktivizēt citās ierīcēs";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Pēc izvēles pievieno abonementam e-pasta adresi, lai piekļūtu Privacy Pro citās ierīcēs. **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Izmanto šo e-pasta adresi, lai aktivizētu savu abonementu sadaļā Iestatījumi > Privacy Pro lietotnē DuckDuckGo citās ierīcēs. **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Ar šo e-pasta adresi saistītais abonements vairs nav aktīvs.";

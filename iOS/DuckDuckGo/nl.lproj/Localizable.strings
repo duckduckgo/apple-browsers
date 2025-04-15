@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Opgeslagen hostnaam: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Krijg op dit apparaat toegang tot je Privacy Pro-abonnement via je Apple-account of e-mailadres.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "E-mailadres toevoegen";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-account";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Aankoop herstellen";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Herstel je aankoop om je abonnement op dit apparaat te activeren.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Je abonnement is automatisch beschikbaar in DuckDuckGo op elk apparaat dat is aangemeld bij je Apple-account.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Toevoegen aan apparaat";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "E-mailadres bewerken";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-mailadres bewerken";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-mail";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "E-mailadres invoeren";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Gebruik je e-mailadres om je abonnement op dit apparaat te activeren.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Abonnement activeren";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Voeg je Privacy Pro-abonnement toe aan dit apparaat";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Annuleren";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Aankoop herstellen";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Aankoop herstellen";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Activeer je abonnement op dit apparaat";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Herstel je abonnement op Apple-apparaten met je Apple-account.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Toevoegen via Apple-account";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Aan de slag";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Gebruik een e-mailadres om Privacy Pro aan dit apparaat toe te voegen.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Toevoegen via e-mailadres";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Ik heb een abonnement";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Instructies opnieuw verzenden";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-mailadres toevoegen";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Privacy Pro toevoegen aan andere apparaten";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Voeg Privacy Pro toe aan je andere apparaten via Apple ID of door een e-mailadres te koppelen. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Gebruik dit e-mailadres om je abonnement toe te voegen op je andere apparaten in de DuckDuckGo-app. Ga naar Instellingen > Privacy Pro > Ik heb een abonnement. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro is beschikbaar op elk apparaat dat is aangemeld bij hetzelfde Apple-account.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Weet je het zeker?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Activeren op andere apparaten";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Voeg een optioneel e-mailadres toe aan je abonnement om toegang te krijgen tot Privacy Pro op andere apparaten. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Gebruik deze e-mail om je abonnement te activeren in 'Instellingen' > 'Privacy Pro' in de DuckDuckGo-app op je andere apparaten. **[Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Je abonnement dat aan dit e-mailadres is gekoppeld, is niet langer actief.";

@@ -38,37 +38,62 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.openSettings.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
-    @MainActor func testGetUserValuesMessageReturnsCorrectUserValues() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getUserValues.rawValue))
-
+    @MainActor func testGetAIChatNativeConfigValues() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getAIChatNativeConfigValues.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
-        if let userValues = result as? AIChatUserScriptHandler.UserValues {
-            XCTAssertTrue(userValues.isToolbarShortcutEnabled, "isToolbarShortcutEnabled should be true")
-            XCTAssertEqual(userValues.platform, "macOS", "Platform should be macOS")
-        } else {
-            XCTFail("Expected result to be of type UserValues")
-        }
+        XCTAssertTrue(mockHandler.didGetConfigValues, "getAIChatNativeConfigValues should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testCloseAIChat() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.closeAIChat.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didCloseChat, "closeAIChat should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetAIChatNativePrompt() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getAIChatNativePrompt.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetPrompt, "getAIChatNativePrompt should be called")
+        XCTAssertNil(result, "Expected result to be nil")
     }
 }
 
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
-    var didOpenSettings = false
-
-    func openSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
     }
 
-    func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        return AIChatUserScriptHandler.UserValues(isToolbarShortcutEnabled: true, platform: "macOS")
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didGetConfigValues = true
+        return nil
     }
+
+    func closeAIChat(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didCloseChat = true
+        return nil
+    }
+
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> (any Encodable)? {
+        didGetPrompt = true
+        return nil
+    }
+
+    var didOpenSettings = false
+    var didGetConfigValues = false
+    var didCloseChat = false
+    var didGetPrompt = false
 }
 
 private final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {

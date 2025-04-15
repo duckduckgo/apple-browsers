@@ -26,7 +26,7 @@ enum OmniBarAccessoryType {
  }
 
 protocol OmniBar: AnyObject {
-    var barView: OmniBarView { get }
+    var barView: any OmniBarView { get }
 
     var isBackButtonEnabled: Bool { get set }
     var isForwardButtonEnabled: Bool { get set }
@@ -74,5 +74,4 @@ protocol OmniBar: AnyObject {
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
-
 }

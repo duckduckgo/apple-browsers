@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Подпиской Privacy Pro можно пользоваться на этом устройстве через аккаунт Apple или адрес электронной почты.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Добавить адрес эл. почты";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Аккаунт Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Восстановить покупку";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Восстановите покупку, чтобы активировать подписку на этом устройстве.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Ваша подписка на DuckDuckGo автоматически доступна на любом устройстве: просто войдите в аккаунт Apple.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Добавление на устройство";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Изменить адрес почты";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Изменить адрес почты";
 
-/* Email option for activation */
-"subscription.activate.email" = "Электронная почта";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Ввести адрес эл. почты";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Используйте адрес электронной почты, чтобы активировать подписку на этом устройстве.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Активация подписки";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Добавьте подписку Privacy Pro на это устройство";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Отменить";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "Хорошо";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Восстановить покупку";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Восстановить покупку";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Активировать подписку на этом устройстве";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Для восстановления подписки на устройствах Apple используйте аккаунт Apple.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Добавить через аккаунт Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Приступим!";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Чтобы добавить подписку Privacy Pro на это устройство, используйте адрес электронной почты.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Добавить с помощью электронной почты";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "У меня уже есть подписка";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Отправить заново";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Добавить адрес эл. почты";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Добавление подписки Privacy Pro на другие устройства";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Подписку Privacy Pro можно добавить на другие устройства с помощью Apple ID или адреса электронной почты. **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Чтобы добавить подписку на других устройствах, укажите этот адрес электронной почты в приложении DuckDuckGo. Для этого откройте раздел «Настройки > Privacy Pro > У меня есть подписка». **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Подписка Privacy Pro доступна на любом устройстве, где выполнен вход в тот же аккаунт Apple.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Вы уверены?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Активация подписки на других устройствах";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Привяжите к подписке дополнительный адрес электронной почты, чтобы пользоваться преимуществами тарифа Privacy Pro на других устройствах. **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Используйте этот адрес для активации подписки в разделе «Настройки > Privacy Pro» в приложении DuckDuckGo на других устройствах. **[Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Подписка, закрепленная за этой учетной записью, утратила активный статус.";

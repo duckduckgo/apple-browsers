@@ -134,6 +134,7 @@ struct SettingsRootView: View {
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                               emailFlow: .restoreFlow,
                                                                onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)
@@ -163,6 +164,7 @@ struct SettingsRootView: View {
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 emailFlow: .restoreFlow,
                                                                  onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)

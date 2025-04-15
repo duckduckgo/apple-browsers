@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Få tilgang til Privacy Pro-abonnementet ditt på denne enheten via Apple-kontoen din eller en e-postadresse.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Legg til e-postadresse";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-konto";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Gjenopprett kjøp";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Gjenopprett kjøpet ditt for å aktivere abonnementet ditt på denne enheten.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Abonnementet ditt er automatisk tilgjengelig i DuckDuckGo på alle enheter som er logget inn på Apple-kontoen din.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Legg til på enheten";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Rediger e-postadresse";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediger e-postadresse";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-post";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Skriv inn e-postadresse";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Bruk e-postadressen din til å aktivere abonnementet ditt på denne enheten.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktiver abonnement";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Legg til Privacy Pro-abonnementet ditt på denne enheten";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Avbryt";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Gjenopprett kjøp";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Gjenopprett kjøp";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktiver abonnementet ditt på denne enheten";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Gjenopprett abonnementet på Apple-enheter ved hjelp av Apple-kontoen din.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Legg til via Apple-konto";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Kom i gang";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Bruk en e-postadresse for å legge til Privacy Pro på denne enheten.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Legg til via e-postadresse";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Jeg har et abonnement";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Send instruksjonene på nytt";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Legg til e-postadresse";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Legg til Privacy Pro på andre enheter";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Legg til Privacy Pro på andre enheter via Apple ID eller ved å koble til en e-postadresse. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Bruk denne e-postadressen til å legge til abonnementet ditt på andre enheter i DuckDuckGo-appen. Gå til Innstillinger > Privacy Pro > Jeg har et abonnement. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro er tilgjengelig på alle enheter som er logget inn på samme Apple-konto.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Er du sikker?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiver på andre enheter";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Legg til en valgfri e-postadresse i abonnementet ditt for å få tilgang til Privacy Pro på andre enheter. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Bruk denne e-postadressen til å aktivere abonnementet ditt i Innstillinger > Privacy Pro i DuckDuckGo-appen på de andre enhetene. **[Finn ut mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Abonnementet tilknyttet denne e-postadressen er ikke lenger aktiv.";

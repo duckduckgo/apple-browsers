@@ -20,7 +20,7 @@ import WebKit
 import Common
 import UserScript
 
-public enum RequestVaultCredentialsAction: String, Codable {
+public enum RequestVaultDataAction: String, Codable {
     case none
     case fill
 }
@@ -49,7 +49,7 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
     func autofillUserScript(_: AutofillUserScript, didRequestCredentialsForDomain: String,
                             subType: AutofillUserScript.GetAutofillDataSubType,
                             trigger: AutofillUserScript.GetTriggerType,
-                            completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider, RequestVaultCredentialsAction) -> Void)
+                            completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider, RequestVaultDataAction) -> Void)
 
     func autofillUserScript(_: AutofillUserScript, didRequestCredentialsForAccount accountId: String,
                             completionHandler: @escaping (SecureVaultModels.WebsiteCredentials?, SecureVaultModels.CredentialsProvider) -> Void)
@@ -57,6 +57,9 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
     func autofillUserScript(_: AutofillUserScript, didRequestIdentityWithId identityId: Int64,
                             completionHandler: @escaping (SecureVaultModels.Identity?) -> Void)
+    func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript,
+                                                trigger: AutofillUserScript.GetTriggerType,
+                                                completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScriptDidAskToUnlockCredentialsProvider(_: AutofillUserScript,
                                                              andProvideCredentialsForDomain domain: String,
@@ -374,6 +377,17 @@ extension AutofillUserScript {
 
     }
 
+    struct CreditCardResponse: Codable {
+
+        let id: String
+        let cardNumber: String
+        let cardName: String
+        let cardSecurityCode: String
+        let expirationMonth: String
+        let expirationYear: String
+
+    }
+
     struct RequestGeneratedPasswordResponse: Codable {
 
         enum GeneratedPasswordResponseAction: String, Codable {
@@ -406,14 +420,14 @@ extension AutofillUserScript {
 
         struct RequestVaultCredentialsResponseContents: Codable {
             let credentials: CredentialResponse?
-            let action: RequestVaultCredentialsAction
+            let action: RequestVaultDataAction
         }
 
         let success: RequestVaultCredentialsResponseContents
 
         static func responseFromSecureVaultWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials?,
                                                               credentialsProvider: SecureVaultModels.CredentialsProvider,
-                                                              action: RequestVaultCredentialsAction) -> Self {
+                                                              action: RequestVaultDataAction) -> Self {
             let credential: CredentialResponse?
             if let credentials = credentials,
                 let id = credentials.account.id,
@@ -431,6 +445,33 @@ extension AutofillUserScript {
 
     struct RequestVaultCredentialsForAccountResponse: Codable {
         let success: CredentialResponse
+    }
+
+
+    struct RequestVaultCreditCardResponse: Codable {
+
+        struct RequestVaultCreditCardResponseContents: Codable {
+            let creditCards: CreditCardResponse?
+            let action: RequestVaultDataAction
+        }
+
+        let success: RequestVaultCreditCardResponseContents
+
+        static func responseFromSecureVaultCreditCards(_ creditCard: SecureVaultModels.CreditCard?,
+                                                              action: RequestVaultDataAction) -> Self {
+            let creditCardResponse: CreditCardResponse?
+            if let creditCard = creditCard,
+               let id = creditCard.id {
+                let month = creditCard.expirationMonth.map { String($0) } ?? ""
+                let year = creditCard.expirationYear.map { String($0) } ?? ""
+
+                creditCardResponse = CreditCardResponse(id: String(id), cardNumber: creditCard.cardNumber, cardName: creditCard.cardholderName ?? "", cardSecurityCode: creditCard.cardSecurityCode ?? "", expirationMonth: month, expirationYear: year)
+            } else {
+                creditCardResponse = nil
+            }
+
+            return RequestVaultCreditCardResponse(success: RequestVaultCreditCardResponseContents(creditCards: creditCardResponse, action: action))
+        }
     }
 
     // MARK: - Message Handlers
@@ -484,6 +525,11 @@ extension AutofillUserScript {
     public enum GetAutofillDataSubType: String, Codable {
         case username
         case password
+        case cardName
+        case cardNumber
+        case cardSecurityCode
+        case expirationMonth
+        case expirationYear
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
@@ -519,6 +565,7 @@ extension AutofillUserScript {
             return
         }
 
+        if request.mainType == .credentials {
         vaultDelegate?.autofillUserScript(self,
                                           didRequestCredentialsForDomain: domain,
                                           subType: request.subType,
@@ -527,8 +574,18 @@ extension AutofillUserScript {
                                                                                                               credentialsProvider: credentialsProvider,
                                                                                                               action: action)
 
-            if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                replyHandler(jsonString)
+                if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                    replyHandler(jsonString)
+                }
+            }
+        } else if request.mainType == .creditCards {
+            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { creditCard, action in
+
+                let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
+
+                if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                    replyHandler(jsonString)
+                }
             }
         }
     }

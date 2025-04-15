@@ -117,7 +117,6 @@ public final class AppVersionNumber: AppVersionNumberProvider {
 }
 
 public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
-
     private let repository: BrokerUpdaterRepository
     private let resources: ResourcesRepository
     public let vault: any DataBrokerProtectionSecureVault
@@ -163,7 +162,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
 
     public func checkForUpdates() async throws {
         if let lastCheckedVersion = repository.getLastCheckedVersion() {
-            if shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
+            if Self.shouldUpdate(incoming: appVersion.versionNumber, storedVersion: lastCheckedVersion) {
                 updateBrokersAndSaveLatestVersion()
             }
         } else {

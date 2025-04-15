@@ -19,33 +19,67 @@
 import Foundation
 import os.log
 
-public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & LocalBrokerJSONServiceProvider & BrokerManaging & AnyObject
-public typealias BrokerJSONFallbackProvider = LocalBrokerJSONServiceProvider & BrokerManaging
+/// Protocol that provides complete broker JSON capabilities, combining remote delivery with local fallback and secure data storage
+public typealias BrokerJSONServiceProvider = RemoteBrokerJSONServiceProvider & BrokerJSONFallbackProvider
 
+/// Protocol that provides fallback broker JSON functionality
+/// Used as initial data source before remote updates
+public typealias BrokerJSONFallbackProvider = LocalBrokerJSONServiceProvider & BrokerStoring
+
+/// Protocol that defines methods for retrieving and processing broker JSON data from the remote broker service
 public protocol RemoteBrokerJSONServiceProvider {
+
+    /// Checks for and retrieves remote broker JSON updates
+    ///
+    /// - Parameters:
+    ///   - skipsLimiter: When true, bypasses the rate limiting mechanism that prevents too frequent update requests
     func checkForUpdates(skipsLimiter: Bool) async throws
+
+    /// Checks for potential remote broker JSON updates with rate limiting enabled
+    /// This is a convenience method that calls `checkForUpdates(skipsLimiter: false)`
     func checkForUpdates() async throws
 }
 
+/// Protocol that defines methods for retrieving and processing broker JSON data from the local storage for fallback reason
 public protocol LocalBrokerJSONServiceProvider {
+
+    /// Returns list of broker JSONs included in the app bundle, which is used to populate initial scans
     func bundledBrokers() throws -> [DataBroker]?
+
+    /// Check for potential bundled broker JSON updates
     func checkForUpdates() async throws
 }
 
-public protocol BrokerManaging {
+/// Protocol that defines methods for storing broker JSON data
+public protocol BrokerStoring {
+
+    /// Secure storage for persisting broker data
     var vault: any DataBrokerProtectionSecureVault { get }
+
+    /// Inserts a new broker or updates an existing one with the same identifier (`id`)
+    ///
+    /// - Parameters:
+    ///   - broker: The broker data to store or update
     func upsertBroker(_ broker: DataBroker) throws
-    func shouldUpdate(incoming: String, storedVersion: String) -> Bool
+
+    /// Utility method to determine whether to proceed with an update based on version comparison
+    /// Can be used for app versions and individual broker versions
+    ///
+    /// - Parameters:
+    ///   - incoming: The newer version string
+    ///   - storedVersion: The current version string
+    /// - Returns: `true` if the incoming version is newer or otherwise should replace the stored version, `false` otherwise
+    static func shouldUpdate(incoming: String, storedVersion: String) -> Bool
 }
 
-public extension BrokerManaging {
+public extension BrokerStoring {
     func upsertBroker(_ broker: DataBroker) throws {
         guard let savedBroker = try vault.fetchBroker(with: broker.url) else {
             try addBroker(broker)
             return
         }
 
-        guard shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else {
+        guard Self.shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else {
             Logger.dataBrokerProtection.log("False positive (changed eTag but same version): \(broker.url, privacy: .public)")
             return
         }
@@ -58,13 +92,7 @@ public extension BrokerManaging {
         try updateAttemptCount(broker)
     }
 
-    func shouldUpdate(incoming: String, storedVersion: String) -> Bool {
-        let result = incoming.compare(storedVersion, options: .numeric)
-
-        return result == .orderedDescending
-    }
-
-    func addBroker(_ broker: DataBroker) throws {
+    private func addBroker(_ broker: DataBroker) throws {
         Logger.dataBrokerProtection.log("New broker found: \(broker.url, privacy: .public)")
 
         /// 1. We save the broker into the database
@@ -90,5 +118,11 @@ public extension BrokerManaging {
                 try vault.updateAttemptCount(0, brokerId: brokerId, profileQueryId: optOutJob.profileQueryId, extractedProfileId: extractedProfileId)
             }
         }
+    }
+
+    static func shouldUpdate(incoming: String, storedVersion: String) -> Bool {
+        let result = incoming.compare(storedVersion, options: .numeric)
+
+        return result == .orderedDescending
     }
 }

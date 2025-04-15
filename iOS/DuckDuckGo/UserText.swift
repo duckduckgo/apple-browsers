@@ -937,6 +937,7 @@ public struct UserText {
     public static let autofillCreditCardSavePromptDismissButton = NSLocalizedString("autofill.creditcard.save-prompt.dismiss-button", value: "Don't Save", comment: "Title for button to dismiss the save credit card details prompt")
     public static let autofillCreditCardSavedToastMessage = NSLocalizedString("autofill.creditcard-saved.toast", value: "Card saved", comment: "Message displayed after saving an autofill credit card")
     public static let autofillCreditCardFillPromptTitle = NSLocalizedString("autofill.creditcard.use-saved-prompt.title", value: "Use a saved card?", comment: "Title for prompt asking the user if they wish to autofill a saved credit card")
+    public static let autofillCreditCardFillPromptAuthentication = NSLocalizedString("autofill.creditcard.use-saved-prompt.authentication", value: "Authenticate to fill credit card information", comment: "Authentication message shown when asking the user if they wish to autofill a saved credit card")
 
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 

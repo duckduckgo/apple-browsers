@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
@@ -24,6 +25,7 @@ import SwiftUI
 import WebKit
 import os.log
 import RemoteMessaging
+import WebKitExtensions
 
 final class TabBarViewController: NSViewController, TabBarRemoteMessagePresenting {
 
@@ -105,6 +107,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
     private var previousScrollViewWidth: CGFloat = .zero
+    private let featureFlagger: FeatureFlagger
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -124,9 +127,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel) -> TabBarViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel, featureFlagger: FeatureFlagger) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: activeRemoteMessageModel)
+            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: activeRemoteMessageModel, featureFlagger: featureFlagger)
         }!
     }
 
@@ -134,8 +137,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel, featureFlagger: FeatureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.featureFlagger = featureFlagger
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
@@ -1206,6 +1210,23 @@ extension TabBarViewController: NSCollectionViewDelegate {
 // MARK: - TabBarViewItemDelegate
 
 extension TabBarViewController: TabBarViewItemDelegate {
+    func tabBarViewItemCrashAction(_ tabBarViewItem: TabBarViewItem) {
+        guard featureFlagger.isFeatureOn(.tabCrashDebugTools), let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        guard let pid = tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.webView.value(forKey: "_webProcessIdentifier") as? Int else {
+            return
+        }
+
+        Task.detached {
+            let task = Process()
+            task.launchPath = "/bin/kill"
+            task.arguments = ["-9", String(pid)]
+            try? task.run()
+        }
+    }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
         if isMouseOver {

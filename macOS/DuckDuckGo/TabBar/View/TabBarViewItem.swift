@@ -75,6 +75,7 @@ protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState
 
+    @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
 }
 final class TabBarItemCellView: NSView {
 
@@ -734,6 +735,18 @@ extension TabBarViewItem: NSMenuDelegate {
         if !isBurner {
             addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
         }
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.tabCrashDebugTools) {
+            menu.addItem(.separator())
+            addCrashMenuItem(to: menu)
+        }
+    }
+
+
+    private func addCrashMenuItem(to menu: NSMenu) {
+        let crashMenuItem = NSMenuItem(title: "Crash This Tab", action: #selector(crashButtonAction(_:)), keyEquivalent: "")
+        crashMenuItem.target = self
+        menu.addItem(crashMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
@@ -741,6 +754,10 @@ extension TabBarViewItem: NSMenuDelegate {
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
+    }
+
+    @objc private func crashButtonAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemCrashAction(self)
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
@@ -1166,6 +1183,7 @@ extension TabBarViewItem {
         func otherTabBarViewItemsState(for: TabBarViewItem) -> OtherTabBarViewItemsState {
             .init(hasItemsToTheLeft: false, hasItemsToTheRight: false)
         }
+        func tabBarViewItemCrashAction(_: TabBarViewItem) {}
     }
 }
 #endif

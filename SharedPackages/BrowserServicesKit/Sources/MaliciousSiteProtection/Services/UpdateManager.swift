@@ -79,8 +79,7 @@ public struct UpdateManager: InternalUpdateManaging {
         }
 
         // load currently stored data set
-        var dataSet = await dataManager.dataSet(for: key)
-        let oldRevision = dataSet.revision
+        let oldRevision = await dataManager.dataSet(for: key).revision
 
         // get change set from current revision from API
         let changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>
@@ -91,25 +90,22 @@ public struct UpdateManager: InternalUpdateManaging {
             Logger.updateManager.error("error fetching \(type(of: key)).\(key.threatKind): \(error)")
 
             // Fire a Pixel if it fails to load initial datasets
-            if case APIRequestV2.Error.urlSession(URLError.notConnectedToInternet) = error, dataSet.revision == 0 {
+            if case APIRequestV2.Error.urlSession(URLError.notConnectedToInternet) = error, oldRevision == 0 {
                 eventMapping.fire(MaliciousSiteProtection.Event.failedToDownloadInitialDataSets(category: key.threatKind, type: key.dataType.kind))
             }
 
             throw error
         }
 
-        guard !changeSet.isEmpty || changeSet.revision != dataSet.revision else {
+        guard !changeSet.isEmpty || changeSet.revision != oldRevision else {
             Logger.updateManager.debug("no changes to \(type(of: key)).\(key.threatKind)")
             return
         }
 
-        // apply changes
-        dataSet.apply(changeSet)
-
-        // store back
+        // apply and save changes
         do {
-            try await self.dataManager.store(dataSet, for: key)
-            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(dataSet.revision)")
+            try await dataManager.updateDataSet(with: key, changeSet: changeSet)
+            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(oldRevision)")
         } catch {
             Logger.updateManager.error("\(type(of: key)).\(key.threatKind) failed to be saved")
             throw error

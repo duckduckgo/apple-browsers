@@ -99,7 +99,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         }
 
         var userAction: VPNExclusionSuggestionAlert.UserAction = .stopVPN
-        let binding = Binding<VPNExclusionSuggestionAlert.UserAction>.init {
+        let binding = Binding<VPNExclusionSuggestionAlert.UserAction> {
             userAction
         } set: { newValue in
             userAction = newValue

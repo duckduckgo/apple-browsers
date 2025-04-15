@@ -44,7 +44,7 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     private static var registeredTaskIdentifiers: Set<String> = []
 
     @MainActor
-    private(set) var inFlyUpdateTasks: [DataManager.StoredDataType.Kind: Task<Void, Never>] = [:]
+    private(set) var isDatasetsFetchInProgress: Bool = false
 
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
@@ -52,14 +52,12 @@ final class MaliciousSiteProtectionDatasetsFetcher {
     @MainActor
     private var shouldUpdateHashPrefixSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastHashPrefixSetUpdateDate` is mistakenly set in the far future
-        inFlyUpdateTasks[.hashPrefixSet] == nil &&
         abs(dateProvider().timeIntervalSince(updateManager.lastHashPrefixSetUpdateDate)) > .minutes(featureFlagger.hashPrefixUpdateFrequency)
     }
 
     @MainActor
     private var shouldUpdateFilterSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastFilterSetUpdateDate` is mistakenly set in the far future
-        inFlyUpdateTasks[.filterSet] == nil &&
         abs(dateProvider().timeIntervalSince(updateManager.lastFilterSetUpdateDate)) > .minutes(featureFlagger.filterSetUpdateFrequency)
     }
 
@@ -93,39 +91,30 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
     @MainActor
     @discardableResult
     func startFetching() -> Task<Void, Error> {
-        guard canFetchDatasets else { return Task {} }
-
-        var updateTasksToReturn: [Task<Void, Never>] = []
-
-        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Feature is On and Enabled in App Settings")
-
-        // If hashPrefix Sets need to be updated fetch them
-        if shouldUpdateHashPrefixSets {
-            Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
-            let task = updateManager.updateData(datasetType: .hashPrefixSet)
-            inFlyUpdateTasks[.hashPrefixSet] = task
-            Task {
-                await task.value
-                inFlyUpdateTasks[.hashPrefixSet] = nil
-            }
-            updateTasksToReturn.append(task)
+        guard
+            canFetchDatasets,
+            !isDatasetsFetchInProgress
+        else {
+            return Task {}
         }
 
-        // If hashPrefix Sets need to be updated fetch them
-        if shouldUpdateFilterSets {
-            Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
-            let task = updateManager.updateData(datasetType: .filterSet)
-            inFlyUpdateTasks[.filterSet] = task
-            Task {
-                await task.value
-                inFlyUpdateTasks[.filterSet] = nil
-            }
-            updateTasksToReturn.append(task)
-        }
+        isDatasetsFetchInProgress = shouldUpdateHashPrefixSets || shouldUpdateFilterSets
+        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
 
         return Task {
-            for task in updateTasksToReturn {
-                await task.value
+            // If hashPrefix Sets need to be updated fetch them
+            if shouldUpdateHashPrefixSets {
+                Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
+                await updateManager.updateData(datasetType: .hashPrefixSet).value
+                // Reset the flag to false only if FilterSets don't have to be fetched.
+                isDatasetsFetchInProgress = shouldUpdateFilterSets
+            }
+
+            // If hashPrefix Sets need to be updated fetch them
+            if shouldUpdateFilterSets {
+                Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
+                await updateManager.updateData(datasetType: .filterSet).value
+                isDatasetsFetchInProgress = false
             }
         }
     }

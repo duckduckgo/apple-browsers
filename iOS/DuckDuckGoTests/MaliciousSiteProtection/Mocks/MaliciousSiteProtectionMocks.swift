@@ -35,6 +35,10 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
     var lastHashPrefixSetUpdateDate: Date = .distantPast
     var lastFilterSetUpdateDate: Date = .distantPast
 
+    var onUpdateDatasets: (() -> Void)?
+    var onHashPrefixUpdate: (() -> Void)?
+    var onFilterSetUpdate: (() -> Void)?
+
     var updateDataTaskExecutionTime: TimeInterval = 0
 
     func startPeriodicUpdates() -> Task<Void, any Error> {
@@ -44,7 +48,12 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
     func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, Never> {
         updateCallCount += 1
         updateDatasets[datasetType] = true
-
+        if datasetType == .hashPrefixSet {
+            onHashPrefixUpdate?()
+        } else if datasetType == .filterSet {
+            onFilterSetUpdate?()
+        }
+        onUpdateDatasets?()
         return Task {
             if updateDataTaskExecutionTime > 0 {
                 try? await Task.sleep(interval: updateDataTaskExecutionTime)

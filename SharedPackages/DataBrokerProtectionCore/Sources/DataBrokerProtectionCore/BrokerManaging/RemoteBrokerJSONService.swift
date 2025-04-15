@@ -114,10 +114,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         try localBrokerProvider?.bundledBrokers()
     }
 
-    private func checkBundleForUpdates() async {
-        try? await localBrokerProvider?.checkForUpdates()
-    }
-
     // MARK: - Main flow
 
     public func fallbackBrokers() throws -> [DataBroker]? {
@@ -140,7 +136,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             }
 
             /// 2. Use bundled JSONs to populate/update the database
-            await checkBundleForUpdates()
+            try? await localBrokerProvider?.checkForUpdates()
 
             /// 3. Hit main_config.json endpoint for ETag and active broker changes
             guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }

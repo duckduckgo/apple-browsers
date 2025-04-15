@@ -29,17 +29,6 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
     let internalUserDecider = MockInternalUserDecider()
     let userDefaults = UserDefaults(suiteName: "SubscriptionFeatureFlagMappingTests")!
 
-    override func setUpWithError() throws {
-
-    }
-
-    func testExample() throws {
-//        let internalUserDecider = MockInternalUserDecider()
-
-//        subscriptionFeatureFlagMapping = SubscriptionFeatureFlagMapping
-    }
-
-
     func testWhenInternalUserOnSandboxButNoOverrideThenItIsNotUsed() {
         // Given
         internalUserDecider.isInternalUser = true
@@ -121,7 +110,6 @@ final class SubscriptionFeatureFlagMappingTests: XCTestCase {
     }
 }
 
-
 final class MockInternalUserDecider: InternalUserDecider {
     var isInternalUser: Bool = false
 
@@ -133,4 +121,3 @@ final class MockInternalUserDecider: InternalUserDecider {
         return false
     }
 }
-

@@ -243,8 +243,8 @@ final class SubscriptionDebugViewController: UITableViewController {
             case .currentRegionOverride:
                 cell.textLabel?.text = "Current override"
 
-                var cfg = UIButton.Configuration.plain()
-                let button = UIButton(configuration: cfg)
+                var buttonConfiguration = UIButton.Configuration.plain()
+                let button = UIButton(configuration: buttonConfiguration)
 
                 let adjustMenuButtonWidth = {
                     button.frame = CGRect(x: 0, y: 0, width: 200, height: 40)
@@ -254,15 +254,15 @@ final class SubscriptionDebugViewController: UITableViewController {
                 let currentRegionOverride = subscriptionUserDefaults.storefrontRegionOverride
 
                 button.menu = UIMenu(options: [.singleSelection], children: [
-                    UIAction(title: "None", state: currentRegionOverride == nil ? .on : .off, handler: { [weak self] action in
+                    UIAction(title: "None", state: currentRegionOverride == nil ? .on : .off, handler: { [weak self] _ in
                         self?.subscriptionUserDefaults.storefrontRegionOverride = nil
                         adjustMenuButtonWidth()
                     }),
-                    UIAction(title: "USA", state: currentRegionOverride == .usa ? .on : .off, handler: { [weak self] action in
+                    UIAction(title: "USA", state: currentRegionOverride == .usa ? .on : .off, handler: { [weak self] _ in
                         self?.subscriptionUserDefaults.storefrontRegionOverride = .usa
                         adjustMenuButtonWidth()
                     }),
-                    UIAction(title: "Rest of World", state: currentRegionOverride == .restOfWorld ? .on : .off, handler: { [weak self] action in
+                    UIAction(title: "Rest of World", state: currentRegionOverride == .restOfWorld ? .on : .off, handler: { [weak self] _ in
                         self?.subscriptionUserDefaults.storefrontRegionOverride = .restOfWorld
                         adjustMenuButtonWidth()
                     }),

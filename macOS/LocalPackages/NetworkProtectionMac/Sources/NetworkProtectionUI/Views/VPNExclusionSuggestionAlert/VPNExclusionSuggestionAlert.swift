@@ -58,7 +58,6 @@ public struct VPNExclusionSuggestionAlert: ModalView {
                     .multilineText()
                     .multilineTextAlignment(.leading)
                     .fixMultilineScrollableText()
-                    .foregroundColor(.secondary)
                     .frame(alignment: .leading)
 
                 Toggle(isOn: .init(get: {

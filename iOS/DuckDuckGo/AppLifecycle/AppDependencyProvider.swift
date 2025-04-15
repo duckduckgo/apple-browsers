@@ -140,18 +140,9 @@ final class AppDependencyProvider: DependencyProvider {
                                                        authEndpointService: authService)
 
             let internalUserDecider = featureFlagger.internalUserDecider
-            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
-                switch feature {
-                case .usePrivacyProUSARegionOverride:
-                    return (internalUserDecider.isInternalUser &&
-                            subscriptionEnvironment.serviceEnvironment == .staging &&
-                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
-                case .usePrivacyProROWRegionOverride:
-                    return (internalUserDecider.isInternalUser &&
-                            subscriptionEnvironment.serviceEnvironment == .staging &&
-                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
-                }
-            }
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
 
             let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
                                                                    subscriptionFeatureFlagger: subscriptionFeatureFlagger)
@@ -220,18 +211,9 @@ final class AppDependencyProvider: DependencyProvider {
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
 
             let internalUserDecider = featureFlagger.internalUserDecider
-            let subscriptionFeatureFlagger: FeatureFlaggerMapping<SubscriptionFeatureFlags> = FeatureFlaggerMapping { feature in
-                switch feature {
-                case .usePrivacyProUSARegionOverride:
-                    return (internalUserDecider.isInternalUser &&
-                            subscriptionEnvironment.serviceEnvironment == .staging &&
-                            subscriptionUserDefaults.storefrontRegionOverride == .usa)
-                case .usePrivacyProROWRegionOverride:
-                    return (internalUserDecider.isInternalUser &&
-                            subscriptionEnvironment.serviceEnvironment == .staging &&
-                            subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
-                }
-            }
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
 
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
                                                                      subscriptionFeatureFlagger: subscriptionFeatureFlagger)

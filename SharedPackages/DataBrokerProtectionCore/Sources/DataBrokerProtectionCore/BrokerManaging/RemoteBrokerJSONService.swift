@@ -90,6 +90,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
+    private let fileManager: FileManager
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
@@ -98,11 +99,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
+                fileManager: FileManager = .default,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 localBrokerProvider: BrokerJSONFallbackProvider?) {
         self.settings = settings
         self.vault = vault
+        self.fileManager = fileManager
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
@@ -157,11 +160,19 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
             guard response.statusCode == 200 else { throw Error.serverError }
 
-            /// 4. Download, extract, and process changed broker JSONs
+            /// 4. Update main_config ETag
+            let newETag = response.etag
+            settings.mainConfigETag = newETag
+            if let newETag {
+                uncompressedBrokerJSONDirectoryURL = fileManager.temporaryDirectory.appendingPathComponent(newETag)
+            } else {
+                throw Error.serverError
+            }
+
+            /// 5. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
 
-            /// 5. Update main_config ETag and last successful update timestamp
-            settings.mainConfigETag = response.etag
+            /// 6. Update last successful update timestamp
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
         } catch {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "checkForBrokerJSONUpdates"))
@@ -174,11 +185,15 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }
         let diff = Set(incomingBrokerJSONs).subtracting(Set(savedBrokerJSONs))
-        guard !diff.isEmpty else { return }
+
+        guard !diff.isEmpty else {
+            Logger.dataBrokerProtection.log("No changes detected in brokers, skipping update")
+            return
+        }
 
         Logger.dataBrokerProtection.log("Changes detected in \(diff.count, privacy: .public) brokers")
 
-        try await downloadBrokerJSONs()
+        try await downloadAndExtractBrokerJSONsIfNeeded()
         try processBrokerJSONs(withFileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
@@ -188,51 +203,49 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - File handling
 
-    func downloadBrokerJSONs() async throws {
+    func downloadAndExtractBrokerJSONsIfNeeded() async throws {
+        guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
+
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: uncompressedBrokerJSONDirectoryURL.path, isDirectory: &isDirectory) else {
+            Logger.dataBrokerProtection.log("Broker JSONs already downloaded and extracted, skipping download")
+            return
+        }
+
         guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
         let request = try Endpoint.request(for: .allBrokers,
                                            baseURL: settings.selectedEnvironment.endpointURL,
                                            accessToken: accessToken)
-        let temporaryURL: URL
 
-        if #available(macOS 12.0, *) {
-            let (url, response) = try await URLSession.shared.download(for: request)
-            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                throw Error.serverError
-            }
-            temporaryURL = url
-        } else {
-            temporaryURL = try await withCheckedThrowingContinuation { continuation in
-                let task = URLSession.shared.downloadTask(with: request) { url, response, error in
-                    if let error {
-                        continuation.resume(throwing: error)
-                        return
-                    }
-
-                    guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                        continuation.resume(throwing: Error.serverError)
-                        return
-                    }
-
-                    guard let url else {
-                        continuation.resume(throwing: Error.clientError)
-                        return
-                    }
-
-                    continuation.resume(returning: url)
+        let temporaryURL: URL = try await withCheckedThrowingContinuation { continuation in
+            let task = URLSession.shared.downloadTask(with: request) { url, response, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
                 }
-                task.resume()
+
+                guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+                    continuation.resume(throwing: Error.serverError)
+                    return
+                }
+
+                guard let url else {
+                    continuation.resume(throwing: Error.clientError)
+                    return
+                }
+
+                continuation.resume(returning: url)
             }
+            task.resume()
         }
 
-        uncompressedBrokerJSONDirectoryURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-
-        if let uncompressedBrokerJSONDirectoryURL {
-            try FileManager.default.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
+        do {
+            try fileManager.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
             Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
-        } else {
-            fatalError("This should never happen")
+        } catch {
+            Logger.dataBrokerProtection.log("Failed to extract downloaded broker JSONs: \(error)")
+            throw error
         }
     }
 
@@ -242,14 +255,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                             eTagMapping: [String: String],
                             activeBrokers: [String],
                             testBrokers: [String]) throws {
-        guard let uncompressedBrokerJSONDirectoryURL else {
-            throw Error.invalidDestinationURL
-        }
+        guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
 
         let directoryURL = uncompressedBrokerJSONDirectoryURL.appendingPathComponent("json", isDirectory: true)
-        let fileURLs = try FileManager.default.contentsOfDirectory(at: directoryURL,
-                                                                   includingPropertiesForKeys: nil,
-                                                                   options: [.skipsHiddenFiles])
+        let fileURLs = try fileManager.contentsOfDirectory(at: directoryURL,
+                                                           includingPropertiesForKeys: nil,
+                                                           options: [.skipsHiddenFiles])
         for fileURL in fileURLs {
             let fileName = fileURL.lastPathComponent
             guard changedBrokerFileNames.contains(fileName) else { continue }
@@ -264,7 +275,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private func cleanUp() throws {
         guard let uncompressedBrokerJSONDirectoryURL else { return }
-        try FileManager.default.removeItem(at: uncompressedBrokerJSONDirectoryURL)
+        try fileManager.removeItem(at: uncompressedBrokerJSONDirectoryURL)
         Logger.dataBrokerProtection.log("Temporary directory removed")
     }
 }

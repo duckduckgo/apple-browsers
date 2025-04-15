@@ -783,10 +783,58 @@
       "comment" : "Description for unable to scan qr code error",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorry, dieser Code ist ungültig. Bitte stelle sicher, dass du den richtigen Code eingegeben oder gescannt hast."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Sorry, this code is invalid. Please make sure the correct code was entered or scanned."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lo sentimos, este código no es válido. Asegúrate de haber introducido o escaneado el código correcto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désolé, ce code n'est pas valide. Veuillez vous assurer que le bon code a été saisi ou scanné."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spiacenti, questo codice non è valido. Assicurati che sia stato inserito o scansionato il codice corretto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sorry, deze code is ongeldig. Zorg ervoor dat de juiste code is ingevoerd of gescand."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niestety, ten kod jest nieprawidłowy. Upewnij się, że wprowadzono lub zeskanowano prawidłowy kod."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este código é inválido. Confirma que introduziste ou leste o código correto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "К сожалению, этот код недействителен. Введите или отсканируйте правильный код."
           }
         }
       }

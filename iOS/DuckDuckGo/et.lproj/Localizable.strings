@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pääsete oma Privacy Pro tellimusele selles seadmes ligi Apple'i konto või e-posti aadressi kaudu.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Lisa e-post";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple'i konto";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Taasta ost";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Taasta oma ost, et aktiveerida oma tellimus sellel seadmel.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Teie tellimus on automaatselt saadaval DuckDuckGos igas seadmes, mis on teie Apple'i kontole sisse logitud.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Lisa seadmele";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Muuda e-posti";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muuda e-posti";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-post";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Sisesta e-posti aadress";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Kasuta oma e-posti, et aktiveerida oma tellimus selles seadmes.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktiveeri püsitellimus";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Lisa sellele seadmele oma Privacy Pro tellimus";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Tühista";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Taasta ost";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Taasta ost";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktiveeri oma tellimus selles seadmes";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Taastage oma tellimus Apple'i seadmetes, kasutades oma Apple'i kontot.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Lisa Apple'i konto kaudu";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Alustage";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Kasutage sellesse seadmesse Privacy Pro lisamiseks e-posti aadressi.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Lisa e-posti aadressi kaudu";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Mul on tellimus";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Saada juhised uuesti";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisa e-post";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Lisa Privacy Pro teistele seadmetele";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Lisage Privacy Pro oma teistesse seadmetesse Apple ID kaudu või e-posti aadressi linkimise teel. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Kasutage seda e-posti aadressi, et lisada oma tellimus teistesse seadmetesse DuckDuckGo rakenduses. Avage jaotis Seaded > Privacy Pro > Mul on tellimus. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro on saadaval igas seadmes, mis on sisse logitud sama Apple'i kontoga.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Oled sa kindel?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiveeri teistes seadmetes";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Lisa oma tellimusele valikuline e-posti aadress, et pääseda Privacy Pro'le ligi teistes seadmetes. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Kasuta seda e-kirja, et aktiveerida oma tellimus jaotises Seaded > Privacy Pro rakenduses DuckDuckGo oma teistes seadmetes. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Selle e-posti aadressiga seotud tellimus ei ole enam aktiivne.";

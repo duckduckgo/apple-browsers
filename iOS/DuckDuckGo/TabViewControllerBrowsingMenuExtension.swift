@@ -53,7 +53,7 @@ extension TabViewController {
 
         let shareEntry = BrowsingMenuEntry.regular(name: UserText.actionShare, image: UIImage(named: "Share-24")!, action: { [weak self] in
             guard let self = self else { return }
-            guard let menu = self.chromeDelegate?.omniBar.barView.menuButtonView else { return }
+            guard let menu = self.chromeDelegate?.omniBar.barView.menuButton else { return }
             Pixel.fire(pixel: .browsingMenuShare)
             self.onShareAction(forLink: self.link!, fromView: menu)
         })

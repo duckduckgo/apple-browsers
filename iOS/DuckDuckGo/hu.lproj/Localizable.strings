@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Az eszközön Apple-fiókkal vagy e-mail-címmel férhetsz hozzá a Privacy Pro-előfizetésedhez.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "E-mail-cím hozzáadása";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-fiók";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Vásárlás visszaállítása";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Előfizetésedet a vásárlás visszaállításával aktiválhatod ezen az eszközön.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Az előfizetésed automatikusan elérhető a DuckDuckGo-ban minden olyan eszközön, amelyen be vagy jelentkezve az Apple-fiókodba.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "E-mail-cím szerkesztése";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-mail-cím szerkesztése";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-mail";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "E-mail-cím megadása";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Előfizetésedet az e-mail-címed használatával aktiválhatod ezen az eszközön.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Előfizetés aktiválása";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Add hozzá a Privacy Pro-előfizetésedet ehhez az eszközhöz";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Mégsem";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Vásárlás visszaállítása";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Vásárlás visszaállítása";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Előfizetés aktiválása ezen az eszközön";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Az Apple-eszközökön az Apple-fiókod használatával állíthatod vissza az előfizetést.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Hozzáadás Apple-fiókkal";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Első lépések";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Egy e-mail-cím megadásával adhatod hozzá a Privacy Pro szolgáltatást ehhez az eszközhöz.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Hozzáadás e-mail-címmel";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Van előfizetésem";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Útmutató újraküldése";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-mail-cím hozzáadása";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Privacy Pro hozzáadása más eszközökhöz";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Add hozzá a Privacy Prót a többi eszközödhöz Apple ID-n keresztül vagy egy e-mail-cím hozzákapcsolásával. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "A DuckDuckGo-alkalmazásban hozzáadhatod az előfizetésedet a többi eszközödön ezzel az e-mail-címmel. Ezt a Beállítások > Privacy Pro > Van előfizetésem menüpontban tudod megtenni. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "A Privacy Pro az ugyanabba az Apple-fiókba bejelentkezett minden eszközön elérhető.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Biztos vagy benne?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiválás más eszközökön";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Egy opcionális e-mail-címnek az előfizetéshez való hozzáadásával más eszközökön is hozzáférhetsz a Privacy Pro-előfizetésedhez. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Ezzel az e-mail-címmel aktiválhatod az előfizetésedet a többi eszközödön a DuckDuckGo alkalmazás Beállítások > Privacy Pro menüpontjában. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Az ehhez az e-mail-címhez tartozó előfizetés már nem aktív.";

@@ -948,7 +948,7 @@ extension MainViewController {
 
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
         WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
     }
@@ -962,7 +962,7 @@ extension MainViewController {
     }
 
     @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingStateMachine.state = .notStarted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {

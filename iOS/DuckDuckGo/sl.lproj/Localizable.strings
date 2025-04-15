@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Dostopajte do svoje naročnine Privacy Pro v tej napravi prek računa Apple ali e-poštnega naslova.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Dodajte e-naslov";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Račun Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Obnovitev nakupa";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Obnovite nakup, da aktivirate naročnino v tej napravi.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Vaša naročnina je samodejno na voljo v DuckDuckGo v kateri koli napravi, kjer ste prijavljeni v svoj račun Apple.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Dodajte v napravo";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Urejanje e-naslova";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Urejanje e-naslova";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-naslov";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Vnesite e-naslov";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Uporabite svoj e-naslov, da aktivirate naročnino v tej napravi.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktiviranje naročnine";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "V to napravo dodajte svojo naročnino na Privacy Pro";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Prekliči";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "V REDU";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Obnovitev nakupa";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Obnovitev nakupa";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivirajte svojo naročnino v tej napravi";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Obnovite naročnino v napravah Apple z računom Apple.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Dodaj prek računa Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Začni";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Uporabite e-poštni naslov, da v to napravo dodate Privacy Pro.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Dodaj prek e-poštnega naslova";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Imam naročnino";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Znova pošlji navodila";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Dodajte e-naslov";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Dodajte Privacy Pro v druge naprave";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Dodajte Privacy Pro v svoje druge naprave prek storitve Apple ID ali z uporabo e-poštnega naslova. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Uporabite ta e-naslov za dodajanje naročnine v drugih napravah v aplikaciji DuckDuckGo. Pojdite v Nastavitve > Privacy Pro > Imam naročnino. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro je na voljo v vseh napravah, v katerih ste prijavljeni v isti račun Apple.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Ste prepričani?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiviranje v drugih napravah";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "V naročnino dodajte neobvezen e-naslov, da boste lahko do naročnine Privacy Pro dostopali v drugih napravah. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Ta e-naslov uporabite za aktivacijo naročnine v aplikaciji DuckDuckGo v drugih napravah, in sicer tako, da odprete Nastavitve > Privacy Pro. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Naročnina, povezana s tem e-poštnim naslovom, ni več aktivna.";

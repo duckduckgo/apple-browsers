@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Získej na tomto zařízení přístup ke svému předplatnému Privacy Pro přes účet Apple nebo e-mailovou adresu.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Přidat e-mail";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Účet Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Obnovit nákup";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Pokud chceš na tomhle zařízení aktivovat svoje předplatné, musíš si obnovit nákup.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Tvoje předplatné se na DuckDuckGo automaticky aktivuje na jakémkoli zařízení přihlášeném ke tvému účtu Apple.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Přidat do zařízení";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Upravit e-mail";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Upravit e-mail";
 
-/* Email option for activation */
-"subscription.activate.email" = "Emailová adresa";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Zadej e-mail";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Pokud chceš na tomhle zařízení aktivovat svoje předplatné, musíš nejdřív do e-mailu.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktivace předplatného";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Přidej do tohoto zařízení své předplatné Privacy Pro";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Zrušit";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "DOBŘE";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Obnovit nákup";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Obnovit nákup";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivuj si předplatné na tomhle zařízení";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Své předplatné můžeš na zařízeních Apple obnovit jen pomocí svého účtu Apple.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Přidat přes účet Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Začínáme";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Pokud si do tohoto zařízení chceš přidat předplatné Privacy Pro, použij e-mailovou adresu.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Přidat přes e-mailovou adresu";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Mám předplatné";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Znovu poslat instrukce";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Přidat e-mail";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Přidej předplatné Privacy Pro do dalších zařízení";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Přidej předplatné Privacy Pro do svých dalších zařízení přes Apple ID nebo propojením e-mailové adresy. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Pomocí tohoto e-mailu si v aplikaci DuckDuckGo přidej předplatné do ostatních zařízení. Přejdi do Nastavení > Privacy Pro > Mám předplatné. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Služba Privacy Pro je dostupná na jakémkoli zařízení přihlášeném ke stejnému účtu Apple.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Opravdu to chceš udělat?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktivovat na jiných zařízeních";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Přidej si k předplatnému nepovinný e-mail, ať můžeš službu Privacy Pro využívat i na jiných zařízeních. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Pomocí tohohle e-mailu si v aplikaci DuckDuckGo aktivuješ předplatné i na jiných zařízeních. Stačí přejít do Nastavení > Privacy Pro. **[Další informace](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Předplatné spojené s tímhle e-mailem už není aktivní.";

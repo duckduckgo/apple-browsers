@@ -156,8 +156,6 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .activateAddEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                     case .postSubscriptionAddEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
                     case .restorePurchaseStoreClick:
@@ -176,7 +174,7 @@ enum Preferences {
 
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
-                    let url = subscriptionManager.url(for: .activateViaEmail)
+                    let url = subscriptionManager.url(for: .activationFlow)
                     WindowControllersManager.shared.showTab(with: .subscription(url))
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -318,8 +316,6 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .activateAddEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                     case .postSubscriptionAddEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
                     case .restorePurchaseStoreClick:
@@ -338,7 +334,7 @@ enum Preferences {
 
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
-                    let url = subscriptionManager.url(for: .activateViaEmail)
+                    let url = subscriptionManager.url(for: .activationFlow)
                     WindowControllersManager.shared.showTab(with: .subscription(url))
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {

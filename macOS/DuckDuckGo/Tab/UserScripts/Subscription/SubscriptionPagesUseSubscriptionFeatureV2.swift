@@ -540,13 +540,7 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
         }
     }
 
-    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
-        switch event {
-        case .activateAddEmailClick:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
-        default: break
-        }
-    }
+    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) { }
 }
 
 private extension SubscriptionPagesUseSubscriptionFeatureV2 {

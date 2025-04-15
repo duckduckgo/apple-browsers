@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Kom åt ditt Privacy Pro-abonnemang på den här enheten via ditt Apple-konto eller en e-postadress.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Lägg till e-postadress";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-konto";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Återställ köp";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Återställ ditt köp för att aktivera abonnemanget på den här enheten.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Ditt abonnemang är automatiskt tillgängligt i DuckDuckGo på alla enheter som är inloggade på ditt Apple-konto.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Lägg till på enheten";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Redigera e-postadress";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Redigera e-postadress";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-post";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Ange e-postadress";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Använd din e-postadress för att aktivera abonnemanget på den här enheten.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktivera abonnemang";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Lägg till ditt Privacy Pro-abonnemang på den här enheten";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Avbryt";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Återställ köp";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Återställ köp";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivera ditt abonnemang på den här enheten";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Återställ ditt abonnemang på Apple-enheter med ditt Apple-konto.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Lägg till via Apple-konto";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Kom igång";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Använd en e-postadress för att lägga till Privacy Pro på den här enheten.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Lägg till via e-postadress";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Jag har ett abonnemang";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Skicka instruktionerna igen";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lägg till e-postadress";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Lägg till Privacy Pro på andra enheter";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Lägg till Privacy Pro på dina andra enheter via Apple-ID eller genom att länka en e-postadress. **[Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Använd e-postadressen för att lägga till ditt abonnemang på dina andra enheter i DuckDuckGo-appen. Gå till Inställningar > Privacy Pro > Jag har ett abonnemang. **[Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro är tillgängligt på alla enheter som är inloggade med samma Apple-konto.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Är du säker?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktivera på andra enheter";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Lägg till en valfri e-postadress till ditt abonnemang för att få tillgång till Privacy Pro på andra enheter. **[Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Använd den här e-postadressen för att aktivera ditt abonnemang i Inställningar > Privacy Pro i DuckDuckGo-appen på dina andra enheter. **[Läs mer](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Abonnemanget som är kopplat till den här e-postadressen är inte längre aktivt.";

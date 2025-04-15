@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Accédez à votre abonnement Privacy Pro sur cet appareil via un compte Apple ou via une adresse e-mail.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Ajouter un e-mail";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Compte Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Rétablir l'achat";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Rétablissez votre achat pour activer votre abonnement sur cet appareil.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Votre abonnement est automatiquement disponible dans DuckDuckGo sur n'importe quel appareil connecté à votre compte Apple.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Ajouter à un appareil";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Modifier l'email";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Modifier l'email";
 
-/* Email option for activation */
-"subscription.activate.email" = "Adresse électronique";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Saisir votre e-mail";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Utilisez votre adresse e-mail pour activer votre abonnement sur cet appareil.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Activez l'abonnement";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Ajoutez votre abonnement Privacy Pro à cet appareil";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Annuler";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Rétablir l'achat";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Rétablir l'achat";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Activez votre abonnement sur cet appareil";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Rétablissez votre abonnement sur les appareils Apple à l'aide de votre compte Apple.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Ajouter via un compte Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Commencer";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Utilisez une adresse e-mail pour ajouter Privacy Pro à cet appareil.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Ajouter via une adresse e-mail";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "J'ai un abonnement";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Renvoyer les instructions";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Ajouter un e-mail";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Ajouter Privacy Pro à d’autres appareils";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Ajoutez Privacy Pro à vos autres appareils via un identifiant Apple ou en associant une adresse e-mail. **[En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Servez-vous de cet e-mail pour ajouter votre abonnement sur vos autres appareils dans l'application DuckDuckGo. Accédez à Paramètres > Privacy Pro > J'ai un abonnement. **[En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro est disponible sur tous les appareils connectés au même compte Apple.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Confirmez-vous ?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Activer sur d'autres appareils";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Ajoutez un e-mail facultatif à votre abonnement pour accéder à Privacy Pro sur d'autres appareils. **[En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Utilisez cet e-mail pour activer votre abonnement dans Réglages > Privacy Pro dans l'application DuckDuckGo sur vos autres appareils. **[En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "L'abonnement associé à cet e-mail n'est plus actif.";

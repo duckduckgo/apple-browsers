@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Bu cihazda Privacy Pro aboneliğinize bir Apple Hesabı veya e-posta adresi ile erişebilirsiniz.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "E-posta Ekle";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple Hesabı";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Satın Almayı Geri Yükle";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Aboneliğinizi bu cihazda etkinleştirmek için satın alma işleminizi geri yükleyin.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Aboneliğiniz, Apple Hesabınızda oturum açtığınız tüm cihazlarda DuckDuckGo'da otomatik olarak kullanılabilir.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Cihaza Ekle";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "E-postayı Düzenle";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-postayı Düzenle";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-posta";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "E-posta Girin";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Bu cihazda aboneliğinizi etkinleştirmek için e-postanızı kullanın.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aboneliği Etkinleştir";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Privacy Pro aboneliğinizi bu cihaza ekleyin";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "İptal";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "Tamam";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Satın Almayı Geri Yükle";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Satın Almayı Geri Yükle";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Bu cihazda aboneliğinizi etkinleştirin";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Apple hesabınızı kullanarak Apple cihazlarınızda aboneliğinizi geri yükleyin.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Apple Hesabı üzerinden ekle";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Başlayın";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Bu cihaza Privacy Pro eklemek için bir e-posta adresi kullanın.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "E-posta Adresiyle ekle";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Aboneliğim Var";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Talimatları Tekrar Gönder";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-posta Ekle";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Privacy Pro'yu Diğer Cihazlara Ekleyin";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Privacy Pro'yu diğer cihazlarınıza Apple ID aracılığıyla veya bir e-posta adresi bağlayarak ekleyin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Aboneliğinizi DuckDuckGo uygulamasındaki diğer cihazlarınıza eklemek için bu e-postayı kullanın. Ayarlar > Privacy Pro > Aboneliğim Var'a gidin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro, aynı Apple Hesabında oturum açılmış herhangi bir cihazda kullanılabilir.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Emin misiniz?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Diğer Cihazlarda Etkinleştir";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Privacy Pro'ya diğer cihazlardan erişmek için aboneliğinize isteğe bağlı bir e-posta ekleyin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Bu e-postayı, diğer cihazlarınızdaki DuckDuckGo uygulamasında Ayarlar > Privacy Pro bölümünde aboneliğinizi etkinleştirmek için kullanın. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Bu e-postayla ilişkili abonelik artık aktif değil.";

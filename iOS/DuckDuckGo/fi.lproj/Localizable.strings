@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pääset Privacy Pro -tilaukseesi tällä laitteella Apple-tilin tai sähköpostiosoitteen kautta.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Lisää sähköpostiosoite";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-tili";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Palauta osto";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Aktivoi tilauksesi tällä laitteella palauttamalla ostosi.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Tilauksesi on automaattisesti käytettävissä DuckDuckGossa kaikilla laitteilla, joilla olet kirjautunut sisään Apple-tilillesi.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Lisää laitteeseen";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Muokkaa sähköpostiosoitetta";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muokkaa sähköpostiosoitetta";
 
-/* Email option for activation */
-"subscription.activate.email" = "Sähköposti";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Anna sähköpostiosoite";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Aktivoi tilauksesi tällä laitteella sähköpostiosoitteellasi.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktivoi tilaus";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Lisää Privacy Pro -tilauksesi tähän laitteeseen";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Peruuta";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Palauta osto";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Palauta osto";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktivoi tilauksesi tällä laitteella";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Palauta tilauksesi Apple-laitteisiin käyttämällä Apple-tiliäsi.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Lisää Apple-tilin kautta";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Aloita";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Lisää Privacy Pro tähän laitteeseen käyttämällä sähköpostiosoitetta.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Lisää sähköpostiosoitteen kautta";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Minulla on tilaus";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Lähetä ohjeet uudelleen";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisää sähköpostiosoite";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Lisää Privacy Pro muihin laitteisiin";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Lisää Privacy Pro muihin laitteisiisi käyttämällä Apple ID:tä tai linkittämällä sähköpostiosoite. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Lisää tilauksesi muihin laitteisiisi DuckDuckGo-sovelluksessa käyttämällä tätä sähköpostiosoitetta. Siirry kohtaan Asetukset > Privacy Pro > Minulla on tilaus. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro on käytettävissä kaikilla laitteilla, joilla on kirjauduttu sisään samalle Apple-tilille.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Oletko varma?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktivoi muilla laitteilla";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Lisää tilaukseesi valinnainen sähköpostiosoite, jotta voit käyttää Privacy Prota muilla laitteilla. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Aktivoi tilauksesi tällä sähköpostiosoitteella muiden laitteiden DuckDuckGo-sovelluksessa kohdassa Asetukset > Privacy Pro. **[Lue lisää](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Tähän sähköpostiin liitetty tilaus ei ole enää aktiivinen.";

@@ -24,13 +24,13 @@ public enum SubscriptionURL {
 
     case baseURL
     case purchase
+    case welcome
     case faq
-    case activateViaEmail
-    case addEmail
+    case activationFlow
+    case activationFlowAddEmailStep
+    case activationFlowLinkViaEmailStep
+    case activationFlowSuccess
     case manageEmail
-    case activateSuccess
-    case addEmailToSubscriptionSuccess
-    case addEmailToSubscriptionOTP
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
 
@@ -47,20 +47,20 @@ public enum SubscriptionURL {
                 baseURL
             case .purchase:
                 baseURL
+            case .welcome:
+                baseURL.appendingPathComponent("welcome")
             case .faq:
                 StaticURLs.helpPagesURL
-            case .activateViaEmail:
-                baseURL.appendingPathComponent("activate")
-            case .addEmail:
-                baseURL.appendingPathComponent("add-email")
+            case .activationFlow:
+                baseURL.appendingPathComponent("activation-flow")
+            case .activationFlowAddEmailStep:
+                baseURL.appendingPathComponent("activation-flow/another-device/add-email")
+            case .activationFlowLinkViaEmailStep:
+                baseURL.appendingPathComponent("activation-flow/another-device/email")
+            case .activationFlowSuccess:
+                baseURL.appendingPathComponent("activation-flow/this-device/activate-by-email/success")
             case .manageEmail:
                 baseURL.appendingPathComponent("manage")
-            case .activateSuccess:
-                baseURL.appendingPathComponent("activate/success")
-            case .addEmailToSubscriptionSuccess:
-                baseURL.appendingPathComponent("add-email/success")
-            case .addEmailToSubscriptionOTP:
-                baseURL.appendingPathComponent("add-email/otp")
             case .manageSubscriptionsInAppStore:
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
@@ -106,7 +106,7 @@ extension URL {
         }
 
         if let queryItems = components.queryItems, !queryItems.isEmpty {
-            components.queryItems = queryItems.filter { !["environment", "origin"].contains($0.name) }
+            components.queryItems = queryItems.filter { !["environment", "origin", "using"].contains($0.name) }
             if components.queryItems?.isEmpty ?? true {
                 components.queryItems = nil
             }

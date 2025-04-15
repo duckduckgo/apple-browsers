@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pasiekite savo „Privacy Pro“ prenumeratą šiame įrenginyje per „Apple“ paskyrą arba el. pašto adresą.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Pridėti el. paštą";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "„Apple“ paskyra";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Atkurti pirkimą";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Atkurk pirkimą, kad aktyvuotum prenumeratą šiame įrenginyje.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Jūsų prenumerata automatiškai pasiekiama „DuckDuckGo“ bet kuriame įrenginyje, prisijungusiame prie jūsų „Apple“ paskyros.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Redaguoti el. pašto adresą";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Redaguoti el. pašto adresą";
 
-/* Email option for activation */
-"subscription.activate.email" = "El. paštas";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Įveskite el. paštą";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Naudokite savo el. pašto adresą, kad aktyvintumėte prenumeratą šiame įrenginyje.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktyvuoti prenumeratą";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Pridėkite savo „Privacy Pro“ prenumeratą prie šio įrenginio";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Atšaukti";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "GERAI";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Atkurti pirkimą";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Atkurti pirkimą";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktyvuokite prenumeratą šiame įrenginyje";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Atkurk savo prenumeratą „Apple“ įrenginiuose naudodamas (-a) savo „Apple“ paskyrą.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Pridėti per „Apple“ paskyrą";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Pradėti";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Naudok el. pašto adresą, kad pridėtum „Privacy Pro“ prie šio įrenginio.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Pridėti per el. pašto adresą";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Turiu prenumeratą";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Pakartotinai siųsti instrukcijas";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Pridėti el. paštą";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Pridėti „Privacy Pro“ prie kitų įrenginių";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Pridėk „Privacy Pro“ į kitus įrenginius per „Apple ID“ arba susiedamas el. pašto adresą. **[Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Naudok šį el. laišką, norėdami įtraukti prenumeratą į kitus įrenginius „DuckDuckGo“ programėlėje. Eik į „Settings“ (Nustatymai) > „Privacy Pro“ > „I have a Subscription“ (Turiu prenumeratą). **[Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "„Privacy Pro“ galima naudoti bet kuriame įrenginyje, prisijungusiame prie tos pačios „Apple“ paskyros.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Ar esi tikras?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktyvuoti kituose įrenginiuose";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Pridėk alternatyvų el. pašto adresą prie savo prenumeratos, kad galėtum pasiekti „Privacy Pro“ kituose įrenginiuose. **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Naudokite šį el. laišką, kad aktyvintumėte prenumeratą nustatymuose > „Privacy Pro“ „DuckDuckGo“ programėlėje kituose įrenginiuose. **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Su šiuo el. paštu susijusi prenumerata nebėra aktyvi.";

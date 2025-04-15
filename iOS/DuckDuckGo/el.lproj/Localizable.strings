@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -2722,23 +2725,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Αποκτήστε πρόσβαση στη συνδρομή σας Privacy Pro σε αυτήν τη συσκευή μέσω Λογαριασμού Apple ή διεύθυνσης email.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Προσθήκη email";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Λογαριασμός Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Επαναφορά αγοράς";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Κάντε επαναφορά της αγοράς σας για να ενεργοποιήσετε τη συνδρομή σας σε αυτήν τη συσκευή.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Η συνδρομή σας είναι αυτόματα διαθέσιμη στο DuckDuckGo σε οποιαδήποτε συσκευή είναι συνδεδεμένη στον Λογαριασμό Apple που διαθέτετε.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Επεξεργασία email";
@@ -2746,17 +2737,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Επεξεργασία email";
 
-/* Email option for activation */
-"subscription.activate.email" = "ηλεκτρονικό ταχυδρομείο";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Εισαγωγή email";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Χρησιμοποιήστε το email σας για να ενεργοποιήσετε τη συνδρομή σας στη συσκευή αυτή.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Ενεργοποίηση συνδρομής";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Προσθέστε τη συνδρομή σας Privacy Pro σε αυτήν τη συσκευή";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Ακύρωση";
@@ -2764,11 +2746,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "Εντάξει";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Επαναφορά αγοράς";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Επαναφορά αγοράς";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Ενεργοποιήστε τη συνδρομή σας σε αυτήν τη συσκευή";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Κάντε επαναφορά της συνδρομής σας σε συσκευές Apple χρησιμοποιώντας τον λογαριασμό Apple που διαθέτετε.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Προσθήκη μέσω λογαριασμού Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Ξεκινήστε";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Χρησιμοποιήστε μια διεύθυνση email για να προσθέσετε το Privacy Pro σε αυτήν τη συσκευή.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Πρόσθεσε μέσω διεύθυνσης email";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Έχω συνδρομή";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Εκ νέου αποστολή οδηγιών";
@@ -2778,6 +2775,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Προσθήκη email";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Προσθήκη Privacy Pro σε άλλες συσκευές";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Προσθέστε το Privacy Pro στις άλλες συσκευές σας μέσω Apple ID ή συνδέοντας μια διεύθυνση email. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να προσθέσετε τη συνδρομή σας στις άλλες συσκευές σας στην εφαρμογή DuckDuckGo. Μεταβείτε στις Ρυθμίσεις > Privacy Pro > Έχω συνδρομή. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Το Privacy Pro είναι διαθέσιμο σε οποιαδήποτε συσκευή που είναι συνδεδεμένη στον ίδιο Λογαριασμό Apple.";
@@ -2799,15 +2805,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Είστε σίγουροι;";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Ενεργοποίηση σε άλλες συσκευές";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Προσθέστε ένα προαιρετικό email στη συνδρομή σας για να αποκτήσετε πρόσβαση στο Privacy Pro από άλλες συσκευές. **[Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να ενεργοποιήσετε τη συνδρομή σας στις Ρυθμίσεις > Privacy Pro στην εφαρμογή DuckDuckGo στις άλλες συσκευές σας. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Η συνδρομή που συνδέεται με αυτό το email δεν είναι πλέον ενεργή.";

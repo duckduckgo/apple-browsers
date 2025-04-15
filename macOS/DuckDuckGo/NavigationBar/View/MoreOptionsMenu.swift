@@ -811,10 +811,13 @@ final class BookmarksSubMenu: NSMenu {
             let favoriteViewModels = favorites.compactMap(BookmarkViewModel.init(entity:))
             let potentialItems = bookmarkMenuItems(from: favoriteViewModels)
 
-            let favoriteMenuItems = potentialItems.isEmpty ? [NSMenuItem.empty] : potentialItems
-
             let favoritesItem = addItem(withTitle: UserText.favorites, action: nil, keyEquivalent: "")
-            favoritesItem.submenu = NSMenu(items: favoriteMenuItems)
+            favoritesItem.submenu = NSMenu().buildItems {
+                NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage), keyEquivalent: "")
+                    .withImage(.favorite)
+                NSMenuItem.separator()
+                potentialItems
+            }
             favoritesItem.image = .favorite
 
             addItem(NSMenuItem.separator())

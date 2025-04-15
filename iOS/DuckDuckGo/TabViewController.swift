@@ -2979,6 +2979,50 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
     }
 
+    func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        
+        if !AutofillSettingStatus.isCreditCardAutofillEnabledInSettings || !featureFlagger.isFeatureOn(.autofillCreditCards) {
+            completionHandler(nil)
+            return
+        }
+
+        // if user is interacting with the searchBar, don't show the autofill prompt since it will overlay the keyboard
+        if let parent = parent as? MainViewController, parent.viewCoordinator.omniBar.isTextFieldEditing {
+            completionHandler(nil)
+            return
+        }
+
+        if creditCards.count > 0 {
+            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
+                completionHandler(creditCard)
+            }
+        } else {
+            completionHandler(nil)
+        }
+        
+    }
+
+    func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
+                                             trigger: AutofillUserScript.GetTriggerType,
+                                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+
+        let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
+            completionHandler(creditCard)
+        }
+
+        if let presentationController = creditCardPromptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(creditCardPromptViewController, animated: true, completion: nil)
+    }
+    
     func secureVaultManager(_: SecureVaultManager,
                             promptUserWithGeneratedPassword password: String,
                             completionHandler: @escaping (Bool) -> Void) {

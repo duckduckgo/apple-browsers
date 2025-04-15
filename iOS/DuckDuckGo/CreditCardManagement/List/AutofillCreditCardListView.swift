@@ -40,11 +40,11 @@ struct AutofillCreditCardListView: View {
                             Button {
                                 viewModel.cardSelected(card)
                             } label: {
-                                CreditCardRow(card: card)
+                                CreditCardRow(card: card, showDisclosure: true)
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
-                                    viewModel.deleteCard(card.card)
+                                    viewModel.deleteCard(card.creditCard)
                                 } label: {
                                     Label(UserText.autofillCreditCardDetailsDeleteButton, systemImage: "trash")
                                 }
@@ -100,38 +100,6 @@ private struct EmptyStateView: View {
         .background(
             Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .background))
         )
-    }
-}
-
-private struct CreditCardRow: View {
-    
-    var card: CreditCardViewModel
-    
-    var body: some View {
-        HStack {
-            card.icon
-                .padding(.trailing, 8)
-
-            VStack(alignment: .leading) {
-                Text(card.displayTitle)
-                    .daxSubheadRegular()
-                    .foregroundStyle(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
-                (Text(verbatim: "••••").font(.system(.footnote, design: .monospaced))
-                 + Text(verbatim: " ")
-                 + Text(card.lastFourDigits)
-                 + Text(card.expirationDate))
-                .daxFootnoteRegular()
-                .foregroundStyle(Color(designSystemColor: .textSecondary))
-            }
-            .padding(.vertical, 4)
-            
-            Spacer()
-
-            Image(systemName: "chevron.forward")
-                .font(Font.system(.footnote).weight(.bold))
-                .foregroundColor(Color(UIColor.tertiaryLabel))
-        }
     }
 }
 

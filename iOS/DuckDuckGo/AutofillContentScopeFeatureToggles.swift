@@ -31,7 +31,7 @@ extension ContentScopeFeatureToggles {
                                    emailProtectionIncontextSignup: featureFlagger.isFeatureOn(.incontextSignup) && Locale.current.isEnglishLanguage,
                                    credentialsAutofill: featureFlagger.isFeatureOn(.autofillCredentialInjecting) && isAutofillEnabledInSettings,
                                    identitiesAutofill: false,
-                                   creditCardsAutofill: false,
+                                   creditCardsAutofill: featureFlagger.isFeatureOn(.autofillCreditCards) && AutofillSettingStatus.isCreditCardAutofillEnabledInSettings,
                                    credentialsSaving: featureFlagger.isFeatureOn(.autofillCredentialsSaving) && isAutofillEnabledInSettings,
                                    passwordGeneration: featureFlagger.isFeatureOn(.autofillPasswordGeneration) && isAutofillEnabledInSettings,
                                    inlineIconCredentials: featureFlagger.isFeatureOn(.autofillInlineIconCredentials) && isAutofillEnabledInSettings,

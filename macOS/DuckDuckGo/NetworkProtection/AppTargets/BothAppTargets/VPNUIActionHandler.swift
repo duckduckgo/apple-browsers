@@ -93,7 +93,7 @@ extension VPNUIActionHandler: VPNUIActionHandling {
 
     @MainActor
     func willStopVPN() async -> Bool {
-        guard !vpnAppState.dontAskAgainExclusionSuggestion,
+        guard vpnAppState.isUsingSystemExtension && !vpnAppState.dontAskAgainExclusionSuggestion,
               let parentWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window else {
             return true
         }

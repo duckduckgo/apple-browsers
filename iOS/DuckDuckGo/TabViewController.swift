@@ -2859,6 +2859,28 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
     }
     
+    private func presentSaveCreditCardModal(with vault: SecureVaultManager, creditCard: SecureVaultModels.CreditCard) {
+        guard CreditCardValidation.isValidCardNumber(creditCard.cardNumber) else {
+            Logger.autofill.debug("Invalid credit card number: \(creditCard.cardNumber), not presenting save prompt")
+            return
+        }
+        
+        let saveCreditCardController = SaveCreditCardViewController(creditCard: creditCard)
+        saveCreditCardController.delegate = self
+        if let presentationController = saveCreditCardController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    saveCreditCardController.viewModel.minHeight
+                })]
+            } else {
+                presentationController.detents = [.medium()]
+            }
+            presentationController.prefersScrollingExpandsWhenScrolledToEdge = false
+        }
+        
+        self.present(saveCreditCardController, animated: true, completion: nil)
+    }
+    
     func secureVaultError(_ error: SecureStorageError) {
         SecureVaultReporter().secureVaultError(error)
     }
@@ -2908,6 +2930,13 @@ extension TabViewController: SecureVaultManagerDelegate {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.presentSavePasswordModal(with: vault, credentials: credentials, backfilled: data.backfilled)
             }
+        } else if let creditCard = data.creditCard,
+                  AutofillSettingStatus.isCreditCardAutofillEnabledInSettings,
+                  featureFlagger.isFeatureOn(.autofillCreditCards) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.presentSaveCreditCardModal(with: vault, creditCard: creditCard)
+            }
+            
         }
     }
 
@@ -3185,6 +3214,23 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                 mainVC.segueToSettingsLoginsWithAccount(nil, source: .saveLoginDisablePrompt)
             })
         }
+    }
+}
+
+extension TabViewController: SaveCreditCardViewControllerDelegate {
+    func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard) {
+        viewController.dismiss(animated: true)
+        let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+        ActionMessageView.present(message: UserText.autofillCreditCardSavedToastMessage,
+                                  actionTitle: UserText.autofillLoginSaveToastActionButton,
+                                  presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                                  onAction: { [weak self] in
+            guard let self = self else { return }
+        })
+    }
+    
+    func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController) {
+        viewController.dismiss(animated: true)
     }
 }
 

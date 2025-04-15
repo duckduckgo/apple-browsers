@@ -148,6 +148,10 @@ extension AutofillCreditCardListViewController: AutofillCreditCardListViewModelD
         presentCardDetails(for: card)
     }
     
+    func autofillCreditCardListViewModelAddCard(_ viewModel: AutofillCreditCardListViewModel) {
+        addButtonPressed()
+    }
+    
 }
 
 extension AutofillCreditCardListViewController: AutofillCreditCardDetailsViewControllerDelegate {

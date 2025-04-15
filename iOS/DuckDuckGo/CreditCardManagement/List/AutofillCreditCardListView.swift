@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import BrowserServicesKit
+import DuckUI
 
 struct AutofillCreditCardListView: View {
     
@@ -31,7 +32,7 @@ struct AutofillCreditCardListView: View {
             case .authLocked, .noAuthAvailable:
                 LockScreenView()
             case .empty:
-                EmptyStateView()
+                EmptyStateView(viewModel: viewModel)
             case .showItems:
                 List {
                     Section {
@@ -59,6 +60,8 @@ struct AutofillCreditCardListView: View {
 }
 
 private struct EmptyStateView: View {
+    var viewModel: AutofillCreditCardListViewModel
+    
     var body: some View {
         VStack(spacing: 0) {
             Image(.creditCardsAdd96)
@@ -80,6 +83,18 @@ private struct EmptyStateView: View {
             .multilineTextAlignment(.center)
             .frame(maxWidth: 300)
             .lineLimit(nil)
+            
+            Button {
+                viewModel.addCard()
+            } label: {
+                HStack {
+                    Image(.add24)
+                    Text(UserText.autofillCreditCardDetailsNewTitle)
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
+            .padding(.top, 24)
+            
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         .background(

@@ -50,7 +50,7 @@ final class VPNUIActionHandler {
     }
 
     func askUserToReportIssues(withDomain domain: String) async {
-        let parentWindow = await WindowControllersManager.shared.lastKeyMainWindowController?.window
+        let parentWindow = await windowControllerManager.lastKeyMainWindowController?.window
         await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
     }
 
@@ -94,38 +94,32 @@ extension VPNUIActionHandler: VPNUIActionHandling {
     @MainActor
     func willStopVPN() async -> Bool {
         guard vpnAppState.isUsingSystemExtension && !vpnAppState.dontAskAgainExclusionSuggestion,
-              let parentWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window else {
+              let parentWindow = windowControllerManager.lastKeyMainWindowController?.window else {
             return true
         }
 
-        @MainActor
-        final class VPNExclusionSuggestionAlertResults: ObservableObject {
-            @Published var userAction: VPNExclusionSuggestionAlert.UserAction = .stopVPN
-            @Published var dontAskAgain: Bool = false
-        }
-
-        let alertResults = VPNExclusionSuggestionAlertResults()
-
+        var userAction: VPNExclusionSuggestionAlert.UserAction = .stopVPN
         let binding = Binding<VPNExclusionSuggestionAlert.UserAction>.init {
-            alertResults.userAction
+            userAction
         } set: { newValue in
-            alertResults.userAction = newValue
+            userAction = newValue
         }
 
+        var dontAskAgain = false
         let dontAskAgainBinding = Binding<Bool> {
-            alertResults.dontAskAgain
+            dontAskAgain
         } set: { newValue in
-            alertResults.dontAskAgain = newValue
+            dontAskAgain = newValue
         }
 
         let modalAlert = VPNExclusionSuggestionAlert(userAction: binding, dontAskAgain: dontAskAgainBinding)
         await modalAlert.show(in: parentWindow)
 
-        if alertResults.dontAskAgain {
+        if dontAskAgain {
             vpnAppState.dontAskAgainExclusionSuggestion = true
         }
 
-        switch alertResults.userAction {
+        switch userAction {
         case .stopVPN:
             return true
         case .excludeApp:

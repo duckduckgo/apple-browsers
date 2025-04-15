@@ -41,6 +41,13 @@ struct AutofillCreditCardListView: View {
                             } label: {
                                 CreditCardRow(card: card)
                             }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteCard(card.card)
+                                } label: {
+                                    Label(UserText.autofillCreditCardDetailsDeleteButton, systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .listRowBackground(Color(designSystemColor: .surface))

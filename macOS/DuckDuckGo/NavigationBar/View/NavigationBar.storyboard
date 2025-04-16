@@ -346,8 +346,8 @@
                             <constraint firstItem="gIy-el-24l" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" constant="6" id="km5-nE-hfK"/>
                             <constraint firstAttribute="trailing" secondItem="EQw-GG-GMA" secondAttribute="trailing" id="oYK-XH-0iN"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="16" id="rfA-3F-QAf"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" id="rqL-Vd-lnY"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" id="zgI-LQ-Zj3"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" priority="250" id="rqL-Vd-lnY"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" priority="100" id="zgI-LQ-Zj3"/>
                         </constraints>
                         <userDefinedRuntimeAttributes>
                             <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
@@ -1051,7 +1051,7 @@
         <image name="Arrow-Right-12" width="9" height="9"/>
         <image name="Back" width="16" height="16"/>
         <image name="Bookmark" width="16" height="16"/>
-        <image name="Bookmarks" width="16" height="16"/>
+        <image name="Bookmarks" width="24" height="24"/>
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>

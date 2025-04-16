@@ -102,17 +102,3 @@ final class LongPressButton: MouseOverButton {
     }
 
 }
-
-private extension NSEvent {
-    func makeMouseUpEvent() -> NSEvent? {
-        return NSEvent.mouseEvent(with: .leftMouseUp,
-                                  location: self.locationInWindow,
-                                  modifierFlags: self.modifierFlags,
-                                  timestamp: self.timestamp,
-                                  windowNumber: self.windowNumber,
-                                  context: nil,
-                                  eventNumber: self.eventNumber,
-                                  clickCount: self.clickCount,
-                                  pressure: self.pressure)
-    }
-}

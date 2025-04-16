@@ -564,11 +564,17 @@ final class MainViewController: NSViewController {
 extension MainViewController: NSDraggingDestination {
 
     func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return .copy
+
+        return draggingUpdated(draggingInfo)
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        guard draggingInfo.draggingPasteboard.url != nil else { return .none }
+        if draggingInfo.draggingPasteboard.url != nil,
+           let addressBarVC = navigationBarViewController.addressBarViewController,
+           // disable dropping url on the same address bar where it came from
+           addressBarVC.view.isMouseLocationInsideBounds(draggingInfo.draggingLocation) {
+            return addressBarVC.draggingUpdated(draggingInfo)
+        }
 
         return .copy
     }

@@ -91,8 +91,7 @@ class BarsAnimator {
 
         // Check if we need to perform additional changes
         let ratioMatchesCurrentState =
-        (barsState == .hidden && ratio == 1.0) ||
-        (barsState == .revealed && ratio == 0) ||
+        ((barsState == .hidden && ratio == 1.0) || (barsState == .revealed && ratio == 0)) &&
         transitionProgress == ratio
 
         guard !ratioMatchesCurrentState else {

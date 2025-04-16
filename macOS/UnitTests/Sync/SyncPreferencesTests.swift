@@ -142,11 +142,22 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertTrue(syncPreferences.isSyncEnabled)
     }
 
-    func testCorrectRecoveryCodeIsReturned() {
+    func testCorrectRecoveryCodeIsReturned() throws {
         let account = SyncAccount(deviceId: "some device", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.account = account
 
-        XCTAssertEqual(syncPreferences.recoveryCode, account.recoveryCode)
+        /// This function expects a base64-encoded string, decodes it,
+        /// and converts it into a JSON dictionary that could be realiably compared using `XCTAssertEqual`.
+        ///
+        /// We're doing this because two instances of `recoveryCode` may have different order
+        /// of keys within the inner JSON object, and because of that their base64 representations
+        /// will be different, while the "codes" would be functionally the same.
+        func contents(of code: String?) throws -> [String: String] {
+            let contents = try Data(base64Encoded: try XCTUnwrap(code)).flatMap { try JSONSerialization.jsonObject(with: $0) }
+            return try XCTUnwrap(contents as? [String: String])
+        }
+
+        try XCTAssertEqual(contents(of: syncPreferences.recoveryCode), contents(of: account.recoveryCode))
     }
 
     @MainActor func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {

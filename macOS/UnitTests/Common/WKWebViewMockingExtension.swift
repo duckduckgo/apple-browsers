@@ -18,7 +18,6 @@
 
 import Common
 import ObjectiveC
-import DuckDuckGo_Privacy_Browser
 
 @testable import DuckDuckGo_Privacy_Browser
 

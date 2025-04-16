@@ -71,7 +71,7 @@ struct SubscriptionRequest {
                                          method: .post,
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken),
                                          body: bodyData,
-                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: 4.0)) else {
+                                         retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))) else {
             return nil
         }
         return SubscriptionRequest(apiRequest: request)

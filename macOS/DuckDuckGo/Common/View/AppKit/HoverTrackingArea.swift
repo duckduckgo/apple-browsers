@@ -19,7 +19,6 @@
 import AppKit
 import Foundation
 import os.log
-import SwiftUI
 
 /// Used in `MouseOverView` and `MouseOverButton` to automatically manage `isMouseOver` state and update layer when needed
 final class HoverTrackingArea: NSTrackingArea {
@@ -129,92 +128,21 @@ final class HoverTrackingArea: NSTrackingArea {
         let description = String(format: "<HoverTrackingArea %p: %@>", self, self.view?.description ?? "<nil>")
         Logger.general.error("\(description): received delayed mouseEntered event after mouseExited: \(event.eventDescription)")
 
-        // TODO: Uncomment the following code after the issue is tested:
-        // DispatchQueue.main.async { [weak self] in
-        //     self?.sendMouseExited(event)
-        // }
-        // TODO: Remove the following code after the issue is tested:
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            guard self.view?.isMouseOver == true else { return }
-
-            let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 600, height: 200),
-                styleMask: [.borderless],
-                backing: .buffered,
-                defer: false
-            )
-            window.backgroundColor = .clear
-            window.isOpaque = false
-            window.level = .floating
-            window.hasShadow = false
-            window.isReleasedWhenClosed = false
-            let sendMouseExited = {
-                self.sendMouseExited(event)
-            }
-            let isMouseOver = {
-                self.view?.isMouseOver ?? false
-            }
-            struct NotificationBubble: View {
-                let message: String
-                weak var window: NSWindow?
-                let sendMouseExited: () -> Void
-                let isMouseOver: () -> Bool
-                @State private var remainingSeconds = 5
-                let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
-
-                var body: some View {
-                    VStack {
-                        Text(message)
-                            .font(.system(size: 21, weight: .medium))
-                            .multilineTextAlignment(.center)
-                        Text(verbatim: "Fixing in: \(remainingSeconds) seconds…")
-                            .font(.system(size: 16))
-                            .foregroundColor(.gray)
-                    }
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(.black))
-                            .opacity(0.9)
-                    )
-                    .onReceive(timer) { _ in
-                        if remainingSeconds > 1 && isMouseOver() {
-                            remainingSeconds -= 1
-                        } else if let window {
-                            sendMouseExited()
-                            NSAnimationContext.runAnimationGroup({ context in
-                                context.duration = 0.3
-                                window.animator().alphaValue = 0
-                            }) {
-                                window.close()
-                            }
-                        }
-                    }
-                }
-            }
-
-            let notificationView = NSHostingView(rootView:
-                NotificationBubble(message: "Mouse hover state stuck caught", window: window, sendMouseExited: sendMouseExited, isMouseOver: isMouseOver)
-                    .frame(width: 400, height: 120)
-            )
-            window.contentView = notificationView
-
-            // Position window near top right of screen
-            if let screen = NSScreen.main {
-                let screenFrame = screen.visibleFrame
-                window.setFrameOrigin(NSPoint(
-                    x: screenFrame.midX - window.frame.width / 2,
-                    y: screenFrame.midY - window.frame.height / 2
-                ))
-            }
-
-            window.orderFront(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.sendMouseExited(event)
         }
     }
 
     private func sendMouseExited(_ event: NSEvent) {
-        guard let newEvent = NSEvent.enterExitEvent(with: .mouseExited, location: view?.window?.mouseLocationOutsideOfEventStream ?? event.locationInWindow, modifierFlags: event.modifierFlags, timestamp: event.timestamp, windowNumber: event.windowNumber, context: nil, eventNumber: event.eventNumber, trackingNumber: event.trackingNumber, userData: nil) else {
+        guard let newEvent = NSEvent.enterExitEvent(with: .mouseExited,
+                                                    location: view?.window?.mouseLocationOutsideOfEventStream ?? event.locationInWindow,
+                                                    modifierFlags: event.modifierFlags,
+                                                    timestamp: event.timestamp,
+                                                    windowNumber: event.windowNumber,
+                                                    context: nil,
+                                                    eventNumber: event.eventNumber,
+                                                    trackingNumber: [.mouseEntered, .mouseExited].contains(event.type) ? event.trackingNumber : 0,
+                                                    userData: nil) else {
             assertionFailure("Failed to create new mouse exited event")
             return
         }

@@ -22,6 +22,16 @@ import ZIPFoundation
 import Common
 import os.log
 
+public protocol ZipArchiveHandling: FileManager {
+    func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
+}
+
+extension FileManager: ZipArchiveHandling {
+    @objc public func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
+        try unzipItem(at: sourceURL, to: destinationURL, skipCRC32: false, allowUncontainedSymlinks: false, progress: nil, pathEncoding: nil)
+    }
+}
+
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
         case missingAccessToken
@@ -90,7 +100,8 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
-    private let fileManager: FileManager
+    private let fileManager: ZipArchiveHandling
+    private let urlSession: URLSession
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
@@ -99,13 +110,15 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
-                fileManager: FileManager = .default,
+                fileManager: ZipArchiveHandling = FileManager.default,
+                urlSession: URLSession = .shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 localBrokerProvider: BrokerJSONFallbackProvider?) {
         self.settings = settings
         self.vault = vault
         self.fileManager = fileManager
+        self.urlSession = urlSession
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
         self.localBrokerProvider = localBrokerProvider
@@ -118,10 +131,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     // MARK: - Main flow
-
-    public func fallbackBrokers() throws -> [DataBroker]? {
-        try localBrokerProvider?.bundledBrokers()
-    }
 
     public func checkForUpdates() async throws {
         try await checkForUpdates(skipsLimiter: false)
@@ -149,7 +158,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                                                contentType: "application/json",
                                                eTag: settings.mainConfigETag,
                                                accessToken: accessToken)
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
             guard let response = response as? HTTPURLResponse else { return }
 
             if response.statusCode == 304 {
@@ -219,7 +228,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                                            accessToken: accessToken)
 
         let temporaryURL: URL = try await withCheckedThrowingContinuation { continuation in
-            let task = URLSession.shared.downloadTask(with: request) { url, response, error in
+            let task = urlSession.downloadTask(with: request) { url, response, error in
                 if let error {
                     continuation.resume(throwing: error)
                     return
@@ -241,7 +250,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         }
 
         do {
-            try fileManager.unzipItem(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
+            try fileManager.unzipArchive(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
             Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
         } catch {
             Logger.dataBrokerProtection.log("Failed to extract downloaded broker JSONs: \(error)")

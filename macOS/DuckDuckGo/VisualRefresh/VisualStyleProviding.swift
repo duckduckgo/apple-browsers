@@ -24,6 +24,7 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
 
     var toolbarButtonsCornerRadius: CGFloat { get }
 }
@@ -86,6 +87,13 @@ struct VisualStyle: VisualStyleProviding {
         case .default: return addressBarBottomPaddingForDefault
         case .homePage: return addressBarBottomPaddingForHomePage
         case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
+        }
+    }
+
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
+        switch type.isLogoVisible {
+        case true: return 16
+        case false: return 0
         }
     }
 

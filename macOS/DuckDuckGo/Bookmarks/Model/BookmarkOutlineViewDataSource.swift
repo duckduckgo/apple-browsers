@@ -263,6 +263,28 @@ final class BookmarkOutlineViewDataSource: NSObject, BookmarksOutlineViewDataSou
         return entity.pasteboardWriter
     }
 
+    func outlineView(_ outlineView: NSOutlineView, draggingSession session: NSDraggingSession, willBeginAt screenPoint: NSPoint, forItems draggedItems: [Any]) {
+        guard let node = draggedItems.first as? BookmarkNode,
+              let entity = node.representedObject as? BaseBookmarkEntity else { return }
+
+        // Set the drag formation to none to use our custom preview
+        session.draggingFormation = .none
+
+        let title: String
+        let favicon: NSImage?
+        if let bookmark = entity as? Bookmark {
+            title = bookmark.title.isEmpty ? bookmark.url : bookmark.title
+            favicon = bookmark.favicon(.small) ?? .bookmarkDefaultFavicon
+        } else if let folder = entity as? BookmarkFolder {
+            title = folder.title
+            favicon = .bookmarksFolder
+        } else {
+            assertionFailure("Unsupported entity type: \(entity)")
+            return
+        }
+        session.setPreviewProvider(URLDragPreviewProvider(text: title, favicon: favicon, backgroundColor: .controlAccentColor, textColor: .selectedMenuItemTextColor, width: outlineView.frame.width))
+    }
+
     func outlineView(_ outlineView: NSOutlineView, validateDrop info: NSDraggingInfo, proposedItem item: Any?, proposedChildIndex index: Int) -> NSDragOperation {
         if !sortMode.isReorderingEnabled { return .none }
 

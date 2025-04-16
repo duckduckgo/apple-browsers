@@ -2163,6 +2163,34 @@
 		841BE93F2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
 		8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
 		8426108E2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
+		842661CC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */; };
+		842661CD2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */; };
+		842661CE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */; };
+		842661CF2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */; };
+		842661D02DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661D12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */; };
+		842661D22DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661D32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */; };
+		842661D42DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661D52DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */; };
+		842661D62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */; };
+		842661D72DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */; };
+		842661D82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */; };
+		842661D92DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */; };
+		842661DA2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */; };
+		842661DB2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */; };
+		842661DC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */; };
+		842661DD2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */; };
+		842661DE2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661DF2DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */; };
+		842661E02DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661E12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */; };
+		842661E22DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
+		842661E32DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */; };
+		842661E42DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */; };
+		842661E52DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */; };
+		842661E62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */; };
+		842661E72DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */; };
 		843965122C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */; };
 		843965132C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */; };
 		843965152C737022004C8899 /* NSPasteboardExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965142C737022004C8899 /* NSPasteboardExtension.swift */; };
@@ -2181,6 +2209,10 @@
 		84537A092C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
+		84A37DDE2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
+		84A37DDF2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
+		84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
+		84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
 		84B479082CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84B479092CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84B49F0D2CB10F0900FF08BB /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */; };
@@ -4516,6 +4548,20 @@
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
 		8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyEquivalentView.swift; sourceTree = "<group>"; };
+		842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithTextOnly.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomColors.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithLongURL.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
 		843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDragOperationExtension.swift; sourceTree = "<group>"; };
 		843965142C737022004C8899 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
 		843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLNodeExtension.swift; sourceTree = "<group>"; };
@@ -4523,6 +4569,8 @@
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		84537A022C998C24008723BC /* FireWindowSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSession.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
+		84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProvider.swift; sourceTree = "<group>"; };
+		84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProviderTests.swift; sourceTree = "<group>"; };
 		84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnitTests.swift"; sourceTree = "<group>"; };
 		84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareFilterSet.json; sourceTree = "<group>"; };
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
@@ -7813,6 +7861,44 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		84A37DE02DAFB645009E0A68 /* URLDragPreviewProvider */ = {
+			isa = PBXGroup;
+			children = (
+				84A37DEB2DAFB68A009E0A68 /* __Snapshots__ */,
+				84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */,
+			);
+			path = URLDragPreviewProvider;
+			sourceTree = "<group>";
+		};
+		84A37DEA2DAFB68A009E0A68 /* URLDragPreviewProviderTests */ = {
+			isa = PBXGroup;
+			children = (
+				842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */,
+				842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */,
+				842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */,
+				842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */,
+				842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */,
+				842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */,
+				842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */,
+				842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */,
+				842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */,
+				842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */,
+				842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */,
+				842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */,
+				842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */,
+				842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */,
+			);
+			path = URLDragPreviewProviderTests;
+			sourceTree = "<group>";
+		};
+		84A37DEB2DAFB68A009E0A68 /* __Snapshots__ */ = {
+			isa = PBXGroup;
+			children = (
+				84A37DEA2DAFB68A009E0A68 /* URLDragPreviewProviderTests */,
+			);
+			path = __Snapshots__;
+			sourceTree = "<group>";
+		};
 		853014D425E6709500FB8205 /* Support */ = {
 			isa = PBXGroup;
 			children = (
@@ -7940,6 +8026,7 @@
 				B65E6B9D26D9EC0800095F96 /* CircularProgressView.swift */,
 				B693954626F04BEA0015B914 /* ColorView.swift */,
 				4B379C2327BDE1B0008A968E /* FlatButton.swift */,
+				C172E72E2C9329D300521D9A /* FlippedView.swift */,
 				B693953E26F04BE70015B914 /* FocusRingView.swift */,
 				B693954326F04BE90015B914 /* GradientView.swift */,
 				B6B140872ABDBCC1004F8E85 /* HoverTrackingArea.swift */,
@@ -7958,8 +8045,8 @@
 				B693954226F04BE90015B914 /* ShadowView.swift */,
 				8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */,
 				4BDFA4AD27BF19E500648192 /* ToggleableScrollView.swift */,
+				84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */,
 				B693954526F04BEA0015B914 /* WindowDraggingView.swift */,
-				C172E72E2C9329D300521D9A /* FlippedView.swift */,
 			);
 			path = AppKit;
 			sourceTree = "<group>";
@@ -8582,6 +8669,7 @@
 		AA585D93248FD31400E9A3E2 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				84A37DE02DAFB645009E0A68 /* URLDragPreviewProvider */,
 				BB80DDCD2D75E94600ED1FFF /* DefaultBrowserAndAddToDockPrompts */,
 				5650E3712D3FDC6600D41ECF /* PageRefreshMonitor */,
 				31F25EFD2CC3C9F9002F9084 /* AIChat */,
@@ -11334,6 +11422,20 @@
 				3706FE8D293F661700E42796 /* DataImportResources in Resources */,
 				3706FE8E293F661700E42796 /* atb.json in Resources */,
 				9FBD845E2BB3B80300220859 /* Origin.txt in Resources */,
+				842661CC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */,
+				842661CD2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
+				842661CE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */,
+				842661CF2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */,
+				842661D02DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D22DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */,
+				842661D42DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D52DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
+				842661D62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */,
+				842661D72DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */,
+				842661D92DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
 				3706FE8F293F661700E42796 /* DuckDuckGo-ExampleCrash.ips in Resources */,
 				3706FE90293F661700E42796 /* DuckDuckGo-Symbol.jpg in Resources */,
 				3706FE91293F661700E42796 /* invalid.json in Resources */,
@@ -11547,6 +11649,20 @@
 				B65CD8D52B316FCA00A595BB /* __Snapshots__ in Resources */,
 				B69B50522726CD8100758A2B /* atb.json in Resources */,
 				4B70C00127B0793D000386ED /* DuckDuckGo-ExampleCrash.ips in Resources */,
+				842661DA2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */,
+				842661DB2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
+				842661DC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */,
+				842661DD2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */,
+				842661DE2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661DF2DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */,
+				842661E02DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661E12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */,
+				842661E22DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				842661E32DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
+				842661E42DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */,
+				842661E52DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */,
+				842661E62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */,
+				842661E72DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
 				B67C6C422654BF49006C872E /* DuckDuckGo-Symbol.jpg in Resources */,
 				B69B50552726CD8100758A2B /* invalid.json in Resources */,
 				9FBD84612BB3BC6400220859 /* Origin-empty.txt in Resources */,
@@ -12841,6 +12957,7 @@
 				3706FC93293F65D500E42796 /* PreferencesViewController.swift in Sources */,
 				3706FC94293F65D500E42796 /* FireproofDomains.swift in Sources */,
 				3706FC95293F65D500E42796 /* Database.swift in Sources */,
+				84A37DDE2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */,
 				3707C71B294B5D0F00682A9F /* AutofillTabExtension.swift in Sources */,
 				3706FC96293F65D500E42796 /* BookmarksBarCenterAlignedLayout.swift in Sources */,
 				3706FC97293F65D500E42796 /* BookmarksOutlineView.swift in Sources */,
@@ -12977,6 +13094,7 @@
 				56A054452C2252CE007D8FAB /* OnboardingUserScriptTests.swift in Sources */,
 				3706FE0C293F661700E42796 /* GeolocationProviderMock.swift in Sources */,
 				CBDD5DE429A6800300832877 /* MockConfigurationStore.swift in Sources */,
+				84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				3706FE0D293F661700E42796 /* MainMenuTests.swift in Sources */,
 				3706FE0E293F661700E42796 /* FirefoxDataImporterTests.swift in Sources */,
 				3706FE0F293F661700E42796 /* CSVLoginExporterTests.swift in Sources */,
@@ -14274,6 +14392,7 @@
 				B64C853026943BC10048FEBE /* Permissions.xcdatamodeld in Sources */,
 				EE339228291BDEFD009F62C1 /* JSAlertController.swift in Sources */,
 				4B9DB04A2A983B24000927DB /* NotificationService.swift in Sources */,
+				84A37DDF2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */,
 				3775912D29AAC72700E26367 /* SyncPreferences.swift in Sources */,
 				F1B33DF22BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift in Sources */,
 				F118EA852BEACC7000F77634 /* NonStandardPixel.swift in Sources */,
@@ -14676,6 +14795,7 @@
 				373B2F852C387B830013A94B /* ActiveRemoteMessageModelTests.swift in Sources */,
 				B67C6C472654C643006C872E /* FileManagerExtensionTests.swift in Sources */,
 				B69B50482726C5C200758A2B /* StatisticsLoaderTests.swift in Sources */,
+				84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				9F6434702BECBA2800D2D8A0 /* SubscriptionRedirectManagerTests.swift in Sources */,
 				142879DA24CE1179005419BB /* SuggestionViewModelTests.swift in Sources */,
 				4B9292BC2667103100AD2C21 /* BookmarkSidebarTreeControllerTests.swift in Sources */,

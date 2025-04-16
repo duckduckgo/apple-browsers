@@ -470,12 +470,28 @@ final class AddressBarTextEditor: NSTextView {
         if let draggedString = session.draggingPasteboard.string(forType: .string),
            let url = URL(trimmedAddressBarString: draggedString) {
             session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
+            
+            // Create dragging image
+            let favicon: NSImage
+            if let tabViewModel = addressBar?.tabCollectionViewModel.selectedTabViewModel,
+               url.securityOrigin == tabViewModel.tab.content.userEditableUrl?.securityOrigin,
+               let tabFavicon = tabViewModel.favicon {
+                favicon = tabFavicon
+            } else {
+                favicon = .web
+            }
+            session.setPreviewProvider(URLDragPreviewProvider(url: url, favicon: favicon))
+
             // if the address matches currently loaded URL
             if let title = addressBar?.tabCollectionViewModel.selectedTabViewModel?.title, !title.isEmpty,
                addressBar?.tabCollectionViewModel.selectedTabViewModel?.tab.url == url {
                 session.draggingPasteboard.setString(title, forType: .urlName)
             }
         }
+    }
+
+    override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
+        self.addressBar?.performDragOperation(sender) ?? false
     }
 
 }

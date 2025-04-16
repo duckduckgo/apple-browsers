@@ -525,6 +525,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 }
 
+/// For handling subscription access actions when presented as modal VC on purchase page via "I Have a Subscription" link
 extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHandling {
 
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {

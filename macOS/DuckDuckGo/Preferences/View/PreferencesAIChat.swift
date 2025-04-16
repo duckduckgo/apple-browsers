@@ -19,6 +19,7 @@
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import PixelKit
 
 extension Preferences {
 
@@ -40,10 +41,36 @@ extension Preferences {
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
+                    .onChange(of: model.showShortcutInAddressBar) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
+                    }
 
                     ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
                                    isOn: $model.showShortcutInApplicationMenu)
+                    .onChange(of: model.showShortcutInApplicationMenu) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
+                    }
                 }
+            }.onAppear {
+                PixelKit.fire(AIChatPixel.aiChatSettingsDisplayed,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
             }
         }
     }

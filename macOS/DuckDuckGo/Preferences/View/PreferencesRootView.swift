@@ -165,7 +165,7 @@ enum Preferences {
                     case .addToDeviceActivationFlow:
                         // Handled on web
                         break
-                    case .activeSubscriptionSettingsClick:
+                    case .openSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .changePlanOrBillingClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
@@ -328,7 +328,7 @@ enum Preferences {
                     case .addToDeviceActivationFlow:
                         // Handled on web
                         break
-                    case .activeSubscriptionSettingsClick:
+                    case .openSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .changePlanOrBillingClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)

@@ -80,7 +80,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
              activateSubscriptionViaRestoreAppStorePurchaseClick,
              manageEmailClick,
              addToDeviceActivationFlow,
-             activeSubscriptionSettingsClick,
+             openSubscriptionSettingsClick,
              changePlanOrBillingClick,
              removeSubscriptionClick
     }
@@ -183,7 +183,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
     @MainActor
     func didAppear() {
         if isUserAuthenticated {
-            userEventHandler(.activeSubscriptionSettingsClick)
+            userEventHandler(.openSubscriptionSettingsClick)
             fetchAndUpdateSubscriptionDetails()
         } else {
             self.subscriptionStorefrontRegion = currentStorefrontRegion()
@@ -561,7 +561,7 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
 //             activateSubscriptionViaRestoreAppStorePurchaseClick,
 //             manageEmailClick,
 //             addToDeviceActivationFlow,
-//             activeSubscriptionSettingsClick,
+//             openSubscriptionSettingsClick,
 //             changePlanOrBillingClick,
 //             removeSubscriptionClick
 //    }
@@ -668,7 +668,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     @MainActor
     func didAppear() {
         if isUserAuthenticated {
-            userEventHandler(.activeSubscriptionSettingsClick)
+            userEventHandler(.openSubscriptionSettingsClick)
             fetchAndUpdateSubscriptionDetails()
         } else {
             self.subscriptionStorefrontRegion = currentStorefrontRegion()

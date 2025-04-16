@@ -106,7 +106,8 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip" >> $GITHUB_ENV
+        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-${app_version}.${build_number}-dSYM.zip" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
 

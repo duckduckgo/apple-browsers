@@ -85,9 +85,15 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
                                             windowFeatures: WKWindowFeatures,
                                             completionHandler: @escaping (WKWebView?) -> Void) {
 
-        switch newWindowPolicy(for: navigationAction)?.preferringTabsToWindows(tabsPreferences.preferNewTabsToWindows) {
+        switch newWindowPolicy(for: navigationAction) {
         // popup kind is known, action doesn‘t require Popup Permission
-        case .allow(let targetKind):
+        case .allow(var targetKind):
+            // replace `.tab` with `.window` when user prefers windows over tabs
+            if case .tab(_, let isBurner, contextMenuInitiated: false) = targetKind,
+               !tabsPreferences.preferNewTabsToWindows  {
+                targetKind = .window(active: true, burner: isBurner)
+            }
+
             // proceed to web view creation
             completionHandler(self.createWebView(from: webView, with: configuration,
                                                  for: navigationAction, of: targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)))
@@ -100,10 +106,11 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
             break
         }
 
-        let shouldSelectNewTab = !NSApp.isCommandPressed || tabsPreferences.switchToNewTabWhenOpened // this is actually not correct, to be fixed later
-        // try to guess popup kind from provided windowFeatures
-        let targetKind = NewWindowPolicy(windowFeatures, shouldSelectNewTab: shouldSelectNewTab, isBurner: burnerMode.isBurner)
-            .preferringTabsToWindows(tabsPreferences.preferNewTabsToWindows)
+        // select new tab by default; ⌘-click modifies the selection state
+        let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent, switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened, canOpenLinkInCurrentTab: false, shouldSelectNewTab: true)
+
+        // determine popup kind from provided windowFeatures and current key modifiers
+        let targetKind = NewWindowPolicy(windowFeatures, linkOpenBehavior: linkOpenBehavior, isBurner: burnerMode.isBurner, preferTabsToWindows: tabsPreferences.preferNewTabsToWindows)
 
         // action doesn‘t require Popup Permission as it‘s user-initiated
         // TO BE FIXED: this also opens a new window when a popup ad is shown on click simultaneously with the main frame navigation:

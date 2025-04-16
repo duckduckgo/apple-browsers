@@ -765,8 +765,10 @@ class MainViewController: UIViewController {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            let keyboardHeightInWebView = self.currentTab?.webView.convert(keyboardFrame, from: nil).height ?? 0
-            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeightInWebView > 0 ? omniBarHeight : 0, right: 0)
+            if let currentTab {
+                let inset = intersection.height > 0 ? omniBarHeight : 0
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
@@ -2025,7 +2027,8 @@ extension MainViewController: BrowserChromeDelegate {
             let topBarsConstant = -browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
-        viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
+        viewCoordinator.constraints.navigationBarContainerTop.constant = -navBarTopOffset * (1.0 - ratio)
+        
     }
 
 }

@@ -175,6 +175,7 @@
                                 </subviews>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="lessThanOrEqual" constant="832" id="FmT-gw-Zi6"/>
+                                    <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="180" id="cjs-qz-wlM"/>
                                 </constraints>
                                 <visibilityPriorities>
                                     <integer value="1000"/>

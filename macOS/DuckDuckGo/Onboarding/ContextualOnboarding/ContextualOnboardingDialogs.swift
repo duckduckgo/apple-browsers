@@ -302,17 +302,17 @@ struct OnboardingSecondaryCTAButton: View {
 // MARK: - Preview
 
 #Preview("Try Search") {
-    OnboardingTrySearchDialog(viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualDialogsManager())), onManualDismiss: {})
+    OnboardingTrySearchDialog(viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider()), onManualDismiss: {})
         .padding()
 }
 
 #Preview("Try Site") {
-    OnboardingTryVisitingSiteDialog(viewModel: OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualDialogsManager())), onManualDismiss: {})
+    OnboardingTryVisitingSiteDialog(viewModel: OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle)), onManualDismiss: {})
         .padding()
 }
 
 #Preview("First Search Dialog") {
-    OnboardingFirstSearchDoneDialog(shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualDialogsManager())), gotItAction: {}, onManualDismiss: {})
+    OnboardingFirstSearchDoneDialog(shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle)), gotItAction: {}, onManualDismiss: {})
         .padding()
 }
 

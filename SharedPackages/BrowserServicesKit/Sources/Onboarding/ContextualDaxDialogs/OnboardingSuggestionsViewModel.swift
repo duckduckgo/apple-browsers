@@ -23,27 +23,16 @@ public protocol OnboardingNavigationDelegate: AnyObject {
     func navigateFromOnboarding(to url: URL)
 }
 
-public protocol OnboardingSearchSuggestionsPixelReporting {
-    func measureSearchSuggestionOptionTapped()
-}
-
-public protocol OnboardingSiteSuggestionsPixelReporting {
-    func measureSiteSuggestionOptionTapped()
-}
-
 public struct OnboardingSearchSuggestionsViewModel {
     let suggestedSearchesProvider: OnboardingSuggestionsItemsProviding
     public weak var delegate: OnboardingNavigationDelegate?
-    private let pixelReporter: OnboardingSearchSuggestionsPixelReporting
 
     public init(
         suggestedSearchesProvider: OnboardingSuggestionsItemsProviding,
-        delegate: OnboardingNavigationDelegate? = nil,
-        pixelReporter: OnboardingSearchSuggestionsPixelReporting
+        delegate: OnboardingNavigationDelegate? = nil
     ) {
         self.suggestedSearchesProvider = suggestedSearchesProvider
         self.delegate = delegate
-        self.pixelReporter = pixelReporter
     }
 
     public var itemsList: [ContextualOnboardingListItem] {
@@ -51,7 +40,6 @@ public struct OnboardingSearchSuggestionsViewModel {
     }
 
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
-        pixelReporter.measureSearchSuggestionOptionTapped()
         delegate?.searchFromOnboarding(for: item.title)
     }
 }
@@ -59,18 +47,15 @@ public struct OnboardingSearchSuggestionsViewModel {
 public struct OnboardingSiteSuggestionsViewModel {
     let suggestedSitesProvider: OnboardingSuggestionsItemsProviding
     public weak var delegate: OnboardingNavigationDelegate?
-    private let pixelReporter: OnboardingSiteSuggestionsPixelReporting
 
     public init(
         title: String,
         suggestedSitesProvider: OnboardingSuggestionsItemsProviding,
-        delegate: OnboardingNavigationDelegate? = nil,
-        pixelReporter: OnboardingSiteSuggestionsPixelReporting
-    ) {
+        delegate: OnboardingNavigationDelegate? = nil
+) {
         self.title = title
         self.suggestedSitesProvider = suggestedSitesProvider
         self.delegate = delegate
-        self.pixelReporter = pixelReporter
     }
 
     public let title: String
@@ -81,7 +66,6 @@ public struct OnboardingSiteSuggestionsViewModel {
 
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
         guard let url = URL(string: item.title) else { return }
-        pixelReporter.measureSiteSuggestionOptionTapped()
         delegate?.navigateFromOnboarding(to: url)
     }
 }

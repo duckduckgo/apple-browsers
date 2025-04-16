@@ -45,4 +45,28 @@ final class DataBrokerTests: XCTestCase {
 
         XCTAssertFalse(broker.performsOptOutWithinParent())
     }
+
+    func testInitInvalidBrokerWithUnsupportedStep() throws {
+        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-step", withExtension: "json", subdirectory: "Resources")!
+        let expectation = XCTestExpectation(description: "Unsupported step type")
+        do {
+            let broker = try DataBroker.initFromResource(jsonURL)
+        } catch Step.DecodingError.unsupportedStepType {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testInitInvalidBrokerWithUnsupportedAction() throws {
+        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-action", withExtension: "json", subdirectory: "Resources")!
+        let expectation = XCTestExpectation(description: "Unsupported action type")
+        do {
+            let broker = try DataBroker.initFromResource(jsonURL)
+        } catch Step.DecodingError.unsupportedActionType {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
 }

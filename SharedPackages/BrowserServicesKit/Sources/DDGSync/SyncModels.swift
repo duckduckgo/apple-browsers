@@ -145,7 +145,7 @@ public struct SyncCode: Codable {
         case error
     }
 
-    public struct RecoveryKey: Codable, Sendable {
+    public struct RecoveryKey: Codable, Sendable, Equatable {
         let userId: String
         let primaryKey: Data
     }

@@ -146,18 +146,7 @@ final class SyncPreferencesTests: XCTestCase {
         let account = SyncAccount(deviceId: "some device", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.account = account
 
-        /// This function expects a base64-encoded string, decodes it,
-        /// and converts it into a JSON dictionary that could be realiably compared using `XCTAssertEqual`.
-        ///
-        /// We're doing this because two instances of `recoveryCode` may have different order
-        /// of keys within the inner JSON object, and because of that their base64 representations
-        /// will be different, while the "codes" would be functionally the same.
-        func contents(of code: String?) throws -> [String: String] {
-            let contents = try Data(base64Encoded: try XCTUnwrap(code)).flatMap { try JSONSerialization.jsonObject(with: $0) }
-            return try XCTUnwrap(contents as? [String: String])
-        }
-
-        try XCTAssertEqual(contents(of: syncPreferences.recoveryCode), contents(of: account.recoveryCode))
+        try XCTAssertEqual(SyncCode.RecoveryKey(base64Code: syncPreferences.recoveryCode), SyncCode.RecoveryKey(base64Code: account.recoveryCode))
     }
 
     @MainActor func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
@@ -453,5 +442,13 @@ struct MockRemoteConnecting: RemoteConnecting {
     }
 
     func stopPolling() {
+    }
+}
+
+private extension SyncCode.RecoveryKey {
+    init(base64Code: String?) throws {
+        let contents = try Data(base64Encoded: try XCTUnwrap(base64Code))
+            .flatMap { try JSONDecoder.snakeCaseKeys.decode(SyncCode.self, from: $0) }
+        self = try XCTUnwrap(contents?.recovery)
     }
 }
